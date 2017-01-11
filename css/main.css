@@ -390,7 +390,7 @@ a:hover .btr_icon-nav-bc {
 /* PAGER */
 
 .btr-pager-holder .pager-mid {
-	padding-right:4px;
+	padding-right: 4px;
 }
 
 .btr-pager-holder input.pager-cur {
@@ -409,6 +409,9 @@ a:hover .btr_icon-nav-bc {
 	text-align:center;
 }
 
+/* Backup from roblox's css */
+.btr-pager{box-sizing:border-box;font-size:16px;}.btr-pager *{box-sizing:inherit;}
+.btr-pager{padding-left:0;margin:20px 0;list-style:none;text-align:center}.btr-pager:before,.btr-pager:after{content:" ";display:table}.btr-pager:after{clear:both}.btr-pager li{float:left}.btr-pager li a{margin:0 9px 0 0;height:32px;width:32px;color:#191919;padding:3px 0 0 0;text-align:center}.btr-pager li span{border:0 none;padding:5px 5px 0 0;display:inline-block}.btr-pager .first,.btr-pager .last,.btr-pager .pager-prev,.btr-pager .pager-next{-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.btr-pager .first a,.btr-pager .last a,.btr-pager .pager-prev a,.btr-pager .pager-next a{margin-left:0;background-color:#fff;border:1px solid #B8B8B8;border-radius:3px;display:inline-block}.btr-pager .first a:hover,.btr-pager .last a:hover,.btr-pager .pager-prev a:hover,.btr-pager .pager-next a:hover{background-color:#F2F2F2}.btr-pager .first a:hover span,.btr-pager .last a:hover span,.btr-pager .pager-prev a:hover span,.btr-pager .pager-next a:hover span{background-color:#F2F2F2}.btr-pager .first a span,.btr-pager .last a span,.btr-pager .pager-prev a span,.btr-pager .pager-next a span{background-color:#fff;background-size:40px auto;width:20px;height:20px}.btr-pager .pager-cur a{border:0 none}.btr-pager .first span{background-position:0 -820px}.btr-pager .last span{background-position:0 -800px}ul.btr-pager .pager-prev span{background-position:0 -300px}ul.btr-pager .pager-next span{background-position:0 -280px}.btr-pager .pager-cur a{border:1px solid #B8B8B8}.btr-pager .pager-total a:hover{border:0 none}.btr-pager .disabled>a,.btr-pager .disabled>a:hover,.btr-pager .disabled>a:focus{cursor:default;background-color:#F2F2F2;border:1px solid #E3E3E3}.btr-pager .disabled>a span,.btr-pager .disabled>a:hover span,.btr-pager .disabled>a:focus span{background-color:#F2F2F2}.btr-pager .disabled>a .icon-left,.btr-pager .disabled>a:hover .icon-left,.btr-pager .disabled>a:focus .icon-left{background-position:0 -960px}.btr-pager .disabled>a .icon-right,.btr-pager .disabled>a:hover .icon-right,.btr-pager .disabled>a:focus .icon-right{background-position:0 -940px}.btr-pager .disabled>a .icon-first-page,.btr-pager .disabled>a:hover .icon-first-page,.btr-pager .disabled>a:focus .icon-first-page{background-position:0 -1000px}.btr-pager .disabled>a .icon-last-page,.btr-pager .disabled>a:hover .icon-last-page,.btr-pager .disabled>a:focus .icon-last-page{background-position:0 -980px}.btr-pager-holder{text-align:center;width:100%}.btr-pager-holder:before,.btr-pager-holder:after{content:" ";display:table}.btr-pager-holder:after{clear:both}.btr-pager-holder .btr-pager{display:inline-block;margin:0 auto;width:auto}
 
 /* Mediaplayer */
 

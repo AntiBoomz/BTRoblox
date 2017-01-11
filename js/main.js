@@ -53,9 +53,9 @@ var pages = {
 		"matches": ["^/games/(\\d+)/"],
 		"css": ["gamedetails.css"]
 	},
-	"placeconfig": {
+	"configureplace": {
 		"matches": ["^/places/(\\d+)/update"],
-		"css": []
+		"css": ["placeconfig.css"]
 	},
 	"messages": {
 		"matches": ["^/my/messages"],

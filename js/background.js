@@ -14,6 +14,9 @@ var defaultSettings = {
 	character: {
 		enabled: true
 	},
+	versionhistory: {
+		enabled: true
+	},
 /*	catalog: {
 		animationPreview:true
 	},*/
@@ -24,9 +27,6 @@ var defaultSettings = {
 		enabled: true,
 		shoutAlerts: true,
 	},
-/*	placeconfig: {
-		enabled: true
-	},*/
 	profile: {
 		enabled: true,
 		embedInventoryEnabled: true
@@ -49,7 +49,6 @@ var versionThumbUrl = "http://www.roblox.com/Thumbs/RawAsset.ashx?imageFormat=pn
 var groupUrl = "https://m.roblox.com/groups/{0}"
 var groupsUrl = "http://api.roblox.com/users/{0}/groups"
 var productInfoUrl = "http://api.roblox.com/marketplace/productinfo?assetId={0}"
-var userIdUrl = "http://www.roblox.com/Game/GetCurrentUser.ashx"
 var blogFeedUrl = "http://blog.roblox.com/feed/"
 var blogFeedFormat = "<a class='btr_feed' href='{0}'><div class='btr_feedtitle'>{1}<span class='btr_feeddate'>()</span></div><span class='btr_feedactdate'>{2}</span><div class='btr_feeddesc'>{3}</div><div class='btr_feedcreator'>by {4}</div></a>"
 
@@ -317,8 +316,15 @@ chrome.runtime.onConnect.addListener(function(port) {
 						respond()
 						return;
 					}
-					
-					chrome.tabs.executeScript(port.sender.tab.id, { file: "js/" + array[index++] }, next)
+
+					var url = array[index++]
+					if(url.search(/^\w+:\/\//) === -1) {
+						chrome.tabs.executeScript(port.sender.tab.id, { file: "js/" + url }, next)
+					} else {
+						$.get(url, (data) => {
+							chrome.tabs.executeScript(port.sender.tab.id, { code: data }, next)
+						})
+					}
 				}
 				if(typeof(msg.data) == "string")
 					msg.data = [msg.data];

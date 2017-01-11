@@ -97,8 +97,7 @@
 						}
 					})
 				} catch(ex) {}
-			}
-			if(page == "messages") {
+			} else if(page == "messages") {
 				try {
 					HijackAngular(angular.module("messages"),{
 						rbxMessagesNav: function(handler,args) {
@@ -201,6 +200,15 @@
 				} catch(ex) {}
 			}
 		}
+
+
+		setTimeout(() => { // One click event is causing problems with tooltips and such
+			var events = $("body").data("events")
+			if(events && events.click && events.click[1]) {
+				var fn = events.click[1].handler
+				events.click[1].handler = function() { try { return fn.apply(this, arguments) } catch(ex) {} }
+			}
+		}, 0)
 
 		setTimeout(function() {
 			$(document).off("Roblox.Messages.CountChanged").on("Roblox.Messages.CountChanged",function() {

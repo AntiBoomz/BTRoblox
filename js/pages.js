@@ -103,7 +103,7 @@ function createNewPager() {
 var createPager = function() {
 	var html = 
 	'<div class="btr-pager-holder pager-holder">' +
-		'<ul class="pager">' +
+		'<ul class="btr-pager pager">' +
 			'<li class="pager-prev"><a><span class="icon-left"></span></a></li>' +
 			'<li class="pager-mid">'+
 				'<span>Page</span>'+
@@ -695,6 +695,290 @@ pages.gamedetails.init = function(placeId) {
 				}
 			})
 		}
+	})
+}
+
+function CreateNewVersionHistory(assetId, assetType) {
+	var parent = $("<div class='btr-versionHistory'></div>")
+
+	var cont = $("<ul class='btr-versionList'></ul>").appendTo(parent)
+
+	var thumbnailCache = {}
+	var pageSize = 15
+	var realPageSize = 50
+	var isBusy = false
+	var pager = createPager()
+	pager.insertAfter(cont)
+
+	var cards = []
+	for(var i=0; i<pageSize; i++) {
+		cards[i] = $(
+		"<li class='list-item'>" +
+			"<div class='version-card'>" +
+				"<div class='version-dropdown'>" +
+					"<a class='rbx-menu-item' data-toggle='popover' data-container='body' data-bind='btr-versiondrop-{0}'>" +
+						"<span class='icon-more'></span>" +
+					"</a>" +
+					"<div data-toggle='btr-versiondrop-{0}'>" +
+						"<ul class='dropdown-menu btr-version-dropdown-menu'>" +
+							"<li><a class='version-revert' data-versionId=''>Revert</a></li>" +
+							"<li><a class='version-download' data-versionId=''>Download</a></li>" +
+						"</ul>" +
+					"</div>" +
+				"</div>" +
+				"<div class='version-thumb-container'><img class='version-thumb'></div>" +
+				"<div class='version-number'>Version </div>" +
+				"<div class='version-date'></div>" +
+			"</div>" +
+		"</li>").elemFormat(i).hide().appendTo(cont)
+	}
+
+
+	pager.on("btr-pager-onchange", function(ev, page) {
+		loadPage(page)
+		return false
+	})
+
+	function loadPage(page) {
+		if(isBusy)
+			return;
+		isBusy = true;
+
+		var pageStart = page * pageSize
+		var from = Math.floor(pageStart/realPageSize)
+		var to = Math.floor((pageStart+pageSize-1)/realPageSize)
+		var versionData = []
+
+		var promises = []
+		for(var i=from; i<=to; i++) {
+			promises.push(new Promise((resolve) => {
+				var pageNum = i
+				var startIndex = pageNum*realPageSize
+
+				$.getJSON("//api.roblox.com/assets/{0}/versions?page={1}".format(assetId, pageNum+1), (json) => {
+					if(pageNum === 0) {
+						realPageSize = json.length
+						var maxVer = json[0].VersionNumber
+						pager.setMaxPage(Math.floor((maxVer-1)/pageSize))
+					}
+
+					json.forEach((val,ind) => { versionData[startIndex+ind] = val })
+
+					resolve()
+				})
+			}))
+		}
+
+		Promise.all(promises).then(() => {
+			isBusy = false
+			pager.setPage(page)
+
+			cards.forEach((card, ind) => {
+				var data = versionData[pageStart+ind]
+
+				if(!data) {
+					card.hide()
+					return;
+				}
+
+				card.find(".version-revert").attr("data-versionId", data.Id)
+				card.find(".version-download").attr("data-version", data.VersionNumber)
+				card.find(".version-number").text("Version " + data.VersionNumber)
+				card.find(".version-date").text(new Date(data.Created).format("M/D/YY hh:mm A"))
+
+				var img = card.find(".version-thumb")
+				img.attr("src", "").hide()
+
+				function tryGetThumbnail() {
+					if(thumbnailCache[data.Id])
+						return img.attr("src", thumbnailCache[data.Id]);
+
+					$.get("/Thumbs/RawAsset.ashx?assetVersionId={0}&imageFormat=png&width=110&height=110".format(data.Id), (data) => {
+						if(data === "PENDING")
+							return setTimeout(tryGetThumbnail, 1000);
+
+						thumbnailCache[data.Id] = data
+						img.attr("src", data).show()
+					})
+				}
+
+				tryGetThumbnail()
+				card.show()
+			})
+		})
+	}
+
+	$(document).on("click", "a.version-revert", (ev) => {
+		if(isBusy)
+			return;
+
+		var versionId = parseInt($(ev.target).attr("data-versionId"))
+		if(isNaN(versionId))
+			return;
+
+		isBusy = true
+
+		getXsrfToken((token) => {
+			$.ajax({
+				method: "POST",
+				url: "/places/revert",
+				data: { assetVersionID: versionId },
+				headers: { "X-CSRF-TOKEN": token },
+				success: () => {
+					isBusy = false
+					loadPage(0)
+				},
+				error: () => {
+					isBusy = false
+				}
+			})
+		})
+	}).on("click", "a.version-download", (ev) => {
+		if(isBusy)
+			return;
+		
+		var version = parseInt($(ev.target).attr("data-version"))
+		if(isNaN(version))
+			return;
+		isBusy = true
+
+		var fileName = "{0}-{1}.rbx{2}".format(
+			($("#basicSettings>input").attr("value") || "place").replace(/[^\w \-\.]+/g,"").replace(/ {2,}/g," ").trim(),
+			version,
+			assetType === "place" ? "l" : "m"
+		)
+
+		downloadAsset("blob", { id: assetId, version: version }).then((blob) => {
+			isBusy = false
+			startDownload(blob, fileName)
+		})
+	})
+
+	loadPage(0)
+
+	return parent
+}
+
+function startDownload(blob, fileName) {
+	console.log(blob, fileName)
+	var link = document.createElement("a")
+	link.setAttribute("download", fileName || "file")
+	link.setAttribute("href", blob)
+	document.body.append(link)
+	link.click()
+	link.remove()
+}
+
+pages.configureplace.init = function(placeId) {
+	if(!settings.versionhistory.enabled)
+		return;
+
+	var newVersionHistory = CreateNewVersionHistory(placeId, "place")
+	var jszipPromise = null
+
+	Observer.add({
+		selector: "#versionHistoryItems",
+		callback: function(cont) {
+			newVersionHistory.insertAfter(cont)
+			cont.remove()
+		}
+	}).add({
+		selector: "#versionHistory>.headline h2",
+		callback: function(header) {
+			$("<a class='btn btn-secondary-sm btr-downloadAsZip' style='float:right;margin-top:4px;'>Download as .zip</a>").insertAfter(header)
+		}
+	})
+
+	$(document).on("click", ".btr-downloadAsZip:not(.disabled)", (ev) => {
+		var btn = $(ev.target)
+		var origText = btn.text()
+		btn.toggleClass("disabled", true)
+		btn.text("Preparing...")
+		var loadedCount = 0
+		var versionCount = 0
+
+		var fileName = ($("#basicSettings>input").attr("value") || "place")
+			.replace(/[^\w \-\.]+/g,"")
+			.replace(/ {2,}/g," ")
+			.trim()
+
+		if(!jszipPromise) {
+			jszipPromise = new Promise((resolve) => {
+				BackgroundJS.send("execScript", ["https://raw.githubusercontent.com/AntiBoomz/BTRoblox/master/out/jszip.min.js"], resolve)
+			})
+		}
+
+		jszipPromise.then(() => {
+			var zip = new JSZip()
+			var queue = []
+			var finishedLoading = false
+			var sentZip = false
+			var activeLoaders = 0
+
+			function loadPage(page, cb) {
+				$.getJSON("//api.roblox.com/assets/{0}/versions?page={1}".format(placeId, page), cb)
+			}
+
+			function loadFile() {
+				if(queue.length === 0) {
+					if(finishedLoading) {
+						if(--activeLoaders === 0) {
+							btn.text("Generating .zip...")
+							zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 }, streamFiles: true }).then((blob) => {
+								btn.text(origText).toggleClass("disabled", false)
+								startDownload(URL.createObjectURL(blob), fileName + ".zip")
+							})
+						}
+						return;
+					}
+
+					return setTimeout(loadFile, 100);
+				}
+
+				var data = queue.splice(0, 1)[0]
+				btn.text("Downloading {0}/{1}".format(++loadedCount, versionCount))
+				downloadAsset("arraybuffer", { id: placeId, version: data.VersionNumber }).then((buffer) => {
+					zip.file(fileName + "-" + data.VersionNumber + ".rbxl", buffer)
+					setTimeout(loadFile, 100)
+				})
+			}
+
+			btn.text("Downloading 0/?")
+			loadPage(1, (json) => {
+				if(json.length === 0) {
+					btn.text("Failed...")
+					setTimeout(() => {
+						btn.text(origText)
+						btn.toggleClass("disabled", false)
+					}, 2000)
+					return;
+				}
+				versionCount = json[0].VersionNumber
+				var maxPage = Math.floor((versionCount-1)/json.length) + 1
+				var curPage = 2
+
+				queue.push.apply(queue, json)
+
+				function nextPage() {
+					if(curPage > maxPage) {
+						finishedLoading = true
+						return;
+					}
+
+					loadPage(curPage++, (list) => {
+						queue.push.apply(queue, list)
+						nextPage()
+					})
+				}
+
+				nextPage()
+
+				for(var i=0; i<5; i++) {
+					activeLoaders++
+					loadFile()
+				}
+			})
+		})
 	})
 }
 
