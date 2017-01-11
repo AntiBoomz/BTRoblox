@@ -61,8 +61,8 @@ var dict = {
 	inventory: "Inventory Changes",
 	inventory_inventoryTools: "Inventory Tools",
 
-	placeconfig: "Version History Changes",
-	placeconfig_enabled: "Enabled",
+	versionhistory: "Version History Changes",
+	versionhistory_enabled: "Enabled",
 
 	groups: "Groups Changes",
 	groups_enabled: "Enabled",
