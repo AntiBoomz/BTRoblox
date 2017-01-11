@@ -1,0 +1,44 @@
+{
+	"manifest_version": 2,
+
+	"name": "BTRoblox",
+	"short_name": "BTR",
+	"description": "Better Roblox - Making Roblox better!",
+	"version": "1.3.6",
+
+	"icons": {
+		"128":"res/icon_128.png"
+	},
+
+	"background": {
+		"scripts": ["js/jquery.js","js/utility.js","js/background.js"]
+	},
+	"permissions": [
+		"*://www.roblox.com/",
+		"*://m.roblox.com/",
+		"*://api.roblox.com/",
+		"*://avatar.roblox.com/",
+		"*://forum.roblox.com/",
+		"*://blog.roblox.com/",
+		"*://*.rbxcdn.com/",
+		"storage",
+		"notifications",
+		"contextMenus"
+	],
+	"web_accessible_resources": [
+		"js/inject.js",
+		"css/*",
+		"res/*",
+		"options.html"
+	],
+
+	"content_scripts": [
+		{
+			"matches": ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
+			"js": ["js/jquery.js", "js/utility.js", "js/main.js", "js/pages.js"],
+			"css": ["css/main.css"],
+			"run_at": "document_start",
+			"all_frames": true
+		}
+	]
+}

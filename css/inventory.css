@@ -1,0 +1,20 @@
+body.btr-embed .container-main {
+	margin:0 !important;
+	margin-top: 20px !important;
+	padding:0 !important;
+}
+
+body.btr-embed #header,
+body.btr-embed #navigation,
+body.btr-embed .SystemAlert,
+body.btr-embed .recommendations-container,
+body.btr-embed .alert-info,
+body.btr-embed .page-content>h1 {
+	display:none !important;
+}
+
+
+
+.btr-it-checkbox input[type="checkbox"]+label:before {
+	background-color:white;
+}

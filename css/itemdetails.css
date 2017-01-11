@@ -1,0 +1,30 @@
+.btr-hide-ads .content {
+	max-width: 970px;
+}
+
+#item-details-description {
+	white-space: pre-wrap;
+	padding-bottom:20px;
+}
+
+#item-details-description.content-height {
+	height:170px;
+}
+
+.btr-preview-loading:after {
+	content:"";
+	position:absolute;
+	left:50%;
+	top:50%;
+	margin-left:-24px;
+	margin-top:-8px;
+	width:48px;
+	height:17px;
+	background:url('chrome-extension://__MSG_@@extension_id__/res/progressIndicator.gif') transparent no-repeat;
+	background-size:100%;
+	opacity:0.2;
+}
+
+.btr-preview-loading img {
+	display:none !important;
+}

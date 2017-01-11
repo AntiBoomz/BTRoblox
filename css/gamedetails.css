@@ -1,0 +1,241 @@
+div.content {
+	padding-left:12px;
+	padding-right:12px;
+	max-width:994px;
+}
+
+#my-recommended-games {
+	display:none;
+}
+
+.rbx-game-server-item .player-avatar img {
+	display:inline-block;
+	width:48px;
+	height:48px;
+	margin:2px
+}
+
+.btr-description {
+	position:relative;
+	padding:0 8px;
+	float:left;
+	width:100%;
+}
+
+.btr-description .game-description {
+	/*border-top:1px solid #E3E3E3;*/
+	padding:12px 12px;
+	margin-top:10px;
+}
+
+.section-content-off {
+	background:transparent !important;
+}
+
+/* Server List */
+
+.btr-game-ping {
+	font-size:12px;
+	font-weight:700;
+
+	float:right;
+	line-height:12px;
+}
+
+.btr-game-ping:before {
+	content:"";
+	display:inline-block;
+	width:10px;
+	height:10px;
+	border-radius:6px;
+	background:gray;
+
+	margin-right:3px;
+}
+
+.lowping { color:#1B1; }
+.lowping:before { background-color:#1B1; }
+
+.medping { color:#CC1; }
+.medping:before { background-color:#CC1; }
+
+.highping { color:#B11; }
+.highping:before { background-color:#B11; }
+
+.rbx-game-server-item .rbx-game-server-status {
+	display:inline-block;
+}
+
+/* Comments */
+
+.comments-container .section-content {
+	background:transparent;
+	box-shadow:none;
+}
+
+/* Leaderboard */
+
+.rbx-leaderboard-container .section-content {
+	background:transparent;
+	box-shadow:none;
+}
+
+/* Pager */
+
+.btr-server-pager {
+	text-align:center;
+	line-height:32px;
+	vertical-align:middle;
+	padding:4px;
+}
+
+.btr-server-pager>button {
+	margin:0 2px;
+}
+
+.btr-server-pager .btr-server-input {
+	text-align:center;
+	padding:2px 5px;
+	width:40px;
+	height:26px;
+}
+
+/* VIP Servers */
+
+div.rbx-vip-server-details .owner-avatar {
+	display:none;
+}
+
+.rbx-vip-server-details {
+	padding-top:8px;
+}
+
+
+/* Developer Store */
+
+#store .game-dev-store {
+	padding:0 4px; /* Left side of the first item is hidden 'cause overflow:hidden */
+}
+
+
+/* Badges */
+
+.btr-badges-container {
+	margin-top:18px;
+}
+
+body .badge-container .badge-row { /* Badge height + 10px */
+	min-height:110px;
+	max-height:160px; /* Regular height */
+	height:auto;
+}
+
+body .badge-container .badge-row .badge-image,
+body .badge-container .badge-row .badge-image img { /* Regular size is 150x150 */
+	width:100px;
+	height:100px;
+}
+
+body .badge-container .badge-row .badge-content {
+	width:calc(100% - 100px);
+}
+
+body .badge-container .badge-row .badge-data-container {
+	width:60%;
+}
+
+body .badge-container .badge-row .badge-data-container>p {
+	height:72px;
+	margin:4px 4px;
+
+	overflow:hidden;
+}
+
+body .badge-container .badge-row.btr_notowned .badge-data-container .para-overflow::after {
+	background:#fafafa;
+}
+
+body .badge-container .badge-row .badge-stats-container {
+	width:40%;
+	margin-top:18px;
+}
+
+
+
+body .badge-container .badge-row.btr_notowned {
+	background-color:#fafafa;
+	color:#777;
+	transition: all 1s;
+}
+
+body .badge-container .badge-row.btr_notowned .badge-data-container .badge-name { /* Normally no link */
+	color:#666;
+}
+
+body .badge-container .badge-row.btr_notowned .badge-image img {
+	-webkit-filter:brightness(60%);
+	transition: all 1s;
+}
+
+.btr_loading {
+	background:url('chrome-extension://__MSG_@@extension_id__/res/progressIndicator.gif') transparent no-repeat center;
+	position:absolute;
+	width:52px;
+	height:20px;
+	top:50%;
+	left:50%;
+	margin-left:-24px;
+	margin-top:-14px;
+	z-index:2;
+}
+
+body .badge-container .badge-row.btr_badgeownedloading:before {
+	position:absolute;
+	content:"";
+	width:16px;
+	height:16px;
+	background:url('chrome-extension://__MSG_@@extension_id__/res/loading1.gif') transparent no-repeat;
+	opacity:0.2;
+}
+
+/* Hiding vip servers on about (Commentary) tab */
+
+#about #rbx-vip-servers {
+	display:none !important;
+}
+
+/* Making the page wider, remove stuff under this to fix it */
+
+div.content {
+	max-width:1208px;
+}
+
+.btr-hide-ads div.content {
+	max-width:1024px;
+}
+
+div.page-content {
+	max-width:1000px;
+}
+
+/* Universe Box */
+
+.btr_partofuniverse {
+	padding:12px 24px;
+	background-color:#EFFAFF;
+	box-shadow:0 1px 3px rgba(0,0,0,0.15);
+	color:#555;
+	font-size:18px;
+	font-weight:400;
+
+	height:50px;
+
+	margin-bottom:12px;
+	line-height:26px;
+}
+
+.btr_universevisitbtn {
+	display:inline-block;
+	float:right;
+	margin-top:-5px;
+}

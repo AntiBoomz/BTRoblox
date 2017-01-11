@@ -1,0 +1,3 @@
+.btr-hide-ads #Body>table>tbody>tr>td:not(#ctl00_cphRoblox_CenterColumn) {
+	display:none;
+}

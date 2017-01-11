@@ -1,0 +1,505 @@
+/* Top bar */
+
+#header {
+	min-width:600px;
+}
+
+
+#header .rbx-navbar.col-md-4 {
+	width:30%;
+	min-width:400px;
+}
+
+#header .rbx-navbar>li {
+	width:20%;
+}
+
+@media (max-width: 1200px) {
+	#header .hidden-xs {
+		display: none !important;
+	}
+
+	#header .hidden-md {
+		display:inline-block !important;
+	}
+
+	.btr-no-hamburger #header .rbx-navbar-search {
+		width:calc(100% - 485px);
+	}
+
+	#header .rbx-navbar-search {
+		width:calc(100% - 435px);
+	}
+
+	#header {
+		height:80px;
+	}
+
+	div.nav-content,
+	div.container-main {
+		margin-top:80px;
+	}
+
+	.container-main {
+		margin-top:80px;
+	}
+
+	#navigation {
+		top:80px;
+	}
+}
+
+@media (min-width:480px) and (max-width:991px) {
+	.btr-no-hamburger #header .rbx-navbar-search {
+		width:calc(100% - 400px);
+	}
+
+	#header .rbx-navbar-search {
+		width:calc(100% - 350px);
+	}
+}
+
+
+@media (max-width:479px) {
+	#header .rbx-navbar-icon-group li {
+		width:16.6%
+	}
+}
+
+#header .rbx-nav-collapse .rbx-nav-notification {
+	display:none;
+}
+
+
+/* btr-no-hamburger */
+
+.btr-no-hamburger #header .rbx-navbar-header {
+	max-width:120px;
+}
+.btr-no-hamburger #header .icon-logo-r {
+	display:none;
+}
+.btr-no-hamburger #header .icon-logo {
+	display:block;
+}
+.btr-no-hamburger #header .logo-transitional {
+	background-image: url("/images/Logo/roblox_logo.svg");
+	background-repeat: no-repeat;
+	background-size: auto auto;
+	width: 118px;
+	height: 30px;
+	display: inline-block;
+	vertical-align: middle;
+	background-size: 118px 30px;
+}
+
+.btr-no-hamburger #header .rbx-nav-collapse {
+	display:none;
+}
+
+.btr-no-hamburger .rbx-left-col {
+	width:175px;
+	box-shadow:0 0 3px rgba(25,25,25,0.3);
+}
+
+.btr-no-hamburger .rbx-left-col .rbx-scrollbar {
+	width:175px;
+}
+
+@media (max-width:1688px) {
+	body.btr-no-hamburger .container-main,
+	body.btr-no-hamburger .nav-container .nav-content {
+		margin-left:175px;
+	}
+}
+
+
+
+/* Navigation buttons etc */
+
+.icon-nav-friend-btr,.icon-nav-message-btr,.icon-nav-bc-btr {
+	background-image:url('chrome-extension://__MSG_@@extension_id__/res/nav2.svg');
+	background-repeat:no-repeat;
+	background-size:auto auto;
+	width:28px;
+	height:28px;
+	display:inline-block;
+}
+
+#nav-message .notification-blue, #nav-friends .notification-blue {
+	display:none;
+}
+
+.icon-nav-bc-btr {
+	background-position:0 -56px;
+}
+
+a:hover .icon-nav-bc-btr {
+	background-position:-28px -56px;
+}
+
+#nav-bc:hover {
+	color:#00a2ff;
+}
+
+
+.icon-nav-friend-btr {
+	background-position:0 -28px;
+}
+
+a:hover .icon-nav-friend-btr {
+	background-position:-28px -28px;
+}
+
+
+.icon-nav-message-btr {
+	background-position:0 0;
+}
+
+a:hover .icon-nav-message-btr {
+	background-position:-28px 0;
+}
+
+/* Text overflow */
+
+.btr-text-overflow {
+	position:relative;
+	white-space:nowrap;
+	overflow:hidden;
+}
+
+.btr-text-overflow:after {
+	position:absolute;
+	right:0;
+	top:0;
+	bottom:0;
+	width:10%;
+	content:"";
+	background:linear-gradient(to right,transparent 0,white 90%);
+	pointer-events:none;
+}
+
+/* New Chat */
+
+.btr-newchat .chat-container.collapsed .chat-main {
+	width:54px;
+}
+
+.btr-newchat .chat-container #chat-group-create-btn {
+	display:none;
+}
+
+.btr-newchat .chat-container #chat-friend-list {
+	max-height:362px;
+}
+
+.btr-newchat .chat-container .chat-main .chat-header .notification-red {
+	margin:-4px -4px 0 0;
+}
+
+/* Ads */
+
+/*
+.btr-hide-ads .ads-container,
+.btr-hide-ads .abp, 
+.btr-hide-ads .abp-spacer, 
+.btr-hide-ads .abp-container,
+.btr-hide-ads .top-abp-container,
+.btr-hide-ads #AdvertisingLeaderboard,
+.btr-hide-ads #AdvertisementRight,
+.btr-hide-ads #MessagesAdSkyscraper,
+.btr-hide-ads .Ads_WideSkyscraper,
+.btr-hide-ads iframe[src*="roblox.com/userads/"],
+.btr-hide-ads .profile-ads-container,
+.btr-hide-ads #ad {
+	display:none !important;
+}
+*/
+
+
+/* 3d avatar stuff */
+
+.btr-3d-avatar-modebtns {
+	position:absolute;
+	height:20px;
+	right:10px;
+	top:10px;
+	overflow:hidden;
+	border-radius:3px;
+}
+
+.btr-3d-avatar-modebtns btn {
+	display:block;
+	height:20px;
+	padding:0 4px;
+	margin-top:0px;
+	background:rgb(120,120,120);
+	color:rgb(170,170,170);
+	float:right;
+	cursor:pointer;
+}
+
+.btr-3d-avatar-modebtns btn:hover {
+	background:rgb(140,140,140);
+}
+
+.btr-3d-avatar-modebtns btn.selected {
+	background:rgb(170,170,170);
+	color:white;
+}
+
+/* Sidebar Blog Feed */
+
+.btr_feed {
+	display:block;
+	font-size:11px;
+	padding-left:8px;
+	padding-right:4px;
+	padding-top:4px;
+	padding-bottom:4px;
+	background-color:transparent;
+	text-decoration:none;
+	overflow:hidden;
+}
+
+.btr_feed:hover {
+	background:rgba(0,0,0,0.08);
+}
+
+.btr_feedcreator, .btr_feeddate {
+	color:#777;
+	font-size:10px;
+	font-weight:normal;
+	margin:0 !important;
+}
+
+.btr_feedactdate {
+	display:none !important;
+}
+
+.btr_feedtitle {
+	color:#555;
+	font-weight:bold;
+	line-height:12px;
+	font-size:11px;
+}
+
+.btr_feeddesc {
+	overflow:hidden;
+	max-height:0;
+	width:100%;
+	padding-right:25px; /* Yay for haxy hiding of scrollbars!*/
+	color:#444;
+	font-weight:normal;
+	transition:max-height 0.4s;
+	margin-top:4px;
+	margin-bottom:0px;
+	font-size:11px;
+}
+
+.btr_feed:hover > .btr_feeddesc {
+	max-height:180px;
+	margin-bottom:4px;
+}
+
+.btr_grouprank {
+	color:#222;
+	font-size:12px;
+	font-weight:600;
+}
+
+
+/* Navigation */
+
+.btr_icon-nav-friend {
+	background-position:0 -28px;
+}
+
+a:hover .btr_icon-nav-friend {
+	background-position:-28px -28px;
+}
+
+.btr_icon-nav-message {
+	background-position:0 0;
+}
+
+a:hover .btr_icon-nav-message {
+	background-position:-28px 0;
+}
+
+.btr_icon-nav-bc {
+	background-position:0 -56px;
+}
+
+a:hover .btr_icon-nav-bc {
+	background-position:-28px -56px;
+}
+
+#nav-bc:hover {
+	color:#00a2ff;
+}
+
+.rbx-scrollbar li span[class^="btr_icon"], .rbx-header .rbx-navbar-icon-group li span[class^="btr_icon"] {
+	vertical-align:middle;
+	margin:0;
+}
+
+.btr_icon-nav-friend,.btr_icon-nav-message,.btr_icon-nav-bc {
+	background-image:url('chrome-extension://__MSG_@@extension_id__/res/nav2.svg');
+	background-repeat:no-repeat;
+	background-size:auto auto;
+	width:28px;
+	height:28px;
+	display:inline-block;
+}
+
+.btr_nav-notif {
+	display:block;
+	float:right;
+	position:absolute;
+	top:4px;
+	right:4px;
+
+	background:white;
+	padding:0px 4px;
+	height:16px;
+	text-align:center;
+
+	color:#0074bd;
+	font-size:13px;
+	line-height:16px;
+	font-weight:bold;
+
+	border-radius:8px;
+	border-color:white;
+
+	box-shadow:0px 0px 0px 1.5px;
+}
+
+
+.btr_hidden {
+	display:none !important;
+}
+
+.btr_downloadLink {
+	margin-left:6px;
+}
+
+
+
+/* PAGER */
+
+.btr-pager-holder .pager-mid {
+	padding-right:4px;
+}
+
+.btr-pager-holder input.pager-cur {
+	width:32px;
+	height:28px;
+
+	background-color:white;
+	border:1px solid #B8B8B8;
+	border-radius:3px;
+
+	margin:0;
+	margin-right:6px;
+
+	padding:0;
+
+	text-align:center;
+}
+
+
+/* Mediaplayer */
+
+
+body .btr-MediaPlayerControls {
+	cursor: pointer;
+	position: absolute;
+	bottom: 4px;
+	right: 2px;
+
+	height: 28px;
+	width: 28px;
+}
+
+.btr-MediaPlayerControls.icon-play {
+	background-position: 0 -308px;
+	background-size: 56px auto;
+}
+.btr-MediaPlayerControls.icon-play:hover {
+	background-position: -28px -308px;
+}
+.btr-MediaPlayerControls.icon-pause {
+	background-position: 0 -336px;
+	background-size: 56px auto;
+}
+.btr-MediaPlayerControls.icon-pause:hover {
+	background-position: -28px -336px;
+}
+
+.btr-MediaPlayerControls.icon-loading,
+.btr-MediaPlayerControls.icon-loading:hover {
+	background-position: 0 -900px; /* 1260/28*height */
+	background-size: 40px auto;
+	height: 20px;
+	width: 20px;
+
+	bottom: 8px;
+	right: 6px;
+}
+
+
+/* SETTINGS */
+
+#btr-settings {
+	display:none;
+	position:fixed;
+	top:0;
+	left:0;
+	right:0;
+	bottom:0;
+	margin:auto;
+	width:600px;
+	height:600px;
+	max-width:90%;
+	max-height:90%;
+
+	box-shadow:0 1px 3px rgba(150,150,150,0.74);
+	background:white;
+	color:rgb(25,25,25);
+	z-index:10000;
+
+	font-family: 'Source Sans Pro', Arial, Helvetica, sans-serif;
+}
+
+#btr-settings.visible {
+	display:block;
+}
+
+#btr-settings .btr-settings-toggle {
+	display:block;
+	position:absolute;
+	top:6px;
+	right:6px;
+
+	width:20px;
+	height:24px;
+
+	color:white;
+	font-weight:600;
+	font-size:18px;
+	text-align:center;
+	line-height:24px;
+}
+
+#btr-settings .btr-settings-toggle:hover {
+	color:lightgray;
+}
+
+#btr-settings iframe {
+	border:none;
+	width:100%;
+	height:100%;
+	overflow:hidden;
+}

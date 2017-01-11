@@ -1,0 +1,21 @@
+.btr-hide-ads .roblox-messages-container,
+.btr-hide-ads .content {
+	width:970px;
+}
+
+body .btr-markAllAsReadInbox {
+	margin-left:12px;
+}
+
+body .content .btr-CurrentPage {
+	display: inline-block;
+	background: white;
+	border: 1px solid #b8b8b8;
+
+	height:25px;
+	min-width:5px;
+	border-radius:3px;
+	padding:2px 8px;
+	margin-top:3px;
+	margin-right:6px;
+}
