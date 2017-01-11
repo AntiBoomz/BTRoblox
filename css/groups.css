@@ -1,0 +1,64 @@
+body .GroupWallPane .btr_comment {
+	padding:2px;
+}
+
+body .btr_comment .RepeaterImage {
+	width:80px;
+}
+
+body .btr_comment .RepeaterImage a,
+body .btr_comment .RepeaterImage img:not(.bcOverlay) {
+	width:80px !important;
+	height:80px !important;
+}
+
+body .btr_comment .RepeaterText {
+	width:510px;
+}
+
+body .GroupsPage .btr_comment .RepeaterText {
+	width:670px;
+}
+
+body .btr_comment .RepeaterText .GroupWall_PostContainer {
+	margin:0;
+	min-height:40px;
+}
+
+
+.btr_comment .GroupWall_PostBtns>a {
+	float:right;
+}
+
+.btr_comment .btr_groupwallpostdate {
+	float:left;
+	font-size:11px;
+	color:#AAA !important; 
+}
+
+
+.btr_comment .UserLink>a {
+	font-weight:bold;
+}
+
+.btr_comment .GroupWall_PostBtns {
+	line-height:26px;
+	height:26px;
+}
+
+.btr_comment .GroupWall_PostBtns>a {
+	visibility:hidden;
+}
+
+.btr_comment:hover .GroupWall_PostBtns>a {
+	visibility:visible;
+}
+
+.btr_comment .GroupWall_PostBtns>a {
+	color:#000 !important;
+	margin:0 2px;
+}
+
+.btr_comment .GroupWall_PostBtns>a.disabled.btn-control {
+	color:#a7a7a7 !important;
+}

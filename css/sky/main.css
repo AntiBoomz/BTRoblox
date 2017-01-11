@@ -1,0 +1,17 @@
+html body {
+	background-image: url('chrome-extension://__MSG_@@extension_id__/res/skyBg.png');
+	background-position: left 40px;
+	background-attachment: fixed;
+	background-repeat: repeat;
+	background-repeat: no-repeat;
+	background-color: #9AE4E8;
+}
+
+body .container-main>.content,
+body #BodyWrapper {
+	margin-top:10px;
+}
+
+body #Footer.footer-container { /* Old footer */
+	margin-top:10px;
+}

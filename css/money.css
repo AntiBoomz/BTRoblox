@@ -1,0 +1,12 @@
+.btr-hide-ads .MyMoneyPage #TabsContentContainer, 
+.btr-hide-ads .MyMoneyPage .WhiteSquareTabsContainer {
+	width:800px;
+}
+
+.btr-hide-ads #Body {
+	width:810px !important;
+}
+
+.btr-hide-ads #BodyWrapper {
+	width:830px !important;
+}

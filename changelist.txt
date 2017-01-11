@@ -1,0 +1,227 @@
+Version 1.2.8 (April 10th)
+- Bugfixes
+
+Version 1.2.7 (March 21st)
+GENERAL
+- General visual bugfixes
+CATALOG
+- Fixed audio play button not showing up in catalog
+DEVELOP
+- Fixed develop page showing two confirmation dialogs when deactivating a place
+
+Version 1.2.6 (March 15th)
+ANIMATION PREVIEWER [WIP]
+- Fixed character being too high/low when using bodymeshes
+PROFILE
+- Fixed places looking broken after website update
+
+Version 1.2.5 (March 8th)
+ANIMATION PREVIEWER [WIP]
+- Fixes a compatibility issue with Vorlias' NMR extension
+- Fixes positioning of hats
+
+Version 1.2.4 (March 8th)
+GENERAL
+- Fixed compatibility issues with a recent website update
+ITEM DETAILS
+- [WIP] Animation asset pages now show a preview of the animation
+
+Version 1.2.3 (March 3rd)
+GENERAL
+- Fixed general ugliness after roblox update
+GROUPS
+- Fixed extension notifying about a new shout when poster renames their user
+- Shout notifications no longer disappear when clicked
+GAMEDETAILS
+- Fixed a missing space between "This place is part of" and the universe name
+- Made Updated label load relative timestamp a little quicker
+- Removed options to hide inactive/empty vip servers
+PROFILE
+- Fixed drag n drop in embedded inventory
+
+Version 1.2.2 (February 20th)
+GENERAL
+- You can now drag and drop assets from website to studio (Doesn't work with audio, packages or models you do not own, obviously)
+PROFILE
+- Fixed Play buttons that broke in last update
+GAME DETAILS
+- [WIP] Added buttons to hide inactive/empty vip servers. Tell me what you think of them C:
+
+Version 1.2.1 (January 31st)
+GENERAL
+- General fixes and improvements
+- Fixed a problem with https rbxcdn
+CHARACTER
+- Fixed character page search
+PROFILE
+- Linkified user status
+
+Version 1.2.0 (December 12th)
+GENERAL
+- General bugfixes / small visual changes
+- Fixed a problem with https pages trying to request data from non-secure pages
+CHARACTER
+- Medium visual changes
+PROFILE
+- Fixes a bug with profiles of users whose inventory/badges/favorites can not be loaded (such as ROBLOX's profile)
+- Adds collections back to the profile
+CHAT
+- Still tinkering with how I should modify the chat
+
+Version 1.1.1 (November 23rd): One hour later...
+CHAT
+- Fixed broken formatting when using better chat
+- Better chat is now enabled by default
+
+Version 1.1.0 (November 23rd): Yay for monthly updates
+GENERAL
+- Minor changes/bug fixes (as always)
+- Extension now works on forum.roblox.com (Which means permissions changed and you may need to manually update the extension)
+- Fixed sky theme ruining the maintenance page
+- Fixed some settings that didn't work
+- Fixed relative timestamps
+GROUPS
+- Fixed group wall formatting when using better groups
+PROFILE
+- Added favorites
+- Increased amount of badges shown
+- Changed how groups display
+- Added an option to have inventory embedded in profile (default true)
+- Removed collections
+DEVELOP
+- Added a button to toggle place visibility
+- Added a confirmation dialog when setting place inactive
+
+Version 1.0.4 (October 26th):
+- Fixed statistics not showing under profile blurb
+
+Version 1.0.3 (October 26th):
+- Minor visual changes / bug fixes
+- Option to completely disable website chat
+- Option for "Better Chat" which:
+-> Adds chat timestamps
+-> Makes 1on1 chat title link to profile
+-> Makes group chat avatars link to profile
+-> Makes chat button smaller when collapsed
+
+Version 1.0.2 (September 29th):
+- Fixes a bug where the extension may indefinitely create update notifications (Thank you for the report, Whimzee)
+- Minor changes/improvements
+Just a reminder: Roblox messages are the best way to contact me in case you find a bug, have a problem or have anything to say about the extension! I may not reply to my messages most of the time, but I do read all of them.
+
+Version 1.0.1 (September 21):
+- Minor visual fixes/changes (Profile page now usable with sky theme)
+- Fixed several compatibility problems with Vorlias' NMR (Non-Mobile ROBLOX) Chrome extension
+- Place version history back to being paged instead of a scrollable list (My god, why did I ever think it was a good idea to make it a scrollable list t.t)
+- Added audio play button to the main catalog(library) page. There's a slight delay which I couldn't eliminate when first playing a sound, but it's better than nothing :)
+
+Version 1.0.0 (September 15):
+- Rewrote a major part of the extension
+- New versioning system: major.minor.patches
+- New settings panel window thingy
+- "Upgraded" the new profile page (Not completely done ~)
+- General improvements
+- Changes most timestamps to relative time
+
+Version 0.211 (August 20):
+- Downloading old place files through version history no longer shows the hash
+- Servers tab on game details page is no longer called "Game Servers"
+- Fixed servers not loading on game details page after a recent site update
+
+Version 0.210 (July 13):
+- Bugfixes and general improvements (hopefully I didn't break anything)
+- Return of the blue "This place is part of X" box from the old place details page since there was no indicator of place being part of an universe on the new layout.
+
+Version 0.209 (June 5):
+- Bugfixes \o/
+- Testing a new theme, "Sky"
+
+Version 0.208 (June 5):
+- Fixed vip servers not loading automatically after version 0.207
+- Fixed new games page having unnecessary empty space on certain resolutions when sidepanel was being forced open
+- Fixed upgraded character page sometimes getting redirected to error page when trying to wear stuff
+- Fixed a visual bug with home page feed
+
+Version 0.207 (June 4):
+- Made extension work with the new games page
+- Fixed game details page sometimes having Commentary tab open on default
+
+Version 0.206 (Apr 25):
+- More reliable update notifs
+- Bugfixes (Group icons missing on profile etc.)
+- Just as a reminder, if the website ever completely breaks for you after an extension update, please tell me asap. I only test the extension with my own computer and browser.
+
+Version 0.205 (Apr 2):
+-! Hello again! Long time no see 8D
+- Some basic visual tweakiness
+- Added option to disable hamburger menu
+
+Version 0.204 (Apr 2):
+-! Woah, it has been months since last update! It's nice to be updating this again
+- Improved the new semi-released game details page
+- Bugfixes (Times are actually in your timezone now, fixed some daylight saving time issues and such)
+- Honestly it's been way too long to remember if I did anything else.
+- Have fun and hope that I didn't break anything and forget about it!
+- Leave some feedback in the Review section and bug reports/problems/suggestions/questions over at Support. Or just tweet/Steam/Skype/PM me on Roblox if you happen to know who I am.
+
+Version 0.203 (Jan 22):
+- Moar bugfixes
+-> Actually fixes group rank/blog/etc. not loading after some time
+-> Fixes BTR settings box being stuck visible on certain pages
+
+Version 0.202 (Jan 14):
+- Bugfixes to bugfixes
+
+Version 0.201 (Jan 14):
+- Bugfixes
+- Removes "Upgrade Now", adds "Builders Club" to sidebar
+- If you encounter problems with this version, please contact me. I changed how some things work in the background, so there may be problems on some machines.
+- Tried to fix group ranks not loading sometimes. May have fixed, may have not.
+
+Version 0.200 (Dec 27): (Apparently version numbers have 3 decimals now)
+- Bugfixes. Seriously, there's nothing but bugfixes this time .-.
+- It may or may not show more/less notifications. I don't know. This is also a bugfix.
+
+Version 0.191 (Dec 18):
+- Roblox uncentered profile blurbs again. Fixes, fixes.
+
+Version 0.19 (Dec 18):
+- Got rid of the fugly red theme
+- Made an option to toggle ads
+- Removed option to show favorites on home page since the new layout already shows them
+- Group shout notifications now actually stay until closed
+- Limited concurrent ajax requests on the background - no longer will it try to load shouts of 100 groups at the same time
+- Made new home page layout work with the extension
+- General improvements, fixes and optimizations
+
+Version 0.18:
+- General fixes / slight changes to look
+- "Mark All As Read" button that goes through your messages and marks them as read
+- Messages now show timestamp in your timezone (I have no idea how I missed them last time)
+- There might have been something else, but I honestly can not remember
+
+Version 0.17:
+- General bugfixes
+- General optimizations
+- Group shout notifications now stay until clicked away
+- Group shouts play a little sound
+- Updates the layout of upgraded character page
+- Upgraded tooltips in profile when hovering over group icons
+- Two new themes
+-> Red: Simply changes navigation bars to red
+-> Fugly Red: A fugly dark-ish red full-site recolor
+
+Version 0.16:
+- General bugfixes
+- Changes timestamps to your computer's timezone
+
+Version 0.15:
+- Centers profile blurbs
+- Fixes upgraded character page that broke in 0.14
+
+Version 0.14:
+- Group shout notifications
+- Separating most group modifications to a single option
+
+Version 0.12:
+- Published extension

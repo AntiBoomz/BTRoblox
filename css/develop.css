@@ -1,0 +1,58 @@
+.btr-hide-ads #build-page td.content-area {
+	border-right:none;
+	width:800px;
+}
+
+.btr-hide-ads #build-page table.section-header {
+	width:800px;
+}
+
+.btr-hide-ads #build-page .item-table .name-col {
+	width:350px;
+}
+
+.btr-hide-ads #build-page .item-table .stats-col-games {
+	width:230px;
+}
+
+.btr-hide-ads #build-page .item-table .universe-name-col {
+	width:630px;
+}
+
+.item-table .btr-showcase-status {
+	padding-left:18px;
+	font-size:13px;
+	background-image:url("chrome-extension://__MSG_@@extension_id__/res/showcase-status.png");
+	background-repeat:no-repeat;
+	display:block;
+	height:15px;
+}
+
+.item-table[data-in-showcase$='alse'] .btr-showcase-status {
+	background-position:0 -30px;
+	color:#888;
+}
+
+.item-table[data-in-showcase$='alse'] .btr-showcase-status:hover {
+	background-position:0 -45px;
+	color:#888;
+	text-decoration:none;
+}
+
+.item-table[data-in-showcase$='alse'] .btr-showcase-status:after {
+	content:"Hidden";
+}
+
+.item-table:not([data-in-showcase$='alse']) .btr-showcase-status {
+	color:#060;
+}
+
+.item-table:not([data-in-showcase$='alse']) .btr-showcase-status:hover {
+	background-position:0 -15px;
+	color:#060;
+	text-decoration:none;
+}
+
+.item-table:not([data-in-showcase$='alse']) .btr-showcase-status:after {
+	content:"Visible";
+}
