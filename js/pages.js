@@ -234,6 +234,7 @@ function downloadAsset(type,params) {
 	});
 }
 
+/*
 var avatarApi = {
 	baseUrl: "https://avatar.roblox.com/v1/",
 	get: function(url, data, cb) {
@@ -289,11 +290,11 @@ var avatarApi = {
 	getOutfitPage: function(page, amt, cb) { 
 		loggedInUserPromise.then((userId) => this.get("users/"+userId+"/outfits", {page:page, itemsPerPage:amt}, cb))
 	}
-}
+}*/
 
 
 pages.character.init = function() {
-	if(location.search == "?new") {
+	/*if(location.search == "?new") {
 		var master = $("<div id='MasterContainer'>")
 
 		Observer.add({
@@ -342,7 +343,7 @@ pages.character.init = function() {
 		})
 
 		var viewerPromise = new Promise((resolve) => {
-			BackgroundJS.send("execScript", ["three.min.js", "RBXMParser.js", "animPreview.js"], () => {
+			BackgroundJS.send("execScript", ["RBXMParser.js", "https://raw.githubusercontent.com/AntiBoomz/BTRoblox/master/out/animPreview.js"], () => {
 				setTimeout(() => resolve(ANTI.Create3dPreview(innerAvatar)), 0) // Errors + BackgroundJS = kri
 			})
 		})
@@ -380,7 +381,7 @@ pages.character.init = function() {
 			rules.bodyColorsPalette.forEach((color) => colorDict[color.brickColorId]=color.hexColor)
 			reloadData()
 		})
-	}
+	}*/
 }
 
 pages.home.init = function() {
@@ -476,9 +477,6 @@ pages.develop.init = function() {
 	})
 }
 
-pages.catalog.init = function() {
-}
-
 pages.itemdetails.init = function(assetId) {
 	Observer.add({
 		selector: "#item-details-description",
@@ -505,6 +503,7 @@ pages.itemdetails.init = function(assetId) {
 		}
 	})
 
+	/*
 	if(settings.catalog.animationPreview) {
 		Observer.add({
 			selector: [".item-type-field-container .field-content","#AssetThumbnail .thumbnail-span"],
@@ -537,7 +536,7 @@ pages.itemdetails.init = function(assetId) {
 				}
 			}
 		})
-	}
+	}*/
 }
 
 pages.gamedetails.init = function(placeId) {
