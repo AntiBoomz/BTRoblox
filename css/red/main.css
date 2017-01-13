@@ -15,43 +15,43 @@ body #btr_title {
 	background:rgb(170,0,0);
 }
 
-body .rbx-btn-secondary:active, 
-body .rbx-btn-secondary-lg:active, 
-body .rbx-btn-secondary-md:active, 
-body .rbx-btn-secondary-sm:active, 
-body .rbx-btn-secondary-xs:active, 
-body .rbx-btn-secondary:visited, 
-body .rbx-btn-secondary-lg:visited, 
-body .rbx-btn-secondary-md:visited, 
-body .rbx-btn-secondary-sm:visited, 
-body .rbx-btn-secondary-xs:visited, 
-body .rbx-btn-secondary.active, 
-body .active.rbx-btn-secondary-lg, 
-body .active.rbx-btn-secondary-md, 
-body .active.rbx-btn-secondary-sm, 
-body .active.rbx-btn-secondary-xs {
+body .btn-secondary:active, 
+body .btn-secondary-lg:active, 
+body .btn-secondary-md:active, 
+body .btn-secondary-sm:active, 
+body .btn-secondary-xs:active, 
+body .btn-secondary:visited, 
+body .btn-secondary-lg:visited, 
+body .btn-secondary-md:visited, 
+body .btn-secondary-sm:visited, 
+body .btn-secondary-xs:visited, 
+body .btn-secondary.active, 
+body .active.btn-secondary-lg, 
+body .active.btn-secondary-md, 
+body .active.btn-secondary-sm, 
+body .active.btn-secondary-xs {
 	background:rgb(255,90,90);
 }
 
-body .rbx-btn-secondary, 
-body .rbx-btn-secondary-lg, 
-body .rbx-btn-secondary-md, 
-body .rbx-btn-secondary-sm, 
-body .rbx-btn-secondary-xs {
+body .btn-secondary, 
+body .btn-secondary-lg, 
+body .btn-secondary-md, 
+body .btn-secondary-sm, 
+body .btn-secondary-xs {
 	background:rgb(255,0,0);
 	border-color:rgb(255,0,0);
 }
 
-body .rbx-btn-secondary:hover, 
-body .rbx-btn-secondary-lg:hover, 
-body .rbx-btn-secondary-md:hover, 
-body .rbx-btn-secondary-sm:hover, 
-body .rbx-btn-secondary-xs:hover, 
-body .rbx-btn-secondary:focus, 
-body .rbx-btn-secondary-lg:focus, 
-body .rbx-btn-secondary-md:focus, 
-body .rbx-btn-secondary-sm:focus, 
-body .rbx-btn-secondary-xs:focus {
+body .btn-secondary:hover, 
+body .btn-secondary-lg:hover, 
+body .btn-secondary-md:hover, 
+body .btn-secondary-sm:hover, 
+body .btn-secondary-xs:hover, 
+body .btn-secondary:focus, 
+body .btn-secondary-lg:focus, 
+body .btn-secondary-md:focus, 
+body .btn-secondary-sm:focus, 
+body .btn-secondary-xs:focus {
 	background:rgb(255,90,90);
 	border-color:rgb(255,90,90);
 }

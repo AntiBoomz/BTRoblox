@@ -1,10 +1,10 @@
-body .no-gutter-ads  .content {
-	max-width:1350px;
-	margin-left:auto !important;
-	margin-right:auto;
+html .content {
+	width: 1313px;
+	margin-left: auto !important;
+	margin-right: auto !important;
 }
 
-body .game-item.hidden { /* When you figure out why some items go invisible, remove this */
-	display:inline-block !important;
-	visibility:visible !important;
+html .games .game-card {
+	padding-left: 5px;
+	padding-right: 6px;
 }

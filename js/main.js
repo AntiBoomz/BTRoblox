@@ -1,87 +1,8 @@
 "use strict"
-
-var settings = null
-var currentPage = null
-
 var loggedInUser = -1
 var loggedInUserPromise = null
 
 var pathname = window.location.pathname.toLowerCase()
-
-var pages = {
-	"home": {
-		"matches": ["^/home"],
-		"css": ["home.css"]
-	},
-	"character": {
-		"matches": ["^/my/character\\.aspx"],
-		"css": ["character.css"]
-	},
-	"groups": {
-		"matches": ["^/my/groups\\.aspx","^/groups/group\\.aspx"],
-		"css": ["groups.css"]
-	},
-	"groupaudit": {
-		"matches": ["^/groups/audit\\.aspx"],
-		"css": []
-	},
-	"groupadmin": {
-		"matches": ["^/my/groupadmin.aspx"],
-		"css": []
-	},
-	"forum": {
-		"matches": ["^/forum/"],
-		"css": ["forum.css"]
-	},
-	"money": {
-		"matches": ["^/my/money"],
-		"css": ["money.css"]
-	},
-	"profile": {
-		"matches": ["^/users/(\\d+)/profile"],
-		"css": ["profile.css"]
-	},
-	"inventory": {
-		"matches": ["^/users/(\\d+)/inventory"],
-		"css": ["inventory.css"]
-	},
-	"games": {
-		"matches": ["^/games/?$"],
-		"css": ["games.css"]
-	},
-	"gamedetails": {
-		"matches": ["^/games/(\\d+)/"],
-		"css": ["gamedetails.css"]
-	},
-	"configureplace": {
-		"matches": ["^/places/(\\d+)/update"],
-		"css": ["placeconfig.css"]
-	},
-	"messages": {
-		"matches": ["^/my/messages"],
-		"css": ["messages.css"]
-	},
-	"develop": {
-		"matches": ["^/develop"],
-		"css": ["develop.css"]
-	},
-	"catalog": {
-		"matches": ["^/catalog/$"],
-		"css": []
-	},
-	"itemdetails": {
-		"matches": ["^/catalog/(\\d+)/","^/library/(\\d+)/"],
-		"css": ["itemdetails.css"]
-	}
-}
-
-var skipPages = [
-	"^/login/fulfillconstraint.aspx",
-	"^/build/upload",
-	"^/userads/",
-	"^/Feeds/GetUserFeed"
-]
-
 
 function CreateObserver(target) {
 	if(target instanceof jQuery)
@@ -380,14 +301,6 @@ var MediaPlayerControls = {
 
 var Observer = CreateObserver(document)
 
-function injectCSS(src) {
-	return $("<link rel='stylesheet'>").attr("href",chrome.runtime.getURL("css/"+src)).prependTo(document.head);
-}
-
-function injectJS(src) {
-	return $("<script type='text/javascript'>").attr("src",chrome.runtime.getURL("js/"+src)).prependTo(document.head);
-}
-
 var templateListeners = {}
 function modifyTemplate(id, callback) {
 	if(!templateListeners[id]) {
@@ -421,13 +334,13 @@ function modifyTemplate(id, callback) {
 var friends = $('<li id="btr-navbar-friends" class="navbar-icon-item">\
 	<a class="rbx-menu-item" href="/Friends.aspx">\
 		<span class="icon-nav-friend-btr"></span>\
-		<span class="btr_nav-notif rbx-text-navbar-right" style="display:none;"></span>\
+		<span class="btr-nav-notif rbx-text-navbar-right" style="display:none;"></span>\
 	</a>\
 </li>')
 var messages = $('<li id="btr-navbar-messages" class="navbar-icon-item">\
 	<a class="rbx-menu-item" href="/My/Messages#!/inbox">\
 		<span class="icon-nav-message-btr"></span>\
-		<span class="btr_nav-notif rbx-text-navbar-right" style="display:none;"></span>\
+		<span class="btr-nav-notif rbx-text-navbar-right" style="display:none;"></span>\
 	</a>\
 </li>')
 
@@ -439,51 +352,94 @@ var settingsDiv = $("<div id='btr-settings'>" +
 
 var settingsIframe = $("<iframe scrolling='no'/>").appendTo(settingsDiv)
 
-// Functions
-function SettingsCallback(_settings) {
-	settings = _settings;
 
-	for(var name in pages) {
-		var page = pages[name];
-		page.name = name
-		for(var i in page.matches) {
-			var matches = pathname.match(page.matches[i]);
-			if(matches) {
-				page.matches = matches.slice(1)
-				currentPage = page
 
-				if(page.css) {
-					for(var i in page.css) {
-						var path = page.css[i]
-
-						injectCSS(path)
-						if(settings.general.theme != "default")
-							injectCSS(settings.general.theme+"/"+path)
-					}
-				}
-
-				if(page.init)
-					page.init.apply(page,page.matches)
-
-				break;
+function Init() {
+	loggedInUserPromise = new Promise(function(resolve) {
+		Observer.add({
+			selector: "#nav-profile",
+			callback: function(nav) {
+				var matches = nav.attr("href").match(/\/users\/(\d+)/)
+				loggedInUser = matches&&matches[1]||-1
+				resolve(loggedInUser)
 			}
-		}
-	}
+		})
 
-	Observer.add({
+		$(document).ready(function() {
+			resolve(-1)
+		})
+	})
+
+	Observer.add({ // Inject.js
 		selector: "head",
-		callback: function() {
-			if(settings.general.theme != "default")
-				injectCSS(settings.general.theme+"/main.css")
+		callback: function(head) {
+			var script = document.createElement("script")
+			script.setAttribute("type", "text/javascript")
+			script.src = chrome.runtime.getURL("js/inject.js")
+			document.head.appendChild(script)
 		}
 	}).add({
 		selector: "body",
 		callback: function(body) {
 			body.toggleClass("btr-no-hamburger",settings.general.noHamburger)
-			.toggleClass("btr-hide-ads",!settings.general.showAds)
-			.toggleClass("btr-newchat",settings.general.chatEnabled && settings.chat.enabled)
+				.toggleClass("btr-hide-ads",!settings.general.showAds)
+				.toggleClass("btr-newchat",settings.general.chatEnabled && settings.chat.enabled)
 
 			settingsDiv.appendTo(body)
+		}
+	}).add({ // Multi-domain linkify
+		selector: "#roblox-linkify",
+		callback: function(div) {
+			var newRegex = /((?:(?:https?:\/\/)(?:[\w\-]+\.)+\w{2,}|(?:[\w\-]+\.)+(?:com|net|uk|org|info|tv|gg|io))(?:\/(?:[\w!$&'\"()*+,\-.:;=@_~]|%[0-9A-Fa-f]{2})*)*(?:\?(?:[\w!$&'\"()*+,\-.:;=@_~?\/]|%[0-9A-Fa-f]{2})*)?(?:#(?:[\w!$&'\"()*+,\-.:;=@_~?\/]|%[0-9A-Fa-f]{2})*)?)(\b)/
+			div.attr("data-regex",newRegex.source)
+		}
+	}).add({ // Modify topbar
+		selector: ".rbx-navbar-right-search",
+		callback: function() {
+			var header = $("#header.rbx-header");
+			var navbars = $(".nav.rbx-navbar",header);
+
+			$(".buy-robux",navbars).parent().hide()
+			$("<li><a class='nav-menu-title' href='/Home'>Home</a></li>").prependTo(navbars)
+			$("<li><a class='nav-menu-title' href='/Forum/default.aspx'>Forum</a></li>").appendTo(navbars)
+
+			loggedInUserPromise.then(function(loggedInUser) {
+				if(loggedInUser > 0) { // is logged in
+					friends.insertAfter($("#navbar-robux"))
+					messages.insertAfter(friends)
+
+					$('<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>')
+						.prependTo(".rbx-popover-content[data-toggle='popover-setting']>ul")
+				}
+			})
+		}
+	}).add({ // Modify sidebar
+		selector: ".rbx-upgrade-now",
+		callback: function() {
+			var navcol = $("#navigation");
+			
+			$("#nav-home,#nav-message,#nav-forum").parent().hide()
+			$("<li>\
+				<a href='/Upgrades/BuildersClubMemberships.aspx' id='nav-bc'>\
+					<span class='icon-nav-bc-btr'/><span>Builders Club</span>\
+				</a>\
+			</li>").insertAfter($("#nav-forum").parent())
+
+			$("#nav-trade>span:not([class^='icon-nav'])").text("Money").parent().attr("href","/My/Money.aspx")
+
+			blogfeed.appendTo($("#nav-blog").parent());
+
+			$(".rbx-upgrade-now").hide();
+
+			friends.find(">a").attr("href",$("#nav-friends").attr("href"))
+
+			var fr_count = $("#nav-friends").attr("data-count");
+			if(fr_count > 0)
+				friends.find(".btr-nav-notif").show().text(fr_count);
+			
+			var msg_count = $("#nav-message").attr("data-count");
+			if(msg_count > 0)
+				messages.find(".btr-nav-notif").show().text(msg_count);
 		}
 	})
 
@@ -493,6 +449,38 @@ function SettingsCallback(_settings) {
 			settingsIframe.attr("src",chrome.runtime.getURL("options.html"))
 	})
 
+
+	InjectJS.listen("Messages.CountChanged",function() {
+		$.get("/messages/api/get-my-unread-messages-count",function(n) {
+			var notif = messages.find(".btr-nav-notif")
+			if(n.count > 0) {
+				notif.text(n.count)
+				notif.show()
+			} else {
+				notif.hide()
+			}
+		})
+	})
+
+	InjectJS.listen("Friends.CountChanged",function() {
+		$.get("/navigation/getCount",function(n) {
+			var a = friends.find("a")
+			var notif = friends.find(".btr-nav-notif")
+			a.attr("href",n.FriendNavigationUrl)
+			if(n.TotalFriendRequests > 0) {
+				notif.text(n.TotalFriendRequests)
+				notif.show()
+			} else {
+				notif.hide()
+			}
+		})
+	})
+
+	if(currentPage) {
+		var page = pages[currentPage.name]
+		if(page.init)
+			page.init.apply(page, currentPage.matches);
+	}
 
 	if(!settings.general.chatEnabled) {
 		Observer.add({
@@ -551,129 +539,8 @@ function SettingsCallback(_settings) {
 	}
 
 	$(document).ready(function() {
-		if(currentPage)
-			InjectJS.send("INIT", settings, currentPage.name, currentPage.matches)
-		else 
-			InjectJS.send("INIT", settings, null)
+		InjectJS.send("INIT", settings, currentPage && currentPage.name, currentPage && currentPage.matches)
 
 		InjectJS.send("INIT_TEMPLATES", Object.keys(templateListeners))
 	})
 }
-
-function Init() {
-	if(document.contentType != "text/html")
-		return;
-
-	for(var i in skipPages) {
-		var match = pathname.match(skipPages[i])
-		if(match) {
-			return;
-		}
-	}
-
-	chrome.storage.local.get(["settings"], (data) => SettingsCallback(data.settings))
-
-	loggedInUserPromise = new Promise(function(resolve) {
-		Observer.add({
-			selector: "#nav-profile",
-			callback: function(nav) {
-				var matches = nav.attr("href").match(/\/users\/(\d+)/)
-				loggedInUser = matches&&matches[1]||-1
-				resolve(loggedInUser)
-			}
-		})
-
-		$(document).ready(function() {
-			resolve(-1)
-		})
-	})
-
-	Observer.add({ // Inject.js
-		selector: "head",
-		callback: function(head) {
-			injectJS("inject.js")
-		}
-	}).add({ // Multi-domain linkify
-		selector: "#roblox-linkify",
-		callback: function(div) {
-			var newRegex = /((?:(?:https?:\/\/)(?:[\w\-]+\.)+\w{2,}|(?:[\w\-]+\.)+(?:com|net|uk|org|info|tv|gg|io))(?:\/(?:[\w!$&'\"()*+,\-.:;=@_~]|%[0-9A-Fa-f]{2})*)*(?:\?(?:[\w!$&'\"()*+,\-.:;=@_~?\/]|%[0-9A-Fa-f]{2})*)?(?:#(?:[\w!$&'\"()*+,\-.:;=@_~?\/]|%[0-9A-Fa-f]{2})*)?)(\b)/
-			div.attr("data-regex",newRegex.source)
-		}
-	}).add({ // Modify topbar
-		selector: ".rbx-navbar-right-search",
-		callback: function() {
-			var header = $("#header.rbx-header");
-			var navbars = $(".nav.rbx-navbar",header);
-
-			$(".buy-robux",navbars).parent().hide()
-			$("<li><a class='nav-menu-title' href='/Home'>Home</a></li>").prependTo(navbars)
-			$("<li><a class='nav-menu-title' href='/Forum/default.aspx'>Forum</a></li>").appendTo(navbars)
-
-			loggedInUserPromise.then(function(loggedInUser) {
-				if(loggedInUser > 0) { // is logged in
-					friends.insertAfter($("#navbar-robux"))
-					messages.insertAfter(friends)
-
-					$('<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>')
-						.prependTo(".rbx-popover-content[data-toggle='popover-setting']>ul")
-				}
-			})
-		}
-	}).add({ // Modify sidebar
-		selector: ".rbx-upgrade-now",
-		callback: function() {
-			var navcol = $("#navigation");
-			
-			$("#nav-home,#nav-message,#nav-forum").parent().hide()
-			$("<li>\
-				<a href='/Upgrades/BuildersClubMemberships.aspx' id='nav-bc'>\
-					<span class='icon-nav-bc-btr'/><span>Builders Club</span>\
-				</a>\
-			</li>").insertAfter($("#nav-forum").parent())
-
-			$("#nav-trade>span:not([class^='icon-nav'])").text("Money").parent().attr("href","/My/Money.aspx")
-
-			blogfeed.appendTo($("#nav-blog").parent());
-
-			$(".rbx-upgrade-now").hide();
-
-			friends.find(">a").attr("href",$("#nav-friends").attr("href"))
-
-			var fr_count = $("#nav-friends").attr("data-count");
-			if(fr_count > 0)
-				friends.find(".btr_nav-notif").show().text(fr_count);
-			
-			var msg_count = $("#nav-message").attr("data-count");
-			if(msg_count > 0)
-				messages.find(".btr_nav-notif").show().text(msg_count);
-		}
-	})
-
-	InjectJS.listen("Messages.CountChanged",function() {
-		$.get("/messages/api/get-my-unread-messages-count",function(n) {
-			var notif = messages.find(".btr_nav-notif")
-			if(n.count > 0) {
-				notif.text(n.count)
-				notif.show()
-			} else {
-				notif.hide()
-			}
-		})
-	})
-
-	InjectJS.listen("Friends.CountChanged",function() {
-		$.get("/navigation/getCount",function(n) {
-			var a = friends.find("a")
-			var notif = friends.find(".btr_nav-notif")
-			a.attr("href",n.FriendNavigationUrl)
-			if(n.TotalFriendRequests > 0) {
-				notif.text(n.TotalFriendRequests)
-				notif.show()
-			} else {
-				notif.hide()
-			}
-		})
-	})
-}
-
-Init()

@@ -40,6 +40,73 @@ var defaultSettings = {
 	}
 }
 
+var pages = {
+	"home": {
+		"matches": ["^/home"],
+		"css": ["home.css"]
+	},
+	"character": {
+		"matches": ["^/my/character\\.aspx"],
+		"css": ["character.css"]
+	},
+	"groups": {
+		"matches": ["^/my/groups\\.aspx","^/groups/group\\.aspx"],
+		"css": ["groups.css"]
+	},
+	"groupaudit": {
+		"matches": ["^/groups/audit\\.aspx"],
+		"css": []
+	},
+	"groupadmin": {
+		"matches": ["^/my/groupadmin.aspx"],
+		"css": []
+	},
+	"forum": {
+		"matches": ["^/forum/"],
+		"css": ["forum.css"]
+	},
+	"money": {
+		"matches": ["^/my/money"],
+		"css": ["money.css"]
+	},
+	"profile": {
+		"matches": ["^/users/(\\d+)/profile"],
+		"css": ["profile.css"]
+	},
+	"inventory": {
+		"matches": ["^/users/(\\d+)/inventory"],
+		"css": ["inventory.css"]
+	},
+	"games": {
+		"matches": ["^/games/?$"],
+		"css": ["games.css"]
+	},
+	"gamedetails": {
+		"matches": ["^/games/(\\d+)/"],
+		"css": ["gamedetails.css"]
+	},
+	"configureplace": {
+		"matches": ["^/places/(\\d+)/update"],
+		"css": ["placeconfig.css"]
+	},
+	"messages": {
+		"matches": ["^/my/messages"],
+		"css": ["messages.css"]
+	},
+	"develop": {
+		"matches": ["^/develop"],
+		"css": ["develop.css"]
+	},
+	"catalog": {
+		"matches": ["^/catalog/$"],
+		"css": []
+	},
+	"itemdetails": {
+		"matches": ["^/catalog/(\\d+)/","^/library/(\\d+)/"],
+		"css": ["itemdetails.css"]
+	}
+}
+
 var dataVersion = 2
 var settings = JSON.parse(JSON.stringify(defaultSettings))
 var groupshouts = { version: 3 }
@@ -57,6 +124,8 @@ var assetTypeCache = {}
 var cachedBlogFeedRaw = null
 var cachedBlogFeed = null
 var domParser = new DOMParser()
+
+var extensionDirectory = null
 
 
 function saveData(data, callback) {
@@ -233,67 +302,17 @@ function checkForNewShouts() {
 		})
 	})
 
-	/*
-	getUserId((id) => {
-		if(isNaN(parseInt(id)))
-			return;
-
-		request.get(groupsUrl.format(id), (jsonString) => {
-			var json = JSON.parse(jsonString)
-			json.forEach((group) => request.get(groupUrl.format(group.Id), (htmlString) => {
-				var doc = domParser.parseFromString(htmlString, "text/html")
-				var shout = doc.body.querySelector("h4+ul .wall-content")
-				if(shout) {
-					var body = shout.querySelector(".wall-text").innerText.trim()
-					if(body.length > 0) {
-						var poster = shout.querySelector(".wall-name").innerText.trim()
-						var posterId = shout.querySelector(".wall-name").getAttribute("href").match(/\/users\/(\d+)/)
-						var date = shout.querySelector(".wall-datetime").innerText.trim()
-
-						posterId = posterId && !isNaN(+posterId[1]) ? +posterId[1] : -1
-
-						var lastShout = groupshouts[group.Id]
-						if(!lastShout || lastShout.posterid != posterId || lastShout.body != body || lastShout.date != date) {
-							groupshouts[group.Id] = {
-								poster: poster,
-								posterid: posterId,
-								body: body,
-								date: date
-							}
-
-							saveData({ "groupshouts": groupshouts })
-
-							if(lastShout) {
-								Notifs.new({
-									title: group.Name,
-									icon: group.EmblemUrl,
-									priority: 2,
-									body: body,
-									altBody: poster,
-									requireInteraction: true,
-
-									link: "http://www.roblox.com/My/Groups.aspx?gid=" + group.Id,
-									sound: "res/notification.mp3"
-								})
-							}
-						}
-					}
-				}
-			}))
-		})
-	})*/
-
-	shoutTimeout = setTimeout(checkForNewShouts, 20000)
+	shoutTimeout = setTimeout(checkForNewShouts, 10000)
 }
 
-chrome.runtime.onConnect.addListener(function(port) {
-	port.onMessage.addListener(function(msg) {
-		var respond = function(data) { 
+chrome.runtime.onConnect.addListener((port) => {
+	port.onMessage.addListener((msg) => {
+		var respond = (data) => { 
 			port.postMessage({
 				action:"return",
 				uuid:msg.uuid,
 				response:data
-			});
+			})
 		}
 		
 		switch(msg.action) {
@@ -366,8 +385,7 @@ chrome.runtime.onConnect.addListener(function(port) {
 				console.log("Unknown message", msg)
 		}
 	});
-});
-
+})
 
 chrome.storage.local.get(["settings", "groupshouts"], (data) => {
 	loadSettings(data.settings)
@@ -377,6 +395,109 @@ chrome.storage.local.get(["settings", "groupshouts"], (data) => {
 	checkForNewShouts()
 })
 
+
+var skipPages = [
+	"^/login/fulfillconstraint.aspx",
+	"^/build/upload",
+	"^/userads/",
+	"^/Feeds/GetUserFeed"
+]
+
+chrome.webRequest.onResponseStarted.addListener((details) => {
+	var headers = details.responseHeaders
+	for(var i=0; i<headers.length; i++) {
+		var header = headers[i]
+		if(header.name.toLowerCase() === "content-type") {
+			if(header.value.split(";")[0].trim().toLowerCase() !== "text/html")
+				return;
+
+			break;
+		}
+	}
+
+	var location = document.createElement("a")
+	location.href = details.url
+
+	for(var i=0; i<skipPages.length; i++) {
+		if(details.url.search(skipPages[i]) !== -1)
+			return;
+	}
+
+	console.log(details)
+
+	var fileExists = pathString => {var path = pathString.split("/"),target=extensionDirectory;for(var i=0,l=path.length;i<l;i++){if(!(target=target[path[i]]))return false;}return true;}
+	var injectJS = path => fileExists("js/"+path)&&chrome.tabs.executeScript(details.tabId, { file: "js/" + path, runAt: "document_start", frameId: details.frameId })
+	var injectCSS = path => fileExists("css/"+path)&&chrome.tabs.insertCSS(details.tabId, { file: "css/" + path, runAt: "document_start", frameId: details.frameId })
+
+	injectCSS("main.css")
+	injectCSS(settings.general.theme + "/main.css")
+
+	var pathname = location.pathname.toLowerCase()
+	var currentPage = null
+	for(var name in pages) {
+		var page = pages[name]
+		for(var i in page.matches) {
+			var matches = pathname.match(page.matches[i]);
+			if(matches) {
+				currentPage = { name: name, matches: matches.slice(1) }
+
+				if(page.css) {
+					for(var i in page.css) {
+						var path = page.css[i]
+						injectCSS(path)
+						injectCSS(settings.general.theme + "/" + path)
+					}
+				}
+				break;
+			}
+		}
+	}
+
+	var initCode = [
+		"settings=" + JSON.stringify(settings),
+		"pages=" + JSON.stringify(pages),
+		"currentPage=" + JSON.stringify(currentPage)
+	].join(",") + ";"
+
+	chrome.tabs.executeScript(details.tabId, { code: initCode, runAt: "document_start", frameId: details.frameId })
+	injectJS("jquery.js")
+	injectJS("utility.js")
+	injectJS("main.js")
+	injectJS("pages.js")
+}, {
+	urls: ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
+	types: ["main_frame", "sub_frame"]
+}, ["responseHeaders"])
+
+chrome.runtime.getPackageDirectoryEntry((rootEntry) => {
+	function recurse(dirEntry, parent, callback) {
+		dirEntry.createReader().readEntries((array) => {
+			var dirCount = 0
+			var finished = false
+			array.forEach((entry) => {
+				if(entry.isDirectory) {
+					var dir = parent[entry.name] = {}
+					dirCount++
+					recurse(entry, dir, callback ? (() => {
+						if(--dirCount === 0 && finished) {
+							callback(parent)
+						}
+					}) : null)
+				} else if(entry.isFile) {
+					parent[entry.name] = true
+				}
+			})
+			finished = true
+			if(callback && dirCount === 0) {
+				callback(parent)
+			}
+		})
+	}
+
+	recurse(rootEntry, {}, (data) => {
+		extensionDirectory = data
+	})
+})
 
 function copyToClipboard(text) {
 	function onCopy(ev) {

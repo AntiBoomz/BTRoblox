@@ -290,7 +290,7 @@ a:hover .icon-nav-message-btr {
 	width:100%;
 	padding-right:25px; /* Yay for haxy hiding of scrollbars!*/
 	color:#444;
-	font-weight:normal;
+	font-weight:300;
 	transition:max-height 0.4s;
 	margin-top:4px;
 	margin-bottom:0px;
@@ -353,29 +353,26 @@ a:hover .btr_icon-nav-bc {
 	display:inline-block;
 }
 
-.btr_nav-notif {
-	display:block;
-	float:right;
-	position:absolute;
-	top:4px;
-	right:4px;
+.btr-nav-notif {
+	box-sizing: content-box;
+	position: absolute;
+	display: block;
+	top: 2px;
+	right: 2px;
 
-	background:white;
-	padding:0px 4px;
-	height:16px;
-	text-align:center;
+	background: white;
+	padding: 0px 4px;
+	height: 16px;
+	text-align: center;
 
-	color:#0074bd;
-	font-size:13px;
-	line-height:16px;
-	font-weight:bold;
+	color: #191919;
+	font-size: 13px;
+	line-height: 16px;
+	font-weight: bold;
 
-	border-radius:8px;
-	border-color:white;
-
-	box-shadow:0px 0px 0px 1.5px;
+	border-radius: 10px;
+	border: 2px solid #0074bd;
 }
-
 
 .btr_hidden {
 	display:none !important;
@@ -505,4 +502,11 @@ body .btr-MediaPlayerControls {
 	width:100%;
 	height:100%;
 	overflow:hidden;
+}
+
+
+/* Ew */
+
+#downloadInstallerIFrame {
+	border: none;
 }
