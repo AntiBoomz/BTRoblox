@@ -359,32 +359,7 @@
 
 	ContentJS.listen("INIT", DocumentReady)
 	ContentJS.listen("INIT_TEMPLATES", TemplatesReady)
-
-	// Inventory
-	ContentJS.listen("refreshInventory", function() {
-		$(".btr-it-reload").click()
-	})
-
-	// Item Details
-	/*
-	var previewScriptInjected = false
-	ContentJS.listen("animationPreview", function(selector, userId, anim) {
-		var cb = () => {
-			document.removeEventListener("btr-init-animPreview", cb)
-			ANTI.Create3dPreview($(selector), "animationPreview", userId, anim)
-		}
-
-		if(typeof(ANTI) == "undefined" || typeof(ANTI.Create3dPreview) == "undefined") {
-			if(!previewScriptInjected) {
-				previewScriptInjected = true
-				ContentJS.send("injectScript", "animPreview")
-			}
-
-			document.addEventListener("btr-init-animPreview", cb)
-		} else {
-			cb()
-		}
-	})*/
+	ContentJS.listen("refreshInventory", () => $(".btr-it-reload").click())
 
 	ContentJS.send("INJECT_INIT")
 })();

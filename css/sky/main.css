@@ -1,17 +1,28 @@
 html body {
-	background-image: url('chrome-extension://__MSG_@@extension_id__/res/skyBg.png');
-	background-position: left 40px;
-	background-attachment: fixed;
-	background-repeat: repeat;
-	background-repeat: no-repeat;
-	background-color: #9AE4E8;
+	background: #9AE4E8 url('chrome-extension://__MSG_@@extension_id__/res/skyBg.png') left 40px no-repeat fixed;
 }
 
-body .container-main>.content,
-body #BodyWrapper {
-	margin-top:10px;
+html .container-main>.content,
+html #BodyWrapper {
+	position: relative;
+	margin-top: 40px;
+	margin-bottom: 40px;
+	padding-top: 0;
+	padding-bottom: 0;
 }
 
-body #Footer.footer-container { /* Old footer */
-	margin-top:10px;
+html .container-main>.content::before,
+html #BodyWrapper::before {
+	content: " ";
+	display: block;
+
+	position: absolute;
+	left: -12px;
+	top: -12px;
+	right: -12px;
+	bottom: -12px;
+
+	background: inherit;
+	border-radius: 2px;
+	z-index: -1;
 }

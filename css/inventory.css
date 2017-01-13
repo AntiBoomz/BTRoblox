@@ -1,7 +1,12 @@
 body.btr-embed .container-main {
 	margin:0 !important;
-	margin-top: 20px !important;
 	padding:0 !important;
+}
+
+body.btr-embed .container-main>.content {
+	margin: 0 !important;
+	padding: 0 !important;
+	max-width: none !important;
 }
 
 body.btr-embed #header,

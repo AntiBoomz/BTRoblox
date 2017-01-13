@@ -1358,13 +1358,11 @@ pages.profile.init = function(userId) {
 			})
 		}
 	}).add({ // Games
-		selector: ".profile-game",
-		callback: function(games) {
+		selector: [".profile-game", "#games-switcher"],
+		callback: function(games, switcher) {
 			right.find(".placeholder-games").replaceWith(games)
 
 			games.addClass("section")
-
-			var switcher = games.find("#games-switcher")//.hide()
 			games.find(".game-grid").attr("ng-cloak","").addClass("section-content")
 
 			var oldlist = games.find("#games-switcher>.hlist").hide()
@@ -1680,7 +1678,7 @@ pages.profile.init = function(userId) {
 
 	if(!settings.profile.embedInventoryEnabled) {
 		bottom.find(".placeholder-inventory").replaceWith(
-			$("<div style='width:100%;text-align:center;'>" +
+			$("<div style='text-align:center;'>" +
 				"<a href='./inventory' class='btn-secondary-xs btn-more inventory-link'>" +
 					"Inventory" +
 				"</a>" +
@@ -1859,6 +1857,7 @@ pages.inventory.init = function(userId) {
 }
 
 
+Init()
 
 
 
@@ -1873,112 +1872,6 @@ pages.inventory.init = function(userId) {
 
 
 /*
-
-pages.placeconfig.init = function() {
-	$("#versionHistory").css("height","1000px")
-	var cont = $("#versionHistoryItems")
-
-	var updateTableContainer = function(tablecont) {
-		if(tablecont.length == 0)
-			return;
-
-		tablecont.css("height","auto")
-
-		tablecont.find("tbody>tr:first").html("<th>Thumbnail</th><th style='text-align:left'>Version Data</th><th/><th/>")
-
-		tablecont.find("tbody>tr:not(:first)").each(function(_,obj) {
-			var self = $(obj)
-
-			var td1 = self.find(">td:nth-child(1)"),
-				td2 = self.find(">td:nth-child(2)"),
-				td3 = self.find(">td:nth-child(3)")
-
-			var versionId = td3.find("span").attr("data-asset-version-id");
-			var versionN = td1.text();
-
-			var imgtd = $("<td style='width:80px;height:80px;padding-right:6px;padding-top:0;'/>")
-			var htd = $("<td style='width:110px;white-space:pre-line;text-align:left;font-weight:600;'>Version Number:\nCreated:</td>")
-			var dtd = $("<td style='text-align:left;white-space:pre-line'>").text(versionN+"\n"+td2.text())
-			var btd = self.find(">td:last")
-
-			var img = $("<img style='width:100%;height:100%;'>").appendTo(imgtd)
-
-			sendMessage("getVHThumb",{versionId:versionId},function(data) {
-				img.attr("src",data.replace(/^https?:/,""));
-			});
-
-			var btn = $('<span class="btn-control btn-control-medium btr_downloadLink">Download place</span>')
-				.attr("data-asset-version-id",versionId)
-				.attr("data-asset-version",versionN)
-				.appendTo(td3);
-
-			self.empty().append(imgtd).append(htd).append(dtd).append(btd)
-		})
-	}
-
-	var updatePagerContainer = function(pagercont) {
-		if(pagercont.length == 0)
-			return;
-
-		var pn = pagercont.find(".robloxVersionHistoryPageNum")
-		pn.attr("contentEditable",true).css("display","inline-block").css("min-width","5px").css("border","1px solid #b8b8b8").css("padding","0 4px")
-
-		var currentPage = parseInt(pn.text())
-		var maxPage = parseInt(pagercont.text().match(/of (\d+)/)[1])
-
-		pn.on("keydown",function(event) {
-			if(event.keyCode == 13) {
-				var newpage = parseInt(pn.text())
-				if(!isFinite(newpage)) {
-					pn.text(currentPage)
-					return;
-				}
-
-				newpage = Math.max(1,Math.min(maxPage,newpage))
-
-				if(currentPage == newpage) {
-					pn.text(currentPage)
-					return;
-				}
-
-				if(currentPage != maxPage) {
-					pn.text(newpage-1)
-					pagercont.find("span.next").click()
-				} else {
-					pn.text(newpage+1)
-					pagercont.find("span.previous").click()
-				}
-			}
-		})
-	}
-
-	mutateObserve(cont).addmul(
-		".pagerContainer",
-		updatePagerContainer,
-		true
-	).addmul(
-		".versionHistoryTableContainer",
-		updateTableContainer,
-		true
-	)
-
-	cont.on("click",".btr_downloadLink",function() {
-		var versionId = $(this).attr("data-asset-version-id");
-		if(versionId != null) {
-			var fileName = ($("#basicSettings>input").attr("value") || "place").replace(/[^\w \-\.]+/g,"").replace(/ {2,}/g," ").trim()
-							+ "-" + ($(this).attr("data-asset-version") || "idk")
-							+ ".rbxl";
-
-			downloadAsset("blob",{assetVersionId:versionId}).then(function(bloburl) {
-				var a = $("<a>").attr("download",fileName).attr("href",bloburl).appendTo("body");
-				a[0].click()
-				a.remove()
-				window.URL.revokeObjectURL(bloburl)
-			});
-		}
-	});
-}
-
 pages.character.preinit = function() {
 	if(!settings.character.enabled)
 		return false;
@@ -2312,30 +2205,4 @@ pages.character.init = function() {
 		true
 	)
 }
-
-
-var robloxTimeZone = (function() {
-	var timeStamp = new Date();
-	var month = timeStamp.getUTCMonth()+1
-	var date = timeStamp.getUTCDate()
-	var weekday = timeStamp.getDay()
-	var hour = timeStamp.getUTCHours()
-
-	if(month >= 3 && month <= 11) { // within march and november
-		if(month == 3) { // march
-			var someSunday = date+7-weekday
-			var secondSunday = someSunday - (Math.floor(someSunday/7)-1)*7
-			if(date < secondSunday || (date==secondSunday && hour-6<2))
-				return "CST"
-		} else if(month == 11) { // november
-			var someSunday = date+7-weekday
-			var firstSunday = someSunday - Math.floor(someSunday/7)*7
-			if(date > firstSunday || (date==firstSunday && hour-5>1))
-				return "CST"
-		}
-		return "CDT";
-	}
-	return "CST"
-})();
-
 */
