@@ -665,29 +665,17 @@ pages.gamedetails.init = function(placeId) {
 						var self = badges[i][0]
 						var badgeId = badges[i][1]
 						self.addClass("btr_badgeownedloading")
-						ajaxQueue.new({
-							url: "//api.roblox.com/Ownership/HasAsset?userId="+userId+"&assetId="+badgeId,
-							type: "GET",
-							success: function(val) {
-								if(val==false) {
-									self.addClass("btr_notowned")
-									self.find(".badge-image img").attr("title","You do not own this badge")
-								}
-							},
-							complete: function() {
-								self.removeClass("btr_badgeownedloading")
-							},
-							error: function() {
-								setTimeout(loadBadge,10000,i)
+						$.get("//api.roblox.com/Ownership/HasAsset?userId={0}&assetId={1}".format(userId, badgeId), (val) => {
+							self.removeClass("btr_badgeownedloading")
+
+							if(val === false) {
+								self.addClass("btr_notowned")
+								self.find(".badge-image img").attr("title", "You do not own this badge")
 							}
 						})
-						if(i+1 < badges.length) {
-							if(i%20 == 0) {
-								setTimeout(loadBadge,1000,i+1)
-							} else {
-								loadBadge(i+1)
-							}
-						}
+
+						if(i + 1 < badges.length)
+							setTimeout(loadBadge, 100, i+1);
 					}
 
 					if(badges.length)
