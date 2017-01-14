@@ -18,6 +18,10 @@ body.btr-embed .page-content>h1 {
 	display:none !important;
 }
 
+body .page-content {
+	padding-top: 16px;
+}
+
 
 
 .btr-it-checkbox input[type="checkbox"]+label:before {
