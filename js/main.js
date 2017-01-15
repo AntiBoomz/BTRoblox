@@ -23,14 +23,14 @@ function CreateObserver(target) {
 							var jnode = $(node)
 
 							if(item.parent) {
-								observeList.splice(itemIndex--,1)
+								observeList.splice(itemIndex--, 1)
 
 								item.parent.result[item.index] = jnode
-								if(--item.parent.resultsLeft == 0) {
+								if(--item.parent.resultsLeft === 0) {
 									try {
-										item.parent.callback.apply(null,item.parent.result)
+										item.parent.callback.apply(null, item.parent.result)
 									} catch(exception) {
-										console.log("Observer Error:",exception.stack)
+										console.log("Observer Error:", exception.stack)
 									}
 								}
 							} else {
@@ -100,9 +100,9 @@ function CreateObserver(target) {
 
 				if(data.resultsLeft == 0) {
 					try {
-						data.callback(jnode)
+						data.callback.apply(null, data.result)
 					} catch(exception) {
-						console.log("Observer Error:",exception.stack)
+						console.log("Observer Error:", exception.stack)
 					}
 					return this;
 				}
