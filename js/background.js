@@ -400,10 +400,11 @@ var skipPages = [
 	"^/login/fulfillconstraint.aspx",
 	"^/build/upload",
 	"^/userads/",
+	"^/user-sponsorship/",
 	"^/Feeds/GetUserFeed"
 ]
 
-chrome.webRequest.onResponseStarted.addListener((details) => {
+chrome.webRequest.onCompleted.addListener((details) => {
 	var headers = details.responseHeaders
 	for(var i=0; i<headers.length; i++) {
 		var header = headers[i]
@@ -422,8 +423,6 @@ chrome.webRequest.onResponseStarted.addListener((details) => {
 		if(details.url.search(skipPages[i]) !== -1)
 			return;
 	}
-
-	console.log(details)
 
 	var fileExists = pathString => {var path = pathString.split("/"),target=extensionDirectory;for(var i=0,l=path.length;i<l;i++){if(!(target=target[path[i]]))return false;}return true;}
 	var injectJS = path => fileExists("js/"+path)&&chrome.tabs.executeScript(details.tabId, { file: "js/" + path, runAt: "document_start", frameId: details.frameId })
