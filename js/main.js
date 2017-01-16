@@ -538,9 +538,5 @@ function Init() {
 		})
 	}
 
-	$(document).ready(function() {
-		InjectJS.send("INIT", settings, currentPage && currentPage.name, currentPage && currentPage.matches)
-
-		InjectJS.send("INIT_TEMPLATES", Object.keys(templateListeners))
-	})
+	InjectJS.send("INIT", settings, currentPage && currentPage.name, currentPage && currentPage.matches, Object.keys(templateListeners))
 }
