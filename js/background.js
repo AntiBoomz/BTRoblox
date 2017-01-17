@@ -424,9 +424,16 @@ chrome.webRequest.onCompleted.addListener((details) => {
 			return;
 	}
 
+	
+	var initCode = [ 
+		"settings="+JSON.stringify(settings),
+		"currentPage="+JSON.stringify(currentPage)
+	].join(",") + "; Init();"
+
+	chrome.tabs.executeScript(details.tabId, { code: initCode, runAt: "document_start", frameId: details.frameId })
+
 	var fileExists = pathString => {var path = pathString.split("/"),target=extensionDirectory;for(var i=0,l=path.length;i<l;i++){if(!(target=target[path[i]]))return false;}return true;}
-	var injectJS = path => fileExists("js/"+path)&&chrome.tabs.executeScript(details.tabId, { file: "js/" + path, runAt: "document_start", frameId: details.frameId })
-	var injectCSS = path => fileExists("css/"+path)&&chrome.tabs.insertCSS(details.tabId, { file: "css/" + path, runAt: "document_start", frameId: details.frameId })
+	var injectCSS = path => fileExists("css/"+path) && chrome.tabs.insertCSS(details.tabId, { file: "css/" + path, runAt: "document_start", frameId: details.frameId })
 
 	injectCSS("main.css")
 	injectCSS(settings.general.theme + "/main.css")
@@ -451,18 +458,6 @@ chrome.webRequest.onCompleted.addListener((details) => {
 			}
 		}
 	}
-
-	var initCode = [
-		"settings=" + JSON.stringify(settings),
-		"pages=" + JSON.stringify(pages),
-		"currentPage=" + JSON.stringify(currentPage)
-	].join(",") + ";"
-
-	chrome.tabs.executeScript(details.tabId, { code: initCode, runAt: "document_start", frameId: details.frameId })
-	injectJS("jquery.js")
-	injectJS("utility.js")
-	injectJS("main.js")
-	injectJS("pages.js")
 }, {
 	urls: ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
 	types: ["main_frame", "sub_frame"]

@@ -31,5 +31,14 @@
 		"css/*",
 		"res/*",
 		"options.html"
+	],
+
+	"content_scripts": [
+		{
+			"matches": [ "*://www.roblox.com/*", "*://forum.roblox.com/*" ],
+			"js": [ "js/jquery.js", "js/utility.js", "js/main.js", "js/pages.js" ],
+			"run_at": "document_start",
+			"all_frames": true
+		}
 	]
 }

@@ -1,4 +1,6 @@
 "use strict"
+
+var pageInit = {}
 var loggedInUser = -1
 var loggedInUserPromise = null
 
@@ -365,18 +367,16 @@ function Init() {
 			}
 		})
 
-		$(document).ready(function() {
-			resolve(-1)
-		})
+		$(() => resolve(-1))
 	})
 
-	Observer.add({ // Inject.js
+	Observer.add({
 		selector: "head",
 		callback: function(head) {
 			var script = document.createElement("script")
 			script.setAttribute("type", "text/javascript")
 			script.src = chrome.runtime.getURL("js/inject.js")
-			document.head.appendChild(script)
+			head.append(script)
 		}
 	}).add({
 		selector: "body",
@@ -476,10 +476,8 @@ function Init() {
 		})
 	})
 
-	if(currentPage) {
-		var page = pages[currentPage.name]
-		if(page.init)
-			page.init.apply(page, currentPage.matches);
+	if(currentPage && pageInit[currentPage.name]) {
+		pageInit[currentPage.name].apply(currentPage, currentPage.matches)
 	}
 
 	if(!settings.general.chatEnabled) {
@@ -538,5 +536,7 @@ function Init() {
 		})
 	}
 
-	InjectJS.send("INIT", settings, currentPage && currentPage.name, currentPage && currentPage.matches, Object.keys(templateListeners))
+	$(document).ready(() => {
+		InjectJS.send("INIT", settings, currentPage && currentPage.name, currentPage && currentPage.matches, Object.keys(templateListeners))
+	})
 }
