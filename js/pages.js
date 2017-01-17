@@ -234,157 +234,8 @@ function downloadAsset(type,params) {
 	});
 }
 
-/*
-var avatarApi = {
-	baseUrl: "https://avatar.roblox.com/v1/",
-	get: function(url, data, cb) {
-		if(typeof(data) == "function")
-			cb = data, data = null;
 
-		$.ajax({
-			type: "GET",
-			url: this.baseUrl + url,
-			data: data,
-			dataType: "json",
-			headers: { "X-CSRF-TOKEN": this.csrfToken }
-		}).done(cb).fail((xhr) => {
-			if(xhr.status == 403) {
-				this.csrfToken = xhr.getResponseHeader("X-CSRF-TOKEN")
-				this.get(url, data, cb)
-			}
-		})
-	},
-	post: function(url, data, cb) {
-		if(typeof(data) == "function")
-			cb = data, data = null;
-
-		$.ajax({
-			type: "POST",
-			url: this.baseUrl + url,
-			data: data ? JSON.stringify(data) : null,
-			dataType: "json",
-			contentType: "application/json",
-			headers: { "X-CSRF-TOKEN": this.csrfToken }
-		}).done(cb).fail((xhr) => {
-			if(xhr.status == 403) {
-				this.csrfToken = xhr.getResponseHeader("X-CSRF-TOKEN")
-				this.post(url, data, cb)
-			}
-		})
-	},
-
-	getRules: function(cb) { this.get("avatar-rules", cb) },
-	getData: function(cb) { this.get("avatar", cb) },
-
-	setType: function(type, cb) { this.post("avatar/set-player-avatar-type", {playerAvatarType: type}, cb) },
-	setBodyColors: function(dict, cb) {	this.post("avatar/set-body-colors", dict, cb) },
-	setScales: function(width, height, cb) { this.post("avatar/set-scales", {width: width, height: height}, cb) },
-	setWearing: function(list, cb) { this.post("avatar/set-wearing-assets", {assetIds: list}, cb) },
-	wear: function(assetId, cb) { this.post("avatar/wear-asset", {assetId: assetId}, cb) },
-	unwear: function(assetId, cb) { this.post("avatar/unwear-asset", {assetId: assetId}, cb) },
-
-	createOutfit: function(data, cb) { this.post("outfits/create", data, cb) },
-	updateOutfit: function(id, data, cb) { this.post("outfits/"+id+"/update", data, cb) },
-	wearOutfit: function(id, cb) { this.post("outfits/"+id+"/wear", cb) },
-	deleteOutfit: function(id, cb) { this.post("outfits/"+id+"/delete", cb) },
-	getOutfitPage: function(page, amt, cb) { 
-		loggedInUserPromise.then((userId) => this.get("users/"+userId+"/outfits", {page:page, itemsPerPage:amt}, cb))
-	}
-}*/
-
-
-pages.character.init = function() {
-	/*if(location.search == "?new") {
-		var master = $("<div id='MasterContainer'>")
-
-		Observer.add({
-			selector: "body",
-			callback: function(body) {
-				body.addClass("btr-characterPage")
-			}
-		}).add({
-			selector: "#MasterContainer",
-			callback: function(cont) {
-				master.insertAfter(cont)
-				cont.remove()
-			}
-		})
-
-		var wrapper = $("<div class='btr-mainWrapper' />").appendTo(master)
-
-		var avatar = $("<div class='btr-avatar' />").appendTo(wrapper)
-		var wearing = $("<div class='btr-wearing' />").appendTo(wrapper)
-		var inventory = $("<div class='btr-inventory' />").appendTo(wrapper)
-
-		var innerAvatar = $("<div class='btr-innerAvatar' />").appendTo(avatar)
-
-		var modeSwitch = $("<div class='btr-modeSwitch btr-switch'>" +
-			"<div class='btr-switch-off'>R6</div>" +
-			"<div class='btr-switch-on'>R15</div>" +
-			"<input type='checkbox'>" + 
-			"<div class='btr-switch-flip'>" +
-				"<div class='btr-switch-off'>R6</div>" +
-				"<div class='btr-switch-on'>R15</div>" +
-			"</div>" +
-		"</div").appendTo(avatar).find("input")
-
-		modeSwitch.on("change", function(event) {
-			if(IsR15 != this.checked) {
-				var val = IsR15 = this.checked
-
-				avatarApi.setType(IsR15 ? "R15" : "R6", (json) => {
-					if(json.success) {
-						IsR15 = val
-						modeSwitch.attr("checked", IsR15)
-						reloadData()
-					}
-				})
-			}
-		})
-
-		var viewerPromise = new Promise((resolve) => {
-			BackgroundJS.send("execScript", ["RBXMParser.js", "https://raw.githubusercontent.com/AntiBoomz/BTRoblox/master/out/animPreview.js"], () => {
-				setTimeout(() => resolve(ANTI.Create3dPreview(innerAvatar)), 0) // Errors + BackgroundJS = kri
-			})
-		})
-		var IsR15 = false
-		var avatarRules = null
-		var avatarData = null
-		var colorDict = {}
-
-		function reloadData() {
-			if(!avatarRules)
-				return;
-
-			avatarApi.getData((data) => {
-				avatarData = data
-				IsR15 = avatarData.playerAvatarType == "R15"
-				modeSwitch.attr("checked", IsR15)
-
-				viewerPromise.then((viewer) => {
-					if(avatarData === data) {
-						var customData = Object.assign({}, data)
-						customData.bodyColors = {}
-						for(var name in data.bodyColors) {
-							customData.bodyColors[name] = colorDict[data.bodyColors[name]]
-						}
-
-						viewer.updateCharacter(customData)
-					}
-				})
-			})
-		}
-
-		avatarApi.getRules((rules) => {
-			console.log("rules", rules)
-			avatarRules = rules
-			rules.bodyColorsPalette.forEach((color) => colorDict[color.brickColorId]=color.hexColor)
-			reloadData()
-		})
-	}*/
-}
-
-pages.home.init = function() {
+pageInit.home = function() {
 	Observer.add({
 		multiple: true,
 		selector: ".feeds .list-item .text-date-hint",
@@ -398,7 +249,7 @@ pages.home.init = function() {
 	})
 }
 
-pages.messages.init = function() {
+pageInit.messages = function() {
 	Observer.add({
 		multiple: true,
 		permanent: true,
@@ -437,7 +288,7 @@ pages.messages.init = function() {
 	});
 }
 
-pages.develop.init = function() {
+pageInit.develop = function() {
 	Observer.add({
 		multiple: true,
 		selector: ".item-table[data-in-showcase]",
@@ -477,7 +328,7 @@ pages.develop.init = function() {
 	})
 }
 
-pages.itemdetails.init = function(assetId) {
+pageInit.itemdetails = function(assetId) {
 	Observer.add({
 		selector: "#item-details-description",
 		callback: function(desc) {
@@ -502,44 +353,9 @@ pages.itemdetails.init = function(assetId) {
 			}
 		}
 	})
-
-	/*
-	if(settings.catalog.animationPreview) {
-		Observer.add({
-			selector: [".item-type-field-container .field-content","#AssetThumbnail .thumbnail-span"],
-			callback: function(label,thumb) {
-				if(label.text() == "Animation") {
-					thumb.addClass("btr-preview-loading")
-						.addClass("btr-animation-preview")
-
-					loggedInUserPromise.then((userId) => {
-						if(userId == -1)
-							userId = 0;
-
-						downloadAsset("arraybuffer", {id:assetId}).then((buffer) => {
-							BackgroundJS.send("execScript", ["RBXMParser.js", "three.min.js", "animPreview.js"], () => {
-								var anim = null
-
-								try {
-									var rbxm = ANTI.ParseRBXM(buffer)
-									anim = ANTI.ParseAnimationData(rbxm)
-								} catch(ex) {
-									console.warn("[BTRoblox] Unable to load animation previewer:", ex.message)
-									thumb.removeClass("btr-preview-loading")
-									return;
-								}
-
-								//ANTI.Create3dPreview(thumb, userId, anim)
-							})
-						});
-					})
-				}
-			}
-		})
-	}*/
 }
 
-pages.gamedetails.init = function(placeId) {
+pageInit.gamedetails = function(placeId) {
 	if(!settings.gamedetails.enabled)
 		return;
 
@@ -857,7 +673,7 @@ function startDownload(blob, fileName) {
 	link.remove()
 }
 
-pages.configureplace.init = function(placeId) {
+pageInit.configureplace = function(placeId) {
 	if(!settings.versionhistory.enabled)
 		return;
 
@@ -970,7 +786,7 @@ pages.configureplace.init = function(placeId) {
 	})
 }
 
-pages.groups.init = function() {
+pageInit.groups = function() {
 	if(!settings.groups.enabled)
 		return;
 
@@ -1093,7 +909,7 @@ pages.groups.init = function() {
 	// TODO: Group admin timestamps (separate)
 }
 
-pages.profile.init = function(userId) {
+pageInit.profile = function(userId) {
 	if(!settings.profile.enabled)
 		return;
 
@@ -1685,7 +1501,7 @@ pages.profile.init = function(userId) {
 	})
 }
 
-pages.inventory.init = function(userId) {
+pageInit.inventory = function(userId) {
 	if(settings.profile.embedInventoryEnabled && top.location != self.location) {
 		var embedParent = $(top.document).find("#btr-injected-inventory")
 
@@ -1843,354 +1659,3 @@ pages.inventory.init = function(userId) {
 		})
 	}
 }
-
-
-Init()
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-pages.character.preinit = function() {
-	if(!settings.character.enabled)
-		return false;
-	
-	$("body").addClass("btr-newwardrobe")
-}
-
-pages.character.init = function() {
-	var charBody = $("#Body")
-	var oldContainer = charBody.find(">.MyRobloxContainer").hide()
-
-	var container = $("<div><h1>Character Customizer</h1></div>").addClass("btr_MyRobloxContainer").appendTo(charBody)
-	var column1 = $("<div></div>").addClass("btr_Column1").appendTo(container)
-	var column2 = $("<div></div>").addClass("btr_Column2").appendTo(container)
-	$("<br clear='all'>").appendTo(container)
-	
-	oldContainer.find(">.Column1f").children().appendTo(column1).find("#ctl00_ctl00_cphRoblox_cphMyRobloxContent_cmdInvalidateThumbnails").attr("href","javascript:Roblox.ThumbnailView.reloadThumbnail();")
-
-	var inv = $("<div id='btr_inv'><h2>Wardrobe</h2><br/></div>").appendTo(column2)
-	var invtabs = $(
-	"<ul id='btr_invtabs'>" +
-		"<li class='btr_invtabbtn SquareTabGray' assetType='17'><a>Heads</a></li>" +
-		"<li class='btr_invtabbtn SquareTabGray' assetType='18'><a>Faces</a></li>" +
-		"<li class='btr_invtabbtn SquareTabGray selected' assetType='8'><a>Hats</a></li>" +
-		"<li class='btr_invtabbtn SquareTabGray' assetType='2'><a>T-Shirts</a></li>" +
-		"<li class='btr_invtabbtn SquareTabGray' assetType='11'><a>Shirts</a></li>" +
-		"<li class='btr_invtabbtn SquareTabGray' assetType='12'><a>Pants</a></li>" +
-		"<li class='btr_invtabbtn SquareTabGray' assetType='19'><a>Gear</a></li>" +
-		"<li class='btr_invtabbtn SquareTabGray' assetType='32'><a>Body</a></li>" +
-		"<li class='btr_invtabbtn SquareTabGray' assetType='outfits'><a>Outfits</a></li>" +
-	"</ul>").appendTo(inv)
-	
-	var invpages = $("<div id='btr_invpages'></div>").appendTo(inv)
-	var topbar = $("<div id='btr_invbar'></div>").appendTo(invpages)
-	var search = $("<div class='btr_search'></div>").appendTo(topbar)
-	var searchbar = $("<input type='text' class='btr-search-bar' value=''>").appendTo(search)
-	var searchclose = $("<span class='btr-search-close'>x</span>").hide().appendTo(search)
-	var searchbtn = $("<div class='btr_searchbtn'>").appendTo(search)
-
-	var noresults = $("<div id='btr_invnosearch' class='rbx-text-danger' style='display:none;text-align:center;padding:20px;'>No results found</div>").appendTo(invpages)
-	var curAssetType = "8";
-	var assets = {}
-
-
-	var applySearch = function() {
-		var txt = searchbar.val().toLowerCase();
-		if(txt.length>0)
-			searchclose.show();
-		else
-			searchclose.hide();
-
-		var as = assets[curAssetType]
-		if(!as) {
-			noresults.hide()
-			return;
-		}
-		var total = 0;
-		for(var i=0;i<as.length;i++) {
-			var x = as[i];
-			if(txt.length == 0 || x.namelwr.indexOf(txt) != -1) {
-				x.obj.css("display","")
-				total++;
-			} else {
-				x.obj.css("display","none")
-			}
-		}
-		if(total == 0) {
-			noresults.show()
-		} else {
-			noresults.hide()
-		}
-	}
-
-	searchbtn.click(applySearch)
-
-	searchbar.on("input",function() {
-		applySearch();
-	})
-
-	searchclose.click(function() {
-		searchbar.val("")
-		applySearch();
-	})
-
-	var urlPromise = new Promise(function(success,failure) {
-		loggedInUserPromise.then(function(userId) {
-			success("//www.roblox.com/users/inventory/list-json?thumbWidth=110&thumbHeight=110&itemsPerPage=1000&assetTypeId={0}&pageNumber={1}&userId="+userId)
-		})
-	})
-
-	var loadAssets = function(assetType,pageNumber,assetCallback) {
-		urlPromise.then(function(url) {
-			$.get(url.format(assetType,pageNumber),function(json) {
-				if(!json.IsValid) {
-					console.log("Inventory json is not valid",assetType,pageNumber)
-					return;
-				}
-
-				var data = json.Data;
-
-				assetCallback(data.Items)
-
-				if(data.End < data.TotalItems-1) {
-					setTimeout(loadAssets,150,assetType,pageNumber+1,assetCallback)
-				}
-			})
-		})
-	}
-
-
-	invtabs.on("click",".btr_invtabbtn",function() {
-		var self = $(this);
-		var assetType = self.attr("assetType")
-
-		curAssetType = assetType;
-
-		invtabs.find(".btr_invtabbtn").not(self).removeClass("selected")
-		self.addClass("selected")
-
-		var page = invpages.find(".btr-hlist").addClass("hidden").filter("[assetType='{0}']".format(assetType)).removeClass("hidden")
-
-		if(isNaN(assetType)) {
-			topbar.hide()
-		} else {
-			topbar.show()
-		}
-		applySearch()
-	})
-
-	$(".btr_invtabbtn",invtabs).each(function(_,obj) {
-		var self = $(obj);
-		var assetType = self.attr("assetType")
-		var invpage = $("<ul class='btr-invpage btr-hlist'/>").toggleClass("hidden",!self.hasClass("selected")).attr("assetType",assetType).appendTo(invpages)
-
-		if(!isNaN(assetType)) {
-			var assetList = []
-			assets[assetType] = assetList
-
-			var assetCallback = function(items) {
-				items.forEach(function(data) {
-					var item = data.Item;
-					var product = data.Product || {};
-					var thumbnail = data.Thumbnail;
-
-
-					var itemUrl = "//www.roblox.com/{0}-item?id={1}".format(
-						item.Name.replace(/[^a-zA-Z0-9]/g," ").trim().replace(/\s+/g,"-"),
-						item.AssetId
-					)
-
-					var obj = $(
-					"<li class='btr-list-item'>" +
-						"<span class='btr-item-link' data-asset-id='{0}' data-wear='true'>" +
-							"<span class='btr-item-thumb'>" +
-								(product.IsLimitedUnique?"<div class='btr-item-serial-number rbx-font-xs'>#{4}</div>" : "") +
-								"<img src='{1}' alt='{3}' title='Click to wear'>" +
-								(product.IsLimitedUnique?"<span class='btr-item-overlay icon-limited-unique-label rbx-font-xs'/>" : "") +
-								(product.IsLimited?	"<span class='btr-item-overlay icon-limited-label rbx-font-xs'/>" : "") +
-							"</span>" +
-							"<a class='rbx-font-xs btr-item-name btr-item-catalog-link btr-text-overflow' target='_blank' href='{2}' title='{3}'>{3}</a>" +
-						"</span>" +
-					"</li>"
-					).elemFormat(item.AssetId,thumbnail.Url,itemUrl,item.Name,product.SerialNumber).appendTo(invpage)
-
-					assetList.push({name:item.Name,namelwr:item.Name.toLowerCase(),obj:obj})
-
-					if(curAssetType == assetType)
-						applySearch();
-				})
-			}
-
-			loadAssets(assetType,1,assetCallback)
-			if(assetType==32) {
-				loadAssets(29,1,assetCallback)
-				loadAssets(28,1,assetCallback)
-				loadAssets(30,1,assetCallback)
-				loadAssets(31,1,assetCallback)
-				loadAssets(27,1,assetCallback)
-			}
-		}
-	})
-	
-	
-	// Outfits
-
-	var oft = $("#OutfitsTab").attr("id","#OutfitsTabOld")
-	var ofl = $("<div id='OutfitsTab' class='btr_outfitlist'></div>").appendTo($(".btr-invpage[assetType='outfits']"))
-	oft.children().appendTo(ofl)
-
-	var worn_div = $("<div id='btr_wornItems'><h2>Currently Wearing</h2><br/></div>").appendTo(column2)
-	var worn_container = $("<ul id='btr_wornItemContainer' class='btr-hlist'/>").appendTo(worn_div)
-	var wornhtml = "";
-	var wearingIdentifier = 0
-
-	var getPostBackDataFromString = function(str) {
-		return str.replace(/ /g,"").match(/__doPostBack\((.+)\)/)[1].replace(/['"]/g,"").split(",");
-	}
-
-	var doPostBackFromStringAsync = function(str,callback,theForm) {
-		var data = getPostBackDataFromString(str)
-
-		var theForm = theForm || $("#aspnetForm")
-		theForm[0].__EVENTTARGET.value = data[0]
-		theForm[0].__EVENTARGUMENT.value = data[1]
-
-		$.post(theForm[0].action,theForm.serialize(),callback)
-	}
-
-	var loadMoreItems = function(callback,data) {
-		var me = wearingIdentifier;
-		$.post("//www.roblox.com/My/Character.aspx?btr_moreWornItemsPlz",data||"",function(data) {
-			if(wearingIdentifier != me)
-				return;
-			var fakeDoc = document.implementation.createHTMLDocument("fakeDoc");
-			fakeDoc.write(data);
-
-			var body = $(fakeDoc.body)
-			var cont = body.find("#ctl00_ctl00_cphRoblox_cphMyRobloxContent_AccoutrementsPane")
-
-			cont.find(".Asset").each(function(_,obj) {
-				var self = $(obj),
-					imgsrc = self.find("img").attr("src"),
-					name = self.find(".AssetName").text().trim(),
-					url = self.find(".AssetName>a").attr("href"),
-					id = url.match(/id=(\d+)$/)[1],
-					type = self.find(".AssetType>.Detail").text().trim();
-
-				$(
-				"<li class='btr-list-item'>" +
-					"<span class='btr-item-link' data-asset-id='{0}' data-wear='false'>" +
-						"<span class='btr-item-thumb'>" +
-							"<img src='{1}' alt='{3}' title='Click to remove'>" +
-						"</span>" +
-						"<a class='rbx-font-xs btr-item-name btr-item-catalog-link btr-text-overflow' target='_blank' href='{2}' title='{3}'>{3}</a>" +
-						"<span class='rbx-font-xs btr-item-type btr-text-overflow'>Type: {4}</span>" +
-					"</span>" +
-				"</li>"
-				).elemFormat(id,imgsrc,url,name,type).hide().appendTo(worn_container);
-			})
-
-			var nextButton = $("#ctl00_ctl00_cphRoblox_cphMyRobloxContent_AccoutrementsDataPager_Footer a:not([disabled])",fakeDoc).filter(function(){return this.innerText=="Next"})
-
-			if(nextButton.length > 0) {
-				var data = getPostBackDataFromString(nextButton.attr("href"))
-
-				var theForm = body.find("#aspnetForm")
-				theForm[0].__EVENTTARGET.value = data[0]
-				theForm[0].__EVENTARGUMENT.value = data[1]
-
-				loadMoreItems(callback,theForm.serialize())
-			} else {
-				if(callback)
-					callback()
-			}
-
-			data = null;
-			fakeDoc = null;
-			body = null;
-			cont = null;
-			nextButton = null;
-		})
-	}
-
-	var loadWornItems = function() {
-		wearingIdentifier = Math.random()
-		var oldstuff = $(">*",worn_container);
-		var loading = $('<div class="btr_loading"></div>').appendTo(worn_container);
-		loadMoreItems(function() {
-			oldstuff.remove();
-			loading.remove();
-			$(">*",worn_container).show()
-			Message.send("refreshThumbnail")
-		});
-	}
-
-	loadWornItems();
-	Message.addListener("ajaxUpdate",function() {
-		loadWornItems();
-	})
-
-	$(document).on("click",".btr_invobjthumb,.btr-item-link",function(ev) {
-		if($(ev.target).hasClass("btr-item-catalog-link")) return;
-
-		var self = $(this)
-		var id = self.attr('data-asset-id');
-		var shouldWear = self.attr('data-wear');
-
-		if(id) {
-			$.get("//m.roblox.com/items/"+id,function(data) {
-				var reqVerToken = data.match(/__RequestVerificationToken" type="hidden" value="([^"]+)/)[1];
-				var userAssetId = data.match(/userAssetId" type="hidden" value="([^"]+)/)[1];
-				if(reqVerToken && userAssetId) {
-					var postData = "__RequestVerificationToken={0}&userAssetId={1}&wearing={2}".format(reqVerToken,userAssetId,shouldWear);
-					$.post("//m.roblox.com/Catalog/WearOrRemoveItem",postData,function() {
-						loadWornItems();
-					});
-				} else {
-					console.log("Broken mobile site?");
-				}
-			}) 
-		}
-	})
-
-	$(document).on('mousewheel','.btr-invpage',function(event){
-		if(this.scrollHeight==this.clientHeight)
-			return; // Nothing to scroll over here
-
-		if(event.originalEvent.deltaY>0&&this.scrollTop>=this.scrollHeight-this.clientHeight) {
-			event.preventDefault();
-			event.stopPropagation();
-		}
-	});
-
-	documentObserve.addmul(
-		".ColorPickerItem:not(.btr-modified)",
-		function(item) {
-			item.addClass("btr-modified")
-			var string = item.attr("onclick")
-			item.attr("onclick","$.modal.close();")
-
-			// I can't remove the original event handler from here, so gotta clone it :/
-			var newItem = item.clone()
-			item.replaceWith(newItem).remove()
-			
-			newItem.click(function() {
-				doPostBackFromStringAsync(string,function() {
-					Message.send("refreshAllUpdatePanels");
-				})
-			})
-		},
-		true
-	)
-}
-*/
