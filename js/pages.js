@@ -204,35 +204,76 @@ function getXsrfToken(callback) {
 	XsrfPromise.then(callback)
 }
 
-function downloadAsset(type,params) {
-	return new Promise(function(resolve) {
-		BackgroundJS.send("getBlob","http://www.roblox.com/Asset/?"+$.param(params),function(bloburl) {
-			var xhr = new XMLHttpRequest();
-			xhr.open("GET",bloburl);
-
-			switch(type) {
-				case "blob":
-					xhr.responseType = "blob";
-					xhr.onload = function() {
-						resolve(window.URL.createObjectURL(xhr.response));
-						window.URL.revokeObjectURL(bloburl);
-					}
-					break;
-				case "arraybuffer":
-					xhr.responseType = "arraybuffer";
-					xhr.onload = function() {
-						resolve(xhr.response);
-						window.URL.revokeObjectURL(bloburl);
-					}
-					break;
-				default:
-					throw type;
-			}
-			
-			xhr.send();
-		});
-	});
+function downloadAsset(type, params) {
+	return new Promise((resolve) => {
+		BackgroundJS.send("getBlob", "http://www.roblox.com/Asset/?" + $.param(params), (bloburl) => {
+			var xhr = new XMLHttpRequest()
+			xhr.open("GET", bloburl)
+			xhr.responseType = type
+			xhr.onload = () => resolve(xhr.response);
+			xhr.send()
+		})
+	})
 }
+
+
+var avatarApi = {
+	baseUrl: "https://avatar.roblox.com/v1/",
+	get: function(url, data, cb) {
+		if(typeof(data) == "function")
+			cb = data, data = null;
+
+		$.ajax({
+			type: "GET",
+			url: this.baseUrl + url,
+			data: data,
+			dataType: "json",
+			headers: { "X-CSRF-TOKEN": this.csrfToken }
+		}).done(cb).fail((xhr) => {
+			if(xhr.status == 403) {
+				this.csrfToken = xhr.getResponseHeader("X-CSRF-TOKEN")
+				this.get(url, data, cb)
+			}
+		})
+	},
+	post: function(url, data, cb) {
+		if(typeof(data) == "function")
+			cb = data, data = null;
+
+		$.ajax({
+			type: "POST",
+			url: this.baseUrl + url,
+			data: data ? JSON.stringify(data) : null,
+			dataType: "json",
+			contentType: "application/json",
+			headers: { "X-CSRF-TOKEN": this.csrfToken }
+		}).done(cb).fail((xhr) => {
+			if(xhr.status == 403) {
+				this.csrfToken = xhr.getResponseHeader("X-CSRF-TOKEN")
+				this.post(url, data, cb)
+			}
+		})
+	},
+
+	getRules: function(cb) { this.get("avatar-rules", cb) },
+	getData: function(cb) { this.get("avatar", cb) },
+
+	setType: function(type, cb) { this.post("avatar/set-player-avatar-type", {playerAvatarType: type}, cb) },
+	setBodyColors: function(dict, cb) {	this.post("avatar/set-body-colors", dict, cb) },
+	setScales: function(width, height, cb) { this.post("avatar/set-scales", {width: width, height: height}, cb) },
+	setWearing: function(list, cb) { this.post("avatar/set-wearing-assets", {assetIds: list}, cb) },
+	wear: function(assetId, cb) { this.post("avatar/wear-asset", {assetId: assetId}, cb) },
+	unwear: function(assetId, cb) { this.post("avatar/unwear-asset", {assetId: assetId}, cb) },
+
+	createOutfit: function(data, cb) { this.post("outfits/create", data, cb) },
+	updateOutfit: function(id, data, cb) { this.post("outfits/"+id+"/update", data, cb) },
+	wearOutfit: function(id, cb) { this.post("outfits/"+id+"/wear", cb) },
+	deleteOutfit: function(id, cb) { this.post("outfits/"+id+"/delete", cb) },
+	getOutfitPage: function(page, amt, cb) { 
+		loggedInUserPromise.then((userId) => this.get("users/"+userId+"/outfits", {page:page, itemsPerPage:amt}, cb))
+	}
+}
+
 
 
 pageInit.home = function() {
@@ -351,9 +392,79 @@ pageInit.itemdetails = function(assetId) {
 		selector: ["#AssetThumbnail .thumbnail-span", ".item-type-field-container .field-content"],
 		callback: function(tbCont, typeLabel) {
 			var type = typeLabel.text().trim().toLowerCase()
-			if(type === "animation") {
+			if(type === "animation" && settings.catalog.animationPreview) {
+				var rulesPromise = new Promise(resolve => avatarApi.getRules(resolve))
+				var dataPromise = new Promise(resolve => avatarApi.getData(resolve))
+				var animPromise = downloadAsset("arraybuffer", { id: assetId })
+
 				BackgroundJS.send("execScript", ["js/three.min.js", "js/RBXParser.js", "js/RBXScene.js"], () => {
-					console.log("Loaded")
+					animPromise.then((buffer) => {
+						try {
+							var anim = ANTI.ParseAnimationData(ANTI.ParseRBXM(buffer))
+						} catch(ex) {
+							console.log("Failed to load animation:", ex)
+							return;
+						}
+
+						var scene = null
+						var animType = "R6"
+						var r15Parts = ["lowertorso", "uppertorso", "leftupperarm", "leftlowerarm", "lefthand", "rightupperarm", "rightlowerarm", "righthand", "leftupperleg", "leftlowerleg", "leftfoot", "rightupperleg", "rightlowerleg", "rightfoot"]
+
+						for(var i=0; i<r15Parts.length; i++) {
+							if(r15Parts[i] in anim.Limbs) {
+								animType = "R15"
+								break;
+							}
+						}
+
+						var modeSwitch = $("<div class='btr-switch' style='position:absolute;top:6px;right:6px;'>" +
+							"<div class='btr-switch-off'>R6</div>" +
+							"<div class='btr-switch-on'>R15</div>" +
+							"<input type='checkbox'>" + 
+							"<div class='btr-switch-flip'>" +
+								"<div class='btr-switch-off'>R6</div>" +
+								"<div class='btr-switch-on'>R15</div>" +
+							"</div>" +
+						"</div").appendTo(tbCont).find("input")
+
+						modeSwitch[0].checked = animType === "R15"
+						modeSwitch.on("change", function(event) {
+							animType = this.checked ? "R15": "R6"
+
+							if(scene) {
+								scene.avatar.setPlayerType(animType)
+							}
+						})
+
+						ANTI.RBXScene.ready((RBXScene) => {
+							scene = new RBXScene()
+							scene.canvas.appendTo(tbCont)
+							tbCont.find("img").remove()
+
+							rulesPromise.then((rules) => {
+								//console.log("rules", rules)
+								var palette = {}
+								rules.bodyColorsPalette.forEach(data => palette[data.brickColorId] = data.hexColor)
+
+								dataPromise.then((data) => {
+									//console.log("data", data)
+									var bodyColors = {}
+									for(var name in data.bodyColors)
+										bodyColors[name] = palette[data.bodyColors[name]];
+
+									scene.avatar.setPlayerType(animType)
+									scene.avatar.setBodyColors(bodyColors)
+									scene.avatar.animator.play(anim)
+
+									scene.avatar.animator.onstop = () => {
+										setTimeout(() => scene.avatar.animator.play(), 500)
+									}
+
+									data.assets.forEach(assetInfo => scene.avatar.addAsset(assetInfo))
+								})
+							})
+						})
+					})
 				})
 			}
 		}
@@ -659,7 +770,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 
 		downloadAsset("blob", { id: assetId, version: version }).then((blob) => {
 			isBusy = false
-			startDownload(blob, fileName)
+			startDownload(URL.createObjectURL(blob), fileName)
 		})
 	})
 
