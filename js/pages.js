@@ -333,12 +333,7 @@ pageInit.itemdetails = function(assetId) {
 		selector: "#item-details-description",
 		callback: function(desc) {
 			desc.addClass("linkify")
-
-			desc.contents().each(function(_,node) {
-				if(node.nodeType == 3) {
-					node.nodeValue = node.nodeValue.trim()
-				}
-			})
+			desc.contents().each((_,node) => node.nodeType===3&&(node.nodeValue=node.nodeValue.trim()))
 		}
 	}).add({
 		multiple: true,
@@ -350,6 +345,16 @@ pageInit.itemdetails = function(assetId) {
 			if(fixedTimeStamp) {
 				span.attr("btr-original-content",span.text())
 				span.text(fixedTimeStamp)
+			}
+		}
+	}).add({
+		selector: ["#AssetThumbnail .thumbnail-span", ".item-type-field-container .field-content"],
+		callback: function(tbCont, typeLabel) {
+			var type = typeLabel.text().trim().toLowerCase()
+			if(type === "animation") {
+				BackgroundJS.send("execScript", ["js/three.min.js", "js/RBXParser.js", "js/RBXScene.js"], () => {
+					console.log("Loaded")
+				})
 			}
 		}
 	})
@@ -708,7 +713,7 @@ pageInit.configureplace = function(placeId) {
 
 		if(!jszipPromise) {
 			jszipPromise = new Promise((resolve) => {
-				BackgroundJS.send("execScript", ["https://raw.githubusercontent.com/AntiBoomz/BTRoblox/master/out/jszip.min.js"], resolve)
+				BackgroundJS.send("execScript", ["js/jszip.min.js"], resolve)
 			})
 		}
 
@@ -1659,3 +1664,9 @@ pageInit.inventory = function(userId) {
 		})
 	}
 }
+
+
+
+var CSFinishedLoading = true
+if(typeof(settings) !== "undefined")
+	Init();
