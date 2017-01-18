@@ -157,35 +157,34 @@ function CreateObserver(target) {
 }
 
 var BackgroundJS = {
+	_listeners: {},
+
 	send: function(action, data, callback) {
 		if(typeof(data) == "function")
 			callback = data, data = null;
 
-		if(!this._port) {
-			var begin = Date.now()
-			this._port = chrome.runtime.connect()
-			var callbacks = this._callbacks = {}
-			this._uuid = 0
+		chrome.runtime.sendMessage({
+			action: action,
+			data: data
+		}, callback)
+	},
 
-			this._port.onMessage.addListener(function(msg) {
-				if(msg.action == "return") {
-		//			console.log("Receiving response took", Date.now() - msg.sent, "ms")
-					if(callbacks[msg.uuid])
-						callbacks[msg.uuid](msg.response)
+	listen: function(actionList, callback) {
+		if(!this._listenerAdded) {
+			this._listenerAdded = true
+
+			chrome.runtime.onMessage.addListener((msg, sender, respond) => {
+				if(this._listeners[msg.action]) {
+					this._listeners[msg.action].forEach((fn) => fn(msg.data, respond));
 				}
 			})
-		//	console.log("Connecting port took", Date.now()-begin, "ms")
 		}
 
-		var uuid = this._uuid++
-		if(callback)
-			this._callbacks[uuid] = callback
+		actionList.split(" ").forEach((action) => {
+			if(!this._listeners[action])
+				this._listeners[action] = [];
 
-		this._port.postMessage({
-			uuid: uuid,
-			action: action,
-			data: data,
-			sent: Date.now()
+			this._listeners[action].push(callback)
 		})
 	}
 }
@@ -429,17 +428,30 @@ function Init() {
 
 			blogfeed.appendTo($("#nav-blog").parent());
 
-			$(".rbx-upgrade-now").hide();
+			$(".rbx-upgrade-now").hide()
 
-			friends.find(">a").attr("href",$("#nav-friends").attr("href"))
+			var navFriends = $("#nav-friends")
+			var navMessages = $("#nav-message")
 
-			var fr_count = $("#nav-friends").attr("data-count");
-			if(fr_count > 0)
-				friends.find(".btr-nav-notif").show().text(fr_count);
-			
-			var msg_count = $("#nav-message").attr("data-count");
-			if(msg_count > 0)
-				messages.find(".btr-nav-notif").show().text(msg_count);
+			function updateFriends() {
+				var count = navFriends.attr("data-count")
+
+				friends.find(">a").attr("href", navFriends.attr("href"))
+				friends.find(".btr-nav-notif").css("display", count > 0 ? "" : "none").text(count)
+			}
+
+			function updateMessages() {
+				var count = navMessages.attr("data-count")
+
+				messages.find(">a").attr("href", navMessages.attr("href"))
+				messages.find(".btr-nav-notif").css("display", count > 0 ? "" : "none").text(count)
+			}
+
+			new MutationObserver(updateFriends).observe(navFriends[0], { attributes: true, attributeFilter: ["href", "data-count"] })
+			new MutationObserver(updateMessages).observe(navFriends[0], { attributes: true, attributeFilter: ["href", "data-count"] })
+
+			updateFriends()
+			updateMessages()
 		}
 	})
 
@@ -447,33 +459,6 @@ function Init() {
 		settingsDiv.toggleClass("visible")
 		if(!settingsIframe.attr("src"))
 			settingsIframe.attr("src",chrome.runtime.getURL("options.html"))
-	})
-
-
-	InjectJS.listen("Messages.CountChanged",function() {
-		$.get("/messages/api/get-my-unread-messages-count",function(n) {
-			var notif = messages.find(".btr-nav-notif")
-			if(n.count > 0) {
-				notif.text(n.count)
-				notif.show()
-			} else {
-				notif.hide()
-			}
-		})
-	})
-
-	InjectJS.listen("Friends.CountChanged",function() {
-		$.get("/navigation/getCount",function(n) {
-			var a = friends.find("a")
-			var notif = friends.find(".btr-nav-notif")
-			a.attr("href",n.FriendNavigationUrl)
-			if(n.TotalFriendRequests > 0) {
-				notif.text(n.TotalFriendRequests)
-				notif.show()
-			} else {
-				notif.hide()
-			}
-		})
 	})
 
 	if(currentPage && pageInit[currentPage.name]) {
@@ -522,19 +507,22 @@ function Init() {
 		})
 	}
 
-	if(settings.general.showBlogFeed) {
-		BackgroundJS.send("getBlogFeed", (val) => {
-			blogfeed.html(val)
-			$(".btr_feed", blogfeed).each(function() {
-				var self = $(this)
-				var date = $(".btr_feeddate", self)
-				var actdate = $(".btr_feedactdate", self)
-				date.text(new Date(actdate.text()).relativeFormat("(z 'ago')") )
-			});
+	function updateBlogFeed(html) {
+		blogfeed.html(html)
+		$(".btr_feed", blogfeed).each(function() {
+			var self = $(this)
+			var date = $(".btr_feeddate", self)
+			var actdate = $(".btr_feedactdate", self)
+			date.text(new Date(actdate.text()).relativeFormat("(z 'ago')") )
+		});
 
-			blogfeed.css("display", "")
-		})
+		blogfeed.css("display", "")
 	}
+
+	if(typeof(blogFeedData) !== "undefined")
+		updateBlogFeed(blogFeedData);
+
+	BackgroundJS.listen("blogfeed", updateBlogFeed)
 
 	$(document).ready(() => {
 		InjectJS.send("INIT", settings, currentPage && currentPage.name, currentPage && currentPage.matches, Object.keys(templateListeners))

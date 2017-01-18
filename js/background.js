@@ -202,9 +202,6 @@ function getAssetTypeId(callback, assetId) {
 }
 
 function getBlogFeed(callback) {
-	if(cachedBlogFeed)
-		callback(cachedBlogFeed);
-
 	request.get(blogFeedUrl, (feed) => {
 		if(cachedBlogFeedRaw !== feed) {
 			cachedBlogFeedRaw = feed
@@ -227,10 +224,10 @@ function getBlogFeed(callback) {
 		    }
 
 		    cachedBlogFeed = responseData
+		    if(callback)
+				callback(cachedBlogFeed);
 		}
-
-		callback(cachedBlogFeed)
-	}, () => callback(null))
+	})
 }
 
 
@@ -305,84 +302,70 @@ function checkForNewShouts() {
 	shoutTimeout = setTimeout(checkForNewShouts, 10000)
 }
 
-chrome.runtime.onConnect.addListener((port) => {
-	port.onMessage.addListener((msg) => {
-		var respond = (data) => { 
-			port.postMessage({
-				action:"return",
-				uuid:msg.uuid,
-				response:data
-			})
-		}
-		
-		switch(msg.action) {
-			case "getSettings":
-				respond(settings)
-				break;
+chrome.runtime.onMessage.addListener((msg, sender, respond) => {
+	switch(msg.action) {
+		case "getSettings":
+			respond(settings)
+			break;
 
-			case "setSetting":
-				loadSettings(msg.data)
-				saveData({ "settings": settings })
-				checkForNewShouts()
-				respond(true)
-				break;
+		case "setSetting":
+			loadSettings(msg.data)
+			saveData({ "settings": settings })
+			checkForNewShouts()
+			respond(true)
+			break;
 
-			case "execScript":
-				var array = typeof(msg.data) == "string" ? [msg.data] : msg.data
-				var index = 0
-				var next = function() {
-					if(index >= array.length) {
-						respond()
-						return;
-					}
-
-					var url = array[index++]
-					if(url.search(/^\w+:\/\//) === -1) {
-						chrome.tabs.executeScript(port.sender.tab.id, { file: url }, next)
-					} else {
-						$.get(url, (data) => chrome.tabs.executeScript(port.sender.tab.id, { code: data }, next))
-					}
+		case "execScript":
+			var array = typeof(msg.data) == "string" ? [msg.data] : msg.data
+			var index = 0
+			var next = function() {
+				if(index >= array.length) {
+					respond()
+					return;
 				}
-				if(typeof(msg.data) == "string")
-					msg.data = [msg.data];
 
-				next()
-				return true
-
-			case "getBlogFeed":
-				getBlogFeed(respond)
-				return true;
-
-			case "getVHThumb":
-				getVersionThumb(respond,msg.data)
-				return true;
-
-			case "getRankName":
-				getRankName(respond,msg.data.userId,msg.data.groupId)
-				return true;
-
-			case "getProductInfo":
-				getProductInfo(respond,msg.data)
-				return true;
-
-			case "getAssetTypeId":
-				getAssetTypeId(respond,msg.data)
-				return true;
-
-			case "getBlob":
-				var xhr = new XMLHttpRequest()
-				xhr.open("GET",msg.data)
-				xhr.responseType = "blob"
-				xhr.onload = function() {
-					respond(window.URL.createObjectURL(xhr.response))
+				var url = array[index++]
+				if(url.search(/^\w+:\/\//) === -1) {
+					chrome.tabs.executeScript(sender.tab.id, { file: url }, next)
+				} else {
+					$.get(url, (data) => chrome.tabs.executeScript(sender.tab.id, { code: data }, next))
 				}
-				xhr.send()
-				return true;
+			}
+			if(typeof(msg.data) == "string")
+				msg.data = [msg.data];
 
-			default:
-				console.log("Unknown message", msg)
-		}
-	});
+			next()
+			return true
+
+		case "getVHThumb":
+			getVersionThumb(respond,msg.data)
+			return true;
+
+		case "getRankName":
+			getRankName(respond,msg.data.userId,msg.data.groupId)
+			return true;
+
+		case "getProductInfo":
+			getProductInfo(respond,msg.data)
+			return true;
+
+		case "getAssetTypeId":
+			getAssetTypeId(respond,msg.data)
+			return true;
+
+		case "getBlob":
+			var xhr = new XMLHttpRequest()
+			xhr.open("GET",msg.data)
+			xhr.responseType = "blob"
+			xhr.onload = function() {
+				respond(window.URL.createObjectURL(xhr.response))
+			}
+			xhr.send()
+			return true;
+
+		default:
+			console.log("Unknown message", msg)
+	}
 })
 
 chrome.storage.local.get(["settings", "groupshouts"], (data) => {
@@ -391,6 +374,7 @@ chrome.storage.local.get(["settings", "groupshouts"], (data) => {
 
 	saveData({ "settings": settings })
 	checkForNewShouts()
+	getBlogFeed()
 })
 
 
@@ -401,8 +385,6 @@ var skipPages = [
 	"^/user-sponsorship/",
 	"^/Feeds/GetUserFeed"
 ]
-
-var pendingRequests = []
 
 chrome.webRequest.onResponseStarted.addListener((details) => {
 	var headers = details.responseHeaders
@@ -416,33 +398,6 @@ chrome.webRequest.onResponseStarted.addListener((details) => {
 		}
 	}
 
-	pendingRequests.push(details)
-	setTimeout(() => {
-		var index = pendingRequests.indexOf(details)
-		pendingRequests.splice(index, 1)
-	}, 5000)
-}, {
-	urls: ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
-	types: ["main_frame", "sub_frame"]
-}, ["responseHeaders"])
-
-chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
-	if(info.status !== "loading" || !tab.url)
-		return;
-
-	var details = null
-
-	for(var i=0, l=pendingRequests.length; i<l; i++) {
-		var req = pendingRequests[i]
-		if(req.tabId === tab.id && req.url === tab.url) {
-			details = pendingRequests.splice(i, 1)[0]
-			break;
-		}
-	}
-
-	if(!details)
-		return;
-
 	var location = document.createElement("a")
 	location.href = details.url
 
@@ -451,40 +406,58 @@ chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
 			return;
 	}
 
-	var fileExists = pathString => {var path = pathString.split("/"),target=extensionDirectory;for(var i=0,l=path.length;i<l;i++){if(!(target=target[path[i]]))return false;}return true;}
-	var injectCSS = path => fileExists("css/"+path) && chrome.tabs.insertCSS(details.tabId, { file: "css/" + path, runAt: "document_start", frameId: details.frameId })
+	var tryCount = 0
+	var interval = setInterval(() => {
+		chrome.tabs.executeScript(details.tabId, { code: "", runAt: "document_start", frameId: details.frameId })
+		if(chrome.runtime.lastError)
+			return tryCount++;
 
-	injectCSS("main.css")
-	injectCSS(settings.general.theme + "/main.css")
+		clearInterval(interval)
 
-	var pathname = location.pathname.toLowerCase()
-	var currentPage = null
-	for(var name in pages) {
-		var page = pages[name]
-		for(var i in page.matches) {
-			var matches = pathname.match(page.matches[i]);
-			if(matches) {
-				currentPage = { name: name, matches: matches.slice(1) }
+		var fileExists = pathString => {var path = pathString.split("/"),target=extensionDirectory;for(var i=0,l=path.length;i<l;i++){if(!(target=target[path[i]]))return false;}return true;}
+		var injectCSS = path => fileExists("css/"+path) && chrome.tabs.insertCSS(details.tabId, { file: "css/" + path, runAt: "document_start", frameId: details.frameId })
 
-				if(page.css) {
-					for(var i in page.css) {
-						var path = page.css[i]
-						injectCSS(path)
-						injectCSS(settings.general.theme + "/" + path)
+		injectCSS("main.css")
+		injectCSS(settings.general.theme + "/main.css")
+
+		var pathname = location.pathname.toLowerCase()
+		var currentPage = null
+		for(var name in pages) {
+			var page = pages[name]
+			for(var i in page.matches) {
+				var matches = pathname.match(page.matches[i]);
+				if(matches) {
+					currentPage = { name: name, matches: matches.slice(1) }
+
+					if(page.css) {
+						for(var i in page.css) {
+							var path = page.css[i]
+							injectCSS(path)
+							injectCSS(settings.general.theme + "/" + path)
+						}
 					}
+					break;
 				}
-				break;
 			}
 		}
-	}
 
-	var initCode = [ 
-		"settings="+JSON.stringify(settings),
-		"currentPage="+JSON.stringify(currentPage)
-	].join(",") + "; if(typeof(CSFinishedLoading) !== 'undefined')Init();"
+		var initCode = [ 
+			"settings="+JSON.stringify(settings),
+			"currentPage="+JSON.stringify(currentPage)
+		]
 
-	chrome.tabs.executeScript(details.tabId, { code: initCode, runAt: "document_start", frameId: details.frameId })
-})
+		if(cachedBlogFeed) {
+			initCode.push("blogFeedData='" + cachedBlogFeed.replace(/\\/g, "\\\\").replace(/'/g, "\\'") + "'")
+			getBlogFeed((data) => chrome.runtime.sendMessage({ action: "blogfeed", data: data }))
+		}
+
+		initCode = initCode.join(",") + "; if(typeof(CSFinishedLoading) !== 'undefined')Init();"
+		chrome.tabs.executeScript(details.tabId, { code: initCode, runAt: "document_start", frameId: details.frameId })
+	}, 1)
+}, {
+	urls: ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
+	types: ["main_frame", "sub_frame"]
+}, ["responseHeaders"])
 
 
 chrome.runtime.getPackageDirectoryEntry((rootEntry) => {

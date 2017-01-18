@@ -221,14 +221,6 @@
 			}
 		}, 0)
 
-		setTimeout(function() {
-			$(document).off("Roblox.Messages.CountChanged").on("Roblox.Messages.CountChanged",function() {
-				ContentJS.send("Messages.CountChanged")
-			}).off("Roblox.Friends.CountChanged").on("Roblox.Friends.CountChanged",function() {
-				ContentJS.send("Friends.CountChanged")
-			})
-		},10)
-
 		if(typeof($.History) !== "undefined") {
 			$.History.setHash = function(hash) {
 				location.replace("#"+hash)
