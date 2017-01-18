@@ -1,9 +1,3 @@
 .gitignore export-ignore
 .gitattributes export-ignore
 changelist.txt export-ignore
-
-
-/res/previewer export-ignore
-/js/three.min.js export-ignore
-/js/RBXParser.js export-ignore
-/js/RBXScene.js export-ignore

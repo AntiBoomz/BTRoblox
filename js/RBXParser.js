@@ -411,72 +411,101 @@
 				Array.prototype.forEach.call(arr, fn)
 			}
 
-			function parseProperties(item, propertiesNode) {
-				forEach(propertiesNode.children, (propNode) => {
-					var name = propNode.attributes.name.value
-					var value = propNode.textContent
-
-					switch(propNode.nodeName.toLowerCase()) {
-						case "content":
-						case "string":
-							break;
-						case "token":
-						case "float":
-						case "int":
-							value = +value
-							break;
-						case "bool":
-							value = value == "true"
-							break;
-						case "coordinateframe":
-							value = [ 0,0,0, 1,0,0, 0,1,0, 0,0,1 ]
-							var trans = { X:0,Y:1,Z:2, R00:3,R01:4,R02:5, R10:6,R11:7,R12:8, R20:9,R21:10,R22:11 }
-							forEach(propNode.children, (x) => (value[trans[x.nodeName.toUpperCase()]]=+x.textContent))
-							break;
-						case "vector3":
-							value = [ 0,0,0 ]
-							var trans = { X:0,Y:1,Z:2 }
-							forEach(propNode.children, (x) => (value[trans[x.nodeName.toUpperCase()]]=+x.textContent))
-							break;
-						case "physicalproperties":
-						case "ref": // Object value
-							value = "?"
-							break;
-						default:
-							console.warn("[ParseRBXXml] Unknown dataType " + propNode.nodeName + " for " + name, propNode.innerHTML)
-							value = null
-							break;
-					}
-
-					item[name] = value
-				})
+			function Parser() {
+				this.refs = {}
+				this.refWait = []
 			}
 
-			function parseItem(node) {
-				var item = {}
-				item.Children = []
-				item.ClassName = node.className
+			Object.assign(Parser.prototype, {
+				parseProperties: function(item, propertiesNode) {
+					forEach(propertiesNode.children, (propNode) => {
+						var name = propNode.attributes.name.value
+						var value = propNode.textContent
 
-				forEach(node.children, (child) => {
-					switch(child.nodeName) {
-						case "Item":
-							var childItem = parseItem(child)
-							childItem.Parent = item
-							item.Children.push(childItem)
-							break;
-						case "Properties":
-							parseProperties(item, child)
-							break;
-						case "External":
-							break;
-						default:
-							console.log("Unknown xml node", child.nodeName);
-							break;
+						switch(propNode.nodeName.toLowerCase()) {
+							case "content":
+							case "string":
+								break;
+							case "token":
+							case "float":
+							case "int":
+								value = +value
+								break;
+							case "bool":
+								value = value == "true"
+								break;
+							case "coordinateframe":
+								value = [ 0,0,0, 1,0,0, 0,1,0, 0,0,1 ]
+								var trans = { X:0,Y:1,Z:2, R00:3,R01:4,R02:5, R10:6,R11:7,R12:8, R20:9,R21:10,R22:11 }
+								forEach(propNode.children, (x) => (value[trans[x.nodeName.toUpperCase()]]=+x.textContent))
+								break;
+							case "vector3":
+								value = [ 0,0,0 ]
+								var trans = { X:0,Y:1,Z:2 }
+								forEach(propNode.children, (x) => (value[trans[x.nodeName.toUpperCase()]]=+x.textContent))
+								break;
+							case "ref":
+								if(value === "null")
+									value = null;
+								else if(this.refs[value])
+									value = this.refs[value];
+								else {
+									this.refWait.push({
+										ref: value,
+										target: item,
+										propName: name
+									})
+									value = null
+								}
+								break;
+							case "physicalproperties":
+							case "binarystring":
+								value = "?"
+								break;
+							default:
+								console.warn("[ParseRBXXml] Unknown dataType " + propNode.nodeName + " for " + name, propNode.innerHTML)
+								value = null
+								break;
+						}
+
+						item[name] = value
+					})
+				},
+				parseItem: function(node) {
+					var item = {}
+					item.Children = []
+					item.ClassName = node.className
+
+					var ref = node.getAttribute("referent")
+					if(ref) {
+						this.refs[ref] = item
+						this.refWait.filter(wait => wait.ref === ref).forEach(wait => {
+							this.refWait.splice(this.refWait.indexOf(wait), 1)
+							wait.target[wait.propName] = item
+						})
 					}
-				})
 
-				return item
-			}
+					forEach(node.children, (child) => {
+						switch(child.nodeName) {
+							case "Item":
+								var childItem = this.parseItem(child)
+								childItem.Parent = item
+								item.Children.push(childItem)
+								break;
+							case "Properties":
+								this.parseProperties(item, child)
+								break;
+							case "External":
+								break;
+							default:
+								console.log("Unknown xml node", child.nodeName);
+								break;
+						}
+					})
+
+					return item
+				}
+			})
 
 			return function(data) {
 				data = new TextDecoder("ascii").decode(data)
@@ -486,7 +515,8 @@
 				} catch(ex) {
 					throw new Error("[ParseRBXXml] Unable to parse xml")
 				}
-				return parseItem(xml).Children
+
+				return new Parser().parseItem(xml).Children
 			}
 		})();
 
@@ -504,7 +534,7 @@
 	})();
 
 	typeof ANTI=="undefined" && (ANTI={}), ANTI.ParseMesh = (function() {
-		function ParseVersion1(reader, divideByTwo) {
+		function ParseVersion1(reader, isVersion1) {
 			var text = reader.String(reader.remaining)
 			var lines = text.split("\n")
 
@@ -523,26 +553,23 @@
 			var uvs = mesh.uvs = new Float32Array(faceCount*6)
 			var faces = mesh.faces = new Uint32Array(faceCount*3)
 
+			var verMul = isVersion1 ? 0.5 : 1;
+
 			for(var i=0, l=faceCount*3; i<l; i++) {
 				var j = i*3
 				var ver = arr[j].split(",")
 				var nor = arr[j+1].split(",")
 				var uv = arr[j+2].split(",")
 
-				vertices[j] = +ver[0]
-				vertices[j+1] = +ver[1]
-				vertices[j+2] = +ver[2]
+				vertices[j] = +ver[0] * verMul
+				vertices[j+1] = +ver[1] * verMul
+				vertices[j+2] = +ver[2] * verMul
 				normals[j] = +nor[0]
 				normals[j+1] = +nor[1]
 				normals[j+2] = +nor[2]
 				uvs[i*2] = +uv[0]
 				uvs[i*2+1] = +uv[1]
 				faces[i] = i
-			}
-
-			if(divideByTwo) {
-				for(var i=0, l=vertices.length; i<l; i++)
-					vertices[i] = vertices[i] / 2;
 			}
 
 			return mesh
@@ -592,11 +619,11 @@
 			if(reader.String(8) != "version ")
 				throw new Error("Not a valid mesh file");
 
+			var version = reader.String(4)
 			var newline = reader.Byte()
 			if(!(newline === 0x0A || (newline === 0x0D && reader.Byte() == 0x0A)))
 				throw new Error("Invalid newline");
 
-			var version = reader.String(4)
 			switch(version) {
 				case "1.00":
 					return ParseVersion1(reader, true)

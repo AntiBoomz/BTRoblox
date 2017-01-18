@@ -17,9 +17,9 @@ var defaultSettings = {
 	versionhistory: {
 		enabled: true
 	},
-/*	catalog: {
-		animationPreview:true
-	},*/
+	catalog: {
+		animationPreview: true
+	},
 	chat: {
 		enabled: true,
 	},
@@ -402,7 +402,9 @@ var skipPages = [
 	"^/Feeds/GetUserFeed"
 ]
 
-chrome.webRequest.onCompleted.addListener((details) => {
+var pendingRequests = []
+
+chrome.webRequest.onResponseStarted.addListener((details) => {
 	var headers = details.responseHeaders
 	for(var i=0; i<headers.length; i++) {
 		var header = headers[i]
@@ -413,6 +415,33 @@ chrome.webRequest.onCompleted.addListener((details) => {
 			break;
 		}
 	}
+
+	pendingRequests.push(details)
+	setTimeout(() => {
+		var index = pendingRequests.indexOf(details)
+		pendingRequests.splice(index, 1)
+	}, 5000)
+}, {
+	urls: ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
+	types: ["main_frame", "sub_frame"]
+}, ["responseHeaders"])
+
+chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+	if(info.status !== "loading" || !tab.url)
+		return;
+
+	var details = null
+
+	for(var i=0, l=pendingRequests.length; i<l; i++) {
+		var req = pendingRequests[i]
+		if(req.tabId === tab.id && req.url === tab.url) {
+			details = pendingRequests.splice(i, 1)[0]
+			break;
+		}
+	}
+
+	if(!details)
+		return;
 
 	var location = document.createElement("a")
 	location.href = details.url
@@ -455,10 +484,8 @@ chrome.webRequest.onCompleted.addListener((details) => {
 	].join(",") + "; if(typeof(CSFinishedLoading) !== 'undefined')Init();"
 
 	chrome.tabs.executeScript(details.tabId, { code: initCode, runAt: "document_start", frameId: details.frameId })
-}, {
-	urls: ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
-	types: ["main_frame", "sub_frame"]
-}, ["responseHeaders"])
+})
+
 
 chrome.runtime.getPackageDirectoryEntry((rootEntry) => {
 	function recurse(dirEntry, parent, callback) {
