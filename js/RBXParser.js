@@ -136,6 +136,10 @@
 	typeof ANTI=="undefined" && (ANTI={}), ANTI.ParseAnimationData = (function() {
 		return function(data) {
 			var sequence = data[0]
+			if(sequence.ClassName === "Animation") {
+				return ANTI.ParseAnimationData(ANTI.ParseRBXM(new TextEncoder().encode(atob(sequence.AnimationId))))
+			}
+			
 			sequence.Children.sort((a,b) => a.Time - b.Time)
 
 			var anim = {

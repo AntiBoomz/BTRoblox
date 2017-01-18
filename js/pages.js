@@ -457,7 +457,7 @@ pageInit.itemdetails = function(assetId) {
 									scene.avatar.animator.play(anim)
 
 									scene.avatar.animator.onstop = () => {
-										setTimeout(() => scene.avatar.animator.play(), 500)
+										setTimeout(() => scene.avatar.animator.play(), 2000)
 									}
 
 									data.assets.forEach(assetInfo => scene.avatar.addAsset(assetInfo))
