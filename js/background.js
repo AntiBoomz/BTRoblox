@@ -338,11 +338,9 @@ chrome.runtime.onConnect.addListener((port) => {
 
 					var url = array[index++]
 					if(url.search(/^\w+:\/\//) === -1) {
-						chrome.tabs.executeScript(port.sender.tab.id, { file: "js/" + url }, next)
+						chrome.tabs.executeScript(port.sender.tab.id, { file: url }, next)
 					} else {
-						$.get(url, (data) => {
-							chrome.tabs.executeScript(port.sender.tab.id, { code: data }, next)
-						})
+						$.get(url, (data) => chrome.tabs.executeScript(port.sender.tab.id, { code: data }, next))
 					}
 				}
 				if(typeof(msg.data) == "string")
@@ -424,14 +422,6 @@ chrome.webRequest.onCompleted.addListener((details) => {
 			return;
 	}
 
-	
-	var initCode = [ 
-		"settings="+JSON.stringify(settings),
-		"currentPage="+JSON.stringify(currentPage)
-	].join(",") + "; Init();"
-
-	chrome.tabs.executeScript(details.tabId, { code: initCode, runAt: "document_start", frameId: details.frameId })
-
 	var fileExists = pathString => {var path = pathString.split("/"),target=extensionDirectory;for(var i=0,l=path.length;i<l;i++){if(!(target=target[path[i]]))return false;}return true;}
 	var injectCSS = path => fileExists("css/"+path) && chrome.tabs.insertCSS(details.tabId, { file: "css/" + path, runAt: "document_start", frameId: details.frameId })
 
@@ -458,6 +448,13 @@ chrome.webRequest.onCompleted.addListener((details) => {
 			}
 		}
 	}
+
+	var initCode = [ 
+		"settings="+JSON.stringify(settings),
+		"currentPage="+JSON.stringify(currentPage)
+	].join(",") + "; if(typeof(CSFinishedLoading) !== 'undefined')Init();"
+
+	chrome.tabs.executeScript(details.tabId, { code: initCode, runAt: "document_start", frameId: details.frameId })
 }, {
 	urls: ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
 	types: ["main_frame", "sub_frame"]
