@@ -437,7 +437,7 @@ pageInit.itemdetails = function(assetId) {
 						})
 
 						ANTI.RBXScene.ready((RBXScene) => {
-							scene = new RBXScene()
+							scene = window.scene = new RBXScene()
 							scene.canvas.appendTo(tbCont)
 							tbCont.find("img").remove()
 
