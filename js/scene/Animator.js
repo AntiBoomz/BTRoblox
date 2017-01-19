@@ -68,7 +68,7 @@ ANTI.RBXScene.Animator = (function() {
 
 						if(frameTime >= currentTime || i === l-1) {
 							var prev = i > 0 ? frames[i-1] : emptyFrame
-							var t = frameTime == prev[0] ? 1 : (currentTime-prev[0])/(frameTime-prev[0])
+							var t = frameTime <= currentTime || frameTime == prev[0] ? 1 : (currentTime-prev[0])/(frameTime-prev[0])
 
 							var pos0 = prev[1]
 							var pos1 = frame[1]
