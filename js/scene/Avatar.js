@@ -527,8 +527,8 @@ ANTI.RBXScene.Avatar = (function() {
 					var pivot = joint.pivot = new THREE.Object3D()
 					var parent = joint.part0 = part.parent
 
-					var c0 = new THREE.Object3D()
-					var c1 = new THREE.Object3D()
+					var c0 = joint.c0 = new THREE.Object3D()
+					var c1 = joint.c1 = new THREE.Object3D()
 
 					var c0Matrix = baseJoint.c0
 					var c1Matrix = new THREE.Matrix4().getInverse(baseJoint.c1)
@@ -537,7 +537,7 @@ ANTI.RBXScene.Avatar = (function() {
 					c0.rotation.setFromRotationMatrix(c0Matrix)
 
 					c1.position.setFromMatrixPosition(c1Matrix)
-					c1.rotation.setFromRotationMatrix(c1Matrix)	
+					c1.rotation.setFromRotationMatrix(c1Matrix)
 
 					c1.add(part)
 					pivot.add(c1)
