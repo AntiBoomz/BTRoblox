@@ -17,9 +17,16 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 		})
 	})
 
-	function RBXScene() {
+	function RBXScene(optionsGiven) {
 		if(!isReady)
 			throw new error("RBXScene is not ready yet");
+
+		var options = {
+			solidGround: true
+		}
+
+		if(optionsGiven)
+			Object.assign(options, optionsGiven);
 
 		this._prevRes = { width: -1, height: -1 }
 		this._updateListeners = []
@@ -62,6 +69,18 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 
 		ground.position.y = -.05
 		ground.receiveShadow = true
+
+		if(options.solidGround) {
+			var base = new THREE.Mesh(
+				new THREE.PlaneGeometry(100, 100),
+				new THREE.MeshBasicMaterial({ color: 0xffffff })
+			)
+			scene.add(base)
+
+			base.rotation.x = -Math.PI/2
+			base.position.y = -.1005
+			base.receiveShadow = true
+		}
 
 		var shadowCaster = new THREE.Mesh(
 			new THREE.PlaneGeometry(20, 20),
