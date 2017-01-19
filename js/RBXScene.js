@@ -83,7 +83,7 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 		}
 
 		var shadowCaster = new THREE.Mesh(
-			new THREE.PlaneGeometry(20, 20),
+			new THREE.PlaneGeometry(40, 40),
 			new THREE.ShadowMaterial()
 		)
 		scene.add(shadowCaster)
@@ -92,6 +92,7 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 		shadowCaster.rotation.x = -Math.PI/2
 		shadowCaster.position.y = -.1
 		shadowCaster.receiveShadow = true
+
 
 		controls.mousedrag((moveX, moveY) => {
 			if(avatar)
