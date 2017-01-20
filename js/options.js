@@ -1,3 +1,4 @@
+"use strict"
 var BackgroundJS = {
 	_listeners: {},
 
@@ -29,7 +30,7 @@ var BackgroundJS = {
 			this._listeners[action].push(callback)
 		})
 	}
-}
+}; BackgroundJS._start();
 
 
 var dict = {
