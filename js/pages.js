@@ -204,15 +204,15 @@ function getXsrfToken(callback) {
 	XsrfPromise.then(callback)
 }
 
-function downloadAsset(type, params) {
-	return new Promise((resolve) => {
-		BackgroundJS.send("getBlob", "http://www.roblox.com/Asset/?" + $.param(params), (bloburl) => {
-			var xhr = new XMLHttpRequest()
-			xhr.open("GET", bloburl)
-			xhr.responseType = type
-			xhr.onload = () => resolve(xhr.response);
-			xhr.send()
-		})
+function downloadAsset(type, params, callback) {
+	BackgroundJS.send("downloadFile", "http://www.roblox.com/asset/?" + $.param(params), (bloburl) => {
+		var xhr = new XMLHttpRequest()
+		xhr.open("GET", bloburl, true)
+		xhr.responseType = type
+		xhr.onload = () => callback(xhr.response);
+		xhr.send()
+	})
+}
 	})
 }
 
@@ -768,7 +768,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 			assetType === "place" ? "l" : "m"
 		)
 
-		downloadAsset("blob", { id: assetId, version: version }).then((blob) => {
+		downloadAsset("blob", { id: assetId, version: version }, (blob) => {
 			isBusy = false
 			startDownload(URL.createObjectURL(blob), fileName)
 		})
@@ -857,7 +857,7 @@ pageInit.configureplace = function(placeId) {
 
 				var data = queue.splice(0, 1)[0]
 				btn.text("Downloading {0}/{1}".format(++loadedCount, versionCount))
-				downloadAsset("arraybuffer", { id: placeId, version: data.VersionNumber }).then((buffer) => {
+				downloadAsset("arraybuffer", { id: placeId, version: data.VersionNumber }, (buffer) => {
 					zip.file(fileName + "-" + data.VersionNumber + ".rbxl", buffer)
 					setTimeout(loadFile, 100)
 				})

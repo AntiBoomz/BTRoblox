@@ -296,7 +296,7 @@ var MediaPlayerControls = {
 					if(!audioCache[assetId]) {
 						audioCache[assetId] = new Promise(function(resolve) {
 							self.addClass("icon-loading")
-							downloadAsset("blob", {id:assetId}).then((blob) => {
+							downloadAsset("blob", { id: assetId }, (blob) => {
 								self.removeClass("icon-loading")
 								resolve(URL.createObjectURL(blob))
 							})
