@@ -1,33 +1,56 @@
 "use strict"
+
 var BackgroundJS = {
 	_listeners: {},
+	_reqCounter: 0,
+	_started: false,
+	_start: function() {
+		if(this._started) return;
+		this._started = true
+		this._port = chrome.runtime.connect({ name: "optionsScript" })
+
+		this._port.onMessage.addListener((msg) => {
+			if(!(msg instanceof Object) || typeof(msg.action) !== "string")
+				return;
+
+			var list = this._listeners[msg.action]
+			if(list) {
+				for(var i=0; i < list.length; i++) {
+					var listener = list[i]
+					if(listener.once)
+						list.splice(i--, 1);
+
+					listener.callback(msg.data)
+				}
+			}
+		})
+	},
 
 	send: function(action, data, callback) {
 		if(typeof(data) == "function")
 			callback = data, data = null;
 
-		chrome.runtime.sendMessage({
+		var uid = this._reqCounter++
+
+		if(callback)
+			this.listen("_response_" + uid, callback);
+
+		this._port.postMessage({
+			uid: uid,
 			action: action,
 			data: data
-		}, callback)
+		})
 	},
 
-	listen: function(actionList, callback) {
-		if(!this._listenerAdded) {
-			this._listenerAdded = true
-
-			chrome.runtime.onMessage.addListener((msg, sender, respond) => {
-				if(this._listeners[msg.action]) {
-					this._listeners[msg.action].forEach((fn) => fn(msg.data, respond));
-				}
-			})
-		}
-
+	listen: function(actionList, callback, once) {
 		actionList.split(" ").forEach((action) => {
 			if(!this._listeners[action])
 				this._listeners[action] = [];
 
-			this._listeners[action].push(callback)
+			this._listeners[action].push({
+				callback: callback,
+				once: once
+			})
 		})
 	}
 }; BackgroundJS._start();

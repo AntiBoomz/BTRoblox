@@ -824,7 +824,7 @@ pageInit.configureplace = function(placeId) {
 
 		if(!jszipPromise) {
 			jszipPromise = new Promise((resolve) => {
-				BackgroundJS.send("execScript", ["js/jszip.min.js"], resolve)
+				BackgroundJS.send("execScript", ["lib/jszip.min.js"], resolve)
 			})
 		}
 
