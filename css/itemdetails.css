@@ -11,20 +11,26 @@
 	height:170px;
 }
 
-.btr-preview-loading:after {
-	content:"";
-	position:absolute;
-	left:50%;
-	top:50%;
-	margin-left:-24px;
-	margin-top:-8px;
-	width:48px;
-	height:17px;
-	background:url('chrome-extension://__MSG_@@extension_id__/res/progressIndicator.gif') transparent no-repeat;
-	background-size:100%;
-	opacity:0.2;
+.btr-explorer-button {
+	position: absolute;
+	top: 12px;
+	right: 50px;
 }
 
-.btr-preview-loading img {
-	display:none !important;
+.menu-shown .btr-explorer-button {
+	right: 88px;
+}
+
+.btr-icon-explorer {
+	display: block;
+	background-image: url('chrome-extension://__MSG_@@extension_id__/res/explorer.svg');
+	background-repeat: no-repeat;
+	background-size: auto auto;
+	width: 28px;
+	height: 28px;
+	vertical-align: middle;
+}
+
+.btr-icon-explorer:hover {
+	background-position: -28px 0;
 }
