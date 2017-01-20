@@ -152,73 +152,6 @@ Date.prototype.format = function(format) {
 };
 
 
-var request = {
-	_poolCount: 0,
-	_pool: [],
-	_queue: [],
-	_getXhr: function(callback) {
-		var xhr = null
-
-		if(this._pool.length == 0) {
-			if(this._poolCount >= 3) {
-				this._queue.push(callback)
-				return;
-			}
-
-			this._poolCount++
-			xhr = new XMLHttpRequest()
-		} else {
-			xhr = this._pool.pop()
-		}
-
-		var released = false
-		callback(xhr, () => {
-			if(released)
-				return;
-
-			released = true
-			xhr.abort()
-			xhr.onload = null
-			xhr.onerror = null
-
-			this._pool.push(xhr)
-			if(this._queue.length > 0) {
-				this._getXhr(this._queue.splice(0,1)[0])
-			}
-		})
-	},
-	getJson: function(url, success, failure) {
-		return this.get(url, success, failure, "json")
-	},
-	get: function(url, success, failure, responseType) {
-		if(typeof failure === "string")
-			responseType = failure, failure = null;
-		else if(typeof success === "string")
-			responseType = success, success = null;
-
-		this._getXhr((xhr, release) => {
-			xhr.onload = () => {
-				var response = xhr.response
-				release()
-				if(success) {
-					success(response)
-				}
-				response = null
-			}
-			xhr.onerror = () => {
-				release()
-				if(failure) {
-					failure()
-				}
-			}
-
-			xhr.responseType = responseType || "text"
-
-			xhr.open("GET", url, true)
-			xhr.send()
-		})
-	}
-}
 
 
 if(typeof(chrome) != "undefined" && chrome.notifications) {
@@ -276,4 +209,4 @@ if(typeof(chrome) != "undefined" && chrome.notifications) {
 		Notifs.notifData[notifId] = null
 	});
 
-}
+}
