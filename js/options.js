@@ -1,29 +1,32 @@
 var BackgroundJS = {
-	send: function(action,data,callback) {
+	_listeners: {},
+
+	send: function(action, data, callback) {
 		if(typeof(data) == "function")
 			callback = data, data = null;
 
-		if(!this._port) {
-			this._port = chrome.runtime.connect()
-			var callbacks = this._callbacks = {}
-			this._uuid = 0
+		chrome.runtime.sendMessage({
+			action: action,
+			data: data
+		}, callback)
+	},
 
-			this._port.onMessage.addListener(function(msg) {
-				if(msg.action == "return") {
-					if(callbacks[msg.uuid])
-						callbacks[msg.uuid](msg.response)
+	listen: function(actionList, callback) {
+		if(!this._listenerAdded) {
+			this._listenerAdded = true
+
+			chrome.runtime.onMessage.addListener((msg, sender, respond) => {
+				if(this._listeners[msg.action]) {
+					this._listeners[msg.action].forEach((fn) => fn(msg.data, respond));
 				}
 			})
 		}
 
-		var uuid = this._uuid++
-		if(callback)
-			this._callbacks[uuid] = callback
+		actionList.split(" ").forEach((action) => {
+			if(!this._listeners[action])
+				this._listeners[action] = [];
 
-		this._port.postMessage({
-			uuid: uuid,
-			action: action,
-			data: data
+			this._listeners[action].push(callback)
 		})
 	}
 }
