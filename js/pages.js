@@ -213,8 +213,53 @@ function downloadAsset(type, params, callback) {
 		xhr.send()
 	})
 }
+
+function ModelViewer() {
+	this.isShown = false
+
+	var domElement = this.domElement = $(
+	"<div class='btr-modal fade'>" +
+		"<div class='btr-modelviewer'>" + 
+			"<div class='btr-modelviewer-header'>" + 
+			"</div>" +
+			"<div class='btr-modelviewer-content'>" + 
+				"<div class='btr-explorer' style='right: 300px;'>" +
+					"<ul class='btr-explorer-list'>" +
+					"</ul>" + 
+				"</div>" +
+				"<div class='btr-properties' style='width: 300px;'>" +
+					"<ul class='btr-properties-list'>" +
+					"</ul>" + 
+				"</div>" +
+			"</div>" + 
+		"</div>" +
+	"</div>")
+
+	domElement.on("click", (event) => {
+		if(!domElement.is(event.target))
+			return;
+
+		domElement.addClass("fade")
+		setTimeout(() => domElement.detach(), 100)
+
+		event.preventDefault()
+		return false
 	})
 }
+
+Object.assign(ModelViewer.prototype, {
+	show: function() {
+		if(this.isShown) return;
+		this.isShown = true
+		this.domElement.appendTo("body")
+		this.domElement.addClass("fade")
+		setTimeout(() => this.domElement.removeClass("fade"), 0)
+	},
+	addView: function(title, model) {
+		console.log(title, model)
+	}
+})
+
 
 
 var avatarApi = {
@@ -370,6 +415,14 @@ pageInit.develop = function() {
 }
 
 pageInit.itemdetails = function(assetId) {
+	var itemTypePromise = new Promise(resolve => Observer.add({
+		selector: ".item-type-field-container .field-content",
+		callback: function(typeLabel) {
+			resolve(typeLabel.text().trim())
+		}
+	}))
+	var assetPromise = null
+
 	Observer.add({
 		selector: "#item-details-description",
 		callback: function(desc) {
@@ -388,83 +441,132 @@ pageInit.itemdetails = function(assetId) {
 				span.text(fixedTimeStamp)
 			}
 		}
-	}).add({
-		selector: ["#AssetThumbnail .thumbnail-span", ".item-type-field-container .field-content"],
-		callback: function(tbCont, typeLabel) {
-			var type = typeLabel.text().trim().toLowerCase()
-			if(type === "animation" && settings.catalog.animationPreview) {
-				var rulesPromise = new Promise(resolve => avatarApi.getRules(resolve))
-				var dataPromise = new Promise(resolve => avatarApi.getData(resolve))
-				var animPromise = downloadAsset("arraybuffer", { id: assetId })
+	})
 
-				BackgroundJS.send("execScript", ["js/three.min.js", "js/RBXParser.js", "js/RBXScene.js"], () => {
-					animPromise.then((buffer) => {
-						try {
-							var anim = ANTI.ParseAnimationData(ANTI.ParseRBXM(buffer))
-						} catch(ex) {
-							console.log("Failed to load animation:", ex)
-							return;
+	itemTypePromise.then(type => {
+		if(settings.catalog.explorerButton) {
+			Observer.add({
+				selector: "#item-container>.section-content",
+				callback: function(cont) {
+					var btn = $(
+					"<div class='btr-explorer-button'>" + 
+						"<a class='btr-icon-explorer'></a>" +
+					"</div>").appendTo(cont)
+
+					var modelViewer = new ModelViewer()
+					var isLoaded = false
+
+					btn.on("click", (event) => {
+						event.preventDefault()
+
+						if(!isLoaded) {
+							isLoaded = true
+							if(!assetPromise)
+								assetPromise = new Promise(resolve => downloadAsset("arraybuffer", { id: assetId }, resolve));
+
+							BackgroundJS.send("execScript", ["js/RBXParser.js"], () => {
+								if(type === "Package") {
+									// Packages are a list of asset ids separated by semicolons
+									// Do a marketplace check of asset, and depending of the id
+									// do the rest.
+									alert("Packages not supported yet!")
+								} else {
+									console.log(type)
+									assetPromise.then(buffer => {
+										console.log("Potato")
+										var model = ANTI.ParseRBXM(buffer)
+										modelViewer.addView("Main", model)
+									})
+								}
+							})
 						}
 
-						var scene = null
-						var animType = "R6"
-						var r15Parts = ["lowertorso", "uppertorso", "leftupperarm", "leftlowerarm", "lefthand", "rightupperarm", "rightlowerarm", "righthand", "leftupperleg", "leftlowerleg", "leftfoot", "rightupperleg", "rightlowerleg", "rightfoot"]
+						modelViewer.show()
+					})
+				}
+			})
+		}
 
-						for(var i=0; i<r15Parts.length; i++) {
-							if(r15Parts[i] in anim.Limbs) {
-								animType = "R15"
-								break;
-							}
-						}
+		if(settings.catalog.animationPreview) {
+			if(type === "Animation") {
+				Observer.add({
+					selector: "#AssetThumbnail .thumbnail-span",
+					callback: function(tbCont) {
+						var rulesPromise = new Promise(resolve => avatarApi.getRules(resolve))
+						var dataPromise = new Promise(resolve => avatarApi.getData(resolve))
+						if(!assetPromise)
+							assetPromise = new Promise(resolve => downloadAsset("arraybuffer", { id: assetId }, resolve));
 
-						var modeSwitch = $("<div class='btr-switch' style='position:absolute;top:6px;right:6px;'>" +
-							"<div class='btr-switch-off'>R6</div>" +
-							"<div class='btr-switch-on'>R15</div>" +
-							"<input type='checkbox'>" + 
-							"<div class='btr-switch-flip'>" +
-								"<div class='btr-switch-off'>R6</div>" +
-								"<div class='btr-switch-on'>R15</div>" +
-							"</div>" +
-						"</div").appendTo(tbCont).find("input")
+						BackgroundJS.send("execScript", ["lib/three.min.js", "js/RBXParser.js", "js/RBXScene.js"], () => {
+							assetPromise.then((buffer) => {
+								try {
+									var anim = ANTI.ParseAnimationData(ANTI.ParseRBXM(buffer))
+								} catch(ex) {
+									console.log("Failed to load animation:", ex)
+									return;
+								}
 
-						modeSwitch[0].checked = animType === "R15"
-						modeSwitch.on("change", function(event) {
-							animType = this.checked ? "R15": "R6"
+								var scene = null
+								var animType = "R6"
+								var r15Parts = ["lowertorso", "uppertorso", "leftupperarm", "leftlowerarm", "lefthand", "rightupperarm", "rightlowerarm", "righthand", "leftupperleg", "leftlowerleg", "leftfoot", "rightupperleg", "rightlowerleg", "rightfoot"]
 
-							if(scene) {
-								scene.avatar.setPlayerType(animType)
-							}
-						})
-
-						ANTI.RBXScene.ready((RBXScene) => {
-							scene = window.scene = new RBXScene()
-							scene.canvas.appendTo(tbCont)
-							tbCont.find("img").remove()
-
-							rulesPromise.then((rules) => {
-								//console.log("rules", rules)
-								var palette = {}
-								rules.bodyColorsPalette.forEach(data => palette[data.brickColorId] = data.hexColor)
-
-								dataPromise.then((data) => {
-									//console.log("data", data)
-									var bodyColors = {}
-									for(var name in data.bodyColors)
-										bodyColors[name] = palette[data.bodyColors[name]];
-
-									scene.avatar.setPlayerType(animType)
-									scene.avatar.setBodyColors(bodyColors)
-									scene.avatar.animator.play(anim)
-
-									scene.avatar.animator.onstop = () => {
-										setTimeout(() => scene.avatar.animator.play(), 2000)
+								for(var i=0; i<r15Parts.length; i++) {
+									if(r15Parts[i] in anim.Limbs) {
+										animType = "R15"
+										break;
 									}
+								}
 
-									data.assets.forEach(assetInfo => scene.avatar.addAsset(assetInfo))
+								var modeSwitch = $("<div class='btr-switch' style='position:absolute;top:6px;right:6px;'>" +
+									"<div class='btr-switch-off'>R6</div>" +
+									"<div class='btr-switch-on'>R15</div>" +
+									"<input type='checkbox'>" + 
+									"<div class='btr-switch-flip'>" +
+										"<div class='btr-switch-off'>R6</div>" +
+										"<div class='btr-switch-on'>R15</div>" +
+									"</div>" +
+								"</div").appendTo(tbCont).find("input")
+
+								modeSwitch[0].checked = animType === "R15"
+								modeSwitch.on("change", function(event) {
+									animType = this.checked ? "R15": "R6"
+
+									if(scene) {
+										scene.avatar.setPlayerType(animType)
+									}
+								})
+
+								ANTI.RBXScene.ready((RBXScene) => {
+									scene = window.scene = new RBXScene()
+									scene.canvas.appendTo(tbCont)
+									tbCont.find("img").remove()
+
+									rulesPromise.then((rules) => {
+										//console.log("rules", rules)
+										var palette = {}
+										rules.bodyColorsPalette.forEach(data => palette[data.brickColorId] = data.hexColor)
+
+										dataPromise.then((data) => {
+											//console.log("data", data)
+											var bodyColors = {}
+											for(var name in data.bodyColors)
+												bodyColors[name] = palette[data.bodyColors[name]];
+
+											scene.avatar.setPlayerType(animType)
+											scene.avatar.setBodyColors(bodyColors)
+											scene.avatar.animator.play(anim)
+
+											scene.avatar.animator.onstop = () => {
+												setTimeout(() => scene.avatar.animator.play(), 2000)
+											}
+
+											data.assets.forEach(assetInfo => scene.avatar.addAsset(assetInfo))
+										})
+									})
 								})
 							})
 						})
-					})
+					}
 				})
 			}
 		}
@@ -475,11 +577,7 @@ pageInit.gamedetails = function(placeId) {
 	if(!settings.gamedetails.enabled)
 		return;
 
-	var gameDataPromise = new Promise(function(solve) {
-		BackgroundJS.send("getProductInfo",placeId,function(data) {
-			solve(data);
-		})
-	})
+	var gameDataPromise = new Promise(resolve => BackgroundJS.send("getProductInfo", placeId, resolve))
 
 	Observer.add({
 		selector: ["#tab-about","#tab-game-instances"],
