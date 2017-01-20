@@ -11,7 +11,12 @@
 	},
 
 	"background": {
-		"scripts": ["js/jquery.js","js/utility.js","js/background.js"]
+		"scripts": [
+			"lib/jquery.min.js",
+			"js/utility.js",
+			"js/request.js", 
+			"js/background.js"
+		]
 	},
 	"permissions": [
 		"*://www.roblox.com/",
@@ -36,7 +41,7 @@
 	"content_scripts": [
 		{
 			"matches": [ "*://www.roblox.com/*", "*://forum.roblox.com/*" ],
-			"js": [ "js/jquery.js", "js/utility.js", "js/main.js", "js/pages.js" ],
+			"js": [ "lib/jquery.min.js", "js/utility.js", "js/main.js", "js/pages.js" ],
 			"run_at": "document_start",
 			"all_frames": true
 		}
