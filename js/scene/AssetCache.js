@@ -60,7 +60,7 @@ ANTI.RBXScene.AssetCache = (function() {
 
 			if(!this._assetCache[assetId]) {
 				this._assetCache[assetId] = new Promise(resolve => {
-					downloadAsset("arraybuffer", { id: assetId }).then((buffer) => resolve(new Asset(buffer)))
+					downloadAsset("arraybuffer", { id: assetId }, (buffer) => resolve(new Asset(buffer)))
 				})
 			}
 
