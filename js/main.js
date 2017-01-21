@@ -472,7 +472,7 @@ function Init() {
 			}
 
 			new MutationObserver(updateFriends).observe(navFriends[0], { attributes: true, attributeFilter: ["href", "data-count"] })
-			new MutationObserver(updateMessages).observe(navFriends[0], { attributes: true, attributeFilter: ["href", "data-count"] })
+			new MutationObserver(updateMessages).observe(navMessages[0], { attributes: true, attributeFilter: ["href", "data-count"] })
 
 			updateFriends()
 			updateMessages()
