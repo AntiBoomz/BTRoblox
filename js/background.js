@@ -186,7 +186,7 @@ function applySettings(data, initialLoad) {
 	}
 
 	if(changedSomething) {
-		chrome.storage.set({ settings: settings })
+		chrome.storage.local.set({ settings: settings })
 		settingsChangedListeners.forEach(fn => fn())
 	}
 }
