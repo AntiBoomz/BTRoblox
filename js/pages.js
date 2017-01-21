@@ -878,7 +878,6 @@ function CreateNewVersionHistory(assetId, assetType) {
 }
 
 function startDownload(blob, fileName) {
-	console.log(blob, fileName)
 	var link = document.createElement("a")
 	link.setAttribute("download", fileName || "file")
 	link.setAttribute("href", blob)

@@ -449,7 +449,8 @@ function Init() {
 
 			$("#nav-trade>span:not([class^='icon-nav'])").text("Money").parent().attr("href","/My/Money.aspx")
 
-			blogfeed.appendTo($("#nav-blog").parent());
+			if(settings.general.showBlogFeed)
+				blogfeed.appendTo($("#nav-blog").parent());
 
 			$(".rbx-upgrade-now").hide()
 
@@ -530,22 +531,24 @@ function Init() {
 		})
 	}
 
-	function updateBlogFeed(html) {
-		blogfeed.html(html)
-		$(".btr_feed", blogfeed).each(function() {
-			var self = $(this)
-			var date = $(".btr_feeddate", self)
-			var actdate = $(".btr_feedactdate", self)
-			date.text(new Date(actdate.text()).relativeFormat("(z 'ago')") )
-		});
+	if(settings.general.showBlogFeed) {
+		function updateBlogFeed(html) {
+			blogfeed.html(html)
+			$(".btr_feed", blogfeed).each(function() {
+				var self = $(this)
+				var date = $(".btr_feeddate", self)
+				var actdate = $(".btr_feedactdate", self)
+				date.text(new Date(actdate.text()).relativeFormat("(z 'ago')") )
+			});
 
-		blogfeed.css("display", "")
+			blogfeed.css("display", "")
+		}
+
+		if(typeof(blogFeedData) !== "undefined")
+			updateBlogFeed(blogFeedData);
+
+		BackgroundJS.listen("blogfeed", updateBlogFeed)
 	}
-
-	if(typeof(blogFeedData) !== "undefined")
-		updateBlogFeed(blogFeedData);
-
-	BackgroundJS.listen("blogfeed", updateBlogFeed)
 
 	$(document).ready(() => {
 		InjectJS.send("INIT", settings, currentPage && currentPage.name, currentPage && currentPage.matches, Object.keys(templateListeners))
