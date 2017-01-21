@@ -3,8 +3,8 @@ body .rbx-header {
 	background:rgb(190,0,0);
 }
 
-body .btr_nav-notif {
-	color:rgb(190,0,0);
+body .btr-nav-notif {
+	border-color: rgb(190,0,0);
 }
 
 
