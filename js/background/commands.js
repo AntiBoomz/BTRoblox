@@ -39,14 +39,23 @@ commands.execScript = (list, respond, port) => {
 }
 
 commands.getRankName =  (data, respond) => {
-	if(rankNameCache[data.groupId] && rankNameCache[data.groupId][data.userId])
-		respond(rankNameCache[data.groupId][data.userId]);
+	var cached = rankNameCache[data.groupId] && rankNameCache[data.groupId][data.userId]
+	if(cached) {
+		respond(cached.value)
+
+		if(Date.now() - cached.timestamp < 60e3) // Cache ranknames for a minute
+			return;
+	}
 
 	request.get(rankNameUrl.format(data.userId, data.groupId), (rankName) => {
 		if(!rankNameCache[data.groupId])
 			rankNameCache[data.groupId] = {};
 
-		rankNameCache[data.groupId][data.userId] = rankName
+		rankNameCache[data.groupId][data.userId] = {
+			timestamp: Date.now(),
+			value: rankName
+		}
+
 		respond(rankName)
 	})
 }
