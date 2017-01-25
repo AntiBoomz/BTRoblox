@@ -3,7 +3,12 @@
 var notifications = {}
 
 function CreateNotification(id, options) {
-	chrome.notifications.create(id, options, (notifId) => {
+	var copy = Object.assign({}, options)
+
+	delete copy.success;
+	delete copy.click;
+
+	chrome.notifications.create(id, copy, (notifId) => {
 		notifications[notifId] = options
 
 		if(options.success)
