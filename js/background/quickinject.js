@@ -54,7 +54,7 @@ chrome.webRequest.onResponseStarted.addListener((details) => {
 	if(headers["content-type"] && headers["content-type"][0].trim().toLowerCase() !== "text/html")
 		return;
 
-	var pathname = parseLocation(details.url).pathname
+	var pathname = parseLocation(details.url).pathname.toLowerCase()
 
 	for(var i=0; i<skipPages.length; i++) {
 		if(pathname.search(skipPages[i]) !== -1)
