@@ -21,6 +21,10 @@
 	right: 88px;
 }
 
+#item-container.btr-explorer-btn-shown h2 {
+	margin-right: 100px;
+}
+
 .btr-icon-explorer {
 	display: block;
 	background-image: url('chrome-extension://__MSG_@@extension_id__/res/explorer.svg');
