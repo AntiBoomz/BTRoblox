@@ -217,6 +217,21 @@
 	RBXEnum.prototype.__proto__ = Number.prototype
 
 
+	typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXParseContentUrl = function parseContentUrl(url) {
+		url = url.trim()
+
+		var match = url.match(/^rbxassetid:\/\/(\d+)/)
+		if(match)
+			return +match[1];
+
+		match = url.match(/https?:\/\/(?:assetgame\.|www\.|)roblox.com\/asset\/?\?id=(\d+)/)
+		if(match)
+			return +match[1];
+
+		console.log("Couldn't parse content url " + url)
+		return null
+	};
+
 	typeof ANTI=="undefined" && (ANTI={}), ANTI.ParseAnimationData = (function() {
 		return function(data) {
 			var sequence = data[0]
