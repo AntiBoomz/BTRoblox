@@ -232,6 +232,10 @@
 		return null
 	};
 
+	typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXInstance = RBXInstance;
+	typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXProperty = RBXProperty;
+	typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXEnum = RBXEnum;
+
 	typeof ANTI=="undefined" && (ANTI={}), ANTI.ParseAnimationData = (function() {
 		return function(data) {
 			var sequence = data[0]
