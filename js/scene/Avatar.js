@@ -289,6 +289,7 @@ ANTI.RBXScene.Avatar = (function() {
 		var model = this.model = new THREE.Object3D()
 		this.animator = new Animator()
 		this.accessories = []
+		this.attachmentPoints = {}
 
 		this.headComposite = new CompositeTexture(false, HeadCompositeConstructor)
 		this.headComposite.material = new THREE.MeshPhongMaterial()
