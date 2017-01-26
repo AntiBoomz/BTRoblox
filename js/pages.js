@@ -674,7 +674,7 @@ pageInit.itemdetails = function(assetId) {
 						})
 
 						Promise.all(promises).then(() => {
-							if(Object.keys(animList) === 0) 
+							if(Object.keys(animList).length === 0) 
 								return console.log("Not anim package");
 
 							enableAnimationPreviewer(animList)
