@@ -4,6 +4,7 @@
 ANTI.RBXScene.Avatar = (function() {
 	var AssetCache = ANTI.RBXScene.AssetCache
 	var Animator = ANTI.RBXScene.Animator
+	var parseContentUrl = ANTI.RBXParseContentUrl
 
 	function applyMeshToGeometry(geom, mesh) {
 		geom.addAttribute("position", new THREE.BufferAttribute(mesh.vertices, 3))
@@ -12,21 +13,6 @@ ANTI.RBXScene.Avatar = (function() {
 		geom.setIndex(new THREE.BufferAttribute(mesh.faces, 1))
 		geom.uvsNeedUpdate = true
 		geom.computeBoundingSphere()
-	}
-
-	function parseContentUrl(url) {
-		url = url.trim()
-
-		var match = url.match(/^rbxassetid:\/\/(\d+)/)
-		if(match)
-			return +match[1];
-
-		match = url.match(/https?:\/\/(?:assetgame\.|www\.|)roblox.com\/asset\/?\?id=(\d+)/)
-		if(match)
-			return +match[1];
-
-		console.log("Couldn't parse content url " + url)
-		return null
 	}
 
 	function CFrame(x,y,z, r00,r01,r02, r10,r11,r12, r20,r21,r22) {
