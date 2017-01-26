@@ -612,62 +612,193 @@ body .btr-MediaPlayerControls {
 
 /* Explorer */
 
-.btr-modal {
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-
-	z-index: 10000;
-
-	background: rgba(0,0,0,.5);
-	opacity: 1;
-
-	transition: opacity .05s;
-}
-
-.btr-modal.fade {
-	opacity: 0;
-}
-
 .btr-modelviewer {
+	width: 552px;
 	position: relative;
-	width: 80vw;
-	height: 80vh;
-	margin: 10vh 10vw;
-
-	background: white;
+	display: flex;
+	height: 420px;
 }
 
-.btr-modelviewer-header {
+.btr-explorer, .btr-properties {
+	min-width: 50%;
 	position: relative;
+	flex: 0 0 50%;
+	white-space: nowrap;
+	overflow: auto;
+}
+
+.btr-explorer-header {
 	width: 100%;
-	height: 36px;
+	height: 24px;
+	display: flex;
 }
 
-.btr-modelviewer-content {
+.btr-explorer-view-btn {
+	flex: 1;
+	cursor: pointer;
+	max-width: 33%;
+	text-align: center;
+
+	background: #F6F6F6;
+	border: 1px solid #DDDDDD;
+
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.btr-explorer-view-btn:hover {
+	background: #F9F9F9;
+}
+
+.btr-explorer-view-btn.selected {
+	background: #D9D9D9;
+}
+
+.btr-explorer-header.hidden {
+	display: none;
+}
+
+.btr-explorer-list {
+	padding: 10px;
+}
+
+.btr-explorer-childlist {
+	padding-left: 20px;
+}
+
+.btr-explorer-item {
+	display: inline-block;
+	height: 22px;
+	padding-right: 6px;
+	margin: 1px 0;
+
+	font-size: 16px;
+	line-height: 22px;
+	font-weight: 500;
+	color: #000;
+
+	cursor: default;
+}
+
+.btr-explorer-item:hover {
+	background-color: #D8E4F7;
+	outline: 1px solid #BFCDE4;
+}
+
+.btr-explorer-item.selected {
+	background-color: #618ED5;
+	outline: 1px solid #567DBC;
+	color: white;
+}
+
+.btr-explorer-more {
 	position: relative;
-	width: 100%;
-	height: calc(100% - 36px);
+	float: left;
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	margin: 3px;
+	margin-right: 0;
 }
 
-.btr-explorer {
+.hasChildren>.btr-explorer-more::before {
+	content: "v";
 	position: absolute;
 	top: 0;
 	left: 0;
+	width: 100%;
 	height: 100%;
+	line-height: 16px;
+	text-align: center;
+	font-size: 12px;
 
-	background: blue;
+	font-weight: 600;
+	color: #000;
+}
+
+.hasChildren.closed>.btr-explorer-more::before {
+	content: ">";
+	color: #88F;
+}
+
+.btr-explorer-icon {
+	float: left;
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	margin: 3px;
+	margin-right: 4px;
+
+	background-image: url('chrome-extension://__MSG_@@extension_id__/res/icon-explorer.png');
+	background-repeat: no-repeat;
+	background-size: auto 16px;
+}
+
+.btr-explorer-item-container.closed>.btr-explorer-childlist {
+	display: none;
+}
+
+.btr-explorer-list>li, .btr-explorer-childlist>li {
+	list-style: none;
+	margin: 0;
+	padding: 0;
 }
 
 .btr-properties {
-	position: absolute;
-	top: 0;
-	right: 0;
-	height: 100%;
+	background: #FFFFFF;
+	border: 1px solid #EEEEEE;
+}
 
-	background: red;
+.btr-properties-header {
+	width: 100%;
+	height: 20px;
+
+	background: #D0D0D0;
+
+	color: #000;
+	line-height: 20px;
+	font-size: 14px;
+	font-weight: 500;
+
+	text-align: center;
+}
+
+.btr-property-item {
+	display: flex;
+	height: 22px;
+	line-height: 22px;
+}
+
+.btr-property-name {
+	flex: 0 0 60%;
+	border-right: 1px solid #EEEEEE;
+	font-size: 14px;
+	font-weight: 500;
+	padding: 2px 4px;
+}
+
+.btr-property-value {
+	flex: 0 0 40%;
+	font-size: 14px;
+	font-weight: 500;
+	padding: 2px 4px;
+
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.btr-properties-list {
+	max-height: calc(100% - 20px);
+	overflow: auto;
+}
+
+.btr-properties-list li {
+	background-color: #FFFFFF;
+	border-bottom: 1px solid #EEEEEE;
+}
+
+.btr-properties-list li:nth-child(2n) {
+	background-color: #F9F9F9;
 }
 
 /* Ew */

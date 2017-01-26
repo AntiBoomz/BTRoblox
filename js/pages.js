@@ -214,52 +214,23 @@ function downloadAsset(type, params, callback) {
 	})
 }
 
-function ModelViewer() {
-	this.isShown = false
-
-	var domElement = this.domElement = $(
-	"<div class='btr-modal fade'>" +
-		"<div class='btr-modelviewer'>" + 
-			"<div class='btr-modelviewer-header'>" + 
-			"</div>" +
-			"<div class='btr-modelviewer-content'>" + 
-				"<div class='btr-explorer' style='right: 300px;'>" +
-					"<ul class='btr-explorer-list'>" +
-					"</ul>" + 
-				"</div>" +
-				"<div class='btr-properties' style='width: 300px;'>" +
-					"<ul class='btr-properties-list'>" +
-					"</ul>" + 
-				"</div>" +
-			"</div>" + 
-		"</div>" +
-	"</div>")
-
-	domElement.on("click", (event) => {
-		if(!domElement.is(event.target))
-			return;
-
-		domElement.addClass("fade")
-		setTimeout(() => domElement.detach(), 100)
-
-		event.preventDefault()
-		return false
-	})
-}
-
-Object.assign(ModelViewer.prototype, {
-	show: function() {
-		if(this.isShown) return;
-		this.isShown = true
-		this.domElement.appendTo("body")
-		this.domElement.addClass("fade")
-		setTimeout(() => this.domElement.removeClass("fade"), 0)
-	},
-	addView: function(title, model) {
-		console.log(title, model)
+var alreadyLoaded = {}
+function execScripts(list, cb) {
+	for(var i=0; i<list.length; i++) {
+		var path = list[i]
+		if(alreadyLoaded[path]) {
+			list.splice(i--, 1)
+		} else {
+			alreadyLoaded[path] = true
+		}
 	}
-})
 
+	if(list.length === 0) {
+		cb()
+	} else {
+		BackgroundJS.send("execScript", list, cb)
+	}
+}
 
 
 var avatarApi = {
@@ -421,7 +392,14 @@ pageInit.itemdetails = function(assetId) {
 			resolve(typeLabel.text().trim())
 		}
 	}))
-	var assetPromise = null
+	var assetPromises = {}
+	function getAsset(assetId) {
+		if(!assetPromises[assetId]) {
+			assetPromises[assetId] = new Promise(resolve => downloadAsset("arraybuffer", { id: assetId }, resolve))
+		}
+
+		return assetPromises[assetId]
+	}
 
 	Observer.add({
 		selector: "#item-details-description",
@@ -450,123 +428,245 @@ pageInit.itemdetails = function(assetId) {
 				callback: function(cont) {
 					var btn = $(
 					"<div class='btr-explorer-button'>" + 
-						"<a class='btr-icon-explorer'></a>" +
+						"<a class='btr-icon-explorer' data-toggle='popover' data-bind='btr-explorer-content'></a>" +
+						"<div class='rbx-popover-content' data-toggle='btr-explorer-content'>" +
+							"<div class='btr-explorer-parent'></div>" +
+						"</div>" +
 					"</div>").appendTo(cont)
 
-					var modelViewer = new ModelViewer()
+					var modelViewer = null
+					var hasStartedLoading = false
 					var isLoaded = false
 
 					btn.on("click", (event) => {
-						event.preventDefault()
-
 						if(!isLoaded) {
-							isLoaded = true
-							if(!assetPromise)
-								assetPromise = new Promise(resolve => downloadAsset("arraybuffer", { id: assetId }, resolve));
+							if(!hasStartedLoading) {
+								hasStartedLoading = true
 
-							BackgroundJS.send("execScript", ["js/RBXParser.js"], () => {
-								if(type === "Package") {
-									// Packages are a list of asset ids separated by semicolons
-									// Do a marketplace check of asset, and depending of the id
-									// do the rest.
-									alert("Packages not supported yet!")
-								} else {
-									console.log(type)
-									assetPromise.then(buffer => {
-										console.log("Potato")
-										var model = ANTI.ParseRBXM(buffer)
-										modelViewer.addView("Main", model)
-									})
-								}
-							})
+								execScripts(["js/RBXModelViewer.js", "js/RBXParser.js"], () => {
+									modelViewer = new ModelViewer()
+
+									if(type === "Package") {
+										getAsset(assetId).then(buffer => {
+											var list = new TextDecoder("ascii").decode(buffer).split(";")
+											list.forEach(assetId => {
+												getAsset(assetId).then(buffer => {
+													var model = ANTI.ParseRBXM(buffer)
+													modelViewer.addView(assetId.toString(), model)
+												})
+											})
+										})
+									} else {
+										getAsset(assetId).then(buffer => {
+											var model = ANTI.ParseRBXM(buffer)
+											modelViewer.addView("Main", model)
+										})
+									}
+
+									isLoaded = true
+									modelViewer.domElement.clone().appendTo(btn.find(".btr-explorer-parent"))
+
+									setTimeout(() => btn.find(".btr-icon-explorer")[0].click(), 250)
+								})
+							}
+							$("body").click()
+							return false
+						} else {
+							var parent = $("div:not('.rbx-popover-content')>.btr-explorer-parent")
+							if(parent.length === 0)
+								return;
+
+							parent.find(".btr-modelviewer").replaceWith(modelViewer.domElement)
 						}
-
-						modelViewer.show()
 					})
 				}
 			})
 		}
 
-		if(settings.catalog.animationPreview) {
-			if(type === "Animation") {
-				Observer.add({
-					selector: "#AssetThumbnail .thumbnail-span",
-					callback: function(tbCont) {
-						var rulesPromise = new Promise(resolve => avatarApi.getRules(resolve))
-						var dataPromise = new Promise(resolve => avatarApi.getData(resolve))
-						if(!assetPromise)
-							assetPromise = new Promise(resolve => downloadAsset("arraybuffer", { id: assetId }, resolve));
+		function enableAnimationPreviewer(anims, first) {
+			if(!first) {
+				first = Object.keys(anims)[0]
+			}
 
-						BackgroundJS.send("execScript", ["lib/three.min.js", "js/RBXParser.js", "js/RBXScene.js"], () => {
-							assetPromise.then((buffer) => {
-								try {
-									var anim = ANTI.ParseAnimationData(ANTI.ParseRBXM(buffer))
-								} catch(ex) {
-									console.log("Failed to load animation:", ex)
-									return;
+			Observer.add({
+				selector: "#AssetThumbnail",
+				callback: function(tbCont) {
+					var rulesPromise = new Promise(resolve => avatarApi.getRules(resolve))
+					var dataPromise = new Promise(resolve => avatarApi.getData(resolve))
+					var isLoaded = false
+					var scene = null
+					var modeSwitch = null
+
+					function playAnimation(assetId) {
+						getAsset(assetId).then(buffer => {
+							try {
+								var anim = ANTI.ParseAnimationData(ANTI.ParseRBXM(buffer))
+							} catch(ex) {
+								console.log("Failed to load animation:", ex)
+								return;
+							}
+
+							var animType = "R6"
+							var r15Parts = ["lowertorso", "uppertorso", "leftupperarm", "leftlowerarm", "lefthand", "rightupperarm", "rightlowerarm", "righthand", "leftupperleg", "leftlowerleg", "leftfoot", "rightupperleg", "rightlowerleg", "rightfoot"]
+
+							for(var i=0; i<r15Parts.length; i++) {
+								if(r15Parts[i] in anim.Limbs) {
+									animType = "R15"
+									break;
 								}
+							}
 
-								var scene = null
-								var animType = "R6"
-								var r15Parts = ["lowertorso", "uppertorso", "leftupperarm", "leftlowerarm", "lefthand", "rightupperarm", "rightlowerarm", "righthand", "leftupperleg", "leftlowerleg", "leftfoot", "rightupperleg", "rightlowerleg", "rightfoot"]
+							modeSwitch[0].checked = animType === "R15"
 
-								for(var i=0; i<r15Parts.length; i++) {
-									if(r15Parts[i] in anim.Limbs) {
-										animType = "R15"
-										break;
-									}
-								}
+							scene.avatar.setPlayerType(animType)
+							scene.avatar.animator.play(anim)
+						})
+					}
 
-								var modeSwitch = $("<div class='btr-switch' style='position:absolute;top:6px;right:6px;'>" +
-									"<div class='btr-switch-off'>R6</div>" +
-									"<div class='btr-switch-on'>R15</div>" +
-									"<input type='checkbox'>" + 
-									"<div class='btr-switch-flip'>" +
-										"<div class='btr-switch-off'>R6</div>" +
-										"<div class='btr-switch-on'>R15</div>" +
-									"</div>" +
-								"</div").appendTo(tbCont).find("input")
+					execScripts(["lib/three.min.js", "js/RBXParser.js", "js/RBXScene.js"], () => {
+						if(Object.keys(anims).length > 1) {
+							var dropdown = $(
+							"<div class='input-group-btn' style='position:absolute;top:6px;left:6px;width:140px'>" +
+								"<button type='button' class='input-dropdown-btn' data-toggle='dropdown'>" +
+									"<span class='rbx-selection-label' data-bind='label'></span>" +
+									"<span class='icon-down-16x16'></span>" +
+								"</button>" +
+								"<ul data-toggle='dropdown-menu' class='dropdown-menu' role='menu'>" +
+								"</ul>" +
+							"</div>").appendTo(tbCont)
 
-								modeSwitch[0].checked = animType === "R15"
-								modeSwitch.on("change", function(event) {
-									animType = this.checked ? "R15": "R6"
+							Object.keys(anims).forEach((name, i) => {
+								var assetId = anims[name]
 
-									if(scene) {
-										scene.avatar.setPlayerType(animType)
-									}
+								var item = $("<li data-value='{1}'><a href='#'>{0}</a></li>")
+									.elemFormat(name, i)
+									.appendTo(dropdown.find(".dropdown-menu"))
+
+								item.click(() => {
+									playAnimation(assetId)
+									dropdown.find("[data-bind='label']").text(item.text())
 								})
 
-								ANTI.RBXScene.ready((RBXScene) => {
-									scene = window.scene = new RBXScene()
-									scene.canvas.appendTo(tbCont)
-									tbCont.find("img").remove()
+								if(name === first) {
+									dropdown.find("[data-bind='label']").text(item.text())
+								}
+							})
+						}
 
-									rulesPromise.then((rules) => {
-										//console.log("rules", rules)
-										var palette = {}
-										rules.bodyColorsPalette.forEach(data => palette[data.brickColorId] = data.hexColor)
 
-										dataPromise.then((data) => {
-											//console.log("data", data)
-											var bodyColors = {}
-											for(var name in data.bodyColors)
-												bodyColors[name] = palette[data.bodyColors[name]];
+						modeSwitch = $("<div class='btr-switch' style='position:absolute;top:6px;right:6px;'>" +
+							"<div class='btr-switch-off'>R6</div>" +
+							"<div class='btr-switch-on'>R15</div>" +
+							"<input type='checkbox'>" + 
+							"<div class='btr-switch-flip'>" +
+								"<div class='btr-switch-off'>R6</div>" +
+								"<div class='btr-switch-on'>R15</div>" +
+							"</div>" +
+						"</div>").appendTo(tbCont).find("input")
 
-											scene.avatar.setPlayerType(animType)
-											scene.avatar.setBodyColors(bodyColors)
-											scene.avatar.animator.play(anim)
+						modeSwitch[0].checked = false
+						modeSwitch.on("change", function(event) {
+							var animType = this.checked ? "R15": "R6"
 
-											scene.avatar.animator.onstop = () => {
-												setTimeout(() => scene.avatar.animator.play(), 2000)
-											}
+							if(scene) {
+								scene.avatar.setPlayerType(animType)
+							}
+						})
 
-											data.assets.forEach(assetInfo => scene.avatar.addAsset(assetInfo))
-										})
-									})
+						ANTI.RBXScene.ready((RBXScene) => {
+							scene = window.scene = new RBXScene()
+							scene.canvas.appendTo(tbCont)
+							tbCont.find(".thumbnail-span, .enable-three-dee").hide()
+
+							rulesPromise.then((rules) => {
+								//console.log("rules", rules)
+								var palette = {}
+								rules.bodyColorsPalette.forEach(data => palette[data.brickColorId] = data.hexColor)
+
+								dataPromise.then((data) => {
+									//console.log("data", data)
+									var bodyColors = {}
+									for(var name in data.bodyColors)
+										bodyColors[name] = palette[data.bodyColors[name]];
+									
+									scene.avatar.setBodyColors(bodyColors)
+									scene.avatar.setPlayerType("R6")
+
+									scene.avatar.animator.onstop = () => {
+										setTimeout(() => scene.avatar.animator.play(), 2000)
+									}
+
+									data.assets.forEach(assetInfo => scene.avatar.addAsset(assetInfo))
+									playAnimation(anims[first])
 								})
 							})
 						})
-					}
+					})
+				}
+			})
+		}
+
+		function avatarAnimList(assetId, animList) {
+			return getAsset(assetId).then(buffer => {
+				var model = ANTI.ParseRBXM(buffer)
+				model.forEach(folder => {
+					if(folder.ClassName !== "Folder" || folder.Name !== "R15Anim")
+						return;
+
+					folder.Children.forEach(value => {
+						if(value.ClassName !== "StringValue")
+							return;
+
+						var animName = value.Name
+
+						value.Children.forEach((anim, i) => {
+							if(anim.ClassName !== "Animation")
+								return;
+
+							var animId = ANTI.RBXParseContentUrl(anim.AnimationId)
+							if(animId) {
+								var index = animName + (i === 0 ? "" : "_" + (i+1))
+								animList[index] = animId
+							}
+						})
+					})
+				})
+			})
+		}
+
+		if(settings.catalog.animationPreview) {
+			if(type === "Animation") {
+				enableAnimationPreviewer({ main: assetId })
+			} else if(type.substring(0,9) === "Animation") { // avatar anim
+				getAsset(assetId)
+				execScripts(["js/RBXParser.js"], () => {
+					var animList = {}
+					avatarAnimList(assetId, animList).then(() => {
+						if(animList.length === 0)
+							return console.log("No anims in model?");
+
+						enableAnimationPreviewer(animList)
+					})
+				})
+			} else if(type === "Package") {
+				var assetPromise = getAsset(assetId)
+				execScripts(["js/RBXParser.js"], () => {
+					var animList = {}
+					var promises = []
+
+					assetPromise.then(buffer => {
+						var list = new TextDecoder("ascii").decode(buffer).split(";")
+						list.forEach(assetId => {
+							promises.push(avatarAnimList(assetId, animList))
+						})
+
+						Promise.all(promises).then(() => {
+							if(Object.keys(animList) === 0) 
+								return console.log("Not anim package");
+
+							enableAnimationPreviewer(animList)
+						})
+					})
 				})
 			}
 		}
@@ -921,7 +1021,7 @@ pageInit.configureplace = function(placeId) {
 
 		if(!jszipPromise) {
 			jszipPromise = new Promise((resolve) => {
-				BackgroundJS.send("execScript", ["lib/jszip.min.js"], resolve)
+				execScripts(["lib/jszip.min.js"], resolve)
 			})
 		}
 
