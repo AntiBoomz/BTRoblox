@@ -133,6 +133,90 @@
 		}
 	}
 
+	function fakeFunction(name) { return  }
+
+	function RBXInstance(className) {
+		if(this.constructor === RBXInstance)
+			throw new Error("RBXInstance is an abstract class and can not be used as a constructor");
+
+		if(!(this instanceof RBXInstance)) {
+			if(!RBXInstance[className]) {
+				var con = RBXInstance[className] = eval("(function " + className + "() {})")
+				con.prototype.__proto__ = RBXInstance.prototype
+			}
+
+			var item = new RBXInstance[className]()
+			RBXInstance.call(item, className)
+			return item
+		}
+
+		Object.defineProperty(this, "Children", { value: [], enumerable: true, writable: false })
+		Object.defineProperty(this, "Properties", { value: [], enumerable: false, writable: false })
+		this.setProperty("ClassName", className)
+		this.setProperty("Parent", null)
+	}
+
+	Object.assign(RBXInstance.prototype, {
+		_removeChild: function(child) {
+			var index = this.Children.indexOf(child)
+			this.Children.splice(index, 1)
+		},
+		_addChild: function(child) {
+			this.Children.push(child)
+		},
+		setParent: function(newparent) {
+			if(this.Parent) {
+				this.Parent._removeChild(this)
+			}
+			this.Parent = newparent
+			if(this.Parent) {
+				this.Parent._addChild(this)
+			}
+		},
+		setProperty: function(name, value) {
+			if(this.Properties.indexOf(name) === -1) {
+				this.Properties.push(name)
+			}
+
+			this[name] = value
+		}
+	})
+
+	function RBXProperty(type, value) {
+		if(this instanceof RBXProperty)
+			throw new Error("RBXProperty can not be constructed");
+
+		if(!(value instanceof Array))
+			throw new Error("value not an array?");
+
+		var con = RBXProperty[type]
+		if(!RBXProperty[type]) {
+			con = RBXProperty[type] = eval("(function " + type + "() {})")
+			con.prototype.__proto__ = RBXProperty.prototype
+		}
+
+		value.type = type
+		value.__proto__ = con.prototype
+		return value
+	}
+
+	RBXProperty.prototype.__proto__ = Array.prototype
+
+	function RBXEnum(value) {
+		if(this instanceof RBXEnum)
+			throw new Error("RBXEnum can not be constructed");
+
+		if(typeof(value) !== "number")
+			throw new Error("value not a number?");
+
+		value = new Number(value)
+		value.__proto__ = RBXEnum.prototype
+		return value
+	}
+
+	RBXEnum.prototype.__proto__ = Number.prototype
+
+
 	typeof ANTI=="undefined" && (ANTI={}), ANTI.ParseAnimationData = (function() {
 		return function(data) {
 			var sequence = data[0]
@@ -225,10 +309,7 @@
 					for(var i=0; i<count; i++) {
 						objId += interleaved[i]
 
-						instData.Objects.push(objList[objId] = {
-							ClassName: className,
-							Children: []
-						})
+						instData.Objects.push(objList[objId] = RBXInstance(className))
 					}
 				}
 
@@ -274,19 +355,19 @@
 							var offsetX = prop.RBXInterleaved32(count, toRBXSigned)
 							var offsetY = prop.RBXInterleaved32(count, toRBXSigned)
 							for(var i=0; i<count; i++) {
-								values[i] = {
-									Scale: [ scaleX[i], scaleY[i] ],
-									Offset: [ offsetX[i], offsetY[i] ]
-								}
+								values[i] = RBXProperty("UDim2", [
+									[ scaleX[i], scaleY[i] ],
+									[ offsetX[i], offsetY[i] ]
+								])
 							}
 							break;
 						case 0x8: // Ray
 							var count = prop.remaining/24
 							for(var i=0; i<count; i++) {
-								values[i] = {
-									Origin: [ toFloat(prop.UInt32LE()), toFloat(prop.UInt32LE()), toFloat(prop.UInt32LE()) ],
-									Direction: [ toFloat(prop.UInt32LE()), toFloat(prop.UInt32LE()), toFloat(prop.UInt32LE()) ]
-								}
+								values[i] = RBXProperty("Ray", [
+									[ toFloat(prop.UInt32LE()), toFloat(prop.UInt32LE()), toFloat(prop.UInt32LE()) ],
+									[ toFloat(prop.UInt32LE()), toFloat(prop.UInt32LE()), toFloat(prop.UInt32LE()) ]
+								])
 							}
 							break;
 						case 0xB: // BrickColor
@@ -298,7 +379,7 @@
 							var green = prop.RBXInterleaved32(count, toRBXFloat)
 							var blue = prop.RBXInterleaved32(count, toRBXFloat)
 							for(var i=0; i<count; i++) {
-								values[i] = [ red[i], green[i], blue[i] ]
+								values[i] = RBXProperty("Color3", [ red[i], green[i], blue[i] ])
 							}
 							break;
 						case 0xD: // Vector2
@@ -306,7 +387,7 @@
 							var vecX = prop.RBXInterleaved32(count, toRBXFloat)
 							var vecY = prop.RBXInterleaved32(count, toRBXFloat)
 							for(var i=0; i<count; i++) {
-								values[i] = [ vecX[i], vecY[i] ]
+								values[i] = RBXProperty("Vector2", [ vecX[i], vecY[i] ])
 							}
 							break;
 						case 0xE: // Vector3
@@ -315,7 +396,7 @@
 							var vecY = prop.RBXInterleaved32(count, toRBXFloat)
 							var vecZ = prop.RBXInterleaved32(count, toRBXFloat)
 							for(var i=0; i<count; i++) {
-								values[i] = [ vecX[i], vecY[i], vecZ[i] ]
+								values[i] = RBXProperty("Vector3", [ vecX[i], vecY[i], vecZ[i] ])
 							}
 							break;
 						case 0x10: // CFrame
@@ -345,10 +426,13 @@
 								values[i][0] = vecX[i]
 								values[i][1] = vecY[i]
 								values[i][2] = vecZ[i]
+
+								values[i] = RBXProperty("CFrame", values[i])
 							}
 							break;
 						case 0x12: // Enum / Token
 							values = prop.RBXInterleaved32(prop.remaining/4)
+							values.forEach((value, i) => values[i] = RBXEnum(value))
 							break;
 						case 0x13: // Referent
 							var count = prop.remaining/4
@@ -362,6 +446,7 @@
 
 						case 0x9: // Faces
 						case 0xA: // Axis
+						case 0x19: // PhysicalProperties
 							break;
 						default:
 							console.warn("[ParseRBXBin] Unknown dataType " + dataType + " for " + instData.ClassName + "." + propName);
@@ -369,13 +454,11 @@
 					}
 
 					for(var i=0, l=values.length; i<l; i++) {
-						instData.Objects[i][propName] = values[i]
+						instData.Objects[i].setProperty(propName, values[i])
 					}
 				}
 
-				var dataModel = {
-					Children: []
-				}
+				var result = []
 
 				var prnt = new ByteReader(reader.LZ4())
 				prnt.Byte()
@@ -389,11 +472,12 @@
 					objId += refs[i]
 					parId += pars[i]
 
-					var child = objList[objId]
-					var parent = parId === -1 ? dataModel : objList[parId]
-
-					child.Parent = parent
-					parent.Children.push(child)
+					var obj = objList[objId]
+					if(parId === -1) {
+						result.push(obj)
+					} else {
+						obj.setParent(objList[parId])
+					}
 				}
 
 				var blockName = reader.String(3)
@@ -406,7 +490,7 @@
 				if(reader.remaining > 0)
 					console.warn("[ParseRBXBin] Unexpected " + reader.remaining + " bytes of data after finishing");
 
-				return dataModel.Children
+				return result
 			}
 		})()
 
@@ -415,12 +499,12 @@
 				Array.prototype.forEach.call(arr, fn)
 			}
 
-			function Parser() {
+			function RBXXmlParser() {
 				this.refs = {}
 				this.refWait = []
 			}
 
-			Object.assign(Parser.prototype, {
+			Object.assign(RBXXmlParser.prototype, {
 				parseProperties: function(item, propertiesNode) {
 					forEach(propertiesNode.children, (propNode) => {
 						var name = propNode.attributes.name.value
@@ -430,7 +514,7 @@
 							case "content":
 							case "string":
 								break;
-							case "token":
+							case "double":
 							case "float":
 							case "int":
 								value = +value
@@ -438,15 +522,20 @@
 							case "bool":
 								value = value == "true"
 								break;
+							case "token":
+								value = RBXEnum(+value)
+								break;
 							case "coordinateframe":
 								value = [ 0,0,0, 1,0,0, 0,1,0, 0,0,1 ]
 								var trans = { X:0,Y:1,Z:2, R00:3,R01:4,R02:5, R10:6,R11:7,R12:8, R20:9,R21:10,R22:11 }
 								forEach(propNode.children, (x) => (value[trans[x.nodeName.toUpperCase()]]=+x.textContent))
+								value = RBXProperty("CFrame", value)
 								break;
 							case "vector3":
 								value = [ 0,0,0 ]
 								var trans = { X:0,Y:1,Z:2 }
 								forEach(propNode.children, (x) => (value[trans[x.nodeName.toUpperCase()]]=+x.textContent))
+								value = RBXProperty("Vector3", value)
 								break;
 							case "ref":
 								if(value === "null")
@@ -464,7 +553,7 @@
 								break;
 							case "physicalproperties":
 							case "binarystring":
-								value = "?"
+								value = null
 								break;
 							default:
 								console.warn("[ParseRBXXml] Unknown dataType " + propNode.nodeName + " for " + name, propNode.innerHTML)
@@ -472,20 +561,18 @@
 								break;
 						}
 
-						item[name] = value
+						item.setProperty(name, value)
 					})
 				},
 				parseItem: function(node) {
-					var item = {}
-					item.Children = []
-					item.ClassName = node.className
+					var item = RBXInstance(node.className)
 
 					var ref = node.getAttribute("referent")
 					if(ref) {
 						this.refs[ref] = item
 						this.refWait.filter(wait => wait.ref === ref).forEach(wait => {
 							this.refWait.splice(this.refWait.indexOf(wait), 1)
-							wait.target[wait.propName] = item
+							wait.target.setProperty(wait.propName, item)
 						})
 					}
 
@@ -493,13 +580,10 @@
 						switch(child.nodeName) {
 							case "Item":
 								var childItem = this.parseItem(child)
-								childItem.Parent = item
-								item.Children.push(childItem)
+								childItem.setParent(item)
 								break;
 							case "Properties":
 								this.parseProperties(item, child)
-								break;
-							case "External":
 								break;
 							default:
 								console.log("Unknown xml node", child.nodeName);
@@ -508,19 +592,33 @@
 					})
 
 					return item
+				},
+				parse: function(xmlString) {
+					var xml = null
+					try {
+						xml = $.parseXML(xmlString).documentElement
+					} catch(ex) {
+						throw new Error("[ParseRBXXml] Unable to parse xml")
+					}
+
+					this.refs = {}
+					this.refWait = []
+
+					var result = []
+
+					forEach(xml.children, (child) => {
+						if(child.nodeName === "Item") {
+							result.push(this.parseItem(child))
+						}
+					})
+
+					return result
 				}
 			})
 
 			return function(data) {
 				data = new TextDecoder("ascii").decode(data)
-				var xml = null
-				try {
-					xml = $.parseXML(data).documentElement
-				} catch(ex) {
-					throw new Error("[ParseRBXXml] Unable to parse xml")
-				}
-
-				return new Parser().parseItem(xml).Children
+				return new RBXXmlParser().parse(data)
 			}
 		})();
 
