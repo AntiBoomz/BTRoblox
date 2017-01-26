@@ -125,11 +125,21 @@ function ModelViewer() {
 
 
 				switch(typeof(value)) {
-					case "string":
-						valuediv.text(value.toString())
-						break
 					case "number":
-						valuediv.text(fixNum(value))
+						value = fixNum(value).toString()
+					case "string":
+						if(value.length > 120) {
+							var blobUrl = URL.createObjectURL(new Blob([value]))
+							value = value.substring(0, 120) + "..."
+
+							$("<a class='more' target='_blank'>...</button>")
+								.attr("href", blobUrl)
+								.appendTo(valuediv)
+						}
+						var input = $("<textarea onkeypress='return false;'>")
+						input.val(value)
+						input.attr("title", value)
+						input.appendTo(valuediv)
 						break
 					case "boolean":
 						var input = $("<input type='checkbox' disabled='true'>")
@@ -181,7 +191,7 @@ function ModelViewer() {
 	domElement.on("click", ".btr-explorer", (event) => {
 		setSelection([])
 
-		event.preventDefault()
+		event.stopPropagation()
 		return false
 	}).on("click", ".hasChildren>.btr-explorer-more", (event) => {
 		$(event.currentTarget.parentNode).toggleClass("closed")
@@ -196,7 +206,7 @@ function ModelViewer() {
 		event.preventDefault()
 		return false
 	}).on("click", ".btr-properties", (event) => {
-		return false
+		event.stopPropagation()
 	}).on("mousewheel", ".btr-explorer, .btr-properties-list", function(event) {
 		var deltaY = event.originalEvent.deltaY
 		if((deltaY > 0 && this.scrollTop === this.scrollHeight - this.clientHeight) || (deltaY < 0 && this.scrollTop === 0)) {

@@ -423,64 +423,77 @@ pageInit.itemdetails = function(assetId) {
 
 	itemTypePromise.then(type => {
 		if(settings.catalog.explorerButton) {
-			Observer.add({
-				selector: "#item-container>.section-content",
-				callback: function(cont) {
-					var btn = $(
-					"<div class='btr-explorer-button'>" + 
-						"<a class='btr-icon-explorer' data-toggle='popover' data-bind='btr-explorer-content'></a>" +
-						"<div class='rbx-popover-content' data-toggle='btr-explorer-content'>" +
-							"<div class='btr-explorer-parent'></div>" +
-						"</div>" +
-					"</div>").appendTo(cont)
+			var showExplorerButton = true
+			if(type === "Image" || type === "Audio" || type === "RenderMesh" || type === "Badge" || type === "Game Pass")
+				showExplorerButton = false;
 
-					var modelViewer = null
-					var hasStartedLoading = false
-					var isLoaded = false
+			if(type === "Model") {
+				if($(".PurchaseButton").length === 0)
+					showExplorerButton = false;
+			}
 
-					btn.on("click", (event) => {
-						if(!isLoaded) {
-							if(!hasStartedLoading) {
-								hasStartedLoading = true
+			if(showExplorerButton) {
+				Observer.add({
+					selector: "#item-container>.section-content",
+					callback: function(cont) {
+						var btn = $(
+						"<div class='btr-explorer-button'>" + 
+							"<a class='btr-icon-explorer' data-toggle='popover' data-bind='btr-explorer-content'></a>" +
+							"<div class='rbx-popover-content' data-toggle='btr-explorer-content'>" +
+								"<div class='btr-explorer-parent'></div>" +
+							"</div>" +
+						"</div>").appendTo(cont)
 
-								execScripts(["js/RBXModelViewer.js", "js/RBXParser.js"], () => {
-									modelViewer = new ModelViewer()
+						$("#item-container").addClass("btr-explorer-btn-shown")
 
-									if(type === "Package") {
-										getAsset(assetId).then(buffer => {
-											var list = new TextDecoder("ascii").decode(buffer).split(";")
-											list.forEach(assetId => {
-												getAsset(assetId).then(buffer => {
-													var model = ANTI.ParseRBXM(buffer)
-													modelViewer.addView(assetId.toString(), model)
+						var modelViewer = null
+						var hasStartedLoading = false
+						var isLoaded = false
+
+						btn.on("click", (event) => {
+							if(!isLoaded) {
+								if(!hasStartedLoading) {
+									hasStartedLoading = true
+
+									execScripts(["js/RBXModelViewer.js", "js/RBXParser.js"], () => {
+										modelViewer = new ModelViewer()
+
+										if(type === "Package") {
+											getAsset(assetId).then(buffer => {
+												var list = new TextDecoder("ascii").decode(buffer).split(";")
+												list.forEach(assetId => {
+													getAsset(assetId).then(buffer => {
+														var model = ANTI.ParseRBXM(buffer)
+														modelViewer.addView(assetId.toString(), model)
+													})
 												})
 											})
-										})
-									} else {
-										getAsset(assetId).then(buffer => {
-											var model = ANTI.ParseRBXM(buffer)
-											modelViewer.addView("Main", model)
-										})
-									}
+										} else {
+											getAsset(assetId).then(buffer => {
+												var model = ANTI.ParseRBXM(buffer)
+												modelViewer.addView("Main", model)
+											})
+										}
 
-									isLoaded = true
-									modelViewer.domElement.clone().appendTo(btn.find(".btr-explorer-parent"))
+										isLoaded = true
+										modelViewer.domElement.clone().appendTo(btn.find(".btr-explorer-parent"))
 
-									setTimeout(() => btn.find(".btr-icon-explorer")[0].click(), 250)
-								})
+										setTimeout(() => btn.find(".btr-icon-explorer")[0].click(), 250)
+									})
+								}
+								$("body").click()
+								return false
+							} else {
+								var parent = $("div:not('.rbx-popover-content')>.btr-explorer-parent")
+								if(parent.length === 0)
+									return;
+
+								parent.find(".btr-modelviewer").replaceWith(modelViewer.domElement)
 							}
-							$("body").click()
-							return false
-						} else {
-							var parent = $("div:not('.rbx-popover-content')>.btr-explorer-parent")
-							if(parent.length === 0)
-								return;
-
-							parent.find(".btr-modelviewer").replaceWith(modelViewer.domElement)
-						}
-					})
-				}
-			})
+						})
+					}
+				})
+			}
 		}
 
 		function enableAnimationPreviewer(anims, first) {

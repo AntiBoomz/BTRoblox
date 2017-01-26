@@ -532,6 +532,7 @@
 						switch(propNode.nodeName.toLowerCase()) {
 							case "content":
 							case "string":
+							case "protectedstring":
 								break;
 							case "double":
 							case "float":
