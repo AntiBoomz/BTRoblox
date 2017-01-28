@@ -800,8 +800,8 @@ pageInit.gamedetails = function(placeId) {
 					var badges = []
 					$(".badge-container .badge-row").each(function(_,obj) {
 						var self = $(obj)
-						var badgeId = self.find(".badge-image>a").attr("href").match(/(\d+)$/)[1]
-						badges.push([self,badgeId])
+						var badgeId = self.find(".badge-image>a").attr("href").match(/catalog\/(\d+)\//)[1]
+						badges.push([self, badgeId])
 					});
 
 					var loadBadge = function(i) {
