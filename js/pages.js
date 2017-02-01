@@ -1927,7 +1927,7 @@ pageInit.inventory = function(userId) {
 				var data = []
 				for(var i=0;i<checked.length;i++) {
 					var self = $(checked[i].parentNode.parentNode.parentNode)
-					var matches = self.find(".item-card-link").attr("href").match("\\?id=(\\d+)")
+					var matches = self.find(".item-card-link").attr("href").match(/(?:\/(?:catalog|library)\/|[?&]id=)(\d+)/)
 
 					if(matches && !isNaN(parseInt(matches[1]))) {
 						data.push({
@@ -1942,11 +1942,11 @@ pageInit.inventory = function(userId) {
 				var removeItem = function(index,retries) {
 					var x = data[index]
 					if(x) {
-						$.getJSON("//api.roblox.com/Marketplace/ProductInfo?assetId="+x.assetId,function(data) {
+						$.getJSON("//api.roblox.com/Marketplace/ProductInfo?assetId="+x.assetId, (data) => {
 							if(!data) return;
 
 							if(data.AssetTypeId == 10 || data.AssetTypeId == 13 || data.AssetTypeId == 40 || data.AssetTypeId == 3 || data.AssetTypeId == 24) {
-								getXsrfToken(function(token) {
+								getXsrfToken((token) => {
 									$.ajax({
 										url: "/asset/delete-from-inventory",
 										type: "post",
@@ -1957,13 +1957,13 @@ pageInit.inventory = function(userId) {
 										headers: {
 											"X-CSRF-TOKEN": token
 										}
-									}).done(function() {
+									}).done(() => {
 										x.obj.remove()
 										if(--itemsLeft == 0) {
 											isRemoving = false
 											InjectJS.send("refreshInventory")
 										}
-									}).fail(function() {
+									}).fail(() => {
 										if(!retries || retries < 5) {
 											setTimeout(removeItem,250,index,(retries||0)+1)
 										} else {
