@@ -14,7 +14,7 @@ function copyToClipboard(text) {
 
 var itemUrlPatterns = [
 	"*://www.roblox.com/*-item?id=*",
-	"*://www.roblox.com/catalog/*"
+	"*://www.roblox.com/catalog/*",
 	"*://www.roblox.com/library/*"
 ]
 
