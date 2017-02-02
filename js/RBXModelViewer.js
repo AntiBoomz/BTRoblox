@@ -128,6 +128,7 @@ function ModelViewer() {
 					case "number":
 						value = fixNum(value).toString()
 					case "string":
+						value = value.trim()
 						if(value.length > 120) {
 							var blobUrl = URL.createObjectURL(new Blob([value]))
 							value = value.substring(0, 120) + "..."
