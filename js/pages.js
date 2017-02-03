@@ -1561,82 +1561,87 @@ pageInit.profile = function(userId) {
 
 					item.toggleClass("visible",Math.floor(index/pageSize) == 0)
 					item.find(".btr-game-stats").append(slide.find(".slide-item-stats>.hlist"))
-					item.find(".unloaded").on("load",function() { $(this).removeClass("unloaded") })
+					item.find(".unloaded").on("load", function() { $(this).removeClass("unloaded") })
 
-					loggedInUserPromise.then(function(loggedInUser) {
-						if(userId == loggedInUser) {
-							$('<span class="btr-game-dropdown">' +
-								'<a class="rbx-menu-item" data-toggle="popover" data-container="body" data-bind="btr-placedrop-{PlaceId}" style="float:right;margin-top:-4px;">' +
-									'<span class="icon-more"></span>' +
-								'</a>' +
-								'<div data-toggle="btr-placedrop-{PlaceId}" style="display:none">' +
-									'<ul class="dropdown-menu" role="menu">' +
-										'<li><div onclick="Roblox.GameLauncher.buildGameInStudio({PlaceId})"><a>Build</a></div></li>' +
-										'<li><div onclick="Roblox.GameLauncher.editGameInStudio({PlaceId})"><a>Edit</a></div></li>' +
-										'<li><a href="/places/{PlaceId}/update"><div>Configure this Place</div></a></li>' +
-										'<li><a href="/my/newuserad.aspx?targetid={PlaceId}&targettype=asset"><div>Advertise this Place</div></a></li>' +
-										'<li><a href="/develop?selectedPlaceId={PlaceId}&View=21"><div>Create a Badge for this Place</div></a></li>' +
-										'<li><a href="/develop?selectedPlaceId={PlaceId}&View=34"><div>Create a Game Pass</div></a></li>' +
-										'<li><a href="/places/{PlaceId}/stats"><div>Developer Stats</div></a></li>' +
-										'<li><a class="btr-btn-toggle-profile"><div>Remove from Profile</div></a></li>' +
-										'<li><a class="btr-btn-shutdown-all"><div>Shut Down All Instances</div></a></li>' +
-									'</ul>' +
-								'</div>' +
-							'</span>').elemFormat({ PlaceId: placeId })
-							.appendTo(item.find(".btr-game-button"))
-							
-							item.on("click",".btr-btn-toggle-profile",function() {
-								getXsrfToken(function(token) {
-									$.ajax({
-										url: "/game/toggle-profile",
-										type: "post",
-										data: {
-											placeId: placeId,
-											addToProfile: false
-										},
-										dataType: "json",
-										headers: {
-											"X-CSRF-TOKEN": token
-										},
-										success: function() {
-											location.reload()
-										}
-									})
-								})
-							}).on("click",".btr-btn-shutdown-all",function() {
-								getXsrfToken(function(token) {
-									$.ajax({
-										url: "/Games/shutdown-all-instances",
-										type: "post",
-										data: {
-											placeId: placeId
-										},
-										dataType: "json",
-										headers: {
-											"X-CSRF-TOKEN": token
-										},
-										success: function() {
-										}
-									})
+					loggedInUserPromise.then((loggedInUser) => {
+						if(userId != loggedInUser) // not using !== because string <-> number
+							return;
+
+						$('<span class="btr-game-dropdown">' +
+							'<a class="rbx-menu-item" data-toggle="popover" data-container="body" data-bind="btr-placedrop-{PlaceId}" style="float:right;margin-top:-4px;">' +
+								'<span class="icon-more"></span>' +
+							'</a>' +
+							'<div data-toggle="btr-placedrop-{PlaceId}" style="display:none">' +
+								'<ul class="dropdown-menu" role="menu">' +
+									'<li><div onclick="Roblox.GameLauncher.buildGameInStudio({PlaceId})"><a>Build</a></div></li>' +
+									'<li><div onclick="Roblox.GameLauncher.editGameInStudio({PlaceId})"><a>Edit</a></div></li>' +
+									'<li><a href="/places/{PlaceId}/update"><div>Configure this Place</div></a></li>' +
+									'<li><a href="/my/newuserad.aspx?targetid={PlaceId}&targettype=asset"><div>Advertise this Place</div></a></li>' +
+									'<li><a href="/develop?selectedPlaceId={PlaceId}&View=21"><div>Create a Badge for this Place</div></a></li>' +
+									'<li><a href="/develop?selectedPlaceId={PlaceId}&View=34"><div>Create a Game Pass</div></a></li>' +
+									'<li><a href="/places/{PlaceId}/stats"><div>Developer Stats</div></a></li>' +
+									'<li><a class="btr-btn-toggle-profile"><div>Remove from Profile</div></a></li>' +
+									'<li><a class="btr-btn-shutdown-all"><div>Shut Down All Instances</div></a></li>' +
+								'</ul>' +
+							'</div>' +
+						'</span>').elemFormat({ PlaceId: placeId })
+						.appendTo(item.find(".btr-game-button"))
+						
+						item.on("click",".btr-btn-toggle-profile", () => {
+							getXsrfToken((token) => {
+								$.ajax({
+									url: "/game/toggle-profile",
+									type: "post",
+									data: {
+										placeId: placeId,
+										addToProfile: false
+									},
+									dataType: "json",
+									headers: {
+										"X-CSRF-TOKEN": token
+									},
+									success: function() {
+										location.reload()
+									}
 								})
 							})
-						}
+						}).on("click",".btr-btn-shutdown-all", () => {
+							getXsrfToken((token) => {
+								$.ajax({
+									url: "/Games/shutdown-all-instances",
+									type: "post",
+									data: {
+										placeId: placeId
+									},
+									dataType: "json",
+									headers: {
+										"X-CSRF-TOKEN": token
+									},
+									success: function() {
+									}
+								})
+							})
+						})
 					})
 
+					function retryUntilFinal(url, cb) {
+						$.getJSON(url, (json) => json && json.Final ? cb(json) : setTimeout(retryUntilFinal, 500, url, cb))
+					}
+
+
+					var iconRetryUrl = slide.find(".slide-item-image").attr("data-retry")
+					if(iconRetryUrl) {
+						retryUntilFinal(iconRetryUrl, (json) => {
+							item.find(".btr-game-icon").attr(src, json.Url)
+						})
+					}
 					
 					if(!isNaN(placeId)) {
-						var thumbUrl = "/Asset-Thumbnail/Json?assetId={0}&width=576&height=324&format=png".format(placeId);
+						var thumbUrl = "/Asset-Thumbnail/Json?assetId={0}&width=576&height=324&format=png".format(placeId)
 
-						function getBigThumb() {
-							$.get(thumbUrl,function(json) {
-								if(json && json.Final) {
-									item.find(".btr-game-thumb").attr("src",json.Url)
-								} else {
-									setTimeout(getBigThumb,200)
-								}
-							})
-						}
-						getBigThumb()
+						retryUntilFinal(thumbUrl, (json) => {
+							item.find(".btr-game-thumb").attr("src", json.Url)
+						})
 					}
 
 					if(index == 0) {
