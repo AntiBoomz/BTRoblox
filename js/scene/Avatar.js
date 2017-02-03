@@ -361,12 +361,9 @@ ANTI.RBXScene.Avatar = (function() {
 								if(!mesh)
 									return console.log("Couldn't find mesh in asset " + assetInfo.id, model);
 
-								var attachmentPoint = this.attachmentPoints[att.Name]
+								
 								var meshId = parseContentUrl(mesh.MeshId)
 								var texId = parseContentUrl(mesh.TextureId)
-
-								if(!attachmentPoint)
-									return console.log("Invalid attachment point in asset " + assetInfo.id, att.Name, model);
 
 								if(!meshId)
 									return console.log("Couldn't parse mesh id for " + assetInfo.id, model);
@@ -397,7 +394,13 @@ ANTI.RBXScene.Avatar = (function() {
 								this.accessories.push(obj)
 
 								obj.attachmentPoint = att.Name
-								attachmentPoint.add(obj)
+
+								var attachmentPoint = this.attachmentPoints[att.Name]
+								if(attachmentPoint) {
+									attachmentPoint.add(obj)
+								} else {
+									console.log("Missing attachment point in asset " + assetInfo.id, att.Name, model)
+								}
 							})
 						})
 					})
