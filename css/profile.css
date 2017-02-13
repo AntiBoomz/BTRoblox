@@ -161,8 +161,8 @@
 /* Player Badges */
 
 .btr-profile .btr-profile-playerbadges .btr-hlist {
-	height: 244px;
-	max-height: none;
+	min-height: 122px;
+	max-height: 244px;
 }
 
 .btr-profile .btr-profile-playerbadges .btr-hlist .list-item {
