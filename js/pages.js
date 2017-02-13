@@ -918,8 +918,9 @@ function CreateNewVersionHistory(assetId, assetType) {
 				card.find(".version-date").text(new Date(data.Created).format("M/D/YY hh:mm A"))
 
 				var img = card.find(".version-thumb")
+				img.hide()
+				/* New roblox thumbnails ruined this ;-;
 				img.attr("src", "").hide()
-
 				function tryGetThumbnail() {
 					if(thumbnailCache[data.Id])
 						return img.attr("src", thumbnailCache[data.Id]);
@@ -933,7 +934,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 					})
 				}
 
-				tryGetThumbnail()
+				tryGetThumbnail()*/
 				card.show()
 			})
 		})
