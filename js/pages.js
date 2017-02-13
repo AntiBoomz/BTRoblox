@@ -1629,7 +1629,6 @@ pageInit.profile = function(userId) {
 						$.getJSON(url, (json) => json && json.Final ? cb(json) : setTimeout(retryUntilFinal, 500, url, cb))
 					}
 
-
 					var iconRetryUrl = slide.find(".slide-item-image").attr("data-retry")
 					if(iconRetryUrl) {
 						retryUntilFinal(iconRetryUrl, (json) => {
@@ -1638,7 +1637,7 @@ pageInit.profile = function(userId) {
 					}
 					
 					if(!isNaN(placeId)) {
-						var thumbUrl = "/Asset-Thumbnail/Json?assetId={0}&width=576&height=324&format=png".format(placeId)
+						var thumbUrl = "/asset-thumbnail/json?assetId={0}&width=768&height=432&format=png".format(placeId)
 
 						retryUntilFinal(thumbUrl, (json) => {
 							item.find(".btr-game-thumb").attr("src", json.Url)
