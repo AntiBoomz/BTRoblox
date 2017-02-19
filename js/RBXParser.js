@@ -257,12 +257,44 @@
 					anim.Limbs[name] = [];
 
 				var cf = pose.CFrame
+				var qw, qx, qy, qz
+				var trace = cf[3] + cf[7] + cf[11]
+				
+				if(trace > 0) {
+					var S = Math.sqrt(1 + trace) * 2
+					qw = S / 4
+					qx = (cf[10] - cf[8]) / S
+					qy = (cf[5] - cf[9]) / S
+					qz = (cf[6] - cf[4]) / S
+				} else if ((cf[3] > cf[7]) && (cf[3] > cf[11])) { 
+					var S = Math.sqrt(1.0 + cf[3] - cf[7] - cf[11]) * 2
+					qw = (cf[10] - cf[8]) / S
+					qx = S / 4
+					qy = (cf[4] + cf[6]) / S 
+					qz = (cf[5] + cf[9]) / S 
+				} else if (cf[7] > cf[11]) { 
+					var S = Math.sqrt(1.0 + cf[7] - cf[3] - cf[11]) * 2
+					qw = (cf[5] - cf[9]) / S
+					qx = (cf[4] + cf[6]) / S 
+					qy = S / 4
+					qz = (cf[8] + cf[10]) / S 
+				} else { 
+					var S = Math.sqrt(1.0 + cf[11] - cf[3] - cf[7]) * 2
+					qw = (cf[6] - cf[4]) / S
+					qx = (cf[5] + cf[9]) / S
+					qy = (cf[8] + cf[10]) / S
+					qz = S / 4
+				}
 
-				anim.Limbs[name].push([
+				var arr = [
 					keyframe.Time,
 					[ cf[0], cf[1], cf[2] ],
-					[ Math.atan2(-cf[8],cf[11]), Math.asin(cf[5]), Math.atan2(-cf[4],cf[3]) ]
-				])
+					[ qx, qy, qz, qw ]
+				]
+
+				arr.original = cf
+
+				anim.Limbs[name].push(arr)
 
 				pose.Children.forEach((childPose) => parsePose(childPose, keyframe))
 			}
