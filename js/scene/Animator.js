@@ -3,14 +3,29 @@
 
 ANTI.RBXScene.Animator = (function() {
 	function mod(a,b){ return((a%b)+b)%b }
-	function fix(n){ return (mod(n,Math.PI*2)+Math.PI)%(Math.PI*2)-Math.PI }
+	//function fix(n){ return (mod(n,Math.PI*2)+Math.PI)%(Math.PI*2)-Math.PI }
+	function fix(n) {
+		var x = n
+
+		if(x > Math.PI) {
+			x = -Math.PI*2 + (x % (Math.PI*2))
+		} else if(x < -Math.PI) {
+			x = Math.PI*2 + (x % (Math.PI*2))
+		}
+
+		return x
+	}
+
 
 	function Animator(joints) {
 		this.playing = false
 		this.anim = null
+		this.speed = 1
 
 		this.setJoints(joints)
 	}
+
+	var tq = new THREE.Quaternion()
 
 	Object.assign(Animator.prototype, {
 		setJoints: function(joints) {
@@ -38,7 +53,7 @@ ANTI.RBXScene.Animator = (function() {
 			var time = window.performance.now() / 1000
 			var delta = time - this.previousUpdate
 			this.previousUpdate = time
-			this.timePosition += delta
+			this.timePosition += delta * this.speed
 
 			if(this.timePosition > this.anim.Length) {
 				if(this.anim.Looped) {
@@ -76,17 +91,26 @@ ANTI.RBXScene.Animator = (function() {
 							var rot0 = prev[2]
 							var rot1 = frame[2]
 
+							var it = (1-t)
+
 							joint.pivot.position.set(
-								pos0[0] + fix(pos1[0]-pos0[0]) * t,
-								pos0[1] + fix(pos1[1]-pos0[1]) * t,
-								pos0[2] + fix(pos1[2]-pos0[2]) * t
+								pos0[0]*it + pos1[0]*t,
+								pos0[1]*it + pos1[1]*t,
+								pos0[2]*it + pos1[2]*t
 							)
 
-							joint.pivot.rotation.set(
-								rot0[0] + fix(rot1[0]-rot0[0]) * t,
-								rot0[1] + fix(rot1[1]-rot0[1]) * t,
-								rot0[2] + fix(rot1[2]-rot0[2]) * t
-							)
+							tq.set(rot1[0], rot1[1], rot1[2], rot1[3])
+							joint.pivot.quaternion.set(rot0[0], rot0[1], rot0[2], rot0[3]).slerp(tq, t)
+
+							/*joint.pivot.rotation.set(
+								rot0[0] + fix(rot1[0]-rot0[0])*t,
+								rot0[1] + fix(rot1[1]-rot0[1])*t,
+								rot0[2] + fix(rot1[2]-rot0[2])*t
+							)*/
+
+							/*if(name === "lefthand") {
+								console.log(i, t, rot0, rot1)
+							}*/
 
 							break;
 						}
