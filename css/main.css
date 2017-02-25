@@ -837,3 +837,7 @@ body .btr-MediaPlayerControls {
 #downloadInstallerIFrame {
 	border: none;
 }
+
+.rbx-header .age-bracket-label {
+	display: none !important;
+}
