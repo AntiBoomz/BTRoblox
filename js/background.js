@@ -19,7 +19,7 @@ var settings = {
 	},
 	catalog: {
 		animationPreview: true,
-		explorerButton: true
+		explorerButton: false
 	},
 	chat: {
 		enabled: true,
