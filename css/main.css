@@ -5,7 +5,8 @@
 }
 
 #header.rbx-header .rbx-navbar.col-md-4 {
-	width: 35%;
+	width: 30%;
+	min-width: 400px;
 }
 
 #header.rbx-header .rbx-navbar>li {
@@ -18,7 +19,7 @@
 
 @media (max-width: 1150px) and (min-width: 992px) {
 	#header.rbx-header .rbx-navbar-search {
-		width: 20%;
+		width: calc(60% - 450px);
 	}
 }
 
