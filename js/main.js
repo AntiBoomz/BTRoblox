@@ -508,7 +508,7 @@ function Init() {
 			multiple: true,
 			selector: '.ads-container,.abp,.abp-spacer,.abp-container,.top-abp-container,#AdvertisingLeaderboard,\
 			#AdvertisementRight,#MessagesAdSkyscraper,.Ads_WideSkyscraper,iframe[src*="roblox.com/userads/"],\
-			.profile-ads-container,#ad',
+			.profile-ads-container,#ad,iframe[src*="roblox.com/user-sponsorship/"]',
 			callback: function(ad) {
 				ad.remove();
 			}
