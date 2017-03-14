@@ -705,10 +705,13 @@ pageInit.gamedetails = function(placeId) {
 			servers.addClass("active")
 		}
 	}).add({
-		selector: [".game-about-container",".game-about-container .section-content",".game-main-content"],
-		callback: function(container,content,newParent) {
-			content.removeAttr("class").addClass("btr-description").appendTo(newParent);
-			container.remove();
+		selector: [".game-about-container", ".game-about-container .section-content", ".game-main-content"],
+		callback: function(oldContainer, descContent, mainContent) {
+			var newContainer = $("<div class='col-xs-12 section-content' style='padding: 0 0 12px;'>").insertBefore(mainContent)
+			mainContent.removeClass("section-content").appendTo(newContainer)
+			descContent.removeClass("section-content").addClass("btr-description").appendTo(newContainer)
+
+			oldContainer.remove();
 		}
 	}).add({
 		selector: ".tab-content",
