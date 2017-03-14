@@ -348,7 +348,7 @@ pageInit.messages = function() {
 pageInit.develop = function() {
 	Observer.add({
 		multiple: true,
-		selector: ".item-table[data-in-showcase]",
+		selector: "#MyCreationsTab .item-table[data-in-showcase]",
 		callback: function(table) {
 			$("<tr>" +
 				"<td>" +
