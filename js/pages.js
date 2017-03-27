@@ -691,6 +691,7 @@ pageInit.gamedetails = function(placeId) {
 		return;
 
 	var gameDataPromise = new Promise(resolve => BackgroundJS.send("getProductInfo", placeId, resolve))
+	var newContainer = $("<div class='col-xs-12 section-content' style='padding: 0 0 12px;'>")
 
 	Observer.add({
 		selector: ["#tab-about","#tab-game-instances"],
@@ -707,9 +708,9 @@ pageInit.gamedetails = function(placeId) {
 	}).add({
 		selector: [".game-about-container", ".game-about-container .section-content", ".game-main-content"],
 		callback: function(oldContainer, descContent, mainContent) {
-			var newContainer = $("<div class='col-xs-12 section-content' style='padding: 0 0 12px;'>").insertBefore(mainContent)
+			newContainer.insertBefore(mainContent)
 			mainContent.removeClass("section-content").appendTo(newContainer)
-			descContent.removeClass("section-content").addClass("btr-description").appendTo(newContainer)
+			descContent.removeClass("section-content").addClass("btr-description").insertAfter(mainContent)
 
 			oldContainer.remove();
 		}
@@ -727,7 +728,7 @@ pageInit.gamedetails = function(placeId) {
 	}).add({
 		selector: [".badge-container",".game-main-content"],
 		callback: function(badges,prevChild) {
-			var container = $("<div class='col-xs-12 btr-badges-container'/>").insertAfter(prevChild);
+			var container = $("<div class='col-xs-12 btr-badges-container'/>").insertAfter(newContainer);
 			badges.appendTo(container);
 		}
 	}).add({
