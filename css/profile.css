@@ -225,12 +225,11 @@
 
 	overflow: hidden;
 	max-height: 0;
-	transition: max-height 0.3s;
+	transition: max-height .2s;
 }
 
 .btr-profile .btr-games-list .btr-game.selected .btr-game-content {
-	max-height: 625px;
-	transition: max-height 0.3s;
+	max-height: 1000px;
 }
 
 .btr-profile .btr-games-list .btr-game-thumb {
@@ -262,24 +261,38 @@
 	position: relative;
 	float: left;
 	width: 100%;
-	padding: 8px 16px;
+	padding: 8px 16px 0;
 	margin-top: 16px;
 
-	max-height: 250px;
+	max-height: 170px;
 	overflow: hidden;
 
 	white-space: pre-wrap;
 	word-break: break-word;
 }
 
-.btr-profile .btr-games-list .btr-game-desc:after {
-	content: "";
-	display: block;
+.btr-profile .btr-games-list .btr-game-desc.expanded {
+	max-height: none;
+	padding-bottom: 20px;
+}
+
+.btr-profile .btr-games-list .btr-game-desc .btr-toggle-description {
+	color: #00A2FF;
 	position: absolute;
-	top: 230px;
-	width: 100%;
-	height: 20px;
-	background:linear-gradient(to bottom, transparent 0, white 100%);
+	right: 0;
+	bottom: 0;
+	z-index: 1000;
+	background: #fff;
+	padding: 1px 6px;
+}
+
+.btr-profile .btr-games-list .btr-game-desc:not(.expanded) .btr-toggle-description:before {
+	content: "...";
+}
+
+.btr-profile .btr-games-list .btr-game-desc .btr-toggle-description:hover {
+	cursor: pointer;
+	text-decoration: underline;
 }
 
 .btr-profile .btr-games-list .btr-game-info {
