@@ -1527,6 +1527,14 @@ pageInit.profile = function(userId) {
 				})
 			}
 
+			hlist.on("click", ".btr-toggle-description", function() {
+				var btn = $(this)
+				var desc = btn.closest(".btr-game-desc")
+
+				desc.toggleClass("expanded")
+				btn.text(desc.hasClass("expanded") ? "Show Less" : "Read More")
+			})
+
 			CreateObserver(oldlist).add({
 				multiple: true,
 				selector: ".slide-item-container",
@@ -1545,7 +1553,7 @@ pageInit.profile = function(userId) {
 								"<a href='{Url}'><img class='btr-game-icon' src='{IconThumb}'></a>" +
 							"</div>" +
 							"<div class='btr-profile-col-1 btr-game-desc linkify'>" +
-								"{Desc}" +
+								"<span class='btr-game-desc-content'>{Desc}</span>" +
 							"</div>" +
 							"<div class='btr-profile-col-1 btr-game-info'>" +
 								"<div class='btr-profile-col-2 btr-game-playbutton-container'>" +
@@ -1564,12 +1572,12 @@ pageInit.profile = function(userId) {
 						IconThumb: slide.find(".slide-item-image").attr("data-src")
 					})
 
-					item.toggleClass("visible",Math.floor(index/pageSize) == 0)
+					item.toggleClass("visible", index/pageSize < 1)
 					item.find(".btr-game-stats").append(slide.find(".slide-item-stats>.hlist"))
 					item.find(".unloaded").on("load", function() { $(this).removeClass("unloaded") })
 
 					loggedInUserPromise.then((loggedInUser) => {
-						if(userId != loggedInUser) // not using !== because string <-> number
+						if(userId != loggedInUser)
 							return;
 
 						$('<span class="btr-game-dropdown">' +
@@ -1656,6 +1664,13 @@ pageInit.profile = function(userId) {
 					item.appendTo(hlist)
 
 					pager.setMaxPage(Math.floor((hlist.children().length-1)/pageSize))
+
+					var desc = item.find(".btr-game-desc")
+					var heig = desc.find("span").height()
+
+					if(heig > 170) {
+						$("<span class='btr-toggle-description'>Read More</span>").appendTo(desc)
+					}
 				}
 			})
 		}
