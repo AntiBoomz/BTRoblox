@@ -14,6 +14,22 @@ commands.getSettings = (data, respond) => respond(settings);
 commands.downloadFile = (url, respond) => request.getBlob(url, (data) => respond(URL.createObjectURL(data)));
 commands.getProductInfo = (assetId, respond) => request.getJson(productInfoUrl.format(assetId), data => respond(data));
 
+commands.resolveAssetUrl = (assetId, respond) => {
+	var xhr = new XMLHttpRequest()
+	xhr.open("GET", "http://www.roblox.com/asset/?id="+assetId, true)
+	xhr.addEventListener("readystatechange", () => {
+		if(xhr.status === 200 && xhr.responseURL.indexOf("rbxcdn") !== -1) {
+			respond(xhr.responseURL.replace(/^http:/, "https:"))
+		} else {
+			respond(null)
+		}
+
+		xhr.abort()
+		xhr = null
+	}, { once: true })
+	xhr.send(null)
+}
+
 commands.execScript = (list, respond, port) => {
 	if(typeof(list) === "string")
 		list = [list];
