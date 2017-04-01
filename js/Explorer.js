@@ -1,4 +1,4 @@
-// BTR-RBXModelViewer.js
+// BTR-explorer.js
 "use strict"
 
 var rmdClassIcons = {
@@ -54,7 +54,7 @@ Object.keys(propertyGroups).forEach((name) => {
 })
 
 
-function ModelViewer() {
+function Explorer() {
 	this.isShown = false
 	this.views = []
 
@@ -91,7 +91,9 @@ function ModelViewer() {
 			target.Properties.sort((a,b) => {
 				var ao = propertyOrder[a]
 				var bo = propertyOrder[b]
-				return (ao ? ao : propertyGroups.Data.Order) - (bo ? bo : propertyGroups.Data.Order)
+
+				var diff = (ao ? ao : propertyGroups.Data.Order) - (bo ? bo : propertyGroups.Data.Order)
+				return diff === 0 ? (a < b ? -1 : 1) : diff
 			}).forEach((name) => {
 				if(hiddenProperties.indexOf(name) !== -1)
 					return;
@@ -157,7 +159,7 @@ function ModelViewer() {
 							valuediv.text(value.Name)
 							break;
 						} else if(value instanceof ANTI.RBXEnum) {
-							valuediv.text("Enum " + value)
+							valuediv.text("Enum " + value.Value)
 							break;
 						} else if(value instanceof ANTI.RBXProperty) {
 							switch(value.type) {
@@ -226,7 +228,7 @@ function ModelViewer() {
 	})
 }
 
-Object.assign(ModelViewer.prototype, {
+Object.assign(Explorer.prototype, {
 	addView: function(title, model) {
 		//console.log(title, model)
 
