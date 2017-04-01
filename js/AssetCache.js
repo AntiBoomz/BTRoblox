@@ -1,7 +1,7 @@
-// BTR-RBXScene-AssetCache.js
+// BTR-AssetCache.js
 "use strict"
 
-ANTI.RBXScene.AssetCache = (function() {
+var AssetCache = (function() {
 	function Asset(buffer) {
 		this._buffer = buffer
 	}
@@ -27,6 +27,11 @@ ANTI.RBXScene.AssetCache = (function() {
 						this._blob = new Blob([this._buffer]);
 
 					return this._bloburl = URL.createObjectURL(this._blob);
+				case "ascii":
+					if(this._ascii)
+						return this._ascii;
+
+					return this._ascii = new TextDecoder("ascii").decode(this._buffer);
 				default:
 					throw new TypeError("Invalid type '" + type + "'");
 			}
@@ -55,7 +60,10 @@ ANTI.RBXScene.AssetCache = (function() {
 			this._urlCache[path].then(cb)
 		},
 		loadAsset: function(assetId, cb) {
-			if(typeof(assetId) !== "number")
+			if(typeof(assetId) === "string")
+				assetId = +assetId;
+
+			if(typeof(assetId) !== "number" && !isNaN(assetId))
 				throw new TypeError("assetId needs to be a number");
 
 			if(!this._assetCache[assetId]) {
