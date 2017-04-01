@@ -58,11 +58,11 @@ ANTI.RBXScene.Avatar = (function() {
 		return texture
 	}
 
-	function mergeTexture() {
+	function mergeTexture(width, height) {
 		var canvas = document.createElement("canvas")
 		var ctx = canvas.getContext("2d")
-		canvas.width = 1024
-		canvas.height = 1024
+		canvas.width = width
+		canvas.height = height
 
 		var texture = new THREE.Texture(canvas)
 		texture.minFilter = THREE.LinearFilter
@@ -87,7 +87,7 @@ ANTI.RBXScene.Avatar = (function() {
 			updateTimeout = setTimeout(updateFinal, 30)
 		}
 
-		for(var i=0; i<arguments.length; i++) {
+		for(var i=2; i<arguments.length; i++) {
 			var img = arguments[i]
 			stack.push(img)
 
@@ -392,7 +392,7 @@ ANTI.RBXScene.Avatar = (function() {
 			var base = images.base[name] = createImage()
 			var over = images.over[name] = createImage()
 
-			textures[name] = mergeTexture(base, this.r6Composite.texture.image, over)
+			textures[name] = mergeTexture(1024,512, base, this.r6Composite.texture.image, over)
 		})
 
 		R15BodyPartNames.forEach(name => {
@@ -400,7 +400,7 @@ ANTI.RBXScene.Avatar = (function() {
 			var composite = this.r15Composites[compositeName]
 			var over = images.over[name] = createImage()
 
-			textures[name] = mergeTexture(composite.texture.image, over)
+			textures[name] = mergeTexture(composite.canvas.width,composite.canvas.height, composite.texture.image, over)
 		})
 
 		if(playerType)
