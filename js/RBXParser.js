@@ -203,21 +203,20 @@
 	RBXProperty.prototype.__proto__ = Array.prototype
 
 	function RBXEnum(value) {
-		if(this instanceof RBXEnum)
-			throw new Error("RBXEnum can not be constructed");
+		if(!(this instanceof RBXEnum))
+			return new RBXEnum(value);
 
 		if(typeof(value) !== "number")
 			throw new Error("value not a number?");
 
-		value = new Number(value)
-		value.__proto__ = RBXEnum.prototype
-		return value
+		this.Value = value
 	}
-
-	RBXEnum.prototype.__proto__ = Number.prototype
 
 
 	typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXParseContentUrl = function parseContentUrl(url) {
+		if(typeof(url) !== "string" || url.length === 0)
+			return null;
+
 		url = url.trim()
 
 		var match = url.match(/^rbxassetid:\/\/(\d+)/)
@@ -675,6 +674,9 @@
 		})();
 
 		return function(data) {
+			if(data.byteLength < 9)
+				throw new TypeError("Not a valid .RBXM file");
+
 			var reader = new ByteReader(data) 
 			if(reader.String(7) != "<roblox")
 				throw new TypeError("Not a valid .RBXM file");

@@ -15,6 +15,17 @@ ANTI.RBXScene.Avatar = (function() {
 		geom.computeBoundingSphere()
 	}
 
+	function clearGeometry(geom) {
+		geom.removeAttribute("position")
+		geom.removeAttribute("normal")
+		geom.removeAttribute("uv")
+		geom.setIndex(null)
+		geom.elementsNeedUpdate = true
+		geom.verticesNeedUpdate = true
+		geom.uvsNeedUpdate = true
+		geom.computeBoundingSphere()
+	}
+
 	function CFrame(x,y,z, r00,r01,r02, r10,r11,r12, r20,r21,r22) {
 		return new THREE.Matrix4().set(
 			r00, r01, r02, x,
@@ -24,20 +35,62 @@ ANTI.RBXScene.Avatar = (function() {
 		)
 	}
 
-	function createTexture(url) {
-		var texture = new THREE.Texture()
-
-		var img = texture.image = new Image()
+	function createImage() {
+		var img  = new Image()
 		img.crossOrigin = "Anonymous"
+
+		return img
+	}
+
+	function createTexture(img) {
+		var texture = new THREE.Texture()
+		texture.minFilter = THREE.LinearFilter
+		texture.wrapS = THREE.ClampToEdgeWrapping
+		texture.wrapT = THREE.ClampToEdgeWrapping
+
+		var img = texture.image = img instanceof Image ? img : createImage()
 		img.addEventListener("load", () => {
 			texture.needsUpdate = true
 			return true
 		})
 
-		if(url)
-			img.src = url;
+		return texture
+	}
+
+	function mergeTexture() {
+		var texture = createTexture()
+		var canvas = document.createElement("canvas")
+		var ctx = canvas.getContext("2d")
+
+		canvas.width = 512
+		canvas.height = 512
+
+		var stack = []
+
+		function updateFinal() {
+			ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+			stack.forEach(img => {
+				if(img.src !== "")
+					ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+			})
+
+			texture.image.src = canvas.toDataURL()
+		}
+
+		for(var i=0; i<arguments.length; i++) {
+			var img = arguments[i]
+			stack.push(img)
+			img.addEventListener("load", updateFinal)
+		}
 
 		return texture
+	}
+
+	function solidColorDataURL(r, g, b) {
+		return "data:image/gif;base64,R0lGODlhAQABAPAA" 
+			+ btoa(String.fromCharCode(0, r, g, b, 255, 255)) 
+			+ "/yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=="
 	}
 
 	var R6Joints = {
@@ -56,6 +109,15 @@ ANTI.RBXScene.Avatar = (function() {
 		rightarm: { RightShoulder: [0,1,0] }
 	}
 
+	const R6BodyPartNames = [
+		"torso", "leftarm", "rightarm", "leftleg", "rightleg"
+	]
+
+	const R15BodyPartNames = [
+		"leftfoot", "lefthand", "leftlowerarm", "leftlowerleg", "leftupperarm", "leftupperleg", "lowertorso", 
+		"rightfoot", "righthand", "rightlowerarm", "rightlowerleg", "rightupperarm", "rightupperleg", "uppertorso"
+	]
+
 	function CompositeTexture(hasThree, constructorFn) {
 		if(hasThree) {
 			var scene = this.scene = new THREE.Scene()
@@ -68,19 +130,22 @@ ANTI.RBXScene.Avatar = (function() {
 		var canvas = this.canvas = document.createElement("canvas")
 		var ctx = this.context = canvas.getContext("2d")
 
-		this.texture = createTexture()
+		this.material = new THREE.MeshPhongMaterial()
+		this.texture = this.material.map = createTexture()
 		this.beforeComposite = []
 		this.afterComposite = []
 		this.width = 1024
 		this.height = 1024
 
-		constructorFn.call(this)
+		constructorFn.apply(this, Array.prototype.slice.call(arguments, 2))
 
 		canvas.width = this.width
 		canvas.height = this.height
 
 		if(this.camera)
 			this.camera.updateProjectionMatrix();
+
+		this.update()
 	}
 
 	var compositeRenderer = null
@@ -110,6 +175,7 @@ ANTI.RBXScene.Avatar = (function() {
 	})
 
 	function HeadCompositeConstructor() {
+		this.background = "#A3A2A5"
 		this.width = 256
 		this.height = 256
 
@@ -123,7 +189,7 @@ ANTI.RBXScene.Avatar = (function() {
 		})
 	}
 
-	function R6CompositeConstructor() {
+	function R6CompositeConstructor(textures) {
 		this.width = 1024
 		this.height = 512
 
@@ -134,30 +200,27 @@ ANTI.RBXScene.Avatar = (function() {
 		this.camera.position.set(size/2, size/4, 10)
 		this.camera.rotation.set(0, 0, 0)
 
-		var shirtmesh = this.shirtmesh = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial())
+		var shirtmesh = this.shirtmesh = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial({
+			transparent: true,
+			map: textures.shirt
+		}))
 		this.scene.add(shirtmesh)
 
-		var pantsmesh = this.pantsmesh = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial())
+		var pantsmesh = this.pantsmesh = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial({
+			transparent: true,
+			map: textures.pants
+		}))
 		this.scene.add(pantsmesh)
 
-		var tshirtmesh = this.tshirtmesh = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial())
+		var tshirtmesh = this.tshirtmesh = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial({
+			transparent: true,
+			map: textures.tshirt
+		}))
 		this.scene.add(tshirtmesh)
 
-		var shirt = this.shirt = shirtmesh.material.map = createTexture()
-		var pants = this.pants = pantsmesh.material.map = createTexture()
-		var tshirt = this.tshirt = tshirtmesh.material.map = createTexture()
-
-		pants.minFilter = THREE.LinearFilter
-		shirt.minFilter = THREE.LinearFilter
-		tshirt.minFilter = THREE.LinearFilter
-
-		shirtmesh.material.transparent = true
-		pantsmesh.material.transparent = true
-		tshirtmesh.material.transparent = true
-
-		shirt.image.addEventListener("load", () => this.update())
-		pants.image.addEventListener("load", () => this.update())
-		tshirt.image.addEventListener("load", () => this.update())
+		textures.shirt.image.addEventListener("load", () => this.update())
+		textures.pants.image.addEventListener("load", () => this.update())
+		textures.tshirt.image.addEventListener("load", () => this.update())
 
 		var meshUrl = chrome.runtime.getURL("res/previewer/r6/shirtTemplate.mesh")
 		AssetCache.loadUrl(meshUrl, asset => applyMeshToGeometry(shirtmesh.geometry, asset.as("mesh")))
@@ -168,6 +231,16 @@ ANTI.RBXScene.Avatar = (function() {
 		var meshUrl = chrome.runtime.getURL("res/previewer/r6/tshirtTemplate.mesh")
 		AssetCache.loadUrl(meshUrl, asset => applyMeshToGeometry(tshirtmesh.geometry, asset.as("mesh")))
 		
+		this.shouldUpdateBodyColors = true
+		this.bodyColors = {
+			headColorId: "#A3A2A5",
+			torsoColorId: "#A3A2A5",
+			rightArmColorId: "#A3A2A5",
+			leftArmColorId: "#A3A2A5",
+			rightLegColorId: "#A3A2A5",
+			rightArmColorId: "#A3A2A5"
+		}
+
 		var ctx = this.context
 		var cachedBodyColors = ctx.createImageData(1024, 512)
 		this.beforeComposite.push(() => {
@@ -204,13 +277,14 @@ ANTI.RBXScene.Avatar = (function() {
 				ctx.fillRect(684,322, 76,76)
 
 				cachedBodyColors = ctx.getImageData(0,0, 1024,512)
+			} else {
+				ctx.putImageData(cachedBodyColors, 0,0)
 			}
-
-			ctx.putImageData(cachedBodyColors, 0,0)
 		})
 	}
 
-	function R15TorsoCompositeConstructor() {
+	function R15TorsoCompositeConstructor(textures) {
+		this.background = "#A3A2A5"
 		this.width = 388
 		this.height = 272
 
@@ -218,23 +292,21 @@ ANTI.RBXScene.Avatar = (function() {
 		this.camera.position.set(this.width/2, this.height/2, 10)
 		this.camera.rotation.set(0, 0, 0)
 
-		var shirtmesh = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial())
+		var shirtmesh = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial({
+			transparent: true,
+			map: textures.shirt
+		}))
 		this.scene.add(shirtmesh)
 
-		var pantsmesh = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial())
+		var pantsmesh = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial({
+			transparent: true,
+			map: textures.pants
+		}))
 		pantsmesh.position.set(0,0,.1)
 		this.scene.add(pantsmesh)
 
-		var shirt = this.shirt = shirtmesh.material.map = createTexture()
-		shirtmesh.material.transparent = true
-		shirt.minFilter = THREE.LinearFilter
-
-		var pants = this.pants = pantsmesh.material.map = createTexture()
-		pantsmesh.material.transparent = true
-		pants.minFilter = THREE.LinearFilter
-
-		shirt.image.addEventListener("load", () => this.update())
-		pants.image.addEventListener("load", () => this.update())
+		textures.shirt.image.addEventListener("load", () => this.update())
+		textures.pants.image.addEventListener("load", () => this.update())
 
 		var meshUrl = chrome.runtime.getURL("res/previewer/r15/R15CompositTorsoBase.mesh")
 		AssetCache.loadUrl(meshUrl, asset => {
@@ -243,7 +315,8 @@ ANTI.RBXScene.Avatar = (function() {
 		})
 	}
 
-	function R15LeftCompositeConstructor() {
+	function R15LimbCompositeConstructor(texture, meshUrl) {
+		this.background = "#A3A2A5"
 		this.width = 264
 		this.height = 284
 
@@ -251,37 +324,14 @@ ANTI.RBXScene.Avatar = (function() {
 		this.camera.position.set(this.width/2, this.height/2, 10)
 		this.camera.rotation.set(0, 0, 0)
 
-		var mesh = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial())
+		var mesh = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial({
+			transparent: true,
+			map: texture
+		}))
 		this.scene.add(mesh)
 
-		var meshtexture = this.meshtexture = mesh.material.map = createTexture()
-		mesh.material.transparent = true
-		meshtexture.minFilter = THREE.LinearFilter
+		texture.image.addEventListener("load", () => this.update())
 
-		meshtexture.image.addEventListener("load", () => this.update())
-
-		var meshUrl = chrome.runtime.getURL("res/previewer/r15/R15CompositLeftArmBase.mesh")
-		AssetCache.loadUrl(meshUrl, asset => applyMeshToGeometry(mesh.geometry, asset.as("mesh")))
-	}
-
-	function R15RightCompositeConstructor() {
-		this.width = 264
-		this.height = 284
-
-		this.camera = new THREE.OrthographicCamera(-this.width/2, this.width/2, this.height/2, -this.height/2, 0.1, 100)
-		this.camera.position.set(this.width/2, this.height/2, 10)
-		this.camera.rotation.set(0, 0, 0)
-
-		var mesh = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial())
-		this.scene.add(mesh)
-
-		var meshtexture = this.meshtexture = mesh.material.map = createTexture()
-		mesh.material.transparent = true
-		meshtexture.minFilter = THREE.LinearFilter
-
-		meshtexture.image.addEventListener("load", () => this.update())
-
-		var meshUrl = chrome.runtime.getURL("res/previewer/r15/R15CompositRightArmBase.mesh")
 		AssetCache.loadUrl(meshUrl, asset => applyMeshToGeometry(mesh.geometry, asset.as("mesh")))
 	}
 
@@ -289,30 +339,52 @@ ANTI.RBXScene.Avatar = (function() {
 		var model = this.model = new THREE.Object3D()
 		this.animator = new Animator()
 		this.accessories = []
+		this.charmeshes = {
+			parts: {},
+			rig: {},
+			att: {}
+		}
 		this.attachmentPoints = {}
 
-		this.headComposite = new CompositeTexture(false, HeadCompositeConstructor)
-		this.headComposite.material = new THREE.MeshPhongMaterial()
-		this.headComposite.material.map = this.headComposite.texture
+		var textures = this.textures = {
+			pants: createTexture(),
+			shirt: createTexture(),
+			tshirt: createTexture()
+		}
 
-		this.r6Composite = new CompositeTexture(true, R6CompositeConstructor)
-		this.r6Composite.material = new THREE.MeshPhongMaterial()
-		this.r6Composite.material.map = this.r6Composite.texture
+		var images = this.images = {
+			base: {},
+			over: {}
+		}
+
+		this.headComposite = new CompositeTexture(false, HeadCompositeConstructor)
+		this.r6Composite = new CompositeTexture(true, R6CompositeConstructor, textures)
+
+		var leftMesh = chrome.runtime.getURL("res/previewer/r15/R15CompositLeftArmBase.mesh")
+		var rightMesh = chrome.runtime.getURL("res/previewer/r15/R15CompositRightArmBase.mesh")
 
 		this.r15Composites = {
-			torso: new CompositeTexture(true, R15TorsoCompositeConstructor),
-			leftArm: new CompositeTexture(true, R15LeftCompositeConstructor),
-			rightArm: new CompositeTexture(true, R15RightCompositeConstructor),
-			leftLeg: new CompositeTexture(true, R15LeftCompositeConstructor),
-			rightLeg: new CompositeTexture(true, R15RightCompositeConstructor),
+			torso: new CompositeTexture(true, R15TorsoCompositeConstructor, textures),
+			leftarm: new CompositeTexture(true, R15LimbCompositeConstructor, textures.shirt, leftMesh),
+			rightarm: new CompositeTexture(true, R15LimbCompositeConstructor, textures.shirt, rightMesh),
+			leftleg: new CompositeTexture(true, R15LimbCompositeConstructor, textures.pants, leftMesh),
+			rightleg: new CompositeTexture(true, R15LimbCompositeConstructor, textures.pants, rightMesh)
 		}
 
-		for(var name in this.r15Composites) {
-			var composite = this.r15Composites[name]
-			var mat = composite.material = new THREE.MeshPhongMaterial()
-			mat.map = composite.texture
-		}
+		R6BodyPartNames.forEach(name => {
+			var base = images.base[name] = createImage()
+			var over = images.over[name] = createImage()
 
+			textures[name] = mergeTexture(base, this.r6Composite.texture.image, over)
+		})
+
+		R15BodyPartNames.forEach(name => {
+			var compositeName = name.toLowerCase().replace(/upper|lower/g, "").replace(/hand/g, "arm").replace(/foot/g, "leg")
+			var composite = this.r15Composites[compositeName]
+			var over = images.over[name] = createImage()
+
+			textures[name] = mergeTexture(composite.texture.image, over)
+		})
 
 		if(playerType)
 			this.setPlayerType(playerType);
@@ -325,8 +397,13 @@ ANTI.RBXScene.Avatar = (function() {
 			this.r6Composite.update()
 
 			$.each(this.r15Composites, (name, composite) => {
-				composite.background = bc[name + "ColorId"]
-				composite.update()
+				for(var i in bc) {
+					if(i.toLowerCase().indexOf(name) === 0) {
+						composite.background = bc[i]
+						composite.update()
+						break;
+					}
+				}
 			})
 
 			this.headComposite.background = bc.headColorId
@@ -334,6 +411,130 @@ ANTI.RBXScene.Avatar = (function() {
 		},
 		addAsset: function(assetInfo) {
 			switch(assetInfo.assetType.id) {
+				// Bodyparts
+				case 27: case 28: 
+				case 29: case 30: case 31:
+					var charmeshes = this.charmeshes
+					AssetCache.loadAsset(assetInfo.id, (asset) => {
+						var model = asset.as("model")
+
+						model.forEach((folder) => {
+							if(folder.ClassName !== "Folder")
+								return;
+
+							if(folder.Name === "R15") {
+								folder.Children.forEach((part) => {
+									if(part.ClassName !== "MeshPart")
+										return;
+
+									var name = part.Name.toLowerCase()
+									var bodypart = charmeshes.parts[name] = {}
+									var meshId = parseContentUrl(part.MeshID)
+
+									if(this.parts[name]) {
+										var obj = this.parts[name]
+										obj.useDefaultMesh = false
+										clearGeometry(obj.geometry)
+									}
+
+									AssetCache.loadAsset(meshId, asset => {
+										var mesh = bodypart.mesh = asset.as("mesh")
+
+										if(this.parts[name])
+											applyMeshToGeometry(this.parts[name].geometry, mesh);
+									})
+
+									var texId = parseContentUrl(part.TextureID)
+									if(texId)
+										AssetCache.loadAsset(texId, asset => this.images.over[name].src = asset.as("bloburl"));
+
+
+									part.Children.forEach((item) => {
+										if(item.ClassName !== "Attachment")
+											return;
+
+										var isRigAttachment = item.Name.substr(-13) == "RigAttachment"
+										if(isRigAttachment) {
+											var jointName = item.Name.slice(0, -13)
+											var cframe = CFrame.apply(null, item.CFrame)
+
+											if(!charmeshes.rig[jointName])
+												charmeshes.rig[jointName] = {};
+
+											charmeshes.rig[jointName][part.Name] = cframe
+
+											if(this.rigData && this.rigData[jointName]) {
+												var data = this.rigData[jointName]
+												var joint = data.joint
+
+												if(data.part0Name === part.Name) {
+													data.c0 = cframe
+
+													joint.c0.position.setFromMatrixPosition(data.c0)
+													joint.c0.rotation.setFromRotationMatrix(data.c0)
+												} else if(data.part1Name === part.Name) {
+													data.c1 = cframe
+													var c1Matrix = new THREE.Matrix4().getInverse(data.c1)
+
+													joint.c1.position.setFromMatrixPosition(c1Matrix)
+													joint.c1.rotation.setFromRotationMatrix(c1Matrix)
+												}
+											}
+										} else {
+											var cframe = CFrame.apply(null, item.CFrame)
+											var att = this.attachmentPoints[item.Name]
+
+											charmeshes.att[item.Name] = cframe
+
+											if(att) {
+												att.position.setFromMatrixPosition(cframe)
+												att.rotation.setFromRotationMatrix(cframe)
+											}
+										}
+									})
+								})
+							} else if(folder.Name === "R6") {
+								folder.Children.forEach((charmesh) => {
+									if(charmesh.ClassName !== "CharacterMesh")
+										return;
+
+									var name = (["head", "torso", "leftarm", "rightarm", "leftleg", "rightleg"])[charmesh.BodyPart.Value]
+									var bodypart = charmeshes.parts[name] = {}
+									var meshId = charmesh.MeshId
+
+									if(this.parts[name]) {
+										var obj = this.parts[name]
+										obj.useDefaultMesh = false
+										clearGeometry(obj.geometry)
+									}
+
+									AssetCache.loadAsset(meshId, (asset) => {
+										var mesh = bodypart.mesh = asset.as("mesh")
+
+										if(this.parts[name])
+											applyMeshToGeometry(this.parts[name].geometry, mesh);
+									})
+
+									var baseTexId = charmesh.BaseTextureId
+									if(baseTexId > 0) {
+										AssetCache.loadAsset(baseTexId, (asset) => {
+											this.images.base[name].src = asset.as("bloburl");
+										})
+									}
+
+									var overTexId = charmesh.OverlayTextureId
+									if(overTexId > 0) {
+										AssetCache.loadAsset(overTexId, (asset) => {
+											this.images.over[name].src = asset.as("bloburl");
+										})
+									}
+								})
+							}
+						})
+					})
+					break
+
+				// Accessories
 				case 8: case 41: case 42: case 43:
 				case 44: case 45: case 46: case 47:
 					AssetCache.loadAsset(assetInfo.id, (asset) => {
@@ -369,10 +570,14 @@ ANTI.RBXScene.Avatar = (function() {
 									return console.log("Couldn't parse mesh id for " + assetInfo.id, model);
 
 								var obj = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial())
+								var tex = obj.material.map = createTexture()
+								tex.image.src = solidColorDataURL(163, 162, 165)
+
 								AssetCache.loadAsset(meshId, (asset) => applyMeshToGeometry(obj.geometry, asset.as("mesh")))
 								if(texId) {
-									var tex = obj.material.map = createTexture()
-									AssetCache.loadAsset(texId, (asset) => tex.image.src=asset.as("bloburl"))
+									AssetCache.loadAsset(texId, (asset) => {
+										tex.image.src = asset.as("bloburl")
+									})
 								}
 
 								var offset = att.CFrame.slice(0)
@@ -412,13 +617,9 @@ ANTI.RBXScene.Avatar = (function() {
 							if(shirt.ClassName !== "Shirt")
 								return;
 
-							var shirtId = parseContentUrl(shirt.ShirtTemplate)
-							AssetCache.loadAsset(shirtId, (asset) => {
-								this.r6Composite.shirt.image.src = asset.as("bloburl")
-								this.r15Composites.torso.shirt.image.src = asset.as("bloburl")
-								this.r15Composites.leftArm.meshtexture.image.src = asset.as("bloburl")
-								this.r15Composites.rightArm.meshtexture.image.src = asset.as("bloburl")
-							})
+							var assetId = parseContentUrl(shirt.ShirtTemplate)
+							if(assetId)
+								AssetCache.loadAsset(assetId, asset => this.textures.shirt.image.src = asset.as("bloburl"));
 						})
 					})
 					break;
@@ -429,10 +630,9 @@ ANTI.RBXScene.Avatar = (function() {
 							if(tshirt.ClassName !== "ShirtGraphic")
 								return;
 
-							var tshirtId = parseContentUrl(tshirt.Graphic)
-							AssetCache.loadAsset(tshirtId, (asset) => {
-								this.r6Composite.tshirt.image.src = asset.as("bloburl")
-							})
+							var assetId = parseContentUrl(tshirt.Graphic)
+							if(assetId)
+								AssetCache.loadAsset(assetId, asset => this.textures.tshirt.image.src = asset.as("bloburl"));
 						})
 					})
 					break;
@@ -443,13 +643,9 @@ ANTI.RBXScene.Avatar = (function() {
 							if(pants.ClassName !== "Pants")
 								return;
 
-							var pantsId = parseContentUrl(pants.PantsTemplate)
-							AssetCache.loadAsset(pantsId, (asset) => {
-								this.r6Composite.pants.image.src = asset.as("bloburl")
-								this.r15Composites.torso.pants.image.src = asset.as("bloburl")
-								this.r15Composites.leftLeg.meshtexture.image.src = asset.as("bloburl")
-								this.r15Composites.rightLeg.meshtexture.image.src = asset.as("bloburl")
-							})
+							var assetId = parseContentUrl(pants.PantsTemplate)
+							if(assetId)
+								AssetCache.loadAsset(assetId, asset => this.textures.pants.image.src = asset.as("bloburl"));
 						})
 					})
 					break;
@@ -460,21 +656,28 @@ ANTI.RBXScene.Avatar = (function() {
 							if(face.ClassName !== "Decal" || face.Name !== "face")
 								return;
 
-							var faceId = parseContentUrl(face.Texture)
-							AssetCache.loadAsset(faceId, (asset) => this.headComposite.face.image.src=asset.as("bloburl"))
+							var assetId = parseContentUrl(face.Texture)
+							if(assetId)
+								AssetCache.loadAsset(assetId, asset => this.headComposite.face.image.src = asset.as("bloburl"));
 						})
 					})
 					break;
 				default:
-					console.log("Unimplemented asset type", assetInfo);
+					console.log("Unimplemented asset type", assetInfo.assetType, assetInfo);
 			}
 		},
 		setPlayerType: function(playerType) {
 			if(this.playerType === playerType)
 				return;
 
-			if(this.parts)
-				this.model.remove.apply(this.model, this.model.children);
+			if(this.parts) {
+				this.model.remove.apply(this.model, this.model.children)
+				for(var name in this.parts) {
+					var obj = this.parts[name]
+					obj.geometry.dispose()
+				}
+				this.model.children.forEach(child => child.dispose())
+			}
 
 			this.playerType = playerType
 			var parts = this.parts = {}
@@ -486,20 +689,33 @@ ANTI.RBXScene.Avatar = (function() {
 			if(playerType === "R6") {
 				this.model.position.set(0, 3, 0)
 
-				var head = parts.head = new THREE.Mesh(undefined, this.headComposite.material)
-				var torso = parts.torso = new THREE.Mesh(undefined, this.r6Composite.material)
-				var rightarm = parts.rightarm = new THREE.Mesh(undefined, this.r6Composite.material)
-				var leftarm = parts.leftarm = new THREE.Mesh(undefined, this.r6Composite.material)
-				var rightleg = parts.rightleg = new THREE.Mesh(undefined, this.r6Composite.material)
-				var leftleg = parts.leftleg = new THREE.Mesh(undefined, this.r6Composite.material)
+				parts.head = new THREE.Mesh(undefined, this.headComposite.material)
+				R6BodyPartNames.forEach(name => {
+					parts[name] = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial({
+						map: this.textures[name]
+					}))
+				})
 
-				torso.add(head, rightarm, leftarm, rightleg, leftleg)
-				this.model.add(torso)
+				parts.torso.add(parts.head, parts.rightarm, parts.leftarm, parts.rightleg, parts.leftleg)
+				this.model.add(parts.torso)
 
 				$.each(parts, (name, part) => {
 					part.castShadow = true
-					var meshUrl = chrome.runtime.getURL("res/previewer/r6/" + name + ".mesh")
-					AssetCache.loadUrl(meshUrl, asset => applyMeshToGeometry(part.geometry, asset.as("mesh")))
+
+					var meshdata = this.charmeshes.parts[name]
+					if(meshdata) {
+						if(meshdata.mesh) {
+							applyMeshToGeometry(part.geometry, meshdata.mesh)
+						}
+					} else {
+						part.useDefaultMesh = true
+						var meshUrl = chrome.runtime.getURL("res/previewer/r6/" + name + ".mesh")
+						AssetCache.loadUrl(meshUrl, asset => {
+							if(part.useDefaultMesh) {
+								applyMeshToGeometry(part.geometry, asset.as("mesh"));
+							}
+						})
+					}
 				})
 
 				$.each(R6Attachments, (partName, dict) => {
@@ -570,21 +786,38 @@ ANTI.RBXScene.Avatar = (function() {
 						if(part.Name === "HumanoidRootPart") {
 							obj = this.model
 						} else {
-							var compositeName = name.replace(/(upper|lower)/g, "").replace("hand","arm").replace("foot","leg").replace("arm", "Arm").replace("leg", "Leg")
-							var composite = name === "head"
-								? this.headComposite
-								: this.r15Composites[compositeName]
+							var material = null
+							if(name === "head") {
+								material = this.headComposite.material
+							} else {
+								material = new THREE.MeshPhongMaterial({
+									map: this.textures[name]
+								})
+							}
 
-							var material = composite ? composite.material : new THREE.MeshPhongMaterial()
 							obj = parts[name] = new THREE.Mesh(undefined, material)
 							obj.castShadow = true
 
-							if(part.Name === "Head") {
-								var meshUrl = chrome.runtime.getURL("res/previewer/r6/head.mesh")
-								AssetCache.loadUrl(meshUrl, asset => applyMeshToGeometry(obj.geometry, asset.as("mesh")))
+							var meshdata = this.charmeshes.parts[name]
+							if(meshdata) {
+								if(meshdata.mesh) {
+									applyMeshToGeometry(obj.geometry, meshdata.mesh)
+								}
 							} else {
-								var meshId = parseContentUrl(part.MeshID)
-								AssetCache.loadAsset(meshId, asset => applyMeshToGeometry(obj.geometry, asset.as("mesh")))
+								obj.useDefaultMesh = true
+								if(part.Name === "Head") {
+									var meshUrl = chrome.runtime.getURL("res/previewer/r6/head.mesh")
+									AssetCache.loadUrl(meshUrl, asset => {
+										if(obj.useDefaultMesh)
+											applyMeshToGeometry(obj.geometry, asset.as("mesh"));
+									})
+								} else {
+									var meshId = parseContentUrl(part.MeshID)
+									AssetCache.loadAsset(meshId, asset => {
+										if(obj.useDefaultMesh)
+											applyMeshToGeometry(obj.geometry, asset.as("mesh"));
+									})
+								}
 							}
 						}
 
@@ -598,12 +831,15 @@ ANTI.RBXScene.Avatar = (function() {
 									if(!data)
 										return console.log("Unknown rig attachment", item.Name);
 
+									var jointdata = this.charmeshes.rig[jointName]
+									var cframe = CFrame.apply(null, item.CFrame)
+
 									if(data.part0Name === part.Name) {
 										data.part0 = obj
-										data.c0 = CFrame.apply(null, item.CFrame)
+										data.c0 = jointdata && jointdata[part.Name] || cframe
 									} else if(data.part1Name === part.Name) {
 										data.part1 = obj
-										data.c1 = CFrame.apply(null, item.CFrame)
+										data.c1 = jointdata && jointdata[part.Name] || cframe
 									} else {
 										console.log("Not part0 or part1?", item.Name)
 									}
@@ -611,7 +847,7 @@ ANTI.RBXScene.Avatar = (function() {
 									var attachment = attachmentPoints[item.Name] = new THREE.Object3D()
 									obj.add(attachment)
 
-									var matrix = CFrame.apply(null, item.CFrame)
+									var matrix = this.charmeshes.att[item.Name] || CFrame.apply(null, item.CFrame)
 									attachment.position.setFromMatrixPosition(matrix)
 									attachment.rotation.setFromRotationMatrix(matrix)
 								}
@@ -630,6 +866,8 @@ ANTI.RBXScene.Avatar = (function() {
 
 						var c0Matrix = data.c0
 						var c1Matrix = new THREE.Matrix4().getInverse(data.c1)
+
+						//console.log(_, c0Matrix.elements[12], c0Matrix.elements[13], c0Matrix.elements[14])
 
 						c0.position.setFromMatrixPosition(c0Matrix)
 						c0.rotation.setFromRotationMatrix(c0Matrix)

@@ -616,7 +616,7 @@ pageInit.itemdetails = function(assetId) {
 					}
 
 					if(currentAnim)
-						playAnimation(currentAnim);
+						scene.avatar.animator.play(currentAnim);
 
 					rulesPromise.then((rules) => {
 						//console.log("rules", rules)
@@ -628,7 +628,7 @@ pageInit.itemdetails = function(assetId) {
 							var bodyColors = {}
 							for(var name in data.bodyColors)
 								bodyColors[name] = palette[data.bodyColors[name]];
-							
+
 							scene.avatar.setBodyColors(bodyColors)
 							data.assets.forEach(assetInfo => scene.avatar.addAsset(assetInfo))
 						})
