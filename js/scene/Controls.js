@@ -9,6 +9,7 @@ ANTI.RBXScene.Controls = (function() {
 		this.zoom = 10
 
 		this._mouseDragListeners = []
+		this._mouseWheelListeners = []
 
 		var canvas = $(scene.canvas)
 		var prevDragEvent = null
@@ -40,9 +41,15 @@ ANTI.RBXScene.Controls = (function() {
 			}
 		}
 
+		var mousewheel = (event) => {
+			this.mousewheel(event.originalEvent.deltaX, event.originalEvent.deltaY)
+			return false
+		}
+
 		canvas.on({
 			mousedown: mousedown, 
-			mouseleave: mouseup, 
+			mouseleave: mouseup,
+			mousewheel: mousewheel,
 			contextmenu: (event) => event.preventDefault()
 		})
 
@@ -70,6 +77,16 @@ ANTI.RBXScene.Controls = (function() {
 
 			for(var i=0, l=listeners.length; i<l; i++)
 				listeners[i](moveX, moveY);
+		},
+		mousewheel: function(deltaX, deltaY) {
+			var listeners = this._mouseWheelListeners
+			if(typeof(deltaX) === "function") {
+				listeners.push(deltaX)
+				return;
+			}
+
+			for(var i=0, l=listeners.length; i<l; i++)
+				listeners[i](deltaX, deltaY);
 		}
 	})
 
