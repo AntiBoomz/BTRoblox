@@ -237,13 +237,13 @@ ANTI.RBXScene.Avatar = (function() {
 		textures.tshirt.image.addEventListener("load", () => this.update())
 
 		var meshUrl = chrome.runtime.getURL("res/previewer/r6/shirtTemplate.mesh")
-		AssetCache.loadUrl(meshUrl, asset => applyMeshToGeometry(shirtmesh.geometry, asset.as("mesh")))
+		AssetCache.loadMesh(meshUrl, mesh => applyMeshToGeometry(shirtmesh.geometry, mesh))
 
 		var meshUrl = chrome.runtime.getURL("res/previewer/r6/pantsTemplate.mesh")
-		AssetCache.loadUrl(meshUrl, asset => applyMeshToGeometry(pantsmesh.geometry, asset.as("mesh")))
+		AssetCache.loadMesh(meshUrl, mesh => applyMeshToGeometry(pantsmesh.geometry, mesh))
 
 		var meshUrl = chrome.runtime.getURL("res/previewer/r6/tshirtTemplate.mesh")
-		AssetCache.loadUrl(meshUrl, asset => applyMeshToGeometry(tshirtmesh.geometry, asset.as("mesh")))
+		AssetCache.loadMesh(meshUrl, mesh => applyMeshToGeometry(tshirtmesh.geometry, mesh))
 		
 		this.shouldUpdateBodyColors = true
 		this.bodyColors = {
@@ -254,6 +254,8 @@ ANTI.RBXScene.Avatar = (function() {
 			rightleg: "#A3A2A5",
 			rightarm: "#A3A2A5"
 		}
+
+		this.background = "#7F7F7F"
 
 		var ctx = this.context
 		var cachedBodyColors = ctx.createImageData(1024, 512)
@@ -322,9 +324,9 @@ ANTI.RBXScene.Avatar = (function() {
 		textures.pants.image.addEventListener("load", () => this.update())
 
 		var meshUrl = chrome.runtime.getURL("res/previewer/r15/R15CompositTorsoBase.mesh")
-		AssetCache.loadUrl(meshUrl, asset => {
-			applyMeshToGeometry(shirtmesh.geometry, asset.as("mesh"))
-			applyMeshToGeometry(pantsmesh.geometry, asset.as("mesh"))
+		AssetCache.loadMesh(meshUrl, mesh => {
+			applyMeshToGeometry(shirtmesh.geometry, mesh)
+			applyMeshToGeometry(pantsmesh.geometry, mesh)
 		})
 	}
 
@@ -337,15 +339,15 @@ ANTI.RBXScene.Avatar = (function() {
 		this.camera.position.set(this.width/2, this.height/2, 10)
 		this.camera.rotation.set(0, 0, 0)
 
-		var mesh = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial({
+		var obj = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial({
 			transparent: true,
 			map: texture
 		}))
-		this.scene.add(mesh)
+		this.scene.add(obj)
 
 		texture.image.addEventListener("load", () => this.update())
 
-		AssetCache.loadUrl(meshUrl, asset => applyMeshToGeometry(mesh.geometry, asset.as("mesh")))
+		AssetCache.loadMesh(meshUrl, mesh => applyMeshToGeometry(obj.geometry, mesh))
 	}
 
 	function Avatar(playerType) {
@@ -430,9 +432,7 @@ ANTI.RBXScene.Avatar = (function() {
 				case 27: case 28: 
 				case 29: case 30: case 31:
 					var charmeshes = this.charmeshes
-					AssetCache.loadAsset(assetId, (asset) => {
-						var model = asset.as("model")
-
+					AssetCache.loadModel(assetId, model => {
 						model.forEach((folder) => {
 							if(folder.ClassName !== "Folder")
 								return;
@@ -452,8 +452,8 @@ ANTI.RBXScene.Avatar = (function() {
 										clearGeometry(obj.geometry)
 									}
 
-									AssetCache.loadAsset(meshId, asset => {
-										var mesh = bodypart.mesh = asset.as("mesh")
+									AssetCache.loadMesh(meshId, mesh => {
+										bodypart.mesh = mesh
 
 										if(this.parts[name])
 											applyMeshToGeometry(this.parts[name].geometry, mesh);
@@ -461,7 +461,7 @@ ANTI.RBXScene.Avatar = (function() {
 
 									var texId = parseContentUrl(part.TextureID)
 									if(texId)
-										AssetCache.loadAsset(texId, asset => this.images.over[name].src = asset.as("bloburl"));
+										AssetCache.loadImage(texId, url => this.images.over[name].src = url);
 
 
 									part.Children.forEach((item) => {
@@ -523,26 +523,20 @@ ANTI.RBXScene.Avatar = (function() {
 										clearGeometry(obj.geometry)
 									}
 
-									AssetCache.loadAsset(meshId, (asset) => {
-										var mesh = bodypart.mesh = asset.as("mesh")
+									AssetCache.loadMesh(meshId, mesh => {
+										bodypart.mesh = mesh
 
 										if(this.parts[name])
 											applyMeshToGeometry(this.parts[name].geometry, mesh);
 									})
 
 									var baseTexId = charmesh.BaseTextureId
-									if(baseTexId > 0) {
-										AssetCache.loadAsset(baseTexId, (asset) => {
-											this.images.base[name].src = asset.as("bloburl");
-										})
-									}
+									if(baseTexId > 0)
+										AssetCache.loadImage(baseTexId, url => this.images.base[name].src = url);
 
 									var overTexId = charmesh.OverlayTextureId
-									if(overTexId > 0) {
-										AssetCache.loadAsset(overTexId, (asset) => {
-											this.images.over[name].src = asset.as("bloburl");
-										})
-									}
+									if(overTexId > 0)
+										AssetCache.loadImage(overTexId, url => this.images.over[name].src = url);
 								})
 							}
 						})
@@ -552,8 +546,7 @@ ANTI.RBXScene.Avatar = (function() {
 				// Accessories
 				case 8: case 41: case 42: case 43:
 				case 44: case 45: case 46: case 47:
-					AssetCache.loadAsset(assetId, (asset) => {
-						var model = asset.as("model")
+					AssetCache.loadModel(assetId, model => {
 						model.forEach((acc) => {
 							if(acc.ClassName !== "Accessory")
 								return;
@@ -588,12 +581,10 @@ ANTI.RBXScene.Avatar = (function() {
 								var tex = obj.material.map = createTexture()
 								tex.image.src = solidColorDataURL(163, 162, 165)
 
-								AssetCache.loadAsset(meshId, (asset) => applyMeshToGeometry(obj.geometry, asset.as("mesh")))
-								if(texId) {
-									AssetCache.loadAsset(texId, (asset) => {
-										tex.image.src = asset.as("bloburl")
-									})
-								}
+								AssetCache.loadMesh(meshId, mesh => applyMeshToGeometry(obj.geometry, mesh))
+
+								if(texId)
+									AssetCache.loadImage(texId, url => tex.image.src = url);
 
 								var offset = att.CFrame.slice(0)
 								if(mesh.Offset) {
@@ -623,54 +614,50 @@ ANTI.RBXScene.Avatar = (function() {
 					})
 					break;
 				case 11:
-					AssetCache.loadAsset(assetId, (asset) => {
-						var model = asset.as("model")
+					AssetCache.loadModel(assetId, model => {
 						model.forEach((shirt) => {
 							if(shirt.ClassName !== "Shirt")
 								return;
 
 							var texId = parseContentUrl(shirt.ShirtTemplate)
 							if(texId)
-								AssetCache.loadAsset(texId, asset => this.textures.shirt.image.src = asset.as("bloburl"));
+								AssetCache.loadImage(texId, url => this.textures.shirt.image.src = url);
 						})
 					})
 					break;
 				case 2:
-					AssetCache.loadAsset(assetId, (asset) => {
-						var model = asset.as("model")
+					AssetCache.loadModel(assetId, model => {
 						model.forEach((tshirt) => {
 							if(tshirt.ClassName !== "ShirtGraphic")
 								return;
 
 							var texId = parseContentUrl(tshirt.Graphic)
 							if(texId)
-								AssetCache.loadAsset(texId, asset => this.textures.tshirt.image.src = asset.as("bloburl"));
+								AssetCache.loadImage(texId, url => this.textures.tshirt.image.src = url);
 						})
 					})
 					break;
 				case 12:
-					AssetCache.loadAsset(assetId, (asset) => {
-						var model = asset.as("model")
+					AssetCache.loadModel(assetId, model => {
 						model.forEach((pants) => {
 							if(pants.ClassName !== "Pants")
 								return;
 
 							var texId = parseContentUrl(pants.PantsTemplate)
 							if(texId)
-								AssetCache.loadAsset(texId, asset => this.textures.pants.image.src = asset.as("bloburl"));
+								AssetCache.loadImage(texId, url => this.textures.pants.image.src = url);
 						})
 					})
 					break;
 				case 18:
-					AssetCache.loadAsset(assetId, (asset) => {
-						var model = asset.as("model")
+					AssetCache.loadModel(assetId, model => {
 						model.forEach((face) => {
 							if(face.ClassName !== "Decal" || face.Name !== "face")
 								return;
 
 							var texId = parseContentUrl(face.Texture)
 							if(texId)
-								AssetCache.loadAsset(texId, asset => this.headComposite.face.image.src = asset.as("bloburl"));
+								AssetCache.loadImage(texId, url => this.headComposite.face.image.src = url);
 						})
 					})
 					break;
@@ -727,9 +714,9 @@ ANTI.RBXScene.Avatar = (function() {
 					} else {
 						part.useDefaultMesh = true
 						var meshUrl = chrome.runtime.getURL("res/previewer/r6/" + name + ".mesh")
-						AssetCache.loadUrl(meshUrl, asset => {
+						AssetCache.loadMesh(meshUrl, mesh => {
 							if(part.useDefaultMesh) {
-								applyMeshToGeometry(part.geometry, asset.as("mesh"));
+								applyMeshToGeometry(part.geometry, mesh);
 							}
 						})
 					}
@@ -774,11 +761,12 @@ ANTI.RBXScene.Avatar = (function() {
 				})
 			} else if(playerType === "R15") {
 				this.model.position.set(0, 2.233, 0)
-				AssetCache.loadUrl(chrome.runtime.getURL("res/previewer/r15/characterR15_3.rbxm"), (asset) => {
+				var modelUrl = chrome.runtime.getURL("res/previewer/r15/characterR15_3.rbxm")
+				AssetCache.loadModel(modelUrl, model => {
+					model = model[0]
 					if(this.ptDebounce !== ptKey)
 						return;
 
-					var model = asset.as("model")[0]
 					var rigData = this.rigData = {
 						LeftWrist: { part0Name: "LeftLowerArm", part1Name: "LeftHand" },
 						LeftElbow: { part0Name: "LeftUpperArm", part1Name: "LeftLowerArm" },
@@ -829,15 +817,15 @@ ANTI.RBXScene.Avatar = (function() {
 								obj.useDefaultMesh = true
 								if(part.Name === "Head") {
 									var meshUrl = chrome.runtime.getURL("res/previewer/r6/head.mesh")
-									AssetCache.loadUrl(meshUrl, asset => {
+									AssetCache.loadMesh(meshUrl, mesh => {
 										if(obj.useDefaultMesh)
-											applyMeshToGeometry(obj.geometry, asset.as("mesh"));
+											applyMeshToGeometry(obj.geometry, mesh);
 									})
 								} else {
 									var meshId = parseContentUrl(part.MeshID)
-									AssetCache.loadAsset(meshId, asset => {
+									AssetCache.loadMesh(meshId, mesh => {
 										if(obj.useDefaultMesh)
-											applyMeshToGeometry(obj.geometry, asset.as("mesh"));
+											applyMeshToGeometry(obj.geometry, mesh);
 									})
 								}
 							}

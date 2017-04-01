@@ -504,12 +504,12 @@ function Create3dPreview(readyCb) {
 
 			var animIndex = ++animDebounce
 
-			AssetCache.loadAsset(animId, asset => {
+			AssetCache.loadModel(animId, model => {
 				if(animDebounce !== animIndex)
 					return;
 
 				try {
-					var anim = ANTI.ParseAnimationData(asset.as("model"))
+					var anim = ANTI.ParseAnimationData(model)
 				} catch(ex) {
 					console.log("Failed to load animation:", ex)
 					return;
@@ -632,13 +632,11 @@ pageInit.itemdetails = function(assetId) {
 					explorerInitialized = true
 
 					if(assetTypeId === 32) { // Package
-						AssetCache.loadAsset(assetId, asset => {
-							asset.as("ascii").split(";").forEach(id => {
-								AssetCache.loadAsset(id, asset => explorer.addView(id.toString(), asset.as("model")))
-							})
-						})
+						AssetCache.loadText(assetId, text => text.split(";").forEach(id => {
+							AssetCache.loadModel(id, model => explorer.addView(id.toString(), model))
+						}))
 					} else {
-						AssetCache.loadAsset(assetId, asset => explorer.addView("Main", asset.as("model")))
+						AssetCache.loadModel(assetId, model => explorer.addView("Main", model))
 					}
 				}
 
@@ -712,8 +710,7 @@ pageInit.itemdetails = function(assetId) {
 
 			if(settings.catalog.animationPreview && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1) {
 				function parseAnimPackage(assetId, cb) {
-					AssetCache.loadAsset(assetId, asset => {
-						var model = asset.as("model")
+					AssetCache.loadModel(assetId, model => {
 						var dict = {}
 
 						model.forEach(folder => {
@@ -754,30 +751,28 @@ pageInit.itemdetails = function(assetId) {
 				}
 
 				if(assetTypeId === 32) {
-					AssetCache.loadAsset(assetId, asset => {
-						var preview = null
-						var playing = false
+					var preview = null
+					var playing = false
 
-						asset.as("ascii").split(";").forEach(assetId => {
-							parseAnimPackage(assetId, anims => {
-								if(Object.keys(anims).length === 0)
-									return;
+					AssetCache.loadText(assetId, text => text.split(";").forEach(assetId => {
+						parseAnimPackage(assetId, anims => {
+							if(Object.keys(anims).length === 0)
+								return;
 
-								if(!preview) {
-									preview = enablePreview(onPreviewReady)
-									preview.loadDefaultAppearance(onAppearenceLoaded)
+							if(!preview) {
+								preview = enablePreview(onPreviewReady)
+								preview.loadDefaultAppearance(onAppearenceLoaded)
+							}
+
+							$.each(anims, (name, animId) => {
+								preview.addDropdown(animId, name)
+								if(!playing) {
+									playing = true
+									preview.playAnimation(animId, name, true)
 								}
-
-								$.each(anims, (name, animId) => {
-									preview.addDropdown(animId, name)
-									if(!playing) {
-										playing = true
-										preview.playAnimation(animId, name, true)
-									}
-								})
 							})
 						})
-					})
+					}))
 				} else {
 					var preview = enablePreview(onPreviewReady)
 					preview.loadDefaultAppearance(onAppearenceLoaded)
