@@ -1,79 +1,97 @@
 // BTR-AssetCache.js
 "use strict"
 
-var AssetCache = (function() {
-	function Asset(buffer) {
-		this._buffer = buffer
+var AssetCache = (() => {
+	var resolveCache = {}
+	var modelCache = {}
+	var meshCache = {}
+	var textCache = {}
+	var imgCache = {}
+
+	function request(url, responseType, cb) {
+		var xhr = new XMLHttpRequest()
+		xhr.open("GET", url, true)
+		xhr.responseType = responseType
+
+		xhr.addEventListener("load", () => {
+			var result = xhr.response
+			xhr = null
+
+			cb(result)
+		}, { once: true })
+
+		xhr.send(null)
 	}
 
-	Object.assign(Asset.prototype, {
-		as: function(type) {
-			switch(type.toLowerCase()) {
-				case "model":
-					if(this._model)
-						return this._model;
-
-					return this._model = ANTI.ParseRBXM(this._buffer);
-				case "mesh":
-					if(this._mesh)
-						return this._mesh;
-
-					return this._mesh = ANTI.ParseMesh(this._buffer);
-				case "bloburl":
-					if(this._bloburl)
-						return this._bloburl;
-
-					if(!this._blob)
-						this._blob = new Blob([this._buffer]);
-
-					return this._bloburl = URL.createObjectURL(this._blob);
-				case "ascii":
-					if(this._ascii)
-						return this._ascii;
-
-					return this._ascii = new TextDecoder("ascii").decode(this._buffer);
-				default:
-					throw new TypeError("Invalid type '" + type + "'");
-			}
+	function resolvePath(path, cb) {
+		if(typeof(path) === "string" && isNaN(path)) {
+			return cb(path);
 		}
-	})
+
+		return AssetCache.resolveAsset(path, cb)
+	}
+
+	function createMethod(cache, responseType, constructor) {
+		return (path, cb) => {
+			resolvePath(path, resolved => {
+				if(!resolved)
+					return console.warn("Failed to resolve model " + path);
+
+				var promise = cache[resolved]
+				if(!promise)
+					promise = cache[resolved] = new Promise(resolve => request(resolved, responseType, x => constructor(x, resolve)));
+
+				promise.then(cb)
+			})
+		}
+	}
+
+	var bufferbase64=function(){
+		var a="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+		return function(b){
+			for(var c=b.length,d=c%3,e=[],f=0,g=c-d;f<g;f+=3){
+				var h=(b[f]<<16)+(b[f+1]<<8)+b[f+2];
+				e.push(a[h>>18&63],a[h>>12&63],a[h>>6&63],a[63&h])
+			}
+			if(1===d){
+				var h=b[c-1];
+				e.push(a[h>>2],a[h<<4&63],"==")
+			}else if(2===d){
+				var h=(b[c-2]<<8)+b[c-1];
+				e.push(a[h>>10],a[h>>4&63],a[h<<2&63],"=")
+			}
+			return e.join("")
+		}
+	}();
 
 	var AssetCache = {
-		Asset: Asset,
-		_assetCache: {},
-		_urlCache: {},
-		loadUrl: function(path, cb) {
-			if(!this._urlCache[path]) {
-				this._urlCache[path] = new Promise(resolve => {
-					var xhr = new XMLHttpRequest()
-					xhr.open("GET", path, true)
-					xhr.responseType = "arraybuffer"
-					xhr.onload = () => {
-						if(xhr.status === 200 || xhr.status === 0) {
-							resolve(new Asset(xhr.response))
-						}
-					}
-					xhr.send()
-				})
-			}
-
-			this._urlCache[path].then(cb)
-		},
-		loadAsset: function(assetId, cb) {
+		resolveAsset: (assetId, cb) => {
 			if(typeof(assetId) === "string")
 				assetId = +assetId;
 
-			if(typeof(assetId) !== "number" && !isNaN(assetId))
-				throw new TypeError("assetId needs to be a number");
+			if(typeof(assetId) !== "number" || isNaN(assetId))
+				throw new Error("assetId should be a number (it's a " + typeof(assetId) + ")" + assetId);
 
-			if(!this._assetCache[assetId]) {
-				this._assetCache[assetId] = new Promise(resolve => {
-					downloadAsset("arraybuffer", { id: assetId }, (buffer) => resolve(new Asset(buffer)))
+			var promise = resolveCache[assetId]
+			if(!promise) {
+				promise = resolveCache[assetId] = new Promise(resolve => {
+					BackgroundJS.send("resolveAssetUrl", assetId, url => {
+						if(!url)
+							return console.warn("Failed to resolve asset " + assetId);
+
+						//console.warn("Resolved " + assetId + " => " + url)
+						resolve(url)
+					})
 				})
 			}
 
-			this._assetCache[assetId].then(cb)
-		}
+			promise.then(cb)
+		},
+
+		loadModel: createMethod(modelCache, "arraybuffer", (buffer, cb) => cb(ANTI.ParseRBXM(buffer))),
+		loadMesh: createMethod(meshCache, "arraybuffer", (buffer, cb) => cb(ANTI.ParseMesh(buffer))),
+		loadText: createMethod(textCache, "text", (text, cb) => cb(text)),
+		loadImage: createMethod(imgCache, "blob", (blob, cb) => cb(URL.createObjectURL(blob)))
 	}
 
 	return AssetCache
