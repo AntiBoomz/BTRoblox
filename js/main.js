@@ -4,6 +4,8 @@ var pageInit = {}
 var loggedInUser = -1
 var loggedInUserPromise = null
 
+var isDevExtension = chrome.runtime.id !== "hbkpclpemjeibhioopcebchdmohaieln"
+
 var pathname = window.location.pathname.toLowerCase()
 
 function CreateObserver(target) {

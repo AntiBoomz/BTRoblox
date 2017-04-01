@@ -232,7 +232,6 @@ function execScripts(list, cb) {
 	}
 }
 
-
 var avatarApi = {
 	baseUrl: "https://avatar.roblox.com/v1/",
 	get: function(url, data, cb) {
@@ -289,7 +288,6 @@ var avatarApi = {
 		loggedInUserPromise.then((userId) => this.get("users/"+userId+"/outfits", {page:page, itemsPerPage:amt}, cb))
 	}
 }
-
 
 
 pageInit.home = function() {
@@ -385,21 +383,199 @@ pageInit.develop = function() {
 	})
 }
 
+const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 39]
+const AnimationPreviewAssetTypeIds = [24, 32, 48, 49, 50, 51, 52, 53, 54, 55, 56]
+const WearableAssetTypeIds = [2, 8, 11, 12, 18, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47]
+const UniqueWearableAssetTypeIds = [2, 11, 12, 18, 28, 29, 30, 31]
+const AssetTypeIds = (() => {
+	var a = "Accessory | "
+	var b = "Animation | "
+
+	return [ null,
+		"Image", "T-Shirt", "Audio", "Mesh", "Lua", "HTML", "Text", "Accessory | Hat", "Place", "Model", // 10
+		"Shirt", "Pants", "Decal", "null", "null", "Avatar", "Head", "Face", "Gear", "null", // 20
+		"Badge", "Group Emblem", "null", "Animation", "Arms", "Legs", "Torso", "Right Arm", "Left Arm", "Left Leg", // 30
+		"Right Leg", "Package", "YouTubeVideo", "Game Pass", "App", "null", "Code", "Plugin", "SolidModel", "MeshPart", // 40
+		a+"Hair", a+"Face", a+"Neck", a+"Shoulder", a+"Front", a+"Back", a+"Waist", // 47
+		b+"Climb", b+"Death", b+"Fall", b+"Idle", b+"Jump", b+"Run", b+"Swim", b+"Walk", b+"Pose" // 56
+	]
+})();
+
+function Create3dPreview() {
+	var container = $("<div style='width:100%;height:100%;'>")
+	var modeSwitch = $("<div class='btr-switch' style='position:absolute;top:6px;right:6px;'>" +
+		"<div class='btr-switch-off'>R6</div>" +
+		"<div class='btr-switch-on'>R15</div>" +
+		"<input type='checkbox'>" + 
+		"<div class='btr-switch-flip'>" +
+			"<div class='btr-switch-off'>R6</div>" +
+			"<div class='btr-switch-on'>R15</div>" +
+		"</div>" +
+	"</div>").appendTo(container).find("input")
+
+	var dropdown = $(
+	"<div class='input-group-btn' style='position:absolute;top:6px;left:6px;width:140px'>" +
+		"<button type='button' class='input-dropdown-btn' data-toggle='dropdown'>" +
+			"<span class='rbx-selection-label' data-bind='label'>{0}</span>" +
+			"<span class='icon-down-16x16'></span>" +
+		"</button>" +
+		"<ul data-toggle='dropdown-menu' class='dropdown-menu' role='menu'>" +
+		"</ul>" +
+	"</div>").hide().appendTo(container)
+
+	var rulesPromise = new Promise(resolve => avatarApi.getRules(resolve))
+	var dataPromise = new Promise(resolve => avatarApi.getData(resolve))
+	var isLoaded = false
+	var scene = null
+
+	var wearableBuffer = []
+
+	function addWearable(assetInfo) {
+		if(!scene) {
+			wearableBuffer.push(assetInfo)
+			return;
+		}
+
+		scene.avatar.addAsset(assetInfo.id, assetInfo.assetType.id)
+	}
+
+	var currentAnim = null
+	var anims = {}
+	var preview = {
+		domElement: container,
+		switch: modeSwitch,
+
+		addWearable: addWearable,
+		addAnimation: function(id, name) {
+			if(!name)
+				name = "main";
+
+			if(name in anims) {
+				anims[name].assetId = id
+			} else {
+				anims[name] = {
+					name: name,
+					assetId: id,
+					btn: null
+				}
+
+				$("<li data-name='{0}'><a href='#'>{0}</a></li>")
+					.elemFormat(name)
+					.appendTo(dropdown.find(".dropdown-menu"))
+
+				var animCount = Object.keys(anims).length
+				if(animCount === 1)
+					this.playAnimation(name);
+				else if(animCount === 2 && !preview.hideDropdown)
+					dropdown.show();
+
+			}
+
+			return this
+		},
+		playAnimation: function(name, keepPlayerType) {
+			if(name in anims) {
+				dropdown.find("[data-bind='label']").text(name)
+				playAnimation(anims[name].assetId, keepPlayerType)
+			}
+
+			return this
+		}
+	}
+
+	dropdown.on("click", ".dropdown-menu>li[data-name]", (ev) => {
+		var animName = ev.currentTarget.getAttribute("data-name")
+		if(animName)
+			preview.playAnimation(animName);
+	})
+
+	modeSwitch.on("change", (ev) => {
+		var animType = ev.currentTarget.checked ? "R15": "R6"
+
+		if(scene)
+			scene.avatar.setPlayerType(animType);
+	})
+
+	function playAnimation(assetId, keepPlayerType) {
+		AssetCache.loadAsset(assetId, asset => {
+			try {
+				var anim = ANTI.ParseAnimationData(asset.as("model"))
+			} catch(ex) {
+				console.log("Failed to load animation:", ex)
+				return;
+			}
+
+			if(!keepPlayerType) {
+				var animType = "R6"
+				var r15Parts = ["lowertorso", "uppertorso", "leftupperarm", "leftlowerarm", "lefthand", "rightupperarm", "rightlowerarm", "righthand", "leftupperleg", "leftlowerleg", "leftfoot", "rightupperleg", "rightlowerleg", "rightfoot"]
+
+				for(var i=0; i<r15Parts.length; i++) {
+					if(r15Parts[i] in anim.Limbs) {
+						animType = "R15"
+						break;
+					}
+				}
+
+				modeSwitch[0].checked = animType === "R15"
+
+				if(scene) {
+					scene.avatar.setPlayerType(animType)
+				}
+			}
+			
+
+			if(scene) {
+				currentAnim = anim
+				scene.avatar.animator.play(anim)
+			}
+		})
+	}
+
+	execScripts(["lib/three.min.js", "js/RBXParser.js", "js/RBXScene.js"], () => {
+		ANTI.RBXScene.ready((RBXScene) => {
+			scene = window.scene = new RBXScene()
+			scene.canvas.appendTo(container)
+
+			scene.avatar.setPlayerType(modeSwitch[0].checked ? "R15" : "R6")
+			scene.avatar.animator.onstop = () => {
+				setTimeout(() => scene.avatar.animator.play(), 2000)
+			}
+
+			if(currentAnim)
+				scene.avatar.animator.play(currentAnim);
+
+			wearableBuffer.forEach(assetInfo => addWearable(assetInfo))
+			wearableBuffer = undefined
+
+			rulesPromise.then((rules) => {
+				//console.log("rules", rules)
+				var palette = {}
+				rules.bodyColorsPalette.forEach(data => palette[data.brickColorId] = data.hexColor)
+
+				dataPromise.then((data) => {
+					//console.log("data", data)
+					var bodyColors = {}
+					for(var name in data.bodyColors)
+						bodyColors[name] = palette[data.bodyColors[name]];
+
+					scene.avatar.setPlayerType(data.playerAvatarType)
+					scene.avatar.setBodyColors(bodyColors)
+					data.assets.forEach(assetInfo => preview.addWearable(assetInfo))
+				})
+			})
+		})
+	})
+
+	return preview
+}
+
 pageInit.itemdetails = function(assetId) {
-	var itemTypePromise = new Promise(resolve => Observer.add({
+	var assetTypePromise = new Promise(resolve => Observer.add({
 		selector: ".item-type-field-container .field-content",
 		callback: function(typeLabel) {
 			resolve(typeLabel.text().trim())
 		}
 	}))
-	var assetPromises = {}
-	function getAsset(assetId) {
-		if(!assetPromises[assetId]) {
-			assetPromises[assetId] = new Promise(resolve => downloadAsset("arraybuffer", { id: assetId }, resolve))
-		}
-
-		return assetPromises[assetId]
-	}
 
 	Observer.add({
 		selector: "#item-details-description",
@@ -421,293 +597,229 @@ pageInit.itemdetails = function(assetId) {
 		}
 	})
 
-	itemTypePromise.then(type => {
-		if(settings.catalog.explorerButton) {
-			var showExplorerButton = true
-			if(type === "Image" || type === "Audio" || type === "RenderMesh" || type === "Badge" || type === "Game Pass")
-				showExplorerButton = false;
+	assetTypePromise.then(assetTypeName => {
+		var assetTypeId = AssetTypeIds.indexOf(assetTypeName)
 
-			if(type === "Model") {
-				if($(".PurchaseButton").length === 0)
-					showExplorerButton = false;
-			}
+		if(assetTypeId === -1) {
+			if(isDevExtension)
+				alert("Unknown asset type " + assetTypeName);
 
-			if(showExplorerButton) {
-				Observer.add({
-					selector: "#item-container>.section-content",
-					callback: function(cont) {
-						var btn = $(
-						"<div class='btr-explorer-button'>" + 
-							"<a class='btr-icon-explorer' data-toggle='popover' data-bind='btr-explorer-content'></a>" +
-							"<div class='rbx-popover-content' data-toggle='btr-explorer-content'>" +
-								"<div class='btr-explorer-parent'></div>" +
-							"</div>" +
-						"</div>").appendTo(cont)
-
-						$("#item-container").addClass("btr-explorer-btn-shown")
-
-						var modelViewer = null
-						var hasStartedLoading = false
-						var isLoaded = false
-
-						btn.on("click", (event) => {
-							if(!isLoaded) {
-								if(!hasStartedLoading) {
-									hasStartedLoading = true
-
-									execScripts(["js/RBXModelViewer.js", "js/RBXParser.js"], () => {
-										modelViewer = new ModelViewer()
-
-										if(type === "Package") {
-											getAsset(assetId).then(buffer => {
-												var list = new TextDecoder("ascii").decode(buffer).split(";")
-												list.forEach(assetId => {
-													getAsset(assetId).then(buffer => {
-														var model = ANTI.ParseRBXM(buffer)
-														modelViewer.addView(assetId.toString(), model)
-													})
-												})
-											})
-										} else {
-											getAsset(assetId).then(buffer => {
-												var model = ANTI.ParseRBXM(buffer)
-												modelViewer.addView("Main", model)
-											})
-										}
-
-										isLoaded = true
-										modelViewer.domElement.clone().appendTo(btn.find(".btr-explorer-parent"))
-
-										setTimeout(() => btn.find(".btr-icon-explorer")[0].click(), 250)
-									})
-								}
-								$("body").click()
-								return false
-							} else {
-								var parent = $("div:not('.rbx-popover-content')>.btr-explorer-parent")
-								if(parent.length === 0)
-									return;
-
-								parent.find(".btr-modelviewer").replaceWith(modelViewer.domElement)
-							}
-						})
-					}
-				})
-			}
+			return;
 		}
 
-		function createPreview() {
-			var mainCont = $("<div class='item-thumbnail-container' style='border:1px #ddd solid;position:relative;height:420px;width:420px;'>")
-			var modeSwitch = $("<div class='btr-switch' style='position:absolute;top:6px;right:6px;'>" +
-				"<div class='btr-switch-off'>R6</div>" +
-				"<div class='btr-switch-on'>R15</div>" +
-				"<input type='checkbox'>" + 
-				"<div class='btr-switch-flip'>" +
-					"<div class='btr-switch-off'>R6</div>" +
-					"<div class='btr-switch-on'>R15</div>" +
+		function enableExplorer() {
+			var explorerInitialized = false
+			var explorer = null
+
+			var btn = $(
+			"<div class='btr-explorer-button'>" + 
+				"<a class='btr-icon-explorer' data-toggle='popover' data-bind='btr-explorer-content'></a>" +
+				"<div class='rbx-popover-content' data-toggle='btr-explorer-content'>" +
+					"<div class='btr-explorer-parent'></div>" +
 				"</div>" +
-			"</div>").appendTo(mainCont).find("input")
-			var dropdown = $(
-			"<div class='input-group-btn' style='position:absolute;top:6px;left:6px;width:140px'>" +
-				"<button type='button' class='input-dropdown-btn' data-toggle='dropdown'>" +
-					"<span class='rbx-selection-label' data-bind='label'>{0}</span>" +
-					"<span class='icon-down-16x16'></span>" +
-				"</button>" +
-				"<ul data-toggle='dropdown-menu' class='dropdown-menu' role='menu'>" +
-				"</ul>" +
-			"</div>").hide().appendTo(mainCont)
+			"</div>")
 
-			var rulesPromise = new Promise(resolve => avatarApi.getRules(resolve))
-			var dataPromise = new Promise(resolve => avatarApi.getData(resolve))
-			var isLoaded = false
-			var scene = null
+			btn.on("click", () => {
+				if(!explorer)
+					return false;
 
-			var currentAnim = null
-			var anims = {}
-			var preview = {
-				addAnimation: function(id, name) {
-					if(!name)
-						name = "main";
+				if(!explorerInitialized) {
+					explorerInitialized = true
 
-					if(name in anims) {
-						anims[name].assetId = id
-					} else {
-						anims[name] = {
-							name: name,
-							assetId: id,
-							btn: null
-						}
-
-						$("<li data-name='{0}'><a href='#'>{0}</a></li>")
-							.elemFormat(name)
-							.appendTo(dropdown.find(".dropdown-menu"))
-
-						var animCount = Object.keys(anims).length
-						if(animCount === 1)
-							this.playAnimation(name);
-						else if(animCount === 2)
-							dropdown.show();
-
-					}
-
-					return this
-				},
-				playAnimation: function(name) {
-					if(name in anims) {
-						dropdown.find("[data-bind='label']").text(name)
-						playAnimation(anims[name].assetId)
-
-					}
-
-					return this
-				}
-			}
-
-			dropdown.on("click", ".dropdown-menu>li[data-name]", (ev) => {
-				var animName = ev.currentTarget.getAttribute("data-name")
-				if(animName)
-					preview.playAnimation(animName);
-			})
-
-			modeSwitch.on("change", (ev) => {
-				var animType = ev.currentTarget.checked ? "R15": "R6"
-
-				if(scene)
-					scene.avatar.setPlayerType(animType);
-			})
-
-			function playAnimation(assetId) {
-				getAsset(assetId).then(buffer => {
-					try {
-						var anim = ANTI.ParseAnimationData(ANTI.ParseRBXM(buffer))
-					} catch(ex) {
-						console.log("Failed to load animation:", ex)
-						return;
-					}
-
-					var animType = "R6"
-					var r15Parts = ["lowertorso", "uppertorso", "leftupperarm", "leftlowerarm", "lefthand", "rightupperarm", "rightlowerarm", "righthand", "leftupperleg", "leftlowerleg", "leftfoot", "rightupperleg", "rightlowerleg", "rightfoot"]
-
-					for(var i=0; i<r15Parts.length; i++) {
-						if(r15Parts[i] in anim.Limbs) {
-							animType = "R15"
-							break;
-						}
-					}
-
-					modeSwitch[0].checked = animType === "R15"
-					currentAnim = anim
-
-					if(scene) {
-						scene.avatar.setPlayerType(animType)
-						scene.avatar.animator.play(anim)
-					}
-				})
-			}
-
-			execScripts(["lib/three.min.js", "js/RBXParser.js", "js/RBXScene.js"], () => {
-				ANTI.RBXScene.ready((RBXScene) => {
-					scene = window.scene = new RBXScene()
-					scene.canvas.appendTo(mainCont)
-
-					scene.avatar.setPlayerType(modeSwitch[0].checked ? "R15" : "R6")
-					scene.avatar.animator.onstop = () => {
-						setTimeout(() => scene.avatar.animator.play(), 2000)
-					}
-
-					if(currentAnim)
-						scene.avatar.animator.play(currentAnim);
-
-					rulesPromise.then((rules) => {
-						//console.log("rules", rules)
-						var palette = {}
-						rules.bodyColorsPalette.forEach(data => palette[data.brickColorId] = data.hexColor)
-
-						dataPromise.then((data) => {
-							//console.log("data", data)
-							var bodyColors = {}
-							for(var name in data.bodyColors)
-								bodyColors[name] = palette[data.bodyColors[name]];
-
-							scene.avatar.setBodyColors(bodyColors)
-							data.assets.forEach(assetInfo => scene.avatar.addAsset(assetInfo))
+					if(assetTypeId === 32) { // Package
+						AssetCache.loadAsset(assetId, asset => {
+							asset.as("ascii").split(";").forEach(id => {
+								AssetCache.loadAsset(id, asset => explorer.addView(id.toString(), asset.as("model")))
+							})
 						})
-					})
-				})
+					} else {
+						AssetCache.loadAsset(assetId, asset => explorer.addView("Main", asset.as("model")))
+					}
+				}
+
+				var parent = $("div:not('.rbx-popover-content')>.btr-explorer-parent")
+				if(parent.length === 0)
+					return;
+
+				parent.find(".btr-modelviewer").replaceWith(explorer.domElement)
+			})
+
+			execScripts(["js/Explorer.js"], () => {
+				explorer = new Explorer()
+				explorer.domElement.clone().appendTo(btn.find(".btr-explorer-parent"))
 			})
 
 			Observer.add({
-				selector: "#AssetThumbnail",
-				callback: function(tbCont) {
-					mainCont.insertAfter(tbCont.parent())
-					tbCont.parent().remove()
+				selector: "#item-container>.section-content",
+				callback: function(cont) {
+					btn.appendTo(cont)
+					cont.parent().addClass("btr-explorer-btn-shown")
 				}
 			})
+		}
+
+		function enablePreview() {
+			var preview = Create3dPreview()
+			var container = $("<div class='item-thumbnail-container btr-preview-container'>")
+			preview.domElement.appendTo(container)
+
+			var visible = true
+			var oldContainer = null
+
+			Observer.add({
+				selector: "#AssetThumbnail",
+				callback: function(oldCont) {
+					oldContainer = oldCont.parent()
+					container.insertAfter(oldContainer)
+
+					if(visible) {
+						oldContainer.hide()
+						container.show()
+					} else {
+						oldContainer.show()
+						container.hide()
+					}
+				}
+			})
+
+			preview.toggleVisible = function(bool) {
+				visible = typeof(bool) === "boolean" ? bool : !visible
+				if(visible) {
+					if(oldContainer)
+						oldContainer.hide();
+					container.show()
+				} else {
+					if(oldContainer)
+						oldContainer.show();
+					container.hide()
+				}
+			}
 
 			return preview
 		}
 
-		function getAnimationsFromAsset(assetId, cb) {
-			var assetPromise = getAsset(assetId)
-			var list = []
+		execScripts(["js/RBXParser.js", "js/AssetCache.js"], () => {
+			if(settings.catalog.explorerButton && InvalidExplorableAssetTypeIds.indexOf(assetTypeId) === -1) {
+				if(!(assetTypeId == 10 && $(".PurchaseButton").length === 0)) { // Do not explore private models
+					enableExplorer()
+				}
+			}
 
-			execScripts(["js/RBXParser.js"], () => {
-				assetPromise.then(buffer => {
-					var model = ANTI.ParseRBXM(buffer)
-					model.forEach(folder => {
-						if(folder.ClassName !== "Folder" || folder.Name !== "R15Anim")
-							return;
+			if(settings.catalog.animationPreview && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1) {
+				function parseAnimPackage(assetId, cb) {
+					AssetCache.loadAsset(assetId, asset => {
+						var model = asset.as("model")
+						var dict = {}
 
-						folder.Children.forEach(value => {
-							if(value.ClassName !== "StringValue")
+						model.forEach(folder => {
+							if(folder.ClassName !== "Folder" || folder.Name !== "R15Anim")
 								return;
 
-							var animName = value.Name
-
-							value.Children.forEach((anim, i) => {
-								if(anim.ClassName !== "Animation")
+							folder.Children.forEach(value => {
+								if(value.ClassName !== "StringValue")
 									return;
 
-								var animId = ANTI.RBXParseContentUrl(anim.AnimationId)
-								if(animId) {
-									var index = animName + (i === 0 ? "" : "_" + (i+1))
-									list.push({
-										name: index,
-										assetId: animId
-									})
-								}
+								var animName = value.Name
+
+								value.Children.forEach((anim, i) => {
+									if(anim.ClassName !== "Animation")
+										return;
+
+									var animId = ANTI.RBXParseContentUrl(anim.AnimationId)
+									if(animId) {
+										var index = animName + (i === 0 ? "" : "_" + (i+1))
+										dict[index] = animId
+									}
+								})
 							})
 						})
+
+						cb(dict)
 					})
+				}
 
-					cb(list)
-				})
-			})
-		}
+				if(assetTypeId === 32) {
+					AssetCache.loadAsset(assetId, asset => {
+						var preview = null
 
-		if(settings.catalog.animationPreview) {
-			if(type === "Animation") {
-				createPreview().addAnimation(assetId)
-			} else if(type.substring(0,9) === "Animation") { // avatar anim
-				var preview = createPreview()
+						asset.as("ascii").split(";").forEach(assetId => {
+							var anims = parseAnimPackage(assetId)
 
-				getAnimationsFromAsset(assetId, (list) => {
-					list.forEach(anim => preview.addAnimation(anim.assetId, anim.name))
-				})
-			} else if(type === "Package") {
+							if(Object.keys(anims).length === 0)
+								return;
+
+							if(!preview)
+								preview = enablePreview();
+
+							for(var name in anims)
+								preview.addAnimation(anims[name], name);
+						})
+					})
+				} else {
+					var preview = enablePreview()
+
+					if(assetTypeId === 24) {
+						preview.addAnimation(assetTypeId)
+					} else {
+						parseAnimPackage(assetId, anims => {
+							for(var name in anims) {
+								preview.addAnimation(anims[name], name)
+							}
+						})
+					}
+				}
+			}
+
+			if(true && WearableAssetTypeIds.indexOf(assetTypeId) !== -1) {
+				var btn = $("<span class='btr-preview-btn rbx-btn-control-sm'>").text("\uD83D\uDC41")
 				var preview = null
 
-				getAsset(assetId).then(buffer => {
-					var assets = new TextDecoder("ascii").decode(buffer).split(";")
-					assets.forEach(assetId => getAnimationsFromAsset(assetId, list => {
-						if(list.length > 0 && !preview)
-							preview = createPreview();
+				$(document).on("click", ".btr-preview-btn", () => {
+					if(!preview) {
+						preview = enablePreview()
+						btn.clone().appendTo(preview.domElement)
+						var addWearable = preview.addWearable.bind(preview)
+						preview.hideDropdown = true
 
-						list.forEach(anim => preview.addAnimation(anim.assetId, anim.name))
-					}))
+						if(UniqueWearableAssetTypeIds.indexOf(assetTypeId) !== -1) {
+							preview.addWearable = (assetInfo) => {
+								if(assetInfo.assetType.id === assetTypeId)
+									return;
+
+								addWearable(assetInfo)
+							}
+						}
+
+						preview.addAnimation(507766388, "R15Idle")
+						preview.addAnimation(180435571, "R6Idle")
+
+						function updateAnim() {
+							var mode = preview.switch[0].checked ? "R15Idle" : "R6Idle"
+							preview.playAnimation(mode, true)
+						}
+
+						updateAnim()
+						preview.switch.on("change", updateAnim)
+
+						addWearable({
+							id: assetId,
+							assetType: {
+								id: assetTypeId
+							}
+						})
+					} else {
+						preview.toggleVisible()
+					}
+				})
+
+				Observer.add({
+					selector: "#AssetThumbnail",
+					callback: function(cont) {
+						btn.appendTo(cont)
+					}
 				})
 			}
-		}
+		})
 	})
 }
 
