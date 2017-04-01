@@ -5,7 +5,6 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 	var isReady = false
 	var readyPromise = new Promise((resolve) => {
 		var components = [
-			"js/scene/AssetCache.js",
 			"js/scene/Animator.js",
 			"js/scene/Controls.js",
 			"js/scene/Avatar.js"
