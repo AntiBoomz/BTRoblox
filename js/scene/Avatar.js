@@ -247,12 +247,12 @@ ANTI.RBXScene.Avatar = (function() {
 		
 		this.shouldUpdateBodyColors = true
 		this.bodyColors = {
-			headColorId: "#A3A2A5",
-			torsoColorId: "#A3A2A5",
-			rightArmColorId: "#A3A2A5",
-			leftArmColorId: "#A3A2A5",
-			rightLegColorId: "#A3A2A5",
-			rightArmColorId: "#A3A2A5"
+			head: "#A3A2A5",
+			torso: "#A3A2A5",
+			rightarm: "#A3A2A5",
+			leftarm: "#A3A2A5",
+			rightleg: "#A3A2A5",
+			rightarm: "#A3A2A5"
 		}
 
 		var ctx = this.context
@@ -260,31 +260,30 @@ ANTI.RBXScene.Avatar = (function() {
 		this.beforeComposite.push(() => {
 			if(this.shouldUpdateBodyColors) {
 				this.shouldUpdateBodyColors = false
-				var bc = this.bodyColors
-				ctx.fillStyle = bc.torsoColorId
+				ctx.fillStyle = this.bodyColors.torso
 				ctx.fillRect(0,0, 192,448)
 				ctx.fillRect(194,322, 272,76)
 				ctx.fillRect(272,401, 148,104)
 
-				ctx.fillStyle = bc.rightArmColorId
+				ctx.fillStyle = this.bodyColors.rightarm
 				ctx.fillRect(200,0, 192,320)
 				ctx.fillRect(420,400, 148,104)
 				ctx.fillRect(758,322, 76,76)
 				ctx.fillRect(898,322, 76,76)
 
-				ctx.fillStyle = bc.leftArmColorId
+				ctx.fillStyle = this.bodyColors.leftarm
 				ctx.fillRect(400,0, 192,320)
 				ctx.fillRect(568,400, 148,104)
 				ctx.fillRect(828,322, 76,76)
 				ctx.fillRect(194,394, 76,76)
 
-				ctx.fillStyle = bc.rightLegColorId
+				ctx.fillStyle = this.bodyColors.rightleg
 				ctx.fillRect(600,0, 192,320)
 				ctx.fillRect(716,400, 148,104)
 				ctx.fillRect(466,322, 76,76)
 				ctx.fillRect(610,322, 76,76)
 
-				ctx.fillStyle = bc.leftLegColorId
+				ctx.fillStyle = this.bodyColors.leftleg
 				ctx.fillRect(800,0, 192,320)
 				ctx.fillRect(864,400, 148,104)
 				ctx.fillRect(542,322, 76,76)
@@ -359,6 +358,10 @@ ANTI.RBXScene.Avatar = (function() {
 			att: {}
 		}
 		this.attachmentPoints = {}
+		this.parts = {}
+		this.joints = {}
+
+		this.ptDebounce = 0
 
 		var textures = this.textures = {
 			pants: createTexture(),
@@ -405,22 +408,20 @@ ANTI.RBXScene.Avatar = (function() {
 	}
 
 	Object.assign(Avatar.prototype, {
-		setBodyColors: function(bc) {
-			this.r6Composite.bodyColors = bc
+		setBodyColors: function(bodyColors) {
+			this.r6Composite.bodyColors = bodyColors
 			this.r6Composite.shouldUpdateBodyColors = true
 			this.r6Composite.update()
 
 			$.each(this.r15Composites, (name, composite) => {
-				for(var i in bc) {
-					if(i.toLowerCase().indexOf(name) === 0) {
-						composite.background = bc[i]
-						composite.update()
-						break;
-					}
-				}
+				if(!bodyColors[name])
+					return;
+
+				composite.background = bodyColors[name]
+				composite.update()
 			})
 
-			this.headComposite.background = bc.headColorId
+			this.headComposite.background = bodyColors.head
 			this.headComposite.update()
 		},
 		addAsset: function(assetId, assetTypeId) {
@@ -695,6 +696,8 @@ ANTI.RBXScene.Avatar = (function() {
 			var joints = this.joints = {}
 			var attachmentPoints = this.attachmentPoints = {}
 
+			var ptKey = ++this.ptDebounce
+
 			this.animator.setJoints(joints)
 
 			if(playerType === "R6") {
@@ -772,6 +775,9 @@ ANTI.RBXScene.Avatar = (function() {
 			} else if(playerType === "R15") {
 				this.model.position.set(0, 2.233, 0)
 				AssetCache.loadUrl(chrome.runtime.getURL("res/previewer/r15/characterR15_3.rbxm"), (asset) => {
+					if(this.ptDebounce !== ptKey)
+						return;
+
 					var model = asset.as("model")[0]
 					var rigData = this.rigData = {
 						LeftWrist: { part0Name: "LeftLowerArm", part1Name: "LeftHand" },
