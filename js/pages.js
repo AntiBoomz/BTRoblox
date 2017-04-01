@@ -401,7 +401,7 @@ const AssetTypeIds = (() => {
 	]
 })();
 
-function Create3dPreview() {
+function Create3dPreview(readyCb) {
 	var container = $("<div style='width:100%;height:100%;'>")
 	var modeSwitch = $("<div class='btr-switch' style='position:absolute;top:6px;right:6px;'>" +
 		"<div class='btr-switch-off'>R6</div>" +
@@ -416,68 +416,125 @@ function Create3dPreview() {
 	var dropdown = $(
 	"<div class='input-group-btn' style='position:absolute;top:6px;left:6px;width:140px'>" +
 		"<button type='button' class='input-dropdown-btn' data-toggle='dropdown'>" +
-			"<span class='rbx-selection-label' data-bind='label'>{0}</span>" +
+			"<span class='rbx-selection-label' data-bind='label'></span>" +
 			"<span class='icon-down-16x16'></span>" +
 		"</button>" +
 		"<ul data-toggle='dropdown-menu' class='dropdown-menu' role='menu'>" +
 		"</ul>" +
 	"</div>").hide().appendTo(container)
 
-	var rulesPromise = new Promise(resolve => avatarApi.getRules(resolve))
-	var dataPromise = new Promise(resolve => avatarApi.getData(resolve))
+	if(!avatarApi.rulesPromise)
+		avatarApi.rulesPromise = new Promise(resolve => avatarApi.getRules(resolve));
+
 	var isLoaded = false
 	var scene = null
 
-	var wearableBuffer = []
-
-	function addWearable(assetInfo) {
-		if(!scene) {
-			wearableBuffer.push(assetInfo)
-			return;
-		}
-
-		scene.avatar.addAsset(assetInfo.id, assetInfo.assetType.id)
-	}
+	var animDebounce = 0
+	var appDebounce = 0
 
 	var currentAnim = null
-	var anims = {}
 	var preview = {
 		domElement: container,
 		switch: modeSwitch,
 
-		addWearable: addWearable,
-		addAnimation: function(id, name) {
-			if(!name)
-				name = "main";
+		setPlayerType: function(playerType) {
+			console.assert(playerType === "R6" || playerType === "R15")
+			this.playerType = playerType
 
-			if(name in anims) {
-				anims[name].assetId = id
-			} else {
-				anims[name] = {
-					name: name,
-					assetId: id,
-					btn: null
+			var isChecked = playerType === "R15"
+			if(modeSwitch[0].checked !== isChecked) {
+				modeSwitch[0].checked = isChecked
+				modeSwitch.trigger("change")
+			}
+
+			if(scene)
+				scene.avatar.setPlayerType(playerType);
+		},
+		loadDefaultAppearance: function(modifierCb) {
+			avatarApi.getData((data) => {
+				if(modifierCb)
+					modifierCb(data);
+
+				this.applyAppearance(data)
+			})
+		},
+		applyAppearance: function(data) {
+			this.appearanceData = data
+			if(!scene)
+				return;
+
+			var appKey = ++appDebounce
+			avatarApi.rulesPromise.then(rules => {
+				if(appDebounce !== appKey)
+					return;
+
+				if(data.playerAvatarType && !this.playerType)
+					preview.setPlayerType(data.playerAvatarType);
+
+				if(data.bodyColors) {
+					var bodyColors = {}
+					$.each(data.bodyColors, (name, value) => {
+						var index = name.toLowerCase().replace(/colorid$/, "")
+						var bodyColor = rules.bodyColorsPalette.find(x => x.brickColorId === value)
+						bodyColors[index] = bodyColor.hexColor
+					})
+
+					scene.avatar.setBodyColors(bodyColors)
+				}
+				
+				if(data.assets) {
+					data.assets.forEach(assetInfo => {
+						scene.avatar.addAsset(assetInfo.id, assetInfo.assetType.id)
+					})
+				}
+			})
+		},
+		addDropdown: function(id, name) {
+			var menu = dropdown.find(".dropdown-menu")
+			$("<li data-name='{0}' data-assetId='{1}'><a href='#'>{0}</a></li>")
+				.elemFormat(name)
+				.appendTo(menu)
+
+			if(menu.children().length === 2)
+				dropdown.show();
+		},
+		playAnimation: function(animId, name, matchPlayerType) {
+			if(name)
+				dropdown.find("[data-bind='label']").text(name);
+
+			var animIndex = ++animDebounce
+
+			AssetCache.loadAsset(animId, asset => {
+				if(animDebounce !== animIndex)
+					return;
+
+				try {
+					var anim = ANTI.ParseAnimationData(asset.as("model"))
+				} catch(ex) {
+					console.log("Failed to load animation:", ex)
+					return;
 				}
 
-				$("<li data-name='{0}'><a href='#'>{0}</a></li>")
-					.elemFormat(name)
-					.appendTo(dropdown.find(".dropdown-menu"))
+				if(matchPlayerType) {
+					var playerType = "R6"
+					var r15Parts = ["lowertorso", "uppertorso", "leftupperarm", "leftlowerarm", "lefthand", "rightupperarm", "rightlowerarm", "righthand", "leftupperleg", "leftlowerleg", "leftfoot", "rightupperleg", "rightlowerleg", "rightfoot"]
 
-				var animCount = Object.keys(anims).length
-				if(animCount === 1)
-					this.playAnimation(name);
-				else if(animCount === 2 && !preview.hideDropdown)
-					dropdown.show();
+					for(var i=0; i<r15Parts.length; i++) {
+						if(r15Parts[i] in anim.Limbs) {
+							playerType = "R15"
+							break;
+						}
+					}
 
-			}
+					preview.setPlayerType(playerType)
+				}
+				
 
-			return this
-		},
-		playAnimation: function(name, keepPlayerType) {
-			if(name in anims) {
-				dropdown.find("[data-bind='label']").text(name)
-				playAnimation(anims[name].assetId, keepPlayerType)
-			}
+				currentAnim = anim
+				if(scene) {
+					scene.avatar.animator.play(anim)
+				}
+			})
 
 			return this
 		}
@@ -485,84 +542,32 @@ function Create3dPreview() {
 
 	dropdown.on("click", ".dropdown-menu>li[data-name]", (ev) => {
 		var animName = ev.currentTarget.getAttribute("data-name")
-		if(animName)
-			preview.playAnimation(animName);
+		var animId = ev.currentTarget.getAttribute("data-assetId")
+		if(animName && animId) 
+			preview.playAnimation(animId, animName);
 	})
 
 	modeSwitch.on("change", (ev) => {
-		var animType = ev.currentTarget.checked ? "R15": "R6"
-
-		if(scene)
-			scene.avatar.setPlayerType(animType);
+		var playerType = ev.currentTarget.checked ? "R15": "R6"
+		preview.setPlayerType(playerType)
 	})
-
-	function playAnimation(assetId, keepPlayerType) {
-		AssetCache.loadAsset(assetId, asset => {
-			try {
-				var anim = ANTI.ParseAnimationData(asset.as("model"))
-			} catch(ex) {
-				console.log("Failed to load animation:", ex)
-				return;
-			}
-
-			if(!keepPlayerType) {
-				var animType = "R6"
-				var r15Parts = ["lowertorso", "uppertorso", "leftupperarm", "leftlowerarm", "lefthand", "rightupperarm", "rightlowerarm", "righthand", "leftupperleg", "leftlowerleg", "leftfoot", "rightupperleg", "rightlowerleg", "rightfoot"]
-
-				for(var i=0; i<r15Parts.length; i++) {
-					if(r15Parts[i] in anim.Limbs) {
-						animType = "R15"
-						break;
-					}
-				}
-
-				modeSwitch[0].checked = animType === "R15"
-
-				if(scene) {
-					scene.avatar.setPlayerType(animType)
-				}
-			}
-			
-
-			if(scene) {
-				currentAnim = anim
-				scene.avatar.animator.play(anim)
-			}
-		})
-	}
 
 	execScripts(["lib/three.min.js", "js/RBXParser.js", "js/RBXScene.js"], () => {
 		ANTI.RBXScene.ready((RBXScene) => {
-			scene = window.scene = new RBXScene()
+			scene = window.scene = preview.scene = new RBXScene()
 			scene.canvas.appendTo(container)
 
-			scene.avatar.setPlayerType(modeSwitch[0].checked ? "R15" : "R6")
-			scene.avatar.animator.onstop = () => {
-				setTimeout(() => scene.avatar.animator.play(), 2000)
-			}
+			if(preview.playerType)
+				scene.avatar.setPlayerType(preview.playerType);
 
 			if(currentAnim)
 				scene.avatar.animator.play(currentAnim);
 
-			wearableBuffer.forEach(assetInfo => addWearable(assetInfo))
-			wearableBuffer = undefined
+			if(preview.appearanceData)
+				preview.applyAppearance(preview.appearanceData);
 
-			rulesPromise.then((rules) => {
-				//console.log("rules", rules)
-				var palette = {}
-				rules.bodyColorsPalette.forEach(data => palette[data.brickColorId] = data.hexColor)
-
-				dataPromise.then((data) => {
-					//console.log("data", data)
-					var bodyColors = {}
-					for(var name in data.bodyColors)
-						bodyColors[name] = palette[data.bodyColors[name]];
-
-					scene.avatar.setPlayerType(data.playerAvatarType)
-					scene.avatar.setBodyColors(bodyColors)
-					data.assets.forEach(assetInfo => preview.addWearable(assetInfo))
-				})
-			})
+			if(readyCb)
+				readyCb(scene, preview);
 		})
 	})
 
@@ -658,8 +663,8 @@ pageInit.itemdetails = function(assetId) {
 			})
 		}
 
-		function enablePreview() {
-			var preview = Create3dPreview()
+		function enablePreview(readyCb) {
+			var preview = Create3dPreview(readyCb)
 			var container = $("<div class='item-thumbnail-container btr-preview-container'>")
 			preview.domElement.appendTo(container)
 
@@ -738,33 +743,53 @@ pageInit.itemdetails = function(assetId) {
 					})
 				}
 
+				function onPreviewReady(scene) {
+					scene.avatar.animator.onstop = () => {
+						setTimeout(() => scene.avatar.animator.play(), 2000)
+					}
+				}
+
 				if(assetTypeId === 32) {
 					AssetCache.loadAsset(assetId, asset => {
 						var preview = null
+						var playing = false
 
 						asset.as("ascii").split(";").forEach(assetId => {
-							var anims = parseAnimPackage(assetId)
+							parseAnimPackage(assetId, anims => {
+								if(Object.keys(anims).length === 0)
+									return;
 
-							if(Object.keys(anims).length === 0)
-								return;
+								if(!preview) {
+									preview = enablePreview(onPreviewReady)
+									preview.loadDefaultAppearance()
+								}
 
-							if(!preview)
-								preview = enablePreview();
-
-							for(var name in anims)
-								preview.addAnimation(anims[name], name);
+								$.each(anims, (name, animId) => {
+									preview.addDropdown(animId, name)
+									if(!playing) {
+										playing = true
+										preview.playAnimation(animId, name, true)
+									}
+								})
+							})
 						})
 					})
 				} else {
-					var preview = enablePreview()
+					var preview = enablePreview(onPreviewReady)
+					preview.loadDefaultAppearance()
 
 					if(assetTypeId === 24) {
-						preview.addAnimation(assetTypeId)
+						preview.playAnimation(assetId, null, true)
 					} else {
 						parseAnimPackage(assetId, anims => {
-							for(var name in anims) {
-								preview.addAnimation(anims[name], name)
-							}
+							var playing = false
+							$.each(anims, (name, animId) => {
+								preview.addDropdown(animId, name)
+								if(!playing) {
+									playing = true
+									preview.playAnimation(animId, name, true)
+								}
+							})
 						})
 					}
 				}
@@ -777,36 +802,36 @@ pageInit.itemdetails = function(assetId) {
 				$(document).on("click", ".btr-preview-btn", () => {
 					if(!preview) {
 						preview = enablePreview()
-						btn.clone().appendTo(preview.domElement)
-						var addWearable = preview.addWearable.bind(preview)
-						preview.hideDropdown = true
+						preview.loadDefaultAppearance((data) => {
+							var assets = data.assets
 
-						if(UniqueWearableAssetTypeIds.indexOf(assetTypeId) !== -1) {
-							preview.addWearable = (assetInfo) => {
-								if(assetInfo.assetType.id === assetTypeId)
-									return;
-
-								addWearable(assetInfo)
+							if(UniqueWearableAssetTypeIds.indexOf(assetTypeId) !== -1) {
+								for(var i=0; i<assets.length; i++) {
+									var assetInfo = assets[i]
+									if(assetInfo.assetType.id === assetTypeId) {
+										assets.splice(i--, 1)
+										break;
+									}
+								}
 							}
-						}
 
-						preview.addAnimation(507766388, "R15Idle")
-						preview.addAnimation(180435571, "R6Idle")
+							assets.push({
+								id: assetId,
+								assetType: {
+									id: assetTypeId
+								}
+							})
+						})
 
 						function updateAnim() {
-							var mode = preview.switch[0].checked ? "R15Idle" : "R6Idle"
-							preview.playAnimation(mode, true)
+							var animId = preview.playerType === "R15" ? 507766388 : 180435571
+							preview.playAnimation(animId)
 						}
 
-						updateAnim()
 						preview.switch.on("change", updateAnim)
+						updateAnim()
 
-						addWearable({
-							id: assetId,
-							assetType: {
-								id: assetTypeId
-							}
-						})
+						btn.clone().appendTo(preview.domElement)
 					} else {
 						preview.toggleVisible()
 					}
