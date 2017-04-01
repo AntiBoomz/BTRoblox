@@ -1,8 +1,7 @@
-// BTR-RBXScene-AssetCache.js
+// BTR-RBXScene-Avatar.js
 "use strict"
 
 ANTI.RBXScene.Avatar = (function() {
-	var AssetCache = ANTI.RBXScene.AssetCache
 	var Animator = ANTI.RBXScene.Animator
 	var parseContentUrl = ANTI.RBXParseContentUrl
 
@@ -43,45 +42,60 @@ ANTI.RBXScene.Avatar = (function() {
 	}
 
 	function createTexture(img) {
-		var texture = new THREE.Texture()
-		texture.minFilter = THREE.LinearFilter
-		texture.wrapS = THREE.ClampToEdgeWrapping
-		texture.wrapT = THREE.ClampToEdgeWrapping
+		if(!img)
+			img = createImage();
 
-		var img = texture.image = img instanceof Image ? img : createImage()
-		img.addEventListener("load", () => {
-			texture.needsUpdate = true
-			return true
-		})
+		var texture = new THREE.Texture(img)
+		texture.minFilter = THREE.LinearFilter
+
+		if(img instanceof Image) {
+			img.addEventListener("load", () => {
+				texture.needsUpdate = true
+				return true
+			})
+		}
 
 		return texture
 	}
 
 	function mergeTexture() {
-		var texture = createTexture()
 		var canvas = document.createElement("canvas")
 		var ctx = canvas.getContext("2d")
+		canvas.width = 1024
+		canvas.height = 1024
 
-		canvas.width = 512
-		canvas.height = 512
+		var texture = new THREE.Texture(canvas)
+		texture.minFilter = THREE.LinearFilter
 
 		var stack = []
+		var updateTimeout = null
 
 		function updateFinal() {
 			ctx.clearRect(0, 0, canvas.width, canvas.height)
 
 			stack.forEach(img => {
-				if(img.src !== "")
+				if(img.src !== "") {
 					ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+				}
 			})
 
-			texture.image.src = canvas.toDataURL()
+			texture.needsUpdate = true
+		}
+
+		function requestUpdate() {
+			clearTimeout(updateTimeout)
+			updateTimeout = setTimeout(updateFinal, 30)
 		}
 
 		for(var i=0; i<arguments.length; i++) {
 			var img = arguments[i]
 			stack.push(img)
-			img.addEventListener("load", updateFinal)
+
+			if(img instanceof Image) {
+				img.addEventListener("load", updateFinal)
+			} else if(img instanceof HTMLCanvasElement) {
+				img.addEventListener("compositeupdate", updateFinal)
+			}
 		}
 
 		return texture
@@ -130,8 +144,7 @@ ANTI.RBXScene.Avatar = (function() {
 		var canvas = this.canvas = document.createElement("canvas")
 		var ctx = this.context = canvas.getContext("2d")
 
-		this.material = new THREE.MeshPhongMaterial()
-		this.texture = this.material.map = createTexture()
+		this.texture = createTexture(canvas)
 		this.beforeComposite = []
 		this.afterComposite = []
 		this.width = 1024
@@ -170,7 +183,8 @@ ANTI.RBXScene.Avatar = (function() {
 			if(this.scene) ctx.drawImage(compositeRenderer.domElement, 0,0, this.width, this.height);
 			this.afterComposite.forEach(fn => fn())
 
-			this.texture.image.src = this.canvas.toDataURL()
+			this.canvas.dispatchEvent(new CustomEvent("compositeupdate"))
+			this.texture.needsUpdate = true
 		}
 	})
 
@@ -409,13 +423,13 @@ ANTI.RBXScene.Avatar = (function() {
 			this.headComposite.background = bc.headColorId
 			this.headComposite.update()
 		},
-		addAsset: function(assetInfo) {
-			switch(assetInfo.assetType.id) {
+		addAsset: function(assetId, assetTypeId) {
+			switch(assetTypeId) {
 				// Bodyparts
 				case 27: case 28: 
 				case 29: case 30: case 31:
 					var charmeshes = this.charmeshes
-					AssetCache.loadAsset(assetInfo.id, (asset) => {
+					AssetCache.loadAsset(assetId, (asset) => {
 						var model = asset.as("model")
 
 						model.forEach((folder) => {
@@ -537,7 +551,7 @@ ANTI.RBXScene.Avatar = (function() {
 				// Accessories
 				case 8: case 41: case 42: case 43:
 				case 44: case 45: case 46: case 47:
-					AssetCache.loadAsset(assetInfo.id, (asset) => {
+					AssetCache.loadAsset(assetId, (asset) => {
 						var model = asset.as("model")
 						model.forEach((acc) => {
 							if(acc.ClassName !== "Accessory")
@@ -557,17 +571,17 @@ ANTI.RBXScene.Avatar = (function() {
 								})
 
 								if(!att)
-									return console.log("Couldn't find attachment in asset " + assetInfo.id, model);
+									return console.log("Couldn't find attachment in asset " + assetId, model);
 
 								if(!mesh)
-									return console.log("Couldn't find mesh in asset " + assetInfo.id, model);
+									return console.log("Couldn't find mesh in asset " + assetId, model);
 
 								
 								var meshId = parseContentUrl(mesh.MeshId)
 								var texId = parseContentUrl(mesh.TextureId)
 
 								if(!meshId)
-									return console.log("Couldn't parse mesh id for " + assetInfo.id, model);
+									return console.log("Couldn't parse mesh id for " + assetId, model);
 
 								var obj = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial())
 								var tex = obj.material.map = createTexture()
@@ -601,69 +615,66 @@ ANTI.RBXScene.Avatar = (function() {
 								obj.attachmentPoint = att.Name
 
 								var attachmentPoint = this.attachmentPoints[att.Name]
-								if(attachmentPoint) {
-									attachmentPoint.add(obj)
-								} else {
-									console.log("Missing attachment point in asset " + assetInfo.id, att.Name, model)
-								}
+								if(attachmentPoint)
+									attachmentPoint.add(obj);
 							})
 						})
 					})
 					break;
 				case 11:
-					AssetCache.loadAsset(assetInfo.id, (asset) => {
+					AssetCache.loadAsset(assetId, (asset) => {
 						var model = asset.as("model")
 						model.forEach((shirt) => {
 							if(shirt.ClassName !== "Shirt")
 								return;
 
-							var assetId = parseContentUrl(shirt.ShirtTemplate)
-							if(assetId)
-								AssetCache.loadAsset(assetId, asset => this.textures.shirt.image.src = asset.as("bloburl"));
+							var texId = parseContentUrl(shirt.ShirtTemplate)
+							if(texId)
+								AssetCache.loadAsset(texId, asset => this.textures.shirt.image.src = asset.as("bloburl"));
 						})
 					})
 					break;
 				case 2:
-					AssetCache.loadAsset(assetInfo.id, (asset) => {
+					AssetCache.loadAsset(assetId, (asset) => {
 						var model = asset.as("model")
 						model.forEach((tshirt) => {
 							if(tshirt.ClassName !== "ShirtGraphic")
 								return;
 
-							var assetId = parseContentUrl(tshirt.Graphic)
-							if(assetId)
-								AssetCache.loadAsset(assetId, asset => this.textures.tshirt.image.src = asset.as("bloburl"));
+							var texId = parseContentUrl(tshirt.Graphic)
+							if(texId)
+								AssetCache.loadAsset(texId, asset => this.textures.tshirt.image.src = asset.as("bloburl"));
 						})
 					})
 					break;
 				case 12:
-					AssetCache.loadAsset(assetInfo.id, (asset) => {
+					AssetCache.loadAsset(assetId, (asset) => {
 						var model = asset.as("model")
 						model.forEach((pants) => {
 							if(pants.ClassName !== "Pants")
 								return;
 
-							var assetId = parseContentUrl(pants.PantsTemplate)
-							if(assetId)
-								AssetCache.loadAsset(assetId, asset => this.textures.pants.image.src = asset.as("bloburl"));
+							var texId = parseContentUrl(pants.PantsTemplate)
+							if(texId)
+								AssetCache.loadAsset(texId, asset => this.textures.pants.image.src = asset.as("bloburl"));
 						})
 					})
 					break;
 				case 18:
-					AssetCache.loadAsset(assetInfo.id, (asset) => {
+					AssetCache.loadAsset(assetId, (asset) => {
 						var model = asset.as("model")
 						model.forEach((face) => {
 							if(face.ClassName !== "Decal" || face.Name !== "face")
 								return;
 
-							var assetId = parseContentUrl(face.Texture)
-							if(assetId)
-								AssetCache.loadAsset(assetId, asset => this.headComposite.face.image.src = asset.as("bloburl"));
+							var texId = parseContentUrl(face.Texture)
+							if(texId)
+								AssetCache.loadAsset(texId, asset => this.headComposite.face.image.src = asset.as("bloburl"));
 						})
 					})
 					break;
 				default:
-					console.log("Unimplemented asset type", assetInfo.assetType, assetInfo);
+					console.log("Unimplemented asset type", assetTypeId, assetId);
 			}
 		},
 		setPlayerType: function(playerType) {
@@ -689,7 +700,10 @@ ANTI.RBXScene.Avatar = (function() {
 			if(playerType === "R6") {
 				this.model.position.set(0, 3, 0)
 
-				parts.head = new THREE.Mesh(undefined, this.headComposite.material)
+				parts.head = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial({
+					map: this.headComposite.texture
+				}))
+
 				R6BodyPartNames.forEach(name => {
 					parts[name] = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial({
 						map: this.textures[name]
@@ -788,7 +802,9 @@ ANTI.RBXScene.Avatar = (function() {
 						} else {
 							var material = null
 							if(name === "head") {
-								material = this.headComposite.material
+								material = new THREE.MeshPhongMaterial({
+									map: this.headComposite.texture
+								})
 							} else {
 								material = new THREE.MeshPhongMaterial({
 									map: this.textures[name]
