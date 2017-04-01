@@ -105,6 +105,17 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 				controls.rotation.x = 1.4;
 		})
 
+		controls.zoom = 10
+		var minZoom = 5
+		var maxZoom = 15
+		controls.mousewheel((deltaX, deltaY) => {
+			if(deltaY > 0) {
+				controls.zoom = Math.min(maxZoom, controls.zoom + 1)
+			} else if(deltaY < 0) {
+				controls.zoom = Math.max(minZoom, controls.zoom - 1)
+			}
+		})
+
 		var innerUpdate = () => {
 			if(avatar)
 				avatar.animator.update();
