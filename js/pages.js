@@ -749,6 +749,10 @@ pageInit.itemdetails = function(assetId) {
 					}
 				}
 
+				function onAppearenceLoaded(data) {
+					delete data.playerAvatarType;
+				}
+
 				if(assetTypeId === 32) {
 					AssetCache.loadAsset(assetId, asset => {
 						var preview = null
@@ -761,7 +765,7 @@ pageInit.itemdetails = function(assetId) {
 
 								if(!preview) {
 									preview = enablePreview(onPreviewReady)
-									preview.loadDefaultAppearance()
+									preview.loadDefaultAppearance(onAppearenceLoaded)
 								}
 
 								$.each(anims, (name, animId) => {
@@ -776,7 +780,7 @@ pageInit.itemdetails = function(assetId) {
 					})
 				} else {
 					var preview = enablePreview(onPreviewReady)
-					preview.loadDefaultAppearance()
+					preview.loadDefaultAppearance(onAppearenceLoaded)
 
 					if(assetTypeId === 24) {
 						preview.playAnimation(assetId, null, true)
