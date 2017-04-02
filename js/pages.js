@@ -852,7 +852,7 @@ pageInit.gamedetails = function(placeId) {
 		return;
 
 	var gameDataPromise = new Promise(resolve => BackgroundJS.send("getProductInfo", placeId, resolve))
-	var newContainer = $("<div class='col-xs-12 section-content' style='padding: 0 0 12px;'>")
+	var newContainer = $("<div class='col-xs-12 btr-game-main-container section-content'>")
 
 	Observer.add({
 		selector: ["#tab-about","#tab-game-instances"],
@@ -922,21 +922,19 @@ pageInit.gamedetails = function(placeId) {
 			var mainPlaceId = $("#MultiplayerVisitButton").attr("placeid");
 			if(placeId != mainPlaceId) {
 				var box = $(
-				"<div class='btr_partofuniverse'>" +
+				"<div class='btr-universe-box'>" +
 					"This place is part of " +
-					"<a class='text-link' href='//www.roblox.com/games/{0}/'></a>" +
-					"<div class='VisitButton VisitButtonPlayGLI btr_universevisitbtn' placeid='{0}' data-action='play' data-is-membership-level-ok='true'>" +
+					"<a class='btr-universe-name text-link' href='//www.roblox.com/games/{0}/'></a>" +
+					"<div class='VisitButton VisitButtonPlayGLI btr-universe-visit-button' placeid='{0}' data-action='play' data-is-membership-level-ok='true'>" +
 						"<a class='btn-secondary-md'>Play</a>" +
 					"</div>" +
 				"</div>"
-				).elemFormat(mainPlaceId).prependTo($(".game-main-content"))
+				).elemFormat(mainPlaceId).prependTo(newContainer)
 
-				$(".game-main-content #game-context-menu").css("top","72px");
-
-				BackgroundJS.send("getProductInfo",mainPlaceId,function(data) {
-					var link = $(">a",box);
-					link.attr("href",link.attr("href")+data.Name.replace(/[^\w-\s]+/g,"").replace(/\s+/g,"-"))
-					link.text(data.Name)
+				BackgroundJS.send("getProductInfo", mainPlaceId, (data) => {
+					var anchor = box.find(".btr-universe-name")
+					anchor.text(data.Name)
+					anchor.attr("href", anchor.attr("href") + data.Name.replace(/[^\w-\s]+/g,"").replace(/\s+/g,"-"))
 				})
 			}
 		}
