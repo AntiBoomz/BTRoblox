@@ -1,127 +1,49 @@
 div.content {
-	padding-left:12px;
-	padding-right:12px;
-	max-width:994px;
+	padding-left: 12px;
+	padding-right: 12px;
 }
 
-#my-recommended-games {
-	display:none;
+div.content {
+	max-width: 1208px;
 }
 
-.rbx-game-server-item .player-avatar img {
-	display:inline-block;
-	width:48px;
-	height:48px;
-	margin:2px
+.btr-hide-ads div.content {
+	max-width: 1024px;
+}
+
+div.page-content {
+	max-width: 1000px;
+}
+
+/* Main container */
+
+body .btr-game-main-container {
+	padding: 0 12px 12px;
+}
+
+.btr-game-main-container .game-main-content {
+	background: none;
+	padding:;
+	padding-left: 0;
+	padding-right: 0;
 }
 
 .btr-description {
-	position:relative;
-	padding:0 8px;
-	float:left;
-	width:100%;
+	float: left;
+	width: 100%;
+	padding: 0;
 }
 
 .btr-description .game-description {
-	/*border-top:1px solid #E3E3E3;*/
-	padding:6px 12px;
-	margin-bottom:10px;
-}
-
-.section-content-off {
-	background:transparent !important;
-}
-
-/* Server List */
-
-.btr-game-ping {
-	font-size:12px;
-	font-weight:700;
-
-	float:right;
-	line-height:12px;
-}
-
-.btr-game-ping:before {
-	content:"";
-	display:inline-block;
-	width:10px;
-	height:10px;
-	border-radius:6px;
-	background:gray;
-
-	margin-right:3px;
-}
-
-.lowping { color:#1B1; }
-.lowping:before { background-color:#1B1; }
-
-.medping { color:#CC1; }
-.medping:before { background-color:#CC1; }
-
-.highping { color:#B11; }
-.highping:before { background-color:#B11; }
-
-.rbx-game-server-item .rbx-game-server-status {
-	display:inline-block;
-}
-
-/* Comments */
-
-.comments-container .section-content {
-	background:transparent;
-	box-shadow:none;
-}
-
-/* Leaderboard */
-
-.rbx-leaderboard-container .section-content {
-	background:transparent;
-	box-shadow:none;
-}
-
-/* Pager */
-
-.btr-server-pager {
-	text-align:center;
-	line-height:32px;
-	vertical-align:middle;
-	padding:4px;
-}
-
-.btr-server-pager>button {
-	margin:0 2px;
-}
-
-.btr-server-pager .btr-server-input {
-	text-align:center;
-	padding:2px 5px;
-	width:40px;
-	height:26px;
-}
-
-/* VIP Servers */
-
-div.rbx-vip-server-details .owner-avatar {
-	display:none;
-}
-
-.rbx-vip-server-details {
-	padding-top:8px;
-}
-
-
-/* Developer Store */
-
-#store .game-dev-store {
-	padding:0 4px; /* Left side of the first item is hidden 'cause overflow:hidden */
+	padding: 6px 12px;
+	margin-bottom: 10px;
 }
 
 
 /* Badges */
 
 .btr-badges-container {
-	margin-top:18px;
+	margin-top: 18px;
 }
 
 body .badge-container .badge-row { /* Badge height + 10px */
@@ -160,8 +82,6 @@ body .badge-container .badge-row .badge-stats-container {
 	margin-top:18px;
 }
 
-
-
 body .badge-container .badge-row.btr_notowned {
 	background-color:#fafafa;
 	color:#777;
@@ -198,44 +118,81 @@ body .badge-container .badge-row.btr_badgeownedloading:before {
 	opacity:0.2;
 }
 
-/* Hiding vip servers on about (Commentary) tab */
-
-#about #rbx-vip-servers {
-	display:none !important;
-}
-
-/* Making the page wider, remove stuff under this to fix it */
-
-div.content {
-	max-width:1208px;
-}
-
-.btr-hide-ads div.content {
-	max-width:1024px;
-}
-
-div.page-content {
-	max-width:1000px;
-}
-
 /* Universe Box */
 
-.btr_partofuniverse {
-	padding:12px 24px;
-	background-color:#EFFAFF;
-	box-shadow:0 1px 3px rgba(0,0,0,0.15);
-	color:#555;
-	font-size:18px;
-	font-weight:400;
+.btr-universe-box {
+	height: 50px;
+	padding: 12px 20px;
+	margin: 12px 0 0;
 
-	height:50px;
+	background-color: #EFFAFF;
 
-	margin-bottom:12px;
-	line-height:26px;
+	color: #555;
+	font-size: 18px;
+	font-weight: 400;
+	line-height: 26px;
+
+	box-shadow: 0 1px 3px rgba(0,0,0,0.15);
 }
 
-.btr_universevisitbtn {
-	display:inline-block;
-	float:right;
-	margin-top:-5px;
+.btr-universe-visit-button {
+	display: inline-block;
+	float: right;
+	margin-top: -5px;
+}
+
+/* Leaderboard */
+
+.rbx-leaderboard-container .rbx-leaderboard-items.section-content {
+	background: transparent;
+	box-shadow: none;
+}
+
+/* Pager */
+
+.btr-server-pager {
+	padding: 4px;
+
+	text-align: center;
+	line-height: 32px;
+	vertical-align: middle;
+}
+
+.btr-server-pager>button {
+	margin: 0 2px;
+}
+
+.btr-server-pager .btr-server-input {
+	width: 40px;
+	height: 26px;
+	padding: 2px 5px;
+
+	text-align: center;
+}
+
+/* VIP Servers */
+
+.rbx-vip-server-details {
+	padding-top: 8px;
+}
+
+.rbx-vip-server-details .owner-avatar {
+	display: none !important;
+}
+
+/* Developer Store */
+
+#store .game-dev-store {
+	padding: 0 4px; /* Overflow problems */
+}
+
+/* Other */
+
+.section-content-off {
+	background: transparent !important;
+}
+
+#my-recommended-games,
+#about #rbx-vip-servers {
+	display: none !important;
 }
