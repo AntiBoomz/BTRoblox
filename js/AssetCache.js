@@ -46,24 +46,6 @@ var AssetCache = (() => {
 		}
 	}
 
-	var bufferbase64=function(){
-		var a="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-		return function(b){
-			for(var c=b.length,d=c%3,e=[],f=0,g=c-d;f<g;f+=3){
-				var h=(b[f]<<16)+(b[f+1]<<8)+b[f+2];
-				e.push(a[h>>18&63],a[h>>12&63],a[h>>6&63],a[63&h])
-			}
-			if(1===d){
-				var h=b[c-1];
-				e.push(a[h>>2],a[h<<4&63],"==")
-			}else if(2===d){
-				var h=(b[c-2]<<8)+b[c-1];
-				e.push(a[h>>10],a[h>>4&63],a[h<<2&63],"=")
-			}
-			return e.join("")
-		}
-	}();
-
 	var AssetCache = {
 		resolveAsset: (assetId, cb) => {
 			if(typeof(assetId) === "string")
@@ -78,8 +60,6 @@ var AssetCache = (() => {
 					BackgroundJS.send("resolveAssetUrl", assetId, url => {
 						if(!url)
 							return console.warn("Failed to resolve asset " + assetId);
-
-						//console.warn("Resolved " + assetId + " => " + url)
 						resolve(url)
 					})
 				})
