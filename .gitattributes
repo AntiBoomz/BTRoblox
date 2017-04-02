@@ -1,5 +1,3 @@
 .gitignore export-ignore
 .gitattributes export-ignore
-build export-ignore -diff -merge
-compiler explort-ignore -diff -merge
 res -diff -merge
