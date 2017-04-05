@@ -238,7 +238,7 @@ Object.assign(Explorer.prototype, {
 		view.title = title
 		view.model = model
 
-		var btn = view.button = $("<div class='btr-explorer-view-btn' data-index='{1}'>{0}</div>".format(view.title, this.views.length-1))
+		var btn = view.button = $("<div class='btr-explorer-view-btn' data-index='{1}'>{0}</div>").elemFormat(view.title, this.views.length-1)
 		var domElement = view.domElement = $("<ul class='btr-explorer-list'></ul>")
 
 		if(this.views.length === 1) {

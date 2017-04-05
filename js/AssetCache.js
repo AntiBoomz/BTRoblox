@@ -38,8 +38,14 @@ var AssetCache = (() => {
 					return console.warn("Failed to resolve model " + path);
 
 				var promise = cache[resolved]
-				if(!promise)
-					promise = cache[resolved] = new Promise(resolve => request(resolved, responseType, x => constructor(x, resolve)));
+				if(!promise) {
+					promise = cache[resolved] = new Promise(resolve => {
+						request(resolved, responseType, x => {
+							try { constructor(x, resolve) }
+							catch(ex) { resolve(null) }
+						})
+					})
+				}
 
 				promise.then(cb)
 			})
