@@ -1,23 +1,26 @@
 BTROBLOX
 ===============
 * [Undocumented APIs](#undocumented-apis)
-
+  * [Group APIs](#group-apis)
+  * [Friend APIs](#friend-apis)
+  * [User APIs](#user-apis)
+  * [Universe APIs](#universe-apis)
 
 
 Undocumented APIs
 -----------
 
 Group APIs
-----------
+---------
 #### Get members of a group (as an admin)
 * https://www.roblox.com/groups/1225129/groupmembers-html?pageNum=1&roleSetIdToSearch=0
 
 
 Friend APIs
-----------
+---------
 #### Get status of online friends
 * https://api.roblox.com/my/friendsonline
-  ```json
+```json
 [
 	{
 		"VisitorId": 261,
@@ -56,14 +59,14 @@ Friend APIs
 		"PlaceId": 1818
     }
 ]
-  ```
+```
 
 
 User APIs
-----------
+---------
 #### Get presence of user(s)
 * https://www.roblox.com/presence/users?userIds=261&userIds=4719353
-  ```json
+```json
 [
 	{
 		"UserPresenceType": 0,
@@ -86,16 +89,16 @@ User APIs
 		"EndpointType": "Presence"
 	}
 ]
-  ```
+```
 
 
 Universe APIs
-----------
+---------
 #### Get info about an universe
 * GET https://api.roblox.com/universes/get-info?universeId=13058
 * GET https://api.roblox.com/universes/get-info?placeId=1818
 * User-Agent: Roblox/WinInet
-  ```json
+```json
 {
 	"Name": "Crossroads",
 	"Description": "The classic ROBLOX level is back!",
@@ -104,15 +107,15 @@ Universe APIs
 	"CurrentUserHasEditPermissions": false,
 	"UniverseAvatarType": "MorphToR6"
 }
-  ```
+```
 
 #### Get places in an universe
-  ```http
+```http
 GET https://api.roblox.com/universes/get-universe-places?universeId=13058&page=1
 GET https://api.roblox.com/universes/get-universe-places?placeid=1818&page=1
 User-Agent: Roblox/WinInet
-  ```
-  ```json
+```
+```json
 {
 	"FinalPage": true,
 	"RootPlace": 1818,
@@ -122,10 +125,10 @@ User-Agent: Roblox/WinInet
 	}],
 	"PageSize": 50
 }
-  ```
+```
 
 #### Get universe containing place
-  ```http
+```http
 GET https://api.roblox.com/universes/get-universe-containing-place?placeid=1818
 User-Agent: Roblox/WinInet
   ```
@@ -133,5 +136,5 @@ User-Agent: Roblox/WinInet
 {
 	"UniverseId": 13058
 }
-  ```
+```
 
