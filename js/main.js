@@ -376,7 +376,9 @@ var settingsDiv = $("<div id='btr-settings'>" +
 	"<a class='btr-settings-toggle'>x</a>" +
 "</div>")
 
-var settingsIframe = $("<iframe scrolling='no'/>").appendTo(settingsDiv)
+var settingsIframe = $("<iframe scrolling='no'/>")
+	.attr("src", chrome.runtime.getURL("options.html"))
+	.appendTo(settingsDiv)
 
 
 
@@ -408,8 +410,6 @@ function Init() {
 			body.toggleClass("btr-no-hamburger",settings.general.noHamburger)
 				.toggleClass("btr-hide-ads",!settings.general.showAds)
 				.toggleClass("btr-newchat",settings.general.chatEnabled && settings.chat.enabled)
-
-			settingsDiv.appendTo(body)
 		}
 	}).add({ // Multi-domain linkify
 		selector: "#roblox-linkify",
@@ -481,10 +481,17 @@ function Init() {
 		}
 	})
 
-	$(document).on("click",".btr-settings-toggle",function() {
-		settingsDiv.toggleClass("visible")
-		if(!settingsIframe.attr("src"))
-			settingsIframe.attr("src",chrome.runtime.getURL("options.html"))
+
+	var settingsVisible = false
+
+	$(document).on("click", ".btr-settings-toggle", () => {
+		settingsVisible = !settingsVisible
+
+		if(settingsVisible) {
+			settingsDiv.appendTo("body")
+		} else {
+			settingsDiv.detach()
+		}
 	})
 
 	if(currentPage && pageInit[currentPage.name]) {

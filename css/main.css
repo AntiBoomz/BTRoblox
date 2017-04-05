@@ -426,7 +426,7 @@ body .btr-MediaPlayerControls {
 /* SETTINGS */
 
 #btr-settings {
-	display:none;
+	display:block;
 	position:fixed;
 	top:0;
 	left:0;
@@ -444,10 +444,6 @@ body .btr-MediaPlayerControls {
 	z-index:10000;
 
 	font-family: 'Source Sans Pro', Arial, Helvetica, sans-serif;
-}
-
-#btr-settings.visible {
-	display:block;
 }
 
 #btr-settings .btr-settings-toggle {
