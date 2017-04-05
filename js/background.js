@@ -42,69 +42,69 @@ var settings = {
 }
 
 var pages = {
-	"home": {
-		"matches": ["^/home"],
-		"css": ["home.css"]
+	home: {
+		matches: ["^/home"],
+		css: ["home.css"]
 	},
-	"character": {
-		"matches": ["^/my/character\\.aspx"],
-		"css": ["character.css"]
+	character: {
+		matches: ["^/my/character\\.aspx"],
+		css: ["character.css"]
 	},
-	"groups": {
-		"matches": ["^/my/groups\\.aspx","^/groups/group\\.aspx"],
-		"css": ["groups.css"]
+	groups: {
+		matches: ["^/my/groups\\.aspx","^/groups/group\\.aspx"],
+		css: ["groups.css"]
 	},
-	"groupaudit": {
-		"matches": ["^/groups/audit\\.aspx"],
-		"css": []
+	groupaudit: {
+		matches: ["^/groups/audit\\.aspx"],
+		css: []
 	},
-	"groupadmin": {
-		"matches": ["^/my/groupadmin.aspx"],
-		"css": []
+	groupadmin: {
+		matches: ["^/my/groupadmin.aspx"],
+		css: []
 	},
-	"forum": {
-		"matches": ["^/forum/"],
-		"css": ["forum.css"]
+	forum: {
+		matches: ["^/forum/"],
+		css: ["forum.css"]
 	},
-	"money": {
-		"matches": ["^/my/money"],
-		"css": ["money.css"]
+	money: {
+		matches: ["^/my/money"],
+		css: ["money.css"]
 	},
-	"profile": {
-		"matches": ["^/users/(\\d+)/profile"],
-		"css": ["profile.css"]
+	profile: {
+		matches: ["^/users/(\\d+)/profile"],
+		css: ["profile.css"]
 	},
-	"inventory": {
-		"matches": ["^/users/(\\d+)/inventory"],
-		"css": ["inventory.css"]
+	inventory: {
+		matches: ["^/users/(\\d+)/inventory"],
+		css: ["inventory.css"]
 	},
-	"games": {
-		"matches": ["^/games/?$"],
-		"css": ["games.css"]
+	games: {
+		matches: ["^/games/?$"],
+		css: ["games.css"]
 	},
-	"gamedetails": {
-		"matches": ["^/games/(\\d+)/"],
-		"css": ["gamedetails.css"]
+	gamedetails: {
+		matches: ["^/games/(\\d+)/"],
+		css: ["gamedetails.css"]
 	},
-	"configureplace": {
-		"matches": ["^/places/(\\d+)/update"],
-		"css": ["placeconfig.css"]
+	configureplace: {
+		matches: ["^/places/(\\d+)/update"],
+		css: ["placeconfig.css"]
 	},
-	"messages": {
-		"matches": ["^/my/messages"],
-		"css": ["messages.css"]
+	messages: {
+		matches: ["^/my/messages"],
+		css: ["messages.css"]
 	},
-	"develop": {
-		"matches": ["^/develop"],
-		"css": ["develop.css"]
+	develop: {
+		matches: ["^/develop"],
+		css: ["develop.css"]
 	},
-	"catalog": {
-		"matches": ["^/catalog/$"],
-		"css": []
+	catalog: {
+		matches: ["^/catalog/$"],
+		css: []
 	},
-	"itemdetails": {
-		"matches": ["^/catalog/(\\d+)/","^/library/(\\d+)/"],
-		"css": ["itemdetails.css"]
+	itemdetails: {
+		matches: ["^/catalog/(\\d+)/","^/library/(\\d+)/"],
+		css: ["itemdetails.css"]
 	}
 }
 
