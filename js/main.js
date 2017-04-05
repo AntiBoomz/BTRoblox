@@ -541,14 +541,25 @@ function Init() {
 	}
 
 	if(settings.general.showBlogFeed) {
-		function updateBlogFeed(html) {
-			blogfeed.html(html)
-			$(".btr_feed", blogfeed).each(function() {
-				var self = $(this)
-				var date = $(".btr_feeddate", self)
-				var actdate = $(".btr_feedactdate", self)
-				date.text(new Date(actdate.text()).relativeFormat("(z 'ago')") )
-			});
+		var blogFeedFormat = 
+		"<a class='btr_feed' href='{0}'>" +
+			"<div class='btr_feedtitle'>" + 
+				"{1}" +
+				"<span class='btr_feeddate'>{2}</span>" +
+			"</div>" + 
+			"<div class='btr_feeddesc'>{3}</div>" +
+			"<div class='btr_feedcreator'>by {4}</div>" +
+		"</a>";
+
+		function updateBlogFeed(data) {
+			blogfeed.empty()
+
+			data.forEach(item => {
+				var relativeDate = new Date(item.published).relativeFormat("(z 'ago')")
+				$(blogFeedFormat)
+					.elemFormat(item.url, item.title, relativeDate, item.desc, item.creator)
+					.appendTo(blogfeed)
+			})
 
 			blogfeed.css("display", "")
 		}
