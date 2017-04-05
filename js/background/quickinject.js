@@ -97,8 +97,9 @@ chrome.webRequest.onResponseStarted.addListener((details) => {
 	function tryInject() {
 		tryCount++
 
-		chrome.tabs.executeScript(details.tabId, { code: "", runAt: "document_start", frameId: details.frameId }, () => {
+		chrome.tabs.executeScript(details.tabId, { code: initCode, runAt: "document_start", frameId: details.frameId }, () => {
 			if(chrome.runtime.lastError) {
+				console.log(chrome.runtime.lastError)
 				if(tryCount < 50) {
 					setTimeout(tryInject, 0);
 				} else {
@@ -114,8 +115,6 @@ chrome.webRequest.onResponseStarted.addListener((details) => {
 					chrome.tabs.insertCSS(details.tabId, { file: "css/" + path, runAt: "document_start", frameId: details.frameId })
 				}
 			})
-			
-			chrome.tabs.executeScript(details.tabId, { code: initCode, runAt: "document_start", frameId: details.frameId })
 		})
 	}
 
@@ -124,5 +123,3 @@ chrome.webRequest.onResponseStarted.addListener((details) => {
 	urls: ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
 	types: ["main_frame", "sub_frame"]
 }, ["responseHeaders"])
-
-
