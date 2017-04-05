@@ -8,7 +8,6 @@ var skipPages = [
 	"^/Feeds/GetUserFeed"
 ]
 
-
 function parseHeaders(array) {
 	var headers = {}
 
@@ -41,11 +40,6 @@ function fileExists(pathString) {
 
 	return true
 }
-
-function stringEscape(str) {
-	return "\"" + str.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + "\""
-}
-
 
 
 chrome.webRequest.onResponseStarted.addListener((details) => {
@@ -94,7 +88,7 @@ chrome.webRequest.onResponseStarted.addListener((details) => {
 
 	var blogfeed = fetchBlogFeed()
 	if(blogfeed) {
-		initCode.push("blogFeedData=" + stringEscape(blogfeed))
+		initCode.push("blogFeedData=" + blogfeed)
 	}
 
 	initCode = initCode.join(",") + "; if(typeof(CSFinishedLoading) !== 'undefined')Init();"
