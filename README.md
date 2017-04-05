@@ -61,7 +61,22 @@ Undocumented APIs
 
 
 ### User APIs
-#### Get presence of user(s)
+#### Get presence of an user
+* https://www.roblox.com/presence/user?userId=261
+  ```json
+  {
+      "UserPresenceType": 0,
+      "LastLocation": "Website",
+      "AbsolutePlaceUrl": null,
+      "PlaceId": null,
+      "GameId": null,
+      "IsGamePlayableOnCurrentDevice": false,
+      "UserId": 261,
+      "EndpointType": "Presence"
+  }
+  ```
+
+#### Get presence of multiple users
 * https://www.roblox.com/presence/users?userIds=261&userIds=4719353
   ```json
   [
