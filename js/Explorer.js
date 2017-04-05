@@ -70,6 +70,8 @@ function Explorer() {
 		"</div>" +
 	"</div>")
 
+	this.loadingElement = $("<div style='text-align:center;margin-top:12px;'>Loading</div>").appendTo(domElement.find(".btr-explorer"))
+
 	var selection = []
 
 	function setSelection(list) {
@@ -244,6 +246,7 @@ Object.assign(Explorer.prototype, {
 		if(this.views.length === 1) {
 			btn.addClass("selected")
 			this.selectedView = view
+			this.loadingElement.remove()
 		} else {
 			domElement.addClass("hidden")
 		}
