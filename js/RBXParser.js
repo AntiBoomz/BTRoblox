@@ -238,10 +238,9 @@
 	typeof ANTI=="undefined" && (ANTI={}), ANTI.ParseAnimationData = (function() {
 		return function(data) {
 			var sequence = data[0]
-			if(sequence.ClassName === "Animation") {
-				return ANTI.ParseAnimationData(ANTI.ParseRBXM(new TextEncoder().encode(atob(sequence.AnimationId))))
-			}
-			
+			if(sequence.ClassName !== "KeyframeSequence")
+				throw new TypeError("Not a KeyframeSequence");
+
 			sequence.Children.sort((a,b) => a.Time - b.Time)
 
 			var anim = {
@@ -251,6 +250,9 @@
 			}
 
 			function parsePose(pose, keyframe) {
+				if(pose.ClassName !== "Pose")
+					return;
+				
 				var name = pose.Name.replace(/\s/,"").toLowerCase()
 				if(!anim.Limbs[name])
 					anim.Limbs[name] = [];
@@ -299,7 +301,13 @@
 			}
 
 			sequence.Children.forEach((keyframe) => {
+				if(keyframe.ClassName !== "Keyframe")
+					return;
+
 				keyframe.Children.forEach((rootPose) => {
+					if(rootPose.ClassName !== "Pose")
+						return;
+
 					rootPose.Children.forEach((pose) => parsePose(pose, keyframe))
 				})
 			})

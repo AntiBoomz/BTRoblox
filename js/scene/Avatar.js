@@ -74,7 +74,7 @@ ANTI.RBXScene.Avatar = (function() {
 			ctx.clearRect(0, 0, canvas.width, canvas.height)
 
 			stack.forEach(img => {
-				if(img.src !== "") {
+				if(img instanceof HTMLCanvasElement || img.src !== "") {
 					ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 				}
 			})
@@ -98,6 +98,7 @@ ANTI.RBXScene.Avatar = (function() {
 			}
 		}
 
+		updateFinal()
 		return texture
 	}
 
@@ -144,7 +145,6 @@ ANTI.RBXScene.Avatar = (function() {
 		var canvas = this.canvas = document.createElement("canvas")
 		var ctx = this.context = canvas.getContext("2d")
 
-		this.texture = createTexture(canvas)
 		this.beforeComposite = []
 		this.afterComposite = []
 		this.width = 1024
@@ -184,11 +184,11 @@ ANTI.RBXScene.Avatar = (function() {
 			this.afterComposite.forEach(fn => fn())
 
 			this.canvas.dispatchEvent(new CustomEvent("compositeupdate"))
-			this.texture.needsUpdate = true
 		}
 	})
 
 	function HeadCompositeConstructor() {
+		this.texture = createTexture(this.canvas)
 		this.background = "#A3A2A5"
 		this.width = 256
 		this.height = 256
@@ -200,6 +200,7 @@ ANTI.RBXScene.Avatar = (function() {
 
 		this.afterComposite.push(() => {
 			this.context.drawImage(this.face.image, 0,0, 256,256)
+			this.texture.needsUpdate = true
 		})
 	}
 
@@ -394,7 +395,7 @@ ANTI.RBXScene.Avatar = (function() {
 			var base = images.base[name] = createImage()
 			var over = images.over[name] = createImage()
 
-			textures[name] = mergeTexture(1024,512, base, this.r6Composite.texture.image, over)
+			textures[name] = mergeTexture(1024,512, base, this.r6Composite.canvas, over)
 		})
 
 		R15BodyPartNames.forEach(name => {
@@ -402,7 +403,7 @@ ANTI.RBXScene.Avatar = (function() {
 			var composite = this.r15Composites[compositeName]
 			var over = images.over[name] = createImage()
 
-			textures[name] = mergeTexture(composite.canvas.width,composite.canvas.height, composite.texture.image, over)
+			textures[name] = mergeTexture(composite.canvas.width,composite.canvas.height, composite.canvas, over)
 		})
 
 		if(playerType)
@@ -455,8 +456,11 @@ ANTI.RBXScene.Avatar = (function() {
 									AssetCache.loadMesh(meshId, mesh => {
 										bodypart.mesh = mesh
 
-										if(this.parts[name])
-											applyMeshToGeometry(this.parts[name].geometry, mesh);
+										var obj = this.parts[name]
+										if(obj) {
+											//obj.useDefaultMesh = false
+											applyMeshToGeometry(obj.geometry, mesh)
+										}
 									})
 
 									var texId = parseContentUrl(part.TextureID)
@@ -525,9 +529,12 @@ ANTI.RBXScene.Avatar = (function() {
 
 									AssetCache.loadMesh(meshId, mesh => {
 										bodypart.mesh = mesh
-
-										if(this.parts[name])
-											applyMeshToGeometry(this.parts[name].geometry, mesh);
+										
+										var obj = this.parts[name]
+										if(obj) {
+											//obj.useDefaultMesh = false
+											applyMeshToGeometry(obj.geometry, mesh);
+										}
 									})
 
 									var baseTexId = charmesh.BaseTextureId

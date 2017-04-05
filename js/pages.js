@@ -383,7 +383,7 @@ pageInit.develop = function() {
 	})
 }
 
-const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 39]
+const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 33, 34, 35, 37, 39]
 const AnimationPreviewAssetTypeIds = [24, 32, 48, 49, 50, 51, 52, 53, 54, 55, 56]
 const WearableAssetTypeIds = [2, 8, 11, 12, 18, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47]
 const UniqueWearableAssetTypeIds = [2, 11, 12, 18, 28, 29, 30, 31]
@@ -423,9 +423,7 @@ function Create3dPreview(readyCb) {
 		"</ul>" +
 	"</div>").hide().appendTo(container)
 
-	if(!avatarApi.rulesPromise)
-		avatarApi.rulesPromise = new Promise(resolve => avatarApi.getRules(resolve));
-
+	var rulesPromise = null
 	var isLoaded = false
 	var scene = null
 
@@ -451,6 +449,8 @@ function Create3dPreview(readyCb) {
 				scene.avatar.setPlayerType(playerType);
 		},
 		loadDefaultAppearance: function(modifierCb) {
+			if(!rulesPromise) rulesPromise = new Promise(resolve => avatarApi.getRules(resolve));
+
 			avatarApi.getData((data) => {
 				if(modifierCb)
 					modifierCb(data);
@@ -463,8 +463,10 @@ function Create3dPreview(readyCb) {
 			if(!scene)
 				return;
 
+			if(!rulesPromise) rulesPromise = new Promise(resolve => avatarApi.getRules(resolve));
+
 			var appKey = ++appDebounce
-			avatarApi.rulesPromise.then(rules => {
+			rulesPromise.then(rules => {
 				if(appDebounce !== appKey)
 					return;
 
@@ -492,29 +494,17 @@ function Create3dPreview(readyCb) {
 		addDropdown: function(id, name) {
 			var menu = dropdown.find(".dropdown-menu")
 			$("<li data-name='{0}' data-assetId='{1}'><a href='#'>{0}</a></li>")
-				.elemFormat(name)
+				.elemFormat(name, id)
 				.appendTo(menu)
 
 			if(menu.children().length === 2)
 				dropdown.show();
 		},
-		playAnimation: function(animId, name, matchPlayerType) {
-			if(name)
-				dropdown.find("[data-bind='label']").text(name);
-
-			var animIndex = ++animDebounce
-
-			AssetCache.loadModel(animId, model => {
-				if(animDebounce !== animIndex)
-					return;
-
-				try {
-					var anim = ANTI.ParseAnimationData(model)
-				} catch(ex) {
-					console.log("Failed to load animation:", ex)
-					return;
-				}
-
+		setDropdown: function(name) {
+			dropdown.find("[data-bind='label']").text(name);
+		},
+		playAnimation: function(animId, matchPlayerType, cb) {
+			function playAnimation(anim) {
 				if(matchPlayerType) {
 					var playerType = "R6"
 					var r15Parts = ["lowertorso", "uppertorso", "leftupperarm", "leftlowerarm", "lefthand", "rightupperarm", "rightlowerarm", "righthand", "leftupperleg", "leftlowerleg", "leftfoot", "rightupperleg", "rightlowerleg", "rightfoot"]
@@ -534,6 +524,30 @@ function Create3dPreview(readyCb) {
 				if(scene) {
 					scene.avatar.animator.play(anim)
 				}
+			}
+
+
+			var animIndex = ++animDebounce
+
+			AssetCache.loadModel(animId, model => {
+				if(!model) {
+					console.log("Failed to load animation: Invalid model", animId)
+					if(cb) cb(new Error("Invalid model"));
+					return
+				}
+
+				if(animDebounce !== animIndex)
+					return;
+
+				try { var anim = ANTI.ParseAnimationData(model) } 
+				catch(ex) {
+					console.log("Failed to load animation:", ex)
+					if(cb) cb(ex);
+					return
+				}
+
+				playAnimation(anim)
+				if(cb) cb(null);
 			})
 
 			return this
@@ -543,8 +557,10 @@ function Create3dPreview(readyCb) {
 	dropdown.on("click", ".dropdown-menu>li[data-name]", (ev) => {
 		var animName = ev.currentTarget.getAttribute("data-name")
 		var animId = ev.currentTarget.getAttribute("data-assetId")
-		if(animName && animId) 
-			preview.playAnimation(animId, animName);
+		if(animName && animId) {
+			preview.setDropdown(animName)
+			preview.playAnimation(animId)
+		}
 	})
 
 	modeSwitch.on("change", (ev) => {
@@ -666,44 +682,52 @@ pageInit.itemdetails = function(assetId) {
 			var container = $("<div class='item-thumbnail-container btr-preview-container'>")
 			preview.domElement.appendTo(container)
 
-			var visible = true
+			var visible = false
 			var oldContainer = null
+
+			preview.toggleVisible = function(bool) {
+				visible = typeof(bool) === "boolean" ? bool : !visible
+				if(!oldContainer)
+					return;
+
+				if(visible) {
+					oldContainer.hide()
+					container.insertAfter(oldContainer)
+				} else {
+					container.detach()
+					oldContainer.show()
+				}
+			}
 
 			Observer.add({
 				selector: "#AssetThumbnail",
 				callback: function(oldCont) {
 					oldContainer = oldCont.parent()
-					container.insertAfter(oldContainer)
-
-					if(visible) {
-						oldContainer.hide()
-						container.show()
-					} else {
-						oldContainer.show()
-						container.hide()
-					}
+					preview.toggleVisible(visible)
 				}
 			})
-
-			preview.toggleVisible = function(bool) {
-				visible = typeof(bool) === "boolean" ? bool : !visible
-				if(visible) {
-					if(oldContainer)
-						oldContainer.hide();
-					container.show()
-				} else {
-					if(oldContainer)
-						oldContainer.show();
-					container.hide()
-				}
-			}
 
 			return preview
 		}
 
 		execScripts(["js/RBXParser.js", "js/AssetCache.js"], () => {
 			if(settings.catalog.explorerButton && InvalidExplorableAssetTypeIds.indexOf(assetTypeId) === -1) {
-				if(!(assetTypeId == 10 && $(".PurchaseButton").length === 0)) { // Do not explore private models
+				if(assetTypeId === 10) {
+					var itemContainer = $("#item-container")
+					if(itemContainer.length === 0)
+						return;
+
+					if(itemContainer.attr("data-is-purchase-enabled").toLowerCase() === "true" // Is public
+						|| itemContainer.find(".item-name-container .label-checkmark").length !== 0) { // or is in inventory
+						enableExplorer()
+					} else {
+						loggedInUserPromise.then(userId => {
+							if(itemContainer.attr("data-user-id") == userId) { // or you're the creator
+								enableExplorer()
+							}
+						})
+					}
+				} else {
 					enableExplorer()
 				}
 			}
@@ -750,47 +774,66 @@ pageInit.itemdetails = function(assetId) {
 					delete data.playerAvatarType;
 				}
 
-				if(assetTypeId === 32) {
-					var preview = null
-					var playing = false
+				var preview = enablePreview(onPreviewReady)
 
-					AssetCache.loadText(assetId, text => text.split(";").forEach(assetId => {
-						parseAnimPackage(assetId, anims => {
-							if(Object.keys(anims).length === 0)
-								return;
+				switch(assetTypeId) {
+					case 32: // Package
+						AssetCache.loadText(assetId, text => {
+							var assetIds = text.split(";")
+							var first = true
 
-							if(!preview) {
-								preview = enablePreview(onPreviewReady)
-								preview.loadDefaultAppearance(onAppearenceLoaded)
+							function addAnims(anims) {
+								$.each(anims, (name, animId) => {
+									preview.addDropdown(animId, name)
+									if(first) {
+										first = false
+										preview.setDropdown(name)
+										preview.playAnimation(animId, true)
+									}
+								})
 							}
 
-							$.each(anims, (name, animId) => {
-								preview.addDropdown(animId, name)
-								if(!playing) {
-									playing = true
-									preview.playAnimation(animId, name, true)
-								}
-							})
-						})
-					}))
-				} else {
-					var preview = enablePreview(onPreviewReady)
-					preview.loadDefaultAppearance(onAppearenceLoaded)
+							parseAnimPackage(assetIds[0], anims => {
+								if(Object.keys(anims).length === 0)
+									return preview.destroy();
 
-					if(assetTypeId === 24) {
-						preview.playAnimation(assetId, null, true)
-					} else {
-						parseAnimPackage(assetId, anims => {
-							var playing = false
-							$.each(anims, (name, animId) => {
-								preview.addDropdown(animId, name)
-								if(!playing) {
-									playing = true
-									preview.playAnimation(animId, name, true)
+								preview.toggleVisible(true)
+								preview.loadDefaultAppearance(onAppearenceLoaded)
+
+								addAnims(anims)
+								for(var i=1; i<assetIds.length; i++) {
+									parseAnimPackage(assetIds[i], addAnims)
 								}
 							})
 						})
-					}
+						break;
+					case 24: // Custom Animation
+						preview.playAnimation(assetId, true, err => {
+							if(!err) {
+								preview.toggleVisible(true)
+								preview.loadDefaultAppearance(onAppearenceLoaded)
+							}
+						})
+						break;
+					default: // PlayerAnimation
+						parseAnimPackage(assetId, anims => {
+							if(Object.keys(anims).length === 0)
+								return preview.destroy();
+
+							preview.toggleVisible(true)
+							preview.loadDefaultAppearance(onAppearenceLoaded)
+
+							var first = true
+							$.each(anims, (name, animId) => {
+								preview.addDropdown(animId, name)
+								if(first) {
+									first = false
+									preview.setDropdown(name)
+									preview.playAnimation(animId, true)
+								}
+							})
+						})
+						break;
 				}
 			}
 
@@ -821,6 +864,7 @@ pageInit.itemdetails = function(assetId) {
 								}
 							})
 						})
+						preview.toggleVisible(true)
 
 						function updateAnim() {
 							var animId = preview.playerType === "R15" ? 507766388 : 180435571
