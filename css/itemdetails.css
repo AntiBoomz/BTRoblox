@@ -6,12 +6,8 @@
 	white-space: pre-wrap;
 }
 
-#item-details-description:not(.content-height) {
-	padding-bottom: 20px;
-}
-
 #item-details-description.content-height {
-	height: 200px;
+	height: 193px;
 }
 
 .btr-explorer-button {
