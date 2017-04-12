@@ -17,11 +17,11 @@
 .btr-explorer-button {
 	position: absolute;
 	top: 12px;
-	right: 50px;
+	right: 12px;
 }
 
 .menu-shown .btr-explorer-button {
-	right: 88px;
+	right: 50px;
 }
 
 #item-container.btr-explorer-btn-shown h2 {
