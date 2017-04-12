@@ -1,6 +1,6 @@
 "use strict"
 
-var skipPages = [
+const skipPages = [
 	"^/login/fulfillconstraint.aspx",
 	"^/build/upload",
 	"^/userads/",
@@ -8,15 +8,11 @@ var skipPages = [
 	"^/Feeds/GetUserFeed"
 ]
 
-function parseHeaders(array) {
-	var headers = {}
-
-	array.forEach((header) => {
-		headers[header.name.toLowerCase()] = header.value.trim().split(";")
-	})
-
-	return headers
+const mainParams = {
+	urls: ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
+	types: ["main_frame", "sub_frame"]
 }
+
 
 function parseLocation(url) {
 	var loc = document.createElement("a")
@@ -42,84 +38,77 @@ function fileExists(pathString) {
 }
 
 
-chrome.webRequest.onResponseStarted.addListener((details) => {
-	var headers = parseHeaders(details.responseHeaders)
-
-	if(headers["content-type"] && headers["content-type"][0].trim().toLowerCase() !== "text/html")
-		return;
-
-	var pathname = parseLocation(details.url).pathname.toLowerCase()
+chrome.webRequest.onResponseStarted.addListener(details => {
+	var timeStarted = Date.now()
+	var headers = details.responseHeaders
+	var location = parseLocation(details.url)
+	var pathname = location.pathname.toLowerCase()
 
 	for(var i=0; i<skipPages.length; i++) {
 		if(pathname.search(skipPages[i]) !== -1)
 			return;
 	}
 
-	var cssFiles = []
-
-	cssFiles.push("main.css")
-	cssFiles.push(settings.general.theme + "/main.css")
+	var contentType = headers.find(h => h.name.toLowerCase() === "content-type")
+	if(!contentType || contentType.value.indexOf("text/html") === -1)
+		return;
 
 	var currentPage = null
+	var cssFiles = []
+
+	var themeDir = "css/" + settings.general.theme + "/"
+	cssFiles.push("css/main.css", themeDir + "main.css")
+
 	for(var name in pages) {
 		var page = pages[name]
 		for(var i in page.matches) {
-			var matches = pathname.match(page.matches[i]);
+			var matches = pathname.match("^" + page.matches[i]);
 			if(matches) {
 				currentPage = { name: name, matches: matches.slice(1) }
 
 				if(page.css) {
-					for(var i in page.css) {
-						var path = page.css[i]
-						cssFiles.push(path)
-						cssFiles.push(settings.general.theme + "/" + path)
-					}
+					page.css.forEach(path => cssFiles.push("css/" + path, themeDir + path))
 				}
-
 				break;
 			}
 		}
 	}
 
-	var initCode = [ 
-		"settings="+JSON.stringify(settings),
-		"currentPage="+JSON.stringify(currentPage)
+	var initData = [
+		"settings=" + JSON.stringify(settings),
+		"currentPage=" + JSON.stringify(currentPage)
 	]
 
 	var blogfeed = fetchBlogFeed()
 	if(blogfeed) {
-		initCode.push("blogFeedData=" + blogfeed)
+		initData.push("blogFeedData=" + JSON.stringify(blogfeed))
 	}
 
-	initCode = initCode.join(",") + "; if(typeof(CSFinishedLoading) !== 'undefined')Init();"
+	var initData = "if(typeof(hasBeenInit) === \"undefined\") { var hasBeenInit=true," + initData.join(",") + "; if(typeof(hasCsLoaded) !== \"undefined\") Init(); }"
+	var initialized = false
 
-	var tryCount = 0
-	function tryInject() {
-		tryCount++
-
-		chrome.tabs.executeScript(details.tabId, { code: initCode, runAt: "document_start", frameId: details.frameId }, () => {
-			if(chrome.runtime.lastError) {
-				console.log(chrome.runtime.lastError)
-				if(tryCount < 50) {
-					setTimeout(tryInject, 0);
-				} else {
-					console.log("Hit tryCount limit :<")
-				}
+	function injectScript() {
+		chrome.tabs.executeScript(details.tabId, { code: initData, runAt: "document_start", frameId: details.frameId }, () => {
+			if(chrome.runtime.lastError || initialized)
 				return;
-			}
 
-			//console.log("Injected in " + tryCount + " tries", details)
-
-			cssFiles.forEach((path) => {
-				if(fileExists("css/" + path)) {
-					chrome.tabs.insertCSS(details.tabId, { file: "css/" + path, runAt: "document_start", frameId: details.frameId })
-				}
+			initialized = true
+			cssFiles.forEach(path => {
+				if(!fileExists(path))
+					return;
+				
+				chrome.tabs.insertCSS(
+					details.tabId, 
+					{ file: path, runAt: "document_start", frameId: details.frameId }, 
+					() => chrome.runtime.lastError
+				)
 			})
 		})
 	}
 
-	tryInject()
-}, {
-	urls: ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
-	types: ["main_frame", "sub_frame"]
-}, ["responseHeaders"])
+	injectScript()
+
+	for(var i=1; i<5; ++i) {
+		setTimeout(injectScript, i*5)
+	}
+}, mainParams, ["responseHeaders"])
