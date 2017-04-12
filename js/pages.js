@@ -841,6 +841,10 @@ pageInit.itemdetails = function(assetId) {
 				var btn = $("<span class='btr-preview-btn rbx-btn-control-sm'>").text("\uD83D\uDC41")
 				var preview = null
 
+				if(assetTypeId === 2) {
+					btn.addClass("btr-rightmost")
+				}
+
 				$(document).on("click", ".btr-preview-btn", () => {
 					if(!preview) {
 						preview = enablePreview()
