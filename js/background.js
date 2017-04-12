@@ -143,6 +143,7 @@ var extensionDirectoryPromise = new Promise(resolve => {
 		})
 	})
 })
+
 var commands = {}
 var clients = []
 var settingsLoadedListeners = []
@@ -206,8 +207,15 @@ chrome.runtime.onConnect.addListener((port) => {
 		port.onDisconnect.addListener(() => clients.splice(clients.indexOf(port), 1))
 	}
 
+	var isPortAlive = true
+	port.onDisconnect.addListener(() => isPortAlive = false)
+
 	port.onMessage.addListener((msg) => {
-		var respond = (response) => port.postMessage({ action: "_response_" + msg.uid, data: response });
+		var respond = (response) => {
+			if(isPortAlive) {
+				port.postMessage({ action: "_response_" + msg.uid, data: response })
+			}
+		}
 
 		if(commands[msg.action])
 			commands[msg.action](msg.data, respond, port);
