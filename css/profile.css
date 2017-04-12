@@ -181,6 +181,10 @@
 
 /* Games */
 
+.btr-profile .profile-container .profile-game {
+	margin-bottom: 0;
+}
+
 .btr-profile .btr-games-list .btr-game {
 	position: relative;
 	float: left;
