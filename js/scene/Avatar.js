@@ -321,6 +321,7 @@ ANTI.RBXScene.Avatar = (function() {
 		pantsmesh.position.set(0,0,.1)
 		this.scene.add(pantsmesh)
 
+		textures.tshirt.image.addEventListener("load", () => this.update())
 		textures.shirt.image.addEventListener("load", () => this.update())
 		textures.pants.image.addEventListener("load", () => this.update())
 
@@ -328,6 +329,10 @@ ANTI.RBXScene.Avatar = (function() {
 		AssetCache.loadMesh(meshUrl, mesh => {
 			applyMeshToGeometry(shirtmesh.geometry, mesh)
 			applyMeshToGeometry(pantsmesh.geometry, mesh)
+		})
+
+		this.afterComposite.push(() => {
+			this.context.drawImage(textures.tshirt.image, 2, 78, 126, 128)
 		})
 	}
 
