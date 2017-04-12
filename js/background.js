@@ -43,67 +43,67 @@ var settings = {
 
 var pages = {
 	home: {
-		matches: ["^/home"],
+		matches: ["/home"],
 		css: ["home.css"]
 	},
 	character: {
-		matches: ["^/my/character\\.aspx"],
+		matches: ["/my/character\\.aspx"],
 		css: ["character.css"]
 	},
 	groups: {
-		matches: ["^/my/groups\\.aspx","^/groups/group\\.aspx"],
+		matches: ["/my/groups\\.aspx","/groups/group\\.aspx"],
 		css: ["groups.css"]
 	},
 	groupaudit: {
-		matches: ["^/groups/audit\\.aspx"],
+		matches: ["/groups/audit\\.aspx"],
 		css: []
 	},
 	groupadmin: {
-		matches: ["^/my/groupadmin.aspx"],
+		matches: ["/my/groupadmin.aspx"],
 		css: []
 	},
 	forum: {
-		matches: ["^/forum/"],
+		matches: ["/forum/"],
 		css: ["forum.css"]
 	},
 	money: {
-		matches: ["^/my/money"],
+		matches: ["/my/money"],
 		css: ["money.css"]
 	},
 	profile: {
-		matches: ["^/users/(\\d+)/profile"],
+		matches: ["/users/(\\d+)/profile"],
 		css: ["profile.css"]
 	},
 	inventory: {
-		matches: ["^/users/(\\d+)/inventory"],
+		matches: ["/users/(\\d+)/inventory"],
 		css: ["inventory.css"]
 	},
 	games: {
-		matches: ["^/games/?$"],
+		matches: ["/games/?$"],
 		css: ["games.css"]
 	},
 	gamedetails: {
-		matches: ["^/games/(\\d+)/"],
+		matches: ["/games/(\\d+)/"],
 		css: ["gamedetails.css"]
 	},
 	configureplace: {
-		matches: ["^/places/(\\d+)/update"],
+		matches: ["/places/(\\d+)/update"],
 		css: ["placeconfig.css"]
 	},
 	messages: {
-		matches: ["^/my/messages"],
+		matches: ["/my/messages"],
 		css: ["messages.css"]
 	},
 	develop: {
-		matches: ["^/develop"],
+		matches: ["/develop"],
 		css: ["develop.css"]
 	},
 	catalog: {
-		matches: ["^/catalog/$"],
+		matches: ["/catalog/$"],
 		css: []
 	},
 	itemdetails: {
-		matches: ["^/catalog/(\\d+)/","^/library/(\\d+)/"],
+		matches: ["/catalog/(\\d+)/","/library/(\\d+)/"],
 		css: ["itemdetails.css"]
 	}
 }
