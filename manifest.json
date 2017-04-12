@@ -29,7 +29,8 @@
 		"storage",
 		"notifications",
 		"contextMenus",
-		"webRequest"
+		"webRequest",
+		"webRequestBlocking"
 	],
 	"web_accessible_resources": [
 		"js/inject.js",
