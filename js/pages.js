@@ -2213,8 +2213,5 @@ pageInit.inventory = function(userId) {
 	}
 }
 
-
-
-var CSFinishedLoading = true
-if(typeof(settings) !== "undefined")
-	Init();
+var hasCsLoaded = true
+if(typeof(hasBeenInit) !== "undefined") Init();

@@ -29,7 +29,7 @@ function fetchBlogFeed() {
 				responseData.push({ url, title, published, desc, creator })
 			}
 
-			cachedBlogFeed = JSON.stringify(responseData)
+			cachedBlogFeed = responseData
 			ContentJS.broadcast("blogfeed", cachedBlogFeed)
 		}
 	})
