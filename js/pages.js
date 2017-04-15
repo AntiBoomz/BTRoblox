@@ -346,7 +346,7 @@ pageInit.messages = function() {
 pageInit.develop = function() {
 	Observer.add({
 		multiple: true,
-		selector: "#MyCreationsTab .item-table[data-in-showcase]",
+		selector: "#MyCreationsTab .item-table[data-in-showcase][data-type='universes']",
 		callback: function(table) {
 			$("<tr>" +
 				"<td>" +
@@ -358,9 +358,12 @@ pageInit.develop = function() {
 
 	$(document).on("click",".btr-showcase-status",function() {
 		var self = $(this)
-		var table = self.closest(".item-table");
-		var placeId = parseInt(table.attr("data-item-id"))
+		var table = self.closest(".item-table")
+		var placeId = parseInt(table.attr("data-rootplace-id"))
 		var isVisible = table.attr("data-in-showcase").toLowerCase()=="true"
+
+		if(isNaN(placeId))
+			return;
 
 		getXsrfToken(function(token) {
 			$.ajax({
