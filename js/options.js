@@ -150,5 +150,10 @@ BackgroundJS.send("getSettings",function(settings) {
 	}
 })
 
-
+$("#btr-content").on("mousewheel", function(event) {
+	var deltaY = event.originalEvent.deltaY
+	if((deltaY > 0 && this.scrollTop === this.scrollHeight - this.clientHeight) || (deltaY < 0 && this.scrollTop === 0)) {
+		return false
+	}
+})
 
