@@ -376,7 +376,7 @@ var settingsDiv = $("<div id='btr-settings'>" +
 	"<a class='btr-settings-toggle'>x</a>" +
 "</div>")
 
-var settingsIframe = $("<iframe scrolling='no'/>")
+var settingsIframe = $("<iframe>")
 	.attr("src", chrome.runtime.getURL("options.html"))
 	.appendTo(settingsDiv)
 

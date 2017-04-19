@@ -27,7 +27,7 @@ body {
 
 #btr-content {
 	width:100%;
-	height:calc(100% - 36px - 24px);
+	height:calc(100% - 61px);
 	padding:0 6px;
 	padding-bottom:30px;
 	overflow-y:auto;
