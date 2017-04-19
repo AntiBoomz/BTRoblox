@@ -1509,7 +1509,6 @@ pageInit.profile = function(userId) {
 				var statusTitle = status.attr("title")
 
 				if(status.hasClass("icon-game")) {
-					var a = $("<a>").attr("title",statusTitle).append(statusText).appendTo(statusDiv)
 					statusText.addClass("btr-status-ingame")
 					statusLabel.text(statusTitle)
 
@@ -1521,6 +1520,7 @@ pageInit.profile = function(userId) {
 							if(matches && matches[1] != "0") {
 								var placeId = matches[1]
 								var urlTitle = statusTitle.replace(/\s+/g,"-").replace(/[^\w\-]/g,"")
+								var a = $("<a>").attr("title", statusTitle).append(statusText).appendTo(statusDiv)
 								a.attr("href","/games/{0}/{1}".format(placeId,urlTitle))
 
 								$("<a class='btr-header-status-follow-button'/>")
