@@ -38,7 +38,7 @@ function CreateObserver(target) {
 									}
 								}
 							} else {
-								if(!item.filter || item.filter.apply(jnode)) {
+								if(!item.filter || item.filter(jnode)) {
 									if(!item.multiple)
 										observeList.splice(itemIndex--,1)
 
@@ -116,7 +116,7 @@ function CreateObserver(target) {
 					if(options.multiple) {
 						result.forEach(function(item) {
 							var jitem = $(item)
-							if(!options.filter || options.filter.apply(jitem)) {
+							if(!options.filter || options.filter(jitem)) {
 								try {
 									options.callback(jitem)
 								} catch(exception) {
@@ -127,7 +127,7 @@ function CreateObserver(target) {
 					} else {
 						for(var i=0;i<result.length;i++) {
 							var jitem = $(result[i])
-							if(!options.filter || options.filter.apply(jitem)) {
+							if(!options.filter || options.filter(jitem)) {
 								try {
 									options.callback(jitem)
 								} catch(exception) {
