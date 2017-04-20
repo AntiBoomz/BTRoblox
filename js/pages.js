@@ -958,11 +958,12 @@ pageInit.gamedetails = function(placeId) {
 			carousel.attr("data-is-video-autoplayed-on-ready","false")
 		}
 	}).add({
-		selector: ".game-stats-container .game-stat:nth-child(3) .text-lead",
-		callback: function(label) {
-			gameDataPromise.then(function(data) {
-				label.text( new Date(data.Updated).relativeFormat("zz 'ago'") )
-			});
+		selector: ".game-stats-container .game-stat",
+		filter: x => x.find(".text-label").text() === "Updated",
+		callback: function(stat) {
+			gameDataPromise.then(data => {
+				stat.find(".text-lead").text(new Date(data.Updated).relativeFormat("zz 'ago'"))
+			})
 		}
 	}).add({
 		selector: ".rbx-visit-button-closed, #MultiplayerVisitButton",
