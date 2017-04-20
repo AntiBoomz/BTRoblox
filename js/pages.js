@@ -188,7 +188,7 @@ function getXsrfToken(callback) {
 		XsrfPromise = new Promise(function(success,failure) {
 			Observer.add({
 				selector: "script:not([src])",
-				filter: function() { return this.text().indexOf("XsrfToken.setToken") != -1; },
+				filter: x => x.text().indexOf("XsrfToken.setToken") !== -1,
 				callback: function(x) {
 					var match = x.text().match(/setToken\('(.*)'\)/);
 					if(match) {
@@ -1514,7 +1514,7 @@ pageInit.profile = function(userId) {
 
 					Observer.add({
 						selector: "script:not([src])",
-						filter: function() { return this.html().indexOf("play_placeId") != -1 },
+						filter: x => x.html().indexOf("play_placeId") !== -1,
 						callback: function(script) {
 							var matches = script.html().match(/play_placeId = (\d+)/)
 							if(matches && matches[1] != "0") {
@@ -1576,7 +1576,7 @@ pageInit.profile = function(userId) {
 		}
 	}).add({ // Roblox Badges
 		selector: "#about>.section>.container-header>h3",
-		filter: function() { return this.text().indexOf("Roblox Badges") != -1 },
+		filter: x => x.text().indexOf("Roblox Badges") !== -1,
 		callback: function(h3) {
 			var badges = h3.parent().parent()
 			left.find(".placeholder-robloxbadges").replaceWith(badges)
@@ -1587,7 +1587,7 @@ pageInit.profile = function(userId) {
 		}
 	}).add({ // Player Badges
 		selector: "#about>.section>.container-header>h3",
-		filter: function() { return this.text().indexOf("Player Badges") != -1 },
+		filter: x => x.text().indexOf("Player Badges") !== -1,
 		callback: function(h3) {
 			var badges = h3.parent().parent()
 			left.find(".placeholder-playerbadges").replaceWith(badges)
@@ -2068,13 +2068,13 @@ pageInit.inventory = function(userId) {
 		if(embedParent.length > 0) {
 			Observer.add({
 				selector: "script:not([src])",
-				filter: function() { return this.html().indexOf("if (top.location != self.location)") != -1; },
+				filter: x => x.html().indexOf("if (top.location != self.location)") !== -1,
 				callback: function(script) {
 					script.remove()
 				}
 			}).add({
 				selector: "script:not([src])",
-				filter: function() { return this.html().indexOf("Roblox.DeveloperConsoleWarning.showWarning()") != -1; },
+				filter: x => x.html().indexOf("Roblox.DeveloperConsoleWarning.showWarning()") !== -1,
 				callback: function(script) {
 					script.remove()
 				}
