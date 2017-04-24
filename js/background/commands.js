@@ -1,22 +1,24 @@
 "use strict"
 
-var productInfoUrl = "https://api.roblox.com/marketplace/productinfo?assetId={0}"
-
-var rankNameUrl = "https://www.roblox.com/Game/LuaWebService/HandleSocialRequest.ashx?method=GetGroupRole&playerid={0}&groupid={1}"
-var rankNameCache = {}
-
 var commands = {}
+
+var rankNameCache = {}
 
 
 commands.setSetting = (data, respond) => applySettings(data);
-
 commands.getSettings = (data, respond) => respond(settings);
-commands.downloadFile = (url, respond) => request.getBlob(url, (data) => respond(URL.createObjectURL(data)));
-commands.getProductInfo = (assetId, respond) => request.getJson(productInfoUrl.format(assetId), data => respond(data));
+commands.downloadFile = (url, respond) => request.getBlob(url, data => respond(URL.createObjectURL(data)));
+
+
+commands.getProductInfo = (assetId, respond) => {
+	var url = `https://api.roblox.com/marketplace/productinfo?assetId=${assetId}`
+	request.getJson(url, json => respond(json))
+}
 
 commands.resolveAssetUrl = (assetId, respond) => {
 	var xhr = new XMLHttpRequest()
-	xhr.open("GET", "http://www.roblox.com/asset/?id="+assetId, true)
+	xhr.open("GET", `http://www.roblox.com/asset/?id=${assetId}`, true)
+	
 	xhr.addEventListener("readystatechange", () => {
 		if(xhr.status === 200 && xhr.responseURL.indexOf("rbxcdn") !== -1) {
 			respond(xhr.responseURL.replace(/^http:/, "https:"))
@@ -27,6 +29,7 @@ commands.resolveAssetUrl = (assetId, respond) => {
 		xhr.abort()
 		xhr = null
 	}, { once: true })
+
 	xhr.send(null)
 }
 
@@ -45,7 +48,7 @@ commands.execScript = (list, respond, port) => {
 		if(url.search(/^\w+:\/\//) === -1) { // Relative url
 			chrome.tabs.executeScript(port.sender.tab.id, { file: url, runAt: "document_start", frameId: port.sender.frameId }, next)
 		} else {
-			request.get(url, (code) => {
+			request.get(url, code => {
 				chrome.tabs.executeScript(port.sender.tab.id, { code: code, runAt: "document_start", frameId: port.sender.frameId }, next)
 			})
 		}
@@ -63,15 +66,20 @@ commands.getRankName =  (data, respond) => {
 			return;
 	}
 
-	request.get(rankNameUrl.format(data.userId, data.groupId), (rankName) => {
-		if(!rankNameCache[data.groupId])
-			rankNameCache[data.groupId] = {};
+	request({
+		method: "GET",
+		url: "https://www.roblox.com/Game/LuaWebService/HandleSocialRequest.ashx",
+		data: { method: "GetGroupRole", playerid: data.userId, groupid: data.groupId },
+		success: rankName => {
+			if(!rankNameCache[data.groupId])
+				rankNameCache[data.groupId] = {};
 
-		rankNameCache[data.groupId][data.userId] = {
-			timestamp: Date.now(),
-			value: rankName
+			rankNameCache[data.groupId][data.userId] = {
+				timestamp: Date.now(),
+				value: rankName
+			}
+
+			respond(rankName)
 		}
-
-		respond(rankName)
 	})
 }

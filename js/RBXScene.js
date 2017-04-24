@@ -11,8 +11,10 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 		]
 
 		BackgroundJS.send("execScript", components, () => {
-			isReady = true
-			resolve(RBXScene)
+			RBXScene.Avatar.ready(() => {
+				isReady = true
+				resolve(RBXScene)
+			})
 		})
 	})
 
@@ -37,9 +39,9 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 		renderer.shadowMap.type = THREE.PCFSoftShadowMap
 		renderer.shadowMap.enabled = true
 
-		var canvas = this.canvas = $(renderer.domElement)
+		var canvas = this.canvas = renderer.domElement
 		var scene = this.scene = new THREE.Scene()
-		var camera = this.camera = new THREE.PerspectiveCamera(60, canvas.width()/canvas.height(), 0.1, 1000)
+		var camera = this.camera = new THREE.PerspectiveCamera(60, canvas.clientWidth/canvas.clientHeight, 0.1, 1000)
 		var controls = this.controls = new RBXScene.Controls(this)
 		var avatar = this.avatar = new RBXScene.Avatar()
 
@@ -95,9 +97,9 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 
 		controls.mousedrag((moveX, moveY) => {
 			if(avatar)
-				avatar.model.rotation.y += 2 * Math.PI * moveX / canvas.width();
+				avatar.model.rotation.y += 2 * Math.PI * moveX / canvas.clientWidth;
 
-			controls.rotation.x += 2 * Math.PI * moveY / canvas.height()
+			controls.rotation.x += 2 * Math.PI * moveY / canvas.clientHeight
 			if(controls.rotation.x < -1.4)
 				controls.rotation.x = -1.4;
 			else if(controls.rotation.x > 1.4)
@@ -124,15 +126,17 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 		}
 		this._afId = requestAnimationFrame(innerUpdate)
 
-		$(window).on("resize.canvasResize", () => {
-			var width = canvas.width()
-			var height = canvas.height()
+		this.oncanvasresize = () => {
+			var width = canvas.clientWidth
+			var height = canvas.clientHeight
 
 			renderer.setSize(width, height)
 
 			camera.aspect = width / height
 			camera.updateProjectionMatrix()
-		})
+		}
+
+		window.addEventListener("resize", this.oncanvasresize)
 	}
 
 	Object.assign(RBXScene, {
@@ -149,10 +153,10 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 				return;
 			}
 
-			var parent = this.canvas.parent()
-			if(parent.length > 0) {
-				var width = parent.width()
-				var height = parent.height()
+			var parent = this.canvas.parentNode
+			if(parent) {
+				var width = parent.clientWidth
+				var height = parent.clientHeight
 				var res = this._prevRes
 
 				if(width !== res.width || height !== res.height) {
@@ -172,7 +176,7 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 		},
 		remove: function() {
 			this.canvas.remove()
-			$(window).off("resize.canvasResize")
+			window.removeEventListener("resize", this.oncanvasresize)
 			cancelAnimationFrame(this._afId)
 		}
 	})

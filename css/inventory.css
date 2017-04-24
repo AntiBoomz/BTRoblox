@@ -1,21 +1,21 @@
-body.btr-embed .container-main {
-	margin:0 !important;
-	padding:0 !important;
-}
-
-body.btr-embed .container-main>.content {
+body.btr-embed,
+body.btr-embed .container-main,
+body.btr-embed .container-main .content {
 	margin: 0 !important;
 	padding: 0 !important;
+}
+
+body.btr-embed .container-main .content {
 	max-width: none !important;
 }
 
-body.btr-embed #header,
-body.btr-embed #navigation,
+body.btr-embed>*:not(#wrap),
+body.btr-embed #wrap>*:not(.container-main),
 body.btr-embed .SystemAlert,
 body.btr-embed .recommendations-container,
 body.btr-embed .alert-info,
 body.btr-embed .page-content>h1 {
-	display:none !important;
+	display: none !important;
 }
 
 body .page-content {

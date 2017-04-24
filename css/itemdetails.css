@@ -25,7 +25,7 @@
 }
 
 .btr-icon-explorer {
-	display: block;
+	display: inline-block;
 	background-image: url('chrome-extension://__MSG_@@extension_id__/res/explorer.svg');
 	background-repeat: no-repeat;
 	background-size: auto auto;

@@ -73,49 +73,35 @@ body .badge-container .badge-row .badge-data-container>p {
 	overflow:hidden;
 }
 
-body .badge-container .badge-row.btr_notowned .badge-data-container .para-overflow::after {
-	background:#fafafa;
-}
-
 body .badge-container .badge-row .badge-stats-container {
 	width:40%;
 	margin-top:18px;
 }
 
 body .badge-container .badge-row.btr_notowned {
-	background-color:#fafafa;
-	color:#777;
-	transition: all 1s;
-}
-
-body .badge-container .badge-row.btr_notowned .badge-data-container .badge-name { /* Normally no link */
-	color:#666;
-}
-
-body .badge-container .badge-row.btr_notowned .badge-image img {
-	-webkit-filter:brightness(60%);
+	opacity: .6;
 	transition: all 1s;
 }
 
 .btr_loading {
-	background:url('chrome-extension://__MSG_@@extension_id__/res/progressIndicator.gif') transparent no-repeat center;
-	position:absolute;
-	width:52px;
-	height:20px;
-	top:50%;
-	left:50%;
-	margin-left:-24px;
-	margin-top:-14px;
-	z-index:2;
+	background: url('chrome-extension://__MSG_@@extension_id__/res/progressIndicator.gif') transparent no-repeat center;
+	position: absolute;
+	width: 52px;
+	height: 20px;
+	top: 50%;
+	left: 50%;
+	margin-left: -24px;
+	margin-top: -14px;
+	z-index: 2;
 }
 
 body .badge-container .badge-row.btr_badgeownedloading:before {
-	position:absolute;
-	content:"";
-	width:16px;
-	height:16px;
-	background:url('chrome-extension://__MSG_@@extension_id__/res/loading1.gif') transparent no-repeat;
-	opacity:0.2;
+	position: absolute;
+	content: "";
+	width: 16px;
+	height: 16px;
+	background: url('chrome-extension://__MSG_@@extension_id__/res/loading1.gif') transparent no-repeat;
+	opacity: 0.5;
 }
 
 /* Universe Box */

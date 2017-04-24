@@ -1,36 +1,303 @@
-String.prototype.format = function(dict) {
-	if(dict instanceof Object && !(dict instanceof Array)) {
-		return this.replace(/{([\w.]+)}/g, function(match, index) {
-			return index in dict ? dict[index] : match
+"use strict"
+
+const $ = (() => {
+	var $ = document.querySelector.bind(document)
+	$.all = document.querySelectorAll.bind(document)
+
+	function HandleEvent(e) {
+		var events = this.$events
+		if(!events) return;
+
+		var listeners = events[e.type]
+		if(!listeners) return;
+
+		var selectiveListeners = []
+		var selfListeners = []
+
+		listeners.forEach(listener => {
+			if(!listener.selector) {
+				selfListeners.push(listener)
+			} else {
+				selectiveListeners.push(listener)
+			}
 		})
+
+		var shouldPropagate = true
+		var shouldImmediatePropagate = true
+
+		function stopPropagation() {
+			shouldPropagate = false
+			return e.__proto__.stopPropagation.apply(e, arguments)
+		}
+
+		function stopImmediatePropagation() {
+			shouldImmediatePropagate = false
+			shouldPropagate = false
+			return e.__proto__.stopImmediatePropagation.apply(e, arguments)
+		}
+
+		e.stopPropagation = stopPropagation
+		e.stopImmediatePropagation = stopImmediatePropagation
+
+		if(selectiveListeners.length) {
+			for(let i=0, len=e.path.indexOf(this); i < len; i++) {
+				var node = e.path[i]
+
+				for(let i=0, len=selectiveListeners.length; i < len; i++) {
+					var listener = selectiveListeners[i]
+					var query = this.querySelectorAll(listener.selector)
+					if(!query || Array.prototype.indexOf.call(query, node) === -1) continue;
+
+					Object.defineProperty(e, "currentTarget", { value: node, enumerable: true, configurable: true })
+					if(listener.callback.call(node, e) === false) {
+						e.preventDefault()
+					}
+					delete e.currentTarget
+
+					if(!shouldImmediatePropagate) break;
+				}
+
+				if(!shouldPropagate) break;
+			}
+		}
+
+		if(selfListeners.length && shouldPropagate && shouldImmediatePropagate) {
+			for(var i=0, len=selfListeners.length; i < len; i++) {
+				var listener = selfListeners[i]
+
+				if(listener.callback.call(this, e) === false) {
+					e.preventDefault()
+				}
+
+				if(!shouldImmediatePropagate) break;
+			}
+		}
+
+		delete e.stopPropagation
+		delete e.stopImmediatePropagation
 	}
 
-	var args = arguments
+	Object.defineProperties(EventTarget.prototype, Object.getOwnPropertyDescriptors({
+		$on() {
+			var eventNames = arguments[0]
+			var callback = arguments[1]
+			var once = arguments[2]
+			var selector = null
 
-	return this.replace(/{(\d+)}/g, function(match, number) {
-		return typeof args[number] != "undefined" ? args[number] : match
-	})
-};
+			if(typeof(callback) === "string") {
+				selector = arguments[1]
+				callback = arguments[2]
+				once = arguments[3]
+			}
 
-$.fn.elemFormat = function() {
-	var args = arguments
+			eventNames.split(" ").forEach(eventType => {
+				if(!eventType.length)
+					return;
 
-	this.find("*").addBack().contents().addBack().each(function(i,obj) {
-		if(obj.nodeType == 3) { // Text nodes
-			obj.nodeValue = obj.nodeValue.format.apply(obj.nodeValue,args)
-		} else if(obj.nodeType == 1) { // Elements
-			$.each(obj.attributes,function(i,attr) {
-				attr.value = attr.value.format.apply(attr.value,args)
-			});
+				if(!this.$events)
+					Object.defineProperty(this, "$events", { value: {} });
+
+				var listeners = this.$events[eventType]
+
+				if(!listeners)
+					listeners = this.$events[eventType] = [];
+
+				var listener = {
+					selector: selector,
+					callback: callback,
+					once: once,
+				}
+
+				listeners.push(listener)
+
+				if(!this.$isListening)
+					Object.defineProperty(this, "$isListening", { value: {} });
+
+				if(!this.$isListening[eventType]) {
+					this.$isListening[eventType] = true
+					this.addEventListener(eventType, HandleEvent, true)
+				}
+			})
+
+			return this
+		},
+		$once() {
+			var onceIndex = typeof(arguments[1]) === "string" ? 3 : 2
+			arguments[onceIndex] = true
+			return this.$on.apply(this, arguments)
+		},
+		$off(eventNames, selector, callback) {
+			if(!this.$events) return this;
+
+			if(typeof(selector) !== "string")
+				callback = selector, selector = null;
+
+			eventNames.split(" ").forEach(eventType => {
+				if(!eventType.length)
+					return;
+
+				var listeners = this.$events[eventType]
+				if(!listeners) return;
+
+				if(selector == null && callback == null)
+					delete this.$events[eventType];
+				else {
+					for(var i=0; i < listeners.length; i++) {
+						var listener = listeners[i]
+						if((selector && listener.selector === selector) || (callback && listener.callback === callback)) {
+							listeners.splice(i--, 1)
+						}
+					}
+				}
+			})
+
+			return this
+		},
+		$trigger(type, init) { return this.dispatchEvent(new Event(type, init)), this },
+	}))
+
+	Object.defineProperties(Element.prototype, Object.getOwnPropertyDescriptors({
+		$class(name, value) { return value === undefined ? this.classList.contains(name) : (this.classList.toggle(name, value), this) }
+	}))
+
+	Object.defineProperties(HTMLElement.prototype, Object.getOwnPropertyDescriptors({
+		$style(name, value) { return value === undefined ? getComputedStyle(this)[name] : (this.style[name] = value, this) },
+	}))
+
+	function qs(fn) {
+		return function(selector) {
+			selector = selector.replace(/(^|,)\s*(?=>)/g, "$&:scope")
+			return fn.call(this, selector)
 		}
-	})
+	}
 
-	return this
+	Element.prototype.$find = qs(Element.prototype.querySelector)
+	Element.prototype.$findAll = qs(Element.prototype.querySelectorAll)
+
+	Document.prototype.$find = qs(Document.prototype.querySelector)
+	Document.prototype.$findAll = qs(Document.prototype.querySelectorAll)
+
+	return $
+})();
+
+function forEach(target, fn) {
+	var arr = Object.entries(target)
+
+	if(arr.length) {
+		arr.forEach(([key, value]) => fn(value, key))
+	} else {
+		Array.from(target).forEach(fn)
+	}
 }
 
-Date.prototype.relativeFormat = function(format) {
-	var myTime = Date.now()
-	var timeDiff = (myTime-this)/1000
+const request = function(options) {
+	if(this instanceof request)
+		throw new Error("request is not a constructor");
+
+	var xhr = new XMLHttpRequest()
+
+	xhr.responseType = options.dataType || "text"
+	xhr.onload = () => options.success && options.success(xhr.response, xhr)
+	xhr.onerror = err => options.failure && options.failure(xhr, err)
+
+
+	var url = options.url
+	var data = null
+	var headers = {}
+
+	if(options.params)
+		url += (url.indexOf("?") === -1 ? "?" : "&") + request.params(options.params);
+
+	if(options.method === "GET") {
+		if(options.data) {
+			url += (url.indexOf("?") === -1 ? "?" : "&") + request.params(options.data)
+		}
+	} else {
+		if(options.data) {
+			if(options.data instanceof Object) {
+				headers["content-type"] = "application/x-www-form-urlencoded"
+				data = request.params(options.data)
+			} else {
+				data = options.data.toString()
+			}
+		} else if(options.json) {
+			headers["content-type"] = "application/json"
+			data = JSON.stringify(options.json)
+		}
+	}
+
+	if(options.contentType)
+		headers["content-type"] = options.contentType;
+
+	if(options.headers) 
+		for(var name in options.headers) headers[name.toLowerCase()] = options.headers[name];
+
+
+	xhr.open(options.method, url, true)
+
+	for(var name in headers) {
+		xhr.setRequestHeader(name, headers[name])
+	}
+
+	xhr.send(data)
+}
+
+Object.assign(request, {
+	params(params) {
+		var p = []
+		for(var name in params) {
+			var value = params[name]
+			p.push(encodeURIComponent(name) + "=" + encodeURIComponent(value == null ? "" : value))
+		}
+
+		return p.join("&").replace(/%20/g, "+")
+	},
+
+	get(url, success, failure) { return this({ method: "GET", url, success, failure }) },
+	getBlob(url, success, failure) { return this({ method: "GET", url, success, failure, dataType: "blob" }) },
+	getJson(url, success, failure) { return this({ method: "GET", url, success, failure, dataType: "json" }) },
+	post(url, data, success, failure) { return this({ method: "POST", url, data, success, failure }) }
+})
+
+const htmlstring = function(pieces) {
+	const escapeMap = {
+		"&": "&amp;",
+		"<": "&lt;",
+		">": "&gt;",
+		'"': "&quot;",
+		"'": "&#39;",
+		"/": "&#x2F;"
+	}
+
+	var escapePiece = s => s.replace(/[^\S ]+/g, "").replace(/ {2,}/g, " ");
+	var escapeArg = s => s.toString().replace(/[&<>"'\/]/g, x => escapeMap[x])
+
+	var result = escapePiece(pieces[0])
+
+	for(var i=1, len=arguments.length; i<len; i++) {
+		var escaped = arguments[i]
+		result += escapeArg(arguments[i]) + escapePiece(pieces[i])
+	}
+
+	return result
+}
+
+const html = function() {
+	var result = htmlstring.apply(this, arguments)
+	var template = document.createElement("template")
+	template.innerHTML = result
+
+	return template.content.firstElementChild || template.content.firstChild
+}
+
+
+Date.prototype.relativeFormat = function(format, relativeTo) {
+	if(relativeTo == null)
+		relativeTo = Date.now();
+	else if(relativeTo instanceof Date)
+		relativeTo = relativeTo.getTime();
+
+	var timeDiff = (relativeTo - this) / 1000
 
 	var s = Math.floor(timeDiff)
 	var m = Math.floor(timeDiff/60)
@@ -79,7 +346,7 @@ Date.prototype.relativeFormat = function(format) {
 		return res
 	}
 
-	return format.replace(/([smhdwMy]{1,2}|z{1,2}[012]?)((?=(?:[^'\\]*(?:\\.|'(?:[^'\\]*\\.)*[^'\\]*'))*[^']*$))/g,replaceFunc).replace(/'([^']*)'/g,"$1")
+	return format.replace(/([smhdwMy]{1,2}|z{1,2}[012]?)((?=(?:[^'\\]*(?:\\.|'(?:[^'\\]*\\.)*[^'\\]*'))*[^']*$))/g, replaceFunc).replace(/'([^']*)'/g, "$1")
 };
 
 /*

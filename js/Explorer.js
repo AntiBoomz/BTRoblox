@@ -48,8 +48,7 @@ var propertyGroups = {
 
 var propertyOrder = []
 
-Object.keys(propertyGroups).forEach((name) => { 
-	var group = propertyGroups[name]
+forEach(propertyGroups, group => { 
 	group.List.forEach((propName) => propertyOrder[propName] = group.Order)
 })
 
@@ -58,37 +57,44 @@ function Explorer() {
 	this.isShown = false
 	this.views = []
 
-	var domElement = this.domElement = $(
-	"<div class='btr-modelviewer'>" + 
-		"<div class='btr-explorer'>" +
-			"<div class='btr-explorer-header hidden'></div>" +
-		"</div>" +
-		"<div class='btr-properties'>" +
-			"<div class='btr-properties-header'></div>" +
-			"<ul class='btr-properties-list'>" +
-			"</ul>" + 
-		"</div>" +
-	"</div>")
+	var domElement = this.domElement = html`
+	<div class="btr-explorer-parent">
+		<div class="btr-explorer">
+			<div class="btr-explorer-header hidden"></div>
+			<div class="btr-explorer-loading" style="text-align:center;margin-top:12px;">Loading</div>
+		</div>
+		<div class="btr-properties">
+			<div class="btr-properties-header"></div>
+			<ul class="btr-properties-list">
+			</ul>
+		</div>
+	</div>"`
 
-	this.loadingElement = $("<div style='text-align:center;margin-top:12px;'>Loading</div>").appendTo(domElement.find(".btr-explorer"))
-
+	this.loadingElement = domElement.$find(".btr-explorer-loading")
 	var selection = []
 
+	function fixNum(v) { return Math.round(v*1e3)/1e3 }
+	function fixNums(arr) {
+		var copy = arr.slice(0)
+		copy.forEach((v,i) => copy[i]=fixNum(v))
+		return copy
+	}
+
 	function setSelection(list) {
-		selection.forEach((item) => item.toggleClass("selected", false))
-		list.forEach((item) => item.toggleClass("selected", true))
+		selection.forEach(item => item.classList.remove("selected"))
+
 		selection = list
+		list.forEach(item => item.classList.add("selected"))
 
-		domElement.find(".btr-properties").css("display", list.length === 0 ? "none" : "")
+		var propertyList = domElement.$find(".btr-properties-list")
+		propertyList.innerHTML = ""
 
-		var propertyList = domElement.find(".btr-properties-list")
-		propertyList.empty()
+		if(list.length) {
+			domElement.$find(".btr-properties").style.display = ""
+			var target = list[0].rbxinstance
 
-		if(list.length > 0) {
-			var target = list[0].data("rbxinstance")
-
-			domElement.find(".btr-properties-header").text("Properties - {0} \"{1}\"".format(target.ClassName, target.Name))
-
+			var title = `Properties - ${target.ClassName} "${target.Name}"`
+			domElement.$find(".btr-properties-header").textContent = title
 
 			target.Properties.sort((a,b) => {
 				var ao = propertyOrder[a]
@@ -111,22 +117,13 @@ function Explorer() {
 						break;
 				}
 
-				var item = $(
-				"<li class='btr-property-item'>" +
-					"<div class='btr-property-name'>{0}</div>".format(name) +
-					"<div class='btr-property-value'></div>" +
-				"</li>")
+				var item = html`
+				<li class="btr-property-item">
+					<div class="btr-property-name" title="${name}">${name}</div>
+					<div class="btr-property-value"></div>
+				</li>`
 
-				var valuediv = item.find(".btr-property-value")
-
-
-				function fixNum(v) { return Math.round(v*1e3)/1e3 }
-				function fixNums(arr) {
-					var copy = arr.slice(0)
-					copy.forEach((v,i) => copy[i]=fixNum(v))
-					return copy
-				}
-
+				var valuediv = item.$find(".btr-property-value")
 
 				switch(typeof(value)) {
 					case "number":
@@ -137,19 +134,16 @@ function Explorer() {
 							var blobUrl = URL.createObjectURL(new Blob([value]))
 							value = value.substring(0, 120) + "..."
 
-							$("<a class='more' target='_blank'>...</button>")
-								.attr("href", blobUrl)
-								.appendTo(valuediv)
+							valuediv.append(html`<a class="more" target="_blank" href="${blobUrl}">...</a>`)
 						}
-						var input = $("<textarea onkeypress='return false;'>")
-						input.val(value)
-						input.attr("title", value)
-						input.appendTo(valuediv)
+						var input = html`<textarea title="${value}" onkeypress="return false"></textarea>`
+						input.value = value
+						valuediv.append(input)
 						break
 					case "boolean":
-						var input = $("<input type='checkbox' disabled='true'>")
-						input[0].checked = value
-						input.appendTo(valuediv)
+						var input = html`<input type="checkbox" disabled="true">`
+						input.checked = value
+						valuediv.append(input)
 						break;
 					case "undefined":
 						break;
@@ -158,10 +152,10 @@ function Explorer() {
 							break;
 
 						if(value instanceof ANTI.RBXInstance) {
-							valuediv.text(value.Name)
+							valuediv.textContent = value.Name
 							break;
 						} else if(value instanceof ANTI.RBXEnum) {
-							valuediv.text("Enum " + value.Value)
+							valuediv.textContent = "Enum " + value.Value
 							break;
 						} else if(value instanceof ANTI.RBXProperty) {
 							switch(value.type) {
@@ -169,10 +163,11 @@ function Explorer() {
 								case "Color3":
 								case "Vector2":
 								case "Vector3":
-									valuediv.text(fixNums(value).join(", "))
+									valuediv.textContent = fixNums(value).join(", ")
 									break;
 								case "UDim2":
-									valuediv.text("{" + fixNums(value[0]).join(",") + "}, {" + fixNums(value[1]).join(", ") + "}")
+									var text = `{${fixNums(value[0]).join(", ")}}, {${fixNums(value[1]).join(", ")}}`
+									valuediv.textContent = text
 									break;
 								default: 
 									console.log("prop", name, value.type, value)
@@ -183,96 +178,85 @@ function Explorer() {
 						console.log(name, typeof(value), value);
 				}
 
-				valuediv.attr("title", valuediv.text())
-				item.appendTo(propertyList)
+				valuediv.setAttribute("title", valuediv.textContent)
+				propertyList.append(item)
 			})
 		} else {
-			domElement.find(".btr-properties-header").text("Properties")
+			domElement.$find(".btr-properties").style.display = "none"
+			domElement.$find(".btr-properties-header").textContent = "Properties"
 		}
 	}
 
 	setSelection([])
 
-	domElement.on("click", ".btr-explorer", (event) => {
-		setSelection([])
+	domElement.$on("click", e => e.stopPropagation())
+	.$on("click", ".btr-explorer", e => setSelection([]))
+	.$on("click", ".hasChildren>.btr-explorer-more", e => {
+		e.stopPropagation()
+		e.currentTarget.parentNode.classList.toggle("closed")
+	}).$on("click", ".btr-explorer-item", e => {
+		e.stopPropagation()
+		setSelection([ e.currentTarget ])
+	}).$on("mousewheel", ".btr-explorer, .btr-properties-list", e => {
+		if(e.shiftKey) return;
 
-		event.stopPropagation()
-		return false
-	}).on("click", ".hasChildren>.btr-explorer-more", (event) => {
-		$(event.currentTarget.parentNode).toggleClass("closed")
-
-		event.preventDefault()
-		return false
-	}).on("click", ".btr-explorer-item", (event) => {
-		var item = $(event.currentTarget)
-
-		setSelection([item])
-
-		event.preventDefault()
-		return false
-	}).on("click", ".btr-properties", (event) => {
-		event.stopPropagation()
-	}).on("mousewheel", ".btr-explorer, .btr-properties-list", function(event) {
-		var deltaY = event.originalEvent.deltaY
-		if((deltaY > 0 && this.scrollTop === this.scrollHeight - this.clientHeight) || (deltaY < 0 && this.scrollTop === 0)) {
+		var el = e.currentTarget
+		if((e.deltaY > 0 && el.scrollTop === el.scrollHeight-el.clientHeight) || (e.deltaY < 0 && el.scrollTop === 0)) {
 			return false
 		}
-	}).on("click", ".btr-explorer-view-btn:not(.selected)", (event) => {
-		var id = $(event.currentTarget).attr("data-index")
+	}).$on("click", ".btr-explorer-view-btn:not(.selected)", e => {
+		var id = e.target.getAttribute("data-index")
 		if(this.selectedView) {
-			this.selectedView.button.removeClass("selected");
-			this.selectedView.domElement.addClass("hidden")
+			this.selectedView.button.classList.remove("selected")
+			this.selectedView.domElement.classList.add("hidden")
 		}
 
 		this.selectedView = this.views[id]
-		this.selectedView.button.addClass("selected")
-		this.selectedView.domElement.removeClass("hidden")
+		this.selectedView.button.classList.add("selected")
+		this.selectedView.domElement.classList.remove("hidden")
 	})
 }
 
 Object.assign(Explorer.prototype, {
-	addView: function(title, model) {
-		//console.log(title, model)
-
+	addView(title, model) {
 		var view = {}
 		this.views.push(view)
 
 		view.title = title
 		view.model = model
 
-		var btn = view.button = $("<div class='btr-explorer-view-btn' data-index='{1}'>{0}</div>").elemFormat(view.title, this.views.length-1)
-		var domElement = view.domElement = $("<ul class='btr-explorer-list'></ul>")
+		var domElement = view.domElement = html`<ul class="btr-explorer-list"></ul>`
+		var btn = view.button = html`<div class="btr-explorer-view-btn" data-index="${this.views.length-1}">${view.title}</div>`
 
 		if(this.views.length === 1) {
-			btn.addClass("selected")
+			btn.classList.add("selected")
 			this.selectedView = view
 			this.loadingElement.remove()
 		} else {
-			domElement.addClass("hidden")
+			domElement.classList.add("hidden")
 		}
 
 		if(this.views.length === 2) {
-			this.domElement.find(".btr-explorer-header").removeClass("hidden")
+			this.domElement.$find(".btr-explorer-header").classList.remove("hidden")
 		}
 
 		function createElements(target, parentElement) {
-			var item = $(
-			"<li class='btr-explorer-item-container'>" +
-				"<div class='btr-explorer-more'></div>" +
-				"<div class='btr-explorer-item'>" +
-					"<div class='btr-explorer-icon' style='background-position:-{iconOffset}px 0;'></div>" +
-					"{name}" +
-				"</div>" +
-			"</li>").elemFormat({
-				name: target.Name,
-				iconOffset: (rmdClassIcons[target.ClassName] || 0)*16
-			}).appendTo(parentElement)
-			
-			item.find(".btr-explorer-item").data("rbxinstance", target)
+			var item = html`
+			<li class='btr-explorer-item-container'>
+				<div class='btr-explorer-more'></div>
+				<div class='btr-explorer-item'>
+					<div class='btr-explorer-icon' style='background-position:-${(rmdClassIcons[target.ClassName] || 0)*16}px 0;'></div>
+					${target.Name}
+				</div>
+			</li>`
+			parentElement.append(item)
+
+			item.$find(".btr-explorer-item").rbxinstance = target
 
 			if(target.Children.length > 0) {
-				item.addClass("hasChildren")
-				var childList = $("<ul class='btr-explorer-childlist'></ul>").appendTo(item)
+				item.classList.add("hasChildren")
+				var childList = html`<ul class="btr-explorer-childlist"></ul>`
+				item.append(childList)
 
 				for(var i=0; i<target.Children.length; i++) {
 					createElements(target.Children[i], childList)
@@ -284,7 +268,7 @@ Object.assign(Explorer.prototype, {
 			createElements(model[i], domElement)
 		}
 
-		btn.appendTo(this.domElement.find(".btr-explorer-header"))
-		domElement.appendTo(this.domElement.find(".btr-explorer"))
+		this.domElement.$find(".btr-explorer-header").append(btn)
+		this.domElement.$find(".btr-explorer").append(domElement)
 	}
 })

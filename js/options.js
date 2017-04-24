@@ -104,55 +104,62 @@ var dict = {
 	catalog_animationPreview: "Animation Previewer"
 }
 
-var ul = $("<ul/>").appendTo("#btr-content-basic")
+var ul = html`<ul></ul>`
+$("#btr-content-basic").append(ul)
 
-BackgroundJS.send("getSettings",function(settings) {
-	for(var sett in settings) {
-		var header = $("<li><h2>{0}</h2></li>").elemFormat(dict[sett]||sett).appendTo(ul);
-		var list = $("<ul/>").appendTo(ul);
-		var t = settings[sett];
+BackgroundJS.send("getSettings", settings => {
+	forEach(settings, (group, groupName) => {
+		var header = html`<li><h2>${dict[groupName]||groupName}</h2></li>`
+		var list = html`<ul></ul>`
 
-		$.each(t,function(x,v) {
-			var name = sett;
-			var v = t[x];
-			var id = name+"_"+x;
-			var li = $("<li/>").appendTo(list);
-			var data = dict[id];
-			var la = $("<label for='{0}'>{1}</label>").elemFormat(id,typeof(data)=="string"?data:typeof(data)=="object"&&data.label||id).appendTo(li);
-			var type = typeof(data)=="object"&&data.type||typeof(v)
+		ul.append(header)
+		ul.append(list)
 
-			if(type=="boolean") {
-				$("<input type='checkbox' class='btr-option btr-option-checkbox' id='{0}'>")
-					.elemFormat(id)
-					.prop("checked",v)
-					.prependTo(li)
-					.on("change",function() {
-						settings[name][x] = this.checked;
-						BackgroundJS.send("setSetting",settings);
-					});
-			} else if(type=="dropdown") {
-				var select = $("<select class='btr-option btr-option-select' id='{0}'/>")
-					.val(v)
-					.elemFormat(id)
-					.prependTo(li)
-					.on("change",function() {
-						settings[name][x] = select.val();
-						BackgroundJS.send("setSetting",settings);
-					});
+		forEach(group, (value, index) => {
+			var id = groupName + "_" + index
 
-				for(var i=0;i<data.values.length;i++) {
-					$("<option/>").attr("value",data.values[i].value).text(data.values[i].label).appendTo(select);
-				}
+			var data = dict[id]
+			
+			var item = html`<li></li>`
+			var label = html`<label for="${id}">${data ? (data instanceof Object ? data.label : data) : id}</label>`
 
-				select.val(v);
+			list.append(item)
+			item.append(label)
+
+			var type = data instanceof Object && data.type || typeof(value)
+
+			if(type === "boolean") {
+				var input = html`<input type="checkbox" class="btr-option btr-option-checkbox" id="${id}">`
+				input.checked = value
+				input.$on("change", e => {
+					console.log(e)
+					group[index] = e.target.checked
+					BackgroundJS.send("setSetting", settings)
+				})
+
+				item.prepend(input)
+			} else if(type === "dropdown") {
+				var select = html`<select class='btr-option btr-option-select' id="${id}"></select>`
+
+				data.values.forEach((v,i) => {
+					select.append(html`<option value="${v.value}">${v.label}</option>`)
+				})
+
+				select.value = value
+				select.$on("change", e => {
+					group[index] = e.target.value
+					BackgroundJS.send("setSetting", settings)
+				})
+				
+				item.prepend(select)
 			}
-		});
-	}
+		})
+	})
 })
 
-$("#btr-content").on("mousewheel", function(event) {
-	var deltaY = event.originalEvent.deltaY
-	if((deltaY > 0 && this.scrollTop === this.scrollHeight - this.clientHeight) || (deltaY < 0 && this.scrollTop === 0)) {
+$("#btr-content").$on("mousewheel", e => {
+	var deltaY = e.deltaY
+	if((deltaY > 0 && e.target.scrollTop === e.target.scrollHeight - e.target.clientHeight) || (deltaY < 0 && e.target.scrollTop === 0)) {
 		return false
 	}
 })

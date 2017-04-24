@@ -4,7 +4,8 @@
 	"name": "BTRoblox",
 	"short_name": "BTR",
 	"description": "Better Roblox - Making Roblox better!",
-	"version": "1.4.1",
+	"version": "1.5.0",
+	"minimum_chrome_version": "54",
 
 	"icons": {
 		"128":"res/icon_128.png"
@@ -12,9 +13,7 @@
 
 	"background": {
 		"scripts": [
-			"lib/jquery.min.js",
 			"js/utility.js",
-			"js/request.js", 
 			"js/background.js"
 		]
 	},
@@ -42,7 +41,7 @@
 		{
 			"matches": ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
 			"css": [],
-			"js": ["lib/jquery.min.js", "js/utility.js", "js/main.js", "js/pages.js"],
+			"js": ["js/utility.js", "js/main.js", "js/pages.js"],
 			"run_at": "document_start",
 			"all_frames": true
 		}

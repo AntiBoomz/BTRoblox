@@ -194,7 +194,7 @@ function applySettings(data, initialLoad) {
 
 
 extensionDirectoryPromise.then((dir) => {
-	Object.keys(dir.js.background).forEach((filePath) => {
+	forEach(dir.js.background, (_, filePath) => {
 		var script = document.createElement("script")
 		script.src = "js/background/" + filePath
 		document.body.appendChild(script)

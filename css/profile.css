@@ -33,6 +33,15 @@
 	background: none;
 }
 
+.btr-profile div[class^="placeholder-"] .btr-section-content-off {
+	display: block;
+	padding: 36px;
+}
+
+.btr-profile div.placeholder-favorites .btr-section-content-off {
+	padding: 12px;
+}
+
 /* Player status */
 
 .btr-profile .btr-header-status-parent {
@@ -343,7 +352,7 @@
 	float: left;
 	width: 33.33%;
 	height: auto;
-	padding: 0 7px;
+	padding: 0 5px;
 }
 
 .btr-profile .btr-profile-favorites .game-card-thumb-container,
@@ -358,7 +367,7 @@
 }
 
 .btr-profile .btr-profile-favorites .game-card-name-secondary {
-	margin-top: 10px;
+	margin-top: 6px;
 	margin-bottom: 4px;
 	height: 16px;
 }

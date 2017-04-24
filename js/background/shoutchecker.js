@@ -20,13 +20,13 @@ function checkShouts() {
 	var groupsDone = {}
 	var hasPlayedSound = false
 
-	request.get("https://www.roblox.com/Feeds/GetUserFeed", (htmlString) => {
+	request.get("https://www.roblox.com/Feeds/GetUserFeed", htmlString => {
 		var doc = new DOMParser().parseFromString(htmlString, "text/html")
 
-		doc.querySelectorAll(".feeds .list-item").forEach((item) => {
-			var link = item.querySelector(".list-content a:first-child")
+		doc.$findAll(".feeds .list-item").forEach((item) => {
+			var link = item.$find(".list-content a:first-child")
 			var groupUrl = link.getAttribute("href")
-			var groupName = link.innerText
+			var groupName = link.textContent
 
 			if(groupUrl.indexOf("groups.aspx") === -1)
 				return;
@@ -38,12 +38,12 @@ function checkShouts() {
 
 			groupsDone[groupId] = true
 
-			var groupEmblem = item.querySelector(".header-thumb").getAttribute("src")
-			var posterLink = item.querySelector(".text-name")
-			var poster = posterLink.innerText
+			var groupEmblem = item.$find(".header-thumb").getAttribute("src")
+			var posterLink = item.$find(".text-name")
+			var poster = posterLink.textContent
 			var posterId = parseInt(posterLink.getAttribute("href").match(/\/users\/(\d+)/)[1])
-			var date = item.querySelector(".text-date-hint").innerText
-			var body = item.querySelector(".feedtext").innerText.replace(/^"(.*)"$/, "$1")
+			var date = item.$find(".text-date-hint").textContent
+			var body = item.$find(".feedtext").textContent.replace(/^"(.*)"$/, "$1")
 
 			if(isNaN(posterId))
 				posterId = -1;
