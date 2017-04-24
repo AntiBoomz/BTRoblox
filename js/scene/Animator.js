@@ -55,9 +55,9 @@ ANTI.RBXScene.Animator = (function() {
 			this.previousUpdate = time
 			this.timePosition += delta * this.speed
 
-			if(this.timePosition > this.anim.Length) {
-				if(this.anim.Looped) {
-					this.timePosition = this.timePosition % this.anim.Length
+			if(this.timePosition > this.anim.length) {
+				if(this.anim.loop) {
+					this.timePosition = this.timePosition % this.anim.length
 				} else {
 					this.playing = false
 					this.timePosition = 0
@@ -69,51 +69,35 @@ ANTI.RBXScene.Animator = (function() {
 			}
 
 			var currentTime = this.timePosition
-			var animData = this.anim.Limbs
-			var emptyFrame = [0, [0,0,0], [0,0,0]]
+			var emptyFrame = {
+				time: 0, 
+				pos: [0,0,0], 
+				rot: [0,0,0]
+			}
+			var nextQuat = new THREE.Quaternion()
 
-			for(var name in animData) {
+			for(var name in this.anim.keyframes) {
 				var joint = this.joints[name]
-
 				if(joint) {
-					var frames = animData[name]
-					for(var i=0, l=frames.length; i<l; i++) {
-						var frame = frames[i]
-						var frameTime = frame[0]
+					var keyframes = this.anim.keyframes[name]
+					var next = keyframes.find(x => x.time >= currentTime)
 
-						if(frameTime >= currentTime || i === l-1) {
-							var prev = i > 0 ? frames[i-1] : emptyFrame
-							var t = frameTime <= currentTime || frameTime == prev[0] ? 1 : (currentTime-prev[0])/(frameTime-prev[0])
+					if(!next) {
+						var last = keyframes[keyframes.length-1]
+						joint.joint.position.fromArray(last.pos)
+						joint.joint.quaternion.fromArray(last.rot)
+					} else {
+						var prev = keyframes[keyframes.indexOf(next)-1] || emptyFrame
+						var length = next.time - prev.time
+						var alpha = length === 0 ? 1 : (currentTime - prev.time)/length
 
-							var pos0 = prev[1]
-							var pos1 = frame[1]
+						joint.joint.position.set(
+							prev.pos[0] + (next.pos[0]-prev.pos[0]) * alpha,
+							prev.pos[1] + (next.pos[1]-prev.pos[1]) * alpha,
+							prev.pos[2] + (next.pos[2]-prev.pos[2]) * alpha,
+						)
 
-							var rot0 = prev[2]
-							var rot1 = frame[2]
-
-							var it = (1-t)
-
-							joint.pivot.position.set(
-								pos0[0]*it + pos1[0]*t,
-								pos0[1]*it + pos1[1]*t,
-								pos0[2]*it + pos1[2]*t
-							)
-
-							tq.set(rot1[0], rot1[1], rot1[2], rot1[3])
-							joint.pivot.quaternion.set(rot0[0], rot0[1], rot0[2], rot0[3]).slerp(tq, t)
-
-							/*joint.pivot.rotation.set(
-								rot0[0] + fix(rot1[0]-rot0[0])*t,
-								rot0[1] + fix(rot1[1]-rot0[1])*t,
-								rot0[2] + fix(rot1[2]-rot0[2])*t
-							)*/
-
-							/*if(name === "lefthand") {
-								console.log(i, t, rot0, rot1)
-							}*/
-
-							break;
-						}
+						joint.joint.quaternion.fromArray(prev.rot).slerp(nextQuat.fromArray(next.rot), alpha)
 					}
 				}
 			}

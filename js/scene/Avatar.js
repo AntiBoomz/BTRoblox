@@ -108,29 +108,62 @@ ANTI.RBXScene.Avatar = (function() {
 			+ "/yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=="
 	}
 
-	var R6Joints = {
-		leftleg: { c0: CFrame(-1,-1,0,-0,-0,-1,0,1,0,1,0,0), c1: CFrame(-0.5,1,0,-0,-0,-1,0,1,0,1,0,0) },
-		leftarm: { c0: CFrame(-1,0.5,0,-0,-0,-1,0,1,0,1,0,0), c1: CFrame(0.5,0.5,0,-0,-0,-1,0,1,0,1,0,0) },
-		head: { c0: CFrame(0,1,0,-1,-0,-0,0,0,1,0,1,0), c1: CFrame(0,-0.5,0,-1,-0,-0,0,0,1,0,1,0) },
-		rightleg: { c0: CFrame(1,-1,0,0,0,1,0,1,0,-1,-0,-0), c1: CFrame(0.5,1,0,0,0,1,0,1,0,-1,-0,-0) },
-		rightarm: { c0: CFrame(1,0.5,0,0,0,1,0,1,0,-1,-0,-0), c1: CFrame(-0.5,0.5,0,0,0,1,0,1,0,-1,-0,-0) },
-		torso: { c0: CFrame(0,0,0,-1,-0,-0,0,0,1,0,1,0), c1: CFrame(0,0,0,-1,-0,-0,0,0,1,0,1,0) }
-	}
+	var avatarTreePromise = new Promise(resolve => {
+		var modelUrl = chrome.runtime.getURL("res/previewer/avatars.rbxm")
 
-	var R6Attachments = {
-		head: { Hair: [0,0.6,0], Hat: [0,0.6,0], FaceFront: [0,0,-0.6], FaceCenter: [0,0,0] },
-		torso: { Neck: [0,1,0], BodyFront: [0,0,-0.5], BodyBack: [0,0,0.5], LeftCollar: [-1,1,0], RightCollar: [1,1,0], WaistFront: [0,-1,-0.5], WaistCenter: [0,-1,0], WaistBack: [0,-1,0.5] },
-		leftarm: { LeftShoulder: [0,1,0] },
-		rightarm: { RightShoulder: [0,1,0] }
-	}
+		function CreateTree(model) {
+			var joints = {}
 
-	const R6BodyPartNames = [
-		"torso", "leftarm", "rightarm", "leftleg", "rightleg"
-	]
+			function get(item) {
+				var part = joints[item.Name]
+				if(!part) {
+					part = joints[item.Name] = { name: item.Name, children: [], attachments: {} }
 
+					if(item.ClassName === "MeshPart") {
+						part.meshid = parseContentUrl(item.MeshID)
+					}
+				}
+
+				return part
+			}
+
+			function recurse(item) {
+				if(item.ClassName === "Motor6D" && item.Part0 && item.Part1) {
+					var part0 = get(item.Part0)
+					var part1 = get(item.Part1)
+
+					part0.children.push(part1)
+					part1.parent = part0
+
+					part1.JointName = item.Name
+					part1.C0 = CFrame.apply(null, item.C0)
+					part1.C1 = new THREE.Matrix4().getInverse(CFrame.apply(null, item.C1))
+				} else if(item.ClassName === "Attachment" && !item.Name.endsWith("RigAttachment")) {
+					var part = get(item.Parent)
+					part.attachments[item.Name] = CFrame.apply(null, item.CFrame)
+				}
+
+				item.Children.forEach(recurse)
+			}
+
+			recurse(model)
+
+			var rootPart = Object.values(joints).find(x => x.parent == null)
+			return rootPart
+		}
+
+		AssetCache.loadModel(modelUrl, model => {
+			var r6 = model.find(x => x.Name === "R6")
+			var r15 = model.find(x => x.Name === "R15")
+
+			resolve([ CreateTree(r6), CreateTree(r15) ])
+		})
+	})
+
+	const R6BodyPartNames = [ "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg" ]
 	const R15BodyPartNames = [
-		"leftfoot", "lefthand", "leftlowerarm", "leftlowerleg", "leftupperarm", "leftupperleg", "lowertorso", 
-		"rightfoot", "righthand", "rightlowerarm", "rightlowerleg", "rightupperarm", "rightupperleg", "uppertorso"
+		"LeftFoot", "LeftHand", "LeftLowerArm", "LeftLowerLeg", "LeftUpperArm", "LeftUpperLeg", "LowerTorso", 
+		"RightFoot", "RightHand", "RightLowerArm", "RightLowerLeg", "RightUpperArm", "RightUpperLeg", "UpperTorso"
 	]
 
 	function CompositeTexture(hasThree, constructorFn) {
@@ -359,14 +392,12 @@ ANTI.RBXScene.Avatar = (function() {
 	function Avatar(playerType) {
 		var model = this.model = new THREE.Object3D()
 		this.animator = new Animator()
+
 		this.accessories = []
-		this.charmeshes = {
-			parts: {},
-			rig: {},
-			att: {}
-		}
-		this.attachmentPoints = {}
+		this.bodyparts = {}
+
 		this.parts = {}
+		this.attachments = {}
 		this.joints = {}
 
 		this.ptDebounce = 0
@@ -396,6 +427,8 @@ ANTI.RBXScene.Avatar = (function() {
 			rightleg: new CompositeTexture(true, R15LimbCompositeConstructor, textures.pants, rightMesh)
 		}
 
+		textures.Head = this.headComposite.texture
+
 		R6BodyPartNames.forEach(name => {
 			var base = images.base[name] = createImage()
 			var over = images.over[name] = createImage()
@@ -416,12 +449,12 @@ ANTI.RBXScene.Avatar = (function() {
 	}
 
 	Object.assign(Avatar.prototype, {
-		setBodyColors: function(bodyColors) {
+		setBodyColors(bodyColors) {
 			this.r6Composite.bodyColors = bodyColors
 			this.r6Composite.shouldUpdateBodyColors = true
 			this.r6Composite.update()
 
-			$.each(this.r15Composites, (name, composite) => {
+			forEach(this.r15Composites, (composite, name) => {
 				if(!bodyColors[name])
 					return;
 
@@ -432,126 +465,112 @@ ANTI.RBXScene.Avatar = (function() {
 			this.headComposite.background = bodyColors.head
 			this.headComposite.update()
 		},
-		addAsset: function(assetId, assetTypeId) {
+		addAsset(assetId, assetTypeId) {
 			switch(assetTypeId) {
 				// Bodyparts
 				case 27: case 28: 
 				case 29: case 30: case 31:
-					var charmeshes = this.charmeshes
 					AssetCache.loadModel(assetId, model => {
-						model.forEach((folder) => {
-							if(folder.ClassName !== "Folder")
-								return;
+						var R6Folder = model.find(x => x.Name === "R6")
+						var R15Folder = model.find(x => x.Name === "R15")
 
-							if(folder.Name === "R15") {
-								folder.Children.forEach((part) => {
-									if(part.ClassName !== "MeshPart")
-										return;
+						var Apply = (target, meshId, baseTexId, overTexId) => {
+							var bodypart = this.bodyparts[target] = {}
 
-									var name = part.Name.toLowerCase()
-									var bodypart = charmeshes.parts[name] = {}
-									var meshId = parseContentUrl(part.MeshID)
-
-									if(this.parts[name]) {
-										var obj = this.parts[name]
-										obj.useDefaultMesh = false
-										clearGeometry(obj.geometry)
-									}
-
-									AssetCache.loadMesh(meshId, mesh => {
-										bodypart.mesh = mesh
-
-										var obj = this.parts[name]
-										if(obj) {
-											//obj.useDefaultMesh = false
-											applyMeshToGeometry(obj.geometry, mesh)
-										}
-									})
-
-									var texId = parseContentUrl(part.TextureID)
-									if(texId)
-										AssetCache.loadImage(texId, url => this.images.over[name].src = url);
-
-
-									part.Children.forEach((item) => {
-										if(item.ClassName !== "Attachment")
-											return;
-
-										var isRigAttachment = item.Name.substr(-13) == "RigAttachment"
-										if(isRigAttachment) {
-											var jointName = item.Name.slice(0, -13)
-											var cframe = CFrame.apply(null, item.CFrame)
-
-											if(!charmeshes.rig[jointName])
-												charmeshes.rig[jointName] = {};
-
-											charmeshes.rig[jointName][part.Name] = cframe
-
-											if(this.rigData && this.rigData[jointName]) {
-												var data = this.rigData[jointName]
-												var joint = data.joint
-
-												if(data.part0Name === part.Name) {
-													data.c0 = cframe
-
-													joint.c0.position.setFromMatrixPosition(data.c0)
-													joint.c0.rotation.setFromRotationMatrix(data.c0)
-												} else if(data.part1Name === part.Name) {
-													data.c1 = cframe
-													var c1Matrix = new THREE.Matrix4().getInverse(data.c1)
-
-													joint.c1.position.setFromMatrixPosition(c1Matrix)
-													joint.c1.rotation.setFromRotationMatrix(c1Matrix)
-												}
-											}
-										} else {
-											var cframe = CFrame.apply(null, item.CFrame)
-											var att = this.attachmentPoints[item.Name]
-
-											charmeshes.att[item.Name] = cframe
-
-											if(att) {
-												att.position.setFromMatrixPosition(cframe)
-												att.rotation.setFromRotationMatrix(cframe)
-											}
-										}
-									})
-								})
-							} else if(folder.Name === "R6") {
-								folder.Children.forEach((charmesh) => {
-									if(charmesh.ClassName !== "CharacterMesh")
-										return;
-
-									var name = (["head", "torso", "leftarm", "rightarm", "leftleg", "rightleg"])[charmesh.BodyPart.Value]
-									var bodypart = charmeshes.parts[name] = {}
-									var meshId = charmesh.MeshId
-
-									if(this.parts[name]) {
-										var obj = this.parts[name]
-										obj.useDefaultMesh = false
-										clearGeometry(obj.geometry)
-									}
-
-									AssetCache.loadMesh(meshId, mesh => {
-										bodypart.mesh = mesh
-										
-										var obj = this.parts[name]
-										if(obj) {
-											//obj.useDefaultMesh = false
-											applyMeshToGeometry(obj.geometry, mesh);
-										}
-									})
-
-									var baseTexId = charmesh.BaseTextureId
-									if(baseTexId > 0)
-										AssetCache.loadImage(baseTexId, url => this.images.base[name].src = url);
-
-									var overTexId = charmesh.OverlayTextureId
-									if(overTexId > 0)
-										AssetCache.loadImage(overTexId, url => this.images.over[name].src = url);
-								})
+							var obj = this.parts[target]
+							if(obj) {
+								clearGeometry(obj.geometry);
 							}
-						})
+							
+							AssetCache.loadMesh(meshId, mesh => {
+								if(this.bodyparts[target] !== bodypart) return;
+								bodypart.mesh = mesh
+
+								var obj = this.parts[target]
+								if(obj)
+									applyMeshToGeometry(obj.geometry, mesh);
+							})
+
+							var baseImg, overImg
+
+							if(baseImg = this.images.base[target]) {
+								baseImg.src = ""
+
+								if(baseTexId && baseTexId > 0) {
+									AssetCache.loadImage(baseTexId, url => {
+										if(this.bodyparts[target] !== bodypart) return;
+										baseImg.src = url
+									})
+								}
+							}
+
+							if(overImg = this.images.over[target]) {
+								overImg.src = ""
+
+								if(overTexId && overTexId > 0) {
+									AssetCache.loadImage(overTexId, url => {
+										if(this.bodyparts[target] !== bodypart) return;
+										overImg.src = url
+									})
+								}
+							}
+
+							return bodypart
+						}
+
+						if(R6Folder) {
+							const BodyPartEnum = [ null, "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg" ]
+
+							R6Folder.Children.filter(x => x.ClassName === "CharacterMesh").forEach(charmesh => {
+								var target = BodyPartEnum[charmesh.BodyPart.Value]
+								if(!target)
+									return;
+
+								Apply(target, charmesh.MeshId, charmesh.BaseTextureId, charmesh.OverlayTextureId)
+							})
+						}
+
+						if(R15Folder) {
+							R15Folder.Children.filter(x => x.ClassName === "MeshPart").forEach(part => {
+								var target = part.Name
+								if(R15BodyPartNames.indexOf(target) === -1)
+									return;
+
+								var bodypart = Apply(target, parseContentUrl(part.MeshID), null, parseContentUrl(part.TextureID))
+
+								bodypart.joints = []
+								bodypart.attachments = {}
+
+								part.Children.filter(x => x.ClassName === "Attachment").forEach(inst => {
+									if(inst.Name.endsWith("RigAttachment")) {
+										var jointName = inst.Name.substring(0, inst.Name.length - 13)
+										var cframe = CFrame.apply(null, inst.CFrame)
+										bodypart.joints.push({ name: jointName, part: target, cframe })
+
+										var activeJoint = this.joints[jointName]
+										if(activeJoint) {
+											if(activeJoint.part0 === target) {
+												activeJoint.c0.position.setFromMatrixPosition(cframe)
+												activeJoint.c0.rotation.setFromRotationMatrix(cframe)
+											} else if(activeJoint.part1 === target) {
+												var inverse = new THREE.Matrix4().getInverse(cframe)
+												activeJoint.c1.position.setFromMatrixPosition(inverse)
+												activeJoint.c1.rotation.setFromRotationMatrix(inverse)
+											}
+										}
+									} else {
+										var name = inst.Name
+										var cframe = bodypart.attachments[name] = CFrame.apply(null, inst.CFrame)
+
+										var activeAtt = this.attachments[name]
+										if(activeAtt) {
+											activeAtt.position.setFromMatrixPosition(cframe)
+											activeAtt.rotation.setFromRotationMatrix(cframe)
+										}
+									}
+								})
+							})
+						}
 					})
 					break
 
@@ -559,69 +578,63 @@ ANTI.RBXScene.Avatar = (function() {
 				case 8: case 41: case 42: case 43:
 				case 44: case 45: case 46: case 47:
 					AssetCache.loadModel(assetId, model => {
-						model.forEach((acc) => {
-							if(acc.ClassName !== "Accessory")
-								return;
+						model.filter(x => x.ClassName === "Accessory").forEach(accInst => {
+							var hanInst = accInst.Children.find(x => x.Name === "Handle")
 
-							acc.Children.forEach((han) => {
-								if(han.ClassName.indexOf("Part") === -1)
-									return;
+							if(!hanInst) return;
 
-								var mesh = null
-								var att = null
-								han.Children.forEach((item) => {
-									if(item.ClassName === "SpecialMesh")
-										mesh = item;
-									else if(item.ClassName === "Attachment")
-										att = item;
-								})
+							var meshInst = hanInst.Children.find(x => x.ClassName === "SpecialMesh")
+							var attInst = hanInst.Children.find(x => x.ClassName === "Attachment")
 
-								if(!att)
-									return console.log("Couldn't find attachment in asset " + assetId, model);
+							if(!meshInst)
+								return console.warn(`[RBXScene.Avatar] Missing meshInst for ${assetId}`);
 
-								if(!mesh)
-									return console.log("Couldn't find mesh in asset " + assetId, model);
+							if(!attInst)
+								return console.warn(`[RBXScene.Avatar] Missing attInst for ${assetId}`);
 
-								
-								var meshId = parseContentUrl(mesh.MeshId)
-								var texId = parseContentUrl(mesh.TextureId)
+							var attachment = attInst.Name
+							var meshId = parseContentUrl(meshInst.MeshId)
+							var texId = parseContentUrl(meshInst.TextureId)
 
-								if(!meshId)
-									return console.log("Couldn't parse mesh id for " + assetId, model);
+							if(!meshId) 
+								return console.warn(`[RBXScene.Avatar] Invalid meshId for ${assetId} '${meshInst.MeshId}'`);
 
-								var obj = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial())
-								var tex = obj.material.map = createTexture()
-								tex.image.src = solidColorDataURL(163, 162, 165)
+							if(!texId) 
+								console.warn(`[RBXScene.Avatar] Invalid texId for ${assetId} '${meshInst.MeshId}'`);
 
-								AssetCache.loadMesh(meshId, mesh => applyMeshToGeometry(obj.geometry, mesh))
+							var tex = createTexture()
+							var mat = new THREE.MeshPhongMaterial({ map: tex })
+							var obj = new THREE.Mesh(undefined, mat)
+							obj.castShadow = true
 
-								if(texId)
-									AssetCache.loadImage(texId, url => tex.image.src = url);
+							AssetCache.loadMesh(meshId, mesh => applyMeshToGeometry(obj.geometry, mesh))
 
-								var offset = att.CFrame.slice(0)
-								if(mesh.Offset) {
-									offset[0] += mesh.Offset[0]
-									offset[1] += mesh.Offset[1]
-									offset[2] += mesh.Offset[2]
-								}
+							tex.image.src = solidColorDataURL(163, 162, 165)
+							if(texId)
+								AssetCache.loadImage(texId, url => tex.image.src = url);
 
-								if(mesh.Scale) {
-									obj.scale.set(mesh.Scale[0], mesh.Scale[1], mesh.Scale[2])
-								}
+							var cframe = attInst.CFrame
 
-								var matrix = CFrame.apply(null, offset)
-								matrix.getInverse(matrix)
-								obj.position.setFromMatrixPosition(matrix)
-								obj.rotation.setFromRotationMatrix(matrix)
+							if(meshInst.Offset) {
+								cframe[0] += meshInst.Offset[0]
+								cframe[1] += meshInst.Offset[1]
+								cframe[2] += meshInst.Offset[2]
+							}
 
-								this.accessories.push(obj)
+							if(meshInst.Scale) {
+								obj.scale.set(meshInst.Scale[0], meshInst.Scale[1], meshInst.Scale[2])
+							}
 
-								obj.attachmentPoint = att.Name
+							var matrix = CFrame.apply(null, cframe)
+							matrix.getInverse(matrix)
+							obj.position.setFromMatrixPosition(matrix)
+							obj.rotation.setFromRotationMatrix(matrix)
 
-								var attachmentPoint = this.attachmentPoints[att.Name]
-								if(attachmentPoint)
-									attachmentPoint.add(obj);
-							})
+							this.accessories.push({ attachment, obj })
+
+							if(this.attachments[attachment]) {
+								this.attachments[attachment].add(obj)
+							}
 						})
 					})
 					break;
@@ -677,240 +690,153 @@ ANTI.RBXScene.Avatar = (function() {
 					console.log("Unimplemented asset type", assetTypeId, assetId);
 			}
 		},
-		setPlayerType: function(playerType) {
+		setPlayerType(playerType) {
 			if(this.playerType === playerType)
 				return;
 
-			if(this.parts) {
-				this.model.remove.apply(this.model, this.model.children)
-				for(var name in this.parts) {
-					var obj = this.parts[name]
-					obj.geometry.dispose()
-				}
-				this.model.children.forEach(child => child.dispose())
-			}
-
 			this.playerType = playerType
-			var parts = this.parts = {}
-			var joints = this.joints = {}
-			var attachmentPoints = this.attachmentPoints = {}
-
 			var ptKey = ++this.ptDebounce
 
-			this.animator.setJoints(joints)
+			avatarTreePromise.then(([R6Tree, R15Tree]) => {
+				if(this.ptDebounce !== ptKey) return;
 
-			if(playerType === "R6") {
-				this.model.position.set(0, 3, 0)
+				if(this.root) {
+					this.model.remove(this.root)
+				}
 
-				parts.head = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial({
-					map: this.headComposite.texture
-				}))
+				var parts = {}
+				var attachments = {}
+				var joints = {}
+				var animJoints = {}
 
-				R6BodyPartNames.forEach(name => {
-					parts[name] = new THREE.Mesh(undefined, new THREE.MeshPhongMaterial({
-						map: this.textures[name]
-					}))
-				})
-
-				parts.torso.add(parts.head, parts.rightarm, parts.leftarm, parts.rightleg, parts.leftleg)
-				this.model.add(parts.torso)
-
-				$.each(parts, (name, part) => {
-					part.castShadow = true
-
-					var meshdata = this.charmeshes.parts[name]
-					if(meshdata) {
-						if(meshdata.mesh) {
-							applyMeshToGeometry(part.geometry, meshdata.mesh)
-						}
+				var CreateModel = tree => {
+					var obj
+					if(tree.name !== "HumanoidRootPart") {
+						var mat = new THREE.MeshPhongMaterial({ map: this.textures[tree.name] })
+						obj = parts[tree.name] = new THREE.Mesh(undefined, mat)
+						obj.defaultmeshid = tree.meshid
+						obj.castShadow = true
 					} else {
-						part.useDefaultMesh = true
-						var meshUrl = chrome.runtime.getURL("res/previewer/r6/" + name + ".mesh")
-						AssetCache.loadMesh(meshUrl, mesh => {
-							if(part.useDefaultMesh) {
-								applyMeshToGeometry(part.geometry, mesh);
-							}
-						})
+						obj = new THREE.Object3D()
 					}
-				})
 
-				$.each(R6Attachments, (partName, dict) => {
-					var part = parts[partName]
-					$.each(dict, (name, pos) => {
-						var attachment = attachmentPoints[name + "Attachment"] = new THREE.Object3D()
-						attachment.position.fromArray(pos)
-						part.add(attachment)
+					forEach(tree.attachments, (cframe, name) => {
+						var att = new THREE.Object3D()
+
+						att.position.setFromMatrixPosition(cframe)
+						att.rotation.setFromRotationMatrix(cframe)
+
+						obj.add(att)
+						attachments[name] = att
 					})
-				})
 
-				$.each(R6Joints, (name, baseJoint) => {
-					var joint = joints[name] = {}
-					var part = joint.part1 = parts[name]
-					var pivot = joint.pivot = new THREE.Object3D()
-					var parent = joint.part0 = part.parent
+					tree.children.forEach(child => {
+						var childObj = CreateModel(child)
+						var c0 = new THREE.Object3D()
+						var c1 = new THREE.Object3D()
+						var joint = new THREE.Object3D()
 
-					var c0 = joint.c0 = new THREE.Object3D()
-					var c1 = joint.c1 = new THREE.Object3D()
+						c0.position.setFromMatrixPosition(child.C0)
+						c0.rotation.setFromRotationMatrix(child.C0)
 
-					var c0Matrix = baseJoint.c0
-					var c1Matrix = new THREE.Matrix4().getInverse(baseJoint.c1)
+						c1.position.setFromMatrixPosition(child.C1)
+						c1.rotation.setFromRotationMatrix(child.C1)
 
-					c0.position.setFromMatrixPosition(c0Matrix)
-					c0.rotation.setFromRotationMatrix(c0Matrix)
+						obj.add(c0)
+						c0.add(joint)
+						joint.add(c1)
+						c1.add(childObj)
 
-					c1.position.setFromMatrixPosition(c1Matrix)
-					c1.rotation.setFromRotationMatrix(c1Matrix)
+						joints[child.JointName] = animJoints[child.name] = { 
+							c0, c1, joint,
+							part0: tree.name,
+							part1: child.name,
+							origC0: child.C0,
+							origC1: child.C1
+						}
+					})
 
-					c1.add(part)
-					pivot.add(c1)
-					c0.add(pivot)
-					parent.add(c0)
-				})
+					return obj
+				}
 
-				this.accessories.forEach((acc) => {
-					var attachmentPoint = attachmentPoints[acc.attachmentPoint]
-					attachmentPoint.add(acc)
-				})
-			} else if(playerType === "R15") {
-				this.model.position.set(0, 2.233, 0)
-				var modelUrl = chrome.runtime.getURL("res/previewer/r15/characterR15_3.rbxm")
-				AssetCache.loadModel(modelUrl, model => {
-					model = model[0]
-					if(this.ptDebounce !== ptKey)
-						return;
+				if(playerType === "R6") {
+					this.model.position.set(0, 3, 0)
+					this.root = CreateModel(R6Tree)
+				} else {
+					this.model.position.set(0, 2.35, 0)
+					this.root = CreateModel(R15Tree)
+				}
+				
+				this.model.add(this.root)
 
-					var rigData = this.rigData = {
-						LeftWrist: { part0Name: "LeftLowerArm", part1Name: "LeftHand" },
-						LeftElbow: { part0Name: "LeftUpperArm", part1Name: "LeftLowerArm" },
-						LeftShoulder: { part0Name: "UpperTorso", part1Name: "LeftUpperArm" },
-						RightWrist: { part0Name: "RightLowerArm", part1Name: "RightHand" },
-						RightElbow: { part0Name: "RightUpperArm", part1Name: "RightLowerArm" },
-						RightShoulder: { part0Name: "UpperTorso", part1Name: "RightUpperArm" },
-						Waist: { part0Name: "LowerTorso", part1Name: "UpperTorso" },
-						LeftAnkle: { part0Name: "LeftLowerLeg", part1Name: "LeftFoot" },
-						LeftKnee: { part0Name: "LeftUpperLeg", part1Name: "LeftLowerLeg" },
-						LeftHip: { part0Name: "LowerTorso", part1Name: "LeftUpperLeg" },
-						RightAnkle: { part0Name: "RightLowerLeg", part1Name: "RightFoot" },
-						RightKnee: { part0Name: "RightUpperLeg", part1Name: "RightLowerLeg" },
-						RightHip: { part0Name: "LowerTorso", part1Name: "RightUpperLeg" },
-						Root: { part0Name: "HumanoidRootPart", part1Name: "LowerTorso" },
-						Neck: { part0Name: "UpperTorso", part1Name: "Head" },
+				this.parts = parts
+				this.attachments = attachments
+				this.joints = joints
+
+				this.animator.setJoints(animJoints)
+
+				this.accessories.forEach(acc => {
+					if(attachments[acc.attachment]) {
+						attachments[acc.attachment].add(acc.obj)
 					}
+				})
 
-					model.Children.forEach((part) => {
-						if(part.ClassName !== "MeshPart" && part.ClassName !== "Part")
-							return;
+				forEach(this.parts, (obj, name) => {
+					var bodypart = this.bodyparts[name]
 
-						var name = part.Name.toLowerCase()
-						var obj = null
-						if(part.Name === "HumanoidRootPart") {
-							obj = this.model
+					if(bodypart && bodypart.mesh) {
+						applyMeshToGeometry(obj.geometry, bodypart.mesh)
+					} else {
+						if(name === "Head" || R6BodyPartNames.indexOf(name) !== -1) {
+							var fileName = name.toLowerCase().replace(/\s/g, "")
+							var meshUrl = chrome.runtime.getURL(`res/previewer/r6/${fileName}.mesh`)
+							AssetCache.loadMesh(meshUrl, mesh => {
+								if(this.bodyparts[name]) return;
+								applyMeshToGeometry(obj.geometry, mesh)
+							})
 						} else {
-							var material = null
-							if(name === "head") {
-								material = new THREE.MeshPhongMaterial({
-									map: this.headComposite.texture
+							if(obj.defaultmeshid) {
+								AssetCache.loadMesh(obj.defaultmeshid, mesh => {
+									if(this.bodyparts[name]) return;
+									applyMeshToGeometry(obj.geometry, mesh)
 								})
 							} else {
-								material = new THREE.MeshPhongMaterial({
-									map: this.textures[name]
-								})
-							}
-
-							obj = parts[name] = new THREE.Mesh(undefined, material)
-							obj.castShadow = true
-
-							var meshdata = this.charmeshes.parts[name]
-							if(meshdata) {
-								if(meshdata.mesh) {
-									applyMeshToGeometry(obj.geometry, meshdata.mesh)
-								}
-							} else {
-								obj.useDefaultMesh = true
-								if(part.Name === "Head") {
-									var meshUrl = chrome.runtime.getURL("res/previewer/r6/head.mesh")
-									AssetCache.loadMesh(meshUrl, mesh => {
-										if(obj.useDefaultMesh)
-											applyMeshToGeometry(obj.geometry, mesh);
-									})
-								} else {
-									var meshId = parseContentUrl(part.MeshID)
-									AssetCache.loadMesh(meshId, mesh => {
-										if(obj.useDefaultMesh)
-											applyMeshToGeometry(obj.geometry, mesh);
-									})
-								}
+								console.warn(`[RBXScene.Avatar] R15 part '${name}' is missing defaultmeshid`)
 							}
 						}
+					}
 
-						part.Children.forEach((item) => {
-							if(item.ClassName === "Attachment") {
-								var isRigAttachment = item.Name.substr(-13) == "RigAttachment"
-								if(isRigAttachment) {
-									var jointName = item.Name.slice(0, -13)
-									var data = rigData[jointName]
-
-									if(!data)
-										return console.log("Unknown rig attachment", item.Name);
-
-									var jointdata = this.charmeshes.rig[jointName]
-									var cframe = CFrame.apply(null, item.CFrame)
-
-									if(data.part0Name === part.Name) {
-										data.part0 = obj
-										data.c0 = jointdata && jointdata[part.Name] || cframe
-									} else if(data.part1Name === part.Name) {
-										data.part1 = obj
-										data.c1 = jointdata && jointdata[part.Name] || cframe
-									} else {
-										console.log("Not part0 or part1?", item.Name)
-									}
-								} else {
-									var attachment = attachmentPoints[item.Name] = new THREE.Object3D()
-									obj.add(attachment)
-
-									var matrix = this.charmeshes.att[item.Name] || CFrame.apply(null, item.CFrame)
-									attachment.position.setFromMatrixPosition(matrix)
-									attachment.rotation.setFromRotationMatrix(matrix)
+					if(bodypart && bodypart.joints) {
+						bodypart.joints.forEach(data => {
+							var joint = joints[data.name]
+							if(joint) {
+								if(joint.part0 === data.part) {
+									joint.c0.position.setFromMatrixPosition(data.cframe)
+									joint.c0.rotation.setFromRotationMatrix(data.cframe)
+								} else if(joint.part1 === data.part) {
+									var inverse = new THREE.Matrix4().getInverse(data.cframe)
+									joint.c1.position.setFromMatrixPosition(inverse)
+									joint.c1.rotation.setFromRotationMatrix(inverse)
 								}
 							}
 						})
-					})
 
-					$.each(rigData, (_, data) => {
-						var joint = data.joint = joints[data.part1Name.toLowerCase()] = {}
-						joint.part0 = data.part0
-						joint.part1 = data.part1
-
-						var c0 = joint.c0 = new THREE.Object3D()
-						var c1 = joint.c1 = new THREE.Object3D()
-						var pivot = joint.pivot = new THREE.Object3D()
-
-						var c0Matrix = data.c0
-						var c1Matrix = new THREE.Matrix4().getInverse(data.c1)
-
-						//console.log(_, c0Matrix.elements[12], c0Matrix.elements[13], c0Matrix.elements[14])
-
-						c0.position.setFromMatrixPosition(c0Matrix)
-						c0.rotation.setFromRotationMatrix(c0Matrix)
-
-						c1.position.setFromMatrixPosition(c1Matrix)
-						c1.rotation.setFromRotationMatrix(c1Matrix)	
-
-						c1.add(joint.part1)
-						pivot.add(c1)
-						c0.add(pivot)
-						joint.part0.add(c0)
-					})
-
-					this.accessories.forEach((acc) => {
-						var attachmentPoint = attachmentPoints[acc.attachmentPoint]
-						attachmentPoint.add(acc)
-					})
+						forEach(bodypart.attachments, (cframe, attName) => {
+							var att = attachments[attName]
+							if(att) {
+								att.position.setFromMatrixPosition(cframe)
+								att.rotation.setFromRotationMatrix(cframe)
+							}
+						})
+					}
 				})
-			}
+			})
 		}
 	})
+	
+	Avatar.ready = (fn) => {
+		avatarTreePromise.then(() => fn())
+	}
 
 	return Avatar
 })();

@@ -11,7 +11,7 @@ ANTI.RBXScene.Controls = (function() {
 		this._mouseDragListeners = []
 		this._mouseWheelListeners = []
 
-		var canvas = $(scene.canvas)
+		var canvas = scene.canvas
 		var prevDragEvent = null
 
 		var mousedown = (event) => {
@@ -19,8 +19,8 @@ ANTI.RBXScene.Controls = (function() {
 
 			if(event.button == 0) {
 				prevDragEvent = event
-				canvas.on("mousemove", mousemove)
-				canvas.on("mouseup", mouseup)
+				canvas.addEventListener("mousemove", mousemove)
+				canvas.addEventListener("mouseup", mouseup)
 			}
 
 			return false
@@ -36,22 +36,22 @@ ANTI.RBXScene.Controls = (function() {
 
 		var mouseup = (event) => {
 			if(event.type == "mouseleave" || event.button == 0) {
-				canvas.off("mousemove", mousemove)
-				canvas.off("mouseup", mouseup)
+				canvas.removeEventListener("mousemove", mousemove)
+				canvas.removeEventListener("mouseup", mouseup)
 			}
 		}
 
 		var mousewheel = (event) => {
-			this.mousewheel(event.originalEvent.deltaX, event.originalEvent.deltaY)
+			this.mousewheel(event.deltaX, event.deltaY)
+
+			event.preventDefault()
 			return false
 		}
 
-		canvas.on({
-			mousedown: mousedown, 
-			mouseleave: mouseup,
-			mousewheel: mousewheel,
-			contextmenu: (event) => event.preventDefault()
-		})
+		canvas.addEventListener("mousedown", mousedown)
+		canvas.addEventListener("mouseleave,mouseup", mouseup)
+		canvas.addEventListener("mousewheel", mousewheel)
+		canvas.addEventListener("contextmenu", e => e.preventDefault())
 
 		scene.update(() => this.update())
 	}

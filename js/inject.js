@@ -118,11 +118,11 @@
 							result.link = function(u) {
 								u.keyDown = function($event) {
 									if($event.which == 13) {
-										var value = $event.target.innerText*1
+										var value = $event.target.textContent*1
 										if(!isNaN(value)) {
 											args[1].search({page:value})
 										} else {
-											$event.target.innerText = u.currentStatus.currentPage
+											$event.target.textContent = u.currentStatus.currentPage
 										}
 
 										$event.preventDefault()

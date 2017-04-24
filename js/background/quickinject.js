@@ -74,9 +74,12 @@ chrome.webRequest.onResponseStarted.addListener(details => {
 		}
 	}
 
+	var dateHeader = headers.find(h => h.name.toLowerCase() === "date").value
+
 	var initData = [
 		"settings=" + JSON.stringify(settings),
-		"currentPage=" + JSON.stringify(currentPage)
+		"currentPage=" + JSON.stringify(currentPage),
+		`serverDate=new Date(${Date.parse(dateHeader)})`
 	]
 
 	var blogfeed = fetchBlogFeed()

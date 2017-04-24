@@ -244,20 +244,16 @@
 			sequence.Children.sort((a,b) => a.Time - b.Time)
 
 			var anim = {
-				Length: sequence.Children[sequence.Children.length-1].Time,
-				Looped: !!sequence.Loop,
-				Limbs: {}
+				length: sequence.Children[sequence.Children.length-1].Time,
+				loop: !!sequence.Loop,
+				keyframes: {}
 			}
 
-			function parsePose(pose, keyframe) {
-				if(pose.ClassName !== "Pose")
+			function parsePose(poseInst, kfInst) {
+				if(poseInst.ClassName !== "Pose")
 					return;
-				
-				var name = pose.Name.replace(/\s/,"").toLowerCase()
-				if(!anim.Limbs[name])
-					anim.Limbs[name] = [];
 
-				var cf = pose.CFrame
+				var cf = poseInst.CFrame
 				var qw, qx, qy, qz
 				var trace = cf[3] + cf[7] + cf[11]
 				
@@ -287,28 +283,27 @@
 					qz = S / 4
 				}
 
-				var arr = [
-					keyframe.Time,
-					[ cf[0], cf[1], cf[2] ],
-					[ qx, qy, qz, qw ]
-				]
+				var name = poseInst.Name
+				if(!anim.keyframes[name]) anim.keyframes[name] = [];
 
-				arr.original = cf
+				var pose = anim.keyframes[name].push({
+					time: kfInst.Time,
+					pos: [ cf[0], cf[1], cf[2] ],
+					rot: [ qx, qy, qz, qw ],
+				})
 
-				anim.Limbs[name].push(arr)
-
-				pose.Children.forEach((childPose) => parsePose(childPose, keyframe))
+				poseInst.Children.forEach(childInst => parsePose(childInst, kfInst))
 			}
 
-			sequence.Children.forEach((keyframe) => {
-				if(keyframe.ClassName !== "Keyframe")
+			sequence.Children.forEach(kfInst => {
+				if(kfInst.ClassName !== "Keyframe")
 					return;
 
-				keyframe.Children.forEach((rootPose) => {
-					if(rootPose.ClassName !== "Pose")
+				kfInst.Children.forEach(rootPoseInst => {
+					if(rootPoseInst.ClassName !== "Pose")
 						return;
 
-					rootPose.Children.forEach((pose) => parsePose(pose, keyframe))
+					rootPoseInst.Children.forEach(poseInst => parsePose(poseInst, kfInst))
 				})
 			})
 
@@ -414,8 +409,8 @@
 							var offsetY = prop.RBXInterleaved32(count, toRBXSigned)
 							for(var i=0; i<count; i++) {
 								values[i] = RBXProperty("UDim2", [
-									[ scaleX[i], scaleY[i] ],
-									[ offsetX[i], offsetY[i] ]
+									[ scaleX[i], offsetX[i] ],
+									[ scaleY[i], offsetY[i] ]
 								])
 							}
 							break;
@@ -655,7 +650,7 @@
 				parse: function(xmlString) {
 					var xml = null
 					try {
-						xml = $.parseXML(xmlString).documentElement
+						xml = new DOMParser().parseFromString(xmlString, "text/xml").documentElement
 					} catch(ex) {
 						throw new Error("[ParseRBXXml] Unable to parse xml")
 					}

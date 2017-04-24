@@ -8,7 +8,7 @@ function fetchBlogFeed() {
 	if(!settings.general.showBlogFeed)
 		return null;
 
-	request.get(blogFeedUrl, (feed) => {
+	request.get(blogFeedUrl, feed => {
 		if(cachedBlogFeedRaw !== feed) {
 			cachedBlogFeedRaw = feed
 
@@ -23,7 +23,7 @@ function fetchBlogFeed() {
 				var published = Date.parse(item.querySelector("pubDate").textContent)
 				var descDoc = new DOMParser().parseFromString(item.querySelector("description").textContent, "text/html")
 				descDoc.querySelector("p:last-child").remove()
-				var desc = descDoc.body.innerText.trim()
+				var desc = descDoc.body.textContent.trim()
 				var creator = item.querySelector("creator").textContent
 
 				responseData.push({ url, title, published, desc, creator })

@@ -8,7 +8,7 @@ var AssetCache = (() => {
 	var textCache = {}
 	var imgCache = {}
 
-	function request(url, responseType, cb) {
+	var request = function(url, responseType, cb) {
 		var xhr = new XMLHttpRequest()
 		xhr.open("GET", url, true)
 		xhr.responseType = responseType
@@ -16,7 +16,6 @@ var AssetCache = (() => {
 		xhr.addEventListener("load", () => {
 			var result = xhr.response
 			xhr = null
-
 			cb(result)
 		}, { once: true })
 
@@ -42,7 +41,7 @@ var AssetCache = (() => {
 					promise = cache[resolved] = new Promise(resolve => {
 						request(resolved, responseType, x => {
 							try { constructor(x, resolve) }
-							catch(ex) { resolve(null) }
+							catch(ex) { resolve(null); console.error("[AssetCache]", ex) }
 						})
 					})
 				}
