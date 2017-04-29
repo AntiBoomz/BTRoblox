@@ -117,25 +117,6 @@ function createPager(noSelect) {
 	return pager
 }
 
-
-const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 33, 34, 35, 37, 39]
-const AnimationPreviewAssetTypeIds = [24, 32, 48, 49, 50, 51, 52, 53, 54, 55, 56]
-const WearableAssetTypeIds = [2, 8, 11, 12, 18, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47]
-const UniqueWearableAssetTypeIds = [2, 11, 12, 18, 28, 29, 30, 31]
-const AssetTypeIds = (() => {
-	var a = "Accessory | "
-	var b = "Animation | "
-
-	return [ null,
-		"Image", "T-Shirt", "Audio", "Mesh", "Lua", "HTML", "Text", "Accessory | Hat", "Place", "Model", // 10
-		"Shirt", "Pants", "Decal", "null", "null", "Avatar", "Head", "Face", "Gear", "null", // 20
-		"Badge", "Group Emblem", "null", "Animation", "Arms", "Legs", "Torso", "Right Arm", "Left Arm", "Left Leg", // 30
-		"Right Leg", "Package", "YouTubeVideo", "Game Pass", "App", "null", "Code", "Plugin", "SolidModel", "MeshPart", // 40
-		a+"Hair", a+"Face", a+"Neck", a+"Shoulder", a+"Front", a+"Back", a+"Waist", // 47
-		b+"Climb", b+"Death", b+"Fall", b+"Idle", b+"Jump", b+"Run", b+"Swim", b+"Walk", b+"Pose" // 56
-	]
-})();
-
 function Create3dPreview(readyCb) {
 	var container = html`
 	<div style="width:100%;height:100%;">
@@ -548,6 +529,28 @@ function execScripts(list, cb) {
 	}
 }
 
+
+const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34, 35, 37, 39]
+const AnimationPreviewAssetTypeIds = [24, 32, 48, 49, 50, 51, 52, 53, 54, 55, 56]
+const WearableAssetTypeIds = [2, 8, 11, 12, 18, 27, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47]
+const UniqueWearableAssetTypeIds = [2, 11, 12, 18, 27, 28, 29, 30, 31]
+const AssetTypeIds = (() => {
+	var a = "Accessory | "
+	var b = "Animation | "
+
+	return [ null,
+		"Image", "T-Shirt", "Audio", "Mesh", "Lua", "HTML", "Text", "Accessory | Hat", "Place", "Model", // 10
+		"Shirt", "Pants", "Decal", "null", "null", "Avatar", "Head", "Face", "Gear", "null", // 20
+		"Badge", "Group Emblem", "null", "Animation", "Arms", "Legs", "Torso", "Right Arm", "Left Arm", "Left Leg", // 30
+		"Right Leg", "Package", "YouTubeVideo", "Game Pass", "App", "null", "Code", "Plugin", "SolidModel", "MeshPart", // 40
+		a+"Hair", a+"Face", a+"Neck", a+"Shoulder", a+"Front", a+"Back", a+"Waist", // 47
+		b+"Climb", b+"Death", b+"Fall", b+"Idle", b+"Jump", b+"Run", b+"Swim", b+"Walk", b+"Pose" // 56
+	]
+})();
+
+
+
+
 var avatarApi = {
 	baseUrl: "https://avatar.roblox.com/v1/",
 	get: function(url, data, cb) {
@@ -749,9 +752,11 @@ pageInit.itemdetails = function(assetId) {
 					}
 				}
 
-				var parent = $("div:not(.rbx-popover-content)>.btr-explorer-parent")
-				if(parent)
-					parent.replaceWith(explorer.domElement);
+				setTimeout(() => {
+					var parent = $("div:not(.rbx-popover-content)>.btr-explorer-parent")
+					if(parent)
+						parent.replaceWith(explorer.domElement);
+				}, 0)
 			})
 		}
 
@@ -857,7 +862,7 @@ pageInit.itemdetails = function(assetId) {
 				var preview = enablePreview(onPreviewReady)
 
 				switch(assetTypeId) {
-					case 32: // Package
+					case 32: // Package, I disabled package exploring elsewhere
 						AssetCache.loadText(assetId, text => {
 							var assetIds = text.split(";")
 							var first = true
@@ -875,7 +880,7 @@ pageInit.itemdetails = function(assetId) {
 
 							parseAnimPackage(assetIds[0], anims => {
 								if(Object.keys(anims).length === 0)
-									return preview.destroy();
+									return;
 
 								preview.toggleVisible(true)
 								preview.loadDefaultAppearance(onAppearenceLoaded)
@@ -965,6 +970,71 @@ pageInit.itemdetails = function(assetId) {
 						preview.toggleVisible()
 					}
 				})
+			}
+
+			if(true && assetTypeId === 32) {
+				var cont = html`
+				<div class="btr-package-contents">
+					<div class="container-header">
+						<h3>This Package Contains...</h3>
+					</div>
+					<ul class="hlist">
+					</ul>
+				</div>`
+
+				var assetThumb = "https://assetgame.roblox.com/asset-thumbnail/image?width=150&height=150&format=png&assetId="
+
+				AssetCache.loadText(assetId, text => {
+					text.split(";").forEach(assetId => {
+						var card = html`
+						<li class="list-item item-card">
+							<div class="item-card-container">
+								<a class="item-card-link" href="https://www.roblox.com/catalog/${assetId}/">
+									<div class="item-card-thumb-container">
+										<img class="item-card-thumb" src="${assetThumb}${assetId}">
+									</div>
+									<div class="text-overflow item-card-name">Loading</div>
+								</a>
+								<div class="text-overflow item-card-creator">
+									<span class="xsmall text-label">By</span>
+									<a class="xsmall text-overflow text-link">ROBLOX</a>
+								</div>
+								<div class="text-overflow item-card-price">
+									<span class="text-label">Offsale</span>
+								</div>
+							</div>
+						</li>`
+
+						BackgroundJS.send("getProductInfo", assetId, data => {
+							if(data.IsForSale) {
+								if(data.PriceInRobux) {
+									card.$find(".item-card-price").innerHTML = htmlstring`
+									<span class="icon-robux-16x16"></span>
+									<span class="text-robux">${data.PriceInRobux}</span>`
+								} else {
+									var label = card.$find(".item-card-price .text-label")
+									label.classList.add("text-robux")
+									label.textContent = "Free"
+								}
+							} else {
+								card.$find(".item-card-price .text-label").textContent = "Offsale"
+							}
+
+							var creator = card.$find(".item-card-creator .text-link")
+							creator.href = `https//www.roblox.com/users/${data.Creator.Id}/profile`
+							creator.textContent = data.Creator.Name
+
+							card.$find(".item-card-name").textContent = data.Name
+							card.$find(".item-card-link").href += data.Name.replace(/[^a-zA-Z0-9]+/g, "-")
+						})
+
+						
+
+						cont.$find(".hlist").append(card)
+					})
+				})
+
+				Observer.one("#item-container>.section-content", content => content.after(cont))
 			}
 		})
 	})
