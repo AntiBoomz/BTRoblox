@@ -53,6 +53,7 @@ followed by 12 bytes containing the mesh header
   * bytes 21-24: UInt32 **triCount**
 
 followed by **vertexCount** blocks of **vertexByteLength** bytes
+
 | Bytes | Type  | Description                                     |
 | :---- | :---- | :---------------------------------------------- |
 | 4     | float | vertex.X                                        |
@@ -66,6 +67,7 @@ followed by **vertexCount** blocks of **vertexByteLength** bytes
 | ?     | ?     | (**vertexByteLength**-32) bytes of unknown data |
 
 followed by **triCount** blocks of 12 bytes
+
 | Bytes | Type   | Description             |
 | :---- | :----- | :---------------------- |
 | 4     | UInt32 | Index of first vertex   |
