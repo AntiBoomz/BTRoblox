@@ -880,7 +880,7 @@ pageInit.itemdetails = function(assetId) {
 
 							parseAnimPackage(assetIds[0], anims => {
 								if(Object.keys(anims).length === 0)
-									return preview.destroy();
+									return;
 
 								preview.toggleVisible(true)
 								preview.loadDefaultAppearance(onAppearenceLoaded)
