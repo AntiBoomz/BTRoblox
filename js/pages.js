@@ -749,9 +749,11 @@ pageInit.itemdetails = function(assetId) {
 					}
 				}
 
-				var parent = $("div:not(.rbx-popover-content)>.btr-explorer-parent")
-				if(parent)
-					parent.replaceWith(explorer.domElement);
+				setTimeout(() => {
+					var parent = $("div:not(.rbx-popover-content)>.btr-explorer-parent")
+					if(parent)
+						parent.replaceWith(explorer.domElement);
+				}, 0)
 			})
 		}
 
