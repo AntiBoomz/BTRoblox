@@ -36,7 +36,6 @@ Third line consists of triangle data
 
 ### Binary Format (version 2)
 * version 2.00
-
 * Format uses two number types
   * UInt32 - unsigned little-endian 32-bit integer
   * float - little-endian single-precision IEEE 754 number
@@ -55,7 +54,7 @@ followed by 12 bytes containing the mesh header
 
   followed by **vertexCount** blocks of **vertexByteLength** bytes
   | Bytes | Type  | Description                                     |
-  | ---   | ---   | --                                              |
+  | ---   | ---   | ---                                             |
   | 4     | float | vertex.X                                        |
   | 4     | float | vertex.Y                                        |
   | 4     | float | vertex.Z                                        |
@@ -68,7 +67,7 @@ followed by 12 bytes containing the mesh header
 
   followed by **triCount** blocks of 12 bytes
   | Bytes | Type   | Description             |
-  | ---   | ---    | --                      |
+  | ---   | ---    | ---                     |
   | 4     | UInt32 | Index of first vertex   |
   | 4     | UInt32 | Index of second vertex  |
   | 4     | UInt32 | Index of third vertex   |
