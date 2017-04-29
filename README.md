@@ -84,12 +84,14 @@ followed by **triCount** blocks of 12 bytes
 Undocumented APIs
 =================
 
-### Group APIs
+Group APIs
+----------
 #### Get members of a group (as an admin)
 * https://www.roblox.com/groups/1225129/groupmembers-html?pageNum=1&roleSetIdToSearch=0
 
 
-### Friend APIs
+Friend APIs
+-----------
 #### Get status of online friends
 * https://api.roblox.com/my/friendsonline
   ```json
@@ -134,7 +136,8 @@ Undocumented APIs
   ```
 
 
-### User APIs
+User APIs
+---------
 #### Get presence of an user
 * https://www.roblox.com/presence/user?userId=261
   ```json
@@ -178,7 +181,8 @@ Undocumented APIs
   ```
 
 
-### Universe APIs
+Universe APIs
+-------------
 #### Get info about an universe
 * https://api.roblox.com/universes/get-info?universeId=13058
   * Also accepts `placeId`
