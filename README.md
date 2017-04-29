@@ -52,25 +52,25 @@ followed by 12 bytes containing the mesh header
   * bytes 17-20: UInt32 **vertexCount**
   * bytes 21-24: UInt32 **triCount**
 
-  followed by **vertexCount** blocks of **vertexByteLength** bytes
-  | Bytes | Type  | Description                                     |
-  | ---   | ---   | ---                                             |
-  | 4     | float | vertex.X                                        |
-  | 4     | float | vertex.Y                                        |
-  | 4     | float | vertex.Z                                        |
-  | 4     | float | normal.X                                        |
-  | 4     | float | normal.Y                                        |
-  | 4     | float | normal.Z                                        |
-  | 4     | float | uv.X                                            |
-  | 4     | float | 1-uv.Y                                          |
-  | ?     | ?     | (**vertexByteLength**-32) bytes of unknown data |
+followed by **vertexCount** blocks of **vertexByteLength** bytes
+| Bytes | Type  | Description                                     |
+| :---- | :---- | :---------------------------------------------- |
+| 4     | float | vertex.X                                        |
+| 4     | float | vertex.Y                                        |
+| 4     | float | vertex.Z                                        |
+| 4     | float | normal.X                                        |
+| 4     | float | normal.Y                                        |
+| 4     | float | normal.Z                                        |
+| 4     | float | uv.X                                            |
+| 4     | float | 1-uv.Y                                          |
+| ?     | ?     | (**vertexByteLength**-32) bytes of unknown data |
 
-  followed by **triCount** blocks of 12 bytes
-  | Bytes | Type   | Description             |
-  | ---   | ---    | ---                     |
-  | 4     | UInt32 | Index of first vertex   |
-  | 4     | UInt32 | Index of second vertex  |
-  | 4     | UInt32 | Index of third vertex   |
+followed by **triCount** blocks of 12 bytes
+| Bytes | Type   | Description             |
+| :---- | :----- | :---------------------- |
+| 4     | UInt32 | Index of first vertex   |
+| 4     | UInt32 | Index of second vertex  |
+| 4     | UInt32 | Index of third vertex   |
 
 
 Undocumented APIs
