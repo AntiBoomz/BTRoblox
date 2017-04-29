@@ -971,6 +971,71 @@ pageInit.itemdetails = function(assetId) {
 					}
 				})
 			}
+
+			if(true && assetTypeId === 32) {
+				var cont = html`
+				<div class="btr-package-contents">
+					<div class="container-header">
+						<h3>This Package Contains...</h3>
+					</div>
+					<ul class="hlist">
+					</ul>
+				</div>`
+
+				var assetThumb = "https://assetgame.roblox.com/asset-thumbnail/image?width=150&height=150&format=png&assetId="
+
+				AssetCache.loadText(assetId, text => {
+					text.split(";").forEach(assetId => {
+						var card = html`
+						<li class="list-item item-card">
+							<div class="item-card-container">
+								<a class="item-card-link" href="https://www.roblox.com/catalog/${assetId}/">
+									<div class="item-card-thumb-container">
+										<img class="item-card-thumb" src="${assetThumb}${assetId}">
+									</div>
+									<div class="text-overflow item-card-name">Loading</div>
+								</a>
+								<div class="text-overflow item-card-creator">
+									<span class="xsmall text-label">By</span>
+									<a class="xsmall text-overflow text-link">ROBLOX</a>
+								</div>
+								<div class="text-overflow item-card-price">
+									<span class="text-label">Offsale</span>
+								</div>
+							</div>
+						</li>`
+
+						BackgroundJS.send("getProductInfo", assetId, data => {
+							if(data.IsForSale) {
+								if(data.PriceInRobux) {
+									card.$find(".item-card-price").innerHTML = htmlstring`
+									<span class="icon-robux-16x16"></span>
+									<span class="text-robux">${data.PriceInRobux}</span>`
+								} else {
+									var label = card.$find(".item-card-price .text-label")
+									label.classList.add("text-robux")
+									label.textContent = "Free"
+								}
+							} else {
+								card.$find(".item-card-price .text-label").textContent = "Offsale"
+							}
+
+							var creator = card.$find(".item-card-creator .text-link")
+							creator.href = `https//www.roblox.com/users/${data.Creator.Id}/profile`
+							creator.textContent = data.Creator.Name
+
+							card.$find(".item-card-name").textContent = data.Name
+							card.$find(".item-card-link").href += data.Name.replace(/[^a-zA-Z0-9]+/g, "-")
+						})
+
+						
+
+						cont.$find(".hlist").append(card)
+					})
+				})
+
+				Observer.one("#item-container>.section-content", content => content.after(cont))
+			}
 		})
 	})
 }
