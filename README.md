@@ -1,6 +1,8 @@
 BTROBLOX
-===============
+========
 * [Roblox Mesh Format](#roblox-mesh-format)
+  * [Text-Based Format](#text-based-format)
+  * [Binary Format](#binary-format)
 * [Undocumented APIs](#undocumented-apis)
   * [Group APIs](#group-apis)
   * [Friend APIs](#friend-apis)
@@ -9,12 +11,14 @@ BTROBLOX
 
 
 Roblox Mesh Format
---------------
+==================
 
 Roblox .mesh files can be in one of two formats, [text-based](#text-based-format) or [binary](#binary-format).
 The first line of the .mesh file indicates what format and version the mesh is.
 
-### Text-Based Format
+Text-Based Format
+-----------------
+
 * version 1.00
 * version 1.01
 
@@ -34,7 +38,9 @@ Third line consists of triangle data
   * Third Vector3 defines the uv coordinates
     * `[0.694823,0.788573,0]`
 
-### Binary Format
+Binary Format
+-------------
+
 * version 2.00
 * Format uses two number types
   * UInt32 - unsigned little-endian 32-bit integer
@@ -76,7 +82,7 @@ followed by **triCount** blocks of 12 bytes
 
 
 Undocumented APIs
---------------
+=================
 
 ### Group APIs
 #### Get members of a group (as an admin)
