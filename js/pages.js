@@ -117,25 +117,6 @@ function createPager(noSelect) {
 	return pager
 }
 
-
-const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 33, 34, 35, 37, 39]
-const AnimationPreviewAssetTypeIds = [24, 32, 48, 49, 50, 51, 52, 53, 54, 55, 56]
-const WearableAssetTypeIds = [2, 8, 11, 12, 18, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47]
-const UniqueWearableAssetTypeIds = [2, 11, 12, 18, 28, 29, 30, 31]
-const AssetTypeIds = (() => {
-	var a = "Accessory | "
-	var b = "Animation | "
-
-	return [ null,
-		"Image", "T-Shirt", "Audio", "Mesh", "Lua", "HTML", "Text", "Accessory | Hat", "Place", "Model", // 10
-		"Shirt", "Pants", "Decal", "null", "null", "Avatar", "Head", "Face", "Gear", "null", // 20
-		"Badge", "Group Emblem", "null", "Animation", "Arms", "Legs", "Torso", "Right Arm", "Left Arm", "Left Leg", // 30
-		"Right Leg", "Package", "YouTubeVideo", "Game Pass", "App", "null", "Code", "Plugin", "SolidModel", "MeshPart", // 40
-		a+"Hair", a+"Face", a+"Neck", a+"Shoulder", a+"Front", a+"Back", a+"Waist", // 47
-		b+"Climb", b+"Death", b+"Fall", b+"Idle", b+"Jump", b+"Run", b+"Swim", b+"Walk", b+"Pose" // 56
-	]
-})();
-
 function Create3dPreview(readyCb) {
 	var container = html`
 	<div style="width:100%;height:100%;">
@@ -548,6 +529,28 @@ function execScripts(list, cb) {
 	}
 }
 
+
+const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34, 35, 37, 39]
+const AnimationPreviewAssetTypeIds = [24, 32, 48, 49, 50, 51, 52, 53, 54, 55, 56]
+const WearableAssetTypeIds = [2, 8, 11, 12, 18, 27, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47]
+const UniqueWearableAssetTypeIds = [2, 11, 12, 18, 27, 28, 29, 30, 31]
+const AssetTypeIds = (() => {
+	var a = "Accessory | "
+	var b = "Animation | "
+
+	return [ null,
+		"Image", "T-Shirt", "Audio", "Mesh", "Lua", "HTML", "Text", "Accessory | Hat", "Place", "Model", // 10
+		"Shirt", "Pants", "Decal", "null", "null", "Avatar", "Head", "Face", "Gear", "null", // 20
+		"Badge", "Group Emblem", "null", "Animation", "Arms", "Legs", "Torso", "Right Arm", "Left Arm", "Left Leg", // 30
+		"Right Leg", "Package", "YouTubeVideo", "Game Pass", "App", "null", "Code", "Plugin", "SolidModel", "MeshPart", // 40
+		a+"Hair", a+"Face", a+"Neck", a+"Shoulder", a+"Front", a+"Back", a+"Waist", // 47
+		b+"Climb", b+"Death", b+"Fall", b+"Idle", b+"Jump", b+"Run", b+"Swim", b+"Walk", b+"Pose" // 56
+	]
+})();
+
+
+
+
 var avatarApi = {
 	baseUrl: "https://avatar.roblox.com/v1/",
 	get: function(url, data, cb) {
@@ -859,7 +862,7 @@ pageInit.itemdetails = function(assetId) {
 				var preview = enablePreview(onPreviewReady)
 
 				switch(assetTypeId) {
-					case 32: // Package
+					case 32: // Package, I disabled package exploring elsewhere
 						AssetCache.loadText(assetId, text => {
 							var assetIds = text.split(";")
 							var first = true
