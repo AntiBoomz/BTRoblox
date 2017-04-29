@@ -1,10 +1,74 @@
 BTROBLOX
 ===============
+* [Roblox Mesh Format](#roblox-mesh-format)
 * [Undocumented APIs](#undocumented-apis)
   * [Group APIs](#group-apis)
   * [Friend APIs](#friend-apis)
   * [User APIs](#user-apis)
   * [Universe APIs](#universe-apis)
+
+
+Roblox Mesh Format
+--------------
+
+Roblox .mesh files can be in one of two formats, [text-based](#text-based-format) or [binary](#binary-format).
+The first line of the .mesh file indicates what format and version the mesh is.
+
+### Text-Based Format (version 1)
+* version 1.00
+* version 1.01
+
+First line is the version header
+  * `version 1.XX`
+Second line is the number of triangles in the mesh
+  * `204`
+Third line consists of triangle data
+  * Each triangle consists of three vertices
+  * Each vertex consists of three Vector3's
+  * Each Vector3 consists of three numbers separated by a comma, wrapped in brackets
+    * `[-6.64469,-1.06332,0.285237]`
+  * First Vector3 defines the vertex position `[-6.64469,-1.06332,0.285237]`
+  * Second Vector3 defines the vertex normal `[0.709295,-0.617098,0.340721]`
+  * Third Vector3 defines the uv coordinates `[0.694823,0.788573,0]`
+
+### Binary Format (version 2)
+* version 2.00
+
+* Format uses two number types
+  * UInt32 - unsigned little-endian 32-bit integer
+  * float - little-endian single-precision IEEE 754 number
+
+The first 13 bytes contain the version header
+  * bytes 0-11: `version 2.00`
+  * byte 12: `0A` - newline
+
+followed by 12 bytes containing the mesh header
+  * byte 13: `0C` - Unknown, possibly length of the mesh header in bytes
+  * byte 14: `00` - Unknown
+  * byte 15: `24` - **vertexByteLength**, length of a vertex block in bytes
+  * byte 16: `0C` - Unknown, possibly length of a triangle block in bytes
+  * bytes 17-20: UInt32 **vertexCount**
+  * bytes 21-24: UInt32 **triCount**
+
+  followed by **vertexCount** blocks of **vertexByteLength** bytes
+  | Bytes | Type  | Description                                     |
+  | ---   | ---   | --                                              |
+  | 4     | float | vertex.X                                        |
+  | 4     | float | vertex.Y                                        |
+  | 4     | float | vertex.Z                                        |
+  | 4     | float | normal.X                                        |
+  | 4     | float | normal.Y                                        |
+  | 4     | float | normal.Z                                        |
+  | 4     | float | uv.X                                            |
+  | 4     | float | 1-uv.Y                                          |
+  | ?     | ?     | (**vertexByteLength**-32) bytes of unknown data |
+
+  followed by **triCount** blocks of 12 bytes
+  | Bytes | Type   | Description             |
+  | ---   | ---    | --                      |
+  | 4     | UInt32 | Index of first vertex   |
+  | 4     | UInt32 | Index of second vertex  |
+  | 4     | UInt32 | Index of third vertex   |
 
 
 Undocumented APIs
