@@ -38,6 +38,7 @@ Third line consists of triangle data
     * `[0.709295,-0.617098,0.340721]`
   * Third Vector3 defines the uv coordinates
     * `[0.694823,0.788573,0]`
+    * Note that uv.Y is flipped, and the actual value is 1-uv.Y
 
 Binary Format
 -------------
