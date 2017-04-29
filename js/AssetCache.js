@@ -41,7 +41,7 @@ var AssetCache = (() => {
 					promise = cache[resolved] = new Promise(resolve => {
 						request(resolved, responseType, x => {
 							try { constructor(x, resolve) }
-							catch(ex) { resolve(null); console.error("[AssetCache]", ex) }
+							catch(ex) { resolve(null); console.error("[AssetCache]", path, ex) }
 						})
 					})
 				}

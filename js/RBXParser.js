@@ -735,8 +735,10 @@
 		}
 
 		function ParseVersion2(reader) {
-			if(!reader.Match([0xC, 0x00, 0x24, 0x0C]))
-				throw new Error("[ParseVersion2] Header did not match");
+			console.assert(reader.Byte() === 0xC) // Possibly header length
+			console.assert(reader.Byte() === 0x0) // Unknown, usually 0
+			var vertexByteLength = reader.Byte() // Length of a single vert block
+			console.assert(reader.Byte() === 0xC) // Possibly face block length
 
 			var vertexCount = reader.UInt32LE()
 			var faceCount = reader.UInt32LE()
@@ -750,6 +752,8 @@
 			var faces = mesh.faces = new Uint32Array(faceCount * 3)
 
 			for(var i=0; i<vertexCount; i++) {
+				var begin = reader.index
+
 				vertices[i*3] = reader.FloatLE()
 				vertices[i*3+1] = reader.FloatLE()
 				vertices[i*3+2] = reader.FloatLE()
@@ -758,7 +762,8 @@
 				normals[i*3+2] = reader.FloatLE()
 				uvs[i*2] = reader.FloatLE()
 				uvs[i*2+1] = 1-reader.FloatLE()
-				reader.FloatLE()
+
+				reader.Jump(vertexByteLength - (reader.index-begin))
 			}
 
 			for(var i=0; i<faceCount*3; i+=3) {
