@@ -20,6 +20,7 @@ Text-Based Format
 -----------------
 
 * version 1.00
+  * Version 1.00 meshes should be scaled down by a factor of 0.5
 * version 1.01
 
 First line is the version header
