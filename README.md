@@ -20,16 +20,19 @@ The first line of the .mesh file indicates what format and version the mesh is.
 
 First line is the version header
   * `version 1.XX`
+
 Second line is the number of triangles in the mesh
   * `204`
+
 Third line consists of triangle data
   * Each triangle consists of three vertices
   * Each vertex consists of three Vector3's
-  * Each Vector3 consists of three numbers separated by a comma, wrapped in brackets
+  * First Vector3 defines the vertex position
     * `[-6.64469,-1.06332,0.285237]`
-  * First Vector3 defines the vertex position `[-6.64469,-1.06332,0.285237]`
-  * Second Vector3 defines the vertex normal `[0.709295,-0.617098,0.340721]`
-  * Third Vector3 defines the uv coordinates `[0.694823,0.788573,0]`
+  * Second Vector3 defines the vertex normal
+    * `[0.709295,-0.617098,0.340721]`
+  * Third Vector3 defines the uv coordinates
+    * `[0.694823,0.788573,0]`
 
 ### Binary Format (version 2)
 * version 2.00
