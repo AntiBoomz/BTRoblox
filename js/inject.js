@@ -212,41 +212,12 @@
 			}
 		}
 
-
-		setTimeout(() => { // One click event is causing problems with tooltips and such
-			var events = $("body").data("events")
-			if(events && events.click && events.click[1]) {
-				var fn = events.click[1].handler
-				events.click[1].handler = function() { try { return fn.apply(this, arguments) } catch(ex) {} }
-			}
-		}, 0)
-
-		if(typeof($.History) !== "undefined") {
-			$.History.setHash = function(hash) {
-				location.replace("#"+hash)
-			}
-		}
-
-		if(typeof(Roblox) != "undefined") {
-			if(page == "develop" && Roblox.BuildPage != "undefined") {
-				Roblox.BuildPage.Showcases = new Proxy(Roblox.BuildPage.Showcases || {},{
-					get: function(obj,prop) {
-						return $(".item-table[data-item-id='"+prop+"']").attr("data-in-showcase").toLowerCase() == "true"
-					},
-					set: function(obj,prop,value) {
-						var item = $(".item-table[data-item-id='"+prop+"']")
-						item.attr("data-in-showcase",value)
-					}
-				})
+		if(typeof(Roblox) !== "undefined") {
+			if(!settings.general.showAds && Roblox.PrerollPlayer) {
+				Roblox.PrerollPlayer.waitForPreroll = x => $.Deferred().resolve(x);
 			}
 
-			if(!settings.general.showAds) {
-				if(Roblox.PrerollPlayer) {
-					Roblox.PrerollPlayer.waitForPreroll = function(x) { return $.Deferred().resolve(x); }
-				}
-			}
-
-			if(page == "gamedetails") {
+			if(page === "gamedetails") {
 				var placeId = matches[0]
 
 				if(Roblox.PrivateServer != null && Roblox.PrivateServer.initServerTab != null)
