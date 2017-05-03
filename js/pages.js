@@ -743,7 +743,7 @@ pageInit.itemdetails = function(assetId) {
 				if(!explorerInitialized) {
 					explorerInitialized = true
 
-					if(assetTypeId === 32) { // Package
+					if(assetTypeId === 32) { // Package, I disabled package exploring elsewhere
 						AssetCache.loadText(assetId, text => text.split(";").forEach(id => {
 							AssetCache.loadModel(id, model => explorer.addView(id.toString(), model))
 						}))
@@ -764,8 +764,10 @@ pageInit.itemdetails = function(assetId) {
 			var preview = Create3dPreview(readyCb)
 			var container = html`<div class="item-thumbnail-container btr-preview-container">`
 			container.append(preview.domElement)
+			var button = null
 
 			var visible = false
+			var initialized = false
 			var oldContainer = null
 
 			preview.toggleVisible = function(bool) {
@@ -774,6 +776,12 @@ pageInit.itemdetails = function(assetId) {
 					return;
 
 				if(visible) {
+					if(!initialized){
+						initialized = true
+
+						if(preview.onInit)
+							preview.onInit();
+					}
 					oldContainer.style.display = "none"
 					oldContainer.after(container)
 				} else {
@@ -782,10 +790,27 @@ pageInit.itemdetails = function(assetId) {
 				}
 			}
 
+			preview.createButtons = function() {
+				preview.enableBtn = html`<span class="btr-preview-btn rbx-btn-control-sm">\uD83D\uDC41</span>`
+				preview.disableBtn = preview.enableBtn.cloneNode(true)
+
+				if(oldContainer)
+					oldContainer.$find("#AssetThumbnail").append(preview.enableBtn);
+
+				preview.domElement.append(preview.disableBtn)
+
+				document.$on("click", ".btr-preview-btn", () => preview.toggleVisible())
+			}
+
+
 			Observer.one("#AssetThumbnail", oldCont => {
 				oldContainer = oldCont.parentNode
 				preview.toggleVisible(visible)
+
+				if(preview.enableBtn)
+					oldContainer.$find("#AssetThumbnail").append(preview.enableBtn);
 			})
+
 
 			return preview
 		}
@@ -859,15 +884,55 @@ pageInit.itemdetails = function(assetId) {
 					delete data.playerAvatarType;
 				}
 
-				var preview = enablePreview(onPreviewReady)
+				function loadAnimations() {
+					switch(assetTypeId) {
+						case 32: // Package
+							AssetCache.loadText(assetId, text => {
+								var assetIds = text.split(";")
+								var first = true
 
-				switch(assetTypeId) {
-					case 32: // Package, I disabled package exploring elsewhere
-						AssetCache.loadText(assetId, text => {
-							var assetIds = text.split(";")
-							var first = true
+								function addAnims(anims) {
+									forEach(anims, (animId, name) => {
+										preview.addDropdown(animId, name)
+										if(first) {
+											first = false
+											preview.setDropdown(name)
+											preview.playAnimation(animId, true)
+										}
+									})
+								}
 
-							function addAnims(anims) {
+								parseAnimPackage(assetIds[0], anims => {
+									if(Object.keys(anims).length === 0)
+										return;
+
+									preview.toggleVisible(true)
+									preview.loadDefaultAppearance(onAppearenceLoaded)
+
+									addAnims(anims)
+									for(var i=1; i<assetIds.length; i++) {
+										parseAnimPackage(assetIds[i], addAnims)
+									}
+								})
+							})
+						break;
+						case 24: // Custom Animation
+							preview.playAnimation(assetId, true, err => {
+								if(!err) {
+									preview.toggleVisible(true)
+									preview.loadDefaultAppearance(onAppearenceLoaded)
+								}
+							})
+						break;
+						default: // PlayerAnimation
+							parseAnimPackage(assetId, anims => {
+								if(Object.keys(anims).length === 0)
+									return preview.destroy();
+
+								preview.toggleVisible(true)
+								preview.loadDefaultAppearance(onAppearenceLoaded)
+
+								var first = true
 								forEach(anims, (animId, name) => {
 									preview.addDropdown(animId, name)
 									if(first) {
@@ -876,100 +941,53 @@ pageInit.itemdetails = function(assetId) {
 										preview.playAnimation(animId, true)
 									}
 								})
-							}
-
-							parseAnimPackage(assetIds[0], anims => {
-								if(Object.keys(anims).length === 0)
-									return;
-
-								preview.toggleVisible(true)
-								preview.loadDefaultAppearance(onAppearenceLoaded)
-
-								addAnims(anims)
-								for(var i=1; i<assetIds.length; i++) {
-									parseAnimPackage(assetIds[i], addAnims)
-								}
 							})
-						})
 						break;
-					case 24: // Custom Animation
-						preview.playAnimation(assetId, true, err => {
-							if(!err) {
-								preview.toggleVisible(true)
-								preview.loadDefaultAppearance(onAppearenceLoaded)
-							}
-						})
-						break;
-					default: // PlayerAnimation
-						parseAnimPackage(assetId, anims => {
-							if(Object.keys(anims).length === 0)
-								return preview.destroy();
-
-							preview.toggleVisible(true)
-							preview.loadDefaultAppearance(onAppearenceLoaded)
-
-							var first = true
-							forEach(anims, (animId, name) => {
-								preview.addDropdown(animId, name)
-								if(first) {
-									first = false
-									preview.setDropdown(name)
-									preview.playAnimation(animId, true)
-								}
-							})
-						})
-						break;
+					}
 				}
-			}
 
-			if(true && WearableAssetTypeIds.indexOf(assetTypeId) !== -1) {
-				var btn = html`<span class="btr-preview-btn rbx-btn-control-sm"></span>`
-				btn.textContent = "\uD83D\uDC41"
-				var preview = null
+				var preview = enablePreview(onPreviewReady)
+				preview.createButtons()
 
-				if(assetTypeId === 2)
-					btn.addClass("btr-rightmost");
+				if(settings.catalog.animationPreviewAutoLoad) {
+					loadAnimations()
+				} else {
+					preview.onInit = loadAnimations
+				}
+			} else if(true && WearableAssetTypeIds.indexOf(assetTypeId) !== -1) {
+				var preview = enablePreview()
+				preview.createButtons()
 
-				Observer.one("#AssetThumbnail", cont => cont.append(btn))
+				preview.onInit = () => {
+					preview.loadDefaultAppearance((data) => {
+						var assets = data.assets
 
-				document.$on("click", ".btr-preview-btn", () => {
-					if(!preview) {
-						preview = enablePreview()
-						preview.loadDefaultAppearance((data) => {
-							var assets = data.assets
-
-							if(UniqueWearableAssetTypeIds.indexOf(assetTypeId) !== -1) {
-								for(var i=0; i<assets.length; i++) {
-									var assetInfo = assets[i]
-									if(assetInfo.assetType.id === assetTypeId) {
-										assets.splice(i--, 1)
-										break;
-									}
+						if(UniqueWearableAssetTypeIds.indexOf(assetTypeId) !== -1) {
+							for(var i=0; i<assets.length; i++) {
+								var assetInfo = assets[i]
+								if(assetInfo.assetType.id === assetTypeId) {
+									assets.splice(i--, 1)
+									break;
 								}
 							}
-
-							assets.push({
-								id: assetId,
-								assetType: {
-									id: assetTypeId
-								}
-							})
-						})
-						preview.toggleVisible(true)
-
-						function updateAnim() {
-							var animId = preview.playerType === "R15" ? 507766388 : 180435571
-							preview.playAnimation(animId)
 						}
 
-						preview.switch.$on("change", updateAnim)
-						updateAnim()
+						assets.push({
+							id: assetId,
+							assetType: {
+								id: assetTypeId
+							}
+						})
+					})
 
-						preview.domElement.append(btn.cloneNode(true))
-					} else {
-						preview.toggleVisible()
+					function updateAnim() {
+						var animId = preview.playerType === "R15" ? 507766388 : 180435571
+						preview.playAnimation(animId)
 					}
-				})
+
+					preview.switch.$on("change", updateAnim)
+					updateAnim()
+				}
 			}
 
 			if(true && assetTypeId === 32) {
@@ -1197,7 +1215,7 @@ pageInit.configureplace = function(placeId) {
 		var placeNameInput = $("#basicSettings>input")
 		var fileName = (placeNameInput ? placeNameInput.value : "place").replace(/[^\w \-\.]+/g,"").replace(/ {2,}/g," ").trim()
 
-		btn.classList.addClass("disabled")
+		btn.classList.add("disabled")
 		btn.textContent = "Preparing..."
 
 		if(!jszipPromise)

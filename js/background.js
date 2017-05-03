@@ -19,6 +19,7 @@ var settings = {
 	},
 	catalog: {
 		animationPreview: true,
+		animationPreviewAutoLoad: true,
 		explorerButton: false
 	},
 	chat: {
