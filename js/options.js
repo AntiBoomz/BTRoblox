@@ -73,13 +73,9 @@ var dict = {
 	general_showAds: "Show Ads",
 	general_noHamburger: "Keep Sidebar Open",
 	general_chatEnabled: "Show Chat",
-	general_draggableAssets: "Draggable Studio Assets",
 
 	chat: "Chat Changes",
 	chat_enabled: "Enabled",
-
-	character: "Wardrobe Changes",
-	character_enabled: "Enabled",
 
 	profile: "Profile Changes",
 	profile_enabled: "Enabled",
