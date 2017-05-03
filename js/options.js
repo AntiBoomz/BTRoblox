@@ -159,7 +159,9 @@ BackgroundJS.send("getSettings", settings => {
 
 $("#btr-content").$on("mousewheel", e => {
 	var deltaY = e.deltaY
-	if((deltaY > 0 && e.target.scrollTop === e.target.scrollHeight - e.target.clientHeight) || (deltaY < 0 && e.target.scrollTop === 0)) {
+	var target = e.currentTarget
+
+	if((deltaY > 0 && target.scrollTop === target.scrollHeight - target.clientHeight) || (deltaY < 0 && target.scrollTop === 0)) {
 		return false
 	}
 })
