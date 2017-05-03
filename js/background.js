@@ -8,11 +8,7 @@ var settings = {
 		showAds: false,
 		noHamburger: true,
 
-		chatEnabled: true,
-		draggableAssets: true
-	},
-	character: {
-		enabled: true
+		chatEnabled: true
 	},
 	versionhistory: {
 		enabled: true
