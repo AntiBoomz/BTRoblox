@@ -100,8 +100,8 @@ var dict = {
 	gamedetails_showBadgeOwned: "Highlight Owned Badges",
 
 	catalog: "Catalog Changes",
-	catalog_audioPlayButton: "Playable Audio On Search Page",
-	catalog_animationPreview: "Animation Previewer"
+	catalog_animationPreview: "Animation Previewer",
+	catalog_animationPreviewAutoLoad: "Auto-Load Animation Previewer"
 }
 
 var ul = html`<ul></ul>`
