@@ -880,9 +880,23 @@ pageInit.itemdetails = function(assetId) {
 					}
 				}
 
-				function onAppearenceLoaded(data) {
-					delete data.playerAvatarType;
+				function enable() {
+					preview.toggleVisible(true)
+					preview.createButtons()
+					preview.loadDefaultAppearance(data => {
+						delete data.playerAvatarType;
+					})
 				}
+
+
+				var preview = enablePreview(onPreviewReady)
+
+				if(settings.catalog.animationPreviewAutoLoad) {
+					loadAnimations()
+				} else {
+					preview.onInit = loadAnimations
+				}
+
 
 				function loadAnimations() {
 					switch(assetTypeId) {
@@ -906,10 +920,9 @@ pageInit.itemdetails = function(assetId) {
 									if(Object.keys(anims).length === 0)
 										return;
 
-									preview.toggleVisible(true)
-									preview.loadDefaultAppearance(onAppearenceLoaded)
-
+									enable()
 									addAnims(anims)
+
 									for(var i=1; i<assetIds.length; i++) {
 										parseAnimPackage(assetIds[i], addAnims)
 									}
@@ -918,10 +931,8 @@ pageInit.itemdetails = function(assetId) {
 						break;
 						case 24: // Custom Animation
 							preview.playAnimation(assetId, true, err => {
-								if(!err) {
-									preview.toggleVisible(true)
-									preview.loadDefaultAppearance(onAppearenceLoaded)
-								}
+								if(!err)
+									enable();
 							})
 						break;
 						default: // PlayerAnimation
@@ -929,8 +940,7 @@ pageInit.itemdetails = function(assetId) {
 								if(Object.keys(anims).length === 0)
 									return preview.destroy();
 
-								preview.toggleVisible(true)
-								preview.loadDefaultAppearance(onAppearenceLoaded)
+								enable()
 
 								var first = true
 								forEach(anims, (animId, name) => {
@@ -944,15 +954,6 @@ pageInit.itemdetails = function(assetId) {
 							})
 						break;
 					}
-				}
-
-				var preview = enablePreview(onPreviewReady)
-				preview.createButtons()
-
-				if(settings.catalog.animationPreviewAutoLoad) {
-					loadAnimations()
-				} else {
-					preview.onInit = loadAnimations
 				}
 			} else if(true && WearableAssetTypeIds.indexOf(assetTypeId) !== -1) {
 				var preview = enablePreview()
