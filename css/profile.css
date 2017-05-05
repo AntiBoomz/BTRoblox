@@ -123,22 +123,13 @@
 
 .btr-profile .profile-about-content {
 	margin-top: 6px;
-}
-
-.btr-profile .profile-about-content>p {
 	text-align: center;
 }
 
-.btr-profile .profile-about-content>p.para-overflow-toggle:not(.para-height) {
-	padding-bottom: 24px;
-}
-
-.btr-profile .profile-about-content>p.para-height {
-	max-height: 386px;
-}
-
-.btr-profile .profile-about-content>p:after {
-	text-align: left;
+.btr-profile .profile-about-content > pre {
+	position: relative;
+	overflow: hidden;
+	line-height: 1.5;
 }
 
 /* Stats */
