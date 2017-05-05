@@ -1706,7 +1706,7 @@ pageInit.profile = function(userId) {
 		grid.setAttribute("ng-cloak", "")
 
 		var oldlist = switcher.$find(">.hlist")
-		var cont = html`<div class="#games-switcher section-content"></div>`
+		var cont = html`<div class="#games-switcher section-content" ng-hide="isGridOn"></div>`
 		switcher.replaceWith(cont)
 
 		var hlist = html`<ul class="hlist btr-games-list"></ul>`
