@@ -10,8 +10,8 @@ var settings = {
 
 		chatEnabled: true
 	},
-	versionhistory: {
-		enabled: true
+	avatar: {
+		moreColors: true,
 	},
 	catalog: {
 		animationPreview: true,
@@ -21,47 +21,82 @@ var settings = {
 	chat: {
 		enabled: true,
 	},
+	gamedetails: {
+		enabled: true,
+		showBadgeOwned: true,
+	},
 	groups: {
 		enabled: true,
 		shoutAlerts: true,
+	},
+	inventory: {
+		inventoryTools: true
 	},
 	profile: {
 		enabled: true,
 		embedInventoryEnabled: true
 	},
-	inventory: {
-		inventoryTools: true
-	},
-	gamedetails: {
-		enabled: true,
-		showBadgeOwned: true,
+	versionhistory: {
+		enabled: true
 	}
 }
 
 var pages = {
-	home: {
-		matches: ["/home"],
-		css: ["home.css"]
+	avatar: {
+		matches: ["/my/avatar"],
+		css: ["avatar.css"]
 	},
-	character: {
-		matches: ["/my/character\\.aspx"],
-		css: ["character.css"]
+	catalog: {
+		matches: ["/catalog/$"],
+		css: []
+	},
+	configureplace: {
+		matches: ["/places/(\\d+)/update"],
+		css: ["placeconfig.css"]
+	},
+	develop: {
+		matches: ["/develop"],
+		css: ["develop.css"]
+	},
+	forum: {
+		matches: ["/forum/"],
+		css: ["forum.css"]
+	},
+	gamedetails: {
+		matches: ["/games/(\\d+)/"],
+		css: ["gamedetails.css"]
+	},
+	games: {
+		matches: ["/games/?$"],
+		css: ["games.css"]
 	},
 	groups: {
 		matches: ["/my/groups\\.aspx","/groups/group\\.aspx"],
 		css: ["groups.css"]
 	},
-	groupaudit: {
-		matches: ["/groups/audit\\.aspx"],
-		css: []
-	},
 	groupadmin: {
 		matches: ["/my/groupadmin.aspx"],
 		css: []
 	},
-	forum: {
-		matches: ["/forum/"],
-		css: ["forum.css"]
+	groupaudit: {
+		matches: ["/groups/audit\\.aspx"],
+		css: []
+	},
+	home: {
+		matches: ["/home"],
+		css: ["home.css"]
+	},
+	inventory: {
+		matches: ["/users/(\\d+)/inventory"],
+		css: ["inventory.css"]
+	},
+	itemdetails: {
+		matches: ["/catalog/(\\d+)/","/library/(\\d+)/"],
+		css: ["itemdetails.css"]
+	},
+	messages: {
+		matches: ["/my/messages"],
+		css: ["messages.css"]
 	},
 	money: {
 		matches: ["/my/money"],
@@ -70,38 +105,6 @@ var pages = {
 	profile: {
 		matches: ["/users/(\\d+)/profile"],
 		css: ["profile.css"]
-	},
-	inventory: {
-		matches: ["/users/(\\d+)/inventory"],
-		css: ["inventory.css"]
-	},
-	games: {
-		matches: ["/games/?$"],
-		css: ["games.css"]
-	},
-	gamedetails: {
-		matches: ["/games/(\\d+)/"],
-		css: ["gamedetails.css"]
-	},
-	configureplace: {
-		matches: ["/places/(\\d+)/update"],
-		css: ["placeconfig.css"]
-	},
-	messages: {
-		matches: ["/my/messages"],
-		css: ["messages.css"]
-	},
-	develop: {
-		matches: ["/develop"],
-		css: ["develop.css"]
-	},
-	catalog: {
-		matches: ["/catalog/$"],
-		css: []
-	},
-	itemdetails: {
-		matches: ["/catalog/(\\d+)/","/library/(\\d+)/"],
-		css: ["itemdetails.css"]
 	}
 }
 
