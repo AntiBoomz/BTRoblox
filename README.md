@@ -182,6 +182,11 @@ User APIs
   ]
   ```
 
+#### Profile Stuff
+* https://www.roblox.com/users/profile/playergroups-json?userId=4719353
+* https://www.roblox.com/users/profile/robloxcollections-json?userId=4719353
+* https://www.roblox.com/users/profile/playerassets-json?assetTypeId=21&userId=4719353
+
 
 Universe APIs
 -------------
