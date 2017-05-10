@@ -160,21 +160,21 @@
 
 /* Player Badges */
 
-.btr-profile .btr-profile-playerbadges .btr-hlist {
+.btr-profile .btr-profile-playerbadges .hlist {
 	min-height: 122px;
 	max-height: 244px;
 }
 
-.btr-profile .btr-profile-playerbadges .btr-hlist .list-item {
+.btr-profile .btr-profile-playerbadges .hlist .list-item {
 	width: 20%;
 }
 
-.btr-profile .btr-profile-playerbadges .btr-hlist .list-item img {
+.btr-profile .btr-profile-playerbadges .hlist .list-item img {
 	width: 90px;
 	height: 90px;
 }
 
-.btr-profile .btr-profile-playerbadges .btr-hlist .list-item .item-name {
+.btr-profile .btr-profile-playerbadges .hlist .list-item .item-name {
 	width: 100%;
 	text-align: center;
 }
@@ -407,6 +407,7 @@
 	width: 25%;
 	padding: 0 5px;
 	margin-top: 2px;
+	margin-bottom: 8px;
 	height: auto;
 
 	display: none;

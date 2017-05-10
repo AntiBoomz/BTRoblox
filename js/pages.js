@@ -1438,13 +1438,17 @@ pageInit.profile = function(userId) {
 		<div class="placeholder-playerbadges" style="display:none">
 			<div class="container-header"><h3>Player Badges</h3></div>
 			<div class="section-content">
-				<span class="section-content-off btr-section-content-off">This user has no Player Badges</span>
+				<ul class="hlist">
+					<span class="section-content-off btr-section-content-off">This user has no Player Badges</span>
+				</ul>
 			</div>
 		</div>
 		<div class="placeholder-groups" style="display:none">
 			<div class="container-header"><h3>Groups</h3></div>
 			<div class="section-content">
-				<span class="section-content-off btr-section-content-off">This user is not in any Groups</span>
+				<ul class="hlist">
+					<span class="section-content-off btr-section-content-off">This user is not in any Groups</span>
+				</ul>
 			</div>
 		</div>
 	</div>`
@@ -1483,10 +1487,15 @@ pageInit.profile = function(userId) {
 	</div>`
 
 	Observer.one("body", body => body.classList.add("btr-profile"))
-	.one(".container-main + *", () => {
+	.one(".container-main + *", () => { // Once container-main has loaded
 		document.$findAll(`.profile-container>div>div[class^="placeholder-"]`).forEach(item => {
 			item.style.display = ""
 		})
+
+		var oldContainer = $(".profile-container > .rbx-tabs-horizontal")
+		if(oldContainer) {
+			oldContainer.remove()
+		}
 	})
 	.one(".profile-container", cont => (cont.append(left),cont.append(right), cont.append(bottom)))
 	.one(".profile-about", about => {
@@ -1587,113 +1596,6 @@ pageInit.profile = function(userId) {
 		badges.classList.add("btr-profile-robloxbadges")
 		//badges.$find(".assets-count").remove()
 		badges.$find(".btn-more").setAttribute("ng-show", badges.$find(".badge-list").children.length > 10 ? "true" : "false")
-	})
-	.one("#about>.section>.container-header>h3", x => x.textContent.indexOf("Player Badges") !== -1, h3 => {
-		var badges = h3.parentNode.parentNode
-		left.$find(".placeholder-playerbadges").replaceWith(badges)
-
-		badges.classList.add("btr-profile-playerbadges")
-		//badges.$find(".assets-count").remove()
-
-		var hlist = badges.$find(".hlist")
-		hlist.classList.add("btr-hlist")
-
-		var isLoading = false
-		var prevData = null
-
-		var pager = createPager(true)
-		hlist.after(pager)
-
-		pager.onprevpage = () => {
-			if(!isLoading && prevData && prevData.Data && prevData.Data.previousPageCursor) {
-				loadPage(prevData.Data.Page-1, prevData.Data.previousPageCursor)
-			}
-		}
-
-		pager.onnextpage = () => {
-			if(!isLoading && prevData && prevData.Data && prevData.Data.nextPageCursor) {
-				loadPage(prevData.Data.Page+1, prevData.Data.nextPageCursor)
-			}
-		}
-
-		function loadPage(page, cursor) {
-			isLoading = true
-			var url = `/users/inventory/list-json?assetTypeId=21&itemsPerPage=10&userId=${userId}&cursor=${cursor}&pageNumber=${page}`
-
-			request.getJson(url, json => {
-				isLoading = false
-				prevData = json
-
-				if(json && json.IsValid) {
-					pager.setPage(json.Data.Page)
-					pager.togglePrev(json.Data.previousPageCursor != null)
-					pager.toggleNext(json.Data.nextPageCursor != null)
-					hlist.innerHTML = ""
-
-					if(json.Data.Items.length === 0) {
-						var text = `${userId == loggedInUser ? "You have" : "This user has"} no badges`
-						hlist.append(html`<div class="section-content-off btr-section-content-off">${text}</div>`)
-					} else {
-						forEach(json.Data.Items, data => {
-							hlist.append(html`
-							<li class="list-item badge-item asset-item">
-								<a href="${data.Item.AbsoluteUrl}" class="badge-link" title="${data.Item.Name}">
-									<img src="${data.Thumbnail.Url}" alt="${data.Item.Name}">
-									<span class="item-name text-overflow">${data.Item.Name}</span>
-								</a>
-							</li>`)
-						})
-					}
-				}
-			})
-		}
-
-		loadPage(1, "")
-	})
-	.one("#groups-switcher", switcher => {
-		var groups = switcher.parentNode.parentNode
-		left.$find(".placeholder-groups").replaceWith(groups)
-
-		groups.classList.add("btr-profile-groups")
-
-		var content = html`<div class="section-content"></div>`
-		groups.append(content)
-		var hlist = groups.$find(".group-list")
-		content.append(hlist)
-
-		groups.$find(".container-header>.container-buttons").remove()
-		groups.$find(".profile-slide-container").remove()
-
-		var pageSize = 8
-		var pager = createPager()
-		hlist.after(pager)
-
-		pager.onsetpage = loadPage
-
-		function loadPage(page) {
-			pager.setPage(page)
-
-			forEach(hlist.children, (obj, index) => {
-				obj.classList.toggle("visible", Math.floor(index/pageSize)+1 === page)
-			})
-		}
-
-		CreateObserver(hlist, { subtree: false }).all(".list-item", parent => {
-			var card = parent.$find(".game-card")
-			parent.replaceWith(card)
-
-			var index = Array.prototype.indexOf.call(card.parentNode.children, card)
-			card.classList.toggle("visible", Math.floor(index/pageSize) === 0)
-			pager.setMaxPage(Math.floor((hlist.children.length-1)/pageSize) + 1)
-
-			hlist.style["min-height"] = `${hlist.scrollHeight}px`
-
-			var thumb = card.$find(".card-thumb")
-
-			thumb.classList.add("unloaded")
-			thumb.src = thumb.getAttribute("data-src")
-			thumb.$once("load", () => thumb.classList.remove("unloaded"))
-		})
 	})
 	.one("#games-switcher", switcher => {
 		var games = switcher.parentNode
@@ -1906,7 +1808,116 @@ pageInit.profile = function(userId) {
 	.one(".favorite-games-container", favorites => favorites.remove())
 	.one(".profile-collections", collections => bottom.$find(".placeholder-collections").replaceWith(collections))
 
-	if(true) {
+	var initPlayerBadges = () => {
+		var badges = left.$find(".placeholder-playerbadges")
+		badges.classList.add("btr-profile-playerbadges")
+
+		var hlist = badges.$find(".hlist")
+
+		var isLoading = false
+		var prevData = null
+
+		var pager = createPager(true)
+		hlist.after(pager)
+
+		pager.onprevpage = () => {
+			if(!isLoading && prevData && prevData.Data && prevData.Data.previousPageCursor) {
+				loadPage(prevData.Data.Page-1, prevData.Data.previousPageCursor)
+			}
+		}
+
+		pager.onnextpage = () => {
+			if(!isLoading && prevData && prevData.Data && prevData.Data.nextPageCursor) {
+				loadPage(prevData.Data.Page+1, prevData.Data.nextPageCursor)
+			}
+		}
+
+		function loadPage(page, cursor) {
+			isLoading = true
+			var url = `/users/inventory/list-json?assetTypeId=21&itemsPerPage=10&userId=${userId}&cursor=${cursor}&pageNumber=${page}`
+
+			request.getJson(url, json => {
+				isLoading = false
+				prevData = json
+
+				if(json && json.IsValid) {
+					pager.setPage(json.Data.Page)
+					pager.togglePrev(json.Data.previousPageCursor != null)
+					pager.toggleNext(json.Data.nextPageCursor != null)
+					hlist.innerHTML = ""
+
+					if(json.Data.Items.length === 0) {
+						var text = `${userId == loggedInUser ? "You have" : "This user has"} no badges`
+						hlist.append(html`<div class="section-content-off btr-section-content-off">${text}</div>`)
+					} else {
+						forEach(json.Data.Items, data => {
+							hlist.append(html`
+							<li class="list-item badge-item asset-item">
+								<a href="${data.Item.AbsoluteUrl}" class="badge-link" title="${data.Item.Name}">
+									<img src="${data.Thumbnail.Url}" alt="${data.Item.Name}">
+									<span class="item-name text-overflow">${data.Item.Name}</span>
+								</a>
+							</li>`)
+						})
+					}
+				}
+			})
+		}
+
+		loadPage(1, "")
+	}
+
+	var initGroups = () => {
+		var groups = left.$find(".placeholder-groups")
+		groups.classList.add("btr-profile-groups")
+
+		var hlist = groups.$find(".hlist")
+		var pageSize = 8
+
+		var pager = createPager()
+		hlist.after(pager)
+		pager.onsetpage = loadPage
+
+		function loadPage(page) {
+			pager.setPage(page)
+
+			forEach(hlist.children, (obj, index) => {
+				obj.classList.toggle("visible", Math.floor(index/pageSize)+1 === page)
+			})
+		}
+
+		var url = `https://www.roblox.com/users/profile/playergroups-json?userId=${userId}`
+		request.getJson(url, json => {
+			console.log(json)
+			pager.setMaxPage(Math.floor((json.NumberOfGroups-1)/pageSize) + 1)
+
+			hlist.innerHTML = ""
+			json.Groups.forEach((item, index) => {
+				var parent = html`
+				<li class="list-item game-card ${index<pageSize?"visible":""}">
+					<a class="card-item game-card-container" href="${item.GroupUrl}">
+						<div class="game-card-thumb-container">
+							<img class="game-card-thumb card-thumb unloaded" src="${item.Emblem.Url}">
+						</div>
+						<div class="text-overflow game-card-name" title="${item.Name}">${item.Name}</div>
+						<div class="text-overflow game-card-name-secondary">
+							${item.Members} ${item.Members === 1 ? "Member" : "Members"}
+						</div>
+						<div class="text-overflow game-card-name-secondary">${item.Rank}</div>
+					</a>
+				</li>`
+
+				var thumb = parent.$find(".card-thumb")
+				thumb.$once("load", () => thumb.classList.remove("unloaded"))
+
+				hlist.append(parent)
+			})
+
+			hlist.style["min-height"] = `${hlist.scrollHeight}px`
+		})
+	}
+
+	var initFavorites = () => { // Favorites
 		var favorites = right.$find(".placeholder-favorites")
 		var hlist = favorites.$find(".hlist")
 
@@ -2019,6 +2030,10 @@ pageInit.profile = function(userId) {
 
 		loadPage(9, 1)
 	}
+
+	initPlayerBadges()
+	initGroups()
+	initFavorites()
 
 	if(settings.profile.embedInventoryEnabled) {
 		bottom.$find(".placeholder-inventory").replaceWith(html`
