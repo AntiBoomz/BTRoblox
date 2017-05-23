@@ -91,7 +91,7 @@
 				try {
 					var avatar = angular.module("avatar")
 					avatar._invokeQueue.forEach(item => {
-						if(item[1] === "constant" && item[2][0] === "avatarConstants") {
+						/*if(item[1] === "constant" && item[2][0] === "avatarConstants") {
 							var avatarConstants = item[2][1]
 							var palette = avatarConstants.bodyColors.palette
 							var fullpalette = {
@@ -105,7 +105,7 @@
 									palette.push({brickColorId, hexColor: fullpalette[brickColorId]})
 								}
 							}
-						}
+						}*/
 					})
 				} catch(ex) { }
 			}
