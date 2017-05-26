@@ -1085,9 +1085,13 @@ pageInit.gamedetails = function(placeId) {
 		newContainer.prepend(mainCont)
 	})
 	.one(".game-about-container>.section-content", descCont => {
+		var aboutCont = descCont.parentNode
+		
 		descCont.classList.remove("section-content")
 		descCont.classList.add("btr-description")
 		newContainer.append(descCont)
+
+		aboutCont.remove()
 	})
 	.one(".tab-content", cont => {
 		cont.classList.add("section")
