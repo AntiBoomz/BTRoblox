@@ -10,9 +10,6 @@ var settings = {
 
 		chatEnabled: true
 	},
-	avatar: {
-		moreColors: true,
-	},
 	catalog: {
 		animationPreview: true,
 		animationPreviewAutoLoad: true,

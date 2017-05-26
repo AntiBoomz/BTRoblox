@@ -2051,13 +2051,6 @@ pageInit.profile = function(userId) {
 }
 
 pageInit.avatar = function() {
-	/*Observer.one("body", body => {
-		CreateObserver(body, { permanent:true, subtree:false })
-		.all(".modal", modal => {
-			if(!modal.$find("#advanced-body-colors")) return;
-			modal.classList.add("btr-avatar-moreColors")
-		})
-	})*/
 }
 
 pageInit.inventory = function(userId) {
