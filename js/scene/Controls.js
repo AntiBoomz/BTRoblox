@@ -19,8 +19,8 @@ ANTI.RBXScene.Controls = (function() {
 
 			if(event.button == 0) {
 				prevDragEvent = event
-				canvas.addEventListener("mousemove", mousemove)
-				canvas.addEventListener("mouseup", mouseup)
+				document.addEventListener("mousemove", mousemove)
+				document.addEventListener("mouseup", mouseup)
 			}
 
 			return false
@@ -35,9 +35,9 @@ ANTI.RBXScene.Controls = (function() {
 		}
 
 		var mouseup = (event) => {
-			if(event.type == "mouseleave" || event.button == 0) {
-				canvas.removeEventListener("mousemove", mousemove)
-				canvas.removeEventListener("mouseup", mouseup)
+			if(event.button == 0) {
+				document.removeEventListener("mousemove", mousemove)
+				document.removeEventListener("mouseup", mouseup)
 			}
 		}
 
@@ -49,7 +49,6 @@ ANTI.RBXScene.Controls = (function() {
 		}
 
 		canvas.addEventListener("mousedown", mousedown)
-		canvas.addEventListener("mouseleave,mouseup", mouseup)
 		canvas.addEventListener("mousewheel", mousewheel)
 		canvas.addEventListener("contextmenu", e => e.preventDefault())
 
