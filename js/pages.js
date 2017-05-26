@@ -1892,7 +1892,6 @@ pageInit.profile = function(userId) {
 
 		var url = `https://www.roblox.com/users/profile/playergroups-json?userId=${userId}`
 		request.getJson(url, json => {
-			console.log(json)
 			pager.setMaxPage(Math.floor((json.NumberOfGroups-1)/pageSize) + 1)
 
 			hlist.innerHTML = ""
