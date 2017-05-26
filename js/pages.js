@@ -1086,7 +1086,7 @@ pageInit.gamedetails = function(placeId) {
 	})
 	.one(".game-about-container>.section-content", descCont => {
 		var aboutCont = descCont.parentNode
-		
+
 		descCont.classList.remove("section-content")
 		descCont.classList.add("btr-description")
 		newContainer.append(descCont)
@@ -1644,7 +1644,7 @@ pageInit.profile = function(userId) {
 			hlist.$findAll(".btr-game.selected").forEach(x => x!==item && x.classList.remove("selected"))
 		}
 
-		hlist.$on("click", ".btr-game-button", e => select(e.currentTarget.parentNode))
+		hlist.$on("click", ".btr-game-button", e => !e.target.matches(".btr-game-dropdown *")&&select(e.currentTarget.parentNode))
 		.$on("click", ".btr-toggle-description", e => {
 			var btn = e.currentTarget
 			var desc = btn.parentNode
