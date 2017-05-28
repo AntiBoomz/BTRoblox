@@ -1694,7 +1694,7 @@ pageInit.profile = function(userId) {
 				</div>
 				<div class="btr-game-content">
 					<div class="btr-profile-col-1 btr-game-thumb-container">
-						<a href="${url}"><img class="btr-game-thumb unloaded"></a>
+						<a href="${url}"><img class="btr-game-thumb"></a>
 						<a href="${url}"><img class="btr-game-icon" src="${iconThumb}"></a>
 					</div>
 					<div class="btr-profile-col-1 btr-game-desc linkify">
@@ -1751,8 +1751,6 @@ pageInit.profile = function(userId) {
 					request.getJson(url, json => json && json.Final ? cb(json) : setTimeout(retryUntilFinal, 500, url, cb))
 				}
 				
-				item.$find(".unloaded").$once("load", e => e.currentTarget.classList.remove("unloaded"))
-
 				if(iconRetryUrl) {
 					retryUntilFinal(iconRetryUrl, json => {
 						item.$find(".btr-game-icon").src = json.Url
