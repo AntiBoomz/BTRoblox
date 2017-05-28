@@ -1108,8 +1108,9 @@ pageInit.gamedetails = function(placeId) {
 			var onSeeMoreBadges = new Promise(resolve => Observer.one("#badges-see-more", btn => btn.$once("click", resolve)))
 
 			var getIsBadgeOwned = (badgeId, cb) => {
-				var url = `//api.roblox.com/Ownership/HasAsset?userId=${loggedInUser}&assetId=${badgeId}`
-				request.get(url, cb, () => cb(true))
+				//var url = `//api.roblox.com/Ownership/HasAsset?userId=${loggedInUser}&assetId=${badgeId}`
+				var url = `//www.roblox.com/Game/Badge/HasBadge.ashx?UserID=${loggedInUser}&BadgeID=${badgeId}`
+				request.get(url, result => cb(result === "Success"), () => cb(true))
 			}
 		}
 
@@ -1128,7 +1129,7 @@ pageInit.gamedetails = function(placeId) {
 
 				var cb = val => {
 					row.classList.remove("btr_badgeownedloading")
-					if(val !== "true") {
+					if(!val) {
 						row.classList.add("btr_notowned")
 						row.$find("img").title = "You do not own this badge"
 					}
