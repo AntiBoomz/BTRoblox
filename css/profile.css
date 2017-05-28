@@ -121,15 +121,17 @@
 
 /* Description */
 
-.btr-profile .profile-about-content {
-	margin-top: 6px;
+.btr-profile .profile-about-content .profile-about-text {
 	text-align: center;
+	line-height: 1.5em;
 }
 
-.btr-profile .profile-about-content > pre {
-	position: relative;
-	overflow: hidden;
-	line-height: 1.5;
+.btr-profile .profile-about-content .profile-about-text.para-height {
+	max-height: 220px;
+}
+
+.btr-profile .profile-about-content .profile-about-text:after {
+	text-align: left;
 }
 
 /* Stats */
@@ -236,17 +238,18 @@
 	max-height: 1000px;
 }
 
+.btr-profile .btr-games-list .btr-game-thumb-container {
+	position: relative;
+	height: 277px;
+}
+
 .btr-profile .btr-games-list .btr-game-thumb {
 	border: none;
 	width: 100%;
 }
 
-.btr-profile .btr-games-list .btr-game-thumb.unloaded {
-	height: 0;
-	margin-bottom: 56.25%; /* Thumbnails are 16:9 */
-}
-
-.btr-profile .btr-games-list .btr-game-icon-container {
+.btr-profile .btr-games-list .btr-game-thumb:not([src]) {
+	opacity: 0;
 }
 
 .btr-profile .btr-games-list .btr-game-icon {
