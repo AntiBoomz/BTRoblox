@@ -1,37 +1,37 @@
 "use strict"
 
-function RobloxTime(dateString) {
-	function RobloxTimeZone() {
-		var month = serverDate.getUTCMonth() + 1
-		var date = serverDate.getUTCDate()
-		var weekday = serverDate.getUTCDay()
-		var hour = serverDate.getUTCHours()
+function GetRobloxTimeZone() {
+	var month = serverDate.getUTCMonth() + 1
+	var date = serverDate.getUTCDate()
+	var weekday = serverDate.getUTCDay()
+	var hour = serverDate.getUTCHours()
 
-		// DST starts on the second Sunday in March at 02:00 CST, which is 08:00 UTC
-		// DST ends on the first Sunday in November at 01:00 CST, which is 07:00 UTC
+	// DST starts on the second Sunday in March at 02:00 CST, which is 08:00 UTC
+	// DST ends on the first Sunday in November at 01:00 CST, which is 07:00 UTC
 
-		var someSunday = date + 7 - weekday
-		var firstSunday = someSunday - Math.floor(someSunday/7)*7
-		var secondSunday = firstSunday + 7
+	var someSunday = date + 7 - weekday
+	var firstSunday = someSunday - Math.floor(someSunday/7)*7
+	var secondSunday = firstSunday + 7
 
-		if(
-			(month > 3 && month < 11) || // Within daytime months
-			(month == 3 && ( // Or march and DST has begun
-				date > secondSunday || 
-				(date == secondSunday && hour >= 8)
-			)) ||
-			(month == 11 && ( // Or november and DST has not ended
-				date < firstSunday ||
-				(date == firstSunday && hour < 7)
-			))
-		) {
-			return "CDT"
-		}
-
-		return "CST"
+	if(
+		(month > 3 && month < 11) || // Within daytime months
+		(month == 3 && ( // Or march and DST has begun
+			date > secondSunday || 
+			(date == secondSunday && hour >= 8)
+		)) ||
+		(month == 11 && ( // Or november and DST has not ended
+			date < firstSunday ||
+			(date == firstSunday && hour < 7)
+		))
+	) {
+		return "CDT"
 	}
 
-	dateString += " " + RobloxTimeZone()
+	return "CST"
+}
+
+function RobloxTime(dateString) {
+	dateString += " " + GetRobloxTimeZone()
 	return Date.parse(dateString) ? new Date(dateString) : false
 }
 
