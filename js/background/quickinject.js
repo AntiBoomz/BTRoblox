@@ -91,9 +91,13 @@ chrome.webRequest.onResponseStarted.addListener(details => {
 	var initialized = false
 
 	function injectScript() {
+		if(initialized)
+			return;
+
 		chrome.tabs.executeScript(details.tabId, { code: initData, runAt: "document_start", frameId: details.frameId }, () => {
-			if(chrome.runtime.lastError || initialized)
-				return;
+			var err = chrome.runtime.lastError
+			if(initialized) return;
+			if(err) return console.log(err);
 
 			initialized = true
 			cssFiles.forEach(path => {
