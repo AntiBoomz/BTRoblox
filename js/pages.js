@@ -2037,17 +2037,14 @@ pageInit.profile = function(userId) {
 	initFavorites()
 
 	if(settings.profile.embedInventoryEnabled) {
-		bottom.$find(".placeholder-inventory").replaceWith(html`
-		<div>
-			<iframe id="btr-injected-inventory" src="/users/${userId}/inventory" scrolling="no">
-		</div>`)
+		onDocumentReady(() => {
+			bottom.$find(".placeholder-inventory").replaceWith(html`
+			<div>
+				<iframe id="btr-injected-inventory" src="/users/${userId}/inventory" scrolling="no">
+			</div>`)
+		})
 	} else {
-		bottom.$find(".placeholder-inventory").replaceWith(html`
-		<div style="text-align:center">
-			<a href="./inventory" class="btn-secondary-xs btn-more inventory-link">
-				Inventory
-			</a>
-		</div>`)
+		bottom.$find(".placeholder-inventory").remove()
 	}
 }
 
