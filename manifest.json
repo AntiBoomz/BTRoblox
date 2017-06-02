@@ -14,7 +14,13 @@
 	"background": {
 		"scripts": [
 			"js/utility.js",
-			"js/background.js"
+			"js/background.js",
+			"js/background/blogfeed.js",
+			"js/background/commands.js",
+			"js/background/contextmenu.js",
+			"js/background/notifications.js",
+			"js/background/quickinject.js",
+			"js/background/shoutchecker.js"
 		]
 	},
 	"permissions": [

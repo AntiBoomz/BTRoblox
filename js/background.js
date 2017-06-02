@@ -109,9 +109,9 @@ var pages = {
 var settingsLoaded = false
 var extensionDirectory = null
 var extensionDirectoryPromise = new Promise(resolve => {
-	chrome.runtime.getPackageDirectoryEntry((rootEntry) => {
+	chrome.runtime.getPackageDirectoryEntry(rootEntry => {
 		function recurse(dirEntry, parent, callback) {
-			dirEntry.createReader().readEntries((array) => {
+			dirEntry.createReader().readEntries(array => {
 				var dirCount = 0
 				var finished = false
 				array.forEach((entry) => {
@@ -188,15 +188,6 @@ function applySettings(data, initialLoad) {
 		settingsChangedListeners.forEach(fn => fn())
 	}
 }
-
-
-extensionDirectoryPromise.then((dir) => {
-	forEach(dir.js.background, (_, filePath) => {
-		var script = document.createElement("script")
-		script.src = "js/background/" + filePath
-		document.body.appendChild(script)
-	})
-})
 
 chrome.runtime.onConnect.addListener((port) => {
 	if(port.name === "contentScript") {
