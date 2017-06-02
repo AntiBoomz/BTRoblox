@@ -8,12 +8,6 @@ const skipPages = [
 	"^/Feeds/GetUserFeed"
 ]
 
-const mainParams = {
-	urls: ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
-	types: ["main_frame", "sub_frame"]
-}
-
-
 function parseLocation(url) {
 	var loc = document.createElement("a")
 	loc.href = url
@@ -37,23 +31,62 @@ function fileExists(pathString) {
 	return true
 }
 
-
-chrome.webRequest.onResponseStarted.addListener(details => {
-	var timeStarted = Date.now()
-	var headers = details.responseHeaders
-	var location = parseLocation(details.url)
-	var pathname = location.pathname.toLowerCase()
-
+function shouldSkip(pathname) {
 	for(var i=0; i<skipPages.length; i++) {
 		if(pathname.search(skipPages[i]) !== -1)
-			return;
+			return true;
 	}
 
-	var contentType = headers.find(h => h.name.toLowerCase() === "content-type")
-	if(!contentType || contentType.value.indexOf("text/html") === -1)
-		return;
+	return false
+}
 
-	var currentPage = null
+function quickInject(data) {
+	//console.log(data)
+	var location = parseLocation(data.url)
+	var pathname = location.pathname.toLowerCase()
+
+	var headers = data.responseHeaders
+	var initData = {}
+
+	if(headers.find(x => x.name.toLowerCase() === "content-type").value.indexOf("text/html") === -1 || shouldSkip(pathname)) {
+		initData.invalid = true
+	} else {
+		var currentPage = null
+
+		for(var name in pages) {
+			var page = pages[name]
+			for(var i in page.matches) {
+				var matches = pathname.match("^" + page.matches[i]);
+				if(matches) {
+					currentPage = { name: name, matches: matches.slice(1) }
+					break;
+				}
+			}
+		}
+
+		initData.settings = settings
+		initData.currentPage = currentPage
+		initData.serverDate = Date.parse(headers.find(x => x.name.toLowerCase() === "date").value)
+
+		var blogfeed = fetchBlogFeed()
+		if(blogfeed)
+			initData.blogFeedData = blogfeed;
+	}
+
+	headers.push({
+		name: "Set-Cookie",
+		value: `BTR-Data=${encodeURIComponent(JSON.stringify(initData))}; Domain=${location.host}; Path=${location.pathname}; Max-Age=10`
+	})
+
+	return { responseHeaders: headers }
+}
+
+var cssSources = {}
+var cachedMerges = {}
+
+function mergeCSS(data) {
+	var location = parseLocation(parseLocation(data.url).search.substring(1))
+	var pathname = location.pathname.toLowerCase()
 	var cssFiles = []
 
 	var themeDir = "css/" + settings.general.theme + "/"
@@ -64,8 +97,6 @@ chrome.webRequest.onResponseStarted.addListener(details => {
 		for(var i in page.matches) {
 			var matches = pathname.match("^" + page.matches[i]);
 			if(matches) {
-				currentPage = { name: name, matches: matches.slice(1) }
-
 				if(page.css) {
 					page.css.forEach(path => cssFiles.push("css/" + path, themeDir + path))
 				}
@@ -74,48 +105,41 @@ chrome.webRequest.onResponseStarted.addListener(details => {
 		}
 	}
 
-	var dateHeader = headers.find(h => h.name.toLowerCase() === "date").value
+	var result = [ "data:text/css," ]
+	cssFiles.forEach(path => {
+		var src = cssSources[path]
+		if(src)
+			result.push(src);
+	})
 
-	var initData = [
-		"settings=" + JSON.stringify(settings),
-		"currentPage=" + JSON.stringify(currentPage),
-		`serverDate=new Date(${Date.parse(dateHeader)})`
-	]
+	var url = cachedMerges[pathname] = result.join("")
 
-	var blogfeed = fetchBlogFeed()
-	if(blogfeed) {
-		initData.push("blogFeedData=" + JSON.stringify(blogfeed))
-	}
+	return { redirectUrl: url }
+}
 
-	var initData = "if(typeof(hasBeenInit) === \"undefined\") { var hasBeenInit=true," + initData.join(",") + "; if(typeof(hasCsLoaded) !== \"undefined\") Init(); }"
-	var initialized = false
+extensionDirectoryPromise.then(() => {
+	function recurse(dict, path) {
+		Object.keys(dict).forEach(name => {
+			var value = dict[name]
+			var filePath = path + "/" + name
 
-	function injectScript() {
-		if(initialized)
-			return;
-
-		chrome.tabs.executeScript(details.tabId, { code: initData, runAt: "document_start", frameId: details.frameId }, () => {
-			var err = chrome.runtime.lastError
-			if(initialized) return;
-			if(err) return console.log(err);
-
-			initialized = true
-			cssFiles.forEach(path => {
-				if(!fileExists(path))
-					return;
-				
-				chrome.tabs.insertCSS(
-					details.tabId, 
-					{ file: path, runAt: "document_start", frameId: details.frameId }, 
-					() => chrome.runtime.lastError
-				)
-			})
+			if(value === true) {
+				request.get(chrome.runtime.getURL(filePath), data => {
+					cssSources[filePath] = data.replace(/\s*\n\s*|\/\*((?!\*\/).)*\*\//g, "")
+				})
+			} else {
+				recurse(value, filePath)
+			}
 		})
 	}
 
-	injectScript()
+	recurse(extensionDirectory.css, "css")
+})
 
-	for(var i=1; i<5; ++i) {
-		setTimeout(injectScript, i*5)
-	}
-}, mainParams, ["responseHeaders"])
+const params = {
+	urls: ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
+	types: ["main_frame", "sub_frame"]
+}
+
+chrome.webRequest.onHeadersReceived.addListener(quickInject, params, [ "blocking", "responseHeaders" ])
+chrome.webRequest.onBeforeRequest.addListener(mergeCSS, { urls: [ chrome.runtime.getURL("css/_merged.css") + "*" ] }, [ "blocking" ])
