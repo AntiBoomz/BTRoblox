@@ -2196,5 +2196,26 @@ pageInit.inventory = function(userId) {
 	}
 }
 
-var hasCsLoaded = true
-if(typeof(hasBeenInit) !== "undefined") Init();
+;(() => {
+var match = document.cookie.match("BTR-Data=([^;]*)")
+if(match) {
+	var data = match[1]
+	data = decodeURIComponent(data)
+	data = JSON.parse(data)
+
+	if(!data.invalid) {
+		window.settings = data.settings
+		window.currentPage = data.currentPage
+		window.serverDate = new Date(data.serverDate)
+		window.blogFeedData = data.blogFeedData
+
+		document.documentElement.prepend(html`<link rel="stylesheet" href="${getURL("css/_merged.css")}?${location.href}">`)
+
+		Init()
+	} else {
+		console.log("invalid = true")
+	}
+} else {
+	console.log("No data cookie")
+}
+})();
