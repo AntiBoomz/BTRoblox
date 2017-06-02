@@ -1397,7 +1397,7 @@ pageInit.groups = function() {
 			var fixedDate = RobloxTime(dateSpan.textContent)
 			if(fixedDate) {
 				dateSpan.setAttribute("btr-timestamp", "")
-				dateSpan.textContent = fixedDate.relativeFormat("zz 'ago'", serverDate)
+				dateSpan.textContent = fixedDate.relativeFormat("zz 'ago'")
 				dateSpan.title = fixedDate.format("M/D/YYYY h:mm:ss A")
 			}
 
