@@ -134,6 +134,10 @@
 	text-align: left;
 }
 
+.btr-profile .profile-about .profile-about-content .profile-about-content-text {
+	white-space: pre-line;
+}
+
 /* Stats */
 
 .btr-profile .profile-stats-container {
