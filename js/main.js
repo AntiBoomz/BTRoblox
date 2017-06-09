@@ -385,6 +385,7 @@ function Init() {
 		onDocumentReady(() => resolve(-1))
 	})
 
+
 	Observer
 	.one("head", head => {
 		var script = document.createElement("script")
@@ -488,6 +489,59 @@ function Init() {
 		})
 	}
 
+	if(true) {
+		var target, audio;
+
+		function audioStop() {
+			if(target) {
+				target.classList.remove("icon-pause")
+				target.classList.add("icon-play")
+			}
+			audio.pause()
+		}
+
+		function audioPlay() {
+			if(target) {
+				target.classList.remove("icon-play")
+				target.classList.add("icon-pause")
+			}
+			audio.play()
+		}
+
+		document.$on("click", ".MediaPlayerIcon[data-mediathumb-url]", ev => {
+			ev.stopImmediatePropagation()
+
+			if(target === ev.currentTarget)
+				return audio.paused ? audioPlay() : audioStop();
+
+			if(!audio) {
+				audio = new Audio();
+
+				var checkInterval;
+				audio.$on("play", () => {
+					clearInterval(checkInterval)
+					checkInterval = setInterval(() => {
+						if(!target || !document.documentElement.contains(target)) {
+							clearInterval(checkInterval)
+							audioStop()
+						}
+					}, 500)
+				})
+				audio.$on("ended error", () => {
+					clearInterval(checkInterval)
+					audioStop()
+				})
+			}
+
+			audioStop()
+
+			target = ev.currentTarget
+			audio.src = target.dataset.mediathumbUrl
+
+			audioPlay()
+		})
+	}
+
 	if(!settings.general.showAds) {
 		var adSelector = '.ads-container,.abp,.abp-spacer,.abp-container,.top-abp-container,#AdvertisingLeaderboard,\
 			#AdvertisementRight,#MessagesAdSkyscraper,.Ads_WideSkyscraper,iframe[src*="roblox.com/userads/"],\
@@ -536,6 +590,7 @@ function Init() {
 		BackgroundJS.listen("blogfeed", updateBlogFeed)
 	}
 
+	
 	if(currentPage && pageInit[currentPage.name]) {
 		pageInit[currentPage.name].apply(currentPage, currentPage.matches)
 	}
