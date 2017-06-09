@@ -320,7 +320,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 
 	pager.onsetpage = loadPage
 
-	versionHistory.$on("click", ".version-revert", e => {
+	document.documentElement.$on("click", ".btr-version-revert", e => {
 		if(isBusy) return;
 
 		var versionId = parseInt(e.currentTarget.getAttribute("data-versionId"))
@@ -342,7 +342,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 			}
 		}))
 	})
-	.$on("click", ".version-download", e => {
+	.$on("click", ".btr-version-download", e => {
 		if(isBusy)
 			return;
 		
@@ -422,8 +422,8 @@ function CreateNewVersionHistory(assetId, assetType) {
 						</a>
 						<div data-toggle="btr-versiondrop-${i}">
 							<ul class="dropdown-menu btr-version-dropdown-menu">
-								<li><a class="version-revert" data-versionId="${item.Id}">Revert</a></li>
-								<li><a class="version-download" data-version="${item.VersionNumber}">Download</a></li>
+								<li><a class="btr-version-revert" data-versionId="${item.Id}">Revert</a></li>
+								<li><a class="btr-version-download" data-version="${item.VersionNumber}">Download</a></li>
 							</ul>
 						</div>
 					</div>
@@ -451,6 +451,10 @@ function CreateNewVersionHistory(assetId, assetType) {
 			tryGetThumbnail()*/
 			versionList.append(card)
 		}
+
+		var script = document.createElement("script")
+		script.innerHTML = "Roblox.BootstrapWidgets.SetupPopover()"
+		versionList.append(script)
 	}
 
 	isBusy = true
