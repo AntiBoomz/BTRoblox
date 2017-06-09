@@ -1104,21 +1104,14 @@ pageInit.gamedetails = function(placeId) {
 		})
 	})
 	.one(".badge-container", badges => {
-		badges.classList.add("btr-badges-container")
+		badges.classList.add("col-xs-12", "btr-badges-container")
 		newContainer.after(badges)
 
-		if(settings.gamedetails.showBadgeOwned) {
-			var lastRequest = null
-			var onSeeMoreBadges = new Promise(resolve => Observer.one("#badges-see-more", btn => btn.$once("click", resolve)))
+		var badgeList = []
 
-			var getIsBadgeOwned = (badgeId, cb) => {
-				//var url = `//api.roblox.com/Ownership/HasAsset?userId=${loggedInUser}&assetId=${badgeId}`
-				var url = `//www.roblox.com/Game/Badge/HasBadge.ashx?UserID=${loggedInUser}&BadgeID=${badgeId}`
-				request.get(url, result => cb(result === "Success"), () => cb(true))
-			}
-		}
+		CreateObserver(badges).all(".badge-row .badge-stats-container", stats => {
+			var row = stats.closest(".badge-row")
 
-		CreateObserver(badges).all(".badge-row", row => {
 			var url = row.$find(".badge-image>a").href
 			var label = row.$find(".badge-name")
 			label.innerHTML = htmlstring`<a href="${url}">${label.textContent}</a>`
@@ -1131,28 +1124,47 @@ pageInit.gamedetails = function(placeId) {
 				badgeId = badgeId[1]
 				row.classList.add("btr_badgeownedloading")
 
-				var cb = val => {
-					row.classList.remove("btr_badgeownedloading")
-					if(!val) {
-						row.classList.add("btr_notowned")
-						row.$find("img").title = "You do not own this badge"
-					}
-				}
-
-				if(!row.classList.contains("badge-see-more-row")) {
-					 getIsBadgeOwned(badgeId, cb)
-				} else {
-					lastRequest = new Promise(resolve => {
-						var prev = lastRequest || onSeeMoreBadges
-
-						prev.then(() => getIsBadgeOwned(badgeId, isOwned => {
-							cb(isOwned)
-							setTimeout(resolve, 100)
-						}))
-					})
-				}
+				badgeList.push([ row, badgeId ])
 			}
 		})
+
+		if(settings.gamedetails.showBadgeOwned) {
+			var lastRequest = null
+			var onSeeMoreBadges = new Promise(resolve => Observer.one("#badges-see-more", btn => btn.$once("click", resolve)))
+
+			var getIsBadgeOwned = (badgeId, cb) => {
+				//var url = `//api.roblox.com/Ownership/HasAsset?userId=${loggedInUser}&assetId=${badgeId}`
+				var url = `//www.roblox.com/Game/Badge/HasBadge.ashx?UserID=${loggedInUser}&BadgeID=${badgeId}`
+				request.get(url, result => cb(result === "Success"), () => cb(true))
+			}
+
+			onDocumentReady(() => {
+				badgeList.forEach(data => {
+					var row = data[0]
+					var badgeId = data[1]
+
+					var cb = val => {
+						row.classList.remove("btr_badgeownedloading")
+						if(!val) {
+							row.classList.add("btr_notowned")
+							row.$find("img").title = "You do not own this badge"
+						}
+					}
+
+					if(!row.classList.contains("badge-see-more-row")) {
+						 getIsBadgeOwned(badgeId, cb)
+					} else {
+						var prev = lastRequest || onSeeMoreBadges
+						lastRequest = new Promise(resolve => {
+							prev.then(() => getIsBadgeOwned(badgeId, isOwned => {
+								cb(isOwned)
+								setTimeout(resolve, 100)
+							}))
+						})
+					}
+				})
+			})
+		}
 	})
 	.one("#carousel-game-details", details => details.setAttribute("data-is-video-autoplayed-on-ready", "false"))
 	.one(".game-stats-container .game-stat", x => x.$find(".text-label").textContent === "Updated", stat => {
