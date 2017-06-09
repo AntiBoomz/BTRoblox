@@ -1631,7 +1631,7 @@ pageInit.profile = function(userId) {
 		grid.setAttribute("ng-cloak", "")
 
 		var oldlist = switcher.$find(">.hlist")
-		var cont = html`<div class="#games-switcher section-content" ng-hide="isGridOn"></div>`
+		var cont = html`<div id="games-switcher" class="section-content" ng-hide="isGridOn"></div>`
 		switcher.classList.add("btr-remove-on-profile-load")
 		switcher.style.display = "none"
 		switcher.after(cont)
