@@ -308,8 +308,7 @@
 						}
 					},".btr-server-input")
 
-					Roblox.GameInstance.init();
-					Roblox.GameInstance.fetchFirstServers();
+					Roblox.GameInstance.init()
 				}
 			}
 		}
