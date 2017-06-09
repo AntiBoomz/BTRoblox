@@ -1505,6 +1505,8 @@ pageInit.profile = function(userId) {
 		if(oldContainer) {
 			oldContainer.remove()
 		}
+
+		$.all(".btr-remove-on-profile-load").forEach(item => item.remove())
 	})
 	.one(".profile-container", cont => (cont.append(left),cont.append(right), cont.append(bottom)))
 	.one(".profile-about", about => {
@@ -1618,7 +1620,10 @@ pageInit.profile = function(userId) {
 
 		var oldlist = switcher.$find(">.hlist")
 		var cont = html`<div class="#games-switcher section-content" ng-hide="isGridOn"></div>`
-		switcher.replaceWith(cont)
+		switcher.classList.add("btr-remove-on-profile-load")
+		switcher.style.display = "none"
+		switcher.after(cont)
+
 
 		var hlist = html`<ul class="hlist btr-games-list"></ul>`
 		cont.append(hlist)
@@ -2214,7 +2219,6 @@ if(match) {
 		window.blogFeedData = data.blogFeedData
 
 		document.documentElement.prepend(html`<link rel="stylesheet" href="${getURL("css/_merged.css")}?${location.href}">`)
-
 		Init()
 	} else {
 		console.log("invalid = true")
