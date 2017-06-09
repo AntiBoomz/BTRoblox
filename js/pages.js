@@ -1699,7 +1699,7 @@ pageInit.profile = function(userId) {
 			})
 		})
 
-		CreateObserver(oldlist, { subtree: false }).all(".slide-item-container .slide-item-stats>.hlist", stats => {
+		CreateObserver(oldlist).all(".slide-item-container .slide-item-stats>.hlist", stats => {
 			var slide = stats.closest(".slide-item-container")
 			var index = +slide.getAttribute("data-index")
 			var placeId = slide.$find(".slide-item-image").getAttribute("data-emblem-id")
