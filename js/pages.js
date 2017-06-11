@@ -1508,18 +1508,6 @@ pageInit.profile = function(userId) {
 	</div>`
 
 	Observer.one("body", body => body.classList.add("btr-profile"))
-	.one(".container-main + *", () => { // Once container-main has loaded
-		document.$findAll(`.profile-container>div>div[class^="placeholder-"]`).forEach(item => {
-			item.style.display = ""
-		})
-
-		var oldContainer = $(".profile-container > .rbx-tabs-horizontal")
-		if(oldContainer) {
-			oldContainer.remove()
-		}
-
-		$.all(".btr-remove-on-profile-load").forEach(item => item.remove())
-	})
 	.one(".profile-container", cont => (cont.append(left),cont.append(right), cont.append(bottom)))
 	.one(".profile-about", about => {
 		left.$find(".placeholder-about").replaceWith(about)
@@ -2058,16 +2046,27 @@ pageInit.profile = function(userId) {
 	initGroups()
 	initFavorites()
 
-	if(settings.profile.embedInventoryEnabled) {
-		onDocumentReady(() => {
+	onDocumentReady(() => {
+		document.$findAll(`.profile-container>div>div[class^="placeholder-"]`).forEach(item => {
+			item.style.display = ""
+		})
+
+		var oldContainer = $(".profile-container > .rbx-tabs-horizontal")
+		if(oldContainer) {
+			oldContainer.remove()
+		}
+
+		$.all(".btr-remove-on-profile-load").forEach(item => item.remove())
+
+		if(settings.profile.embedInventoryEnabled) {
 			bottom.$find(".placeholder-inventory").replaceWith(html`
 			<div>
 				<iframe id="btr-injected-inventory" src="/users/${userId}/inventory" scrolling="no">
 			</div>`)
-		})
-	} else {
-		bottom.$find(".placeholder-inventory").remove()
-	}
+		} else {
+			bottom.$find(".placeholder-inventory").remove()
+		}
+	})
 }
 
 pageInit.avatar = function() {
