@@ -88,7 +88,7 @@ Undocumented APIs
 
 Subdomains
 ----------
-#### API docs
+#### API Docs
 * https://api.roblox.com/docs
 * https://inventory.roblox.com/docs
 * https://avatar.roblox.com/docs
@@ -97,13 +97,13 @@ Subdomains
 * https://chat.roblox.com/docs
 * https://notifications.roblox.com/docs
 
-#### All subdomains
+#### Roblox Subdomains
 * https://roblox.com/
 * https://abuse.roblox.com/
 * https://affiliates.roblox.com/
 * https://api.roblox.com/
- * https://clientsettings.api.roblox.com/
- * https://ephemeralcounters.api.roblox.com/
+  * https://clientsettings.api.roblox.com/
+  * https://ephemeralcounters.api.roblox.com/
 * https://assetgame.roblox.com/
 * https://auth.roblox.com/
 * https://avatar.roblox.com/
@@ -152,7 +152,7 @@ Subdomains
 * http://wiki.roblox.com/
 * https://www.roblox.com/
 
-#### robloxlabs
+#### Robloxlabs Subdomains
 * https://www.gametest1.robloxlabs.com/
 * https://www.gametest2.robloxlabs.com/
 * https://www.gametest3.robloxlabs.com/
