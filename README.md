@@ -88,9 +88,9 @@ Undocumented APIs
 
 Subdomains
 ----------
-* https://inventory.roblox.com/docs [backup](https://rawgit.com/AntiBoomz/BTRoblox/master/docs/inventory.mhtml)
-* https://avatar.roblox.com/docs [backup](https://rawgit.com/AntiBoomz/BTRoblox/master/docs/avatar.mhtml)
-* https://api.roblox.com/docs [backup](https://rawgit.com/AntiBoomz/BTRoblox/master/docs/api.mhtml)
+* https://inventory.roblox.com/docs
+* https://avatar.roblox.com/docs
+* https://api.roblox.com/docs
 
 Group APIs
 ----------
