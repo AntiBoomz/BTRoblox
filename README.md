@@ -86,6 +86,12 @@ followed by **triCount** blocks of 12 bytes
 Undocumented APIs
 =================
 
+Subdomains
+----------
+* https://inventory.roblox.com/docs [backup](/docs/inventory.roblox.com.html)
+* https://avatar.roblox.com/docs [backup](/docs/avatar.roblox.com.html)
+* https://api.roblox.com/docs [backup](/docs/api.roblox.com.html)
+
 Group APIs
 ----------
 #### Get members of a group (as an admin)
