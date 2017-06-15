@@ -88,9 +88,80 @@ Undocumented APIs
 
 Subdomains
 ----------
+#### API docs
+* https://api.roblox.com/docs
 * https://inventory.roblox.com/docs
 * https://avatar.roblox.com/docs
-* https://api.roblox.com/docs
+* https://develop.roblox.com/docs
+* https://auth.roblox.com/docs
+* https://chat.roblox.com/docs
+* https://notifications.roblox.com/docs
+
+#### All subdomains
+* https://roblox.com/
+* https://abuse.roblox.com/
+* https://affiliates.roblox.com/
+* https://api.roblox.com/
+ * https://clientsettings.api.roblox.com/
+ * https://ephemeralcounters.api.roblox.com/
+* https://assetgame.roblox.com/
+* https://auth.roblox.com/
+* https://avatar.roblox.com/
+* https://blog.roblox.com/
+* https://bloxcon.roblox.com/
+* https://careers.roblox.com/
+* https://chat.roblox.com/
+* https://community.roblox.com/
+* https://confluence.roblox.com/
+* https://corp.roblox.com/
+* https://data.roblox.com/
+* http://de.roblox.com/
+* https://develop.roblox.com/
+* http://developer.roblox.com/
+* https://ecsv2.roblox.com/
+* https://en.help.roblox.com/
+* http://es.roblox.com/
+* https://forum.roblox.com/
+* http://fr.roblox.com/
+* https://gamepersistence.roblox.com/
+* http://help.roblox.com/
+* https://inventory.roblox.com/
+* https://jira.roblox.com/
+* https://job.roblox.com/
+* https://jobs.roblox.com/
+* http://js.roblox.com/
+* https://m.roblox.com/
+* http://mail.roblox.com/
+* https://misc.roblox.com/
+* https://news.roblox.com/
+* https://nl.roblox.com/
+* https://notifications.roblox.com/
+* https://partners.roblox.com/
+* http://polls.roblox.com/
+* http://pt.roblox.com/
+* https://publish.roblox.com/
+* https://realtime.roblox.com/
+* https://sales.roblox.com/
+* https://search.roblox.com/
+* http://setup.roblox.com/
+* http://shop.roblox.com/
+* http://social.roblox.com/
+* https://static.roblox.com/
+* http://uk.roblox.com/
+* https://web.roblox.com/
+* http://wiki.roblox.com/
+* https://www.roblox.com/
+
+#### robloxlabs
+* https://www.gametest1.robloxlabs.com/
+* https://www.gametest2.robloxlabs.com/
+* https://www.gametest3.robloxlabs.com/
+* https://www.gametest4.robloxlabs.com/
+* https://www.gametest5.robloxlabs.com/
+* https://www.sitetest1.robloxlabs.com/
+* https://www.sitetest2.robloxlabs.com/
+* https://www.sitetest3.robloxlabs.com/
+
 
 Group APIs
 ----------
