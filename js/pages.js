@@ -1449,7 +1449,16 @@ pageInit.profile = function(userId) {
 
 	var left = html`
 	<div class="btr-profile-col-2 btr-profile-left">
-		<div class="placeholder-about" style="display:none"></div>
+		<div class="btr-profile-about">
+			<div class="container-header"><h3>About</h3></div>
+			<div class="section-content">
+				<div class="placeholder-status" style="display:none"></div>
+				<div class="placeholder-avatar" style="display:none"></div>
+				<div class="placeholder-desc" style="display:none"></div>
+				<div class="placeholder-stats" style="display:none"></div>
+				<div class="placeholder-footer" style="display:none"></div>
+			</div>
+		</div>
 		<div class="placeholder-robloxbadges" style="display:none">
 			<div class="container-header"><h3>Roblox Badges</h3></div>
 			<div class="section-content">
@@ -1509,20 +1518,21 @@ pageInit.profile = function(userId) {
 
 	Observer.one("body", body => body.classList.add("btr-profile"))
 	.one(".profile-container", cont => (cont.append(left),cont.append(right), cont.append(bottom)))
-	.one(".profile-about", about => {
-		left.$find(".placeholder-about").replaceWith(about)
+	.one(".profile-about-content", desc => {
+		$(".placeholder-desc").replaceWith(desc)
 
-		var tooltip = about.$find(".tooltip-pastnames")
+		desc.$find(".profile-about-content-text").classList.add("linkify")
+	})
+	.one(".profile-about-footer", footer => {
+		$(".placeholder-footer").replaceWith(footer)
+
+		var tooltip = footer.$find(".tooltip-pastnames")
 		if(tooltip)
 			tooltip.setAttribute("data-container", "body"); // Display tooltip over side panel
-
-		about.$find(".profile-about-content-text").classList.add("linkify")
-
-		var content = about.$find(">.section-content")
-
-		var status = $(".profile-avatar-status")
+	})
+	.one(".profile-avatar-status", status => {
 		var statusDiv = html`<div class="btr-header-status-parent"></div>`
-		content.prepend(statusDiv)
+		$(".placeholder-status").replaceWith(statusDiv)
 		var statusText = html`<span class="btr-header-status-text"></span>`
 		statusDiv.append(statusText)
 		var statusLabel = html`<span></span>`
@@ -1569,36 +1579,42 @@ pageInit.profile = function(userId) {
 				statusLabel.textContent = statusTitle
 			}
 		}
+	})
+	.one(".profile-avatar", avatar => {
+		left.$find(".placeholder-avatar").replaceWith(avatar)
+		avatar.$find(">h3").remove()
 
-		Observer.one(".profile-avatar", avatar => {
-			about.$find(".profile-about-content").before(avatar)
-			avatar.$find(">h3").remove()
+		var avatarLeft = avatar.$find(".profile-avatar-left")
+		var avatarRight = avatar.$find(".profile-avatar-right")
 
-			var avatarLeft = avatar.$find(".profile-avatar-left")
-			var avatarRight = avatar.$find(".profile-avatar-right")
+		avatarLeft.classList.remove("col-sm-6")
+		avatarRight.classList.remove("col-sm-6")
 
-			avatarLeft.classList.remove("col-sm-6")
-			avatarRight.classList.remove("col-sm-6")
+		avatarLeft.classList.add("btr-profile-col-1")
+		avatarRight.classList.add("btr-profile-col-1")
 
-			avatarLeft.classList.add("btr-profile-col-1")
-			avatarRight.classList.add("btr-profile-col-1")
+		avatar.$find(".enable-three-dee").textContent = "3D" // It's initialized as empty
 
-			avatar.$find(".enable-three-dee").textContent = "3D" // It's initialized as empty
+		var toggleItems = html`<span class="btr-toggle-items btn-control btn-control-sm">Show Items</span>`
+		avatar.$find("#UserAvatar").append(toggleItems)
 
-			var toggleItems = html`<span class="btr-toggle-items btn-control btn-control-sm">Show Items</span>`
-			avatar.$find("#UserAvatar").append(toggleItems)
+		var toggleVisible = ev => {
+			var visible = !avatarRight.classList.contains("visible")
+			avatarRight.classList.toggle("visible", visible)
 
-			toggleItems.$on("click", () => {
-				var visible = !avatarRight.classList.contains("visible")
-				avatarRight.classList.toggle("visible", visible)
+			toggleItems.textContent = visible ? "Hide Items" : "Show Items"
+			ev.stopImmediatePropagation()
+		}
 
-				toggleItems.textContent = visible ? "Hide Items" : "Show Items"
-			})
+		toggleItems.$on("click", toggleVisible)
+		document.body.$on("click", ev => {
+			if(!avatarRight.contains(ev.target) && avatarRight.classList.contains("visible"))
+				toggleVisible(ev);
 		})
-		.one(".profile-statistics", stats => {
-			about.$find(".profile-about-content").after(stats.$find(".profile-stats-container"))
-			stats.remove()
-		})
+	})
+	.one(".profile-stats-container", stats => {
+		stats.closest(".profile-statistics").remove()
+		$(".placeholder-stats").replaceWith(stats)
 	})
 	.one("#about>.section>.container-header>h3", x => x.textContent.indexOf("Roblox Badges") !== -1, h3 => {
 		var badges = h3.parentNode.parentNode
@@ -2047,10 +2063,6 @@ pageInit.profile = function(userId) {
 	initFavorites()
 
 	onDocumentReady(() => {
-		document.$findAll(`.profile-container>div>div[class^="placeholder-"]`).forEach(item => {
-			item.style.display = ""
-		})
-
 		var oldContainer = $(".profile-container > .rbx-tabs-horizontal")
 		if(oldContainer) {
 			oldContainer.remove()
@@ -2066,6 +2078,11 @@ pageInit.profile = function(userId) {
 		} else {
 			bottom.$find(".placeholder-inventory").remove()
 		}
+
+		document.$findAll(`.profile-container>div>div[class^="placeholder-"]`).forEach(item => {
+			item.style.display = ""
+			item.classList.forEach(className => className.startsWith("placeholder-") && item.classList.remove(className))
+		})
 	})
 }
 
