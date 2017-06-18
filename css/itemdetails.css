@@ -35,9 +35,27 @@
 	right: 126px;
 }
 
-#item-container.btr-explorer-btn-shown h2 {
-	margin-right: 100px;
+
+.btr-explorer-btn-shown h2 {
+	padding-right: 40px;
 }
+
+.btr-explorer-btn-shown h2,
+.btr-download-btn-shown h2,
+.btr-content-btn-shown h2 {
+	padding-right: 40px;
+}
+
+.btr-explorer-btn-shown.btr-download-btn-shown h2,
+.btr-explorer-btn-shown.btr-content-btn-shown h2,
+.btr-download-btn-shown.btr-content-btn-shown h2 {
+	padding-right: 80px;
+}
+
+.btr-explorer-btn-shown.btr-download-btn-shown.btr-content-btn-shown h2 {
+	padding-right: 120px;
+}
+
 
 .btr-icon-explorer,
 .btr-icon-download,
@@ -51,12 +69,19 @@
 	vertical-align: middle;
 }
 
+.btr-icon-explorer.disabled,
+.btr-icon-download.disabled,
+.btr-icon-content.disabled {
+	filter: invert(75%);
+	cursor: default;
+}
+
 .btr-icon-download { background-position-y: -28px; }
 .btr-icon-content { background-position-y: -56px; }
 
-.btr-icon-explorer:hover,
-.btr-icon-download:hover,
-.btr-icon-content:hover {
+.btr-icon-explorer:not(.disabled):hover,
+.btr-icon-download:not(.disabled):hover,
+.btr-icon-content:not(.disabled):hover {
 	background-position-x: -28px;
 }
 

@@ -23,11 +23,11 @@ const AssetTypeIds = (() => {
 	]
 })();
 const ContainerAssetTypeIds = {
-	[2]: { typeId: 1, filter: x => x.ClassName === "Decal", prop: "Texture" },
+	[2]: { typeId: 1, filter: x => x.ClassName === "ShirtGraphic", prop: "Graphic" },
+	[11]: { typeId: 1, filter: x => x.ClassName === "Shirt", prop: "ShirtTemplate" },
+	[12]: { typeId: 1, filter: x => x.ClassName === "Pants", prop: "PantsTemplate" },
 	[13]: { typeId: 1, filter: x => x.ClassName === "Decal", prop: "Texture" },
 	[18]: { typeId: 1, filter: x => x.ClassName === "Decal", prop: "Texture" },
-	[11]: { typeId: 1, filter: x => x.ClassName === "Shirt", prop: "ShirtTexture" },
-	[12]: { typeId: 1, filter: x => x.ClassName === "Pants", prop: "PantsTexture" },
 	[40]: { typeId: 4, filter: x => x.ClassName === "MeshPart", prop: "MeshID" },
 }
 
@@ -990,7 +990,7 @@ pageInit.itemdetails = function(assetId) {
 			var assetTypeContainer = ContainerAssetTypeIds[assetTypeId]
 
 			if(true && assetTypeContainer) {
-				let btn = html`<a class="btr-content-button" href=""><div class="btr-icon-content"></div></a>`
+				let btn = html`<a class="btr-content-button" href="#"><div class="btr-icon-content disabled"></div></a>`
 			
 				Observer.one("#item-container > .section-content", cont => {
 					cont.closest("#item-container").classList.add("btr-content-btn-shown")
@@ -1004,6 +1004,7 @@ pageInit.itemdetails = function(assetId) {
 					if(!actId) return;
 
 					btn.href = `/catalog/${actId}`
+					btn.$find(".disabled").classList.remove("disabled")
 				})
 			}
 
