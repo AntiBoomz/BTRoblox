@@ -200,7 +200,7 @@ const request = function(options) {
 	xhr.onload = () => options.success && options.success(xhr.response, xhr)
 	xhr.onerror = err => options.failure && options.failure(xhr, err)
 
-
+	var method = options.method || "GET"
 	var url = options.url
 	var data = null
 	var headers = {}
@@ -208,7 +208,7 @@ const request = function(options) {
 	if(options.params)
 		url += (url.indexOf("?") === -1 ? "?" : "&") + request.params(options.params);
 
-	if(options.method === "GET") {
+	if(method === "GET") {
 		if(options.data) {
 			url += (url.indexOf("?") === -1 ? "?" : "&") + request.params(options.data)
 		}
@@ -233,7 +233,7 @@ const request = function(options) {
 		for(var name in options.headers) headers[name.toLowerCase()] = options.headers[name];
 
 
-	xhr.open(options.method, url, true)
+	xhr.open(method, url, true)
 
 	for(var name in headers) {
 		xhr.setRequestHeader(name, headers[name])
