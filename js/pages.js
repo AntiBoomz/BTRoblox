@@ -360,9 +360,17 @@ function CreateNewVersionHistory(assetId, assetType) {
 		var fileExt = assetType === "place" ? "rbxl" : "rbxm"
 		var fileName = `${placeName}-${version}.${fileExt}`
 
-		downloadAsset("blob", { id: assetId, version }, blob => {
-			isBusy = false
-			startDownload(URL.createObjectURL(blob), fileName)
+		BackgroundJS.send("resolveAssetUrl", { id: assetId, version }, url => {
+			if(!url) return console.warn("Failed to resolve asset");
+
+			request({
+				url,
+				dataType: "blob",
+				success: blob => {
+					isBusy = false
+					startDownload(URL.createObjectURL(blob), fileName)
+				}
+			})
 		})
 	})
 
@@ -496,17 +504,6 @@ function getXsrfToken(callback) {
 	}
 
 	XsrfPromise.then(callback)
-}
-
-function downloadAsset(type, params, callback) {
-	BackgroundJS.send("downloadFile", "http://www.roblox.com/asset/?" + request.params(params), bloburl => {
-		request({
-			method: "GET",
-			url: bloburl,
-			dataType: type,
-			success: data => callback(data)
-		})
-	})
 }
 
 function startDownload(blob, fileName) {
@@ -1285,9 +1282,18 @@ pageInit.configureplace = function(placeId) {
 
 				var data = queue.splice(0, 1)[0]
 				btn.textContent = `Downloading ${++loadedCount}/${versionCount}`
-				downloadAsset("arraybuffer", { id: placeId, version: data.VersionNumber }, (buffer) => {
-					zip.file(`${fileName}-${data.VersionNumber}.rbxl`, buffer)
-					setTimeout(loadFile, 100)
+
+				BackgroundJS.send("resolveAssetUrl", { id: placeId, version: data.VersionNumber }, url => {
+					if(!url) return console.warn("Failed to resolve asset");
+
+					request({
+						url,
+						dataType: "arraybuffer",
+						success: buffer => {
+							zip.file(`${fileName}-${data.VersionNumber}.rbxl`, buffer)
+							setTimeout(loadFile, 100)
+						}
+					})
 				})
 			}
 

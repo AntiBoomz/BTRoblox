@@ -7,7 +7,6 @@ var rankNameCache = {}
 
 commands.setSetting = (data, respond) => applySettings(data);
 commands.getSettings = (data, respond) => respond(settings);
-commands.downloadFile = (url, respond) => request.getBlob(url, data => respond(URL.createObjectURL(data)));
 
 
 commands.getProductInfo = (assetId, respond) => {
@@ -16,8 +15,16 @@ commands.getProductInfo = (assetId, respond) => {
 }
 
 commands.resolveAssetUrl = (assetId, respond) => {
+	var params = {}
+
+	if(assetId instanceof Object) {
+		Object.assign(params, assetId)
+	} else {
+		params.id = assetId
+	}
+
 	var xhr = new XMLHttpRequest()
-	xhr.open("GET", `http://www.roblox.com/asset/?id=${assetId}`, true)
+	xhr.open("GET", `http://www.roblox.com/asset/?${ request.params(params) }`, true)
 	
 	xhr.addEventListener("readystatechange", () => {
 		if(xhr.status === 200 && xhr.responseURL.indexOf("rbxcdn") !== -1) {
