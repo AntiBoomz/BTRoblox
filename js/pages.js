@@ -3,6 +3,35 @@
 var pageInit = {}
 var startDate = new Date()
 
+
+const InvalidExplorableAssetTypeIds = [1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 16, 21, 22, 32, 33, 34, 35, 37, 39, 40]
+const AnimationPreviewAssetTypeIds = [24, 32, 48, 49, 50, 51, 52, 53, 54, 55, 56]
+const WearableAssetTypeIds = [2, 8, 11, 12, 18, 27, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47]
+const UniqueWearableAssetTypeIds = [2, 11, 12, 18, 27, 28, 29, 30, 31]
+const InvalidDownloadableAssetTypeIds = [5, 6, 7, 16, 21, 32, 33, 34, 35, 37]
+const AssetTypeIds = (() => {
+	var a = "Accessory | "
+	var b = "Animation | "
+
+	return [ null,
+		"Image", "T-Shirt", "Audio", "Mesh", "Lua", "HTML", "Text", "Accessory | Hat", "Place", "Model", // 10
+		"Shirt", "Pants", "Decal", "null", "null", "Avatar", "Head", "Face", "Gear", "null", // 20
+		"Badge", "Group Emblem", "null", "Animation", "Arms", "Legs", "Torso", "Right Arm", "Left Arm", "Left Leg", // 30
+		"Right Leg", "Package", "YouTubeVideo", "Game Pass", "App", "null", "Code", "Plugin", "SolidModel", "MeshPart", // 40
+		a+"Hair", a+"Face", a+"Neck", a+"Shoulder", a+"Front", a+"Back", a+"Waist", // 47
+		b+"Climb", b+"Death", b+"Fall", b+"Idle", b+"Jump", b+"Run", b+"Swim", b+"Walk", b+"Pose" // 56
+	]
+})();
+const ContainerAssetTypeIds = {
+	[2]: { typeId: 1, filter: x => x.ClassName === "Decal", prop: "Texture" },
+	[13]: { typeId: 1, filter: x => x.ClassName === "Decal", prop: "Texture" },
+	[18]: { typeId: 1, filter: x => x.ClassName === "Decal", prop: "Texture" },
+	[11]: { typeId: 1, filter: x => x.ClassName === "Shirt", prop: "ShirtTexture" },
+	[12]: { typeId: 1, filter: x => x.ClassName === "Pants", prop: "PantsTexture" },
+	[40]: { typeId: 4, filter: x => x.ClassName === "MeshPart", prop: "MeshID" },
+}
+
+
 function GetRobloxTimeZone() {
 	var month = startDate.getUTCMonth() + 1
 	var date = startDate.getUTCDate()
@@ -534,24 +563,6 @@ function execScripts(list, cb) {
 }
 
 
-const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34, 35, 37, 39]
-const AnimationPreviewAssetTypeIds = [24, 32, 48, 49, 50, 51, 52, 53, 54, 55, 56]
-const WearableAssetTypeIds = [2, 8, 11, 12, 18, 27, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47]
-const UniqueWearableAssetTypeIds = [2, 11, 12, 18, 27, 28, 29, 30, 31]
-const AssetTypeIds = (() => {
-	var a = "Accessory | "
-	var b = "Animation | "
-
-	return [ null,
-		"Image", "T-Shirt", "Audio", "Mesh", "Lua", "HTML", "Text", "Accessory | Hat", "Place", "Model", // 10
-		"Shirt", "Pants", "Decal", "null", "null", "Avatar", "Head", "Face", "Gear", "null", // 20
-		"Badge", "Group Emblem", "null", "Animation", "Arms", "Legs", "Torso", "Right Arm", "Left Arm", "Left Leg", // 30
-		"Right Leg", "Package", "YouTubeVideo", "Game Pass", "App", "null", "Code", "Plugin", "SolidModel", "MeshPart", // 40
-		a+"Hair", a+"Face", a+"Neck", a+"Shoulder", a+"Front", a+"Back", a+"Waist", // 47
-		b+"Climb", b+"Death", b+"Fall", b+"Idle", b+"Jump", b+"Run", b+"Swim", b+"Walk", b+"Pose" // 56
-	]
-})();
-
 
 
 
@@ -821,29 +832,10 @@ pageInit.itemdetails = function(assetId) {
 
 		execScripts(["js/RBXParser.js", "js/AssetCache.js"], () => {
 			if(settings.catalog.explorerButton && InvalidExplorableAssetTypeIds.indexOf(assetTypeId) === -1) {
-				if(assetTypeId === 10) {
-					var itemContainer = $("#item-container")
-					if(itemContainer) {
-						var isPublic = !!itemContainer.getAttribute("data-seller-name")
-						var isOwned = !!itemContainer.$find(".item-name-container .label-checkmark")
-
-						if(isPublic || isOwned) {
-							enableExplorer()
-						} else {
-							loggedInUserPromise.then(loggedInUser => {
-								CreateObserver(itemContainer)
-								.one(`.item-name-container a[href*="/users/"]`, anchor => {
-									var matches = anchor.href.match(/\/users\/(\d+)/)
-									if(matches && matches[1] == loggedInUser) {
-										enableExplorer()
-									}
-								})
-							})
-						}
-					}
-				} else {
-					enableExplorer()
-				}
+				Observer.one("#item-container", itemCont => {
+					if(assetTypeId !== 10 || itemCont.dataset.productId)
+						enableExplorer();
+				})
 			}
 
 			if(settings.catalog.animationPreview && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1) {
@@ -993,6 +985,131 @@ pageInit.itemdetails = function(assetId) {
 					preview.switch.$on("change", updateAnim)
 					updateAnim()
 				}
+			}
+			
+			var assetTypeContainer = ContainerAssetTypeIds[assetTypeId]
+
+			if(true && assetTypeContainer) {
+				let btn = html`<a class="btr-content-button" href=""><div class="btr-icon-content"></div></a>`
+			
+				Observer.one("#item-container > .section-content", cont => {
+					cont.closest("#item-container").classList.add("btr-content-btn-shown")
+					cont.append(btn)
+				})
+
+				AssetCache.loadModel(assetId, model => {
+					var inst = model.find(assetTypeContainer.filter)
+					if(!inst) return;
+					var actId = ANTI.RBXParseContentUrl( inst[assetTypeContainer.prop] )
+					if(!actId) return;
+
+					btn.href = `/catalog/${actId}`
+				})
+			}
+
+			if(true && InvalidDownloadableAssetTypeIds.indexOf(assetTypeId) === -1) {
+				let isDownloading = false
+
+				let dlButtonPressed = function() {
+					if(isDownloading) return;
+					isDownloading = true
+
+					var finish = blob => {
+						isDownloading = false
+
+						var title = $("#item-container .item-name-container h2")
+						var fileName = title ? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-") : "unknown"
+
+						switch(assetTypeContainer ? assetTypeContainer.typeId : assetTypeId) {
+							case 1:
+								fileName += ".png"
+								break;
+							case 4:
+								fileName += ".mesh"
+								break;
+							default:
+								fileName += ".rbxm"
+						}
+
+						startDownload(URL.createObjectURL(blob), fileName)
+					}
+
+					if(assetTypeContainer) {
+						AssetCache.loadModel(assetId, model => {
+							var inst = model.find(assetTypeContainer.filter)
+							if(!inst) return;
+							var actId = ANTI.RBXParseContentUrl( inst[assetTypeContainer.prop] )
+							if(!actId) return;
+
+							AssetCache.loadBlob(actId, finish)
+						})
+					} else {
+						AssetCache.loadBlob(assetId, finish)
+					}
+				}
+
+				Observer.one("#item-container > .section-content", cont => {
+					var itemCont = cont.closest("#item-container")
+					if(assetTypeId === 10 && !itemCont.dataset.productId) return;
+
+					itemCont.classList.add("btr-download-btn-shown")
+					var btn = html`<a class="btr-download-button"><div class="btr-icon-download"></div></a>`
+					cont.append(btn)
+
+					btn.$on("click", dlButtonPressed)
+				})
+			}
+
+			if(true && (assetTypeId === 1 || assetTypeId === 13)) {
+				Observer.one("#AssetThumbnail", thumb => {
+					var btns = html`
+					<div class="btr-bg-btn-cont">
+						<div class="btr-bg-btn" data-color="white"></div>
+						<div class="btr-bg-btn" data-color="black"></div>
+						<div class="btr-bg-btn" data-color="none"></div>
+					</div>`
+
+					thumb.append(btns)
+
+					btns.$on("click", ".btr-bg-btn", ev => {
+						var color = ev.currentTarget.dataset.color
+						var prev = btns.$find(".selected")
+
+						if(prev) prev.classList.remove("selected");
+						ev.currentTarget.classList.add("selected")
+
+						thumb.dataset.btrBg = color
+						localStorage["btr-item-thumb-bg"] = color
+					})
+
+
+					var selectedBg = localStorage["btr-item-thumb-bg"] || "white"
+					btns.$find(`[data-color="${selectedBg}"]`).click()
+				})
+			}
+
+			if(true && assetTypeId === 13) {
+				var transparentTexture = "https://t6.rbxcdn.com/3707fe58b613498a0f1fc7d11faeccf3"
+				Observer.one(`#AssetThumbnail .thumbnail-span img`, img => {
+					if(img.src !== transparentTexture) return;
+
+					AssetCache.loadModel(assetId, model => {
+						var decal = model.find(x => x.ClassName === "Decal")
+						if(!decal) return;
+						var imgId = ANTI.RBXParseContentUrl(decal.Texture)
+						if(!imgId) return;
+
+						var url = `/asset-thumbnail/json?width=420&height=420&format=png&assetId=${imgId}`
+						function fetchThumb() {
+							request.getJson(url, data => {
+								if(!data.Final) return setTimeout(fetchThumb, 200);
+								img.src = data.Url
+							})
+						}
+
+						fetchThumb()
+					})
+				})
 			}
 
 			if(true && assetTypeId === 32) {

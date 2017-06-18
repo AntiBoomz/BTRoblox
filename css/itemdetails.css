@@ -10,23 +10,40 @@
 	height: 193px;
 }
 
-.btr-explorer-button {
+
+.btr-explorer-button,
+.btr-download-button,
+.btr-content-button {
 	position: absolute;
 	top: 12px;
 	right: 12px;
 }
 
-.menu-shown .btr-explorer-button {
+.menu-shown .btr-explorer-button,
+.menu-shown .btr-download-button,
+.menu-shown .btr-content-button {
 	right: 50px;
+}
+
+.menu-shown.btr-explorer-btn-shown .btr-download-button,
+.menu-shown.btr-download-btn-shown .btr-content-button,
+.menu-shown.btr-explorer-btn-shown .btr-content-button {
+	right: 88px;
+}
+
+.menu-show.btr-explorer-btn-shown.btr-download-btn-shown .btr-content-button {
+	right: 126px;
 }
 
 #item-container.btr-explorer-btn-shown h2 {
 	margin-right: 100px;
 }
 
-.btr-icon-explorer {
+.btr-icon-explorer,
+.btr-icon-download,
+.btr-icon-content {
 	display: inline-block;
-	background-image: url('chrome-extension://__MSG_@@extension_id__/res/explorer.svg');
+	background-image: url('chrome-extension://__MSG_@@extension_id__/res/icons.svg');
 	background-repeat: no-repeat;
 	background-size: auto auto;
 	width: 28px;
@@ -34,9 +51,16 @@
 	vertical-align: middle;
 }
 
-.btr-icon-explorer:hover {
-	background-position: -28px 0;
+.btr-icon-download { background-position-y: -28px; }
+.btr-icon-content { background-position-y: -56px; }
+
+.btr-icon-explorer:hover,
+.btr-icon-download:hover,
+.btr-icon-content:hover {
+	background-position-x: -28px;
 }
+
+
 
 .btr-preview-container {
 	position: relative;
@@ -87,4 +111,34 @@
 .btr-preview-btn:hover {
 	cursor: pointer;
 	box-shadow: 0 1px 3px rgba(150,150,150,0.74);
+}
+
+
+.btr-bg-btn-cont {
+	position: absolute;
+	right: 6px;
+	bottom: 6px;
+}
+
+.btr-bg-btn {
+	display: inline-block;
+	width: 20px;
+	height: 20px;
+
+	border: 1px solid gray;
+	margin: 0 2px;
+	cursor: pointer;
+}
+
+.btr-bg-btn.selected {
+	outline: 1px solid gray;
+}
+
+.btr-bg-btn[data-color="white"], #AssetThumbnail[data-btr-bg="white"] { background: white; }
+.btr-bg-btn[data-color="black"], #AssetThumbnail[data-btr-bg="black"] { background: black; }
+.btr-bg-btn[data-color="none"], #AssetThumbnail[data-btr-bg="none"] {
+	background-color: white;
+	background-image: linear-gradient(45deg, #e6e6e8 25%, transparent 25%, transparent 75%, #e6e6e8 75%), linear-gradient(45deg, #e6e6e8 25%, transparent 25%, transparent 75%, #e6e6e8 75%);
+	background-size: 20px 20px;
+	background-position: 0 0, 10px 10px;
 }
