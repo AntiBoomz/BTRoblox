@@ -33,9 +33,7 @@
 		"*://*.rbxcdn.com/",
 		"storage",
 		"notifications",
-		"contextMenus",
-		"webRequest",
-		"webRequestBlocking"
+		"contextMenus"
 	],
 	"web_accessible_resources": [
 		"js/inject.js",
@@ -46,8 +44,8 @@
 	"content_scripts": [
 		{
 			"matches": ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
-			"css": [],
 			"js": ["js/utility.js", "js/main.js", "js/pages.js"],
+			"css": [],
 			"run_at": "document_start",
 			"all_frames": true
 		}

@@ -38,7 +38,8 @@ var settings = {
 	}
 }
 
-var pages = {
+
+const pages = {
 	avatar: {
 		matches: ["/my/avatar"],
 		css: ["avatar.css"]
@@ -105,6 +106,13 @@ var pages = {
 	}
 }
 
+const skipPages = [
+	"^/login/fulfillconstraint.aspx",
+	"^/build/upload",
+	"^/userads/",
+	"^/user-sponsorship/",
+	"^/Feeds/GetUserFeed"
+]
 
 var settingsLoaded = false
 var extensionDirectory = null

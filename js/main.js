@@ -1,12 +1,15 @@
 "use strict"
 
-var pageInit = {}
-var loggedInUser = -1
-var loggedInUserPromise = null
-
 var isDevExtension = chrome.runtime.id !== "hbkpclpemjeibhioopcebchdmohaieln"
 var pathname = window.location.pathname.toLowerCase()
 var getURL = chrome.runtime.getURL
+
+var hasDataLoaded = false
+var haveContentScriptsLoaded = false
+var settings, currentPage, blogFeedData;
+
+var loggedInUser = -1
+var loggedInUserPromise = null
 var Observer = CreateObserver(document)
 
 function CreateObserver(target, params) {
@@ -254,8 +257,6 @@ function onDocumentReady(cb) {
 	}
 }
 
-
-
 var BackgroundJS = {
 	_listeners: {},
 	_reqCounter: 0,
@@ -309,7 +310,7 @@ var BackgroundJS = {
 			})
 		})
 	}
-}; BackgroundJS._start();
+}
 
 var InjectJS = {
 	_queue: [],
@@ -339,42 +340,40 @@ var InjectJS = {
 			document.addEventListener("content." + action, realCallback)
 		})
 	}
-}; InjectJS.listen("INJECT_INIT", () => InjectJS._start());
-
-
-// Premade objects
-
-
-var friends = html`
-<li id="btr-navbar-friends" class="navbar-icon-item">
-	<a class="rbx-menu-item" href="/Friends.aspx">
-		<span class="icon-nav-friend-btr"></span>
-		<span class="btr-nav-notif rbx-text-navbar-right" style="display:none;"></span>
-	</a>
-</li>`
-
-var messages = html`
-<li id="btr-navbar-messages" class="navbar-icon-item">
-	<a class="rbx-menu-item" href="/My/Messages#!/inbox">
-		<span class="icon-nav-message-btr"></span>
-		<span class="btr-nav-notif rbx-text-navbar-right" style="display:none;"></span>
-	</a>
-</li>`
-
-var blogfeed = html`
-<div id="btr_blogfeed" style="display:none;">Blog feed enabled</div>`
-
-var settingsDiv = html`
-<div id="btr-settings">
-	<a class="btr-settings-toggle">x</a>
-	<iframe src="${getURL("options.html")}">
-</div>`
-
-var settingsIframe = settingsDiv.$find("iframe")
-
+}
 
 
 function Init() {
+	BackgroundJS._start()
+	InjectJS.listen("INJECT_INIT", () => InjectJS._start())
+
+	var friends = html`
+	<li id="btr-navbar-friends" class="navbar-icon-item">
+		<a class="rbx-menu-item" href="/Friends.aspx">
+			<span class="icon-nav-friend-btr"></span>
+			<span class="btr-nav-notif rbx-text-navbar-right" style="display:none;"></span>
+		</a>
+	</li>`
+
+	var messages = html`
+	<li id="btr-navbar-messages" class="navbar-icon-item">
+		<a class="rbx-menu-item" href="/My/Messages#!/inbox">
+			<span class="icon-nav-message-btr"></span>
+			<span class="btr-nav-notif rbx-text-navbar-right" style="display:none;"></span>
+		</a>
+	</li>`
+
+	var blogfeed = html`
+	<div id="btr_blogfeed" style="display:none;">Blog feed enabled</div>`
+
+	var settingsDiv = html`
+	<div id="btr-settings">
+		<a class="btr-settings-toggle">x</a>
+		<iframe src="${getURL("options.html")}">
+	</div>`
+
+	var settingsIframe = settingsDiv.$find("iframe")
+
 	loggedInUserPromise = new Promise(resolve => {
 		Observer.one("#nav-profile", nav => {
 			var matches = nav.getAttribute("href").match(/\/users\/(\d+)/)
@@ -384,7 +383,6 @@ function Init() {
 
 		onDocumentReady(() => resolve(-1))
 	})
-
 
 	Observer
 	.one("head", head => {
@@ -589,7 +587,6 @@ function Init() {
 
 		BackgroundJS.listen("blogfeed", updateBlogFeed)
 	}
-
 	
 	if(currentPage && pageInit[currentPage.name]) {
 		pageInit[currentPage.name].apply(currentPage, currentPage.matches)
@@ -599,3 +596,19 @@ function Init() {
 		InjectJS.send("INIT", settings, currentPage && currentPage.name, currentPage && currentPage.matches, Object.keys(templateListeners))
 	})
 }
+
+
+(function() {
+	if(document.contentType !== "text/html") return;
+
+	chrome.runtime.sendMessage({ name: "getdata", url: location.href }, data => {
+		if(!data) return;
+		hasDataLoaded = true
+
+		settings = data.settings
+		currentPage = data.currentPage
+		blogFeedData = data.blogFeedData
+
+		if(haveContentScriptsLoaded) Init();
+	})
+})();

@@ -1,10 +1,13 @@
 "use strict"
 
+var pageInit = {}
+var startDate = new Date()
+
 function GetRobloxTimeZone() {
-	var month = serverDate.getUTCMonth() + 1
-	var date = serverDate.getUTCDate()
-	var weekday = serverDate.getUTCDay()
-	var hour = serverDate.getUTCHours()
+	var month = startDate.getUTCMonth() + 1
+	var date = startDate.getUTCDate()
+	var weekday = startDate.getUTCDay()
+	var hour = startDate.getUTCHours()
 
 	// DST starts on the second Sunday in March at 02:00 CST, which is 08:00 UTC
 	// DST ends on the first Sunday in November at 01:00 CST, which is 07:00 UTC
@@ -1169,7 +1172,7 @@ pageInit.gamedetails = function(placeId) {
 	.one("#carousel-game-details", details => details.setAttribute("data-is-video-autoplayed-on-ready", "false"))
 	.one(".game-stats-container .game-stat", x => x.$find(".text-label").textContent === "Updated", stat => {
 		BackgroundJS.send("getProductInfo", placeId, data => {
-			stat.$find(".text-lead").textContent = new Date(data.Updated).relativeFormat("zz 'ago'", serverDate)
+			stat.$find(".text-lead").textContent = new Date(data.Updated).relativeFormat("zz 'ago'", startDate)
 		})
 	})
 	.one(".rbx-visit-button-closed, #MultiplayerVisitButton", btn => {
@@ -1345,7 +1348,7 @@ pageInit.groups = function() {
 		var fixedDate = RobloxTime(span.textContent)
 		if(fixedDate) {
 			span.setAttribute("btr-timestamp", "")
-			span.textContent = fixedDate.relativeFormat("zz 'ago'", serverDate)
+			span.textContent = fixedDate.relativeFormat("zz 'ago'", startDate)
 			span.title = fixedDate.format("M/D/YYYY h:mm:ss A")
 		}
 	})
@@ -2233,25 +2236,5 @@ pageInit.inventory = function(userId) {
 	}
 }
 
-;(() => {
-var match = document.cookie.match("BTR-Data=([^;]*)")
-if(match) {
-	var data = match[1]
-	data = decodeURIComponent(data)
-	data = JSON.parse(data)
-
-	if(!data.invalid) {
-		window.settings = data.settings
-		window.currentPage = data.currentPage
-		window.serverDate = new Date(data.serverDate)
-		window.blogFeedData = data.blogFeedData
-
-		document.documentElement.prepend(html`<link rel="stylesheet" href="${getURL("css/_merged.css")}?${location.href}">`)
-		Init()
-	} else {
-		console.log("invalid = true")
-	}
-} else {
-	console.log("No data cookie")
-}
-})();
+haveContentScriptsLoaded = true
+if(hasDataLoaded) Init();

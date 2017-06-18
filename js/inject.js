@@ -232,29 +232,21 @@
 					var curIndex = 0;
 					var maxSize = 0;
 
-					var realAjax = $.ajax;
-					var fakeAjax = function(data) {
-						var success = data.success;
-						data.success = function(i) {
-							curIndex = data.data.startindex;
-							maxSize = i.TotalCollectionSize;
-							Roblox.GameInstance.clearInstances()
-							updatePager();
-							success.apply(this,arguments);
-						}
-						return realAjax.apply(this,arguments);
-					};
-					
+					$.ajaxPrefilter(options => {
+						if(options.url === "/games/getgameinstancesjson") {
+							var success = options.success
+							options.success = function(i) {
+								curIndex = +options.url.match(/startindex=(\d+)/)[1]
+								maxSize = i.TotalCollectionSize
 
-					(function(fetchServers) {
-						Roblox.GameInstance.fetchServers = function(a,b) {
-							$.ajax = fakeAjax;
-							fetchServers.apply(this,arguments);
-							$.ajax = realAjax;
-						}
-					})(Roblox.GameInstance.fetchServers)
-					
+								Roblox.GameInstance.clearInstances()
+								updatePager()
 
+								return success.apply(this, arguments)
+							}
+						}
+					})
+					
 					$(".rbx-running-games-load-more").hide() // Hide Load More
 
 					var pager = $(
@@ -275,22 +267,22 @@
 						pager.find(".btr-server-input").val(curPage)
 						pager.find(".btr-server-max").text(maxPage)
 
-						pager.find(".btr-server-first").toggleClass("disabled",curPage<=1);
-						pager.find(".btr-server-prev").toggleClass("disabled",curPage<=1);
-						pager.find(".btr-server-last").toggleClass("disabled",curPage==maxPage);
-						pager.find(".btr-server-next").toggleClass("disabled",curPage==maxPage);
+						pager.find(".btr-server-first").toggleClass("disabled", curPage<=1);
+						pager.find(".btr-server-prev").toggleClass("disabled", curPage<=1);
+						pager.find(".btr-server-last").toggleClass("disabled", curPage==maxPage);
+						pager.find(".btr-server-next").toggleClass("disabled", curPage==maxPage);
 
 						$(".rbx-game-server-join").removeAttr("href")
 					}
 
-					pager.on("click",".btr-server-last:not(.disabled)",function() {
-						Roblox.GameInstance.fetchServers(placeId,maxSize-maxSize%10);
-					}).on("click",".btr-server-next:not(.disabled)",function() {
-						Roblox.GameInstance.fetchServers(placeId,Math.min(maxSize-maxSize%10,curIndex+10));
-					}).on("click",".btr-server-prev:not(.disabled)",function() {
-						Roblox.GameInstance.fetchServers(placeId,Math.max(0,curIndex-10));
-					}).on("click",".btr-server-first:not(.disabled)",function() {
-						Roblox.GameInstance.fetchServers(placeId,0);
+					pager.on("click",".btr-server-last:not(.disabled)", () => {
+						Roblox.GameInstance.fetchServers(placeId, maxSize-maxSize%10)
+					}).on("click",".btr-server-next:not(.disabled)", () => {
+						Roblox.GameInstance.fetchServers(placeId, Math.min(maxSize-maxSize%10, curIndex+10))
+					}).on("click",".btr-server-prev:not(.disabled)", () => {
+						Roblox.GameInstance.fetchServers(placeId, Math.max(0, curIndex-10))
+					}).on("click",".btr-server-first:not(.disabled)", () => {
+						Roblox.GameInstance.fetchServers(placeId, 0)
 					}).on({
 						blur:function() {
 							var maxPage = Math.floor(maxSize/10)+1

@@ -1,13 +1,5 @@
 "use strict"
 
-const skipPages = [
-	"^/login/fulfillconstraint.aspx",
-	"^/build/upload",
-	"^/userads/",
-	"^/user-sponsorship/",
-	"^/Feeds/GetUserFeed"
-]
-
 function parseLocation(url) {
 	var loc = document.createElement("a")
 	loc.href = url
@@ -31,92 +23,57 @@ function fileExists(pathString) {
 	return true
 }
 
-function shouldSkip(pathname) {
-	for(var i=0; i<skipPages.length; i++) {
-		if(pathname.search(skipPages[i]) !== -1)
-			return true;
-	}
+const themeCSS = {}
 
-	return false
-}
+chrome.runtime.onMessage.addListener((msg, sender, respond) => {
+	switch(msg.name) {
+		case "getdata":
+			var pathname = parseLocation(msg.url).pathname.toLowerCase()
 
-function quickInject(data) {
-	//console.log(data)
-	var location = parseLocation(data.url)
-	var pathname = location.pathname.toLowerCase()
+			if(skipPages.find(url => pathname.search(url) !== -1))
+				return respond(null);
 
-	var headers = data.responseHeaders
-	var initData = {}
+			var currentPage
 
-	if(headers.find(x => x.name.toLowerCase() === "content-type").value.indexOf("text/html") === -1 || shouldSkip(pathname)) {
-		initData.invalid = true
-	} else {
-		var currentPage = null
+			var cssDir = `css/`
+			var themeDir = `css/${settings.general.theme}/`
+			var cssFiles = [ cssDir + "main.css", themeDir + "main.css" ]
 
-		for(var name in pages) {
-			var page = pages[name]
-			for(var i in page.matches) {
-				var matches = pathname.match("^" + page.matches[i]);
-				if(matches) {
-					currentPage = { name: name, matches: matches.slice(1) }
-					break;
+			for(var name in pages) {
+				var page = pages[name]
+				for(var i in page.matches) {
+					var matches = pathname.match("^" + page.matches[i])
+					if(matches) {
+						currentPage = { name, matches: matches.slice(1)}
+						if(page.css) page.css.forEach(path => cssFiles.push(cssDir + path, themeDir + path));
+						break
+					}
 				}
 			}
-		}
 
-		initData.settings = settings
-		initData.currentPage = currentPage
-		initData.serverDate = Date.parse(headers.find(x => x.name.toLowerCase() === "date").value)
+			var cssParts = []
+			cssFiles.forEach(path => path in cssSources && cssParts.push(cssSources[path]))
+			var mergedCSS = cssParts.join("\n\n")
 
-		var blogfeed = fetchBlogFeed()
-		if(blogfeed)
-			initData.blogFeedData = blogfeed;
+			respond({
+				settings,
+				currentPage,
+				blogFeedData: fetchBlogFeed()
+			})
+
+			chrome.tabs.insertCSS(sender.tab.id, {
+				frameId: sender.frameId,
+				code: mergedCSS,
+				runAt: "document_start"
+			}, () => chrome.runtime.lastError)
+		break;
 	}
+})
 
-	headers.push({
-		name: "Set-Cookie",
-		value: `BTR-Data=${encodeURIComponent(JSON.stringify(initData))}; Domain=${location.host}; Path=${location.pathname}; Max-Age=10`
-	})
 
-	return { responseHeaders: headers }
-}
 
-var cssSources = {}
-var cachedMerges = {}
 
-function mergeCSS(data) {
-	var location = parseLocation(parseLocation(data.url).search.substring(1))
-	var pathname = location.pathname.toLowerCase()
-	var cssFiles = []
-
-	var themeDir = "css/" + settings.general.theme + "/"
-	cssFiles.push("css/main.css", themeDir + "main.css")
-
-	for(var name in pages) {
-		var page = pages[name]
-		for(var i in page.matches) {
-			var matches = pathname.match("^" + page.matches[i]);
-			if(matches) {
-				if(page.css) {
-					page.css.forEach(path => cssFiles.push("css/" + path, themeDir + path))
-				}
-				break;
-			}
-		}
-	}
-
-	var result = [ "data:text/css," ]
-	cssFiles.forEach(path => {
-		var src = cssSources[path]
-		if(src)
-			result.push(src);
-	})
-
-	var url = cachedMerges[pathname] = result.join("")
-
-	return { redirectUrl: url }
-}
-
+const cssSources = {}
 extensionDirectoryPromise.then(() => {
 	function recurse(dict, path) {
 		Object.keys(dict).forEach(name => {
@@ -125,7 +82,8 @@ extensionDirectoryPromise.then(() => {
 
 			if(value === true) {
 				request.get(chrome.runtime.getURL(filePath), data => {
-					cssSources[filePath] = data.replace(/\s*\n\s*|\/\*((?!\*\/).)*\*\//g, "")
+					data = data.replace(/\s*\n\s*|\/\*((?!\*\/).)*\*\//g, "")
+					cssSources[filePath] = `/* File: ${filePath} */\n${data}`
 				})
 			} else {
 				recurse(value, filePath)
@@ -133,13 +91,5 @@ extensionDirectoryPromise.then(() => {
 		})
 	}
 
-	recurse(extensionDirectory.css, "css")
-})
-
-const params = {
-	urls: ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
-	types: ["main_frame", "sub_frame"]
-}
-
-chrome.webRequest.onHeadersReceived.addListener(quickInject, params, [ "blocking", "responseHeaders" ])
-chrome.webRequest.onBeforeRequest.addListener(mergeCSS, { urls: [ chrome.runtime.getURL("css/_merged.css") + "*" ] }, [ "blocking" ])
+ 	recurse(extensionDirectory.css, "css")
+ })
