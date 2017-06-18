@@ -3,22 +3,13 @@
 
 var AssetCache = (() => {
 	var resolveCache = {}
-	var modelCache = {}
-	var meshCache = {}
-	var textCache = {}
-	var imgCache = {}
+	var assetCache = {}
 
-	var request = function(url, responseType, cb) {
+	function download(url, cb) {
 		var xhr = new XMLHttpRequest()
 		xhr.open("GET", url, true)
-		xhr.responseType = responseType
-
-		xhr.addEventListener("load", () => {
-			var result = xhr.response
-			xhr = null
-			cb(result)
-		}, { once: true })
-
+		xhr.responseType = "arraybuffer"
+		xhr.onload = () => cb(xhr.response)
 		xhr.send(null)
 	}
 
@@ -30,17 +21,21 @@ var AssetCache = (() => {
 		return AssetCache.resolveAsset(path, cb)
 	}
 
-	function createMethod(cache, responseType, constructor) {
-		return (path, cb) => {
-			resolvePath(path, resolved => {
-				if(!resolved)
-					return console.warn("Failed to resolve model " + path);
+	function createMethod(constructor) {
+		var cache = {}
 
-				var promise = cache[resolved]
+		return (path, cb) => {
+			resolvePath(path, url => {
+				if(!url) return console.warn("Failed to resolve model " + path);
+
+				var promise = cache[url]
 				if(!promise) {
-					promise = cache[resolved] = new Promise(resolve => {
-						request(resolved, responseType, x => {
-							try { constructor(x, resolve) }
+					promise = cache[url] = new Promise(resolve => {
+						var filePromise = assetCache[url]
+						if(!filePromise) filePromise = assetCache[url] = new Promise(resolve => download(url, resolve));
+
+						filePromise.then(buffer => {
+							try { constructor(buffer, resolve) }
 							catch(ex) { resolve(null); console.error("[AssetCache]", path, ex) }
 						})
 					})
@@ -63,8 +58,7 @@ var AssetCache = (() => {
 			if(!promise) {
 				promise = resolveCache[assetId] = new Promise(resolve => {
 					BackgroundJS.send("resolveAssetUrl", assetId, url => {
-						if(!url)
-							return console.warn("Failed to resolve asset " + assetId);
+						if(!url) return console.warn("Failed to resolve asset " + assetId);
 						resolve(url)
 					})
 				})
@@ -73,10 +67,13 @@ var AssetCache = (() => {
 			promise.then(cb)
 		},
 
-		loadModel: createMethod(modelCache, "arraybuffer", (buffer, cb) => cb(ANTI.ParseRBXM(buffer))),
-		loadMesh: createMethod(meshCache, "arraybuffer", (buffer, cb) => cb(ANTI.ParseMesh(buffer))),
-		loadText: createMethod(textCache, "text", (text, cb) => cb(text)),
-		loadImage: createMethod(imgCache, "blob", (blob, cb) => cb(URL.createObjectURL(blob)))
+		loadModel: createMethod((buffer, cb) => cb( ANTI.ParseRBXM(buffer) )),
+		loadMesh: createMethod((buffer, cb) => cb( ANTI.ParseMesh(buffer) )),
+		loadImage: createMethod((buffer, cb) => cb( URL.createObjectURL( new Blob([buffer]) ) )),
+
+		loadBuffer: createMethod((buffer, cb) => cb( buffer )),
+		loadBlob: createMethod((buffer, cb) => cb( new Blob([buffer]) )),
+		loadText: createMethod((buffer, cb) => cb( new TextDecoder().decode(buffer) ))
 	}
 
 	return AssetCache
