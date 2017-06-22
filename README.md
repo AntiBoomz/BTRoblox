@@ -1,15 +1,18 @@
 BTROBLOX
 ========
+<!---
 * [Roblox Mesh Format](#roblox-mesh-format)
   * [Text-Based Format](#text-based-format)
   * [Binary Format](#binary-format)
-* [Undocumented APIs](#undocumented-apis)
+-->
+* [Roblox Mesh Format](http://wiki.roblox.com/index.php?title=Roblox_Mesh_Format)
+* [Undocumented APIs](#roblox-web-apis)
   * [Group APIs](#group-apis)
   * [Friend APIs](#friend-apis)
   * [User APIs](#user-apis)
   * [Universe APIs](#universe-apis)
 
-
+<!---
 Roblox Mesh Format
 ==================
 
@@ -82,13 +85,14 @@ followed by **triCount** blocks of 12 bytes
 | 4     | UInt32 | Index of second vertex  |
 | 4     | UInt32 | Index of third vertex   |
 
+-->
 
-Undocumented APIs
+Roblox Web APIs
 =================
 
 Subdomains
 ----------
-#### API Docs
+<!--#### API Docs-->
 * https://api.roblox.com/docs
 * https://inventory.roblox.com/docs
 * https://avatar.roblox.com/docs
@@ -96,7 +100,7 @@ Subdomains
 * https://auth.roblox.com/docs
 * https://chat.roblox.com/docs
 * https://notifications.roblox.com/docs
-
+<!--
 #### Roblox Subdomains
 * https://roblox.com/
 * https://abuse.roblox.com/
@@ -161,7 +165,7 @@ Subdomains
 * https://www.sitetest1.robloxlabs.com/
 * https://www.sitetest2.robloxlabs.com/
 * https://www.sitetest3.robloxlabs.com/
-
+-->
 
 Group APIs
 ----------
