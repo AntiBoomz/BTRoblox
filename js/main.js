@@ -582,9 +582,7 @@ function Init() {
 			blogfeed.style.display = ""
 		}
 
-		if(typeof(blogFeedData) !== "undefined")
-			updateBlogFeed(blogFeedData);
-
+		if(blogFeedData) updateBlogFeed(blogFeedData);
 		BackgroundJS.listen("blogfeed", updateBlogFeed)
 	}
 	
