@@ -21,17 +21,21 @@
 
 .menu-shown .btr-explorer-button,
 .menu-shown .btr-download-button,
-.menu-shown .btr-content-button {
+.menu-shown .btr-content-button,
+.btr-explorer-btn-shown .btr-download-button,
+.btr-explorer-btn-shown .btr-content-button,
+.btr-download-btn-shown .btr-content-button {
 	right: 50px;
 }
 
 .menu-shown.btr-explorer-btn-shown .btr-download-button,
 .menu-shown.btr-download-btn-shown .btr-content-button,
-.menu-shown.btr-explorer-btn-shown .btr-content-button {
+.menu-shown.btr-explorer-btn-shown .btr-content-button,
+.btr-explorer-btn-shown.btr-download-btn-shown .btr-content-button {
 	right: 88px;
 }
 
-.menu-show.btr-explorer-btn-shown.btr-download-btn-shown .btr-content-button {
+.menu-shown.btr-explorer-btn-shown.btr-download-btn-shown .btr-content-button {
 	right: 126px;
 }
 
