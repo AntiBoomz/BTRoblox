@@ -46,7 +46,7 @@ const pages = {
 	},
 	catalog: {
 		matches: ["/catalog/$"],
-		css: []
+		css: ["catalog.css"]
 	},
 	configureplace: {
 		matches: ["/places/(\\d+)/update"],

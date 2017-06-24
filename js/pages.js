@@ -1334,6 +1334,54 @@ pageInit.gamedetails = function(placeId) {
 	})
 }
 
+pageInit.catalog = function() {
+	Observer.one("body", body => body.classList.add("btr-inventory"))
+
+	modifyTemplate("catalog-item-card", template => {
+		template.$find(".item-card-container").classList.add("btr-item-card-container")
+
+		var hover = html`<div class="btr-item-card-more">
+			<div class=text-secondary>
+				<div class="text-overflow item-card-label">Updated: <span class=btr-updated-label>Loading...</span></div>
+				<div class="text-overflow item-card-label">Sales: <span class=btr-sales-label>Loading...</span></div>
+				<div class="text-overflow item-card-label" ng-if="!item.Creator">By <span class="text-link creator-name" ng-click="creatorClick($event, 'https://www.roblox.com/users/1/profile')">ROBLOX</span></div>
+			</div>
+		</div>`
+		hover.append(template.$find(".creator-name").parentNode)
+		template.$find(".item-card-caption").append(hover)
+	})
+
+	var productCache = {}
+
+	document.$on("mouseover", ".btr-item-card-container", ev => {
+		var self = ev.currentTarget
+
+		if(self.dataset.btrHoverInit === "true") return;
+		self.dataset.btrHoverInit = "true"
+
+		var matches = self.closest("a").href.match(/\/catalog\/(\d+)/)
+		if(!matches) return;
+
+		var assetId = matches[1]
+		var promise = productCache[assetId] || (productCache[assetId] = new Promise(resolve => 
+			BackgroundJS.send("getProductInfo", assetId, resolve)
+		))
+
+		promise.then(data => {
+			var updated = new Date(data.Updated).relativeFormat("zz 'ago'", startDate)
+			var sales = data.Sales
+
+			var label = self.$find(".btr-updated-label")
+			label.textContent = updated
+			label.title = updated
+
+			var label = self.$find(".btr-sales-label")
+			label.textContent = sales
+			label.title = sales
+		})
+	})
+}
+
 pageInit.configureplace = function(placeId) {
 	if(!settings.versionhistory.enabled)
 		return;
