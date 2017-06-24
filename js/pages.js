@@ -776,7 +776,11 @@ pageInit.itemdetails = function(assetId) {
 		}
 
 		function enablePreview(readyCb) {
-			var preview = Create3dPreview(readyCb)
+			var preview = Create3dPreview((scene, preview) => {
+				if(readyCb) readyCb(scene, preview);
+
+				if(visible) scene.start();
+			})
 			var container = html`<div class="item-thumbnail-container btr-preview-container">`
 			container.append(preview.domElement)
 			var button = null
@@ -799,22 +803,55 @@ pageInit.itemdetails = function(assetId) {
 					}
 					oldContainer.style.display = "none"
 					oldContainer.after(container)
+					if(preview.scene) preview.scene.start();
 				} else {
 					container.remove()
 					oldContainer.style.display = ""
+					if(preview.scene) preview.scene.stop();
 				}
 			}
 
 			preview.createButtons = function() {
-				preview.enableBtn = html`<span class="btr-preview-btn rbx-btn-control-sm">\uD83D\uDC41</span>`
-				preview.disableBtn = preview.enableBtn.cloneNode(true)
+				var cont = html`<div class="btr-thumb-btn-container">
+					<div class="btr-thumb-btn rbx-btn-control-sm btr-hats-btn"><span class="btr-icon-hat"></span></div>
+					<div class="btr-thumb-btn rbx-btn-control-sm btr-body-btn"><span class="btr-icon-body"></span></div>
+					<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn checked"><span class="btr-icon-preview"></span></div>
+				</div>`
 
-				if(oldContainer)
-					oldContainer.$find("#AssetThumbnail").append(preview.enableBtn);
+				preview.domElement.append(cont)
 
-				preview.domElement.append(preview.disableBtn)
+				var outCont = html`<div class="btr-thumb-btn-container">
+					<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn"><span class="btr-icon-preview"></span></div>
+				</div>`
+
+				if(oldContainer) oldContainer.$find("#AssetThumbnail").append(outCont);
 
 				document.$on("click", ".btr-preview-btn", () => preview.toggleVisible())
+				.$on("click", ".btr-hats-btn", ev => {
+					if(!preview.scene) return;
+
+					var self = ev.currentTarget
+					var checked = !self.classList.contains("checked")
+					self.classList.toggle("checked", checked)
+
+					preview.scene.avatar.accessories.forEach(acc => {
+						if(acc.asset.assetId === assetId) return;
+						acc.obj.visible = !checked
+					})
+				})
+				.$on("click", ".btr-body-btn", ev => {
+					if(!preview.scene) return;
+
+					var self = ev.currentTarget
+					var checked = !self.classList.contains("checked")
+					self.classList.toggle("checked", checked)
+
+					preview.scene.avatar.bodyparts.forEach(bp => {
+						if(bp.asset.assetId === assetId) return;
+						bp.hidden = checked
+					})
+					preview.scene.avatar.refreshBodyParts()
+				})
 			}
 
 
@@ -822,8 +859,7 @@ pageInit.itemdetails = function(assetId) {
 				oldContainer = oldCont.parentNode
 				preview.toggleVisible(visible)
 
-				if(preview.enableBtn)
-					oldContainer.$find("#AssetThumbnail").append(preview.enableBtn);
+				if(preview.outCont)	oldContainer.$find("#AssetThumbnail").append(preview.outCont);
 			})
 
 

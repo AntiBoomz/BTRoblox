@@ -89,8 +89,6 @@
 	background-position-x: -28px;
 }
 
-
-
 .btr-preview-container {
 	position: relative;
 	height: 420px;
@@ -98,33 +96,51 @@
 	border: 1px #ddd solid;
 }
 
-.btr-preview-btn {
+
+.btr-thumb-btn-container {
 	position: absolute;
-	bottom: 0;
-	right: 0;
-	padding: 9px;
-	margin: 10px;
+	bottom: 7px;
+	right: 7px;
+}
+
+#AssetThumbnail[data-3d-thumbs-enabled] .btr-thumb-btn-container {
+	right: 53px;
+}
+
+
+.btr-thumb-btn {
+	position: relative;
+	display: inline-flex;
 	width: 40px;
 	height: 38px;
 
-	background: #fff;
+	margin: 3px;
 
+	justify-content: center;
+	align-items: center;
+
+	background: #fff;
 	border: 1px solid #B8B8B8;
 	border-radius: 3px;
-
-	text-align: center;
-	font-weight: 400;
-	font-size: 18px;
-
-	user-select: none;
 	transition: box-shadow .2 ease-in-out;
 }
 
-#AssetThumbnail[data-3d-thumbs-enabled] .btr-preview-btn {
-	right: 46px;
+.btr-thumb-btn [class^="btr-icon"] {
+	flex: 0 0 auto;
+	display: inline-block;
+	background-image: url('chrome-extension://__MSG_@@extension_id__/res/previewer/icons.svg');
+	background-repeat: no-repeat;
+	background-size: auto auto;
+	width: 28px;
+	height: 28px;
+	vertical-align: middle;
 }
 
-.btr-preview-container .btr-preview-btn:after {
+.btr-icon-hat { background-position: 0 0; }
+.btr-icon-body { background-position: -28px 0; }
+.btr-icon-preview { background-position: 0 -28px; }
+
+.btr-thumb-btn.checked:after {
 	content: "✕";
 	position: absolute;
 	top: 0;
@@ -134,10 +150,11 @@
 	text-align: center;
 	line-height: 38px;
 	pointer-events: none;
-	font-size: 20px;
+	font-size: 28px;
+	font-weight: 800;
 }
 
-.btr-preview-btn:hover {
+.btr-thumb-btn:hover {
 	cursor: pointer;
 	box-shadow: 0 1px 3px rgba(150,150,150,0.74);
 }

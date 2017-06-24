@@ -18,16 +18,9 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 		})
 	})
 
-	function RBXScene(optionsGiven) {
+	function RBXScene() {
 		if(!isReady)
 			throw new error("RBXScene is not ready yet");
-
-		var options = {
-			solidGround: true
-		}
-
-		if(optionsGiven)
-			Object.assign(options, optionsGiven);
 
 		this._prevRes = { width: -1, height: -1 }
 		this._updateListeners = []
@@ -36,7 +29,7 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 			antialias: true,
 			alpha: true
 		})
-		renderer.shadowMap.type = THREE.PCFSoftShadowMap
+		renderer.shadowMap.type = THREE.BasicShadowMap
 		renderer.shadowMap.enabled = true
 
 		var canvas = this.canvas = renderer.domElement
@@ -45,6 +38,7 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 		var controls = this.controls = new RBXScene.Controls(this)
 		var avatar = this.avatar = new RBXScene.Avatar()
 
+		this.update(() => avatar.animator && avatar.animator.update())
 		scene.add(avatar.model)
 
 		var ambientLight = new THREE.AmbientLight(0x909090)
@@ -58,41 +52,36 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 		var shadowLight = new THREE.DirectionalLight(0x404040)
 		shadowLight.position.set(0, 1, 0).normalize().multiplyScalar(10)
 		shadowLight.castShadow = true
-		shadowLight.shadow.mapSize.width = 1024
-		shadowLight.shadow.mapSize.height = 1024
+		shadowLight.shadow.mapSize.width = 512
+		shadowLight.shadow.mapSize.height = 512
+
+		shadowLight.shadow.camera.near = 1
+		shadowLight.shadow.camera.far = 10.2
+		shadowLight.shadow.camera.left = -2.5
+		shadowLight.shadow.camera.bottom = -2.5
+		shadowLight.shadow.camera.right = 2.5
+		shadowLight.shadow.camera.top = 2.5
+
 		scene.add(shadowLight)
 		
-		var ground = new THREE.Mesh(
-			new THREE.CylinderGeometry(2.5, 2.5, .1, 24),
+	
+		var stand = new THREE.Mesh(
+			new THREE.CylinderGeometry(2.5, 2.5, .1, 48),
 			new THREE.MeshLambertMaterial({ color: 0xb7a760 })
 		)
-		scene.add(ground)
+		stand.position.y = -.05
+		stand.receiveShadow = true
 
-		ground.position.y = -.05
-		ground.receiveShadow = true
-
-		if(options.solidGround) {
-			var base = new THREE.Mesh(
-				new THREE.PlaneGeometry(100, 100),
-				new THREE.MeshBasicMaterial({ color: 0xffffff })
-			)
-			scene.add(base)
-
-			base.rotation.x = -Math.PI/2
-			base.position.y = -.1005
-			base.receiveShadow = true
-		}
-
-		var shadowCaster = new THREE.Mesh(
+		scene.add(stand)
+	
+		var ground = new THREE.Mesh(
 			new THREE.PlaneGeometry(40, 40),
-			new THREE.ShadowMaterial()
+			new THREE.MeshLambertMaterial({ color: 0xffffff })
 		)
-		scene.add(shadowCaster)
+		ground.rotation.x = -Math.PI/2
+		ground.position.y = -.1
 
-		shadowCaster.material.opacity = .5
-		shadowCaster.rotation.x = -Math.PI/2
-		shadowCaster.position.y = -.1
-		shadowCaster.receiveShadow = true
+		scene.add(ground)
 
 
 		controls.mousedrag((moveX, moveY) => {
@@ -117,15 +106,6 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 			}
 		})
 
-		var innerUpdate = () => {
-			if(avatar)
-				avatar.animator.update();
-
-			this.update()
-			this._afId = requestAnimationFrame(innerUpdate)
-		}
-		this._afId = requestAnimationFrame(innerUpdate)
-
 		this.oncanvasresize = () => {
 			var width = canvas.clientWidth
 			var height = canvas.clientHeight
@@ -144,15 +124,7 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 	})
 
 	Object.assign(RBXScene.prototype, {
-		update: function(fn) {
-			if(arguments.length > 0) {
-				if(typeof(fn) !== "function")
-					throw new TypeError("Listener should be a function");
-
-				this._updateListeners.push(fn)
-				return;
-			}
-
+		_update() {
 			var parent = this.canvas.parentNode
 			if(parent) {
 				var width = parent.clientWidth
@@ -174,10 +146,42 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 
 			this.renderer.render(this.scene, this.camera)
 		},
-		remove: function() {
+		update(fn) {
+			if(arguments.length > 0) {
+				if(typeof(fn) !== "function")
+					throw new TypeError("Listener should be a function");
+
+				this._updateListeners.push(fn)
+				return;
+			}
+
+			console.log("Manual")
+			this._update()
+		},
+		remove() {
+			if(this.started) this.stop();
 			this.canvas.remove()
 			window.removeEventListener("resize", this.oncanvasresize)
+		},
+		start() {
+			console.assert(!this.started, "Already started")
+			this.started = true
+
+			if(!this.avatar.hasInit) this.avatar.init();
+
+			var innerUpdate = () => {
+				this._update()
+				cancelAnimationFrame(this._afId)
+				this._afId = requestAnimationFrame(innerUpdate)
+			}
+
+			this._afId = requestAnimationFrame(innerUpdate)
+		},
+		stop() {
+			console.assert(this.started, "Already stopped")
+			this.started = false
 			cancelAnimationFrame(this._afId)
+			delete this._afId
 		}
 	})
 
