@@ -188,11 +188,39 @@ function applySettings(data, initialLoad) {
 		}
 	}
 
+	if(initialLoad) {
+		const mirror = {
+			catalog: {
+				animationPreview: "itemdetails.animationPreview",
+				animationPreviewAutoLoad: "itemdetails.animationPreviewAutoLoad",
+				explorerButton: "itemdetails.explorerButton"
+			}
+		}
+
+		function recurseMirror(mirror, tar) {
+			for(var name in mirror) {
+				if(name in tar) {
+					if(tar[name] instanceof Object && mirror[name] instanceof Object) {
+						recurseMirror(mirror[name], tar[name])
+					} else {
+						var path = mirror[name].split(".")
+						var prop = path.pop()
+
+						var dest = data
+						if( path.every(i => dest=dest[i]) && !(prop in dest))
+							dest[prop] = tar[name], delete tar[name];
+
+					}
+				}
+			}
+		}
+
+		recurseMirror(mirror, data)
+	}
+
 	recurse(settings, data)
 
-	if(initialLoad) {
-		settingsLoadedListeners.forEach(fn => fn())
-	}
+	if(initialLoad) settingsLoadedListeners.forEach(fn => fn());
 
 	if(changedSomething) {
 		chrome.storage.local.set({ settings: settings })
@@ -221,7 +249,7 @@ chrome.runtime.onConnect.addListener((port) => {
 	})
 })
 
-chrome.storage.local.get(["settings"], (data) => {
+chrome.storage.local.get(["settings"], data => {
 	settingsLoaded = true
 	applySettings(data.settings, true)
 })

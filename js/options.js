@@ -100,7 +100,8 @@ var dict = {
 	
 	itemdetails: "Item Details Changes",
 	itemdetails_animationPreview: "Animation Previewer",
-	itemdetails_animationPreviewAutoLoad: "Auto-Load Animation Previewer"
+	itemdetails_animationPreviewAutoLoad: "Auto-Load Animation Previewer",
+	itemdetails_explorerButton: "Show Explorer Button"
 }
 
 var ul = html`<ul></ul>`
