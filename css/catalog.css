@@ -13,6 +13,18 @@
 }
 
 
+.btr-pager-input {
+	height: 32px;
+	width: 64px;
+	border: 1px solid #B8B8B8;
+	border-radius: 3px;
+
+	margin-right: 8px;
+	-webkit-appearance: none;
+	text-align: center;
+}
+
+
 @media (min-width: 768px) {
 	.btr-inventory .item-card-container:hover .btr-item-card-more {
 		display: block;
@@ -26,14 +38,22 @@
 
 	.btr-inventory .item-card .item-card-container {
 		float: left;
+		box-shadow: none;
+		border-radius: 0;
 	}
 
 	.btr-inventory .item-card .item-card-container:hover {
 		z-index: 2;
+		box-shadow: 0 1px 2px 0 rgba(25,25,25,0.75);
+		transition: none;
 	}
 
-	.btr-inventory .item-card-price:not(.margin-top-none) {
-		margin-top: 18px;
+	body.btr-inventory .item-card-price {
+		margin-top: 0/*18px*/;
+	}
+
+	.btr-inventory .item-card-thumb-container {
+		border: 1px solid #E3E3E3;
 	}
 }
 
