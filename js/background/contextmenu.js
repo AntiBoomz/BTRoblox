@@ -26,7 +26,7 @@ chrome.contextMenus.create({
 })
 
 chrome.contextMenus.create({
-	title: "Copy asset id",
+	title: "Copy page asset id",
 	contexts: ["page"],
 	documentUrlPatterns: itemUrlPatterns,
 	onclick: (info, tab) => copyToClipboard(info.pageUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library)\/)(\d+).*$/, "$1"))

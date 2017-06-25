@@ -13,19 +13,19 @@
 		}
 	}
 
-	function HijackAngular(module,objects) {
-		module._invokeQueue.forEach(function(x,i) {
+	function HijackAngular(module, objects) {
+		module._invokeQueue.forEach((x,i) => {
 			var newhandler = objects[x[2][0]]
 
 			if(typeof(newhandler) == "function") {
-				var data = x[2][1];
-				var oldhandler = data[data.length-1];
+				var data = x[2][1]
+				var oldhandler = data[data.length-1]
 
 				data[data.length-1] = function() {
-					return newhandler.apply(this,[oldhandler,arguments])
+					return newhandler.apply(this, [ oldhandler, arguments ])
 				}
 			}
-		});
+		})
 	}
 
 	var templates = []
@@ -214,6 +214,7 @@
 				} catch(ex) {}
 			}
 		}
+
 
 		if(typeof(Roblox) !== "undefined") {
 			if(!settings.general.showAds && Roblox.PrerollPlayer) {
