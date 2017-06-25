@@ -54,6 +54,11 @@
 
 	.btr-inventory .item-card-thumb-container {
 		border: 1px solid #E3E3E3;
+		border-radius: 0;
+	}
+
+	.btr-inventory .item-card-thumb {
+		border-radius: 0;
 	}
 }
 
