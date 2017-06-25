@@ -867,14 +867,14 @@ pageInit.itemdetails = function(assetId) {
 		}
 
 		execScripts(["js/RBXParser.js", "js/AssetCache.js"], () => {
-			if(settings.catalog.explorerButton && InvalidExplorableAssetTypeIds.indexOf(assetTypeId) === -1) {
+			if(settings.itemdetails.explorerButton && InvalidExplorableAssetTypeIds.indexOf(assetTypeId) === -1) {
 				Observer.one("#item-container", itemCont => {
 					if(assetTypeId !== 10 || itemCont.dataset.productId)
 						enableExplorer();
 				})
 			}
 
-			if(settings.catalog.animationPreview && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1) {
+			if(settings.itemdetails.animationPreview && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1) {
 				function parseAnimPackage(assetId, cb) {
 					AssetCache.loadModel(assetId, model => {
 						var dict = {}
@@ -923,7 +923,7 @@ pageInit.itemdetails = function(assetId) {
 
 				var preview = enablePreview(onPreviewReady)
 
-				if(settings.catalog.animationPreviewAutoLoad) {
+				if(settings.itemdetails.animationPreviewAutoLoad) {
 					loadAnimations()
 				} else {
 					preview.onInit = loadAnimations
@@ -1371,6 +1371,7 @@ pageInit.gamedetails = function(placeId) {
 }
 
 pageInit.catalog = function() {
+	if(!settings.catalog.enabled) return;
 	Observer.one("body", body => body.classList.add("btr-inventory"))
 
 	modifyTemplate("rbx-pagination", template => {

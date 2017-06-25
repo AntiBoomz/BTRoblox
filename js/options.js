@@ -96,8 +96,11 @@ var dict = {
 	gamedetails_showBadgeOwned: "Highlight Owned Badges",
 
 	catalog: "Catalog Changes",
-	catalog_animationPreview: "Animation Previewer",
-	catalog_animationPreviewAutoLoad: "Auto-Load Animation Previewer"
+	catalog_enabled: "Enabled",
+	
+	itemdetails: "Item Details Changes",
+	itemdetails_animationPreview: "Animation Previewer",
+	itemdetails_animationPreviewAutoLoad: "Auto-Load Animation Previewer"
 }
 
 var ul = html`<ul></ul>`

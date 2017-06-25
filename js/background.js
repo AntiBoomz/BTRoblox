@@ -11,6 +11,9 @@ var settings = {
 		chatEnabled: true
 	},
 	catalog: {
+		enabled: true
+	},
+	itemdetails: {
 		animationPreview: true,
 		animationPreviewAutoLoad: true,
 		explorerButton: false
