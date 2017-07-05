@@ -1,7 +1,5 @@
 "use strict"
 
-var commands = {}
-
 var rankNameCache = {}
 
 

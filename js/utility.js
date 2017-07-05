@@ -417,3 +417,214 @@ Date.prototype.format = function(format) {
 			: ret;
 	});
 };
+
+
+function CreateObserver(target, params) {
+	var options = Object.assign({ childList: true, subtree: true }, params || {})
+	var connected = false
+	var observeList = []
+
+	if(!options.permanent) {
+		onDocumentReady(() => {
+			observeList = []
+		})
+	}
+
+
+	var mo = new MutationObserver(mutations => {
+		for(var index=0; index < observeList.length; index++) {
+			var item = observeList[index]
+
+			switch(item.type) {
+				case "one":
+					var elem = null
+
+					if(!item.filter) {
+						elem = target.querySelector(item.selector)
+					} else {
+						//var elems = target.querySelectorAll(item.selector)
+
+						for(var i=0; i < mutations.length; i++) {
+							var addedNodes = mutations[i].addedNodes
+							for(var j=0; j < addedNodes.length; j++) {
+								var node = addedNodes[j]
+								if(node.nodeType !== 1 || !node.matches(item.selector)) continue; //  || Array.prototype.indexOf.call(elems, node) === -1
+								if(!item.filter(node)) continue;
+								
+								elem = node
+								break
+							}
+
+							if(elem) break;
+						}
+					}
+
+					if(!elem) break;
+					observeList.splice(index--, 1)
+
+					if(!item.partial) {
+						try { item.callback(elem) }
+						catch(ex) { console.error("[MutationObserver]", ex) }
+					} else {
+						item.whole.result[item.index] = elem
+
+						if(--item.whole.resultsLeft === 0) {
+							try { item.whole.callback.apply(null, item.whole.result) }
+							catch(ex) { console.error("[MutationObserver]", ex) }
+						}
+					}
+				break;
+				case "all":
+					//var elems = target.querySelectorAll(item.selector)
+					//if(!elems.length) break;
+
+					for(var i=0; i < mutations.length; i++) {
+						var addedNodes = mutations[i].addedNodes
+						for(var j=0; j < addedNodes.length; j++) {
+							var node = addedNodes[j]
+							if(node.nodeType !== 1 || !node.matches(item.selector)) continue; //  || Array.prototype.indexOf.call(elems, node) === -1
+							if(item.filter && !item.filter(node)) continue;
+
+							try { item.callback(node) }
+							catch(ex) { console.error("[MutationObserver]", ex) }
+						}
+					}
+				break;
+			}
+		}
+
+		if(connected && observeList.length === 0) {
+			connected = false
+			mo.disconnect()
+		}
+	})
+
+	function firstCheck(item) {
+		switch(item.type) {
+			case "one":
+				var elem
+
+				if(item.filter) {
+					var elems = target.querySelectorAll(item.selector)
+
+					for(var i=0; i < elems.length; i++) {
+						if(item.filter(elems[i])) {
+							elem = elems[i]
+							break
+						}
+					}
+				} else {
+					elem = target.querySelector(item.selector)
+				}
+
+				if(elem) {
+					try { item.callback(elem) }
+					catch(ex) { console.error("[MutationObserver]", ex) }
+
+					return true
+				}
+
+				break
+			case "all":
+				var elems = target.querySelectorAll(item.selector)
+
+				for(var i=0; i < elems.length; i++) {
+					if(item.filter && !item.filter(elems[i])) continue;
+
+					try { item.callback(elems[i]) }
+					catch(ex) { console.error("[MutationObserver]", ex) }
+				}
+				break
+		}
+
+		return false
+	}
+
+
+	return {
+		one() {
+			var selector = arguments[0]
+			var filter, callback
+
+			if(arguments.length === 2) {
+				callback = arguments[1]
+			} else if(arguments.length === 3) {
+				filter = arguments[1]
+				callback = arguments[2]
+			}
+
+			var items = []
+
+			if(Array.isArray(selector)) {
+				var whole = {
+					result: [],
+					resultsLeft: selector.length,
+					callback: callback
+				}
+
+				for(var i=0; i < selector.length; i++) {
+					var item = {
+						type: "one",
+
+						partial: true,
+						whole: whole,
+						index: i,
+
+						selector: selector[i],
+						filter: filter
+					}
+
+					items.push(item)
+				}
+			} else {
+				var item = {
+					type: "one",
+
+					selector: selector,
+					filter: filter,
+					callback: callback
+				}
+
+				items.push(item)
+			}
+
+			items.forEach(item => !firstCheck(item) && observeList.push(item))
+
+			if(!connected && observeList.length > 0) {
+				connected = true
+				mo.observe(target, options)
+			}
+
+			return this
+		},
+		all() {
+			var selector = arguments[0]
+			var filter, callback
+
+			if(arguments.length === 2) {
+				callback = arguments[1]
+			} else if(arguments.length === 3) {
+				filter = arguments[1]
+				callback = arguments[2]
+			}
+
+			var item = {
+				type: "all",
+
+				selector: selector,
+				filter: filter,
+				callback: callback
+			}
+
+			firstCheck(item)
+			observeList.push(item)
+
+			if(!connected) {
+				connected = true
+				mo.observe(target, options)
+			}
+
+			return this
+		}
+	}
+}

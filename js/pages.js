@@ -1,7 +1,7 @@
 "use strict"
 
-var pageInit = {}
-var startDate = new Date()
+const pageInit = {}
+const startDate = new Date()
 
 
 const InvalidExplorableAssetTypeIds = [1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 16, 21, 22, 32, 33, 34, 35, 37, 39, 40]
@@ -10,50 +10,169 @@ const WearableAssetTypeIds = [2, 8, 11, 12, 18, 27, 28, 29, 30, 31, 41, 42, 43, 
 const UniqueWearableAssetTypeIds = [2, 11, 12, 18, 27, 28, 29, 30, 31]
 const InvalidDownloadableAssetTypeIds = [5, 6, 7, 16, 21, 32, 33, 34, 35, 37]
 const AssetTypeIds = (() => {
-	var a = "Accessory | "
-	var b = "Animation | "
+	const acc = ["Hair", "Face", "Neck", "Shoulder", "Front", "Back", "Waist"]
+	const anim = ["Climb", "Death", "Fall", "Idle", "Jump", "Run", "Swim", "Walk", "Pose"]
 
-	return [ null,
+	acc.forEach((value, index) => { acc[index] = `Accessory | ${value}` })
+	anim.forEach((value, index) => { anim[index] = `Animation | ${value}` })
+
+	return [null,
 		"Image", "T-Shirt", "Audio", "Mesh", "Lua", "HTML", "Text", "Accessory | Hat", "Place", "Model", // 10
 		"Shirt", "Pants", "Decal", "null", "null", "Avatar", "Head", "Face", "Gear", "null", // 20
 		"Badge", "Group Emblem", "null", "Animation", "Arms", "Legs", "Torso", "Right Arm", "Left Arm", "Left Leg", // 30
 		"Right Leg", "Package", "YouTubeVideo", "Game Pass", "App", "null", "Code", "Plugin", "SolidModel", "MeshPart", // 40
-		a+"Hair", a+"Face", a+"Neck", a+"Shoulder", a+"Front", a+"Back", a+"Waist", // 47
-		b+"Climb", b+"Death", b+"Fall", b+"Idle", b+"Jump", b+"Run", b+"Swim", b+"Walk", b+"Pose" // 56
+		...acc, // 47
+		...anim // 56
 	]
 })();
 const ContainerAssetTypeIds = {
-	[2]: { typeId: 1, filter: x => x.ClassName === "ShirtGraphic", prop: "Graphic" },
-	[11]: { typeId: 1, filter: x => x.ClassName === "Shirt", prop: "ShirtTemplate" },
-	[12]: { typeId: 1, filter: x => x.ClassName === "Pants", prop: "PantsTemplate" },
-	[13]: { typeId: 1, filter: x => x.ClassName === "Decal", prop: "Texture" },
-	[18]: { typeId: 1, filter: x => x.ClassName === "Decal", prop: "Texture" },
-	[40]: { typeId: 4, filter: x => x.ClassName === "MeshPart", prop: "MeshID" },
+	2: { typeId: 1, filter: x => x.ClassName === "ShirtGraphic", prop: "Graphic" },
+	11: { typeId: 1, filter: x => x.ClassName === "Shirt", prop: "ShirtTemplate" },
+	12: { typeId: 1, filter: x => x.ClassName === "Pants", prop: "PantsTemplate" },
+	13: { typeId: 1, filter: x => x.ClassName === "Decal", prop: "Texture" },
+	18: { typeId: 1, filter: x => x.ClassName === "Decal", prop: "Texture" },
+	40: { typeId: 4, filter: x => x.ClassName === "MeshPart", prop: "MeshID" }
 }
 
 
+const avatarApi = {
+	baseUrl: "https://avatar.roblox.com/v1/",
+	get(url, ...args) {
+		let [data, cb] = args
+		if(typeof data === "function") {
+			cb = data
+			data = null
+		}
+
+		request({
+			method: "GET",
+			url: this.baseUrl + url,
+			params: data,
+			dataType: "json",
+			headers: { "X-CSRF-TOKEN": this.csrfToken },
+			success: json => cb(json),
+			failure: xhr => {
+				if(xhr.status === 403) {
+					this.csrfToken = xhr.getResponseHeader("X-CSRF-TOKEN")
+					this.get(url, data, cb)
+				}
+			}
+		})
+	},
+	post(url, ...args) {
+		let [data, cb] = args
+		if(typeof data === "function") {
+			cb = data
+			data = null
+		}
+
+		request({
+			method: "POST",
+			url: this.baseUrl + url,
+			json: JSON.stringify(data),
+			dataType: "json",
+			headers: { "X-CSRF-TOKEN": this.csrfToken },
+			success: json => cb(json),
+			failure: xhr => {
+				if(xhr.status === 403) {
+					this.csrfToken = xhr.getResponseHeader("X-CSRF-TOKEN")
+					this.post(url, data, cb)
+				}
+			}
+		})
+	},
+
+	getRules(cb) { this.get("avatar-rules", cb) },
+	getData(cb) { this.get("avatar", cb) },
+
+	setType(type, cb) { this.post("avatar/set-player-avatar-type", { playerAvatarType: type }, cb) },
+	setBodyColors(dict, cb) {	this.post("avatar/set-body-colors", dict, cb) },
+	setScales(width, height, cb) { this.post("avatar/set-scales", { width, height }, cb) },
+	setWearing(list, cb) { this.post("avatar/set-wearing-assets", { assetIds: list }, cb) },
+	wear(assetId, cb) { this.post("avatar/wear-asset", { assetId }, cb) },
+	unwear(assetId, cb) { this.post("avatar/unwear-asset", { assetId }, cb) },
+
+	createOutfit(data, cb) { this.post("outfits/create", data, cb) },
+	updateOutfit(id, data, cb) { this.post(`outfits/${id}/update`, data, cb) },
+	wearOutfit(id, cb) { this.post(`outfits/${id}/wear`, cb) },
+	deleteOutfit(id, cb) { this.post(`outfits/${id}/delete`, cb) },
+	getOutfitPage(page, amt, cb) {
+		loggedInUserPromise.then(userId => this.get(`users/${userId}/outfits`, { page, itemsPerPage: amt }, cb))
+	}
+}
+
+
+const alreadyLoaded = {}
+function execScripts(list, cb) {
+	for(let i = 0; i < list.length; i++) {
+		const path = list[i]
+		if(alreadyLoaded[path]) {
+			list.splice(i--, 1)
+		} else {
+			alreadyLoaded[path] = true
+		}
+	}
+
+	if(list.length === 0) {
+		cb()
+	} else {
+		BackgroundJS.send("execScript", list, cb)
+	}
+}
+
+let XsrfPromise;
+function getXsrfToken(callback) {
+	if(!XsrfPromise) {
+		XsrfPromise = new Promise(resolve => {
+			Observer.one(
+				"script:not([src])",
+				x => x.textContent.indexOf("XsrfToken.setToken") !== -1,
+				x => {
+					const match = x.textContent.match(/setToken\('(.*)'\)/)
+					if(match) {
+						resolve(match[1])
+					} else {
+						console.log("Getting XsrfToken failed")
+					}
+				}
+			)
+		})
+	}
+
+	XsrfPromise.then(callback)
+}
+
+function startDownload(blob, fileName) {
+	const link = document.createElement("a")
+	link.setAttribute("download", fileName || "file")
+	link.setAttribute("href", blob)
+	document.body.append(link)
+	link.click()
+	link.remove()
+}
+
 function GetRobloxTimeZone() {
-	var month = startDate.getUTCMonth() + 1
-	var date = startDate.getUTCDate()
-	var weekday = startDate.getUTCDay()
-	var hour = startDate.getUTCHours()
+	const month = startDate.getUTCMonth() + 1
+	const date = startDate.getUTCDate()
+	const weekday = startDate.getUTCDay()
+	const hour = startDate.getUTCHours()
 
 	// DST starts on the second Sunday in March at 02:00 CST, which is 08:00 UTC
 	// DST ends on the first Sunday in November at 01:00 CST, which is 07:00 UTC
 
-	var someSunday = date + 7 - weekday
-	var firstSunday = someSunday - Math.floor(someSunday/7)*7
-	var secondSunday = firstSunday + 7
+	const someSunday = date + 7 - weekday
+	const firstSunday = someSunday - Math.floor(someSunday / 7) * 7
+	const secondSunday = firstSunday + 7
 
 	if(
 		(month > 3 && month < 11) || // Within daytime months
-		(month == 3 && ( // Or march and DST has begun
-			date > secondSunday || 
-			(date == secondSunday && hour >= 8)
+		(month === 3 && ( // Or march and DST has begun
+			date > secondSunday ||
+			(date === secondSunday && hour >= 8)
 		)) ||
-		(month == 11 && ( // Or november and DST has not ended
+		(month === 11 && ( // Or november and DST has not ended
 			date < firstSunday ||
-			(date == firstSunday && hour < 7)
+			(date === firstSunday && hour < 7)
 		))
 	) {
 		return "CDT"
@@ -63,12 +182,12 @@ function GetRobloxTimeZone() {
 }
 
 function RobloxTime(dateString) {
-	dateString += " " + GetRobloxTimeZone()
-	return Date.parse(dateString) ? new Date(dateString) : false
+	return Date.parse(dateString) ? new Date(`${dateString} ${GetRobloxTimeZone()}`) : false
 }
 
+
 function createPager(noSelect) {
-	var pager = html`
+	const pager = html`
 	<div class="btr-pager-holder">
 		<ul class="pager">
 			<li class="pager-prev"><a><span class="icon-left"></span></a></li>
@@ -84,9 +203,9 @@ function createPager(noSelect) {
 		Page <input class="pager-cur" type="text" value=""> of <span class="pager-total"></span>`
 	}
 
-	var prev = pager.$find(".pager-prev")
-	var next = pager.$find(".pager-next")
-	var cur = pager.$find(".pager-cur")
+	const prev = pager.$find(".pager-prev")
+	const next = pager.$find(".pager-next")
+	const cur = pager.$find(".pager-cur")
 
 	Object.assign(pager, {
 		curPage: 1,
@@ -113,12 +232,12 @@ function createPager(noSelect) {
 	next.$find("a").$on("click", () => pager.onnextpage && pager.onnextpage())
 
 	if(!noSelect) {
-		var tot = pager.$find(".pager-total")
+		const tot = pager.$find(".pager-total")
 		pager.maxPage = 1
 
 		Object.assign(pager, {
-			onprevpage() { this.curPage>1 && this.onsetpage && this.onsetpage(this.curPage-1) },
-			onnextpage() { this.curPage<this.maxPage && this.onsetpage && this.onsetpage(this.curPage+1) },
+			onprevpage() { if(this.curPage > 1 && this.onsetpage) this.onsetpage(this.curPage - 1); },
+			onnextpage() { if(this.curPage < this.maxPage && this.onsetpage) this.onsetpage(this.curPage + 1); },
 
 			setMaxPage(maxPage) {
 				this.maxPage = maxPage
@@ -132,7 +251,7 @@ function createPager(noSelect) {
 
 		cur.$on("keydown", e => {
 			if(e.keyCode === 13 && pager.onsetpage) {
-				var page = parseInt(cur.value)
+				let page = parseInt(cur.value, 10)
 				if(isNaN(page)) return;
 
 				page = Math.max(1, Math.min(pager.maxPage, page))
@@ -150,7 +269,7 @@ function createPager(noSelect) {
 }
 
 function Create3dPreview(readyCb) {
-	var container = html`
+	const container = html`
 	<div style="width:100%;height:100%;">
 		<div class='btr-switch' style='position:absolute;top:6px;right:6px;'>
 			<div class='btr-switch-off'>R6</div>
@@ -170,18 +289,17 @@ function Create3dPreview(readyCb) {
 		</div>
 	</div>`
 
-	var modeSwitch = container.$find(".btr-switch input")
-	var dropdown = container.$find(".input-group-btn")
+	const modeSwitch = container.$find(".btr-switch input")
+	const dropdown = container.$find(".input-group-btn")
 
-	var rulesPromise = null
-	var isLoaded = false
-	var scene = null
+	let rulesPromise = null
+	let scene = null
 
-	var animDebounce = 0
-	var appDebounce = 0
+	let animDebounce = 0
+	let appDebounce = 0
 
-	var currentAnim = null
-	var preview = {
+	let currentAnim = null
+	const preview = {
 		domElement: container,
 		switch: modeSwitch,
 
@@ -189,51 +307,46 @@ function Create3dPreview(readyCb) {
 			console.assert(playerType === "R6" || playerType === "R15")
 			this.playerType = playerType
 
-			var isChecked = playerType === "R15"
+			const isChecked = playerType === "R15"
 			if(modeSwitch.checked !== isChecked) {
 				modeSwitch.checked = isChecked
 				modeSwitch.$trigger("change")
 			}
 
-			if(scene)
-				scene.avatar.setPlayerType(playerType);
+			if(scene) scene.avatar.setPlayerType(playerType);
 		},
 		loadDefaultAppearance(modifierCb) {
 			if(!rulesPromise) rulesPromise = new Promise(resolve => avatarApi.getRules(resolve));
 
-			avatarApi.getData((data) => {
-				if(modifierCb)
-					modifierCb(data);
+			avatarApi.getData(data => {
+				if(modifierCb) modifierCb(data);
 
 				this.applyAppearance(data)
 			})
 		},
 		applyAppearance(data) {
 			this.appearanceData = data
-			if(!scene)
-				return;
+			if(!scene) return;
 
 			if(!rulesPromise) rulesPromise = new Promise(resolve => avatarApi.getRules(resolve));
 
-			var appKey = ++appDebounce
+			const appKey = ++appDebounce
 			rulesPromise.then(rules => {
-				if(appDebounce !== appKey)
-					return;
+				if(appDebounce !== appKey) return;
 
-				if(data.playerAvatarType && !this.playerType)
-					preview.setPlayerType(data.playerAvatarType);
+				if(data.playerAvatarType && !this.playerType) preview.setPlayerType(data.playerAvatarType);
 
 				if(data.bodyColors) {
-					var bodyColors = {}
+					const bodyColors = {}
 					forEach(data.bodyColors, (value, name) => {
-						var index = name.toLowerCase().replace(/colorid$/, "")
-						var bodyColor = rules.bodyColorsPalette.find(x => x.brickColorId === value)
+						const index = name.toLowerCase().replace(/colorid$/, "")
+						const bodyColor = rules.bodyColorsPalette.find(x => x.brickColorId === value)
 						bodyColors[index] = bodyColor.hexColor
 					})
 
 					scene.avatar.setBodyColors(bodyColors)
 				}
-				
+
 				if(data.assets) {
 					data.assets.forEach(assetInfo => {
 						scene.avatar.addAsset(assetInfo.id, assetInfo.assetType.id)
@@ -242,11 +355,10 @@ function Create3dPreview(readyCb) {
 			})
 		},
 		addDropdown(id, name) {
-			var menu = dropdown.$find(".dropdown-menu")
+			const menu = dropdown.$find(".dropdown-menu")
 			menu.append(html`<li data-name="${name}" data-assetId="${id}"><a href="#">${name}</a></li>`)
 
-			if(menu.children.length === 2)
-				dropdown.style.display = "";
+			if(menu.children.length === 2) dropdown.style.display = "";
 		},
 		setDropdown(name) {
 			dropdown.$find("[data-bind='label']").textContent = name
@@ -255,22 +367,14 @@ function Create3dPreview(readyCb) {
 			function playAnimation(anim) {
 				if(matchPlayerType) {
 					const R15BodyPartNames = [
-						"LeftFoot", "LeftHand", "LeftLowerArm", "LeftLowerLeg", "LeftUpperArm", "LeftUpperLeg", "LowerTorso", 
+						"LeftFoot", "LeftHand", "LeftLowerArm", "LeftLowerLeg", "LeftUpperArm", "LeftUpperLeg", "LowerTorso",
 						"RightFoot", "RightHand", "RightLowerArm", "RightLowerLeg", "RightUpperArm", "RightUpperLeg", "UpperTorso"
 					]
 
-					var isR15 = false
-
-					for(var name in anim.keyframes) {
-						if(R15BodyPartNames.indexOf(name) !== -1) {
-							isR15 = true
-							break;
-						}
-					}
-					
+					const isR15 = R15BodyPartNames.some(x => x in anim.keyframes)
 					preview.setPlayerType(isR15 ? "R15" : "R6")
 				}
-				
+
 				currentAnim = anim
 				if(scene) {
 					scene.avatar.animator.play(anim)
@@ -278,7 +382,7 @@ function Create3dPreview(readyCb) {
 			}
 
 
-			var animIndex = ++animDebounce
+			const animIndex = ++animDebounce
 
 			AssetCache.loadModel(animId, model => {
 				if(!model) {
@@ -287,11 +391,12 @@ function Create3dPreview(readyCb) {
 					return
 				}
 
-				if(animDebounce !== animIndex)
-					return;
+				if(animDebounce !== animIndex) return;
 
-				try { var anim = ANTI.ParseAnimationData(model) } 
-				catch(ex) {
+				let anim
+				try {
+					anim = ANTI.ParseAnimationData(model)
+				} catch(ex) {
 					console.log("Failed to load animation:", ex)
 					if(cb) cb(ex);
 					return
@@ -306,16 +411,16 @@ function Create3dPreview(readyCb) {
 	}
 
 	dropdown.$on("click", ".dropdown-menu>li[data-name]", e => {
-		var animName = e.currentTarget.getAttribute("data-name")
-		var animId = e.currentTarget.getAttribute("data-assetId")
+		const animName = e.currentTarget.getAttribute("data-name")
+		const animId = e.currentTarget.getAttribute("data-assetId")
 		if(animName && animId) {
 			preview.setDropdown(animName)
 			preview.playAnimation(animId)
 		}
 	})
 
-	modeSwitch.$on("change", e => {
-		var playerType = modeSwitch.checked ? "R15": "R6"
+	modeSwitch.$on("change", () => {
+		const playerType = modeSwitch.checked ? "R15" : "R6"
 		preview.setPlayerType(playerType)
 	})
 
@@ -324,17 +429,10 @@ function Create3dPreview(readyCb) {
 			scene = window.scene = preview.scene = new RBXScene()
 			container.append(scene.canvas)
 
-			if(preview.playerType)
-				scene.avatar.setPlayerType(preview.playerType);
-
-			if(currentAnim)
-				scene.avatar.animator.play(currentAnim);
-
-			if(preview.appearanceData)
-				preview.applyAppearance(preview.appearanceData);
-
-			if(readyCb)
-				readyCb(scene, preview);
+			if(preview.playerType) scene.avatar.setPlayerType(preview.playerType);
+			if(currentAnim) scene.avatar.animator.play(currentAnim);
+			if(preview.appearanceData) preview.applyAppearance(preview.appearanceData);
+			if(readyCb) readyCb(scene, preview);
 		})
 	})
 
@@ -342,75 +440,22 @@ function Create3dPreview(readyCb) {
 }
 
 function CreateNewVersionHistory(assetId, assetType) {
-	var versionHistory = html`<div class="btr-versionHistory"></div>`
-	var versionList = html`<ul class="btr-versionList"></ul>`
-	var pager = createPager()
+	const versionHistory = html`<div class="btr-versionHistory"></div>`
+	const versionList = html`<ul class="btr-versionList"></ul>`
+	const pager = createPager()
+	const pageSize = 15
 
-	var isBusy = false
-	var pageSize = 15
-	var actualPageSize
-
-	pager.onsetpage = loadPage
-
-	document.documentElement.$on("click", ".btr-version-revert", e => {
-		if(isBusy) return;
-
-		var versionId = parseInt(e.currentTarget.getAttribute("data-versionId"))
-		if(isNaN(versionId)) return;
-
-		isBusy = true
-
-		getXsrfToken(token => request({
-			method: "POST",
-			url: "/places/revert",
-			data: { assetVersionID: versionId },
-			headers: { "X-CSRF-TOKEN": token },
-			success: () => {
-				isBusy = false
-				loadPage(1)
-			},
-			error: () => {
-				isBusy = false
-			}
-		}))
-	})
-	.$on("click", ".btr-version-download", e => {
-		if(isBusy)
-			return;
-		
-		var version = parseInt(e.currentTarget.getAttribute("data-version"))
-		if(isNaN(version))
-			return;
-
-		isBusy = true
-
-		var placeNameInput = $("#basicSettings>input")
-		var placeName = (placeNameInput ? placeNameInput.value : "place").replace(/[^\w \-\.]+/g,"").replace(/ {2,}/g," ").trim()
-		var fileExt = assetType === "place" ? "rbxl" : "rbxm"
-		var fileName = `${placeName}-${version}.${fileExt}`
-
-		BackgroundJS.send("resolveAssetUrl", { id: assetId, version }, url => {
-			if(!url) return console.warn("Failed to resolve asset");
-
-			request({
-				url,
-				dataType: "blob",
-				success: blob => {
-					isBusy = false
-					startDownload(URL.createObjectURL(blob), fileName)
-				}
-			})
-		})
-	})
+	let isBusy = false
+	let actualPageSize
 
 	function getPage(page, target) {
 		return new Promise(resolve => {
-			var url = `//api.roblox.com/assets/${assetId}/versions?page=${page}`
+			const url = `//api.roblox.com/assets/${assetId}/versions?page=${page}`
 			request.getJson(url, json => {
 				if(Array.isArray(target)) {
-					var offset = (page-1) * actualPageSize
+					const offset = (page - 1) * actualPageSize
 
-					json.forEach((v,i) => {
+					json.forEach((v, i) => {
 						target[offset + i] = v
 					})
 				} else {
@@ -422,38 +467,14 @@ function CreateNewVersionHistory(assetId, assetType) {
 		})
 	}
 
-	function loadPage(page) {
-		if(isBusy) return;
-		isBusy = true
-
-		var promises = []
-		var items = []
-		var itemStart = (page-1) * pageSize
-		var itemEnd = itemStart + pageSize - 1
-
-		var pageFrom = Math.floor(itemStart/actualPageSize) + 1
-		var pageTo = Math.floor(itemEnd/actualPageSize) + 1
-
-		for(var i=pageFrom; i <= pageTo; i++) {
-			promises.push( getPage(i, items) )
-		}
-
-		Promise.all(promises).then(() => {
-			constructPage(items, itemStart, itemEnd)
-			isBusy = false
-			pager.setPage(page)
-		})
-	}
-
-	function constructPage(items, itemStart, itemEnd){
+	function constructPage(items, itemStart, itemEnd) {
 		versionList.innerHTML = ""
 
-		for(var i=itemStart; i <= itemEnd; i++) {
-			var item = items[i]
-			if(!item)
-				break;
+		for(let i = itemStart; i <= itemEnd; i++) {
+			const item = items[i]
+			if(!item) break;
 
-			var card = html`
+			const card = html`
 			<li class="list-item">
 				<div class="version-card">
 					<div class="version-dropdown">
@@ -492,17 +513,94 @@ function CreateNewVersionHistory(assetId, assetType) {
 			versionList.append(card)
 		}
 
-		var script = document.createElement("script")
+		const script = document.createElement("script")
 		script.innerHTML = "Roblox.BootstrapWidgets.SetupPopover()"
 		versionList.append(script)
 	}
 
+
+	function loadPage(page) {
+		if(isBusy) return;
+		isBusy = true
+
+		const promises = []
+		const items = []
+		const itemStart = (page - 1) * pageSize
+		const itemEnd = itemStart + pageSize - 1
+
+		const pageFrom = Math.floor(itemStart / actualPageSize) + 1
+		const pageTo = Math.floor(itemEnd / actualPageSize) + 1
+
+		for(let i = pageFrom; i <= pageTo; i++) {
+			promises.push(getPage(i, items))
+		}
+
+		Promise.all(promises).then(() => {
+			constructPage(items, itemStart, itemEnd)
+			isBusy = false
+			pager.setPage(page)
+		})
+	}
+
+	document.documentElement
+	.$on("click", ".btr-version-revert", e => {
+		if(isBusy) return;
+
+		const versionId = parseInt(e.currentTarget.getAttribute("data-versionId"), 10)
+		if(isNaN(versionId)) return;
+
+		isBusy = true
+
+		getXsrfToken(token => request({
+			method: "POST",
+			url: "/places/revert",
+			data: { assetVersionID: versionId },
+			headers: { "X-CSRF-TOKEN": token },
+			success: () => {
+				isBusy = false
+				loadPage(1)
+			},
+			error: () => {
+				isBusy = false
+			}
+		}))
+	})
+	.$on("click", ".btr-version-download", e => {
+		if(isBusy) return;
+
+		const version = parseInt(e.currentTarget.getAttribute("data-version"), 10)
+		if(isNaN(version)) return;
+
+		isBusy = true
+
+		const placeNameInput = $("#basicSettings>input")
+		const placeName = (placeNameInput ? placeNameInput.value : "place").replace(/[^\w \-.]+/g, "").replace(/ {2,}/g, " ").trim()
+		const fileExt = assetType === "place" ? "rbxl" : "rbxm"
+		const fileName = `${placeName}-${version}.${fileExt}`
+
+		BackgroundJS.send("resolveAssetUrl", { id: assetId, version }, url => {
+			if(!url) return console.warn("Failed to resolve asset");
+
+			request({
+				url,
+				dataType: "blob",
+				success: blob => {
+					isBusy = false
+					startDownload(URL.createObjectURL(blob), fileName)
+				}
+			})
+		})
+	})
+
+	pager.onsetpage = loadPage
+
+
 	isBusy = true
 	getPage(1, json => {
 		actualPageSize = json.length
-		pager.setMaxPage(Math.floor((json[0].VersionNumber-1)/pageSize) + 1)
+		pager.setMaxPage(Math.floor((json[0].VersionNumber - 1) / pageSize) + 1)
 		pager.setPage(1)
-		constructPage(json, 0, pageSize-1)
+		constructPage(json, 0, pageSize - 1)
 		isBusy = false
 	})
 
@@ -513,123 +611,9 @@ function CreateNewVersionHistory(assetId, assetType) {
 }
 
 
-var XsrfPromise;
-function getXsrfToken(callback) {
-	if(!XsrfPromise) {
-		XsrfPromise = new Promise(resolve => {
-			Observer.one(
-				"script:not([src])",
-				x => x.textContent.indexOf("XsrfToken.setToken") !== -1,
-				x => {
-					var match = x.textContent.match(/setToken\('(.*)'\)/)
-					if(match) {
-						resolve(match[1])
-					} else {
-						console.log("Getting XsrfToken failed")
-					}
-				}
-			)
-		})
-	}
-
-	XsrfPromise.then(callback)
-}
-
-function startDownload(blob, fileName) {
-	var link = document.createElement("a")
-	link.setAttribute("download", fileName || "file")
-	link.setAttribute("href", blob)
-	document.body.append(link)
-	link.click()
-	link.remove()
-}
-
-var alreadyLoaded = {}
-function execScripts(list, cb) {
-	for(var i=0; i<list.length; i++) {
-		var path = list[i]
-		if(alreadyLoaded[path]) {
-			list.splice(i--, 1)
-		} else {
-			alreadyLoaded[path] = true
-		}
-	}
-
-	if(list.length === 0) {
-		cb()
-	} else {
-		BackgroundJS.send("execScript", list, cb)
-	}
-}
-
-
-
-
-
-var avatarApi = {
-	baseUrl: "https://avatar.roblox.com/v1/",
-	get: function(url, data, cb) {
-		if(typeof(data) == "function")
-			cb = data, data = null;
-
-		request({
-			method: "GET",
-			url: this.baseUrl + url,
-			params: data,
-			dataType: "json",
-			headers: { "X-CSRF-TOKEN": this.csrfToken },
-			success: json => cb(json),
-			failure: xhr => {
-				if(xhr.status === 403) {
-					this.csrfToken = xhr.getResponseHeader("X-CSRF-TOKEN")
-					this.get(url, data, cb)
-				}
-			}
-		})
-	},
-	post: function(url, data, cb) {
-		if(typeof(data) == "function")
-			cb = data, data = null;
-
-		request({
-			method: "POST",
-			url: this.baseUrl + url,
-			json: JSON.stringify(data),
-			dataType: "json",
-			headers: { "X-CSRF-TOKEN": this.csrfToken },
-			success: json => cb(json),
-			failure: xhr => {
-				if(xhr.status == 403) {
-					this.csrfToken = xhr.getResponseHeader("X-CSRF-TOKEN")
-					this.post(url, data, cb)
-				}
-			}
-		})
-	},
-
-	getRules: function(cb) { this.get("avatar-rules", cb) },
-	getData: function(cb) { this.get("avatar", cb) },
-
-	setType: function(type, cb) { this.post("avatar/set-player-avatar-type", {playerAvatarType: type}, cb) },
-	setBodyColors: function(dict, cb) {	this.post("avatar/set-body-colors", dict, cb) },
-	setScales: function(width, height, cb) { this.post("avatar/set-scales", {width: width, height: height}, cb) },
-	setWearing: function(list, cb) { this.post("avatar/set-wearing-assets", {assetIds: list}, cb) },
-	wear: function(assetId, cb) { this.post("avatar/wear-asset", {assetId: assetId}, cb) },
-	unwear: function(assetId, cb) { this.post("avatar/unwear-asset", {assetId: assetId}, cb) },
-
-	createOutfit: function(data, cb) { this.post("outfits/create", data, cb) },
-	updateOutfit: function(id, data, cb) { this.post("outfits/"+id+"/update", data, cb) },
-	wearOutfit: function(id, cb) { this.post("outfits/"+id+"/wear", cb) },
-	deleteOutfit: function(id, cb) { this.post("outfits/"+id+"/delete", cb) },
-	getOutfitPage: function(page, amt, cb) { 
-		loggedInUserPromise.then((userId) => this.get("users/"+userId+"/outfits", {page:page, itemsPerPage:amt}, cb))
-	}
-}
-
-
 pageInit.home = function() {
 	Observer.all(".feeds .list-item .text-date-hint", span => {
-		var fixedDate = RobloxTime(span.textContent.replace("|",""))
+		const fixedDate = RobloxTime(span.textContent.replace("|", ""))
 		if(fixedDate) {
 			span.setAttribute("btr-timestamp", "")
 			span.textContent = fixedDate.format("MMM D, YYYY | hh:mm A")
@@ -641,16 +625,16 @@ pageInit.messages = function() {
 	Observer.one(".roblox-messages-container", container => {
 		CreateObserver(container, { permanent: true })
 		.all(".messageDivider", row => {
-			var span = row.$find(".message-summary-date")
-			var fixedDate = RobloxTime(span.textContent.replace("|",""))
+			const span = row.$find(".message-summary-date")
+			const fixedDate = RobloxTime(span.textContent.replace("|", ""))
 			if(fixedDate) {
 				span.setAttribute("btr-timestamp", "")
 				span.textContent = fixedDate.format("MMM D, YYYY | hh:mm A")
 			}
 		})
 		.all(".roblox-message-body", msg => {
-			var span = msg.$find(".subject .date")
-			var fixedDate = RobloxTime(span.textContent.replace("|",""))
+			const span = msg.$find(".subject .date")
+			const fixedDate = RobloxTime(span.textContent.replace("|", ""))
 			if(fixedDate) {
 				span.setAttribute("btr-timestamp", "")
 				span.textContent = fixedDate.format("MMM D, YYYY | hh:mm A")
@@ -659,7 +643,7 @@ pageInit.messages = function() {
 	})
 
 	modifyTemplate("messages-nav", template => {
-		var curPage = template.$find(".CurrentPage")
+		const curPage = template.$find(".CurrentPage")
 		curPage.classList.add("btr-CurrentPage")
 		curPage.setAttribute("contentEditable", true)
 		curPage.setAttribute("ng-keydown", "keyDown($event)")
@@ -675,19 +659,18 @@ pageInit.develop = function() {
 	Observer.all("#MyCreationsTab .item-table[data-in-showcase][data-type='universes']", table => {
 		table.$find(".details-table>tbody").append(html`<tr><td><a class='btr-showcase-status'/></td></tr>`)
 
-		table.$on("click", ".btr-showcase-status", e => {
-			var placeId = parseInt(table.getAttribute("data-rootplace-id"))
-			var isVisible = table.getAttribute("data-in-showcase").toLowerCase() === "true"
+		table.$on("click", ".btr-showcase-status", () => {
+			const placeId = parseInt(table.getAttribute("data-rootplace-id"), 10)
+			const isVisible = table.getAttribute("data-in-showcase").toLowerCase() === "true"
 
-			if(isNaN(placeId))
-				return;
+			if(isNaN(placeId)) return;
 
 			getXsrfToken(token => {
 				request({
 					method: "POST",
 					url: "/game/toggle-profile",
 					data: {
-						placeId: placeId,
+						placeId,
 						addToProfile: !isVisible
 					},
 					dataType: "json",
@@ -704,15 +687,11 @@ pageInit.develop = function() {
 }
 
 pageInit.itemdetails = function(assetId) {
-	var assetTypePromise = new Promise(resolve => {
-		Observer.one(".item-type-field-container .field-content", label => resolve(label.textContent.trim()))
-	})
-
 	Observer.one("#AjaxCommentsContainer .comments", cont => {
 		CreateObserver(cont, { permanent: true, subtree: false })
 		.all(".comment-item", comment => {
-			var span = comment.$find(".text-date-hint")
-			var fixedDate = RobloxTime(span.textContent.replace("|",""))
+			const span = comment.$find(".text-date-hint")
+			const fixedDate = RobloxTime(span.textContent.replace("|", ""))
 			if(fixedDate) {
 				span.setAttribute("btr-timestamp", "")
 				span.textContent = fixedDate.format("MMM D, YYYY | hh:mm A")
@@ -720,23 +699,22 @@ pageInit.itemdetails = function(assetId) {
 		})
 	})
 	.one(".item-type-field-container .field-content", typeLabel => {
-		var assetTypeName = typeLabel.textContent.trim()
-		var assetTypeId = AssetTypeIds.indexOf(assetTypeName)
+		const assetTypeName = typeLabel.textContent.trim()
+		const assetTypeId = AssetTypeIds.indexOf(assetTypeName)
 
 		if(assetTypeId === -1) {
-			if(isDevExtension)
-				alert("Unknown asset type " + assetTypeName);
+			if(isDevExtension) alert(`Unknown asset type ${assetTypeName}`);
 
 			return;
 		}
 
 		function enableExplorer() {
-			var explorerInitialized = false
-			var explorer = null
+			let explorerInitialized = false
+			let explorer = null
 
-			execScripts(["js/Explorer.js"], () => explorer = new Explorer())
+			execScripts(["js/Explorer.js"], () => { explorer = new Explorer() })
 
-			var btn = html`
+			const btn = html`
 			<div>
 				<a class="btr-explorer-button" data-toggle="popover" data-bind="btr-explorer-content">
 					<span class="btr-icon-explorer"</span>
@@ -752,8 +730,7 @@ pageInit.itemdetails = function(assetId) {
 			})
 
 			btn.$on("click", () => {
-				if(!explorer)
-					return false;
+				if(!explorer) return false;
 
 				if(!explorerInitialized) {
 					explorerInitialized = true
@@ -768,38 +745,34 @@ pageInit.itemdetails = function(assetId) {
 				}
 
 				setTimeout(() => {
-					var parent = $("div:not(.rbx-popover-content)>.btr-explorer-parent")
-					if(parent)
-						parent.replaceWith(explorer.domElement);
+					const parent = $("div:not(.rbx-popover-content)>.btr-explorer-parent")
+					if(parent) parent.replaceWith(explorer.domElement);
 				}, 0)
 			})
 		}
 
 		function enablePreview(readyCb) {
-			var preview = Create3dPreview((scene, preview) => {
+			const container = html`<div class="item-thumbnail-container btr-preview-container">`
+			let visible = false
+			let initialized = false
+			let oldContainer = null
+
+			const preview = Create3dPreview(scene => {
 				if(readyCb) readyCb(scene, preview);
 
 				if(visible) scene.start();
 			})
-			var container = html`<div class="item-thumbnail-container btr-preview-container">`
 			container.append(preview.domElement)
-			var button = null
-
-			var visible = false
-			var initialized = false
-			var oldContainer = null
 
 			preview.toggleVisible = function(bool) {
-				visible = typeof(bool) === "boolean" ? bool : !visible
-				if(!oldContainer)
-					return;
+				visible = typeof bool === "boolean" ? bool : !visible
+				if(!oldContainer) return;
 
 				if(visible) {
-					if(!initialized){
+					if(!initialized) {
 						initialized = true
 
-						if(preview.onInit)
-							preview.onInit();
+						if(preview.onInit) preview.onInit();
 					}
 					oldContainer.style.display = "none"
 					oldContainer.after(container)
@@ -812,7 +785,7 @@ pageInit.itemdetails = function(assetId) {
 			}
 
 			preview.createButtons = function() {
-				var cont = html`<div class="btr-thumb-btn-container">
+				const cont = html`<div class="btr-thumb-btn-container">
 					<div class="btr-thumb-btn rbx-btn-control-sm btr-hats-btn"><span class="btr-icon-hat"></span></div>
 					<div class="btr-thumb-btn rbx-btn-control-sm btr-body-btn"><span class="btr-icon-body"></span></div>
 					<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn checked"><span class="btr-icon-preview"></span></div>
@@ -820,7 +793,7 @@ pageInit.itemdetails = function(assetId) {
 
 				preview.domElement.append(cont)
 
-				var outCont = html`<div class="btr-thumb-btn-container">
+				const outCont = html`<div class="btr-thumb-btn-container">
 					<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn"><span class="btr-icon-preview"></span></div>
 				</div>`
 
@@ -830,8 +803,8 @@ pageInit.itemdetails = function(assetId) {
 				.$on("click", ".btr-hats-btn", ev => {
 					if(!preview.scene) return;
 
-					var self = ev.currentTarget
-					var checked = !self.classList.contains("checked")
+					const self = ev.currentTarget
+					const checked = !self.classList.contains("checked")
 					self.classList.toggle("checked", checked)
 
 					preview.scene.avatar.accessories.forEach(acc => {
@@ -842,8 +815,8 @@ pageInit.itemdetails = function(assetId) {
 				.$on("click", ".btr-body-btn", ev => {
 					if(!preview.scene) return;
 
-					var self = ev.currentTarget
-					var checked = !self.classList.contains("checked")
+					const self = ev.currentTarget
+					const checked = !self.classList.contains("checked")
 					self.classList.toggle("checked", checked)
 
 					preview.scene.avatar.bodyparts.forEach(bp => {
@@ -869,36 +842,32 @@ pageInit.itemdetails = function(assetId) {
 		execScripts(["js/RBXParser.js", "js/AssetCache.js"], () => {
 			if(settings.itemdetails.explorerButton && InvalidExplorableAssetTypeIds.indexOf(assetTypeId) === -1) {
 				Observer.one("#item-container", itemCont => {
-					if(assetTypeId !== 10 || itemCont.dataset.productId)
-						enableExplorer();
+					if(assetTypeId !== 10 || itemCont.dataset.productId) enableExplorer();
 				})
 			}
 
 			if(settings.itemdetails.animationPreview && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1) {
-				function parseAnimPackage(assetId, cb) {
-					AssetCache.loadModel(assetId, model => {
-						var dict = {}
+				const preview = enablePreview(scene => {
+					scene.avatar.animator.onstop = () => {
+						setTimeout(() => scene.avatar.animator.play(), 2000)
+					}
+				})
 
-						model.forEach(folder => {
-							if(folder.ClassName !== "Folder" || folder.Name !== "R15Anim")
-								return;
+				const parseAnimPackage = (id, cb) => {
+					AssetCache.loadModel(id, model => {
+						const dict = {}
+						const folder = model.find(x => x.ClassName === "Folder" && x.Name === "R15Anim")
+						folder.Children.filter(x => x.ClassName === "StringValue").forEach(value => {
+							const animName = value.Name
 
-							folder.Children.forEach(value => {
-								if(value.ClassName !== "StringValue")
-									return;
+							value.Children.forEach((anim, i) => {
+								if(anim.ClassName !== "Animation") return;
 
-								var animName = value.Name
-
-								value.Children.forEach((anim, i) => {
-									if(anim.ClassName !== "Animation")
-										return;
-
-									var animId = ANTI.RBXParseContentUrl(anim.AnimationId)
-									if(animId) {
-										var index = animName + (i === 0 ? "" : "_" + (i+1))
-										dict[index] = animId
-									}
-								})
+								const animId = ANTI.RBXParseContentUrl(anim.AnimationId)
+								if(animId) {
+									const index = animName + (i === 0 ? "" : `_${i + 1}`)
+									dict[index] = animId
+								}
 							})
 						})
 
@@ -906,13 +875,7 @@ pageInit.itemdetails = function(assetId) {
 					})
 				}
 
-				function onPreviewReady(scene) {
-					scene.avatar.animator.onstop = () => {
-						setTimeout(() => scene.avatar.animator.play(), 2000)
-					}
-				}
-
-				function enable() {
+				const enable = () => {
 					preview.toggleVisible(true)
 					preview.createButtons()
 					preview.loadDefaultAppearance(data => {
@@ -920,61 +883,14 @@ pageInit.itemdetails = function(assetId) {
 					})
 				}
 
-
-				var preview = enablePreview(onPreviewReady)
-
-				if(settings.itemdetails.animationPreviewAutoLoad) {
-					loadAnimations()
-				} else {
-					preview.onInit = loadAnimations
-				}
-
-
-				function loadAnimations() {
+				const loadAnimations = () => {
 					switch(assetTypeId) {
-						case 32: // Package
-							AssetCache.loadText(assetId, text => {
-								var assetIds = text.split(";")
-								var first = true
+					case 32: // Package
+						AssetCache.loadText(assetId, text => {
+							const assetIds = text.split(";")
+							let first = true
 
-								function addAnims(anims) {
-									forEach(anims, (animId, name) => {
-										preview.addDropdown(animId, name)
-										if(first) {
-											first = false
-											preview.setDropdown(name)
-											preview.playAnimation(animId, true)
-										}
-									})
-								}
-
-								parseAnimPackage(assetIds[0], anims => {
-									if(Object.keys(anims).length === 0)
-										return;
-
-									enable()
-									addAnims(anims)
-
-									for(var i=1; i<assetIds.length; i++) {
-										parseAnimPackage(assetIds[i], addAnims)
-									}
-								})
-							})
-						break;
-						case 24: // Custom Animation
-							preview.playAnimation(assetId, true, err => {
-								if(!err)
-									enable();
-							})
-						break;
-						default: // PlayerAnimation
-							parseAnimPackage(assetId, anims => {
-								if(Object.keys(anims).length === 0)
-									return preview.destroy();
-
-								enable()
-
-								var first = true
+							function addAnims(anims) {
 								forEach(anims, (animId, name) => {
 									preview.addDropdown(animId, name)
 									if(first) {
@@ -983,21 +899,61 @@ pageInit.itemdetails = function(assetId) {
 										preview.playAnimation(animId, true)
 									}
 								})
+							}
+
+							parseAnimPackage(assetIds[0], anims => {
+								if(Object.keys(anims).length === 0) return;
+
+								enable()
+								addAnims(anims)
+
+								for(let i = 1; i < assetIds.length; i++) {
+									parseAnimPackage(assetIds[i], addAnims)
+								}
 							})
+						})
+						break;
+					case 24: // Custom Animation
+						preview.playAnimation(assetId, true, err => {
+							if(!err) enable();
+						})
+						break;
+					default: // PlayerAnimation
+						parseAnimPackage(assetId, anims => {
+							if(Object.keys(anims).length === 0) return preview.destroy();
+
+							enable()
+
+							let first = true
+							forEach(anims, (animId, name) => {
+								preview.addDropdown(animId, name)
+								if(first) {
+									first = false
+									preview.setDropdown(name)
+									preview.playAnimation(animId, true)
+								}
+							})
+						})
 						break;
 					}
 				}
+
+				if(settings.itemdetails.animationPreviewAutoLoad) {
+					loadAnimations()
+				} else {
+					preview.onInit = loadAnimations
+				}
 			} else if(true && WearableAssetTypeIds.indexOf(assetTypeId) !== -1) {
-				var preview = enablePreview()
+				const preview = enablePreview()
 				preview.createButtons()
 
 				preview.onInit = () => {
-					preview.loadDefaultAppearance((data) => {
-						var assets = data.assets
+					preview.loadDefaultAppearance(data => {
+						const assets = data.assets
 
 						if(UniqueWearableAssetTypeIds.indexOf(assetTypeId) !== -1) {
-							for(var i=0; i<assets.length; i++) {
-								var assetInfo = assets[i]
+							for(let i = 0; i < assets.length; i++) {
+								const assetInfo = assets[i]
 								if(assetInfo.assetType.id === assetTypeId) {
 									assets.splice(i--, 1)
 									break;
@@ -1014,7 +970,7 @@ pageInit.itemdetails = function(assetId) {
 					})
 
 					function updateAnim() {
-						var animId = preview.playerType === "R15" ? 507766388 : 180435571
+						const animId = preview.playerType === "R15" ? 507766388 : 180435571
 						preview.playAnimation(animId)
 					}
 
@@ -1022,21 +978,22 @@ pageInit.itemdetails = function(assetId) {
 					updateAnim()
 				}
 			}
-			
-			var assetTypeContainer = ContainerAssetTypeIds[assetTypeId]
+
+			const assetTypeContainer = ContainerAssetTypeIds[assetTypeId]
 
 			if(true && assetTypeContainer) {
-				let btn = html`<a class="btr-content-button" href="#"><div class="btr-icon-content disabled"></div></a>`
-			
+				const btn = html`<a class="btr-content-button" href="#"><div class="btr-icon-content disabled"></div></a>`
+
 				Observer.one("#item-container > .section-content", cont => {
 					cont.closest("#item-container").classList.add("btr-content-btn-shown")
 					cont.append(btn)
 				})
 
 				AssetCache.loadModel(assetId, model => {
-					var inst = model.find(assetTypeContainer.filter)
+					const inst = model.find(assetTypeContainer.filter)
 					if(!inst) return;
-					var actId = ANTI.RBXParseContentUrl( inst[assetTypeContainer.prop] )
+
+					const actId = ANTI.RBXParseContentUrl(inst[assetTypeContainer.prop])
 					if(!actId) return;
 
 					btn.href = `/catalog/${actId}`
@@ -1047,25 +1004,25 @@ pageInit.itemdetails = function(assetId) {
 			if(true && InvalidDownloadableAssetTypeIds.indexOf(assetTypeId) === -1) {
 				let isDownloading = false
 
-				let dlButtonPressed = function() {
+				const dlButtonPressed = function() {
 					if(isDownloading) return;
 					isDownloading = true
 
-					var finish = blob => {
+					function finish(blob) {
 						isDownloading = false
 
-						var title = $("#item-container .item-name-container h2")
-						var fileName = title ? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-") : "unknown"
+						const title = $("#item-container .item-name-container h2")
+						let fileName = title ? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-") : "unknown"
 
 						switch(assetTypeContainer ? assetTypeContainer.typeId : assetTypeId) {
-							case 1:
-								fileName += ".png"
-								break;
-							case 4:
-								fileName += ".mesh"
-								break;
-							default:
-								fileName += ".rbxm"
+						case 1:
+							fileName += ".png"
+							break;
+						case 4:
+							fileName += ".mesh"
+							break;
+						default:
+							fileName += ".rbxm"
 						}
 
 						startDownload(URL.createObjectURL(blob), fileName)
@@ -1073,9 +1030,10 @@ pageInit.itemdetails = function(assetId) {
 
 					if(assetTypeContainer) {
 						AssetCache.loadModel(assetId, model => {
-							var inst = model.find(assetTypeContainer.filter)
+							const inst = model.find(assetTypeContainer.filter)
 							if(!inst) return;
-							var actId = ANTI.RBXParseContentUrl( inst[assetTypeContainer.prop] )
+
+							const actId = ANTI.RBXParseContentUrl(inst[assetTypeContainer.prop])
 							if(!actId) return;
 
 							AssetCache.loadBlob(actId, finish)
@@ -1086,11 +1044,11 @@ pageInit.itemdetails = function(assetId) {
 				}
 
 				Observer.one("#item-container > .section-content", cont => {
-					var itemCont = cont.closest("#item-container")
+					const itemCont = cont.closest("#item-container")
 					if(assetTypeId === 10 && !itemCont.dataset.productId) return;
 
 					itemCont.classList.add("btr-download-btn-shown")
-					var btn = html`<a class="btr-download-button"><div class="btr-icon-download"></div></a>`
+					const btn = html`<a class="btr-download-button"><div class="btr-icon-download"></div></a>`
 					cont.append(btn)
 
 					btn.$on("click", dlButtonPressed)
@@ -1099,7 +1057,7 @@ pageInit.itemdetails = function(assetId) {
 
 			if(true && (assetTypeId === 1 || assetTypeId === 13)) {
 				Observer.one("#AssetThumbnail", thumb => {
-					var btns = html`
+					const btns = html`
 					<div class="btr-bg-btn-cont">
 						<div class="btr-bg-btn" data-color="white"></div>
 						<div class="btr-bg-btn" data-color="black"></div>
@@ -1109,8 +1067,8 @@ pageInit.itemdetails = function(assetId) {
 					thumb.append(btns)
 
 					btns.$on("click", ".btr-bg-btn", ev => {
-						var color = ev.currentTarget.dataset.color
-						var prev = btns.$find(".selected")
+						const color = ev.currentTarget.dataset.color
+						const prev = btns.$find(".selected")
 
 						if(prev) prev.classList.remove("selected");
 						ev.currentTarget.classList.add("selected")
@@ -1120,23 +1078,25 @@ pageInit.itemdetails = function(assetId) {
 					})
 
 
-					var selectedBg = localStorage["btr-item-thumb-bg"] || "white"
+					const selectedBg = localStorage["btr-item-thumb-bg"] || "white"
 					btns.$find(`[data-color="${selectedBg}"]`).click()
 				})
 			}
 
 			if(true && assetTypeId === 13) {
-				var transparentTexture = "https://t6.rbxcdn.com/3707fe58b613498a0f1fc7d11faeccf3"
+				const transparentTexture = "https://t6.rbxcdn.com/3707fe58b613498a0f1fc7d11faeccf3"
+
 				Observer.one(`#AssetThumbnail .thumbnail-span img`, img => {
 					if(img.src !== transparentTexture) return;
 
 					AssetCache.loadModel(assetId, model => {
-						var decal = model.find(x => x.ClassName === "Decal")
+						const decal = model.find(x => x.ClassName === "Decal")
 						if(!decal) return;
-						var imgId = ANTI.RBXParseContentUrl(decal.Texture)
+
+						const imgId = ANTI.RBXParseContentUrl(decal.Texture)
 						if(!imgId) return;
 
-						var url = `/asset-thumbnail/json?width=420&height=420&format=png&assetId=${imgId}`
+						const url = `/asset-thumbnail/json?width=420&height=420&format=png&assetId=${imgId}`
 						function fetchThumb() {
 							request.getJson(url, data => {
 								if(!data.Final) return setTimeout(fetchThumb, 200);
@@ -1150,7 +1110,7 @@ pageInit.itemdetails = function(assetId) {
 			}
 
 			if(true && assetTypeId === 32) {
-				var cont = html`
+				const cont = html`
 				<div class="btr-package-contents">
 					<div class="container-header">
 						<h3>This Package Contains...</h3>
@@ -1159,16 +1119,16 @@ pageInit.itemdetails = function(assetId) {
 					</ul>
 				</div>`
 
-				var assetThumb = "https://assetgame.roblox.com/asset-thumbnail/image?width=150&height=150&format=png&assetId="
+				const assetThumb = "https://assetgame.roblox.com/asset-thumbnail/image?width=150&height=150&format=png&assetId="
 
 				AssetCache.loadText(assetId, text => {
-					text.split(";").forEach(assetId => {
-						var card = html`
+					text.split(";").forEach(childId => {
+						const card = html`
 						<li class="list-item item-card">
 							<div class="item-card-container">
-								<a class="item-card-link" href="https://www.roblox.com/catalog/${assetId}/">
+								<a class="item-card-link" href="https://www.roblox.com/catalog/${childId}/">
 									<div class="item-card-thumb-container">
-										<img class="item-card-thumb" src="${assetThumb}${assetId}">
+										<img class="item-card-thumb" src="${assetThumb}${childId}">
 									</div>
 									<div class="text-overflow item-card-name">Loading</div>
 								</a>
@@ -1182,14 +1142,14 @@ pageInit.itemdetails = function(assetId) {
 							</div>
 						</li>`
 
-						BackgroundJS.send("getProductInfo", assetId, data => {
+						BackgroundJS.send("getProductInfo", childId, data => {
 							if(data.IsForSale) {
 								if(data.PriceInRobux) {
 									card.$find(".item-card-price").innerHTML = htmlstring`
 									<span class="icon-robux-16x16"></span>
 									<span class="text-robux">${data.PriceInRobux}</span>`
 								} else {
-									var label = card.$find(".item-card-price .text-label")
+									const label = card.$find(".item-card-price .text-label")
 									label.classList.add("text-robux")
 									label.textContent = "Free"
 								}
@@ -1197,15 +1157,13 @@ pageInit.itemdetails = function(assetId) {
 								card.$find(".item-card-price .text-label").textContent = "Offsale"
 							}
 
-							var creator = card.$find(".item-card-creator .text-link")
+							const creator = card.$find(".item-card-creator .text-link")
 							creator.href = `https//www.roblox.com/users/${data.Creator.Id}/profile`
 							creator.textContent = data.Creator.Name
 
 							card.$find(".item-card-name").textContent = data.Name
 							card.$find(".item-card-link").href += data.Name.replace(/[^a-zA-Z0-9]+/g, "-")
 						})
-
-						
 
 						cont.$find(".hlist").append(card)
 					})
@@ -1218,10 +1176,9 @@ pageInit.itemdetails = function(assetId) {
 }
 
 pageInit.gamedetails = function(placeId) {
-	if(!settings.gamedetails.enabled)
-		return;
+	if(!settings.gamedetails.enabled) return;
 
-	var newContainer = html`<div class="col-xs-12 btr-game-main-container section-content">`
+	const newContainer = html`<div class="col-xs-12 btr-game-main-container section-content">`
 
 	Observer.one(["#tab-about", "#tab-game-instances"], (aboutTab, gameTab) => {
 		aboutTab.$find(".text-lead").textContent = "Commentary"
@@ -1229,7 +1186,7 @@ pageInit.gamedetails = function(placeId) {
 		aboutTab.classList.remove("active")
 		gameTab.classList.add("active")
 
-		var parent = aboutTab.parentNode
+		const parent = aboutTab.parentNode
 		parent.append(aboutTab)
 		parent.prepend(gameTab)
 	})
@@ -1243,7 +1200,7 @@ pageInit.gamedetails = function(placeId) {
 		newContainer.prepend(mainCont)
 	})
 	.one(".game-about-container>.section-content", descCont => {
-		var aboutCont = descCont.parentNode
+		const aboutCont = descCont.parentNode
 
 		descCont.classList.remove("section-content")
 		descCont.classList.add("btr-description")
@@ -1261,43 +1218,43 @@ pageInit.gamedetails = function(placeId) {
 		badges.classList.add("col-xs-12", "btr-badges-container")
 		newContainer.after(badges)
 
-		var badgeList = []
+		const badgeList = []
 
 		CreateObserver(badges).all(".badge-row .badge-stats-container", stats => {
-			var row = stats.closest(".badge-row")
+			const row = stats.closest(".badge-row")
 
-			var url = row.$find(".badge-image>a").href
-			var label = row.$find(".badge-name")
+			const url = row.$find(".badge-image>a").href
+			const label = row.$find(".badge-name")
 			label.innerHTML = htmlstring`<a href="${url}">${label.textContent}</a>`
 			row.$find("p.para-overflow").classList.remove("para-overflow")
 
 			if(settings.gamedetails.showBadgeOwned) {
-				var badgeId = url.match(/catalog\/(\d+)\//)
+				let badgeId = url.match(/catalog\/(\d+)\//)
 				if(!badgeId) return;
 
 				badgeId = badgeId[1]
 				row.classList.add("btr_badgeownedloading")
 
-				badgeList.push([ row, badgeId ])
+				badgeList.push([row, badgeId])
 			}
 		})
 
 		if(settings.gamedetails.showBadgeOwned) {
-			var lastRequest = null
-			var onSeeMoreBadges = new Promise(resolve => Observer.one("#badges-see-more", btn => btn.$once("click", resolve)))
+			let lastRequest = null
+			const onSeeMoreBadges = new Promise(resolve => Observer.one("#badges-see-more", btn => btn.$once("click", resolve)))
 
-			var getIsBadgeOwned = (badgeId, cb) => {
-				//var url = `//api.roblox.com/Ownership/HasAsset?userId=${loggedInUser}&assetId=${badgeId}`
-				var url = `//www.roblox.com/Game/Badge/HasBadge.ashx?UserID=${loggedInUser}&BadgeID=${badgeId}`
+			const getIsBadgeOwned = (badgeId, cb) => {
+				// var url = `//api.roblox.com/Ownership/HasAsset?userId=${loggedInUser}&assetId=${badgeId}`
+				const url = `//www.roblox.com/Game/Badge/HasBadge.ashx?UserID=${loggedInUser}&BadgeID=${badgeId}`
 				request.get(url, result => cb(result === "Success"), () => cb(true))
 			}
 
 			onDocumentReady(() => {
 				badgeList.forEach(data => {
-					var row = data[0]
-					var badgeId = data[1]
+					const row = data[0]
+					const badgeId = data[1]
 
-					var cb = val => {
+					function cb(val) {
 						row.classList.remove("btr_badgeownedloading")
 						if(!val) {
 							row.classList.add("btr_notowned")
@@ -1306,9 +1263,9 @@ pageInit.gamedetails = function(placeId) {
 					}
 
 					if(!row.classList.contains("badge-see-more-row")) {
-						 getIsBadgeOwned(badgeId, cb)
+						getIsBadgeOwned(badgeId, cb)
 					} else {
-						var prev = lastRequest || onSeeMoreBadges
+						const prev = lastRequest || onSeeMoreBadges
 						lastRequest = new Promise(resolve => {
 							prev.then(() => getIsBadgeOwned(badgeId, isOwned => {
 								cb(isOwned)
@@ -1327,14 +1284,12 @@ pageInit.gamedetails = function(placeId) {
 		})
 	})
 	.one(".rbx-visit-button-closed, #MultiplayerVisitButton", btn => {
-		if(btn.classList.contains("rbx-visit-button-closed"))
-			return;
+		if(btn.classList.contains("rbx-visit-button-closed")) return;
 
-		var rootPlaceId = btn.getAttribute("placeid")
-		if(placeId === rootPlaceId)
-			return;
+		const rootPlaceId = btn.getAttribute("placeid")
+		if(placeId === rootPlaceId) return;
 
-		var box = html`
+		const box = html`
 		<div class='btr-universe-box'>
 			This place is part of 
 			<a class='btr-universe-name text-link' href='//www.roblox.com/games/${rootPlaceId}/'></a>
@@ -1343,19 +1298,19 @@ pageInit.gamedetails = function(placeId) {
 			</div>
 		</div>`
 
-		var anchor = box.$find(".btr-universe-name")
+		const anchor = box.$find(".btr-universe-name")
 
 		newContainer.prepend(box)
 		BackgroundJS.send("getProductInfo", rootPlaceId, data => {
 			anchor.textContent = data.Name
-			anchor.href = anchor.href + data.Name.replace(/[^\w\-\s]+/g, "").replace(/\s+/g, "-")
+			anchor.href += data.Name.replace(/[^\w\-\s]+/g, "").replace(/\s+/g, "-")
 		})
 	})
 	.one("#AjaxCommentsContainer .comments", cont => {
 		CreateObserver(cont, { permanent: true, subtree: false })
 		.all(".comment-item", comment => {
-			var span = comment.$find(".text-date-hint")
-			var fixedDate = RobloxTime(span.textContent.replace("|",""))
+			const span = comment.$find(".text-date-hint")
+			const fixedDate = RobloxTime(span.textContent.replace("|", ""))
 			if(fixedDate) {
 				span.setAttribute("btr-timestamp", "")
 				span.textContent = fixedDate.format("MMM D, YYYY | hh:mm A")
@@ -1363,7 +1318,7 @@ pageInit.gamedetails = function(placeId) {
 		})
 	})
 
-	onDocumentReady(function() {
+	onDocumentReady(() => {
 		if($("#AjaxCommentsContainer") == null) {
 			$("#about").append(html`<div class="section-content-off">Comments have been disabled for this place</div>`)
 		}
@@ -1375,7 +1330,7 @@ pageInit.catalog = function() {
 	Observer.one("body", body => body.classList.add("btr-inventory"))
 
 	modifyTemplate("rbx-pagination", template => {
-		var input = html`
+		const input = html`
 		<input type=text id=rbx-current-page class=btr-pager-input ng-value=pagination.curPage|number 
 		ng-keyup="$event.keyCode===13&&pagination.pageUpdated('next', pagination.curPage=$event.target.value.split(',').join('')-1)">`
 		template.$find("#rbx-current-page").replaceWith(input)
@@ -1384,7 +1339,7 @@ pageInit.catalog = function() {
 	modifyTemplate("catalog-item-card", template => {
 		template.$find(".item-card-container").classList.add("btr-item-card-container")
 
-		var hover = html`<div class="btr-item-card-more">
+		const hover = html`<div class="btr-item-card-more">
 			<div class=text-secondary>
 				<div class="text-overflow item-card-label">Updated: <span class=btr-updated-label>Loading...</span></div>
 				<div class="text-overflow item-card-label">Sales: <span class=btr-sales-label>Loading...</span></div>
@@ -1395,43 +1350,42 @@ pageInit.catalog = function() {
 		template.$find(".item-card-caption").append(hover)
 	})
 
-	var productCache = {}
+	const productCache = {}
 
 	document.$on("mouseover", ".btr-item-card-container", ev => {
-		var self = ev.currentTarget
+		const self = ev.currentTarget
 
 		if(self.dataset.btrHoverInit === "true") return;
 		self.dataset.btrHoverInit = "true"
 
-		var matches = self.closest("a").href.match(/\/catalog\/(\d+)/)
+		const matches = self.closest("a").href.match(/\/catalog\/(\d+)/)
 		if(!matches) return;
 
-		var assetId = matches[1]
-		var promise = productCache[assetId] || (productCache[assetId] = new Promise(resolve => 
+		const assetId = matches[1]
+		const promise = productCache[assetId] || (productCache[assetId] = new Promise(resolve =>
 			BackgroundJS.send("getProductInfo", assetId, resolve)
 		))
 
 		promise.then(data => {
-			var updated = new Date(data.Updated).relativeFormat("zz 'ago'", startDate)
-			var sales = data.Sales
+			const updated = new Date(data.Updated).relativeFormat("zz 'ago'", startDate)
+			const sales = data.Sales
 
-			var label = self.$find(".btr-updated-label")
-			label.textContent = updated
-			label.title = updated
+			const ulabel = self.$find(".btr-updated-label")
+			ulabel.textContent = updated
+			ulabel.title = updated
 
-			var label = self.$find(".btr-sales-label")
-			label.textContent = sales
-			label.title = sales
+			const slabel = self.$find(".btr-sales-label")
+			slabel.textContent = sales
+			slabel.title = sales
 		})
 	})
 }
 
 pageInit.configureplace = function(placeId) {
-	if(!settings.versionhistory.enabled)
-		return;
+	if(!settings.versionhistory.enabled) return;
 
-	var newVersionHistory = CreateNewVersionHistory(placeId, "place")
-	var jszipPromise = null
+	const newVersionHistory = CreateNewVersionHistory(placeId, "place")
+	let jszipPromise = null
 
 	Observer.one("#versionHistoryItems", cont => cont.replaceWith(newVersionHistory))
 	.one("#versionHistory>.headline h2", header => {
@@ -1439,29 +1393,27 @@ pageInit.configureplace = function(placeId) {
 	})
 
 	document.$on("click", ".btr-downloadAsZip:not(.disabled)", e => {
-		var btn = e.currentTarget
-		var origText = btn.textContent
-		var loadedCount = 0
-		var versionCount = 0
+		const btn = e.currentTarget
+		const origText = btn.textContent
+		let loadedCount = 0
+		let versionCount = 0
 
-		var placeNameInput = $("#basicSettings>input")
-		var fileName = (placeNameInput ? placeNameInput.value : "place").replace(/[^\w \-\.]+/g,"").replace(/ {2,}/g," ").trim()
+		const placeNameInput = $("#basicSettings>input")
+		const fileName = (placeNameInput ? placeNameInput.value : "place").replace(/[^\w \-.]+/g, "").replace(/ {2,}/g, " ").trim()
 
 		btn.classList.add("disabled")
 		btn.textContent = "Preparing..."
 
-		if(!jszipPromise)
-			jszipPromise = new Promise(resolve => execScripts(["lib/jszip.min.js"], resolve));
+		if(!jszipPromise) jszipPromise = new Promise(resolve => execScripts(["lib/jszip.min.js"], resolve));
 
 		jszipPromise.then(() => {
-			var zip = new JSZip()
-			var queue = []
-			var finishedLoading = false
-			var sentZip = false
-			var activeLoaders = 0
+			const zip = new JSZip()
+			const queue = []
+			let finishedLoading = false
+			let activeLoaders = 0
 
 			function loadPage(page, cb) {
-				var url = `//api.roblox.com/assets/${placeId}/versions?page=${page}`
+				const url = `//api.roblox.com/assets/${placeId}/versions?page=${page}`
 				request.getJson(url, cb)
 			}
 
@@ -1471,17 +1423,17 @@ pageInit.configureplace = function(placeId) {
 						if(--activeLoaders === 0) {
 							btn.textContent = "Generating .zip..."
 
-							var options = { 
-								type: "blob", 
-								compression: "DEFLATE", 
-								compressionOptions: { level: 6 }, 
+							const options = {
+								type: "blob",
+								compression: "DEFLATE",
+								compressionOptions: { level: 6 },
 								streamFiles: true
 							}
 
 							zip.generateAsync(options).then(blob => {
 								btn.classList.remove("disabled")
 								btn.textContent = origText
-								startDownload(URL.createObjectURL(blob), fileName + ".zip")
+								startDownload(URL.createObjectURL(blob), `${fileName}.zip`)
 							})
 						}
 						return;
@@ -1490,7 +1442,7 @@ pageInit.configureplace = function(placeId) {
 					return setTimeout(loadFile, 100);
 				}
 
-				var data = queue.splice(0, 1)[0]
+				const data = queue.splice(0, 1)[0]
 				btn.textContent = `Downloading ${++loadedCount}/${versionCount}`
 
 				BackgroundJS.send("resolveAssetUrl", { id: placeId, version: data.VersionNumber }, url => {
@@ -1520,10 +1472,10 @@ pageInit.configureplace = function(placeId) {
 					return;
 				}
 				versionCount = json[0].VersionNumber
-				var maxPage = Math.floor((versionCount-1)/json.length) + 1
-				var curPage = 2
+				const maxPage = Math.floor((versionCount - 1) / json.length) + 1
+				let curPage = 2
 
-				queue.push.apply(queue, json)
+				queue.push(...json)
 
 				function nextPage() {
 					if(curPage > maxPage) {
@@ -1532,14 +1484,14 @@ pageInit.configureplace = function(placeId) {
 					}
 
 					loadPage(curPage++, list => {
-						queue.push.apply(queue, list)
+						queue.push(...list)
 						nextPage()
 					})
 				}
 
 				nextPage()
 
-				for(var i=0; i<5; i++) {
+				for(let i = 0; i < 5; i++) {
 					activeLoaders++
 					loadFile()
 				}
@@ -1549,11 +1501,9 @@ pageInit.configureplace = function(placeId) {
 }
 
 pageInit.groups = function() {
-	if(!settings.groups.enabled)
-		return;
+	if(!settings.groups.enabled) return;
 
-	var rankNamePromises = {}
-
+	const rankNamePromises = {}
 
 	Observer.one("body", body => body.classList.add("btr-groups"))
 	.one(["#GroupDescP pre", "#GroupDesc_Full"], (desc, fullDesc) => {
@@ -1561,7 +1511,7 @@ pageInit.groups = function() {
 		fullDesc.remove()
 	})
 	.one("#ctl00_cphRoblox_GroupStatusPane_StatusDate", span => {
-		var fixedDate = RobloxTime(span.textContent)
+		const fixedDate = RobloxTime(span.textContent)
 		if(fixedDate) {
 			span.setAttribute("btr-timestamp", "")
 			span.textContent = fixedDate.relativeFormat("zz 'ago'", startDate)
@@ -1573,22 +1523,21 @@ pageInit.groups = function() {
 		.all(".AlternatingItemTemplateOdd, .AlternatingItemTemplateEven", post => {
 			post.classList.add("btr_comment")
 
-			var content = post.$find(".RepeaterText")
-			var postDate = post.$find(".GroupWall_PostDate")
-			var postBtns = post.$find(".GroupWall_PostBtns")
-			var userLink = post.$find(".UserLink")
-			var dateSpan = postDate.firstElementChild
+			const content = post.$find(".RepeaterText")
+			const postDate = post.$find(".GroupWall_PostDate")
+			const postBtns = post.$find(".GroupWall_PostBtns")
+			const userLink = post.$find(".UserLink")
+			const dateSpan = postDate.firstElementChild
 
-			var defBtns = Array.from(postBtns.children)
-			var deleteButton = defBtns.find(x => x.textContent.indexOf("Delete") !== -1)
-			var exileButton = defBtns.find(x => x.textContent.indexOf("Exile User") !== -1)
+			const defBtns = Array.from(postBtns.children)
+			let deleteButton = defBtns.find(x => x.textContent.indexOf("Delete") !== -1)
+			let exileButton = defBtns.find(x => x.textContent.indexOf("Exile User") !== -1)
 
 			content.prepend(userLink)
 			content.append(postBtns)
 
-			var firstBtn = postBtns.firstChild
-			while(postDate.firstElementChild)
-				firstBtn.before(postDate.firstElementChild);
+			const firstBtn = postBtns.firstChild
+			while(postDate.firstElementChild) firstBtn.before(postDate.firstElementChild);
 
 			postDate.parentNode.remove()
 
@@ -1598,10 +1547,8 @@ pageInit.groups = function() {
 				exileButton.style = ""
 			} else {
 				exileButton = html`<a class="btn-control btn-control-medium disabled">Exile User</a>`
-				if(deleteButton)
-					deleteButton.before(exileButton);
-				else
-					postBtns.append(exileButton);
+				if(deleteButton) deleteButton.before(exileButton);
+				else postBtns.append(exileButton);
 			}
 
 
@@ -1610,7 +1557,7 @@ pageInit.groups = function() {
 				deleteButton.classList.add("btn-control", "btn-control-medium")
 				deleteButton.style = ""
 
-				if(deleteButton.href.startsWith("javascript:")) {
+				if(deleteButton.href.startsWith("javascript")) {
 					deleteButton.href = `
 					javascript:Roblox.GenericConfirmation.open({
 						titleText: "Delete This Comment?",
@@ -1629,25 +1576,28 @@ pageInit.groups = function() {
 			}
 
 			dateSpan.classList.add("btr_groupwallpostdate")
-			var fixedDate = RobloxTime(dateSpan.textContent)
+			const fixedDate = RobloxTime(dateSpan.textContent)
 			if(fixedDate) {
 				dateSpan.setAttribute("btr-timestamp", "")
 				dateSpan.textContent = fixedDate.relativeFormat("zz 'ago'")
 				dateSpan.title = fixedDate.format("M/D/YYYY h:mm:ss A")
 			}
 
-			var groupId, userId
+			let groupId
+			let userId
 			try {
 				groupId = $("#ClanInvitationData").getAttribute("data-group-id") || document.location.search.match("gid=(\\d+)")[1]
 				userId = userLink.$find("a").href.match(/users\/(\d+)/)[1]
-			} catch(ex) {}
+			} catch(ex) {
+				// Do nothing
+			}
 
 			if(groupId && userId) {
-				var span = html`<span class="btr_grouprank"></span>`
+				const span = html`<span class="btr_grouprank"></span>`
 				userLink.append(span)
 
 				if(!rankNamePromises[userId]) {
-					var options = { userId, groupId }
+					const options = { userId, groupId }
 					rankNamePromises[userId] = new Promise(resolve => BackgroundJS.send("getRankName", options, resolve))
 				}
 
@@ -1663,10 +1613,9 @@ pageInit.groups = function() {
 }
 
 pageInit.profile = function(userId) {
-	if(!settings.profile.enabled)
-		return;
+	if(!settings.profile.enabled) return;
 
-	var left = html`
+	const left = html`
 	<div class="btr-profile-col-2 btr-profile-left">
 		<div class="btr-profile-about">
 			<div class="container-header"><h3>About</h3></div>
@@ -1702,7 +1651,7 @@ pageInit.profile = function(userId) {
 		</div>
 	</div>`
 
-	var right = html`
+	const right = html`
 	<div class="btr-profile-col-2 btr-profile-right">
 		<div class="placeholder-games" style="display:none">
 			<div class="container-header"><h3>Games</h3></div>
@@ -1729,14 +1678,14 @@ pageInit.profile = function(userId) {
 		</div>
 	</div>`
 
-	var bottom = html`
+	const bottom = html`
 	<div class="btr-profile-col-1 btr-profile-bottom">
 		<div class="placeholder-collections" style="display:none"></div>
 		<div class="placeholder-inventory" style="display:none"></div>
 	</div>`
 
 	Observer.one("body", body => body.classList.add("btr-profile"))
-	.one(".profile-container", cont => (cont.append(left),cont.append(right), cont.append(bottom)))
+	.one(".profile-container", cont => cont.append(left, right, bottom))
 	.one(".profile-about-content", desc => {
 		$(".placeholder-desc").replaceWith(desc)
 
@@ -1745,50 +1694,49 @@ pageInit.profile = function(userId) {
 	.one(".profile-about-footer", footer => {
 		$(".placeholder-footer").replaceWith(footer)
 
-		var tooltip = footer.$find(".tooltip-pastnames")
-		if(tooltip)
-			tooltip.setAttribute("data-container", "body"); // Display tooltip over side panel
+		const tooltip = footer.$find(".tooltip-pastnames")
+		if(tooltip) tooltip.setAttribute("data-container", "body"); // Display tooltip over side panel
 	})
 	.one(".profile-avatar-status", status => {
-		var statusDiv = html`<div class="btr-header-status-parent"></div>`
+		const statusDiv = html`<div class="btr-header-status-parent"></div>`
 		$(".placeholder-status").replaceWith(statusDiv)
-		var statusText = html`<span class="btr-header-status-text"></span>`
+		const statusText = html`<span class="btr-header-status-text"></span>`
 		statusDiv.append(statusText)
-		var statusLabel = html`<span></span>`
+		const statusLabel = html`<span></span>`
 		statusText.append(statusLabel)
 
 		if(!status) {
 			statusText.classList.add("btr-status-offline")
 			statusLabel.textContent = "Offline"
 		} else {
-			var statusTitle = status.getAttribute("title")
+			const statusTitle = status.getAttribute("title")
 
 			if(status.classList.contains("icon-game")) {
 				statusText.classList.add("btr-status-ingame")
 				statusLabel.textContent = statusTitle
 
 				Observer.one("script:not([src])", x => x.innerHTML.indexOf("play_placeId") !== -1, script => {
-					var matches = script.innerHTML.match(/play_placeId = (\d+)/)
-					if(matches && matches[1] != "0") {
-						var placeId = matches[1]
-						var urlTitle = statusTitle.replace(/\s+/g, "-").replace(/[^\w\-]/g, "")
+					const matches = script.innerHTML.match(/play_placeId = (\d+)/)
+					if(matches && matches[1] !== "0") {
+						const placeId = matches[1]
+						let urlTitle = statusTitle.replace(/\s+/g, "-").replace(/[^\w-]/g, "")
 
-						var anchor = html`<a href="/games/${placeId}/${urlTitle}" title="${statusTitle}"></a>`
+						const anchor = html`<a href="/games/${placeId}/${urlTitle}" title="${statusTitle}"></a>`
 						statusText.replaceWith(anchor)
 						anchor.append(statusText)
 
-						var onclick = `Roblox.GameLauncher.followPlayerIntoGame(${userId})`
+						const onclick = `Roblox.GameLauncher.followPlayerIntoGame(${userId})`
 						anchor.append(html`
 						<a class="btr-header-status-follow-button" title="Follow" onclick="${onclick}">\uD83D\uDEAA</a>`)
 
 						if(statusTitle === "In Game") {
 							BackgroundJS.send("getProductInfo", placeId, data => {
-								urlTitle = data.Name.replace(/\s+/g, "-").replace(/[^\w\-]/g, "")
+								urlTitle = data.Name.replace(/\s+/g, "-").replace(/[^\w-]/g, "")
 								anchor.href = `/games/${placeId}/${urlTitle}`
 								statusLabel.textContent = data.Name
 							})
 						}
-					} 
+					}
 				})
 			} else if(status.classList.contains("icon-studio")) {
 				statusText.classList.add("btr-status-studio")
@@ -1803,8 +1751,8 @@ pageInit.profile = function(userId) {
 		left.$find(".placeholder-avatar").replaceWith(avatar)
 		avatar.$find(">h3").remove()
 
-		var avatarLeft = avatar.$find(".profile-avatar-left")
-		var avatarRight = avatar.$find(".profile-avatar-right")
+		const avatarLeft = avatar.$find(".profile-avatar-left")
+		const avatarRight = avatar.$find(".profile-avatar-right")
 
 		avatarLeft.classList.remove("col-sm-6")
 		avatarRight.classList.remove("col-sm-6")
@@ -1814,11 +1762,11 @@ pageInit.profile = function(userId) {
 
 		avatar.$find(".enable-three-dee").textContent = "3D" // It's initialized as empty
 
-		var toggleItems = html`<span class="btr-toggle-items btn-control btn-control-sm">Show Items</span>`
+		const toggleItems = html`<span class="btr-toggle-items btn-control btn-control-sm">Show Items</span>`
 		avatar.$find("#UserAvatar").append(toggleItems)
 
-		var toggleVisible = ev => {
-			var visible = !avatarRight.classList.contains("visible")
+		function toggleVisible(ev) {
+			const visible = !avatarRight.classList.contains("visible")
 			avatarRight.classList.toggle("visible", visible)
 
 			toggleItems.textContent = visible ? "Hide Items" : "Show Items"
@@ -1827,8 +1775,7 @@ pageInit.profile = function(userId) {
 
 		toggleItems.$on("click", toggleVisible)
 		document.body.$on("click", ev => {
-			if(!avatarRight.contains(ev.target) && avatarRight.classList.contains("visible"))
-				toggleVisible(ev);
+			if(!avatarRight.contains(ev.target) && avatarRight.classList.contains("visible")) toggleVisible(ev);
 		})
 	})
 	.one(".profile-stats-container", stats => {
@@ -1836,48 +1783,36 @@ pageInit.profile = function(userId) {
 		$(".placeholder-stats").replaceWith(stats)
 	})
 	.one("#about>.section>.container-header>h3", x => x.textContent.indexOf("Roblox Badges") !== -1, h3 => {
-		var badges = h3.parentNode.parentNode
+		const badges = h3.parentNode.parentNode
 		left.$find(".placeholder-robloxbadges").replaceWith(badges)
 
 		badges.classList.add("btr-profile-robloxbadges")
-		//badges.$find(".assets-count").remove()
+		// badges.$find(".assets-count").remove()
 		badges.$find(".btn-more").setAttribute("ng-show", badges.$find(".badge-list").children.length > 10 ? "true" : "false")
 	})
 	.one("#games-switcher", switcher => {
-		var games = switcher.parentNode
+		const games = switcher.parentNode
 		right.$find(".placeholder-games").replaceWith(games)
 
 		games.classList.add("section")
 
-		var grid = games.$find(".game-grid")
+		const grid = games.$find(".game-grid")
 		grid.classList.add("section-content")
 		grid.setAttribute("ng-cloak", "")
 
-		var oldlist = switcher.$find(">.hlist")
-		var cont = html`<div id="games-switcher" class="section-content" ng-hide="isGridOn"></div>`
+		const oldlist = switcher.$find(">.hlist")
+		const cont = html`<div id="games-switcher" class="section-content" ng-hide="isGridOn"></div>`
 		switcher.classList.add("btr-remove-on-profile-load")
 		switcher.style.display = "none"
 		switcher.after(cont)
 
 
-		var hlist = html`<ul class="hlist btr-games-list"></ul>`
+		const hlist = html`<ul class="hlist btr-games-list"></ul>`
 		cont.append(hlist)
 
-		var pageSize = 10
-		var pager = createPager()
+		const pageSize = 10
+		const pager = createPager()
 		hlist.after(pager)
-
-		pager.onsetpage = loadPage
-
-		function loadPage(page) {
-			pager.setPage(page)
-
-			forEach(hlist.children, (obj, index) => {
-				obj.classList.toggle("visible", Math.floor(index/pageSize)+1 === page) 
-			})
-
-			select(hlist.children[(page-1)*pageSize])
-		}
 
 		function select(item) {
 			if(item.$getThumbnail) {
@@ -1886,27 +1821,37 @@ pageInit.profile = function(userId) {
 			}
 
 			item.classList.toggle("selected")
-			hlist.$findAll(".btr-game.selected").forEach(x => x!==item && x.classList.remove("selected"))
+			hlist.$findAll(".btr-game.selected").forEach(x => x !== item && x.classList.remove("selected"))
 		}
 
-		hlist.$on("click", ".btr-game-button", e => !e.target.matches(".btr-game-dropdown *")&&select(e.currentTarget.parentNode))
+		function loadPage(page) {
+			pager.setPage(page)
+
+			forEach(hlist.children, (obj, index) => {
+				obj.classList.toggle("visible", Math.floor(index / pageSize) + 1 === page)
+			})
+
+			select(hlist.children[(page - 1) * pageSize])
+		}
+
+		hlist.$on("click", ".btr-game-button", e => !e.target.matches(".btr-game-dropdown *") && select(e.currentTarget.parentNode))
 		.$on("click", ".btr-toggle-description", e => {
-			var btn = e.currentTarget
-			var desc = btn.parentNode
-			var expanded = !desc.classList.contains("expanded")
+			const btn = e.currentTarget
+			const desc = btn.parentNode
+			const expanded = !desc.classList.contains("expanded")
 
 			desc.classList.toggle("expanded", expanded)
 			btn.textContent = expanded ? "Show Less" : "Read More"
 		})
 		.$on("click", ".btr-btn-toggle-profile", () => {
-			var placeId = e.currentTarget.getAttribute("data-placeid")
+			const placeId = e.currentTarget.getAttribute("data-placeid")
 			getXsrfToken(token => {
 				request({
 					method: "POST",
 					url: "/game/toggle-profile",
 					data: { placeId, addToProfile: false },
 					dataType: "json",
-					headers: { "X-CSRF-TOKEN": token },
+					headers: { "X-CSRF-TOKEN": token }
 				})
 			})
 		})
@@ -1922,17 +1867,19 @@ pageInit.profile = function(userId) {
 			})
 		})
 
+		pager.onsetpage = loadPage
+
 		CreateObserver(oldlist).all(".slide-item-container .slide-item-stats>.hlist", stats => {
-			var slide = stats.closest(".slide-item-container")
-			var index = +slide.getAttribute("data-index")
-			var placeId = slide.$find(".slide-item-image").getAttribute("data-emblem-id")
+			const slide = stats.closest(".slide-item-container")
+			const index = +slide.getAttribute("data-index")
+			const placeId = slide.$find(".slide-item-image").getAttribute("data-emblem-id")
 
-			var title = slide.$find(".slide-item-name").textContent
-			var desc = slide.$find(".slide-item-description").textContent
-			var url = slide.$find(".slide-item-emblem-container>a").href
-			var iconThumb = slide.$find(".slide-item-image").getAttribute("data-src")
+			const title = slide.$find(".slide-item-name").textContent
+			const desc = slide.$find(".slide-item-description").textContent
+			const url = slide.$find(".slide-item-emblem-container>a").href
+			const iconThumb = slide.$find(".slide-item-image").getAttribute("data-src")
 
-			var item = html`
+			const item = html`
 			<li class="btr-game">
 				<div class="btr-game-button">
 					<span class="btr-game-title">${title}</span>
@@ -1957,12 +1904,11 @@ pageInit.profile = function(userId) {
 				</div>
 			</li>`
 
-			item.classList.toggle("visible", index/pageSize < 1)
+			item.classList.toggle("visible", (index / pageSize) < 1)
 			item.$find(".btr-game-stats").append(slide.$find(".slide-item-stats>.hlist"))
 
 			loggedInUserPromise.then(loggedInUser => {
-				if(userId != loggedInUser)
-					return;
+				if(userId !== loggedInUser) return;
 
 				item.$find(".btr-game-button").append(html`
 				<span class="btr-game-dropdown">
@@ -1987,23 +1933,26 @@ pageInit.profile = function(userId) {
 			})
 
 			hlist.append(item)
-			pager.setMaxPage(Math.floor((hlist.children.length-1)/pageSize) + 1)
+			pager.setMaxPage(Math.floor((hlist.children.lengt - 1) / pageSize) + 1)
 
-			var iconRetryUrl = slide.$find(".slide-item-image").getAttribute("data-retry")
+			const iconRetryUrl = slide.$find(".slide-item-image").getAttribute("data-retry")
 
 			function getThumbnail() {
-				function retryUntilFinal(url, cb) {
-					request.getJson(url, json => json && json.Final ? cb(json) : setTimeout(retryUntilFinal, 500, url, cb))
+				function retryUntilFinal(thumbUrl, cb) {
+					request.getJson(thumbUrl, json => {
+						if(json && json.Final) cb(json);
+						else setTimeout(retryUntilFinal, 500, thumbUrl, cb);
+					})
 				}
-				
+
 				if(iconRetryUrl) {
 					retryUntilFinal(iconRetryUrl, json => {
 						item.$find(".btr-game-icon").src = json.Url
 					})
 				}
-				
+
 				if(!isNaN(placeId)) {
-					var thumbUrl = `/asset-thumbnail/json?assetId=${placeId}&width=768&height=432&format=png`
+					const thumbUrl = `/asset-thumbnail/json?assetId=${placeId}&width=768&height=432&format=png`
 					retryUntilFinal(thumbUrl, json => {
 						item.$find(".btr-game-thumb").src = json.Url
 					})
@@ -2017,25 +1966,24 @@ pageInit.profile = function(userId) {
 				item.$getThumbnail = getThumbnail
 			}
 
-
-			var desc = item.$find(".btr-game-desc")
-			if(desc.scrollHeight > 170) // scrollHeight is not set before appending
-				desc.append(html`<span class="btr-toggle-description">Read More</span>`);
+			// scrollHeight is not set before appending
+			const descElem = item.$find(".btr-game-desc")
+			if(descElem.scrollHeight > 170) descElem.append(html`<span class="btr-toggle-description">Read More</span>`);
 		})
 	})
 	.one(".home-friends", friends => {
 		right.$find(".placeholder-friends").replaceWith(friends)
-		var hlist = friends.$find(".hlist")
+		const hlist = friends.$find(".hlist")
 
 		if(hlist.children.length === 9) {
-			var url = `//api.roblox.com/users/${userId}/friends`
+			const url = `//api.roblox.com/users/${userId}/friends`
 
 			request.getJson(url, list => {
 				if(list.length > 9) {
-					var item = list[9]
+					const item = list[9]
 
-					var profileUrl = `/users/${item.Id}/profile`
-					var thumbUrl = `/Thumbs/Avatar.ashx?x=100&y=100&userId=${item.Id}`
+					const profileUrl = `/users/${item.Id}/profile`
+					const thumbUrl = `/Thumbs/Avatar.ashx?x=100&y=100&userId=${item.Id}`
 
 					hlist.append(html`
 					<li class="list-item friend">
@@ -2055,34 +2003,21 @@ pageInit.profile = function(userId) {
 	.one(".favorite-games-container", favorites => favorites.remove())
 	.one(".profile-collections", collections => bottom.$find(".placeholder-collections").replaceWith(collections))
 
-	var initPlayerBadges = () => {
-		var badges = left.$find(".placeholder-playerbadges")
+	function initPlayerBadges() {
+		const badges = left.$find(".placeholder-playerbadges")
 		badges.classList.add("btr-profile-playerbadges")
 
-		var hlist = badges.$find(".hlist")
-
-		var isLoading = false
-		var prevData = null
-
-		var pager = createPager(true)
+		const hlist = badges.$find(".hlist")
+		const pager = createPager(true)
 		hlist.after(pager)
 
-		pager.onprevpage = () => {
-			if(!isLoading && prevData && prevData.Data && prevData.Data.previousPageCursor) {
-				loadPage(prevData.Data.Page-1, prevData.Data.previousPageCursor)
-			}
-		}
-
-		pager.onnextpage = () => {
-			if(!isLoading && prevData && prevData.Data && prevData.Data.nextPageCursor) {
-				loadPage(prevData.Data.Page+1, prevData.Data.nextPageCursor)
-			}
-		}
+		let isLoading = false
+		let prevData = null
 
 		function loadPage(page, cursor) {
 			isLoading = true
-			var url = `/users/inventory/list-json?assetTypeId=21&itemsPerPage=10&userId=${userId}&cursor=${cursor}&pageNumber=${page}`
 
+			const url = `/users/inventory/list-json?assetTypeId=21&itemsPerPage=10&userId=${userId}&cursor=${cursor}&pageNumber=${page}`
 			request.getJson(url, json => {
 				isLoading = false
 				prevData = json
@@ -2094,7 +2029,7 @@ pageInit.profile = function(userId) {
 					hlist.innerHTML = ""
 
 					if(json.Data.Items.length === 0) {
-						var text = `${userId == loggedInUser ? "You have" : "This user has"} no badges`
+						const text = `${userId === loggedInUser ? "You have" : "This user has"} no badges`
 						hlist.append(html`<div class="section-content-off btr-section-content-off">${text}</div>`)
 					} else {
 						forEach(json.Data.Items, data => {
@@ -2111,36 +2046,49 @@ pageInit.profile = function(userId) {
 			})
 		}
 
+		pager.onprevpage = () => {
+			if(!isLoading && prevData && prevData.Data && prevData.Data.previousPageCursor) {
+				loadPage(prevData.Data.Page - 1, prevData.Data.previousPageCursor)
+			}
+		}
+
+		pager.onnextpage = () => {
+			if(!isLoading && prevData && prevData.Data && prevData.Data.nextPageCursor) {
+				loadPage(prevData.Data.Page + 1, prevData.Data.nextPageCursor)
+			}
+		}
+
 		loadPage(1, "")
 	}
 
-	var initGroups = () => {
-		var groups = left.$find(".placeholder-groups")
+	function initGroups() {
+		const groups = left.$find(".placeholder-groups")
 		groups.classList.add("btr-profile-groups")
 
-		var hlist = groups.$find(".hlist")
-		var pageSize = 8
+		const hlist = groups.$find(".hlist")
+		const pageSize = 8
 
-		var pager = createPager()
+		const pager = createPager()
 		hlist.after(pager)
-		pager.onsetpage = loadPage
 
 		function loadPage(page) {
 			pager.setPage(page)
 
 			forEach(hlist.children, (obj, index) => {
-				obj.classList.toggle("visible", Math.floor(index/pageSize)+1 === page)
+				obj.classList.toggle("visible", Math.floor(index / pageSize) + 1 === page)
 			})
 		}
 
-		var url = `https://www.roblox.com/users/profile/playergroups-json?userId=${userId}`
+		pager.onsetpage = loadPage
+
+		const url = `https://www.roblox.com/users/profile/playergroups-json?userId=${userId}`
 		request.getJson(url, json => {
-			pager.setMaxPage(Math.floor((json.NumberOfGroups-1)/pageSize) + 1)
+			pager.setMaxPage(Math.floor((json.NumberOfGroups - 1) / pageSize) + 1)
 
 			hlist.innerHTML = ""
 			json.Groups.forEach((item, index) => {
-				var parent = html`
-				<li class="list-item game-card ${index<pageSize?"visible":""}">
+				const parent = html`
+				<li class="list-item game-card ${index < pageSize ? "visible" : ""}">
 					<a class="card-item game-card-container" href="${item.GroupUrl}">
 						<div class="game-card-thumb-container">
 							<img class="game-card-thumb card-thumb unloaded" src="${item.Emblem.Url}">
@@ -2153,7 +2101,7 @@ pageInit.profile = function(userId) {
 					</a>
 				</li>`
 
-				var thumb = parent.$find(".card-thumb")
+				const thumb = parent.$find(".card-thumb")
 				thumb.$once("load", () => thumb.classList.remove("unloaded"))
 
 				hlist.append(parent)
@@ -2163,23 +2111,21 @@ pageInit.profile = function(userId) {
 		})
 	}
 
-	var initFavorites = () => { // Favorites
-		var favorites = right.$find(".placeholder-favorites")
-		var hlist = favorites.$find(".hlist")
+	function initFavorites() { // Favorites
+		const favorites = right.$find(".placeholder-favorites")
+		const hlist = favorites.$find(".hlist")
 
-		var header = favorites.$find(".container-header h3")
+		const header = favorites.$find(".container-header h3")
 		header.textContent = "Favorite Places"
 
-		var isLoading = false
-		var pageSize = 6
-		var lastCategory = null
-
-		var pager = createPager()
+		const pageSize = 6
+		const pager = createPager()
 		hlist.after(pager)
 
-		pager.onsetpage = page => loadPage(lastCategory, page)
+		let isLoading = false
+		let lastCategory = null
 
-		var dropdown = html`
+		const dropdown = html`
 		<div class="input-group-btn">
 			<button type="button" class="input-dropdown-btn" data-toggle="dropdown" aria-expanded="false">
 				<span class="rbx-selection-label" data-bind="label">Places</span>
@@ -2204,17 +2150,8 @@ pageInit.profile = function(userId) {
 			</ul>
 		</div>`
 
-		var dropdownLabel = dropdown.$find(".rbx-selection-label")
+		const dropdownLabel = dropdown.$find(".rbx-selection-label")
 		favorites.$find(".container-header .btn-more").after(dropdown)
-
-
-		dropdown.$on("click", ".dropdown-menu li", e => {
-			var category = +e.currentTarget.getAttribute("data-value")
-			if(isNaN(category)) return;
-
-			loadPage(category, 1)
-		})
-
 
 		function loadPage(category, page) {
 			if(isLoading) return;
@@ -2222,34 +2159,34 @@ pageInit.profile = function(userId) {
 
 			lastCategory = category
 
-			var params = {
+			const params = {
+				userId,
 				thumbWidth: 150,
 				thumbHeight: 150,
-				userId: userId,
 				itemsPerPage: pageSize,
 				assetTypeId: category,
 				pageNumber: page
 			}
 
-			var url = `/users/favorites/list-json?${request.params(params)}`
+			const url = `/users/favorites/list-json?${request.params(params)}`
 			request.getJson(url, json => {
 				isLoading = false
 
 				if(json && json.IsValid) {
 					pager.setPage(page)
-					pager.setMaxPage(Math.floor((json.Data.TotalItems-1)/pageSize) + 1)
+					pager.setMaxPage(Math.floor((json.Data.TotalItems - 1) / pageSize) + 1)
 
 					hlist.innerHTML = ""
 
-					var categoryName = dropdownLabel.textContent
+					const categoryName = dropdownLabel.textContent
 					header.textContent = `Favorite ${categoryName}`
 
-					var items = json.Data.Items
+					const items = json.Data.Items
 					if(!items.length) {
 						hlist.append(html`<div class='section-content-off btr-section-content-off'>This user has no favorite ${categoryName}</div>`)
 					} else {
 						items.forEach(data => {
-							var item = html`
+							const item = html`
 							<li class="list-item game-card">
 								<div class="card-item game-card-container">
 									<a href="${data.Item.AbsoluteUrl}" title="${data.Item.Name}">
@@ -2266,6 +2203,7 @@ pageInit.profile = function(userId) {
 									</div>
 								</div>
 							</li>`
+
 							hlist.append(item)
 							item.$find(".unloaded").$once("load", e => e.currentTarget.classList.remove("unloaded"))
 						})
@@ -2273,6 +2211,14 @@ pageInit.profile = function(userId) {
 				}
 			})
 		}
+
+		dropdown.$on("click", ".dropdown-menu li", e => {
+			const category = +e.currentTarget.getAttribute("data-value")
+			if(isNaN(category)) return;
+
+			loadPage(category, 1)
+		})
+		pager.onsetpage = page => loadPage(lastCategory, page)
 
 		loadPage(9, 1)
 	}
@@ -2282,7 +2228,7 @@ pageInit.profile = function(userId) {
 	initFavorites()
 
 	onDocumentReady(() => {
-		var oldContainer = $(".profile-container > .rbx-tabs-horizontal")
+		const oldContainer = $(".profile-container > .rbx-tabs-horizontal")
 		if(oldContainer) {
 			oldContainer.remove()
 		}
@@ -2308,14 +2254,14 @@ pageInit.profile = function(userId) {
 pageInit.avatar = function() {
 }
 
-pageInit.inventory = function(userId) {
-	if(settings.profile.embedInventoryEnabled && top.location != self.location) {
-		var embedParent = top.document.$find("#btr-injected-inventory")
+pageInit.inventory = function() {
+	if(settings.profile.embedInventoryEnabled && top.location !== self.location) {
+		const embedParent = top.document.$find("#btr-injected-inventory")
 
 		if(embedParent) {
 			Observer.one("head", head => head.append(html`<base target="_top"></base>`))
 			.all("script:not([src])", script => {
-				var src = script.innerHTML
+				const src = script.innerHTML
 				if(src.indexOf("if (top.location != self.location)") !== -1 ||
 					src.indexOf("Roblox.DeveloperConsoleWarning.showWarning()") !== -1) {
 					script.remove()
@@ -2324,17 +2270,17 @@ pageInit.inventory = function(userId) {
 			.one("#chat-container", chat => chat.remove())
 			.one("body", body => {
 				body.classList.add("btr-embed")
-				setInterval(() => embedParent.style.height = `${body.scrollHeight}px`, 100)
+				setInterval(() => { embedParent.style.height = `${body.scrollHeight}px` }, 100)
 			})
 		}
 	}
 
 	if(settings.inventory.inventoryTools) {
 		modifyTemplate("assets-list", template => {
-			var categories = ["Models", "Meshes", "Decals", "Animations", "Audio"]
-			categories.forEach((v,i) => categories[i] = `currentData.category.name == "${v}"`)
+			const categories = ["Models", "Meshes", "Decals", "Animations", "Audio"]
+			categories.forEach((v, i) => { categories[i] = `currentData.category.name == "${v}"` })
 
-			var visibility = `staticData.isOwnPage && (${categories.join(" || ")})`
+			const visibility = `staticData.isOwnPage && (${categories.join(" || ")})`
 
 			template.$find(".assets-explorer-title").after(html`
 			<div class="header-content" ng-show="${visibility}">
@@ -2349,26 +2295,26 @@ pageInit.inventory = function(userId) {
 			</span>`)
 		})
 
-		var isRemoving = false
-		var shiftPressed = false
-		var lastPressed = null
+		let isRemoving = false
+		let shiftPressed = false
+		let lastPressed = null
 
-		var updateButtons = function() {
+		const updateButtons = function() {
 			$(".btr-it-btn").classList.toggle("disabled", $(".btr-it-box:checked") != null)
 		}
 
 		InjectJS.listen("inventoryUpdateEnd", updateButtons)
 
-		document.$on("keyup keydown", e => shiftPressed = e.shiftKey)
+		document.$on("keyup keydown", e => { shiftPressed = e.shiftKey })
 		.$on("change", ".btr-it-box", e => {
-			var id = +e.currentTarget.getAttribute("data-index")
+			const id = +e.currentTarget.getAttribute("data-index")
 
-			if(shiftPressed && lastPressed != null && id != lastPressed) {
-				var from = Math.min(id, lastPressed)
-				var to = Math.max(id, lastPressed)
-				var value = e.currentTarget.checked
+			if(shiftPressed && lastPressed != null && id !== lastPressed) {
+				const from = Math.min(id, lastPressed)
+				const to = Math.max(id, lastPressed)
+				const value = e.currentTarget.checked
 
-				for(var i = from; i <= to; i++) {
+				for(let i = from; i <= to; i++) {
 					$(`#btr-it-box${i}`).checked = value
 				}
 			}
@@ -2376,47 +2322,40 @@ pageInit.inventory = function(userId) {
 			lastPressed = id
 			updateButtons()
 		})
-		.$on("click",".item-card-link", e => {
-			if($(".btr-it-box:checked") != null) {
-				return false;
-			}
-		}).$on("click",".btr-it-remove", e => {
-			if(isRemoving)
-				return;
+		.$on("click", ".item-card-link", () => {
+			if($(".btr-it-box:checked") != null) return false;
+		}).$on("click", ".btr-it-remove", () => {
+			if(isRemoving) return;
 
-			var checked = $.all(".btr-it-box:checked")
-
-			if(!checked.length)
-				return;
+			const checked = $.all(".btr-it-box:checked")
+			if(!checked.length) return;
 
 			isRemoving = true
-			var data = []
-			for(var i=0;i<checked.length;i++) {
-				var self = $(checked[i].parentNode.parentNode.parentNode)
-				var matches = self.find(".item-card-link").attr("href").match(/(?:\/(?:catalog|library)\/|[?&]id=)(\d+)/)
+			const items = []
+			for(let i = 0; i < checked.length; i++) {
+				const self = $(checked[i].parentNode.parentNode.parentNode)
+				const matches = self.find(".item-card-link").attr("href").match(/(?:\/(?:catalog|library)\/|[?&]id=)(\d+)/)
 
-				if(matches && !isNaN(parseInt(matches[1]))) {
-					data.push({
+				if(matches && !isNaN(parseInt(matches[1], 10))) {
+					items.push({
 						obj: $(self),
 						assetId: matches[1]
 					})
 				}
 			}
 
-			var itemsLeft = data.length
-			var validAssetTypes = [ 10, 13, 40, 3, 24 ]
-			
-			var removeItem = function(index,retries) {
-				var x = data[index]
+			const validAssetTypes = [10, 13, 40, 3, 24]
+			let itemsLeft = items.length
+
+			function removeItem(index, retries) {
+				const x = items[index]
 				if(x) {
-					$.getJSON("//api.roblox.com/Marketplace/ProductInfo?assetId="+x.assetId, data =>{
-						if(!data)
-							return;
+					const url = `//api.roblox.com/Marketplace/ProductInfo?assetId=${x.assetId}`
+					$.getJSON(url, data => {
+						if(!data) return;
+						if(validAssetTypes.indexOf(data.AssetTypeId) === -1) return console.log("Bad assetType", data);
 
-						if(validAssetTypes.indexOf(data.AssetTypeId) === -1)
-							return console.log("Bad assetType", data);
-
-						getXsrfToken((token) => {
+						getXsrfToken(token => {
 							$.ajax({
 								url: "/asset/delete-from-inventory",
 								type: "post",
@@ -2429,20 +2368,20 @@ pageInit.inventory = function(userId) {
 								}
 							}).done(() => {
 								x.obj.remove()
-								if(--itemsLeft == 0) {
+								if(--itemsLeft === 0) {
 									isRemoving = false
 									InjectJS.send("refreshInventory")
 								}
 							}).fail(() => {
 								if(!retries || retries < 5) {
-									setTimeout(removeItem,250,index,(retries||0)+1)
+									setTimeout(removeItem, 250, index, (retries || 0) + 1)
 								} else {
 									console.log("Retries exhausted")
 								}
 							})
 						})
 					})
-				} 
+				}
 
 				setTimeout(removeItem, 250, index + 1)
 			}

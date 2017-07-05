@@ -1,6 +1,6 @@
 "use strict"
 
-var settings = {
+const settings = {
 	general: {
 		theme: "default",
 		showBlogFeed: true,
@@ -19,15 +19,15 @@ var settings = {
 		explorerButton: false
 	},
 	chat: {
-		enabled: true,
+		enabled: true
 	},
 	gamedetails: {
 		enabled: true,
-		showBadgeOwned: true,
+		showBadgeOwned: true
 	},
 	groups: {
 		enabled: true,
-		shoutAlerts: true,
+		shoutAlerts: true
 	},
 	inventory: {
 		inventoryTools: true
@@ -72,7 +72,7 @@ const pages = {
 		css: ["games.css"]
 	},
 	groups: {
-		matches: ["/my/groups\\.aspx","/groups/group\\.aspx"],
+		matches: ["/my/groups\\.aspx", "/groups/group\\.aspx"],
 		css: ["groups.css"]
 	},
 	groupadmin: {
@@ -92,7 +92,7 @@ const pages = {
 		css: ["inventory.css"]
 	},
 	itemdetails: {
-		matches: ["/catalog/(\\d+)/","/library/(\\d+)/"],
+		matches: ["/catalog/(\\d+)/", "/library/(\\d+)/"],
 		css: ["itemdetails.css"]
 	},
 	messages: {
@@ -117,75 +117,78 @@ const skipPages = [
 	"^/Feeds/GetUserFeed"
 ]
 
-var settingsLoaded = false
-var extensionDirectory = null
-var extensionDirectoryPromise = new Promise(resolve => {
+const commands = {}
+const clients = []
+const settingsLoadedListeners = []
+const settingsChangedListeners = []
+let settingsLoaded = false
+let extensionDirectory = null
+
+
+const extensionDirectoryPromise = new Promise(resolve => {
 	chrome.runtime.getPackageDirectoryEntry(rootEntry => {
 		function recurse(dirEntry, parent, callback) {
 			dirEntry.createReader().readEntries(array => {
-				var dirCount = 0
-				var finished = false
-				array.forEach((entry) => {
+				let dirCount = 0
+				let finished = false
+
+				array.forEach(entry => {
 					if(entry.isDirectory) {
-						var dir = parent[entry.name] = {}
+						const dir = parent[entry.name] = {}
 						dirCount++
+
 						recurse(entry, dir, callback ? (() => {
-							if(--dirCount === 0 && finished) {
-								callback(parent)
-							}
+							if(--dirCount === 0 && finished) callback(parent);
 						}) : null)
 					} else if(entry.isFile) {
 						parent[entry.name] = true
 					}
 				})
 				finished = true
-				if(callback && dirCount === 0) {
-					callback(parent)
-				}
+				if(callback && dirCount === 0) callback(parent);
 			})
 		}
 
-		recurse(rootEntry, {}, (data) => {
+		recurse(rootEntry, {}, data => {
 			extensionDirectory = data
 			resolve(data)
 		})
 	})
 })
 
-var commands = {}
-var clients = []
-var settingsLoadedListeners = []
-var settingsChangedListeners = []
-
-
-var ContentJS = {
-	broadcast: function(action, data) {
-		clients.forEach((port) => {
-			port.postMessage({ action: action, data: data })
-		})
+const ContentJS = {
+	broadcast(action, data) {
+		clients.forEach(port => port.postMessage({ action, data }))
 	}
 }
 
 
-function addSettingsLoadedListener(fn) { settingsLoaded? fn() : settingsLoadedListeners.push(fn) }
-function addSettingsChangedListener(fn) { settingsChangedListeners.push(fn) }
+function addSettingsLoadedListener(fn) {
+	if(settingsLoaded) fn();
+	else settingsLoadedListeners.push(fn);
+}
+
+function addSettingsChangedListener(fn) {
+	settingsChangedListeners.push(fn)
+}
 
 function applySettings(data, initialLoad) {
-	var changedSomething = false
+	let changedSomething = false
 
 	function recurse(par, obj) {
-		for(var i in obj) {
-			var oldVal = par[i]
-			var newVal = obj[i]
-			if(oldVal != null) {
+		Object.keys(obj).forEach(index => {
+			const oldVal = par[index]
+			const newVal = obj[index]
+
+			if(oldVal) {
 				if(oldVal instanceof Object) {
 					recurse(oldVal, newVal)
-				} else if(typeof(oldVal) === typeof(newVal) && oldVal !== newVal) {
+				} else if(typeof oldVal === typeof newVal && oldVal !== newVal) {
 					changedSomething = true
-					par[i] = newVal
+					par[index] = newVal
 				}
 			}
-		}
+		})
 	}
 
 	if(initialLoad) {
@@ -197,22 +200,23 @@ function applySettings(data, initialLoad) {
 			}
 		}
 
-		function recurseMirror(mirror, tar) {
-			for(var name in mirror) {
+		const recurseMirror = (par, tar) => {
+			Object.keys(par).forEach(name => {
 				if(name in tar) {
-					if(tar[name] instanceof Object && mirror[name] instanceof Object) {
-						recurseMirror(mirror[name], tar[name])
+					if(tar[name] instanceof Object && par[name] instanceof Object) {
+						recurseMirror(par[name], tar[name])
 					} else {
-						var path = mirror[name].split(".")
-						var prop = path.pop()
+						const path = par[name].split(".")
+						const prop = path.pop()
 
-						var dest = data
-						if( path.every(i => dest=dest[i]) && !(prop in dest))
-							dest[prop] = tar[name], delete tar[name];
-
+						let dest = data
+						if(path.every(i => !!(dest = dest[i])) && !(prop in dest)) {
+							dest[prop] = tar[name]
+							delete tar[name]
+						}
 					}
 				}
-			}
+			})
 		}
 
 		recurseMirror(mirror, data)
@@ -223,29 +227,29 @@ function applySettings(data, initialLoad) {
 	if(initialLoad) settingsLoadedListeners.forEach(fn => fn());
 
 	if(changedSomething) {
-		chrome.storage.local.set({ settings: settings })
+		chrome.storage.local.set({ settings })
 		settingsChangedListeners.forEach(fn => fn())
 	}
 }
 
-chrome.runtime.onConnect.addListener((port) => {
+chrome.runtime.onConnect.addListener(port => {
 	if(port.name === "contentScript") {
 		clients.push(port)
 		port.onDisconnect.addListener(() => clients.splice(clients.indexOf(port), 1))
 	}
 
-	var isPortAlive = true
-	port.onDisconnect.addListener(() => isPortAlive = false)
+	let isPortAlive = true
+	port.onDisconnect.addListener(() => { isPortAlive = false })
 
-	port.onMessage.addListener((msg) => {
-		var respond = (response) => {
+	port.onMessage.addListener(msg => {
+		const respond = response => {
 			if(isPortAlive) {
-				port.postMessage({ action: "_response_" + msg.uid, data: response })
+				port.postMessage({ action: `_response_${msg.uid}`, data: response })
 			}
 		}
 
-		if(commands[msg.action])
-			commands[msg.action](msg.data, respond, port);
+		const command = commands[msg.action]
+		if(command) command(msg.data, respond, port);
 	})
 })
 
