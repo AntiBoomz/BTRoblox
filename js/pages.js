@@ -1933,7 +1933,7 @@ pageInit.profile = function(userId) {
 			})
 
 			hlist.append(item)
-			pager.setMaxPage(Math.floor((hlist.children.lengt - 1) / pageSize) + 1)
+			pager.setMaxPage(Math.floor((hlist.children.length - 1) / pageSize) + 1)
 
 			const iconRetryUrl = slide.$find(".slide-item-image").getAttribute("data-retry")
 
