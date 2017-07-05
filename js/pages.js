@@ -1807,7 +1807,7 @@ pageInit.profile = function(userId) {
 		switcher.after(cont)
 
 
-		const hlist = html`<ul class="hlist btr-games-list"></ul>`
+		const hlist = html`<ul class="hlist btr-games-list" ng-non-bindable></ul>`
 		cont.append(hlist)
 
 		const pageSize = 10
@@ -2034,7 +2034,7 @@ pageInit.profile = function(userId) {
 					} else {
 						forEach(json.Data.Items, data => {
 							hlist.append(html`
-							<li class="list-item badge-item asset-item">
+							<li class="list-item badge-item asset-item" ng-non-bindable>
 								<a href="${data.Item.AbsoluteUrl}" class="badge-link" title="${data.Item.Name}">
 									<img src="${data.Thumbnail.Url}" alt="${data.Item.Name}">
 									<span class="item-name text-overflow">${data.Item.Name}</span>
@@ -2066,6 +2066,7 @@ pageInit.profile = function(userId) {
 		groups.classList.add("btr-profile-groups")
 
 		const hlist = groups.$find(".hlist")
+		hlist.setAttribute("ng-non-bindable", "")
 		const pageSize = 8
 
 		const pager = createPager()
@@ -2114,6 +2115,7 @@ pageInit.profile = function(userId) {
 	function initFavorites() { // Favorites
 		const favorites = right.$find(".placeholder-favorites")
 		const hlist = favorites.$find(".hlist")
+		hlist.setAttribute("ng-non-bindable", "")
 
 		const header = favorites.$find(".container-header h3")
 		header.textContent = "Favorite Places"
