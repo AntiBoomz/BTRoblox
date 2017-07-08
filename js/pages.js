@@ -2059,7 +2059,7 @@ pageInit.profile = function(userId) {
 			}
 		}
 
-		loadPage(1, "")
+		onDocumentReady(() => loadPage(1, ""))
 	}
 
 	function initGroups() {
@@ -2083,33 +2083,35 @@ pageInit.profile = function(userId) {
 
 		pager.onsetpage = loadPage
 
-		const url = `https://www.roblox.com/users/profile/playergroups-json?userId=${userId}`
-		request.getJson(url, json => {
-			pager.setMaxPage(Math.floor((json.NumberOfGroups - 1) / pageSize) + 1)
+		onDocumentReady(() => {
+			const url = `https://www.roblox.com/users/profile/playergroups-json?userId=${userId}`
+			request.getJson(url, json => {
+				pager.setMaxPage(Math.floor((json.NumberOfGroups - 1) / pageSize) + 1)
 
-			hlist.innerHTML = ""
-			json.Groups.forEach((item, index) => {
-				const parent = html`
-				<li class="list-item game-card ${index < pageSize ? "visible" : ""}">
-					<a class="card-item game-card-container" href="${item.GroupUrl}">
-						<div class="game-card-thumb-container">
-							<img class="game-card-thumb card-thumb unloaded" src="${item.Emblem.Url}">
-						</div>
-						<div class="text-overflow game-card-name" title="${item.Name}">${item.Name}</div>
-						<div class="text-overflow game-card-name-secondary">
-							${item.Members} ${item.Members === 1 ? "Member" : "Members"}
-						</div>
-						<div class="text-overflow game-card-name-secondary">${item.Rank}</div>
-					</a>
-				</li>`
+				hlist.innerHTML = ""
+				json.Groups.forEach((item, index) => {
+					const parent = html`
+					<li class="list-item game-card ${index < pageSize ? "visible" : ""}">
+						<a class="card-item game-card-container" href="${item.GroupUrl}">
+							<div class="game-card-thumb-container">
+								<img class="game-card-thumb card-thumb unloaded" src="${item.Emblem.Url}">
+							</div>
+							<div class="text-overflow game-card-name" title="${item.Name}">${item.Name}</div>
+							<div class="text-overflow game-card-name-secondary">
+								${item.Members} ${item.Members === 1 ? "Member" : "Members"}
+							</div>
+							<div class="text-overflow game-card-name-secondary">${item.Rank}</div>
+						</a>
+					</li>`
 
-				const thumb = parent.$find(".card-thumb")
-				thumb.$once("load", () => thumb.classList.remove("unloaded"))
+					const thumb = parent.$find(".card-thumb")
+					thumb.$once("load", () => thumb.classList.remove("unloaded"))
 
-				hlist.append(parent)
+					hlist.append(parent)
+				})
+
+				hlist.style["min-height"] = `${hlist.scrollHeight}px`
 			})
-
-			hlist.style["min-height"] = `${hlist.scrollHeight}px`
 		})
 	}
 
@@ -2223,7 +2225,7 @@ pageInit.profile = function(userId) {
 		})
 		pager.onsetpage = page => loadPage(lastCategory, page)
 
-		loadPage(9, 1)
+		onDocumentReady(() => loadPage(9, 1))
 	}
 
 	initPlayerBadges()
