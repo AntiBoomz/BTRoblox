@@ -1630,14 +1630,14 @@ pageInit.profile = function(userId) {
 		<div class="placeholder-robloxbadges" style="display:none">
 			<div class="container-header"><h3>Roblox Badges</h3></div>
 			<div class="section-content">
-				<span class="section-content-off btr-section-content-off">This user has no Roblox Badges</span>
+				<div class="section-content-off btr-section-content-off">This user has no Roblox Badges</div>
 			</div>
 		</div>
 		<div class="placeholder-playerbadges" style="display:none">
 			<div class="container-header"><h3>Player Badges</h3></div>
 			<div class="section-content">
 				<ul class="hlist">
-					<span class="section-content-off btr-section-content-off">This user has no Player Badges</span>
+					<div class="section-content-off btr-section-content-off">This user has no Player Badges</div>
 				</ul>
 			</div>
 		</div>
@@ -1645,7 +1645,7 @@ pageInit.profile = function(userId) {
 			<div class="container-header"><h3>Groups</h3></div>
 			<div class="section-content">
 				<ul class="hlist">
-					<span class="section-content-off btr-section-content-off">This user is not in any Groups</span>
+					<div class="section-content-off btr-section-content-off">This user is not in any Groups</div>
 				</ul>
 			</div>
 		</div>
@@ -1656,13 +1656,13 @@ pageInit.profile = function(userId) {
 		<div class="placeholder-games" style="display:none">
 			<div class="container-header"><h3>Games</h3></div>
 			<div class="section-content">
-				<span class="section-content-off btr-section-content-off">This user has no active Games</span>
+				<div class="section-content-off btr-section-content-off">This user has no active Games</div>
 			</div>
 		</div>
 		<div class="placeholder-friends" style="display:none">
 			<div class="container-header"><h3>Friends</h3></div>
 			<div class="section-content">
-				<span class="section-content-off btr-section-content-off">This user has no Friends</span>
+				<div class="section-content-off btr-section-content-off">This user has no Friends</div>
 			</div>
 		</div>
 		<div class="placeholder-favorites btr-profile-favorites style="display:none"">
@@ -1672,7 +1672,7 @@ pageInit.profile = function(userId) {
 			</div>
 			<div class="section-content">
 				<ul class="hlist game-cards">
-					<span class="section-content-off btr-section-content-off">This user has no favorite Places</span>
+					<div class="section-content-off btr-section-content-off">This user has no favorite Places</div>
 				</ul>
 			</div>
 		</div>
