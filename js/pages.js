@@ -1697,7 +1697,8 @@ pageInit.profile = function(userId) {
 		const tooltip = footer.$find(".tooltip-pastnames")
 		if(tooltip) tooltip.setAttribute("data-container", "body"); // Display tooltip over side panel
 	})
-	.one(".profile-avatar-status", status => {
+	.one(".profile-header-top .header-caption", () => { // Wait for the first element after status
+		const status = $(".profile-avatar-status")
 		const statusDiv = html`<div class="btr-header-status-parent"></div>`
 		$(".placeholder-status").replaceWith(statusDiv)
 		const statusText = html`<span class="btr-header-status-text"></span>`
