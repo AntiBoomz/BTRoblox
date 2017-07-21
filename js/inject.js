@@ -211,112 +211,121 @@
 							return result
 						}
 					})
-				} catch(ex) {}
+				} catch(ex) {
+					// Nothing
+				}
 			}
 		}
 
 
-		if(typeof(Roblox) !== "undefined") {
+		if(typeof Roblox !== "undefined") {
 			if(!settings.general.showAds && Roblox.PrerollPlayer) {
 				Roblox.PrerollPlayer.waitForPreroll = x => $.Deferred().resolve(x);
 			}
 
 			if(page === "gamedetails") {
-				var placeId = matches[0]
+				const placeId = matches[0]
 
-				if(Roblox.PrivateServer != null && Roblox.PrivateServer.initServerTab != null)
-					Roblox.PrivateServer.initServerTab()
-				else
-					console.log("[BTR] Unable to init private servers")
-		
-				if(Roblox.GameInstance != null && Roblox.GameInstance.init != null) {
-					var curIndex = 0;
-					var maxSize = 0;
+				$(() => {
+					const tabBtn = $(".rbx-tab.active")
+					if(tabBtn.length) {
+						tabBtn.removeClass("active")
+						tabBtn.find("a").click()
+					}
+				})
 
-					$.ajaxPrefilter(options => {
-						if(options.url === "/games/getgameinstancesjson") {
-							var success = options.success
-							options.success = function(i) {
-								curIndex = +options.url.match(/startindex=(\d+)/)[1]
-								maxSize = i.TotalCollectionSize
+				const createPager = (gameInstance, isFriends) => {
+					const prefix = isFriends ? ".rbx-friends" : ".rbx"
+					let curIndex = 0
+					let maxSize = 0
 
-								Roblox.GameInstance.clearInstances()
-								updatePager()
+					$(`${prefix}-running-games-load-more`).hide() // Hide Load More
 
-								return success.apply(this, arguments)
-							}
-						}
-					})
-					
-					$(".rbx-running-games-load-more").hide() // Hide Load More
+					const pager = $(
+					`<div class='btr-server-pager'>
+						<button type='button' class='btn-control-sm btr-server-first'>First</button>
+						<button type='button' class='btn-control-sm btr-server-prev'>Prev</button>
+						<span style='margin:0 10px;vertical-align:middle;line-height:100%'>
+							<input type='text' class='rbx-input-field btr-server-input'> of <span class='btr-server-max'>0</span>
+						</span>
+						<button type='button' class='btn-control-sm btr-server-next'>Next</button>
+						<button type='button' class='btn-control-sm btr-server-last'>Last</button>
+					</div>`
+					).appendTo(`${prefix}-running-games-footer`);
 
-					var pager = $(
-					"<div class='btr-server-pager'>"+
-						"<button type='button' class='btn-control-sm btr-server-first'>First</button>"+
-						"<button type='button' class='btn-control-sm btr-server-prev'>Prev</button>"+
-						"<span style='margin:0 10px;vertical-align:middle;line-height:100%'>"+
-							"<input type='text' pattern='\\d*' class='rbx-input-field btr-server-input'> of <span class='btr-server-max'>0</span>"+
-						"</span>"+
-						"<button type='button' class='btn-control-sm btr-server-next'>Next</button>"+
-						"<button type='button' class='btn-control-sm btr-server-last'>Last</button>"+
-					"</div>"
-					).appendTo(".rbx-running-games-footer");
-
-					var updatePager = function() {
-						var curPage = Math.floor(curIndex/10)+1
-						var maxPage = Math.floor(maxSize/10)+1
+					const updatePager = function() {
+						const curPage = Math.floor(curIndex / 10) + 1
+						const maxPage = Math.floor(maxSize / 10) + 1
 						pager.find(".btr-server-input").val(curPage)
 						pager.find(".btr-server-max").text(maxPage)
 
-						pager.find(".btr-server-first").toggleClass("disabled", curPage<=1);
-						pager.find(".btr-server-prev").toggleClass("disabled", curPage<=1);
-						pager.find(".btr-server-last").toggleClass("disabled", curPage==maxPage);
-						pager.find(".btr-server-next").toggleClass("disabled", curPage==maxPage);
+						pager.find(".btr-server-first").toggleClass("disabled", curPage <= 1)
+						pager.find(".btr-server-prev").toggleClass("disabled", curPage <= 1)
+						pager.find(".btr-server-last").toggleClass("disabled", curPage === maxPage)
+						pager.find(".btr-server-next").toggleClass("disabled", curPage === maxPage)
 
-						$(".rbx-game-server-join").removeAttr("href")
+						$(`${prefix}-game-server-join`).removeAttr("href")
 					}
 
-					pager.on("click",".btr-server-last:not(.disabled)", () => {
-						Roblox.GameInstance.fetchServers(placeId, maxSize-maxSize%10)
-					}).on("click",".btr-server-next:not(.disabled)", () => {
-						Roblox.GameInstance.fetchServers(placeId, Math.min(maxSize-maxSize%10, curIndex+10))
-					}).on("click",".btr-server-prev:not(.disabled)", () => {
-						Roblox.GameInstance.fetchServers(placeId, Math.max(0, curIndex-10))
-					}).on("click",".btr-server-first:not(.disabled)", () => {
-						Roblox.GameInstance.fetchServers(placeId, 0)
-					}).on({
-						blur:function() {
-							var maxPage = Math.floor(maxSize/10)+1
-							var text = $(this).val()
-							var num = parseInt(text)
+					const url = isFriends ? "/games/getfriendsgameinstances" : "/games/getgameinstancesjson"
+					$.ajaxPrefilter(options => {
+						if(options.url === url) {
+							const success = options.success
+							options.success = function(i, ...args) {
+								curIndex = +options.url.match(/startindex=(\d+)/)[1]
+								maxSize = i.TotalCollectionSize
+
+								gameInstance.clearInstances()
+								updatePager()
+
+								return success.call(this, i, ...args)
+							}
+						}
+					})
+
+					pager.on("click", ".btr-server-last:not(.disabled)", () => {
+						gameInstance.fetchServers(placeId, maxSize - maxSize % 10)
+					})
+					.on("click", ".btr-server-next:not(.disabled)", () => {
+						gameInstance.fetchServers(placeId, Math.min(maxSize - (maxSize % 10), curIndex + 10))
+					})
+					.on("click", ".btr-server-prev:not(.disabled)", () => {
+						gameInstance.fetchServers(placeId, Math.max(0, curIndex - 10))
+					})
+					.on("click", ".btr-server-first:not(.disabled)", () => {
+						gameInstance.fetchServers(placeId, 0)
+					})
+					.on({
+						blur() {
+							const maxPage = Math.floor(maxSize / 10) + 1
+							const text = $(this).val()
+							let num = parseInt(text, 10)
+
 							if(!isNaN(num)) {
-								num = Math.min(maxPage,Math.max(1,num))
-								Roblox.GameInstance.fetchServers(placeId,(num-1)*10)
+								num = Math.min(maxPage, Math.max(1, num))
+								gameInstance.fetchServers(placeId, (num - 1) * 10)
 							}
 						},
-						keypress:function(e) {
-							if (e.which == 13) {
+						keypress(e) {
+							if (e.which === 13) {
 								$(this).blur()
 							}
 						}
-					},".btr-server-input")
-
-					Roblox.GameInstance.init()
+					}, ".btr-server-input")
 				}
+
+				if(Roblox.FriendsRunningGameInstances) createPager(Roblox.FriendsRunningGameInstances, true);
+				if(Roblox.AllRunningGameInstances) createPager(Roblox.AllRunningGameInstances);
 			}
 		}
 
-		if(typeof(Sys) != "undefined" && Sys.WebForms != null) {
-			var prm = Sys.WebForms.PageRequestManager.getInstance()
+		if(typeof Sys !== "undefined" && Sys.WebForms != null) {
+			const prm = Sys.WebForms.PageRequestManager.getInstance()
 
-			prm.add_pageLoaded(function() {
-				ContentJS.send("ajaxUpdate")
-			})
+			prm.add_pageLoaded(() => ContentJS.send("ajaxUpdate"))
 
-			if(page == "groups" && settings.groups.enabled) {
-				prm.add_pageLoaded(function() {
-					$(".GroupWallPane .linkify").linkify()
-				})
+			if(page === "groups" && settings.groups.enabled) {
+				prm.add_pageLoaded(() => $(".GroupWallPane .linkify").linkify())
 			}
 		}
 	}
