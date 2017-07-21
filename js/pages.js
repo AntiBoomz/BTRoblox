@@ -1685,7 +1685,7 @@ pageInit.profile = function(userId) {
 	</div>`
 
 	Observer.one("body", body => body.classList.add("btr-profile"))
-	.one(".profile-container", cont => cont.append(left, right, bottom))
+	.one(".profile-header", cont => cont.after(left, right, bottom))
 	.one(".profile-about-content", desc => {
 		$(".placeholder-desc").replaceWith(desc)
 
