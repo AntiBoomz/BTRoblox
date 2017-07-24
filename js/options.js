@@ -132,7 +132,6 @@ BackgroundJS.send("getSettings", settings => {
 				var input = html`<input type="checkbox" class="btr-option btr-option-checkbox" id="${id}">`
 				input.checked = value
 				input.$on("change", e => {
-					console.log(e)
 					group[index] = e.target.checked
 					BackgroundJS.send("setSetting", settings)
 				})
