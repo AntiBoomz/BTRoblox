@@ -56,8 +56,10 @@
 			}
 		}]
 
-		try { angular.module("pageTemplateApp").run(args) } catch(ex) { }
-		try { angular.module("baseTemplateApp").run(args) } catch(ex) { }
+		const templateApps = ["chatAppHtmlTemplateApp", "pageTemplateApp", "baseTemplateApp"]
+		templateApps.forEach(templateName => {
+			try { angular.module(templateName).run(args) } catch(ex) { }
+		})
 	}
 
 	function OnInit(settings, page, matches, templates) {

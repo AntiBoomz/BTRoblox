@@ -251,7 +251,7 @@ function Init() {
 		Observer.one("#chat-container", cont => cont.remove())
 	} else {
 		modifyTemplate("chat-bar", template => {
-			const label = template.$find(".chat-header-label:first-child .chat-header-title")
+			const label = template.$find("#chat-main .chat-header-title")
 			label.textContent = "Chat"
 		})
 	}
