@@ -180,7 +180,7 @@ function applySettings(data, initialLoad) {
 			const oldVal = par[index]
 			const newVal = obj[index]
 
-			if(oldVal) {
+			if(oldVal != null) {
 				if(oldVal instanceof Object) {
 					recurse(oldVal, newVal)
 				} else if(typeof oldVal === typeof newVal && oldVal !== newVal) {
