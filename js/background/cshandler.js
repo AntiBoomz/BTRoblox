@@ -162,6 +162,8 @@ Object.entries(
 			return true
 		},
 		getRankName(data, respond) {
+			const url = `https://www.roblox.com/Game/LuaWebService/HandleSocialRequest.ashx?method=GetGroupRole&playerid=${data.userId}&groupid=${data.groupId}`
+			fetch(url).then(async resp => respond(await resp.text()))
 			return true
 		},
 		_execScripts(list, respond, port) {
