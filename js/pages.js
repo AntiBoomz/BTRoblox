@@ -1493,7 +1493,7 @@ pageInit.configureplace = function(placeId) {
 pageInit.groups = function() {
 	if(!settings.groups.enabled) return;
 
-	const rankNamePromises = {}
+	const rankNameCache = {}
 
 	Observer.one("body", body => body.classList.add("btr-groups"))
 	.one(["#GroupDescP pre", "#GroupDesc_Full"], (desc, fullDesc) => {
@@ -1585,13 +1585,11 @@ pageInit.groups = function() {
 			if(groupId && userId) {
 				const span = html`<span class="btr_grouprank"></span>`
 				userLink.append(span)
-
-				if(!rankNamePromises[userId]) {
-					const options = { userId, groupId }
-					rankNamePromises[userId] = new Promise(resolve => BackgroundJS.send("getRankName", options, resolve))
-				}
-
-				rankNamePromises[userId].then(rankname => {
+				
+				let promise = rankNameCache[userId]
+				if(!promise) promise = rankNameCache[userId] = new Promise(resolve => BackgroundJS.send("getRankName", { userId, groupId }, resolve));
+				
+				promise.then(rankname => {
 					userLink.append(html`<span class="btr_grouprank">(${rankname})</span>`)
 				})
 			}
