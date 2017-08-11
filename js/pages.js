@@ -37,27 +37,19 @@ const ContainerAssetTypeIds = {
 
 const avatarApi = {
 	baseUrl: "https://avatar.roblox.com/v1/",
-	get(url, ...args) {
+	get(path, ...args) {
 		let [data, cb] = args
 		if(typeof data === "function") {
 			cb = data
 			data = null
 		}
 
-		request({
+		const url = this.baseUrl + path + encodeParams(data)
+		fetch(url, {
 			method: "GET",
-			url: this.baseUrl + url,
-			params: data,
-			dataType: "json",
 			headers: { "X-CSRF-TOKEN": this.csrfToken },
-			success: json => cb(json),
-			failure: xhr => {
-				if(xhr.status === 403) {
-					this.csrfToken = xhr.getResponseHeader("X-CSRF-TOKEN")
-					this.get(url, data, cb)
-				}
-			}
-		})
+			credentials: "include"
+		}).then(async response => cb(await response.json()))
 	},
 	post(url, ...args) {
 		let [data, cb] = args
@@ -66,20 +58,12 @@ const avatarApi = {
 			data = null
 		}
 
-		request({
+		const url = this.baseUrl + path
+		fetch(url, {
 			method: "POST",
-			url: this.baseUrl + url,
-			json: JSON.stringify(data),
-			dataType: "json",
 			headers: { "X-CSRF-TOKEN": this.csrfToken },
-			success: json => cb(json),
-			failure: xhr => {
-				if(xhr.status === 403) {
-					this.csrfToken = xhr.getResponseHeader("X-CSRF-TOKEN")
-					this.post(url, data, cb)
-				}
-			}
-		})
+			body: JSON.stringify(data)
+		}).then(async response => cb(await response.json()))
 	},
 
 	getRules(cb) { this.get("avatar-rules", cb) },
@@ -102,6 +86,12 @@ const avatarApi = {
 }
 
 
+async function getProductInfo(assetId) {
+	const response = await fetch(`https://api.roblox.com/marketplace/productinfo?assetId=${assetId}`)
+	return response.json()
+}
+
+
 const alreadyLoaded = {}
 function execScripts(list, cb) {
 	for(let i = 0; i < list.length; i++) {
@@ -116,7 +106,7 @@ function execScripts(list, cb) {
 	if(list.length === 0) {
 		cb()
 	} else {
-		BackgroundJS.send("execScript", list, cb)
+		BackgroundJS.send("_execScripts", list, cb)
 	}
 }
 
@@ -338,6 +328,7 @@ function Create3dPreview(readyCb) {
 
 				if(data.bodyColors) {
 					const bodyColors = {}
+
 					forEach(data.bodyColors, (value, name) => {
 						const index = name.toLowerCase().replace(/colorid$/, "")
 						const bodyColor = rules.bodyColorsPalette.find(x => x.brickColorId === value)
@@ -1142,7 +1133,7 @@ pageInit.itemdetails = function(assetId) {
 							</div>
 						</li>`
 
-						BackgroundJS.send("getProductInfo", childId, data => {
+						getProductInfo(childId).then(data => {
 							if(data.IsForSale) {
 								if(data.PriceInRobux) {
 									card.$find(".item-card-price").innerHTML = htmlstring`
@@ -1279,7 +1270,7 @@ pageInit.gamedetails = function(placeId) {
 	})
 	.one("#carousel-game-details", details => details.setAttribute("data-is-video-autoplayed-on-ready", "false"))
 	.one(".game-stats-container .game-stat", x => x.$find(".text-label").textContent === "Updated", stat => {
-		BackgroundJS.send("getProductInfo", placeId, data => {
+		getProductInfo(placeId).then(data => {
 			stat.$find(".text-lead").textContent = new Date(data.Updated).relativeFormat("zz 'ago'", startDate)
 		})
 	})
@@ -1301,7 +1292,7 @@ pageInit.gamedetails = function(placeId) {
 		const anchor = box.$find(".btr-universe-name")
 
 		newContainer.prepend(box)
-		BackgroundJS.send("getProductInfo", rootPlaceId, data => {
+		getProductInfo(rootPlaceId).then(data => {
 			anchor.textContent = data.Name
 			anchor.href += data.Name.replace(/[^\w\-\s]+/g, "").replace(/\s+/g, "-")
 		})
@@ -1362,9 +1353,8 @@ pageInit.catalog = function() {
 		if(!matches) return;
 
 		const assetId = matches[1]
-		const promise = productCache[assetId] || (productCache[assetId] = new Promise(resolve =>
-			BackgroundJS.send("getProductInfo", assetId, resolve)
-		))
+		let promise = productCache[assetId]
+		if(!promise) promise = productCache[assetId] = getProductInfo(assetId);
 
 		promise.then(data => {
 			const updated = new Date(data.Updated).relativeFormat("zz 'ago'", startDate)
@@ -1627,13 +1617,13 @@ pageInit.profile = function(userId) {
 				<div class="placeholder-footer" style="display:none"></div>
 			</div>
 		</div>
-		<div class="placeholder-robloxbadges" style="display:none">
+		<div class="placeholder-robloxbadges">
 			<div class="container-header"><h3>Roblox Badges</h3></div>
 			<div class="section-content">
 				<div class="section-content-off btr-section-content-off">This user has no Roblox Badges</div>
 			</div>
 		</div>
-		<div class="placeholder-playerbadges" style="display:none">
+		<div class="btr-profile-playerbadges">
 			<div class="container-header"><h3>Player Badges</h3></div>
 			<div class="section-content">
 				<ul class="hlist">
@@ -1641,7 +1631,7 @@ pageInit.profile = function(userId) {
 				</ul>
 			</div>
 		</div>
-		<div class="placeholder-groups" style="display:none">
+		<div class="btr-profile-groups">
 			<div class="container-header"><h3>Groups</h3></div>
 			<div class="section-content">
 				<ul class="hlist">
@@ -1653,19 +1643,19 @@ pageInit.profile = function(userId) {
 
 	const right = html`
 	<div class="btr-profile-col-2 btr-profile-right">
-		<div class="placeholder-games" style="display:none">
+		<div class="placeholder-games">
 			<div class="container-header"><h3>Games</h3></div>
 			<div class="section-content">
 				<div class="section-content-off btr-section-content-off">This user has no active Games</div>
 			</div>
 		</div>
-		<div class="placeholder-friends" style="display:none">
+		<div class="placeholder-friends">
 			<div class="container-header"><h3>Friends</h3></div>
 			<div class="section-content">
 				<div class="section-content-off btr-section-content-off">This user has no Friends</div>
 			</div>
 		</div>
-		<div class="placeholder-favorites btr-profile-favorites style="display:none"">
+		<div class="btr-profile-favorites">
 			<div class="container-header">
 				<h3>Favorite Places</h3>
 				<a href="./favorites" class="btn-secondary-xs btn-fixed-width btn-more">Favorites</a>
@@ -1717,7 +1707,7 @@ pageInit.profile = function(userId) {
 				statusLabel.textContent = statusTitle
 
 				Observer.one("script:not([src])", x => x.innerHTML.indexOf("play_placeId") !== -1, script => {
-					const matches = script.innerHTML.match(/play_placeId = (\d+)/)
+					const matches = script.innerHTML.match(/play_placeId\s*=\s*(\d+)/)
 					if(matches && matches[1] !== "0") {
 						const placeId = matches[1]
 						let urlTitle = statusTitle.replace(/\s+/g, "-").replace(/[^\w-]/g, "")
@@ -1731,7 +1721,7 @@ pageInit.profile = function(userId) {
 						<a class="btr-header-status-follow-button" title="Follow" onclick="${onclick}">\uD83D\uDEAA</a>`)
 
 						if(statusTitle === "In Game") {
-							BackgroundJS.send("getProductInfo", placeId, data => {
+							getProductInfo(placeId).then(data => {
 								urlTitle = data.Name.replace(/\s+/g, "-").replace(/[^\w-]/g, "")
 								anchor.href = `/games/${placeId}/${urlTitle}`
 								statusLabel.textContent = data.Name
@@ -2005,9 +1995,7 @@ pageInit.profile = function(userId) {
 	.one(".profile-collections", collections => bottom.$find(".placeholder-collections").replaceWith(collections))
 
 	function initPlayerBadges() {
-		const badges = left.$find(".placeholder-playerbadges")
-		badges.classList.add("btr-profile-playerbadges")
-
+		const badges = left.$find(".btr-profile-playerbadges")
 		const hlist = badges.$find(".hlist")
 		const pager = createPager(true)
 		hlist.after(pager)
@@ -2063,9 +2051,7 @@ pageInit.profile = function(userId) {
 	}
 
 	function initGroups() {
-		const groups = left.$find(".placeholder-groups")
-		groups.classList.add("btr-profile-groups")
-
+		const groups = left.$find(".btr-profile-groups")
 		const hlist = groups.$find(".hlist")
 		hlist.setAttribute("ng-non-bindable", "")
 		const pageSize = 8
@@ -2116,7 +2102,7 @@ pageInit.profile = function(userId) {
 	}
 
 	function initFavorites() { // Favorites
-		const favorites = right.$find(".placeholder-favorites")
+		const favorites = right.$find(".btr-profile-favorites")
 		const hlist = favorites.$find(".hlist")
 		hlist.setAttribute("ng-non-bindable", "")
 
@@ -2249,10 +2235,11 @@ pageInit.profile = function(userId) {
 			bottom.$find(".placeholder-inventory").remove()
 		}
 
+		/*
 		document.$findAll(`.profile-container>div>div[class^="placeholder-"]`).forEach(item => {
 			item.style.display = ""
 			item.classList.forEach(className => className.startsWith("placeholder-") && item.classList.remove(className))
-		})
+		})*/
 	})
 }
 
@@ -2267,7 +2254,7 @@ pageInit.inventory = function() {
 			Observer.one("head", head => head.append(html`<base target="_top"></base>`))
 			.all("script:not([src])", script => {
 				const src = script.innerHTML
-				if(src.indexOf("if (top.location != self.location)") !== -1 ||
+				if(src.indexOf("top.location=self.location") !== -1 ||
 					src.indexOf("Roblox.DeveloperConsoleWarning.showWarning()") !== -1) {
 					script.remove()
 				}
@@ -2305,7 +2292,7 @@ pageInit.inventory = function() {
 		let lastPressed = null
 
 		const updateButtons = function() {
-			$(".btr-it-btn").classList.toggle("disabled", $(".btr-it-box:checked") != null)
+			$(".btr-it-btn").classList.toggle("disabled", !$(".btr-it-box:checked"))
 		}
 
 		InjectJS.listen("inventoryUpdateEnd", updateButtons)

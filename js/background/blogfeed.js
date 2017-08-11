@@ -1,40 +1,41 @@
 "use strict"
 
-var blogFeedUrl = "https://blog.roblox.com/feed/"
-var cachedBlogFeedRaw = null
-var cachedBlogFeed = null
+const Blogfeed = (() => {
+	const feedUrl = "https://blog.roblox.com/feed/"
+	let cachedFeedRaw
+	let cachedFeed
 
-function fetchBlogFeed() {
-	if(!settings.general.showBlogFeed)
-		return null;
 
-	request.get(blogFeedUrl, feed => {
-		if(cachedBlogFeedRaw !== feed) {
-			cachedBlogFeedRaw = feed
+	return {
+		get(cb) {
+			fetch(feedUrl).then(response => {
+				response.text().then(feed => {
+					if(feed === cachedFeedRaw) return;
+					cachedFeedRaw = feed
 
-			var responseData = []
-			var doc = new DOMParser().parseFromString(feed, "text/xml")
-			var items = doc.querySelectorAll("item")
+					const responseData = []
+					const doc = new DOMParser().parseFromString(feed, "text/xml")
+					const items = doc.querySelectorAll("item")
 
-			for(var i=0; i<3; i++) {
-				var item = items[i]
-				var url = item.querySelector("link").textContent
-				var title = item.querySelector("title").textContent
-				var published = Date.parse(item.querySelector("pubDate").textContent)
-				var descDoc = new DOMParser().parseFromString(item.querySelector("description").textContent, "text/html")
-				descDoc.querySelector("p:last-child").remove()
-				var desc = descDoc.body.textContent.trim()
-				var creator = item.querySelector("creator").textContent
+					for(let i = 0; i < 3; i++) {
+						const item = items[i]
+						const url = item.querySelector("link").textContent
+						const title = item.querySelector("title").textContent
+						const published = Date.parse(item.querySelector("pubDate").textContent)
+						const descDoc = new DOMParser().parseFromString(item.querySelector("description").textContent, "text/html")
+						descDoc.querySelector("p:last-child").remove()
+						const desc = descDoc.body.textContent.trim()
+						const creator = item.querySelector("creator").textContent
 
-				responseData.push({ url, title, published, desc, creator })
-			}
+						responseData.push({ url, title, published, desc, creator })
+					}
 
-			cachedBlogFeed = responseData
-			ContentJS.broadcast("blogfeed", cachedBlogFeed)
+					cachedFeed = responseData
+					if(typeof cb === "function") cb(cachedFeed);
+				})
+			})
+
+			return cachedFeed
 		}
-	})
-
-	return cachedBlogFeed
-}
-
-addSettingsLoadedListener(fetchBlogFeed)
+	}
+})();

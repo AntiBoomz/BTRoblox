@@ -15,47 +15,61 @@ let loggedInUser = -1
 let loggedInUserPromise = null
 
 
-const BackgroundJS = {
-	_listeners: {},
-	_reqCounter: 0,
-	_started: false,
-	_start() {
-		if(this._started) return;
-		this._started = true
-		this._port = chrome.runtime.connect({ name: "contentScript" })
+const BackgroundJS = (() => {
+	const listenersByType = {}
+	let port
+	let portTimeout
 
-		this._port.onMessage.addListener(msg => {
-			if(!(msg instanceof Object) || typeof msg.action !== "string") return;
-
-			const list = this._listeners[msg.action]
-			if(list) {
-				for(let i = 0; i < list.length; i++) {
-					const listener = list[i]
-					if(listener.once) list.splice(i--, 1);
-					listener.callback(msg.data)
-				}
+	const onMessage = msg => {
+		const listeners = listenersByType[msg.type]
+		if(listeners) {
+			for(let i = 0; i < listeners.length; i++) {
+				const [callback, once] = listeners[i]
+				try {
+					const result = callback(msg.data)
+					if(once) listeners.splice(i--, 1);
+					if(result === true) return true;
+				} catch(ex) { console.error(ex) }
 			}
-		})
-	},
-	send(action, ...args) {
-		const uid = this._reqCounter++
-		let [data, callback] = args
-		if(typeof data === "function") {
-			callback = data
-			data = null
+		}
+	}
+
+	const refreshPort = () => {
+		if(!port) {
+			port = chrome.runtime.connect({ name: "BackgroundJS.connect" })
+
+			port.onMessage.addListener(onMessage)
+			port.onDisconnect.addListener(() => {
+				clearTimeout(portTimeout)
+				port = null
+			})
 		}
 
-
-		if(callback) this.listen(`_response_${uid}`, callback);
-		this._port.postMessage({ uid, action, data })
-	},
-	listen(actionList, callback, once) {
-		actionList.split(" ").forEach(action => {
-			if(!this._listeners[action]) this._listeners[action] = [];
-			this._listeners[action].push({ callback, once })
-		})
+		clearTimeout(portTimeout)
+		portTimeout = setTimeout(() => {
+			port.disconnect()
+			port = null
+		}, 5 * 60e3)
 	}
-}
+
+	return {
+		send(type, data, callback) {
+			if(typeof data === "function") {
+				callback = data
+				data = null
+			}
+
+			refreshPort()
+			chrome.runtime.sendMessage({ type, data }, callback)
+		},
+		listen(typeList, callback, once) {
+			typeList.split(" ").forEach(type => {
+				if(!listenersByType[type]) listenersByType[type] = [];
+				listenersByType[type].push([callback, once])
+			})
+		}
+	}
+})();
 
 const InjectJS = {
 	_queue: [],
@@ -69,7 +83,7 @@ const InjectJS = {
 
 	send(action, ...detail) {
 		if(!this._started) {
-			this._queue.push(detail)
+			this._queue.push([action, ...detail])
 			return;
 		}
 
@@ -119,7 +133,6 @@ function onDocumentReady(cb) {
 }
 
 function Init() {
-	BackgroundJS._start()
 	InjectJS.listen("INJECT_INIT", () => InjectJS._start())
 
 	const friends = html`
@@ -142,10 +155,141 @@ function Init() {
 	<div id="btr_blogfeed" style="display:none;">Blog feed enabled</div>`
 
 	const settingsDiv = html`
-	<div id="btr-settings">
-		<a class="btr-settings-toggle">x</a>
-		<iframe src="${getURL("options.html")}">
+	<div class="btr-settings-modal">
+		<div class="btr-settings">
+			<div class="btr-settings-header">
+				<div class="btr-settings-header-title">BTRoblox</div>
+				<div class="btr-settings-header-close btr-settings-toggle">⨯</div>
+			</div>
+			<div class="btr-settings-content">
+			</div>
+			<div class="btr-settings-footer">
+				Refresh the page to apply settings
+			</div>
+		</div>
 	</div>`
+
+	document.$on("click", ".btr-settings-toggle", () => {
+		const visible = settingsDiv.parentNode !== document.body
+
+		if(visible) document.body.appendChild(settingsDiv);
+		else settingsDiv.remove();
+
+		if(!settingsDiv.hasAttribute("loaded")) {
+			settingsDiv.setAttribute("loaded", "")
+			const content = settingsDiv.$find(".btr-settings-content")
+
+			content.addEventListener("mousewheel", e => {
+				if(e.deltaY < 0 && content.scrollTop === 0) return e.preventDefault();
+				if(e.deltaY > 0 && content.scrollTop >= content.scrollHeight - content.clientHeight) return e.preventDefault();
+			})
+
+			fetch(getURL("options.html")).then(async resp => {
+				content.innerHTML = await resp.text()
+
+				const settingsDone = {}
+				let labelCounter = 0
+				let wipGroup
+
+				Array.from(content.children).forEach(group => {
+					const groupPath = group.getAttribute("path")
+					const settingsGroup = settings[groupPath]
+					const title = html`<h4>${group.getAttribute("label")}</h4>`
+					group.prepend(title)
+					title.after(html`<br>`)
+
+					settingsDone[groupPath] = {}
+
+					if(group.hasAttribute("toggleable")) {
+						const inputList = group.getElementsByTagName("input")
+						const input = html`<input type=checkbox class=btr-settings-enabled-toggle>`
+						title.after(input)
+
+						const update = state => {
+							Array.from(inputList).forEach(x => {
+								if(x === input) return;
+
+								if(!state) x.setAttribute("disabled", "");
+								else x.removeAttribute("disabled");
+							})
+						}
+
+						input.checked = !!settingsGroup.enabled
+						input.$on("change", () => {
+							settingsGroup.enabled = input.checked
+							BackgroundJS.send("setSetting", { [groupPath]: { enabled: input.checked } })
+							update(input.checked)
+						})
+						setTimeout(update, 0, input.checked)
+
+						settingsDone[groupPath].enabled = true
+					}
+
+					Array.from(group.getElementsByTagName("select")).forEach(select => {
+						const settingName = select.getAttribute("path")
+
+						select.value = settingsGroup[settingName]
+						select.$on("change", () => {
+							settingsGroup[settingName] = select.value
+							BackgroundJS.send("setSetting", { [groupPath]: { [settingName]: select.value } })
+						})
+
+						settingsDone[groupPath][settingName] = true
+					})
+
+					Array.from(group.getElementsByTagName("checkbox")).forEach(checkbox => {
+						const settingName = checkbox.getAttribute("path")
+						const input = html`<input id=btr-settings-input-${labelCounter} type=checkbox>`
+						const label = html`<label for=btr-settings-input-${labelCounter++}>${checkbox.getAttribute("label")}`
+
+						checkbox.classList.add("checkbox")
+
+						checkbox.append(input)
+						checkbox.append(label)
+
+						if(!(settingName in settingsGroup)) label.textContent += " (Bad setting)";
+
+						input.checked = !!settingsGroup[settingName]
+						input.$on("change", () => {
+							settingsGroup[settingName] = input.checked
+							BackgroundJS.send("setSetting", { [groupPath]: { [settingName]: input.checked } })
+						})
+
+						settingsDone[groupPath][settingName] = true
+					})
+				})
+
+				Object.entries(settings).forEach(([groupPath, settingsGroup]) => {
+					Object.entries(settingsGroup).forEach(([settingName, settingValue]) => {
+						if(groupPath in settingsDone && settingName in settingsDone[groupPath]) return;
+
+						if(!wipGroup) {
+							wipGroup = html`<group><h4>WIP</h4><br></group>`
+							content.append(wipGroup)
+						}
+
+						if(typeof settingValue === "boolean") {
+							const checkbox = html`<checkbox></checkbox>`
+							const input = html`<input id=btr-settings-input-${labelCounter} type=checkbox>`
+							const label = html`<label for=btr-settings-input-${labelCounter++}>${groupPath}.${settingName}`
+
+							checkbox.append(input)
+							checkbox.append(label)
+							wipGroup.append(checkbox)
+
+							input.checked = !!settingValue
+							input.$on("change", () => {
+								settingsGroup[settingName] = input.checked
+								BackgroundJS.send("setSetting", { [groupPath]: { [settingName]: input.checked } })
+							})
+						} else {
+							wipGroup.append(html`<div>${groupPath}.${settingName} (${typeof settingValue})`)
+						}
+					})
+				})
+			})
+		}
+	})
 
 	loggedInUserPromise = new Promise(resolve => {
 		Observer.one("#nav-profile", nav => {
@@ -238,74 +382,12 @@ function Init() {
 		updateMessages()
 	})
 
-
-	let settingsVisible = false
-	document.$on("click", ".btr-settings-toggle", () => {
-		settingsVisible = !settingsVisible
-
-		if(settingsVisible) document.body.append(settingsDiv)
-		else settingsDiv.remove()
-	})
-
 	if(!settings.general.chatEnabled) {
 		Observer.one("#chat-container", cont => cont.remove())
 	} else {
 		modifyTemplate("chat-bar", template => {
 			const label = template.$find("#chat-main .chat-header-title")
 			label.textContent = "Chat"
-		})
-	}
-
-	if(true) {
-		let target
-		let audio;
-
-		const audioStop = () => {
-			if(target) {
-				target.classList.remove("icon-pause")
-				target.classList.add("icon-play")
-			}
-			audio.pause()
-		}
-
-		const audioPlay = () => {
-			if(target) {
-				target.classList.remove("icon-play")
-				target.classList.add("icon-pause")
-			}
-			audio.play()
-		}
-
-		document.$on("click", ".MediaPlayerIcon[data-mediathumb-url]", ev => {
-			ev.stopImmediatePropagation()
-
-			if(target === ev.currentTarget) return audio.paused ? audioPlay() : audioStop();
-
-			if(!audio) {
-				audio = new Audio();
-
-				let checkInterval;
-				audio.$on("play", () => {
-					clearInterval(checkInterval)
-					checkInterval = setInterval(() => {
-						if(!target || !document.documentElement.contains(target)) {
-							clearInterval(checkInterval)
-							audioStop()
-						}
-					}, 500)
-				})
-				audio.$on("ended error", () => {
-					clearInterval(checkInterval)
-					audioStop()
-				})
-			}
-
-			audioStop()
-
-			target = ev.currentTarget
-			audio.src = target.dataset.mediathumbUrl
-
-			audioPlay()
 		})
 	}
 
@@ -367,7 +449,7 @@ function Init() {
 function PreInit() {
 	if(document.contentType !== "text/html") return;
 
-	chrome.runtime.sendMessage({ name: "getdata", url: location.href }, data => {
+	BackgroundJS.send("csInit", pathname, data => {
 		if(!data) return;
 		hasDataLoaded = true
 

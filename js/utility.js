@@ -177,6 +177,9 @@ const $ = (() => {
 	Document.prototype.$find = qs(Document.prototype.querySelector)
 	Document.prototype.$findAll = qs(Document.prototype.querySelectorAll)
 
+	DocumentFragment.prototype.$find = qs(DocumentFragment.prototype.querySelector)
+	DocumentFragment.prototype.$findAll = qs(DocumentFragment.prototype.querySelectorAll)
+
 	return $
 })();
 
@@ -190,9 +193,20 @@ function forEach(target, fn) {
 	}
 }
 
+function encodeParams(params) {
+	if(params instanceof Object) {
+		const paramString = Object.entries(params).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join("&")
+		return paramString.length ? "?" + paramString : ""
+	}
+
+	return ""
+}
+
+
 const request = function(options) {
 	if(this instanceof request)
 		throw new Error("request is not a constructor");
+	console.warn("[BTRoblox] request is deprecated")
 
 	var xhr = new XMLHttpRequest()
 
@@ -244,6 +258,7 @@ const request = function(options) {
 
 Object.assign(request, {
 	params(params) {
+		console.warn("[BTRoblox] request is deprecated")
 		var p = []
 		for(var name in params) {
 			var value = params[name]
@@ -258,6 +273,7 @@ Object.assign(request, {
 	getJson(url, success, failure) { return this({ method: "GET", url, success, failure, dataType: "json" }) },
 	post(url, data, success, failure) { return this({ method: "POST", url, data, success, failure }) }
 })
+
 
 const htmlstring = function(pieces) {
 	const escapeMap = {

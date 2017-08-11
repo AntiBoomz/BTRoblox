@@ -13,15 +13,12 @@
 
 	"background": {
 		"scripts": [
-			"js/utility.js",
-			"js/background.js",
+			"js/background/settings.js",
 			"js/background/blogfeed.js",
-			"js/background/commands.js",
-			"js/background/contextmenu.js",
-			"js/background/notifications.js",
-			"js/background/quickinject.js",
-			"js/background/shoutchecker.js"
-		]
+			"js/background/cshandler.js",
+			"js/background/groupshout.js"
+		],
+		"persistent": false
 	},
 	"permissions": [
 		"*://www.roblox.com/",
@@ -33,6 +30,7 @@
 		"*://*.rbxcdn.com/",
 		"storage",
 		"notifications",
+		"alarms",
 		"contextMenus"
 	],
 	"web_accessible_resources": [

@@ -1,18 +1,44 @@
-<head>
-	<script type="text/javascript" src="/js/utility.js"></script>
-	<link rel="stylesheet" href="/css/options.css">
-</head>
+<group label="General" path="general">
+	<select path="theme">
+		<option label="Default" value="default"/>
+		<option label="Simply Black" value="simblk"/>
+		<option label="Sky" value="sky"/>
+		<option label="Red" value="red"/>
+	</select>
 
-<body>
-	<div id="btr-options" class="visible">
-		<div id="btr-header">BTR Settings</div>
-		<div id="btr-content">
-			<div id="btr-content-basic">
-				<script type="text/javascript" src="/js/options.js"></script>
-			</div>
-		</div>
-		<div id="btr-footer">
-			<span style="float:right">Reload the page to apply changes<a class="btr-footer-button btn-control-xs btr-settings-save">Reload</a></span>
-		</div>
-	</div>
-</body>
+	<checkbox label="Add Blog Feed to Sidebar" path="showBlogFeed"></checkbox>
+	<checkbox label="Show Ads" path="showAds"></checkbox>
+	<checkbox label="Keep Sidebar Open" path="noHamburger"></checkbox>
+	<checkbox label="Show Chat" path="chatEnabled"></checkbox>
+</group>
+
+<group label="Profile Changes" path="profile" toggleable>
+	<checkbox label="Embed Inventory" path="embedInventoryEnabled"></checkbox>
+</group>
+
+<group label="Groups Changes" path="groups" toggleable>
+	<checkbox label="Group Shout Notifications" path="shoutAlerts"></checkbox>
+</group>
+
+<group label="Game Details Page Changes" path="gamedetails" toggleable>
+	<checkbox label="Highlight Owned Badges" path="showBadgeOwned"></checkbox>
+</group>
+
+<group label="Item Details Changes" path="itemdetails">
+	<checkbox label="Animation Previewer" path="animationPreview"></checkbox>
+	<checkbox label="Auto-Load Animation Previewer" path="animationPreviewAutoLoad"></checkbox>
+	<checkbox label="Show Explorer Button" path="explorerButton"></checkbox>
+</group>
+
+<group label="Inventory Changes" path="inventory">
+	<checkbox label="Inventory Tools" path="inventoryTools"></checkbox>
+</group>
+
+<group label="Catalog Changes" path="catalog" toggleable>
+</group>
+
+<group label="Chat Changes" path="chat" toggleable>
+</group>
+
+<group label="Version History Changes" path="versionhistory" toggleable>
+</group>

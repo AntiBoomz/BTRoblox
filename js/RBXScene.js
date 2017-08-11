@@ -10,7 +10,7 @@ typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXScene = (function() {
 			"js/scene/Avatar.js"
 		]
 
-		BackgroundJS.send("execScript", components, () => {
+		execScripts(components, () => {
 			RBXScene.Avatar.ready(() => {
 				isReady = true
 				resolve(RBXScene)
