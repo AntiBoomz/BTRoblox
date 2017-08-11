@@ -1531,17 +1531,6 @@ pageInit.groups = function() {
 
 			postDate.parentNode.remove()
 
-			if(exileButton) {
-				exileButton.textContent = "Exile User"
-				exileButton.classList.add("btn-control", "btn-control-medium")
-				exileButton.style = ""
-			} else {
-				exileButton = html`<a class="btn-control btn-control-medium disabled">Exile User</a>`
-				if(deleteButton) deleteButton.before(exileButton);
-				else postBtns.append(exileButton);
-			}
-
-
 			if(deleteButton) {
 				deleteButton.textContent = "Delete"
 				deleteButton.classList.add("btn-control", "btn-control-medium")
@@ -1562,7 +1551,17 @@ pageInit.groups = function() {
 				}
 			} else {
 				deleteButton = html`<a class="btn-control btn-control-medium disabled">Delete</a>`
-				postBtns.append(deleteButton)
+				if(exileButton) exileButton.before(deleteButton);
+				else postBtns.append(deleteButton)
+			}
+
+			if(exileButton) {
+				exileButton.textContent = "Exile User"
+				exileButton.classList.add("btn-control", "btn-control-medium")
+				exileButton.style = ""
+			} else {
+				exileButton = html`<a class="btn-control btn-control-medium disabled">Exile User</a>`
+				postBtns.append(exileButton)
 			}
 
 			dateSpan.classList.add("btr_groupwallpostdate")
