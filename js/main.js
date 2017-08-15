@@ -49,7 +49,7 @@ const BackgroundJS = (() => {
 		portTimeout = setTimeout(() => {
 			port.disconnect()
 			port = null
-		}, 5 * 60e3)
+		}, 30 * 60e3)
 	}
 
 	return {
