@@ -16,7 +16,8 @@
 			"js/background/settings.js",
 			"js/background/blogfeed.js",
 			"js/background/cshandler.js",
-			"js/background/groupshout.js"
+			"js/background/groupshout.js",
+			"js/background/contextmenu.js"
 		],
 		"persistent": false
 	},
