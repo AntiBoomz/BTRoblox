@@ -2226,7 +2226,7 @@ pageInit.profile = function(userId) {
 		if(settings.profile.embedInventoryEnabled) {
 			bottom.$find(".placeholder-inventory").replaceWith(html`
 			<div>
-				<iframe id="btr-injected-inventory" src="/users/${userId}/inventory" scrolling="no">
+				<iframe id="btr-injected-inventory" src="/users/${userId}/inventory" scrolling="no" sandbox="allow-same-origin allow-scripts allow-top-navigation-by-user-activation">
 			</div>`)
 		} else {
 			bottom.$find(".placeholder-inventory").remove()
