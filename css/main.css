@@ -856,7 +856,6 @@ body input.btr-settings-enabled-toggle {
 	background: #B8B8B8;
 	border-radius: 12px;
 
-	line-height: 24px;
 	font-size: 12px;
 	font-weight: 400;
 	color: #fff;
@@ -896,6 +895,7 @@ body input.btr-settings-enabled-toggle {
 	margin-left: 6px;
 	display: inline;
 	user-select: none;
+	vertical-align: middle;
 }
 
 .btr-settings-enabled-toggle:checked:after {
