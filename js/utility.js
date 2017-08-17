@@ -180,100 +180,10 @@ const $ = (() => {
 	DocumentFragment.prototype.$find = qs(DocumentFragment.prototype.querySelector)
 	DocumentFragment.prototype.$findAll = qs(DocumentFragment.prototype.querySelectorAll)
 
+	HTMLCollection.prototype.$forEach = Array.prototype.forEach
+
 	return $
 })();
-
-function forEach(target, fn) {
-	var arr = Object.entries(target)
-
-	if(arr.length) {
-		arr.forEach(([key, value]) => fn(value, key))
-	} else {
-		Array.from(target).forEach(fn)
-	}
-}
-
-function encodeParams(params) {
-	if(params instanceof Object) {
-		const paramString = Object.entries(params).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join("&")
-		return paramString.length ? "?" + paramString : ""
-	}
-
-	return ""
-}
-
-
-const request = function(options) {
-	if(this instanceof request)
-		throw new Error("request is not a constructor");
-	console.warn("[BTRoblox] request is deprecated")
-
-	var xhr = new XMLHttpRequest()
-
-	xhr.responseType = options.dataType || "text"
-	xhr.onload = () => options.success && options.success(xhr.response, xhr)
-	xhr.onerror = err => options.failure && options.failure(xhr, err)
-
-	var method = options.method || "GET"
-	var url = options.url
-	var data = null
-	var headers = {}
-
-	if(options.params)
-		url += (url.indexOf("?") === -1 ? "?" : "&") + request.params(options.params);
-
-	if(method === "GET") {
-		if(options.data) {
-			url += (url.indexOf("?") === -1 ? "?" : "&") + request.params(options.data)
-		}
-	} else {
-		if(options.data) {
-			if(options.data instanceof Object) {
-				headers["content-type"] = "application/x-www-form-urlencoded"
-				data = request.params(options.data)
-			} else {
-				data = options.data.toString()
-			}
-		} else if(options.json) {
-			headers["content-type"] = "application/json"
-			data = JSON.stringify(options.json)
-		}
-	}
-
-	if(options.contentType)
-		headers["content-type"] = options.contentType;
-
-	if(options.headers) 
-		for(var name in options.headers) headers[name.toLowerCase()] = options.headers[name];
-
-
-	xhr.open(method, url, true)
-
-	for(var name in headers) {
-		xhr.setRequestHeader(name, headers[name])
-	}
-
-	xhr.send(data)
-}
-
-Object.assign(request, {
-	params(params) {
-		console.warn("[BTRoblox] request is deprecated")
-		var p = []
-		for(var name in params) {
-			var value = params[name]
-			p.push(encodeURIComponent(name) + "=" + encodeURIComponent(value == null ? "" : value))
-		}
-
-		return p.join("&").replace(/%20/g, "+")
-	},
-
-	get(url, success, failure) { return this({ method: "GET", url, success, failure }) },
-	getBlob(url, success, failure) { return this({ method: "GET", url, success, failure, dataType: "blob" }) },
-	getJson(url, success, failure) { return this({ method: "GET", url, success, failure, dataType: "json" }) },
-	post(url, data, success, failure) { return this({ method: "POST", url, data, success, failure }) }
-})
-
 
 const htmlstring = function(pieces) {
 	const escapeMap = {

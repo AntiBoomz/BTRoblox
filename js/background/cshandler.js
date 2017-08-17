@@ -143,7 +143,7 @@ Object.entries(
 		resolveAssetUrl(data, respond) {
 			let url = "http://www.roblox.com/asset/?"
 
-			if(typeof data === "object") url += Object.entries(params).map(([key, val]) => `${key}=${encodeURIComponent(val)}`).join("&");
+			if(typeof data === "object") url += new URLSearchParams(data).toString();
 			else url += "id=" + data;
 
 			const xhr = new XMLHttpRequest()

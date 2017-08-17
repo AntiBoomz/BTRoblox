@@ -48,7 +48,7 @@ var propertyGroups = {
 
 var propertyOrder = []
 
-forEach(propertyGroups, group => { 
+Object.values(propertyGroups).forEach(group => { 
 	group.List.forEach((propName) => propertyOrder[propName] = group.Order)
 })
 

@@ -548,77 +548,77 @@
 		})()
 
 		var ParseRBXXml = (function() {
-			function forEach(arr, fn) {
-				Array.prototype.forEach.call(arr, fn)
-			}
-
 			function RBXXmlParser() {
 				this.refs = {}
 				this.refWait = []
 			}
 
 			Object.assign(RBXXmlParser.prototype, {
-				parseProperties: function(item, propertiesNode) {
-					forEach(propertiesNode.children, (propNode) => {
+				parseProperties(item, propertiesNode) {
+					propertiesNode.children.$forEach(propNode => {
 						var name = propNode.attributes.name.value
 						var value = propNode.textContent
 
 						switch(propNode.nodeName.toLowerCase()) {
-							case "content":
-							case "string":
-							case "protectedstring":
-								break;
-							case "double":
-							case "float":
-							case "int":
-								value = +value
-								break;
-							case "bool":
-								value = value == "true"
-								break;
-							case "token":
-								value = RBXEnum(+value)
-								break;
-							case "coordinateframe":
-								value = [ 0,0,0, 1,0,0, 0,1,0, 0,0,1 ]
-								var trans = { X:0,Y:1,Z:2, R00:3,R01:4,R02:5, R10:6,R11:7,R12:8, R20:9,R21:10,R22:11 }
-								forEach(propNode.children, (x) => (value[trans[x.nodeName.toUpperCase()]]=+x.textContent))
-								value = RBXProperty("CFrame", value)
-								break;
-							case "vector3":
-								value = [ 0,0,0 ]
-								var trans = { X:0,Y:1,Z:2 }
-								forEach(propNode.children, (x) => (value[trans[x.nodeName.toUpperCase()]]=+x.textContent))
-								value = RBXProperty("Vector3", value)
-								break;
-							case "ref":
-								if(value === "null")
-									value = null;
-								else if(this.refs[value])
-									value = this.refs[value];
-								else {
-									this.refWait.push({
-										ref: value,
-										target: item,
-										propName: name
-									})
-									value = null
-								}
-								break;
-							case "physicalproperties":
-							case "binarystring":
+						case "content":
+						case "string":
+						case "protectedstring":
+							break;
+						case "double":
+						case "float":
+						case "int":
+							value = +value
+							break;
+						case "bool":
+							value = value == "true"
+							break;
+						case "token":
+							value = RBXEnum(+value)
+							break;
+						case "coordinateframe":
+							value = [ 0,0,0, 1,0,0, 0,1,0, 0,0,1 ]
+							var trans = { X:0,Y:1,Z:2, R00:3,R01:4,R02:5, R10:6,R11:7,R12:8, R20:9,R21:10,R22:11 }
+							propNode.children.$forEach(x => {
+								value[trans[x.nodeName.toUpperCase()]] = +x.textContent
+							})
+							value = RBXProperty("CFrame", value)
+							break;
+						case "vector3":
+							value = [ 0,0,0 ]
+							var trans = { X:0,Y:1,Z:2 }
+							propNode.children.$forEach(x => {
+								value[trans[x.nodeName.toUpperCase()]] = +x.textContent
+							})
+							value = RBXProperty("Vector3", value)
+							break;
+						case "ref":
+							if(value === "null")
+								value = null;
+							else if(this.refs[value])
+								value = this.refs[value];
+							else {
+								this.refWait.push({
+									ref: value,
+									target: item,
+									propName: name
+								})
 								value = null
-								break;
-							default:
-								console.warn("[ParseRBXXml] Unknown dataType " + propNode.nodeName + " for " + name, propNode.innerHTML)
-								value = null
-								break;
+							}
+							break;
+						case "physicalproperties":
+						case "binarystring":
+							value = null
+							break;
+						default:
+							console.warn("[ParseRBXXml] Unknown dataType " + propNode.nodeName + " for " + name, propNode.innerHTML)
+							value = null
+							break;
 						}
 
 						item.setProperty(name, value)
 					})
 				},
-				parseItem: function(node) {
+				parseItem(node) {
 					var item = RBXInstance(node.className)
 
 					var ref = node.getAttribute("referent")
@@ -630,24 +630,24 @@
 						})
 					}
 
-					forEach(node.children, (child) => {
+					node.children.$forEach(child => {
 						switch(child.nodeName) {
-							case "Item":
-								var childItem = this.parseItem(child)
-								childItem.setParent(item)
-								break;
-							case "Properties":
-								this.parseProperties(item, child)
-								break;
-							default:
-								console.log("Unknown xml node", child.nodeName);
-								break;
+						case "Item":
+							var childItem = this.parseItem(child)
+							childItem.setParent(item)
+							break;
+						case "Properties":
+							this.parseProperties(item, child)
+							break;
+						default:
+							console.log("Unknown xml node", child.nodeName);
+							break;
 						}
 					})
 
 					return item
 				},
-				parse: function(xmlString) {
+				parse(xmlString) {
 					var xml = null
 					try {
 						xml = new DOMParser().parseFromString(xmlString, "text/xml").documentElement
@@ -660,7 +660,7 @@
 
 					var result = []
 
-					forEach(xml.children, (child) => {
+					xml.children.$forEach(child => {
 						if(child.nodeName === "Item") {
 							result.push(this.parseItem(child))
 						}

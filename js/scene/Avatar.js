@@ -461,9 +461,8 @@ ANTI.RBXScene.Avatar = (function() {
 			this.r6Composite.shouldUpdateBodyColors = true
 			this.r6Composite.update()
 
-			forEach(this.r15Composites, (composite, name) => {
-				if(!bodyColors[name])
-					return;
+			Object.entries(this.r15Composites).forEach(([name, composite]) => {
+				if(!bodyColors[name]) return;
 
 				composite.background = bodyColors[name]
 				composite.update()
@@ -699,7 +698,7 @@ ANTI.RBXScene.Avatar = (function() {
 					}
 					obj.name = tree.name
 
-					forEach(tree.attachments, (cframe, name) => {
+					Object.entries(tree.attachments).forEach(([name, cframe]) => {
 						var att = new THREE.Group()
 						obj.add(att)
 
@@ -775,7 +774,7 @@ ANTI.RBXScene.Avatar = (function() {
 				}
 			})
 
-			forEach(this.parts, (part, partName) => {
+			Object.entries(this.parts).forEach(([partName, part]) => {
 				var change = changedParts[partName]
 				var meshId = change && change.meshId || part.rbxDefaultMesh
 
@@ -805,7 +804,7 @@ ANTI.RBXScene.Avatar = (function() {
 				}
 			})
 
-			forEach(this.joints, (joint, jointName) => {
+			Object.entries(this.joints).forEach(([jointName, joint]) => {
 				var change = changedJoints[jointName]
 				var C0 = change && change[joint.part0] || joint.origC0
 				var C1 = change && change[joint.part1] && InvertCFrame(change[joint.part1]) || joint.origC1
@@ -817,7 +816,7 @@ ANTI.RBXScene.Avatar = (function() {
 				joint.c1.rotation.setFromRotationMatrix(C1)
 			})
 
-			forEach(this.attachments, (att, attName) => {
+			Object.entries(this.attachments).forEach(([attName, att]) => {
 				var cframe = changedAttachments[attName] || att.cframe
 
 				att.obj.position.setFromMatrixPosition(cframe)

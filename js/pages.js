@@ -44,7 +44,7 @@ const avatarApi = {
 			data = null
 		}
 
-		const url = this.baseUrl + path + encodeParams(data)
+		const url = this.baseUrl + path + "?" + new URLSearchParams(data).toString()
 		fetch(url, {
 			method: "GET",
 			headers: { "X-CSRF-TOKEN": this.csrfToken },
@@ -329,7 +329,7 @@ function Create3dPreview(readyCb) {
 				if(data.bodyColors) {
 					const bodyColors = {}
 
-					forEach(data.bodyColors, (value, name) => {
+					Object.entries(data.bodyColors).forEach(([name, value]) => {
 						const index = name.toLowerCase().replace(/colorid$/, "")
 						const bodyColor = rules.bodyColorsPalette.find(x => x.brickColorId === value)
 						bodyColors[index] = bodyColor.hexColor
@@ -439,23 +439,20 @@ function CreateNewVersionHistory(assetId, assetType) {
 	let isBusy = false
 	let actualPageSize
 
-	function getPage(page, target) {
-		return new Promise(resolve => {
-			const url = `//api.roblox.com/assets/${assetId}/versions?page=${page}`
-			request.getJson(url, json => {
-				if(Array.isArray(target)) {
-					const offset = (page - 1) * actualPageSize
+	async function getPage(page, target) {
+		const url = `//api.roblox.com/assets/${assetId}/versions?page=${page}`
+		const response = await fetch(url, { credentials: "include" })
+		const json = await response.json()
 
-					json.forEach((v, i) => {
-						target[offset + i] = v
-					})
-				} else {
-					target(json)
-				}
+		if(Array.isArray(target)) {
+			const offset = (page - 1) * actualPageSize
 
-				resolve()
+			json.forEach((v, i) => {
+				target[offset + i] = v
 			})
-		})
+		} else {
+			target(json)
+		}
 	}
 
 	function constructPage(items, itemStart, itemEnd) {
@@ -542,19 +539,17 @@ function CreateNewVersionHistory(assetId, assetType) {
 
 		isBusy = true
 
-		getXsrfToken(token => request({
-			method: "POST",
-			url: "/places/revert",
-			data: { assetVersionID: versionId },
-			headers: { "X-CSRF-TOKEN": token },
-			success: () => {
-				isBusy = false
-				loadPage(1)
-			},
-			error: () => {
-				isBusy = false
-			}
-		}))
+		getXsrfToken(async token => {
+			const response = await fetch("/places/revert", {
+				method: "POST",
+				credentials: "include",
+				headers: { "X-CSRF-TOKEN": token },
+				body: new URLSearchParams({ assetVersionID: versionId })
+			})
+
+			isBusy = false
+			if(response.status === 200) loadPage(1);
+		})
 	})
 	.$on("click", ".btr-version-download", e => {
 		if(isBusy) return;
@@ -571,14 +566,11 @@ function CreateNewVersionHistory(assetId, assetType) {
 
 		BackgroundJS.send("resolveAssetUrl", { id: assetId, version }, url => {
 			if(!url) return console.warn("Failed to resolve asset");
-
-			request({
-				url,
-				dataType: "blob",
-				success: blob => {
-					isBusy = false
-					startDownload(URL.createObjectURL(blob), fileName)
-				}
+			
+			fetch(url).then(async response => {
+				const blob = await response.blob()
+				isBusy = false
+				startDownload(URL.createObjectURL(blob), fileName)
 			})
 		})
 	})
@@ -656,22 +648,16 @@ pageInit.develop = function() {
 
 			if(isNaN(placeId)) return;
 
-			getXsrfToken(token => {
-				request({
+			getXsrfToken(async token => {
+				const response = await fetch("/game/toggle-profile", {
 					method: "POST",
-					url: "/game/toggle-profile",
-					data: {
-						placeId,
-						addToProfile: !isVisible
-					},
-					dataType: "json",
+					credentials: "include",
 					headers: { "X-CSRF-TOKEN": token },
-					success: json => {
-						if(json.isValid) {
-							table.setAttribute("data-in-showcase", json.data.inShowcase)
-						}
-					}
+					body: new URLSearchParams({ placeId, addToProfile: !isVisible })
 				})
+
+				const json = await response.json()
+				if(json.isValid) table.setAttribute("data-in-showcase", json.data.inShowcase);
 			})
 		})
 	})
@@ -882,7 +868,7 @@ pageInit.itemdetails = function(assetId) {
 							let first = true
 
 							function addAnims(anims) {
-								forEach(anims, (animId, name) => {
+								Object.entries(anims).forEach(([name, animId]) => {
 									preview.addDropdown(animId, name)
 									if(first) {
 										first = false
@@ -916,7 +902,7 @@ pageInit.itemdetails = function(assetId) {
 							enable()
 
 							let first = true
-							forEach(anims, (animId, name) => {
+							Object.entries(anims).forEach(([name, animId]) => {
 								preview.addDropdown(animId, name)
 								if(first) {
 									first = false
@@ -1089,9 +1075,11 @@ pageInit.itemdetails = function(assetId) {
 
 						const url = `/asset-thumbnail/json?width=420&height=420&format=png&assetId=${imgId}`
 						function fetchThumb() {
-							request.getJson(url, data => {
-								if(!data.Final) return setTimeout(fetchThumb, 200);
-								img.src = data.Url
+							fetch(url).then(async response => {
+								const data = await response.json()
+
+								if(!data.Final) setTimeout(fetchThumb, 200);
+								else img.src = data.Url;
 							})
 						}
 
@@ -1235,9 +1223,11 @@ pageInit.gamedetails = function(placeId) {
 			const onSeeMoreBadges = new Promise(resolve => Observer.one("#badges-see-more", btn => btn.$once("click", resolve)))
 
 			const getIsBadgeOwned = (badgeId, cb) => {
-				// var url = `//api.roblox.com/Ownership/HasAsset?userId=${loggedInUser}&assetId=${badgeId}`
 				const url = `//www.roblox.com/Game/Badge/HasBadge.ashx?UserID=${loggedInUser}&BadgeID=${badgeId}`
-				request.get(url, result => cb(result === "Success"), () => cb(true))
+				fetch(url).then(async response => {
+					const result = await response.text()
+					cb(result === "Success")
+				})
 			}
 
 			onDocumentReady(() => {
@@ -1404,7 +1394,10 @@ pageInit.configureplace = function(placeId) {
 
 			function loadPage(page, cb) {
 				const url = `//api.roblox.com/assets/${placeId}/versions?page=${page}`
-				request.getJson(url, cb)
+				fetch(url, { credentials: "include" }).then(async response => {
+					const json = await response.json()
+					cb(json)
+				})
 			}
 
 			function loadFile() {
@@ -1432,20 +1425,32 @@ pageInit.configureplace = function(placeId) {
 					return setTimeout(loadFile, 100);
 				}
 
-				const data = queue.splice(0, 1)[0]
+				const data = queue.shift()
 				btn.textContent = `Downloading ${++loadedCount}/${versionCount}`
 
 				BackgroundJS.send("resolveAssetUrl", { id: placeId, version: data.VersionNumber }, url => {
-					if(!url) return console.warn("Failed to resolve asset");
-
-					request({
-						url,
-						dataType: "arraybuffer",
-						success: buffer => {
-							zip.file(`${fileName}-${data.VersionNumber}.rbxl`, buffer)
-							setTimeout(loadFile, 100)
+					if(url) {
+						const tryFetch = () => {
+							fetch(url)
+								.then(response => response.arrayBuffer())
+								.then(buffer => {
+									zip.file(`${fileName}-${data.VersionNumber}.rbxl`, buffer)
+									setTimeout(loadFile, 100)
+								})
+								.catch(ex => {
+									console.warn(ex)
+									setTimeout(tryFetch, 1000)
+								})
 						}
-					})
+
+						tryFetch()
+					} else {
+						console.warn("Failed to resolve asset")
+						queue.unshift(data)
+						setTimeout(loadFile, 500)
+					}
+
+					
 				})
 			}
 
@@ -1815,7 +1820,7 @@ pageInit.profile = function(userId) {
 		function loadPage(page) {
 			pager.setPage(page)
 
-			forEach(hlist.children, (obj, index) => {
+			hlist.children.$forEach((obj, index) => {
 				obj.classList.toggle("visible", Math.floor(index / pageSize) + 1 === page)
 			})
 
@@ -1834,23 +1839,21 @@ pageInit.profile = function(userId) {
 		.$on("click", ".btr-btn-toggle-profile", () => {
 			const placeId = e.currentTarget.getAttribute("data-placeid")
 			getXsrfToken(token => {
-				request({
+				fetch("/game/toggle-profile", {
 					method: "POST",
-					url: "/game/toggle-profile",
-					data: { placeId, addToProfile: false },
-					dataType: "json",
-					headers: { "X-CSRF-TOKEN": token }
+					credentials: "include",
+					headers: { "X-CSRF-TOKEN": token },
+					body: new URLSearchParams({ placeId, addToProfile: false })
 				})
 			})
 		})
 		.$on("click", ".btr-btn-shutdown-all", () => {
 			getXsrfToken(token => {
-				request({
+				fetch("/Games/shutdown-all-instances", {
 					method: "POST",
-					url: "/Games/shutdown-all-instances",
-					data: { placeId },
-					dataType: "json",
-					headers: { "X-CSRF-TOKEN": token }
+					credentials: "include",
+					headers: { "X-CSRF-TOKEN": token },
+					body: new URLSearchParams({ placeId })
 				})
 			})
 		})
@@ -1927,7 +1930,9 @@ pageInit.profile = function(userId) {
 
 			function getThumbnail() {
 				function retryUntilFinal(thumbUrl, cb) {
-					request.getJson(thumbUrl, json => {
+					fetch(thumbUrl).then(async response => {
+						const json = await response.json()
+
 						if(json && json.Final) cb(json);
 						else setTimeout(retryUntilFinal, 500, thumbUrl, cb);
 					})
@@ -1965,26 +1970,25 @@ pageInit.profile = function(userId) {
 
 		if(hlist.children.length === 9) {
 			const url = `//api.roblox.com/users/${userId}/friends`
+			fetch(url).then(async response => {
+				const list = await response.json()
+				if(list.length <= 9) return;
+				const item = list[9]
 
-			request.getJson(url, list => {
-				if(list.length > 9) {
-					const item = list[9]
+				const profileUrl = `/users/${item.Id}/profile`
+				const thumbUrl = `/Thumbs/Avatar.ashx?x=100&y=100&userId=${item.Id}`
 
-					const profileUrl = `/users/${item.Id}/profile`
-					const thumbUrl = `/Thumbs/Avatar.ashx?x=100&y=100&userId=${item.Id}`
-
-					hlist.append(html`
-					<li class="list-item friend">
-						<div class="avatar-container">
-							<a href="${profileUrl}" class="avatar avatar-card-fullbody friend-link" title="${item.Username}">
-								<span class="avatar-card-link friend-avatar">
-									<img alt="${item.Username}" class="avatar-card-image" src="${thumbUrl}">
-								</span>
-								<span class="text-overflow friend-name">${item.Username}</span>
-							</a>
-						</div>
-					</li>`)
-				}
+				hlist.append(html`
+				<li class="list-item friend">
+					<div class="avatar-container">
+						<a href="${profileUrl}" class="avatar avatar-card-fullbody friend-link" title="${item.Username}">
+							<span class="avatar-card-link friend-avatar">
+								<img alt="${item.Username}" class="avatar-card-image" src="${thumbUrl}">
+							</span>
+							<span class="text-overflow friend-name">${item.Username}</span>
+						</a>
+					</div>
+				</li>`)
 			})
 		}
 	})
@@ -2004,7 +2008,8 @@ pageInit.profile = function(userId) {
 			isLoading = true
 
 			const url = `/users/inventory/list-json?assetTypeId=21&itemsPerPage=10&userId=${userId}&cursor=${cursor}&pageNumber=${page}`
-			request.getJson(url, json => {
+			fetch(url).then(async response => {
+				const json = await response.json()
 				isLoading = false
 				prevData = json
 
@@ -2018,7 +2023,7 @@ pageInit.profile = function(userId) {
 						const text = `${userId === loggedInUser ? "You have" : "This user has"} no badges`
 						hlist.append(html`<div class="section-content-off btr-section-content-off">${text}</div>`)
 					} else {
-						forEach(json.Data.Items, data => {
+						json.Data.Items.forEach(data => {
 							hlist.append(html`
 							<li class="list-item badge-item asset-item" ng-non-bindable>
 								<a href="${data.Item.AbsoluteUrl}" class="badge-link" title="${data.Item.Name}">
@@ -2059,7 +2064,7 @@ pageInit.profile = function(userId) {
 		function loadPage(page) {
 			pager.setPage(page)
 
-			forEach(hlist.children, (obj, index) => {
+			hlist.children.$forEach((obj, index) => {
 				obj.classList.toggle("visible", Math.floor(index / pageSize) + 1 === page)
 			})
 		}
@@ -2068,7 +2073,9 @@ pageInit.profile = function(userId) {
 
 		onDocumentReady(() => {
 			const url = `https://www.roblox.com/users/profile/playergroups-json?userId=${userId}`
-			request.getJson(url, json => {
+			fetch(url).then(async response => {
+				const json = await response.json()
+
 				pager.setMaxPage(Math.floor((json.NumberOfGroups - 1) / pageSize) + 1)
 
 				hlist.innerHTML = ""
@@ -2147,17 +2154,18 @@ pageInit.profile = function(userId) {
 
 			lastCategory = category
 
-			const params = {
+			const params = new URLSearchParams({
 				userId,
 				thumbWidth: 150,
 				thumbHeight: 150,
 				itemsPerPage: pageSize,
 				assetTypeId: category,
 				pageNumber: page
-			}
+			}).toString()
 
-			const url = `/users/favorites/list-json?${request.params(params)}`
-			request.getJson(url, json => {
+			const url = `/users/favorites/list-json?${params}`
+			fetch(url).then(async response => {
+				const json = await response.json()
 				isLoading = false
 
 				if(json && json.IsValid) {
