@@ -140,30 +140,22 @@ Object.entries(
 			Settings.set(data)
 			return false
 		},
-		resolveAssetUrl(data, respond) {
-			let url = "http://www.roblox.com/asset/?"
-
-			if(typeof data === "object") url += new URLSearchParams(data).toString();
-			else url += "id=" + data;
-
-			const xhr = new XMLHttpRequest()
-			xhr.open("GET", url, true)
-			xhr.addEventListener("readystatechange", function() {
-				if(this.status === 200 && this.responseURL.indexOf("rbxcdn") !== -1) {
-					respond(this.responseURL.replace(/^http:/, "https:"))
-				} else {
-					respond(null)
-				}
-
-				this.abort()
-			}, { once: true })
-			xhr.send(null)
-
-			return true
-		},
 		getRankName(data, respond) {
 			const url = `https://www.roblox.com/Game/LuaWebService/HandleSocialRequest.ashx?method=GetGroupRole&playerid=${data.userId}&groupid=${data.groupId}`
 			fetch(url).then(async resp => respond(await resp.text()))
+			return true
+		},
+		downloadFile(url, respond) {
+			fetch(url, { credentials: "include" })
+				.then(async response => {
+					const blob = await response.blob()
+					respond(URL.createObjectURL(blob))
+				})
+				.catch(ex => {
+					console.error("[cshandler] downloadFile error", ex)
+					respond(null)
+				})
+
 			return true
 		},
 		_execScripts(list, respond, port) {

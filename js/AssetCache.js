@@ -3,63 +3,28 @@
 "use strict"
 
 const AssetCache = (() => {
-	const resolveCache = {}
 	const assetCache = {}
-	const fetchParams = { credentials: "include" }
-
-	function resolvePath(path, cb) {
-		if(typeof path === "string" && isNaN(path)) {
-			return cb(path);
-		}
-
-		return AssetCache.resolveAsset(path, cb)
-	}
 
 	function createMethod(constructor) {
 		const cache = {}
 
-		return (path, cb) => {
-			resolvePath(path, url => {
-				if(!url) return console.warn("Failed to resolve model " + path);
-				let promise = cache[url]
+		return (url, cb) => {
+			if(typeof url !== "string" || !isNaN(url)) url = `https://www.roblox.com/asset/?id=${url}`;
 
-				if(!promise) {
-					promise = cache[url] = new Promise(resolve => {
-						let filePromise = assetCache[url]
-						if(!filePromise) filePromise = assetCache[url] = fetch(url, fetchParams).then(response => response.arrayBuffer());
+			let promise = cache[url]
+			if(!promise) {
+				let assetPromise = assetCache[url]
+				if(!assetPromise) assetPromise = assetCache[url] = downloadFile(url);
 
-						filePromise.then(buffer => {
-							constructor(buffer).then(resolve).catch(err => {
-								resolve(null)
-								console.error("[AssetCache]", path, err)
-							})
-						})
-					})
-				}
+				promise = cache[url] = assetPromise.then(buffer => constructor(buffer))
+				promise.catch(ex => console.error("[AssetCache]", url, ex))
+			}
 
-				promise.then(cb)
-			})
+			promise.then(cb).catch(() => cb(null))
 		}
 	}
 
 	return {
-		resolveAsset(argId, cb) {
-			const assetId = +argId
-			if(isNaN(assetId)) throw new TypeError("number expected as assetId");
-
-			let promise = resolveCache[assetId]
-			if(!promise) {
-				promise = resolveCache[assetId] = new Promise(resolve => {
-					BackgroundJS.send("resolveAssetUrl", assetId, url => {
-						if(!url) return console.warn("Failed to resolve asset ", assetId);
-						resolve(url)
-					})
-				})
-			}
-
-			promise.then(cb)
-		},
-
 		loadModel: createMethod(async buffer => ANTI.ParseRBXM(buffer)),
 		loadMesh: createMethod(async buffer => ANTI.ParseMesh(buffer)),
 		loadImage: createMethod(async buffer => URL.createObjectURL(new Blob([buffer]))),

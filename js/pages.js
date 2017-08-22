@@ -91,6 +91,29 @@ async function getProductInfo(assetId) {
 	return response.json()
 }
 
+function downloadFile(url, type) {
+	return new Promise(resolve => BackgroundJS.send("downloadFile", url, resolve))
+		.then(async bloburl => {
+			if(!bloburl) throw new Error("Failed to download file");
+
+			const response = await fetch(bloburl)
+			URL.revokeObjectURL(bloburl)
+			switch(type) {
+				case "blob": return response.blob()
+				case "text": return response.text()
+				case "json": return response.json()
+				default: return response.arrayBuffer()
+			}
+		})
+}
+
+function downloadAsset(params, type) {
+	if(!(params instanceof Object)) params = { id: params };
+	params = new URLSearchParams(params).toString()
+	const url = `https://www.roblox.com/asset/?${params}`
+
+	return downloadFile(url, type)
+}
 
 const alreadyLoaded = {}
 function execScripts(list, cb) {
@@ -564,14 +587,9 @@ function CreateNewVersionHistory(assetId, assetType) {
 		const fileExt = assetType === "place" ? "rbxl" : "rbxm"
 		const fileName = `${placeName}-${version}.${fileExt}`
 
-		BackgroundJS.send("resolveAssetUrl", { id: assetId, version }, url => {
-			if(!url) return console.warn("Failed to resolve asset");
-			
-			fetch(url).then(async response => {
-				const blob = await response.blob()
-				isBusy = false
-				startDownload(URL.createObjectURL(blob), fileName)
-			})
+		downloadAsset({ id: assetId, version }, "blob").then(blob => {
+			isBusy = false
+			startDownload(URL.createObjectURL(blob), fileName)
 		})
 	})
 
@@ -959,7 +977,7 @@ pageInit.itemdetails = function(assetId) {
 			const assetTypeContainer = ContainerAssetTypeIds[assetTypeId]
 
 			if(true && assetTypeContainer) {
-				const btn = html`<a class="btr-content-button" href="#"><div class="btr-icon-content disabled"></div></a>`
+				const btn = html`<a class="btr-content-button disabled" href="#"><div class="btr-icon-content"></div></a>`
 
 				Observer.one("#item-container > .section-content", cont => {
 					cont.closest("#item-container").classList.add("btr-content-btn-shown")
@@ -974,26 +992,39 @@ pageInit.itemdetails = function(assetId) {
 					if(!actId) return;
 
 					btn.href = `/catalog/${actId}`
-					btn.$find(".disabled").classList.remove("disabled")
+					btn.classList.remove("disabled")
 				})
 			}
 
 			if(true && InvalidDownloadableAssetTypeIds.indexOf(assetTypeId) === -1) {
-				let isDownloading = false
+				const btn = html`<a class="btr-download-button"><div class="btr-icon-download"></div></a>`
+				let dlPromise
+				
+				Observer.one("#item-container > .section-content", cont => {
+					const itemCont = cont.closest("#item-container")
+					if(assetTypeId === 10 && !itemCont.dataset.productId) return;
 
-				const dlButtonPressed = function() {
-					if(isDownloading) return;
-					isDownloading = true
+					itemCont.classList.add("btr-download-btn-shown")
+					cont.append(btn)
+				})
 
-					function finish(blob) {
-						isDownloading = false
+				function doNamedDownload(event) {
+					event.preventDefault()
+					if(!dlPromise) {
+						dlPromise = downloadAsset(assetId, "blob")
+							.then(blob => URL.createObjectURL(blob))
+					}
 
+					dlPromise.then(bloburl => {
 						const title = $("#item-container .item-name-container h2")
-						let fileName = title ? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-") : "unknown"
-
-						switch(assetTypeContainer ? assetTypeContainer.typeId : assetTypeId) {
+						let fileName = title ? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-") : new URL(btn.href).pathname
+					
+						switch(assetTypeId) {
 						case 1:
 							fileName += ".png"
+							break;
+						case 3:
+							fileName += ".mp3"
 							break;
 						case 4:
 							fileName += ".mesh"
@@ -1002,34 +1033,12 @@ pageInit.itemdetails = function(assetId) {
 							fileName += ".rbxm"
 						}
 
-						startDownload(URL.createObjectURL(blob), fileName)
-					}
-
-					if(assetTypeContainer) {
-						AssetCache.loadModel(assetId, model => {
-							const inst = model.find(assetTypeContainer.filter)
-							if(!inst) return;
-
-							const actId = ANTI.RBXParseContentUrl(inst[assetTypeContainer.prop])
-							if(!actId) return;
-
-							AssetCache.loadBlob(actId, finish)
-						})
-					} else {
-						AssetCache.loadBlob(assetId, finish)
-					}
+						startDownload(bloburl, fileName)
+					})
 				}
 
-				Observer.one("#item-container > .section-content", cont => {
-					const itemCont = cont.closest("#item-container")
-					if(assetTypeId === 10 && !itemCont.dataset.productId) return;
-
-					itemCont.classList.add("btr-download-btn-shown")
-					const btn = html`<a class="btr-download-button"><div class="btr-icon-download"></div></a>`
-					cont.append(btn)
-
-					btn.$on("click", dlButtonPressed)
-				})
+				btn.href = `/asset/?id=${assetId}`
+				btn.$on("click", doNamedDownload)
 			}
 
 			if(true && (assetTypeId === 1 || assetTypeId === 13)) {
@@ -1053,6 +1062,12 @@ pageInit.itemdetails = function(assetId) {
 						thumb.dataset.btrBg = color
 						localStorage["btr-item-thumb-bg"] = color
 					})
+						.$on("mouseenter", ".btr-bg-btn", ev => {
+							thumb.dataset.btrBg = ev.currentTarget.dataset.color
+						})
+						.$on("mouseleave", ".btr-bg-btn", ev => {
+							thumb.dataset.btrBg = localStorage["btr-item-thumb-bg"]
+						})
 
 
 					const selectedBg = localStorage["btr-item-thumb-bg"] || "white"
@@ -1428,30 +1443,19 @@ pageInit.configureplace = function(placeId) {
 				const data = queue.shift()
 				btn.textContent = `Downloading ${++loadedCount}/${versionCount}`
 
-				BackgroundJS.send("resolveAssetUrl", { id: placeId, version: data.VersionNumber }, url => {
-					if(url) {
-						const tryFetch = () => {
-							fetch(url)
-								.then(response => response.arrayBuffer())
-								.then(buffer => {
-									zip.file(`${fileName}-${data.VersionNumber}.rbxl`, buffer)
-									setTimeout(loadFile, 100)
-								})
-								.catch(ex => {
-									console.warn(ex)
-									setTimeout(tryFetch, 1000)
-								})
-						}
+				function tryDownload() {
+					downloadAsset({ id: placeId, version: data.VersionNumber })
+						.then(buffer => {
+							zip.file(`${fileName}-${data.VersionNumber}.rbxl`, buffer)
+							setTimeout(loadFile, 100)
+						})
+						.catch(ex => {
+							console.warn(ex)
+							setTimeout(tryDownload, 1000)
+						})
+				}
 
-						tryFetch()
-					} else {
-						console.warn("Failed to resolve asset")
-						queue.unshift(data)
-						setTimeout(loadFile, 500)
-					}
-
-					
-				})
+				tryDownload()
 			}
 
 			btn.textContent = "Fetching version info..."
@@ -1677,14 +1681,14 @@ pageInit.profile = function(userId) {
 	</div>`
 
 	Observer.one("body", body => body.classList.add("btr-profile"))
-	.one(".profile-header", cont => cont.after(left, right, bottom))
+	.one(".profile-container>.rbx-tabs-horizontal", cont => cont.before(left, right, bottom))
 	.one(".profile-about-content", desc => {
-		$(".placeholder-desc").replaceWith(desc)
+		left.$find(".placeholder-desc").replaceWith(desc)
 
 		desc.$find(".profile-about-content-text").classList.add("linkify")
 	})
 	.one(".profile-about-footer", footer => {
-		$(".placeholder-footer").replaceWith(footer)
+		left.$find(".placeholder-footer").replaceWith(footer)
 
 		const tooltip = footer.$find(".tooltip-pastnames")
 		if(tooltip) tooltip.setAttribute("data-container", "body"); // Display tooltip over side panel
@@ -1692,7 +1696,7 @@ pageInit.profile = function(userId) {
 	.one(".profile-header-top .header-caption", () => { // Wait for the first element after status
 		const status = $(".profile-avatar-status")
 		const statusDiv = html`<div class="btr-header-status-parent"></div>`
-		$(".placeholder-status").replaceWith(statusDiv)
+		left.$find(".placeholder-status").replaceWith(statusDiv)
 		const statusText = html`<span class="btr-header-status-text"></span>`
 		statusDiv.append(statusText)
 		const statusLabel = html`<span></span>`
@@ -1773,7 +1777,7 @@ pageInit.profile = function(userId) {
 	})
 	.one(".profile-stats-container", stats => {
 		stats.closest(".profile-statistics").remove()
-		$(".placeholder-stats").replaceWith(stats)
+		left.$find(".placeholder-stats").replaceWith(stats)
 	})
 	.one("#about>.section>.container-header>h3", x => x.textContent.indexOf("Roblox Badges") !== -1, h3 => {
 		const badges = h3.parentNode.parentNode

@@ -73,9 +73,9 @@
 	vertical-align: middle;
 }
 
-.btr-icon-explorer.disabled,
-.btr-icon-download.disabled,
-.btr-icon-content.disabled {
+a.disabled > .btr-icon-explorer,
+a.disabled > .btr-icon-download,
+a.disabled > .btr-icon-content {
 	filter: invert(75%);
 	cursor: default;
 }
@@ -83,9 +83,9 @@
 .btr-icon-download { background-position-y: -28px; }
 .btr-icon-content { background-position-y: -56px; }
 
-.btr-icon-explorer:not(.disabled):hover,
-.btr-icon-download:not(.disabled):hover,
-.btr-icon-content:not(.disabled):hover {
+a:not(.disabled) > .btr-icon-explorer:hover,
+a:not(.disabled) > .btr-icon-download:hover,
+a:not(.disabled) > .btr-icon-content:hover {
 	background-position-x: -28px;
 }
 
