@@ -1746,18 +1746,14 @@ pageInit.profile = function(userId) {
 	})
 	.one(".profile-avatar", avatar => {
 		left.$find(".placeholder-avatar").replaceWith(avatar)
-		avatar.$find(">h3").remove()
+		avatar.$find(".container-header").remove()
 
 		const avatarLeft = avatar.$find(".profile-avatar-left")
 		const avatarRight = avatar.$find(".profile-avatar-right")
 
-		avatarLeft.classList.remove("col-sm-6")
-		avatarRight.classList.remove("col-sm-6")
-
-		avatarLeft.classList.add("btr-profile-col-1")
-		avatarRight.classList.add("btr-profile-col-1")
-
-		avatar.$find(".enable-three-dee").textContent = "3D" // It's initialized as empty
+		avatar.classList.remove("section")
+		avatarLeft.classList.remove("col-sm-6", "section-content")
+		avatarRight.classList.remove("col-sm-6", "section-content")
 
 		const toggleItems = html`<span class="btr-toggle-items btn-control btn-control-sm">Show Items</span>`
 		avatar.$find("#UserAvatar").append(toggleItems)

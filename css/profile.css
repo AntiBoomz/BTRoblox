@@ -97,6 +97,14 @@
 
 /* Avatar */
 
+.btr-profile .profile-avatar {
+	position: relative;
+}
+
+.btr-profile .profile-avatar-left {
+	width: 100%;
+}
+
 .btr-profile .profile-avatar-left .btr-toggle-items {
 	position: absolute;
 	right: 12px;
@@ -104,13 +112,13 @@
 }
 
 .btr-profile .profile-avatar-right {
-	float: none;
-	top: 300px;
-	z-index: 100;
+	position: absolute;
+	width: 100%;
 
 	opacity: 0;
 	pointer-events: none;
 	transition: opacity 0.3s;
+	z-index: 100;
 }
 
 .btr-profile .profile-avatar-right.visible {
@@ -142,6 +150,7 @@
 
 .btr-profile .profile-stats-container {
 	border-top: 1px solid #B8B8B8;
+	margin-top: 6px;
 }
 
 /* Roblox Badges */
