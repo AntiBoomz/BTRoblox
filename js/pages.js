@@ -4,7 +4,7 @@ const pageInit = {}
 const startDate = new Date()
 
 
-const InvalidExplorableAssetTypeIds = [1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 16, 21, 22, 32, 33, 34, 35, 37, 39, 40]
+const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34, 35, 37, 39]
 const AnimationPreviewAssetTypeIds = [24, 32, 48, 49, 50, 51, 52, 53, 54, 55, 56]
 const WearableAssetTypeIds = [2, 8, 11, 12, 18, 27, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47]
 const UniqueWearableAssetTypeIds = [2, 11, 12, 18, 27, 28, 29, 30, 31]
@@ -721,9 +721,9 @@ pageInit.itemdetails = function(assetId) {
 				</div>
 			</div>`
 
-			Observer.one("#item-container>.section-content", cont => {
+			Observer.one("#item-container > .section-content", cont => {
 				cont.append(btn)
-				cont.parentNode.classList.toggle("btr-explorer-btn-shown")
+				cont.parentNode.classList.add("btr-explorer-btn-shown")
 			})
 
 			btn.$on("click", () => {
@@ -836,12 +836,17 @@ pageInit.itemdetails = function(assetId) {
 			return preview
 		}
 
-		execScripts(["js/RBXParser.js", "js/AssetCache.js"], () => {
-			if(settings.itemdetails.explorerButton && InvalidExplorableAssetTypeIds.indexOf(assetTypeId) === -1) {
-				Observer.one("#item-container", itemCont => {
-					if(assetTypeId !== 10 || itemCont.dataset.productId) enableExplorer();
+		const canAccessPromise = new Promise(resolve => {
+			if(assetTypeId !== 10) return resolve(true);
+			Observer.one("#item-container", itemCont => {
+				if(itemCont.dataset.userassetId) return resolve(true);
+				Observer.one(".price-container .action-button > *", btn => {
+					resolve(btn.nodeName === "BUTTON" && !btn.disabled)
 				})
-			}
+			})
+		})
+
+		execScripts(["js/RBXParser.js", "js/AssetCache.js"], () => {
 
 			if(settings.itemdetails.animationPreview && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1) {
 				const preview = enablePreview(scene => {
@@ -976,72 +981,76 @@ pageInit.itemdetails = function(assetId) {
 				}
 			}
 
-			const assetTypeContainer = ContainerAssetTypeIds[assetTypeId]
+			canAccessPromise.then(canAccess => {
+				if(!canAccess) return;
 
-			if(true && assetTypeContainer) {
-				const btn = html`<a class="btr-content-button disabled" href="#"><div class="btr-icon-content"></div></a>`
-
-				Observer.one("#item-container > .section-content", cont => {
-					cont.closest("#item-container").classList.add("btr-content-btn-shown")
-					cont.append(btn)
-				})
-
-				AssetCache.loadModel(assetId, model => {
-					const inst = model.find(assetTypeContainer.filter)
-					if(!inst) return;
-
-					const actId = ANTI.RBXParseContentUrl(inst[assetTypeContainer.prop])
-					if(!actId) return;
-
-					btn.href = `/catalog/${actId}`
-					btn.classList.remove("disabled")
-				})
-			}
-
-			if(true && InvalidDownloadableAssetTypeIds.indexOf(assetTypeId) === -1) {
-				const btn = html`<a class="btr-download-button"><div class="btr-icon-download"></div></a>`
-				let dlPromise
-				
-				Observer.one("#item-container > .section-content", cont => {
-					const itemCont = cont.closest("#item-container")
-					if(assetTypeId === 10 && !itemCont.dataset.productId) return;
-
-					itemCont.classList.add("btr-download-btn-shown")
-					cont.append(btn)
-				})
-
-				function doNamedDownload(event) {
-					event.preventDefault()
-					if(!dlPromise) {
-						dlPromise = downloadAsset(assetId, "blob")
-							.then(blob => URL.createObjectURL(blob))
-					}
-
-					dlPromise.then(bloburl => {
-						const title = $("#item-container .item-name-container h2")
-						let fileName = title ? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-") : new URL(btn.href).pathname
-					
-						switch(assetTypeId) {
-						case 1:
-							fileName += ".png"
-							break;
-						case 3:
-							fileName += ".mp3"
-							break;
-						case 4:
-							fileName += ".mesh"
-							break;
-						default:
-							fileName += ".rbxm"
-						}
-
-						startDownload(bloburl, fileName)
-					})
+				if(settings.itemdetails.explorerButton && InvalidExplorableAssetTypeIds.indexOf(assetTypeId) === -1) {
+					enableExplorer()
 				}
 
-				btn.href = `/asset/?id=${assetId}`
-				btn.$on("click", doNamedDownload)
-			}
+				if(settings.itemdetails.downloadButton && InvalidDownloadableAssetTypeIds.indexOf(assetTypeId) === -1) {
+					const btn = html`<a class="btr-download-button"><div class="btr-icon-download"></div></a>`
+					let dlPromise
+					
+					Observer.one("#item-container > .section-content", cont => {
+						cont.append(btn)
+						cont.parentNode.classList.add("btr-download-btn-shown")
+					})
+	
+					function doNamedDownload(event) {
+						event.preventDefault()
+						if(!dlPromise) {
+							dlPromise = downloadAsset(assetId, "blob")
+								.then(blob => URL.createObjectURL(blob))
+						}
+	
+						dlPromise.then(bloburl => {
+							const title = $("#item-container .item-name-container h2")
+							let fileName = title ? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-") : new URL(btn.href).pathname
+						
+							switch(assetTypeId) {
+							case 1:
+								fileName += ".png"
+								break;
+							case 3:
+								fileName += ".mp3"
+								break;
+							case 4:
+								fileName += ".mesh"
+								break;
+							default:
+								fileName += ".rbxm"
+							}
+	
+							startDownload(bloburl, fileName)
+						})
+					}
+	
+					btn.href = `/asset/?id=${assetId}`
+					btn.$on("click", doNamedDownload)
+				}
+
+				const assetTypeContainer = ContainerAssetTypeIds[assetTypeId]
+				if(settings.itemdetails.contentButton && assetTypeContainer) {
+					const btn = html`<a class="btr-content-button disabled" href="#"><div class="btr-icon-content"></div></a>`
+	
+					Observer.one("#item-container > .section-content", cont => {
+						cont.append(btn)
+						cont.parentNode.classList.add("btr-content-btn-shown")
+					})
+	
+					AssetCache.loadModel(assetId, model => {
+						const inst = model.find(assetTypeContainer.filter)
+						if(!inst) return;
+	
+						const actId = ANTI.RBXParseContentUrl(inst[assetTypeContainer.prop])
+						if(!actId) return;
+	
+						btn.href = `/catalog/${actId}`
+						btn.classList.remove("disabled")
+					})
+				}
+			})
 
 			if(true && (assetTypeId === 1 || assetTypeId === 13)) {
 				Observer.one("#AssetThumbnail", thumb => {
