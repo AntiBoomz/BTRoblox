@@ -2283,6 +2283,8 @@ pageInit.inventory = function() {
 		}
 	}
 
+	if(!settings.inventory.enabled) return;
+
 	if(settings.inventory.inventoryTools) {
 		modifyTemplate("assets-list", template => {
 			const categories = ["Models", "Meshes", "Decals", "Animations", "Audio"]

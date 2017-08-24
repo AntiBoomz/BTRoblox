@@ -89,7 +89,7 @@
 				} catch(ex) {}
 			}
 
-			if(page === "inventory" && settings.inventory.inventoryTools) {
+			if(page === "inventory" && settings.inventory.enabled && settings.inventory.inventoryTools) {
 				try {
 					HijackAngular(angular.module("assetsExplorer"),{
 						assetsService: function(handler,args) {

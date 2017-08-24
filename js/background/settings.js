@@ -34,6 +34,7 @@ const Settings = (() => {
 			shoutAlerts: true
 		},
 		inventory: {
+			enabled: true,
 			inventoryTools: true
 		},
 		profile: {
