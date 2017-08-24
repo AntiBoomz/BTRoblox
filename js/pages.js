@@ -2308,7 +2308,7 @@ pageInit.inventory = function() {
 
 		document.$on("keyup keydown", e => { shiftPressed = e.shiftKey })
 		.$on("change", ".btr-it-box", e => {
-			const id = +e.currentTarget.getAttribute("data-index")
+			const id = +e.currentTarget.dataset.index
 
 			if(shiftPressed && lastPressed != null && id !== lastPressed) {
 				const from = Math.min(id, lastPressed)
@@ -2334,12 +2334,12 @@ pageInit.inventory = function() {
 			isRemoving = true
 			const items = []
 			for(let i = 0; i < checked.length; i++) {
-				const self = $(checked[i].parentNode.parentNode.parentNode)
-				const matches = self.find(".item-card-link").attr("href").match(/(?:\/(?:catalog|library)\/|[?&]id=)(\d+)/)
+				const self = checked[i].closest(".item-card")
+				const matches = self.$find(".item-card-link").href.match(/(?:\/(?:catalog|library)\/|[?&]id=)(\d+)/)
 
 				if(matches && !isNaN(parseInt(matches[1], 10))) {
 					items.push({
-						obj: $(self),
+						obj: self,
 						assetId: matches[1]
 					})
 				}
@@ -2349,42 +2349,32 @@ pageInit.inventory = function() {
 			let itemsLeft = items.length
 
 			function removeItem(index, retries) {
-				const x = items[index]
-				if(x) {
-					const url = `//api.roblox.com/Marketplace/ProductInfo?assetId=${x.assetId}`
-					$.getJSON(url, data => {
-						if(!data) return;
-						if(validAssetTypes.indexOf(data.AssetTypeId) === -1) return console.log("Bad assetType", data);
+				const item = items[index]
+				if(item) {
+					const url = `//api.roblox.com/Marketplace/ProductInfo?assetId=${item.assetId}`
+					fetch(url).then(async response => {
+						const data = await response.json()
+						if(validAssetTypes.indexOf(data.AssetTypeId) === -1)
+							return console.log("Bad assetType", data);
 
 						getXsrfToken(token => {
-							$.ajax({
-								url: "/asset/delete-from-inventory",
-								type: "post",
-								data: {
-									assetId: x.assetId
-								},
-								dataType: "json",
-								headers: {
-									"X-CSRF-TOKEN": token
-								}
-							}).done(() => {
-								x.obj.remove()
+							fetch("/asset/delete-from-inventory", {
+								method: "POST",
+								credentials: "include",
+								headers: { "X-CSRF-TOKEN": token },
+								body: new URLSearchParams({ assetId: item.assetId })
+							}).then(() => {
+								item.obj.remove()
 								if(--itemsLeft === 0) {
 									isRemoving = false
 									InjectJS.send("refreshInventory")
 								}
-							}).fail(() => {
-								if(!retries || retries < 5) {
-									setTimeout(removeItem, 250, index, (retries || 0) + 1)
-								} else {
-									console.log("Retries exhausted")
-								}
 							})
 						})
 					})
-				}
 
-				setTimeout(removeItem, 250, index + 1)
+					setTimeout(removeItem, 250, index + 1)
+				}
 			}
 
 			removeItem(0)
