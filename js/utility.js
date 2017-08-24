@@ -444,12 +444,20 @@ function CreateObserver(target, params) {
 				}
 
 				if(elem) {
-					try { item.callback(elem) }
-					catch(ex) { console.error("[MutationObserver]", ex) }
+					if(!item.partial) {
+						try { item.callback(elem) }
+						catch(ex) { console.error("[MutationObserver]", ex) }
+					} else {
+						item.whole.result[item.index] = elem
+
+						if(--item.whole.resultsLeft === 0) {
+							try { item.whole.callback.apply(null, item.whole.result) }
+							catch(ex) { console.error("[MutationObserver]", ex) }
+						}
+					}
 
 					return true
 				}
-
 				break
 			case "all":
 				var elems = target.querySelectorAll(item.selector)
@@ -490,25 +498,19 @@ function CreateObserver(target, params) {
 
 				for(var i=0; i < selector.length; i++) {
 					var item = {
+						whole, filter,
 						type: "one",
-
 						partial: true,
-						whole: whole,
-						index: i,
-
 						selector: selector[i],
-						filter: filter
+						index: i
 					}
 
 					items.push(item)
 				}
 			} else {
 				var item = {
-					type: "one",
-
-					selector: selector,
-					filter: filter,
-					callback: callback
+					selector, filter, callback,
+					type: "one"
 				}
 
 				items.push(item)
