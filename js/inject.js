@@ -225,7 +225,7 @@
 				Roblox.PrerollPlayer.waitForPreroll = x => $.Deferred().resolve(x);
 			}
 
-			if(page === "gamedetails") {
+			if(page === "gamedetails" && settings.gamedetails.enabled) {
 				const placeId = matches[0]
 
 				$(() => {
