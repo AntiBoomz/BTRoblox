@@ -15,9 +15,12 @@ const Settings = (() => {
 			enabled: true
 		},
 		itemdetails: {
+			enabled: true,
 			animationPreview: true,
 			animationPreviewAutoLoad: true,
-			explorerButton: false
+			explorerButton: true,
+			downloadButton: true,
+			contentButton: true
 		},
 		chat: {
 			enabled: true

@@ -682,6 +682,8 @@ pageInit.develop = function() {
 }
 
 pageInit.itemdetails = function(assetId) {
+	if(!settings.itemdetails.enabled) return;
+
 	Observer.one("#AjaxCommentsContainer .comments", cont => {
 		CreateObserver(cont, { permanent: true, subtree: false })
 		.all(".comment-item", comment => {
