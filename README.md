@@ -11,6 +11,7 @@ BTROBLOX
   * [Group APIs](#group-apis)
   * [Friend APIs](#friend-apis)
   * [User APIs](#user-apis)
+  * [Asset APIs](#asset-apis)
   * [Universe APIs](#universe-apis)
 
 <!---
@@ -271,6 +272,12 @@ User APIs
 * https://www.roblox.com/users/profile/playerassets-json?assetTypeId=21&userId=4719353
 
 
+Asset APIs
+-------------
+#### Get source of a linkedscript
+* https://www.roblox.com/asset/?universeId=265920480&assetName=Scripts/Init
+
+
 Universe APIs
 -------------
 #### Get info about an universe
@@ -286,6 +293,93 @@ Universe APIs
       "StudioAccessToApisAllowed": false,
       "CurrentUserHasEditPermissions": false,
       "UniverseAvatarType": "MorphToR6"
+  }
+  ```
+
+#### Get assets in an universe
+* https://api.roblox.com/universes/get-aliases?universeId=265920480&page=1
+  * Requires `User-Agent: Roblox/WinInet` header
+  * Requires studio access to the universe
+  
+  ```json
+  {
+      "FinalPage": true,
+      "Aliases": [
+          {
+              "Name": "Scripts/Init",
+              "Type": 1,
+              "TargetId": 718028943,
+              "Asset": {
+                  "TypeId": 5,
+                  "Name": "Script",
+                  "Description": "Script",
+                  "CreatorType": 1,
+                  "CreatorTargetId": 4719353,
+                  "Created": "2017-03-31T12:16:46.547",
+                  "Updated": "2017-03-31T15:36:22.55",
+                  "Id": 718028943,
+                  "DomainFactories": {
+                      "AssetTypeFactory": {},
+                      "AssetFactory": {},
+                      "AssetVersionFactory": {},
+                      "RawContentFactory": {},
+                      "AssetReviewAccessor": {},
+                      "AliasFactory": {},
+                      "BadgeTypeFactory": {},
+                      "AnimationFactory": {},
+                      "ArmsFactory": {},
+                      "AudioFactory": {},
+                      "BackAccessoryFactory": {},
+                      "BadgeFactory": {},
+                      "BadgeGiverFactory": {},
+                      "DecalFactory": {},
+                      "FaceAccessoryFactory": {},
+                      "FaceFactory": {},
+                      "FrontAccessoryFactory": {},
+                      "GamePassFactory": {},
+                      "GearFactory": {},
+                      "HairAccessoryFactory": {},
+                      "HatFactory": {},
+                      "HeadFactory": {},
+                      "HtmlFactory": {},
+                      "ImageFactory": {},
+                      "LeftArmFactory": {},
+                      "LeftLegFactory": {},
+                      "LegsFactory": {},
+                      "LuaFactory": {},
+                      "MeshFactory": {},
+                      "MeshPartFactory": {},
+                      "ModelFactory": {},
+                      "NeckAccessoryFactory": {},
+                      "PackageFactory": {},
+                      "PantsFactory": {},
+                      "PlaceFactory": {},
+                      "PluginFactory": {},
+                      "RightArmFactory": {},
+                      "RightLegFactory": {},
+                      "ShirtFactory": {},
+                      "ShoulderAccessoryFactory": {},
+                      "SolidModelFactory": {},
+                      "TeeShirtFactory": {},
+                      "TextFactory": {},
+                      "TorsoFactory": {},
+                      "WaistAccessoryFactory": {},
+                      "YouTubeVideoFactory": {},
+                      "ClimbAnimationFactory": {},
+                      "DeathAnimationFactory": {},
+                      "FallAnimationFactory": {},
+                      "IdleAnimationFactory": {},
+                      "JumpAnimationFactory": {},
+                      "RunAnimationFactory": {},
+                      "SwimAnimationFactory": {},
+                      "WalkAnimationFactory": {},
+                      "PoseAnimationFactory": {}
+                  }
+              },
+              "Version": null
+          }
+      ],
+      "PageSize": 50
   }
   ```
 
