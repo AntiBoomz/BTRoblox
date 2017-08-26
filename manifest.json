@@ -36,6 +36,7 @@
 	],
 	"web_accessible_resources": [
 		"js/inject.js",
+		"lib/prism.css",
 		"css/*",
 		"res/*",
 		"options.html"

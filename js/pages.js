@@ -1387,6 +1387,137 @@ pageInit.catalog = function() {
 	})
 }
 
+pageInit.configureuniverse = function() {
+	if(!settings.universeconfig.enabled) return;
+	Observer.one("body", body => body.classList.add("btr-uconf"))
+
+	const universeId = new URLSearchParams(location.search).get("id")
+	if(!universeId) return;
+
+	Observer.one(`#navbar .verticaltab[data-maindiv="developerProducts"]`, devProd => {
+		devProd.after(html`
+		<div class="verticaltab" data-maindiv="assets">
+			<a href="#">Assets (WIP)</a>
+		</div>`)
+	})
+	.one("#developerProducts", devProd => {
+		const cont = html`
+		<div id=assets class=configure-tab style=display:none>
+			<div class=headline><h2>Asset Explorer</h2></div>
+			<ul class=btr-asset-list>
+				<li>Loading...</li>
+			</ul>
+		</div>`
+		devProd.after(cont)
+
+		function init() {
+			document.head.append(html`<link href="${getURL("lib/prism.css")}" rel="stylesheet" />`)
+			const prismPromise = new Promise(resolve => execScripts(["lib/prism.js"], resolve))
+
+			const url = `https://api.roblox.com/universes/get-aliases?universeId=${universeId}&page=1`
+			fetch(url, { credentials: "include", headers: { useragent: "Roblox/WinInet" } })
+				.then(async resp => {
+					const json = await resp.json()
+					console.log(json)
+
+					const list = cont.$find(".btr-asset-list")
+					list.innerHTML = ""
+					if(!json.Aliases.length) return list.append(html`<li>This game has no assets</li>`);
+
+					json.Aliases.forEach(alias => {
+						const asset = alias.Asset
+						const li = html`<li class=btr-asset-item></li>`
+
+						const btn = html`
+						<div class=btr-asset-button>
+							${alias.Name}
+							<a class=btr-asset-link href=/library/${asset.Id}/${asset.Name.replace(/\W+/g, "-")}>🌐</a>
+						</div>`
+						li.append(btn)
+
+						const content = html`
+						<div class=btr-asset-content>
+							Unloaded
+						</div>`
+						li.append(content)
+
+						let hasLoaded = false
+
+						list.append(li)
+						btn.$on("click", ev => {
+							if(ev.target !== btn) return;
+							li.classList.toggle("open")
+
+							if(!hasLoaded) {
+								hasLoaded = true
+								content.innerHTML = ""
+
+								if(alias.Type === 1) {
+									const hl = html`<div class=btr-cc><pre class="language-lua line-numbers"><code class=language-lua></code></pre><div>`
+									const code = hl.$find("code")
+									content.append(hl)
+
+									const applySource = source => {
+										code.textContent = source.replace(/^\-\-rbxsig.+\r?\n(?:\-\-rbxassetid.+\r?\n)?/, "")
+										Prism.highlightElement(code)
+									}
+
+									downloadAsset(asset.Id, "text").then(applySource)
+
+									const select = html`<select class=btr-asset-version-select></select>`
+									btn.append(select)
+
+									fetch(`//api.roblox.com/assets/${asset.Id}/versions`, { credentials: "include" })
+										.then(async resp => {
+											const json = await resp.json()
+											const verCount = json[0].VersionNumber
+
+											for(let version = verCount; version > 0; version--) {
+												const option = html`<option value=${version}>Version ${version}</option>`
+												select.append(option)
+											}
+
+											select.firstElementChild.textContent += " (Current)"
+
+											select.value = verCount
+
+											const versionCache = []
+											let reqCounter = 0
+											select.$on("change", () => {
+												if(!versionCache[select.value]) {
+													versionCache[select.value] = downloadAsset(
+														{ id: asset.Id, version: select.value },
+														"text"
+													)
+
+													code.textContent = "loading..."
+												}
+
+												const reqId = ++reqCounter
+												versionCache[select.value].then(source => {
+													if(reqCounter !== reqId) return;
+													applySource(source)
+												})
+											})
+										})
+								}
+							}
+						})
+					})
+				})
+		}
+
+		let observer = new MutationObserver(() => {
+			if(cont.offsetParent) {
+				observer.disconnect()
+				observer = null
+				init()
+			}
+		})
+		observer.observe(cont, { attributes: true })
+	})
+}
+
 pageInit.configureplace = function(placeId) {
 	if(!settings.versionhistory.enabled) return;
 

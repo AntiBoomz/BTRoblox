@@ -21,6 +21,10 @@ const PAGE_INFO = Object.entries({
 		matches: ["^/places/(\\d+)/update"],
 		css: ["placeconfig.css"]
 	},
+	configureuniverse: {
+		matches: ["^/universes/configure"],
+		css: ["universeconfig.css"]
+	},
 	develop: {
 		matches: ["^/develop"],
 		css: ["develop.css"]

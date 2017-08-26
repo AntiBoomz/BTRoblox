@@ -43,6 +43,9 @@ const Settings = (() => {
 		},
 		versionhistory: {
 			enabled: true
+		},
+		universeconfig: {
+			enabled: false
 		}
 	}
 
