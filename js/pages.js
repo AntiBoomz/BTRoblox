@@ -91,6 +91,7 @@ async function getProductInfo(assetId) {
 	return response.json()
 }
 
+
 function downloadFile(url, type) {
 	return new Promise(resolve => BackgroundJS.send("downloadFile", url, resolve))
 		.then(async bloburl => {
@@ -1286,9 +1287,17 @@ pageInit.gamedetails = function(placeId) {
 	})
 	.one("#carousel-game-details", details => details.setAttribute("data-is-video-autoplayed-on-ready", "false"))
 	.one(".game-stats-container .game-stat", x => x.$find(".text-label").textContent === "Updated", stat => {
-		getProductInfo(placeId).then(data => {
-			stat.$find(".text-lead").textContent = new Date(data.Updated).relativeFormat("zz 'ago'", startDate)
-		})
+		const xhr = new XMLHttpRequest()
+		xhr.open("GET", `https://api.roblox.com/marketplace/productinfo?assetId=${placeId}`)
+		xhr.responseType = "json"
+
+		xhr.onload = function() {
+			const data = this.response
+			const serverDate = new Date(this.getResponseHeader("Date"))
+			stat.$find(".text-lead").textContent = new Date(data.Updated).relativeFormat("zz 'ago'", serverDate)
+		}
+
+		xhr.send()
 	})
 	.one(".rbx-visit-button-closed, #MultiplayerVisitButton", btn => {
 		if(btn.classList.contains("rbx-visit-button-closed")) return;
