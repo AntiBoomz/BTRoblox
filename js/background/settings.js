@@ -80,7 +80,9 @@ const Settings = (() => {
 			if(getPromise) return getPromise;
 			getPromise = new Promise(resolve => {
 				chrome.storage.local.get(["settings"], data => {
-					applySettings(data.settings)
+					if(data.settings instanceof Object) {
+						applySettings(data.settings)
+					}
 					resolve(settings)
 				})
 			})
