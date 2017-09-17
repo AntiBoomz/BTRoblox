@@ -44,6 +44,13 @@
 	"content_scripts": [
 		{
 			"matches": ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
+			"exclude_matches": [
+				"*://*/login/fulfillconstraint.aspx*",
+				"*://*/build/upload*",
+				"*://*/userads/*",
+				"*://*/user-sponsorship/*",
+				"*://*/Feeds/GetUserFeed*"
+			],
 			"js": ["js/utility.js", "js/main.js", "js/pages.js"],
 			"css": [],
 			"run_at": "document_start",

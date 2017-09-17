@@ -1,13 +1,5 @@
 "use strict"
 
-const SKIP_PAGES = [
-	"^/login/fulfillconstraint.aspx",
-	"^/build/upload",
-	"^/userads/",
-	"^/user-sponsorship/",
-	"^/Feeds/GetUserFeed"
-]
-
 const PAGE_INFO = Object.entries({
 	avatar: {
 		matches: ["^/my/avatar"],
@@ -175,8 +167,6 @@ Object.entries(
 
 
 function csInit(path, respond, port) {
-	if(SKIP_PAGES.find(regex => path.search(regex) !== -1)) return;
-
 	let pageInfo
 	let currentPage
 
