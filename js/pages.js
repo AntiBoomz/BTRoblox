@@ -1935,7 +1935,8 @@ pageInit.profile = function(userId) {
 		// badges.$find(".assets-count").remove()
 		badges.$find(".btn-more").setAttribute("ng-show", badges.$find(".badge-list").children.length > 10 ? "true" : "false")
 	})
-	.one("#games-switcher", switcher => {
+	.one("#games-switcher>.hlist", oldlist => {
+		const switcher = oldlist.parentNode
 		const games = switcher.parentNode
 		right.$find(".placeholder-games").replaceWith(games)
 
@@ -1945,7 +1946,6 @@ pageInit.profile = function(userId) {
 		grid.classList.add("section-content")
 		grid.setAttribute("ng-cloak", "")
 
-		const oldlist = switcher.$find(">.hlist")
 		const cont = html`<div id="games-switcher" class="section-content" ng-hide="isGridOn"></div>`
 		switcher.classList.add("btr-remove-on-profile-load")
 		switcher.style.display = "none"
