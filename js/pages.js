@@ -1764,7 +1764,7 @@ pageInit.profile = function(userId) {
 
 	const left = html`
 	<div class="btr-profile-col-2 btr-profile-left">
-		<div class="btr-profile-about">
+		<div class="btr-profile-about profile-about">
 			<div class="container-header"><h3>About</h3></div>
 			<div class="section-content">
 				<div class="placeholder-status" style="display:none"></div>
@@ -1844,6 +1844,7 @@ pageInit.profile = function(userId) {
 		const tooltip = footer.$find(".tooltip-pastnames")
 		if(tooltip) tooltip.setAttribute("data-container", "body"); // Display tooltip over side panel
 	})
+	.one(".profile-about .profile-social-networks", social => left.$find(".btr-profile-about .container-header").append(social))
 	.one(".profile-header-top .header-caption", () => { // Wait for the first element after status
 		const status = $(".profile-avatar-status")
 		const statusDiv = html`<div class="btr-header-status-parent"></div>`
