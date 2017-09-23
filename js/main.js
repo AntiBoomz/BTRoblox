@@ -449,16 +449,15 @@ function Init() {
 function PreInit() {
 	if(document.contentType !== "text/html") return;
 
-	BackgroundJS.send("csInit", pathname, data => {
-		if(!data) return;
-		hasDataLoaded = true
-
-		settings = data.settings
-		currentPage = data.currentPage
-		blogFeedData = data.blogFeedData
+	currentPage = GET_PAGE(pathname)
+	chrome.storage.local.get(["settings", "cachedBlogFeed"], data => {
+		settings = data.settings ? data.settings : JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
+		blogFeedData = data.cachedBlogFeed
 
 		if(haveContentScriptsLoaded) Init();
 	})
+
+	BackgroundJS.send("applyPage", currentPage ? currentPage.name : null)
 }
 
 PreInit()

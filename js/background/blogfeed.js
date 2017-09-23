@@ -5,7 +5,6 @@ const Blogfeed = (() => {
 	let cachedFeedRaw
 	let cachedFeed
 
-
 	return {
 		get(cb) {
 			fetch(feedUrl).then(response => {
@@ -31,6 +30,8 @@ const Blogfeed = (() => {
 					}
 
 					cachedFeed = responseData
+					chrome.storage.local.set({ cachedBlogFeed: cachedFeed })
+
 					if(typeof cb === "function") cb(cachedFeed);
 				})
 			})

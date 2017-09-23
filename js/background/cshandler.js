@@ -83,6 +83,34 @@ Object.entries(
 
 			return true
 		},
+		applyPage(name, respond, port) {
+			const pageInfo = typeof name === "string" ? PAGE_INFO[name] : null
+
+			Settings.get().then(settings => {
+				if(settings.general.showBlogFeed) {
+					Blogfeed.get(updatedFeedData => {
+						port.postMessage({ type: "blogfeed", data: updatedFeedData })
+					})
+				}
+
+				const cssFiles = ["main.css"]
+				const cssGroups = ["css/", `css/${settings.general.theme}/`]
+				const cssMerge = []
+
+				if(pageInfo && pageInfo.css) cssFiles.push(...pageInfo.css);
+
+				cssGroups.forEach(group => cssFiles.forEach(filePath => {
+					const source = cssCache[group + filePath]
+					if(source) cssMerge.push(source);
+				}))
+
+				chrome.tabs.insertCSS(port.sender.tab.id, {
+					frameId: port.sender.frameId,
+					code: cssMerge.join("\n\n"),
+					runAt: "document_start"
+				}, () => chrome.runtime.lastError)
+			})
+		},
 		_execScripts(list, respond, port) {
 			const promises = list.map(path => new Promise(resolve => {
 				chrome.tabs.executeScript(port.sender.tab.id, { file: path, runAt: "document_start", frameId: port.sender.frameId }, resolve)
@@ -93,58 +121,6 @@ Object.entries(
 		}
 	}
 ).forEach(([key, value]) => ContentJS.listen(key, value));
-
-
-function csInit(path, respond, port) {
-	let pageInfo
-	let currentPage
-
-	PAGE_INFO.some(([name, info]) => {
-		return info.matches.some(regex => {
-			const matches = path.match(regex)
-			if(matches) {
-				pageInfo = info
-				currentPage = { name, matches: matches.slice(1) }
-				return true
-			}
-		})
-	})
-
-	Settings.get().then(settings => {
-		const response = {
-			settings,
-			currentPage
-		}
-
-		if(settings.general.showBlogFeed) {
-			response.blogFeedData = Blogfeed.get(updatedFeedData => {
-				port.postMessage({ type: "blogfeed", data: updatedFeedData })
-			})
-		}
-
-		respond(response)
-
-		// Inject CSS
-		const cssFiles = ["main.css"]
-		const cssGroups = ["css/", `css/${settings.general.theme}/`]
-		const cssMerge = []
-
-		if(pageInfo && pageInfo.css) cssFiles.push(...pageInfo.css);
-
-		cssGroups.forEach(group => cssFiles.forEach(filePath => {
-			const source = cssCache[group + filePath]
-			if(source) cssMerge.push(source);
-		}))
-
-		chrome.tabs.insertCSS(port.sender.tab.id, {
-			frameId: port.sender.frameId,
-			code: cssMerge.join("\n\n"),
-			runAt: "document_start"
-		}, () => chrome.runtime.lastError)
-	})
-
-	return true
-}
 
 function updateCSSCache() {
 	localStorage.removeItem("cssCache")
@@ -182,5 +158,4 @@ function updateCSSCache() {
 	})
 }
 
-ContentJS.listen("csInit", csInit)
 chrome.runtime.onInstalled.addListener(updateCSSCache)
