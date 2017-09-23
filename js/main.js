@@ -18,7 +18,7 @@ let loggedInUserPromise = null
 const BackgroundJS = (() => {
 	const listenersByType = {}
 	let port
-//	let portTimeout
+	let portTimeout
 
 	const onMessage = msg => {
 		const listeners = listenersByType[msg.type]
@@ -40,16 +40,16 @@ const BackgroundJS = (() => {
 
 			port.onMessage.addListener(onMessage)
 			port.onDisconnect.addListener(() => {
-//				clearTimeout(portTimeout)
+				clearTimeout(portTimeout)
 				port = null
 			})
 		}
 
-//		clearTimeout(portTimeout)
-//		portTimeout = setTimeout(() => {
-//			port.disconnect()
-//			port = null
-//		}, 30 * 60e3)
+		clearTimeout(portTimeout)
+		portTimeout = setTimeout(() => {
+			port.disconnect()
+			port = null
+		}, 60e3)
 	}
 
 	return {
