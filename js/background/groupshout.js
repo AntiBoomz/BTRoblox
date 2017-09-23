@@ -4,7 +4,6 @@ const GroupShouts = (() => {
 	const groupshouts = {
 		version: 3
 	}
-	let previousCheck = 0
 	let notifAudio
 
 	const createNotif = (notifId, options, success, click) => {
@@ -28,8 +27,6 @@ const GroupShouts = (() => {
 	}
 
 	const executeCheck = async () => {
-		previousCheck = Date.now()
-
 		const response = await fetch("https://www.roblox.com/Feeds/GetUserFeed", { credentials: "include" })
 		const responseText = await response.text()
 
@@ -93,14 +90,12 @@ const GroupShouts = (() => {
 
 	const startChecking = () => {
 		chrome.alarms.get("GroupShouts", alarm => {
-			if(alarm) return;
-
-			chrome.alarms.create("GroupShouts", {
-				delayInMinutes: 1,
-				periodInMinutes: 1
-			})
-
-			if(Date.now() - previousCheck > 5e3) executeCheck();
+			if(!alarm) {
+				chrome.alarms.create("GroupShouts", {
+					delayInMinutes: 1,
+					periodInMinutes: 1
+				})
+			}
 		})
 	}
 
@@ -112,6 +107,9 @@ const GroupShouts = (() => {
 		if(alarm.name === "GroupShouts") executeCheck();
 	})
 
+	let isFirstLoad = false
+	chrome.runtime.onInstall.addListener(() => { isFirstLoad = true })
+
 	chrome.storage.local.get(["groupshouts"], data => {
 		if(data.groupshouts && data.groupshouts.version === groupshouts.version) Object.assign(groupshouts, data.groupshouts);
 
@@ -119,16 +117,28 @@ const GroupShouts = (() => {
 			const shouldCheckShouts = () => settings.groups.enabled && settings.groups.shoutAlerts
 			let isChecking = shouldCheckShouts()
 
-			if(isChecking) startChecking();
-			else stopChecking();
+			if(isChecking) {
+				startChecking()
+				if(isFirstLoad) executeCheck();
+			} else {
+				stopChecking()
+			}
 
+			let previousCheck = 0
 			Settings.onChange(() => {
 				const shouldCheck = shouldCheckShouts()
 				if(isChecking !== shouldCheck) {
 					isChecking = shouldCheck
 
-					if(isChecking) startChecking();
-					else stopChecking();
+					if(isChecking) {
+						startChecking()
+						if(Date.now() - previousCheck > 1) { // Just so that spam-changing the option wont flood requests
+							previousCheck = Date.now()
+							executeCheck()
+						}
+					} else {
+						stopChecking()
+					}
 				}
 			})
 		})
