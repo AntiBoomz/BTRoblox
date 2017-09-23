@@ -1,54 +1,6 @@
 "use strict"
 
 const Settings = (() => {
-	const DEFAULT_SETTINGS = {
-		general: {
-			theme: "default",
-			showBlogFeed: true,
-
-			showAds: false,
-			noHamburger: true,
-
-			chatEnabled: true
-		},
-		catalog: {
-			enabled: true
-		},
-		itemdetails: {
-			enabled: true,
-			animationPreview: true,
-			animationPreviewAutoLoad: true,
-			explorerButton: true,
-			downloadButton: true,
-			contentButton: true
-		},
-		chat: {
-			enabled: true
-		},
-		gamedetails: {
-			enabled: true,
-			showBadgeOwned: true
-		},
-		groups: {
-			enabled: true,
-			shoutAlerts: true
-		},
-		inventory: {
-			enabled: true,
-			inventoryTools: true
-		},
-		profile: {
-			enabled: true,
-			embedInventoryEnabled: true
-		},
-		versionhistory: {
-			enabled: true
-		},
-		universeconfig: {
-			enabled: false
-		}
-	}
-
 	const settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
 
 	function applySettings(data) {

@@ -13,6 +13,7 @@
 
 	"background": {
 		"scripts": [
+			"js/constants.js",
 			"js/background/settings.js",
 			"js/background/blogfeed.js",
 			"js/background/cshandler.js",
@@ -51,7 +52,7 @@
 				"*://*/user-sponsorship/*",
 				"*://*/Feeds/GetUserFeed*"
 			],
-			"js": ["js/utility.js", "js/main.js", "js/pages.js"],
+			"js": ["js/constants.js", "js/utility.js", "js/main.js", "js/pages.js"],
 			"css": [],
 			"run_at": "document_start",
 			"all_frames": true
