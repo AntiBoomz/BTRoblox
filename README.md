@@ -5,7 +5,7 @@ BTROBLOX
   * [Text-Based Format](#text-based-format)
   * [Binary Format](#binary-format)
 -->
-* [Roblox Mesh Format (wiki)](http://wiki.roblox.com/index.php?title=Roblox_Mesh_Format)
+* [Roblox Mesh Format (wiki)](http://wiki.roblox.com/index.php?title=Roblox_Mesh_Format) [(backup)](https://pastebin.com/yCknWRaj)
 * [API Docs](#api-docs)
 * [Undocumented APIs](#undocumented-apis)
   * [Group APIs](#group-apis)
