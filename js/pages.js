@@ -1935,8 +1935,7 @@ pageInit.profile = function(userId) {
 		// badges.$find(".assets-count").remove()
 		badges.$find(".btn-more").setAttribute("ng-show", badges.$find(".badge-list").children.length > 10 ? "true" : "false")
 	})
-	.one("#games-switcher>.hlist", oldlist => {
-		const switcher = oldlist.parentNode
+	.one("#games-switcher", switcher => {
 		const games = switcher.parentNode
 		right.$find(".placeholder-games").replaceWith(games)
 
@@ -2012,7 +2011,7 @@ pageInit.profile = function(userId) {
 
 		pager.onsetpage = loadPage
 
-		CreateObserver(oldlist).all(".slide-item-container .slide-item-stats>.hlist", stats => {
+		CreateObserver(switcher).all(".hlist .slide-item-container .slide-item-stats>.hlist", stats => {
 			const slide = stats.closest(".slide-item-container")
 			const index = +slide.getAttribute("data-index")
 			const placeId = slide.$find(".slide-item-image").getAttribute("data-emblem-id")
