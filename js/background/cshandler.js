@@ -1,11 +1,5 @@
 "use strict"
 
-const cssCache = (() => {
-	try {
-		return JSON.parse(localStorage.cssCache)
-	} catch(ex) { return {} }
-})();
-
 const ContentJS = (() => {
 	const listenersByType = {}
 	const ports = {}
