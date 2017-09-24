@@ -108,7 +108,7 @@ const GroupShouts = (() => {
 	})
 
 	let isFirstLoad = false
-	chrome.runtime.onInstall.addListener(() => { isFirstLoad = true })
+	chrome.runtime.onInstalled.addListener(() => { isFirstLoad = true })
 
 	chrome.storage.local.get(["groupshouts"], data => {
 		if(data.groupshouts && data.groupshouts.version === groupshouts.version) Object.assign(groupshouts, data.groupshouts);
