@@ -162,6 +162,44 @@ function Init() {
 				<div class="btr-settings-header-close btr-settings-toggle">⨯</div>
 			</div>
 			<div class="btr-settings-content">
+				<group label="General" path="general">
+					<select path="theme">
+						<option label="Default" value="default"/>
+						<option label="Simply Black" value="simblk"/>
+						<option label="Sky" value="sky"/>
+						<option label="Red" value="red"/>
+					</select>
+
+					<checkbox label="Add Blog Feed to Sidebar" path="showBlogFeed"></checkbox>
+					<checkbox label="Show Ads" path="showAds"></checkbox>
+					<checkbox label="Keep Sidebar Open" path="noHamburger"></checkbox>
+					<checkbox label="Show Chat" path="chatEnabled"></checkbox>
+				</group>
+				<group label="Profile Changes" path="profile" toggleable>
+					<checkbox label="Embed Inventory" path="embedInventoryEnabled"></checkbox>
+				</group>
+				<group label="Groups Changes" path="groups" toggleable>
+					<checkbox label="Group Shout Notifications" path="shoutAlerts"></checkbox>
+				</group>
+				<group label="Game Details Page Changes" path="gamedetails" toggleable>
+					<checkbox label="Highlight Owned Badges" path="showBadgeOwned"></checkbox>
+				</group>
+				<group label="Item Details Changes" path="itemdetails" toggleable>
+					<checkbox label="Animation Previewer" path="animationPreview"></checkbox>
+					<checkbox label="Auto-Load Animation Previewer" path="animationPreviewAutoLoad"></checkbox>
+					<checkbox label="Show Explorer Button" path="explorerButton"></checkbox>
+					<checkbox label="Show Download Button" path="downloadButton"></checkbox>
+					<checkbox label="Show Content Button" path="contentButton"></checkbox>
+				</group>
+				<group label="Inventory Changes" path="inventory" toggleable>
+					<checkbox label="Inventory Tools" path="inventoryTools"></checkbox>
+				</group>
+				<group label="Catalog Changes" path="catalog" toggleable>
+				</group>
+				<group label="Chat Changes" path="chat" toggleable>
+				</group>
+				<group label="Version History Changes" path="versionhistory" toggleable>
+				</group>
 			</div>
 			<div class="btr-settings-footer">
 				Refresh the page to apply settings
@@ -184,108 +222,104 @@ function Init() {
 				if(e.deltaY > 0 && content.scrollTop >= content.scrollHeight - content.clientHeight) return e.preventDefault();
 			})
 
-			fetch(getURL("options.html")).then(async resp => {
-				content.innerHTML = await resp.text()
+			const settingsDone = {}
+			let labelCounter = 0
+			let wipGroup
 
-				const settingsDone = {}
-				let labelCounter = 0
-				let wipGroup
+			Array.from(content.children).forEach(group => {
+				const groupPath = group.getAttribute("path")
+				const settingsGroup = settings[groupPath]
+				const title = html`<h4>${group.getAttribute("label")}</h4>`
+				group.prepend(title)
+				title.after(html`<br>`)
 
-				Array.from(content.children).forEach(group => {
-					const groupPath = group.getAttribute("path")
-					const settingsGroup = settings[groupPath]
-					const title = html`<h4>${group.getAttribute("label")}</h4>`
-					group.prepend(title)
-					title.after(html`<br>`)
+				settingsDone[groupPath] = {}
 
-					settingsDone[groupPath] = {}
+				if(group.hasAttribute("toggleable")) {
+					const inputList = group.getElementsByTagName("input")
+					const input = html`<input type=checkbox class=btr-settings-enabled-toggle>`
+					title.after(input)
 
-					if(group.hasAttribute("toggleable")) {
-						const inputList = group.getElementsByTagName("input")
-						const input = html`<input type=checkbox class=btr-settings-enabled-toggle>`
-						title.after(input)
+					const update = state => {
+						Array.from(inputList).forEach(x => {
+							if(x === input) return;
 
-						const update = state => {
-							Array.from(inputList).forEach(x => {
-								if(x === input) return;
-
-								if(!state) x.setAttribute("disabled", "");
-								else x.removeAttribute("disabled");
-							})
-						}
-
-						input.checked = !!settingsGroup.enabled
-						input.$on("change", () => {
-							settingsGroup.enabled = input.checked
-							BackgroundJS.send("setSetting", { [groupPath]: { enabled: input.checked } })
-							update(input.checked)
+							if(!state) x.setAttribute("disabled", "");
+							else x.removeAttribute("disabled");
 						})
-						setTimeout(update, 0, input.checked)
-
-						settingsDone[groupPath].enabled = true
 					}
 
-					Array.from(group.getElementsByTagName("select")).forEach(select => {
-						const settingName = select.getAttribute("path")
+					input.checked = !!settingsGroup.enabled
+					input.$on("change", () => {
+						settingsGroup.enabled = input.checked
+						BackgroundJS.send("setSetting", { [groupPath]: { enabled: input.checked } })
+						update(input.checked)
+					})
+					setTimeout(update, 0, input.checked)
 
-						select.value = settingsGroup[settingName]
-						select.$on("change", () => {
-							settingsGroup[settingName] = select.value
-							BackgroundJS.send("setSetting", { [groupPath]: { [settingName]: select.value } })
-						})
+					settingsDone[groupPath].enabled = true
+				}
 
-						settingsDone[groupPath][settingName] = true
+				Array.from(group.getElementsByTagName("select")).forEach(select => {
+					const settingName = select.getAttribute("path")
+
+					select.value = settingsGroup[settingName]
+					select.$on("change", () => {
+						settingsGroup[settingName] = select.value
+						BackgroundJS.send("setSetting", { [groupPath]: { [settingName]: select.value } })
 					})
 
-					Array.from(group.getElementsByTagName("checkbox")).forEach(checkbox => {
-						const settingName = checkbox.getAttribute("path")
-						const input = html`<input id=btr-settings-input-${labelCounter} type=checkbox>`
-						const label = html`<label for=btr-settings-input-${labelCounter++}>${checkbox.getAttribute("label")}`
+					settingsDone[groupPath][settingName] = true
+				})
 
-						checkbox.classList.add("checkbox")
+				Array.from(group.getElementsByTagName("checkbox")).forEach(checkbox => {
+					const settingName = checkbox.getAttribute("path")
+					const input = html`<input id=btr-settings-input-${labelCounter} type=checkbox>`
+					const label = html`<label for=btr-settings-input-${labelCounter++}>${checkbox.getAttribute("label")}`
+
+					checkbox.classList.add("checkbox")
+
+					checkbox.append(input)
+					checkbox.append(label)
+
+					if(!(settingName in settingsGroup)) label.textContent += " (Bad setting)";
+
+					input.checked = !!settingsGroup[settingName]
+					input.$on("change", () => {
+						settingsGroup[settingName] = input.checked
+						BackgroundJS.send("setSetting", { [groupPath]: { [settingName]: input.checked } })
+					})
+
+					settingsDone[groupPath][settingName] = true
+				})
+			})
+
+			Object.entries(settings).forEach(([groupPath, settingsGroup]) => {
+				Object.entries(settingsGroup).forEach(([settingName, settingValue]) => {
+					if(groupPath in settingsDone && settingName in settingsDone[groupPath]) return;
+
+					if(!wipGroup) {
+						wipGroup = html`<group><h4>WIP</h4><br></group>`
+						content.append(wipGroup)
+					}
+
+					if(typeof settingValue === "boolean") {
+						const checkbox = html`<checkbox></checkbox>`
+						const input = html`<input id=btr-settings-input-${labelCounter} type=checkbox>`
+						const label = html`<label for=btr-settings-input-${labelCounter++}>${groupPath}.${settingName}`
 
 						checkbox.append(input)
 						checkbox.append(label)
+						wipGroup.append(checkbox)
 
-						if(!(settingName in settingsGroup)) label.textContent += " (Bad setting)";
-
-						input.checked = !!settingsGroup[settingName]
+						input.checked = !!settingValue
 						input.$on("change", () => {
 							settingsGroup[settingName] = input.checked
 							BackgroundJS.send("setSetting", { [groupPath]: { [settingName]: input.checked } })
 						})
-
-						settingsDone[groupPath][settingName] = true
-					})
-				})
-
-				Object.entries(settings).forEach(([groupPath, settingsGroup]) => {
-					Object.entries(settingsGroup).forEach(([settingName, settingValue]) => {
-						if(groupPath in settingsDone && settingName in settingsDone[groupPath]) return;
-
-						if(!wipGroup) {
-							wipGroup = html`<group><h4>WIP</h4><br></group>`
-							content.append(wipGroup)
-						}
-
-						if(typeof settingValue === "boolean") {
-							const checkbox = html`<checkbox></checkbox>`
-							const input = html`<input id=btr-settings-input-${labelCounter} type=checkbox>`
-							const label = html`<label for=btr-settings-input-${labelCounter++}>${groupPath}.${settingName}`
-
-							checkbox.append(input)
-							checkbox.append(label)
-							wipGroup.append(checkbox)
-
-							input.checked = !!settingValue
-							input.$on("change", () => {
-								settingsGroup[settingName] = input.checked
-								BackgroundJS.send("setSetting", { [groupPath]: { [settingName]: input.checked } })
-							})
-						} else {
-							wipGroup.append(html`<div>${groupPath}.${settingName} (${typeof settingValue})`)
-						}
-					})
+					} else {
+						wipGroup.append(html`<div>${groupPath}.${settingName} (${typeof settingValue})`)
+					}
 				})
 			})
 		}
