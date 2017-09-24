@@ -484,7 +484,7 @@ function PreInit() {
 	if(document.contentType !== "text/html") return;
 
 	currentPage = GET_PAGE(pathname)
-	chrome.storage.local.get(["settings", "cachedBlogFeed"], data => {
+	chrome.storage.local.get(["settings", "cachedBlogFeed", "directoryEntry"], data => {
 		settings = data.settings ? data.settings : JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
 		blogFeedData = data.cachedBlogFeed
 
@@ -493,10 +493,12 @@ function PreInit() {
 
 		const cssGroups = ["css/", `css/${settings.general.theme}/`]
 		const parent = document.head || document.documentElement
-		cssGroups.forEach(group => cssFiles.forEach(filePath => {
+		cssGroups.forEach(group => cssFiles.forEach(path => {
+			if(data.directoryEntry && data.directoryEntry.indexOf(group + path) === -1) return;
+
 			const link = document.createElement("link")
 			link.rel = "stylesheet"
-			link.href = getURL(group + filePath)
+			link.href = getURL(group + path)
 
 			parent.append(link)
 		}))
