@@ -488,10 +488,23 @@ function PreInit() {
 		settings = data.settings ? data.settings : JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
 		blogFeedData = data.cachedBlogFeed
 
+		const cssFiles = ["main.css"]
+		if(currentPage && currentPage.css) cssFiles.push(...currentPage.css);
+
+		const cssGroups = ["css/", `css/${settings.general.theme}/`]
+		const parent = document.head || document.documentElement
+		cssGroups.forEach(group => cssFiles.forEach(filePath => {
+			const link = document.createElement("link")
+			link.rel = "stylesheet"
+			link.href = getURL(group + filePath)
+
+			parent.append(link)
+		}))
+
 		if(haveContentScriptsLoaded) Init();
 	})
 
-	BackgroundJS.send("applyPage", currentPage ? currentPage.name : null)
+	BackgroundJS.send("requestBlogFeed")
 }
 
 PreInit()

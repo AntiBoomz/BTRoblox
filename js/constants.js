@@ -76,7 +76,7 @@ const GET_PAGE = function(path) {
 		const page = PAGE_INFO[name]
 		for(let i = 0; i < page.matches.length; i++) {
 			const matches = path.match(page.matches[i])
-			if(matches) return { name, matches: matches.slice(1) };
+			if(matches) return Object.assign({}, page, { name, matches: matches.slice(1) });
 		}
 	}
 

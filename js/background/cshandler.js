@@ -83,32 +83,13 @@ Object.entries(
 
 			return true
 		},
-		applyPage(name, respond, port) {
-			const pageInfo = typeof name === "string" ? PAGE_INFO[name] : null
-
+		requestBlogFeed(_, respond, port) {
 			Settings.get().then(settings => {
 				if(settings.general.showBlogFeed) {
 					Blogfeed.get(updatedFeedData => {
 						port.postMessage({ type: "blogfeed", data: updatedFeedData })
 					})
 				}
-
-				const cssFiles = ["main.css"]
-				const cssGroups = ["css/", `css/${settings.general.theme}/`]
-				const cssMerge = []
-
-				if(pageInfo && pageInfo.css) cssFiles.push(...pageInfo.css);
-
-				cssGroups.forEach(group => cssFiles.forEach(filePath => {
-					const source = cssCache[group + filePath]
-					if(source) cssMerge.push(source);
-				}))
-
-				chrome.tabs.insertCSS(port.sender.tab.id, {
-					frameId: port.sender.frameId,
-					code: cssMerge.join("\n\n"),
-					runAt: "document_start"
-				}, () => chrome.runtime.lastError)
 			})
 		},
 		_execScripts(list, respond, port) {
@@ -122,40 +103,6 @@ Object.entries(
 	}
 ).forEach(([key, value]) => ContentJS.listen(key, value));
 
-function updateCSSCache() {
-	localStorage.removeItem("cssCache")
-	Object.keys(cssCache).forEach(key => delete cssCache[key])
 
-	let updateCacheTimeout
-
-	chrome.runtime.getPackageDirectoryEntry(root => {
-		function recurse(dir, dirpath) {
-			dir.createReader().readEntries(array => {
-				array.forEach(entry => {
-					const entrypath = `${dirpath}/${entry.name}`
-					if(entry.isDirectory) {
-						recurse(entry, entrypath)
-					} else if(entry.isFile && entry.name.endsWith(".css")) {
-						cssCache[entrypath] = `/* File: ${entrypath}  Loading... */`
-						fetch(chrome.runtime.getURL(entrypath)).then(response => {
-							response.text().then(source => {
-								source = source.replace(/\s*\n\s*|\/\*((?!\*\/).)*\*\//g, "")
-								source = `/* File: ${entrypath} */\n${source}`
-								cssCache[entrypath] = source
-
-								clearTimeout(updateCacheTimeout)
-								updateCacheTimeout = setTimeout(() => {
-									localStorage.cssCache = JSON.stringify(cssCache)
-								}, 500)
-							})
-						})
-					}
-				})
-			})
-		}
-
-		root.getDirectory("css", null, dir => recurse(dir, dir.name))
-	})
-}
-
-chrome.runtime.onInstalled.addListener(updateCSSCache)
+// Legacy cleanup
+localStorage.removeItem("cssCache")
