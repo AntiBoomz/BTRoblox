@@ -318,7 +318,7 @@ function Create3dPreview(readyCb) {
 		switch: modeSwitch,
 
 		setPlayerType(playerType) {
-			console.assert(playerType === "R6" || playerType === "R15")
+			assert(playerType === "R6" || playerType === "R15")
 			this.playerType = playerType
 
 			const isChecked = playerType === "R15"

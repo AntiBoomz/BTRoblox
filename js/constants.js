@@ -204,4 +204,6 @@ const MESSAGING = (() => {
 	}
 })();
 
+const assert = (bool, ...msg) => {
+	if(!bool) throw new Error(...msg);
 }
