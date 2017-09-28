@@ -1,7 +1,5 @@
 "use strict"
 
-const isDevExtension = chrome.runtime.id !== "hbkpclpemjeibhioopcebchdmohaieln"
-const pathname = window.location.pathname.toLowerCase()
 const getURL = chrome.runtime.getURL
 const pathname = window.location.pathname.toLowerCase()
 const Observer = CreateObserver(document)
