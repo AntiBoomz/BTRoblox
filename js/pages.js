@@ -1220,7 +1220,7 @@ pageInit.gamedetails = function(placeId) {
 		badges.classList.add("col-xs-12", "btr-badges-container")
 		newContainer.after(badges)
 
-		const badgeList = []
+		const badgeInfo = {}
 
 		CreateObserver(badges).all(".badge-row .badge-stats-container", stats => {
 			const row = stats.closest(".badge-row")
@@ -1231,54 +1231,41 @@ pageInit.gamedetails = function(placeId) {
 			row.$find("p.para-overflow").classList.remove("para-overflow")
 
 			if(settings.gamedetails.showBadgeOwned) {
-				let badgeId = url.match(/catalog\/(\d+)\//)
-				if(!badgeId) return;
+				const match = url.match(/catalog\/(\d+)\//)
+				if(!match) return;
 
-				badgeId = badgeId[1]
-				row.classList.add("btr_badgeownedloading")
+				const badgeId = +match[1]
+				const info = badgeInfo[badgeId]
 
-				badgeList.push([row, badgeId])
+				if(info) {
+					row.classList.toggle("btr_notowned", !info.IsOwned)
+				} else {
+		//			row.classList.add("btr_badgeownedloading")
+					badgeInfo[badgeId] = {
+						btrElement: row
+					}
+				}
 			}
 		})
 
 		if(settings.gamedetails.showBadgeOwned) {
-			let lastRequest = null
-			const onSeeMoreBadges = new Promise(resolve => Observer.one("#badges-see-more", btn => btn.$once("click", resolve)))
+		//	onDocumentReady(() => {
+			const url = `//www.roblox.com/badges/list-badges-for-place?placeId=${placeId}`
+			fetch(url, { credentials: "include" }).then(async response => {
+				const json = await response.json()
 
-			const getIsBadgeOwned = (badgeId, cb) => {
-				const url = `//www.roblox.com/Game/Badge/HasBadge.ashx?UserID=${loggedInUser}&BadgeID=${badgeId}`
-				fetch(url).then(async response => {
-					const result = await response.text()
-					cb(result === "Success")
-				})
-			}
-
-			onDocumentReady(() => {
-				badgeList.forEach(data => {
-					const row = data[0]
-					const badgeId = data[1]
-
-					function cb(val) {
-						row.classList.remove("btr_badgeownedloading")
-						if(!val) {
-							row.classList.add("btr_notowned")
-							row.$find("img").title = "You do not own this badge"
-						}
-					}
-
-					if(!row.classList.contains("badge-see-more-row")) {
-						getIsBadgeOwned(badgeId, cb)
+				json.GameBadges.forEach(data => {
+					const info = badgeInfo[data.BadgeAssetId]
+					if(info) {
+						Object.assign(info, data)
+						info.btrElement.classList.toggle("btr_notowned", !info.IsOwned)
+		//				info.btrElement.classList.remove("btr_badgeownedloading")
 					} else {
-						const prev = lastRequest || onSeeMoreBadges
-						lastRequest = new Promise(resolve => {
-							prev.then(() => getIsBadgeOwned(badgeId, isOwned => {
-								cb(isOwned)
-								setTimeout(resolve, 100)
-							}))
-						})
+						badgeInfo[data.BadgeAssetId] = data
 					}
 				})
 			})
+		//	})
 		}
 	})
 	.one("#carousel-game-details", details => details.setAttribute("data-is-video-autoplayed-on-ready", "false"))
