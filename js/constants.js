@@ -129,4 +129,79 @@ const DEFAULT_SETTINGS = {
 	universeconfig: {
 		enabled: false
 	}
+};
+
+const STORAGE = chrome.storage.local;
+const MESSAGING = (() => {
+	const IS_BACKGROUND_SCRIPT = chrome.extension
+		&& chrome.extension.getBackgroundPage
+		&& chrome.extension.getBackgroundPage() === window
+
+	if(IS_BACKGROUND_SCRIPT) {
+		const listenersByName = {}
+
+		const onConnect = port => {
+			if(!port.name) return port.disconnect();
+			const listener = listenersByName[port.name]
+
+			const onMessage = msg => {
+				port.onMessage.removeListener(onMessage)
+
+				if(listener) {
+					const respond = (response, isFinal) => {
+						if(port) {
+							port.postMessage(response)
+							if(isFinal !== false) port.disconnect()
+						} else {
+							console.warn("Tried to respond to a closed port")
+						}
+					}
+
+					try { listener(msg, respond, port) }
+					catch(ex) { console.error(ex) }
+				}
+			}
+
+			const onDisconnect = () => {
+				port.onMessage.removeListener(onMessage)
+				port.onDisconnect.removeListener(onDisconnect)
+				port = null
+			}
+
+			port.onMessage.addListener(onMessage)
+			port.onDisconnect.addListener(onDisconnect)
+		}
+
+		chrome.runtime.onConnect.addListener(onConnect)
+
+		return {
+			listen(name, callback) {
+				if(typeof name === "object") {
+					Object.entries(name).forEach(([key, fn]) => this.listen(key, fn))
+					return
+				}
+
+				if(!listenersByName[name]) {
+					listenersByName[name] = callback
+				} else {
+					console.warn("Listener '${name}' already exists")
+				}
+			}
+		}
+	}
+
+	return {
+		send(name, data, callback) {
+			if(typeof data === "function") callback = data, data = null;
+
+			const port = chrome.runtime.connect({ name })
+			port.postMessage(data)
+
+			if(typeof callback === "function") {
+				port.onMessage.addListener(callback)
+			}
+		}
+	}
+})();
+
 }

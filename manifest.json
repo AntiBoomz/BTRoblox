@@ -16,9 +16,10 @@
 			"js/constants.js",
 			"js/background/settings.js",
 			"js/background/blogfeed.js",
-			"js/background/cshandler.js",
+			"js/background/messaging.js",
 			"js/background/groupshout.js",
-			"js/background/contextmenu.js"
+			"js/background/contextmenu.js",
+			"js/background/directoryentry.js"
 		],
 		"persistent": false
 	},
@@ -37,23 +38,19 @@
 	],
 	"web_accessible_resources": [
 		"js/inject.js",
-		"lib/prism.css",
+		"lib/*",
 		"css/*",
-		"res/*",
-		"options.html"
+		"res/*"
 	],
 	"content_scripts": [
 		{
 			"matches": ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
 			"exclude_matches": [
-				"*://*/login/fulfillconstraint.aspx*",
-				"*://*/build/upload*",
-				"*://*/userads/*",
-				"*://*/user-sponsorship/*",
-				"*://*/Feeds/GetUserFeed*"
+				"*://*.roblox.com/userads/*",
+				"*://*.roblox.com/user-sponsorship/*",
+				"*://*.roblox.com/build/upload*"
 			],
 			"js": ["js/constants.js", "js/utility.js", "js/main.js", "js/pages.js"],
-			"css": [],
 			"run_at": "document_start",
 			"all_frames": true
 		}

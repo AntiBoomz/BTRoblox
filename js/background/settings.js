@@ -28,24 +28,25 @@ const Settings = (() => {
 	const onChangeListeners = []
 	let getPromise
 	return {
-		get() {
-			if(getPromise) return getPromise;
-			getPromise = new Promise(resolve => {
-				chrome.storage.local.get(["settings"], data => {
-					if(data.settings instanceof Object) {
-						applySettings(data.settings)
-					}
-					resolve(settings)
+		get(cb) {
+			if(!getPromise) {
+				getPromise = new Promise(resolve => {
+					STORAGE.get(["settings"], data => {
+						if(data.settings instanceof Object) {
+							applySettings(data.settings)
+						}
+						resolve(settings)
+					})
 				})
-			})
+			}
 
-			return getPromise
+			getPromise.then(cb)
 		},
 		set(data) {
 			if(!(data instanceof Object)) throw new TypeError("data should be an object");
 
 			if(applySettings(data)) {
-				chrome.storage.local.set({ settings })
+				STORAGE.set({ settings })
 				onChangeListeners.forEach(fn => fn(settings))
 			}
 		},

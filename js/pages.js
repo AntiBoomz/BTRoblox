@@ -93,7 +93,7 @@ async function getProductInfo(assetId) {
 
 
 function downloadFile(url, type) {
-	return new Promise(resolve => BackgroundJS.send("downloadFile", url, resolve))
+	return new Promise(resolve => MESSAGING.send("downloadFile", url, resolve))
 		.then(async bloburl => {
 			if(!bloburl) throw new Error("Failed to download file");
 
@@ -130,7 +130,7 @@ function execScripts(list, cb) {
 	if(list.length === 0) {
 		cb()
 	} else {
-		BackgroundJS.send("_execScripts", list, cb)
+		MESSAGING.send("_execScripts", list, cb)
 	}
 }
 
@@ -700,11 +700,7 @@ pageInit.itemdetails = function(assetId) {
 		const assetTypeName = typeLabel.textContent.trim()
 		const assetTypeId = AssetTypeIds.indexOf(assetTypeName)
 
-		if(assetTypeId === -1) {
-			if(isDevExtension) alert(`Unknown asset type ${assetTypeName}`);
-
-			return;
-		}
+		if(assetTypeId === -1) return;
 
 		function enableExplorer() {
 			let explorerInitialized = false
@@ -1420,7 +1416,7 @@ pageInit.configureuniverse = function() {
 		devProd.after(cont)
 
 		function init() {
-			document.head.append(html`<link href="${getURL("lib/prism.css")}" rel="stylesheet" />`)
+			document.head.append(html`<link href="${chrome.runtime.getURL("lib/prism.css")}" rel="stylesheet" />`)
 			const prismPromise = new Promise(resolve => execScripts(["lib/prism.js"], resolve))
 
 			const url = `https://api.roblox.com/universes/get-aliases?universeId=${universeId}&page=1`
@@ -1746,7 +1742,7 @@ pageInit.groups = function() {
 				userLink.append(span)
 				
 				let promise = rankNameCache[userId]
-				if(!promise) promise = rankNameCache[userId] = new Promise(resolve => BackgroundJS.send("getRankName", { userId, groupId }, resolve));
+				if(!promise) promise = rankNameCache[userId] = new Promise(resolve => MESSAGING.send("getRankName", { userId, groupId }, resolve));
 				
 				promise.then(rankname => {
 					userLink.append(html`<span class="btr_grouprank">(${rankname})</span>`)

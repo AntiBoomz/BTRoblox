@@ -27,12 +27,18 @@ const GroupShouts = (() => {
 	}
 
 	const executeCheck = async () => {
-		const response = await fetch("https://www.roblox.com/Feeds/GetUserFeed", { credentials: "include" })
-		const responseText = await response.text()
+		let doc
+		try {
+			const response = await fetch("https://www.roblox.com/Feeds/GetUserFeed", { credentials: "include" })
+			const responseText = await response.text()
 
-		const doc = new DOMParser().parseFromString(responseText, "text/html")
+			doc = new DOMParser().parseFromString(responseText, "text/html")
+		} catch(ex) {
+			console.error(ex)
+			return
+		}
+
 		const items = doc.documentElement.querySelectorAll(".feeds .list-item")
-
 		const groupsDone = {}
 		let hasPlayedSound = false
 
@@ -61,7 +67,7 @@ const GroupShouts = (() => {
 			const lastShout = groupshouts[groupId]
 			if(!lastShout || lastShout.posterid !== posterid || lastShout.body !== body || lastShout.date !== date) {
 				groupshouts[groupId] = { poster, posterid, body, date }
-				chrome.storage.local.set({ groupshouts })
+				STORAGE.set({ groupshouts })
 
 				if(!lastShout) return; // Don't show anything on first init
 
@@ -110,10 +116,10 @@ const GroupShouts = (() => {
 	let isFirstLoad = false
 	chrome.runtime.onInstalled.addListener(() => { isFirstLoad = true })
 
-	chrome.storage.local.get(["groupshouts"], data => {
+	STORAGE.get(["groupshouts"], data => {
 		if(data.groupshouts && data.groupshouts.version === groupshouts.version) Object.assign(groupshouts, data.groupshouts);
 
-		Settings.get().then(settings => {
+		Settings.get(settings => {
 			const shouldCheckShouts = () => settings.groups.enabled && settings.groups.shoutAlerts
 			let isChecking = shouldCheckShouts()
 

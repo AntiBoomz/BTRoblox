@@ -3,6 +3,7 @@
 const isDevExtension = chrome.runtime.id !== "hbkpclpemjeibhioopcebchdmohaieln"
 const pathname = window.location.pathname.toLowerCase()
 const getURL = chrome.runtime.getURL
+const pathname = window.location.pathname.toLowerCase()
 const Observer = CreateObserver(document)
 
 let hasDataLoaded = false
@@ -13,63 +14,6 @@ let blogFeedData;
 
 let loggedInUser = -1
 let loggedInUserPromise = null
-
-
-const BackgroundJS = (() => {
-	const listenersByType = {}
-	let port
-	let portTimeout
-
-	const onMessage = msg => {
-		const listeners = listenersByType[msg.type]
-		if(listeners) {
-			for(let i = 0; i < listeners.length; i++) {
-				const [callback, once] = listeners[i]
-				try {
-					const result = callback(msg.data)
-					if(once) listeners.splice(i--, 1);
-					if(result === true) return true;
-				} catch(ex) { console.error(ex) }
-			}
-		}
-	}
-
-	const refreshPort = () => {
-		if(!port) {
-			port = chrome.runtime.connect({ name: "BackgroundJS.connect" })
-
-			port.onMessage.addListener(onMessage)
-			port.onDisconnect.addListener(() => {
-				clearTimeout(portTimeout)
-				port = null
-			})
-		}
-
-		clearTimeout(portTimeout)
-		portTimeout = setTimeout(() => {
-			port.disconnect()
-			port = null
-		}, 60e3)
-	}
-
-	return {
-		send(type, data, callback) {
-			if(typeof data === "function") {
-				callback = data
-				data = null
-			}
-
-			refreshPort()
-			chrome.runtime.sendMessage({ type, data }, callback)
-		},
-		listen(typeList, callback, once) {
-			typeList.split(" ").forEach(type => {
-				if(!listenersByType[type]) listenersByType[type] = [];
-				listenersByType[type].push([callback, once])
-			})
-		}
-	}
-})();
 
 const InjectJS = {
 	_queue: [],
@@ -252,7 +196,7 @@ function Init() {
 					input.checked = !!settingsGroup.enabled
 					input.$on("change", () => {
 						settingsGroup.enabled = input.checked
-						BackgroundJS.send("setSetting", { [groupPath]: { enabled: input.checked } })
+						MESSAGING.send("setSetting", { [groupPath]: { enabled: input.checked } })
 						update(input.checked)
 					})
 					setTimeout(update, 0, input.checked)
@@ -266,7 +210,7 @@ function Init() {
 					select.value = settingsGroup[settingName]
 					select.$on("change", () => {
 						settingsGroup[settingName] = select.value
-						BackgroundJS.send("setSetting", { [groupPath]: { [settingName]: select.value } })
+						MESSAGING.send("setSetting", { [groupPath]: { [settingName]: select.value } })
 					})
 
 					settingsDone[groupPath][settingName] = true
@@ -287,7 +231,7 @@ function Init() {
 					input.checked = !!settingsGroup[settingName]
 					input.$on("change", () => {
 						settingsGroup[settingName] = input.checked
-						BackgroundJS.send("setSetting", { [groupPath]: { [settingName]: input.checked } })
+						MESSAGING.send("setSetting", { [groupPath]: { [settingName]: input.checked } })
 					})
 
 					settingsDone[groupPath][settingName] = true
@@ -315,7 +259,7 @@ function Init() {
 						input.checked = !!settingValue
 						input.$on("change", () => {
 							settingsGroup[settingName] = input.checked
-							BackgroundJS.send("setSetting", { [groupPath]: { [settingName]: input.checked } })
+							MESSAGING.send("setSetting", { [groupPath]: { [settingName]: input.checked } })
 						})
 					} else {
 						wipGroup.append(html`<div>${groupPath}.${settingName} (${typeof settingValue})`)
@@ -339,7 +283,7 @@ function Init() {
 	.one("head", head => {
 		const script = document.createElement("script")
 		script.type = "text/javascript"
-		script.src = getURL("js/inject.js")
+		script.src = chrome.runtime.getURL("js/inject.js")
 
 		head.append(script)
 	})
@@ -468,7 +412,7 @@ function Init() {
 		}
 
 		if(blogFeedData) updateBlogFeed(blogFeedData);
-		BackgroundJS.listen("blogfeed", updateBlogFeed)
+		MESSAGING.send("requestBlogFeed", updateBlogFeed)
 	}
 
 	if(currentPage && pageInit[currentPage.name]) {
@@ -484,7 +428,7 @@ function PreInit() {
 	if(document.contentType !== "text/html") return;
 
 	currentPage = GET_PAGE(pathname)
-	chrome.storage.local.get(["settings", "cachedBlogFeed", "directoryEntry"], data => {
+	STORAGE.get(["settings", "cachedBlogFeed", "directoryEntry"], data => {
 		settings = data.settings ? data.settings : JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
 		blogFeedData = data.cachedBlogFeed
 
@@ -498,15 +442,13 @@ function PreInit() {
 
 			const link = document.createElement("link")
 			link.rel = "stylesheet"
-			link.href = getURL(group + path)
+			link.href = chrome.runtime.getURL(group + path)
 
 			parent.append(link)
 		}))
 
 		if(haveContentScriptsLoaded) Init();
 	})
-
-	BackgroundJS.send("requestBlogFeed")
 }
 
 PreInit()

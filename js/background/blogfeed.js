@@ -30,7 +30,7 @@ const Blogfeed = (() => {
 					}
 
 					cachedFeed = responseData
-					chrome.storage.local.set({ cachedBlogFeed: cachedFeed })
+					STORAGE.set({ cachedBlogFeed: cachedFeed })
 
 					if(typeof cb === "function") cb(cachedFeed);
 				})
