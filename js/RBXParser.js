@@ -587,6 +587,8 @@ const RBXParser = (() => {
 	
 	class ModelParser {
 		parse(buffer) {
+			assert(buffer.byteLength >= 9, "Not a balid RBXM file (too small)")
+
 			let format
 			if(typeof buffer === "string" && !buffer.startsWith("<roblox ")) {
 				format = "xml"
