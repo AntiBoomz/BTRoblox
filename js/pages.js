@@ -410,7 +410,7 @@ function Create3dPreview(readyCb) {
 
 				let anim
 				try {
-					anim = ANTI.ParseAnimationData(model)
+					anim = new RBXParser.AnimationParser().parse(model)
 				} catch(ex) {
 					console.log("Failed to load animation:", ex)
 					if(cb) cb(ex);
@@ -862,7 +862,7 @@ pageInit.itemdetails = function(assetId) {
 							value.Children.forEach((anim, i) => {
 								if(anim.ClassName !== "Animation") return;
 
-								const animId = ANTI.RBXParseContentUrl(anim.AnimationId)
+								const animId = RBXParser.parseContentUrl(anim.AnimationId)
 								if(animId) {
 									const index = animName + (i === 0 ? "" : `_${i + 1}`)
 									dict[index] = animId
@@ -1040,7 +1040,7 @@ pageInit.itemdetails = function(assetId) {
 						const inst = model.find(assetTypeContainer.filter)
 						if(!inst) return;
 	
-						const actId = ANTI.RBXParseContentUrl(inst[assetTypeContainer.prop])
+						const actId = RBXParser.parseContentUrl(inst[assetTypeContainer.prop])
 						if(!actId) return;
 	
 						btn.href = `/catalog/${actId}`
@@ -1093,7 +1093,7 @@ pageInit.itemdetails = function(assetId) {
 						const decal = model.find(x => x.ClassName === "Decal")
 						if(!decal) return;
 
-						const imgId = ANTI.RBXParseContentUrl(decal.Texture)
+						const imgId = RBXParser.parseContentUrl(decal.Texture)
 						if(!imgId) return;
 
 						const url = `/asset-thumbnail/json?width=420&height=420&format=png&assetId=${imgId}`

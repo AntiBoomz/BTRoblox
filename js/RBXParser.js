@@ -1,56 +1,135 @@
-// BTR-RBXParser.js
+"use strict"
 
-(function() {
-	function toFloat(value) {
-		var exp = (value >> 23) & 255
-
-		if(exp === 0)
-			return 0;
-
-		var float = Math.pow(2, exp-127) * (1 + (value&0x7FFFFF)/0x7FFFFF)
-		return value > 0x7FFFFFFF ? -float : float
+const RBXParser = (() => {
+	class Model extends Array {
 	}
 
-	function toDouble(byte0, byte1) {
-		var exp = (byte0 >> 20) & 2047
-		var frac = (((byte0 & 1048575) * 4294967296) + byte1) / 4503599627370496
-		var neg = byte0 & 2147483648
+	class Property {
+		constructor(type, value) {
+			this.type = type
+			this.value = value
+		}
+		toString() {
+			switch(this.type) {
+			case "Enum":
+				return "Enum " + this.value.toString()
+			case "Instance":
+				return this.value && this.value.Name || ""
+			case "CFrame":
+			case "Color3":
+			case "Vector2":
+			case "Vector3":
+				return this.value.join(", ")
+			case "UDim2":
+				return `{${this.value[0].join(", ")}} {${this.value[0].join(", ")}}`
+			default:
+				return this.value.toString()
+			}
+		}
+	}
 
-		if(exp === 0) {
-			if(frac === 0)
-				return -0;
-
-			var double = Math.pow(2, exp-1023) * frac
-			return neg ? -double : double
-		} else if(exp === 2047) {
-			return frac === 0 ? Infinity : NaN
+	class Instance {
+		constructor(className) {
+			assert(typeof className === "string")
+			Object.defineProperty(this, "Children", { value: [], enumerable: true, writable: false })
+			Object.defineProperty(this, "Properties", { value: [], enumerable: false, writable: false })
+			Instance.set(this, "ClassName", className)
+			Instance.set(this, "Parent", new Property("Instance", null))
 		}
 
-		var double = Math.pow(2, exp-1023) * (1+frac)
-		return neg ? -double : double
+		static set(inst, name, prop) {
+			const prevProp = inst.Properties[name]
+
+			if(!(prop instanceof Property)) {
+				switch(typeof prop) {
+				case "string":
+					prop = new Property("String", prop)
+					break
+				case "number":
+					prop = new Property("Number", prop)
+					break
+				case "boolean":
+					prop = new Property("Boolean", prop)
+					break
+				default:
+					throw new Error("Invalid fast property assign")
+				}
+			}
+
+			if(prevProp) {
+				assert(prevProp.type === prop.type, "Property type mismatch")
+			}
+
+			Object.defineProperty(inst, name, { value: prop.value, writable: false, enumerable: true, configurable: true })
+			inst.Properties[name] = prop
+
+			if(name === "Parent") {
+				if(prevProp && prevProp.value instanceof Instance) {
+					const children = prevProp.value.Children
+					children.splice(children.indexOf(inst), 1)
+				}
+
+				if(prop.value instanceof Instance) {
+					prop.value.Children.push(inst)
+				}
+			}
+		}
 	}
 
-	var Decoder = new TextDecoder("ascii")
 	class ByteReader extends Uint8Array {
+		static ParseFloat(long) {
+			const exp = (long >> 23) & 255
+			if(exp === 0) return 0;
+			const float = 2 ** (exp - 127) * (1 + (long & 0x7FFFFF) / 0x7FFFFF)
+			return long > 0x7FFFFFFF ? -float : float
+		}
+
+		static ParseDouble(long0, long1) {
+			const exp = (long0 >> 20) & 2047
+			const frac = (((long0 & 1048575) * 4294967296) + long1) / 4503599627370496
+			const neg = long0 & 2147483648
+
+			if(exp === 0) {
+				if(frac === 0) return -0;
+				const double = 2 ** (exp - 1023) * frac
+				return neg ? -double : double
+			} else if(exp === 2047) {
+				return frac === 0 ? Infinity : NaN
+			}
+
+			const double = 2 ** (exp - 1023) * (1+frac)
+			return neg ? -double : double
+		}
+
 		constructor(buffer) {
-			super(buffer)
+			if(buffer instanceof Uint8Array) {
+				super(buffer.buffer)
+			} else {
+				assert(buffer instanceof ArrayBuffer, "Not an arraybuffer")
+				super(buffer)
+			}
 
 			this.index = 0
 		}
 
-		get remaining() { return this.length - this.index }
+		SetIndex(n) { this.index = n }
+		GetIndex() { return this.index }
+		GetRemaining() { return this.length - this.index }
+		Jump(n) { this.index += n }
 
-		Array(n) { var i = this.index; this.index += n; return new Uint8Array(this.buffer, i, n) }
+		Array(n) {
+			const result = new Uint8Array(this.buffer, this.index, n)
+			this.index += n
+			return result
+		}
 		Match(arr) {
-			var i = this.index
+			const begin = this.index
 			this.index += arr.length
-			for(var j=0; j<arr.length; j++) {
-				if(arr[j] !== this[i+j])
-					return false;
+			for(let i = 0; i < arr.length; i++) {
+				if(arr[i] !== this[begin + i]) return false;
 			}
 			return true
 		}
-		Jump(n) { this.index += n }
 
 		Byte() { return this[this.index++] }
 		UInt8() { return this[this.index++] }
@@ -58,72 +137,82 @@
 		UInt16BE() { return (this[this.index++] * 256) + this[this.index++] }
 		UInt32LE() { return this[this.index++] + (this[this.index++] * 256) + (this[this.index++] * 65536) + (this[this.index++] * 16777216) }
 		UInt32BE() { return (this[this.index++] * 16777216) + (this[this.index++] * 65536) + (this[this.index++] * 256) + this[this.index++] }
-		FloatLE() { return toFloat(this.UInt32LE()) }
-		FloatBE() { return toFloat(this.UInt32BE()) }
-		DoubleLE() { var byte = this.UInt32LE(); return toDouble(this.UInt32LE(), byte) } // Little endian is flipped
-		DoubleBE() { return toDouble(this.UInt32BE(), this.UInt32BE()) }
+		FloatLE() { return ByteReader.ParseFloat(this.UInt32LE()) }
+		FloatBE() { return ByteReader.ParseFloat(this.UInt32BE()) }
+		DoubleLE() {
+			const byte = this.UInt32LE()
+			return ByteReader.ParseDouble(this.UInt32LE(), byte)
+		}
+		DoubleBE() { return ByteReader.ParseDouble(this.UInt32BE(), this.UInt32BE()) }
 
-		String(n) { var i = this.index; this.index += n; return Decoder.decode(new Uint8Array(this.buffer, i, n)) }
+		String(n) { 
+			const i = this.index
+			this.index += n
+			return new TextDecoder("ascii").decode(new Uint8Array(this.buffer, i, n))
+		}
+
+		// Custom stuff
+
 		LZ4() {
-			var comLength = this.UInt32LE()
-			var decomLength = this.UInt32LE()
+			const comLength = this.UInt32LE()
+			const decomLength = this.UInt32LE()
 			this.Jump(4)
 
-			var start = this.index
-
-			var data = new Uint8Array(decomLength)
-			var index = 0
+			const start = this.index
+			const data = new Uint8Array(decomLength)
+			let index = 0
 
 			while(index < decomLength) {
-				var token = this.Byte()
-				var litLen = token >> 4
+				const token = this.Byte()
+				let litLen = token >> 4
 
 				if(litLen === 0xF) {
-					do {
-						var lenByte = this.Byte()
+					while(true) {
+						const lenByte = this.Byte()
 						litLen += lenByte
-					} while(lenByte === 0xFF)
+						if(lenByte !== 0xFF) break;
+					}
 				}
 
-				for(var i=0; i<litLen; i++) {
+				for(let i = 0; i < litLen; i++) {
 					data[index++] = this.Byte()
 				}
 
-				if(index >= decomLength)
-					break;
+				if(index >= decomLength) break;
 
-				var offset = this.UInt16LE()
-				var len = token & 0xF
+				const offset = this.UInt16LE()
+				let len = token & 0xF
 
 				if(len === 0xF) {
-					do {
-						var lenByte = this.Byte()
+					while(true) {
+						const lenByte = this.Byte()
 						len += lenByte
-					} while(lenByte === 0xFF)
+						if(lenByte !== 0xFF) break;
+					}
 				}
 
 				len += 4
-				var begin = index - offset
-				for(var i=0; i<len; i++) {
+				const begin = index - offset
+				for(let i = 0; i < len; i++) {
 					data[index++] = data[begin + i]
 				}
 			}
 
-			if(start + comLength !== this.index)
-				throw new Error("[ByteReader.LZ4] Invalid LZ4, bad end index")
-
+			assert(start + comLength === this.index, "[ByteReader.LZ4] Invalid LZ4, bad end index")
 			return data
 		}
 
-		RBXInterleaved32(count, fn) {
-			var result = new Array(count)
-			var byteCount = count * 4
+		// RBXInterleaved
 
-			for(var i=0; i<count; i++) {
-				var value = (this[this.index + i] << 24) 
+		_RBXInterleaved(count, fn) {
+			const result = new Array(count)
+			const byteCount = count * 4
+
+			for(let i = 0; i < count; i++) {
+				const value = (this[this.index + i] << 24) 
 					+ (this[this.index + (i + count) % byteCount] << 16)
-					+ (this[this.index + (i + count*2) % byteCount] << 8)
-					+ this[this.index + (i + count*3) % byteCount]
+					+ (this[this.index + (i + count * 2) % byteCount] << 8)
+					+ this[this.index + (i + count * 3) % byteCount]
 
 				result[i] = fn ? fn(value) : value
 			}
@@ -131,673 +220,624 @@
 			this.Jump(byteCount)
 			return result
 		}
-	}
 
-	function fakeFunction(name) { return  }
-
-	function RBXInstance(className) {
-		if(this.constructor === RBXInstance)
-			throw new Error("RBXInstance is an abstract class and can not be used as a constructor");
-
-		if(!(this instanceof RBXInstance)) {
-			if(!RBXInstance[className]) {
-				var con = RBXInstance[className] = eval("(function " + className + "() {})")
-				con.prototype.__proto__ = RBXInstance.prototype
-			}
-
-			var item = new RBXInstance[className]()
-			RBXInstance.call(item, className)
-			return item
+		RBXInterleavedFloat(count) {
+			return this._RBXInterleaved(count, value =>
+				ByteReader.ParseFloat((value >> 1) + ((value & 1) * 2147483648))
+			)
 		}
 
-		Object.defineProperty(this, "Children", { value: [], enumerable: true, writable: false })
-		Object.defineProperty(this, "Properties", { value: [], enumerable: false, writable: false })
-		this.setProperty("ClassName", className)
-		this.setProperty("Parent", null)
+		RBXInterleavedInt(count) {
+			return this._RBXInterleaved(count, value =>
+				(value % 2 === 1 ? -(value + 1) / 2 : value / 2)
+			)
+		}
+
+		RBXInterleavedByte(count) {
+			return this._RBXInterleaved(count)
+		}
 	}
 
-	Object.assign(RBXInstance.prototype, {
-		_removeChild: function(child) {
-			var index = this.Children.indexOf(child)
-			this.Children.splice(index, 1)
-		},
-		_addChild: function(child) {
-			this.Children.push(child)
-		},
-		setParent: function(newparent) {
-			if(this.Parent) {
-				this.Parent._removeChild(this)
-			}
-			this.Parent = newparent
-			if(this.Parent) {
-				this.Parent._addChild(this)
-			}
-		},
-		setProperty: function(name, value) {
-			if(this.Properties.indexOf(name) === -1) {
-				this.Properties.push(name)
-			}
+	const peekMethods = [
+		"Byte", "UInt8", "UInt16LE", "UInt16BE", "UInt32LE", "UInt32BE",
+		"FloatLE", "FloatBE", "DoubleLE", "DoubleBE", "String"
+	]
 
-			this[name] = value
+	peekMethods.forEach(key => {
+		const fn = ByteReader.prototype[key]
+		ByteReader.prototype["Peek" + key] = function(...args) {
+			const index = this.GetIndex()
+			const result = fn.apply(this, args)
+			this.SetIndex(index)
+			return result
 		}
 	})
 
-	function RBXProperty(type, value) {
-		if(this instanceof RBXProperty)
-			throw new Error("RBXProperty can not be constructed");
+	class RBXXmlParser {
+		parse(data) {
+			if(typeof data !== "string") data = new TextDecoder("ascii").decode(data);
 
-		if(!(value instanceof Array))
-			throw new Error("value not an array?");
+			const xml = new DOMParser().parseFromString(data, "text/xml").documentElement
+			const result = new Model()
 
-		var con = RBXProperty[type]
-		if(!RBXProperty[type]) {
-			con = RBXProperty[type] = eval("(function " + type + "() {})")
-			con.prototype.__proto__ = RBXProperty.prototype
+			this.refs = {}
+			this.refWait = []
+
+			for(let child of xml.children) {
+				if(child.nodeName === "Item") {
+					result.push(this.parseItem(child))
+				}
+			}
+
+			return result
 		}
 
-		value.type = type
-		value.__proto__ = con.prototype
-		return value
+		parseItem(node) {
+			const instance = new Instance(node.className)
+			const referent = node.getAttribute("referent")
+
+			if(referent) {
+				this.refs[referent] = instance
+				this.refWait.filter(wait => wait.ref === referent).forEach(wait => {
+					this.refWait.splice(this.refWait.indexOf(wait), 1)
+					Instance.set(wait.target, wait.propName, new Property("Instance", instance))
+				})
+			}
+
+			for(let childNode of node.children) {
+				switch(childNode.nodeName) {
+				case "Item":
+					const child = this.parseItem(childNode)
+					Instance.set(child, "Parent", new Property("Instance", instance))
+					break
+				case "Properties":
+					this.parseProperties(instance, childNode)
+					break
+				}
+			}
+
+			return instance
+		}
+
+		parseProperties(instance, targetNode) {
+			for(let propNode of targetNode.children) {
+				const name = propNode.attributes.name.value
+
+				let value = propNode.textContent
+				switch(propNode.nodeName.toLowerCase()) {
+				case "content":
+				case "string":
+				case "protectedstring":
+					break;
+				case "double":
+				case "float":
+				case "int":
+					value = +value
+					break;
+				case "bool":
+					value = value === "true"
+					break;
+				case "token":
+					value = new Property("Enum", +value)
+					break;
+				case "coordinateframe":
+					value = [ 0,0,0, 1,0,0, 0,1,0, 0,0,1 ]
+					for(let x of propNode.children) {
+						value[RBXXmlParser.CFrameTransform.indexOf(x.nodeName.toUpperCase())] = +x.textContent
+					}
+					value = new Property("CFrame", value)
+					break;
+				case "vector3":
+					value = [ 0,0,0 ]
+					for(let x of propNode.children) {
+						value[RBXXmlParser.Vector3Transform.indexOf(x.nodeName.toUpperCase())] = +x.textContent
+					}
+					value = new Property("Vector3", value)
+					break;
+				case "color3uint8":
+					value = new Property("Color3", [ +value >> 16 & 0xFF, +value >> 8 & 0xFF, +value & 0xFF ])
+					break
+				case "ref":
+					if(value === "null") value = null;
+					else if(this.refs[value]) value = this.refs[value];
+					else {
+						this.refWait.push({
+							ref: value,
+							target: item,
+							propName: name
+						})
+						value = null
+					}
+
+					value = new Property("Instance", value)
+					break
+				case "physicalproperties":
+				case "binarystring":
+					continue
+				default:
+					console.warn("Unknown dataType " + propNode.nodeName + " for " + instance.ClassName, propNode.innerHTML)
+					continue
+				}
+
+				Instance.set(instance, name, value)
+			}
+		}
+	}
+	RBXXmlParser.CFrameTransform = ["X", "Y", "Z", "R00", "R01", "R02", "R10", "R11", "R12", "R20", "R21", "R22"]
+	RBXXmlParser.Vector3Transform = ["X", "Y", "Z"]
+
+	class RBXBinParser {
+		// http://www.classy-studios.com/Downloads/RobloxFileSpec.pdf
+		parse(buffer) {
+			const reader = this.reader = new ByteReader(buffer)
+			if(!reader.Match(RBXBinParser.HeaderBytes)) console.warn("Header bytes did not match (Did binary format change?)");
+
+			const groupsCount = reader.UInt32LE()
+			const instancesCount = reader.UInt32LE()
+			reader.Jump(8)
+
+			this.result = new Model()
+			this.groups = new Array(groupsCount)
+			this.instances = new Array(instancesCount)
+
+			for(let n = 0; n < groupsCount; n++) this.parseINST();
+			while(reader.PeekString(4) === "PROP") this.parsePROP();
+			this.parsePRNT()
+
+			assert(reader.String(3) === "END", "Invalid or missing END")
+			if(!reader.Match(RBXBinParser.FooterBytes)) console.warn("Footer bytes did not match (Did binary format change?)");
+			if(reader.GetRemaining() > 0) console.warn("Unexpected bonus data after model");
+
+			return this.result
+		}
+
+		parseINST() {
+			assert(this.reader.String(4) === "INST", "Invalid or missing INST")
+			const sub = new ByteReader(this.reader.LZ4())
+
+			const groupId = sub.UInt32LE()
+			const className = sub.String( sub.UInt32LE() )
+			const bonus = sub.Byte() // Idk :<
+			const instCount = sub.UInt32LE()
+			const instIds = sub.RBXInterleavedInt(instCount)
+
+			const group = this.groups[groupId] = {
+				ClassName: className,
+				Objects: []
+			}
+
+			let instId = 0
+			for(let i = 0; i < instCount; i++) {
+				instId += instIds[i]
+				group.Objects.push( this.instances[instId] = new Instance(className) )
+			}
+		}
+
+		parsePROP() {
+			assert(this.reader.String(4) === "PROP", "Invalid or missing PROP")
+			const sub = new ByteReader(this.reader.LZ4())
+
+			const group = this.groups[sub.UInt32LE()]
+			const prop = sub.String( sub.UInt32LE() )
+			const dataType = sub.Byte()
+
+			let values = []
+			switch(dataType) {
+			case 0x1: // String
+				while(sub.GetRemaining() > 0) {
+					values.push(sub.String(sub.UInt32LE()))
+				}
+				break;
+			case 0x2: // Boolean
+				while(sub.GetRemaining() > 0) {
+					values.push(sub.Byte() === 0x1)
+				}
+				break;
+			case 0x3: // Int32
+				values = sub.RBXInterleavedInt(sub.GetRemaining() / 4)
+				break;
+			case 0x4: // Float
+				values = sub.RBXInterleavedFloat(sub.GetRemaining() / 4)
+				break;
+			case 0x5: // Double
+				while(sub.GetRemaining() > 0) {
+					values.push(ByteReader.ParseDouble(sub.UInt32LE(), sub.UInt32LE()))
+				}
+				break;
+			case 0x7: { // UDim2
+				const count = sub.GetRemaining()/16
+				const scaleX = sub.RBXInterleavedFloat(count)
+				const scaleY = sub.RBXInterleavedFloat(count)
+				const offsetX = sub.RBXInterleavedInt(count)
+				const offsetY = sub.RBXInterleavedInt(count)
+				for(let i = 0; i < count; i++) {
+					values[i] = new Property("UDim2", [
+						[ scaleX[i], offsetX[i] ],
+						[ scaleY[i], offsetY[i] ]
+					])
+				}
+				break;
+			}
+			case 0x8: { // Ray
+				const count = sub.GetRemaining() / 24
+				for(let i = 0; i < count; i++) {
+					values[i] = new Property("Ray", [
+						[ sub.FloatLE(), sub.FloatLE(), sub.FloatLE() ],
+						[ sub.FloatLE(), sub.FloatLE(), sub.FloatLE() ]
+					])
+				}
+				break
+			}
+			case 0xB: // BrickColor
+				values = sub.RBXInterleavedByte(sub.GetRemaining() / 4)
+				break;
+			case 0xC: { // Color3
+				const count = sub.GetRemaining() / 12
+				const red = sub.RBXInterleavedFloat(count)
+				const green = sub.RBXInterleavedFloat(count)
+				const blue = sub.RBXInterleavedFloat(count)
+				for(let i = 0; i < count; i++) {
+					values[i] = new Property("Color3", [ red[i], green[i], blue[i] ])
+				}
+				break
+			}
+			case 0xD: { // Vector2
+				const count = sub.GetRemaining() / 8
+				const vecX = sub.RBXInterleavedFloat(count)
+				const vecY = sub.RBXInterleavedFloat(count)
+				for(let i = 0; i < count; i++) {
+					values[i] = new Property("Vector2", [ vecX[i], vecY[i] ])
+				}
+				break
+			}
+			case 0xE: { // Vector3
+				const count = sub.GetRemaining()/12
+				const vecX = sub.RBXInterleavedFloat(count)
+				const vecY = sub.RBXInterleavedFloat(count)
+				const vecZ = sub.RBXInterleavedFloat(count)
+				for(let i = 0; i < count; i++) {
+					values[i] = new Property("Vector3", [ vecX[i], vecY[i], vecZ[i] ])
+				}
+				break
+			}
+			case 0x10: { // CFrame
+				let count = 0
+				while(sub.GetRemaining() > count * 12) {
+					const value = values[count++] = [0,0,0, 1,0,0, 0,1,0, 0,0,1]
+					let type = sub.Byte()
+
+					if(type !== 0) {
+						const cframe = RBXBinParser.ShortCFrames[type]
+						assert(cframe, "Invalid shortened CFrame")
+						for(let i = 0; i < 9; i++) value[i+3] = cframe[i];
+					} else {
+						for(let i = 0; i < 9; i++) value[i+3] = sub.FloatLE();
+					}
+				}
+
+				const vecX = sub.RBXInterleavedFloat(count)
+				const vecY = sub.RBXInterleavedFloat(count)
+				const vecZ = sub.RBXInterleavedFloat(count)
+				for(let i = 0; i < count; i++) {
+					values[i][0] = vecX[i]
+					values[i][1] = vecY[i]
+					values[i][2] = vecZ[i]
+
+					values[i] = new Property("CFrame", values[i])
+				}
+				break
+			}
+			case 0x12: { // Enum / Token
+				const count = sub.GetRemaining() / 4
+				values = sub.RBXInterleavedByte(count).map(x => new Property("Enum", x))
+				break
+			}
+			case 0x13: { // Reference
+				const count = sub.GetRemaining() / 4
+				const refIds = sub.RBXInterleavedInt(count)
+
+				let refId = 0
+				for(let i = 0; i < count; i++) {
+					refId += refIds[i]
+					values[i] = new Property("Instance", this.instances[refId])
+				}
+				break
+			}
+			case 0x9: // Faces
+			case 0xA: // Axis
+			case 0x19: // PhysicalProperties
+				break;
+			default:
+				console.warn("[ParseRBXBin] Unknown dataType " + dataType + " for " + group.ClassName + "." + prop);
+				break;
+			}
+
+			values.forEach((value, i) => {
+				Instance.set(group.Objects[i], prop, value)
+			})
+		}
+
+		parsePRNT() {
+			assert(this.reader.String(4) === "PRNT", "Invalid or missing PRNT")
+			const sub = new ByteReader(this.reader.LZ4())
+
+			sub.Byte()
+			const parentCount = sub.UInt32LE()
+			const childIds = sub.RBXInterleavedInt(parentCount)
+			const parentIds = sub.RBXInterleavedInt(parentCount)
+
+			let childId = 0
+			let parentId = 0
+			for(let i = 0; i < parentCount; i++) {
+				childId += childIds[i]
+				parentId += parentIds[i]
+
+				const child = this.instances[childId]
+				if(parentId === -1) {
+					this.result.push(child)
+				} else {
+					Instance.set(child, "Parent", new Property("Instance", this.instances[parentId]))
+				}
+			}
+		}
+	}
+	RBXBinParser.HeaderBytes = [ 0x3C, 0x72, 0x6F, 0x62, 0x6C, 0x6F, 0x78, 0x21, 0x89, 0xFF, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00 ]
+	RBXBinParser.FooterBytes = [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3C, 0x2F, 0x72, 0x6F, 0x62, 0x6C, 0x6F, 0x78, 0x3E ]
+	RBXBinParser.ShortCFrames = [null,null,[1,0,0,0,1,0,0,0,1],[1,0,0,0,0,-1,0,1,0],null,[1,0,0,0,-1,0,0,0,-1],[1,0,0,0,0,1,0,-1,0],[0,1,0,1,0,0,0,0,-1],null,[0,0,1,1,0,0,0,1,0],[0,-1,0,1,0,0,0,0,1],null,[0,0,-1,1,0,0,0,-1,0],[0,1,0,0,0,1,1,0,0],[0,0,-1,0,1,0,1,0,0],null,[0,-1,0,0,0,-1,1,0,0],[0,0,1,0,-1,0,1,0,0],null,null,[-1,0,0,0,1,0,0,0,-1],[-1,0,0,0,0,1,0,1,0],null,[-1,0,0,0,-1,0,0,0,1],[-1,0,0,0,0,-1,0,-1,0],[0,1,0,-1,0,0,0,0,1],null,[0,0,-1,-1,0,0,0,1,0],[0,-1,0,-1,0,0,0,0,-1],null,[0,0,1,-1,0,0,0,-1,0],[0,1,0,0,0,-1,-1,0,0],[0,0,1,0,1,0,-1,0,0],null,[0,-1,0,0,0,1,-1,0,0],[0,0,-1,0,-1,0,-1,0,0]]
+	
+	class ModelParser {
+		parse(buffer) {
+			let format
+			if(typeof buffer === "string" && !buffer.startsWith("<roblox ")) {
+				format = "xml"
+			} else {
+				if(typeof buffer === "string") buffer = new TextEncoder().encode(buffer).buffer;
+				const reader = new ByteReader(buffer)
+				assert(reader.String(7) === "<roblox", "Not a valid RBXM file (invalid header)")
+				format = reader.Byte() === 0x21 ? "bin" : "xml"
+			}
+
+			return format === "xml"
+				? this.parseXml(buffer)
+				: this.parseBin(buffer)
+		}
+
+		parseXml(buffer) { return new RBXXmlParser().parse(buffer) }
+		parseBin(buffer) { return new RBXBinParser().parse(buffer) }
 	}
 
-	RBXProperty.prototype.__proto__ = Array.prototype
+	class MeshParser {
+		parse(buffer) {
+			let format
 
-	function RBXEnum(value) {
-		if(!(this instanceof RBXEnum))
-			return new RBXEnum(value);
+			if(typeof buffer === "string" && buffer.startsWith("version 1.0")) {
+				format = "text"
+			} else {
+				if(typeof buffer === "string") buffer = new TextEncoder().encode(buffer);
+				const reader = new ByteReader(buffer)
+				assert(reader.String(8) === "version ", "Invalid mesh file")
 
-		if(typeof(value) !== "number")
-			throw new Error("value not a number?");
+				const version = reader.String(4)
+				switch(version) {
+				case "1.00":
+				case "1.01":
+					format = "text"
+					break
+				case "2.00":
+					format = "bin"
+					break
+				default:
+					throw new Error("Unsupported mesh version")
+				}
+			}
 
-		this.Value = value
+			return format === "text"
+				? this.parseText(buffer)
+				: this.parseBin(buffer)
+		}
+
+		parseText(buffer) {
+			if(typeof buffer !== "string") buffer = new TextDecoder().decode(buffer);
+			const lines = buffer.split(/\r?\n/)
+			assert(lines.length === 3, "Invalid mesh version 1 file (Wrong amount of lines)")
+
+			const version = lines[0]
+			const faceCount = lines[1]
+			const data = lines[2]
+
+			const vectors = data.replace(/\s+/g, "").slice(1, -1).split("][")
+			assert(vectors.length === faceCount * 9, "Length mismatch")
+
+			const scaleMultiplier = version === "version 1.00" ? 0.5 : 1
+			const vertexCount = faceCount * 3
+			const vertices = new Float32Array(vertexCount * 3)
+			const normals = new Float32Array(vertexCount * 3)
+			const uvs = new Float32Array(vertexCount * 2)
+			const faces = new Uint32Array(vertexCount)
+
+			for(let i = 0; i < vertexCount; i++) {
+				const n = i * 3
+				const vertex = vectors[n].split(",")
+				const normal = vectors[n + 1].split(",")
+				const uv = vectors[n + 2].split(",")
+
+				vertices[n] = +vertex[0] * scaleMultiplier
+				vertices[n + 1] = +vertex[1] * scaleMultiplier
+				vertices[n + 2] = +vertex[2] * scaleMultiplier
+
+				normals[n] = +normal[0]
+				normals[n + 1] = +normal[1]
+				normals[n + 2] = +normal[2]
+
+				uvs[i * 2] = +uv[0]
+				uvs[i * 2 + 1] = +uv[1]
+				faces[i] = i
+			}
+
+			return { vertices, normals, uvs, faces }
+		}
+
+		parseBin(buffer) {
+			const reader = new ByteReader(buffer)
+			assert(reader.String(12) === "version 2.00", "Bad header")
+
+			const newline = reader.Byte()
+			assert(newline === 0x0A || newline === 0x0D && reader.Byte() === 0x0A, "Bad newline")
+
+			const begin = reader.GetIndex()
+			const headerSize = reader.UInt16LE(); assert(headerSize === 12, "Invalid header size")
+			const vertexSize = reader.Byte(); assert(vertexSize >= 32, "Invalid vertex size")
+			const faceSize = reader.Byte(); assert(faceSize >= 12, "Invalid face size")
+
+			const vertexCount = reader.UInt32LE()
+			const faceCount = reader.UInt32LE()
+
+			const vertices = new Float32Array(vertexCount * 3)
+			const normals = new Float32Array(vertexCount * 3)
+			const uvs = new Float32Array(vertexCount * 2)
+			const faces = new Uint32Array(faceCount * 3)
+
+			reader.SetIndex(begin + headerSize)
+			for(let i = 0; i < vertexCount; i++) {
+				vertices[i*3] = reader.FloatLE()
+				vertices[i*3+1] = reader.FloatLE()
+				vertices[i*3+2] = reader.FloatLE()
+
+				normals[i*3] = reader.FloatLE()
+				normals[i*3+1] = reader.FloatLE()
+				normals[i*3+2] = reader.FloatLE()
+
+				uvs[i*2] = reader.FloatLE()
+				uvs[i*2+1] = 1-reader.FloatLE()
+
+				reader.Jump(vertexSize - 32)
+			}
+
+			for(let i = 0; i < faceCount; i++) {
+				faces[i*3] = reader.UInt32LE()
+				faces[i*3+1] = reader.UInt32LE()
+				faces[i*3+2] = reader.UInt32LE()
+
+				reader.Jump(faceSize - 12)
+			}
+
+			if(reader.GetRemaining() > 0) console.warn("Leftover data in mesh");
+			return { vertices, normals, uvs, faces }
+		}
 	}
 
+	class AnimationParser {
+		static CFrameToQuat(cf) {
+			var qw, qx, qy, qz
+			var trace = cf[3] + cf[7] + cf[11]
+			
+			if(trace > 0) {
+				var S = Math.sqrt(1 + trace) * 2
+				qw = S / 4
+				qx = (cf[10] - cf[8]) / S
+				qy = (cf[5] - cf[9]) / S
+				qz = (cf[6] - cf[4]) / S
+			} else if ((cf[3] > cf[7]) && (cf[3] > cf[11])) { 
+				var S = Math.sqrt(1.0 + cf[3] - cf[7] - cf[11]) * 2
+				qw = (cf[10] - cf[8]) / S
+				qx = S / 4
+				qy = (cf[4] + cf[6]) / S 
+				qz = (cf[5] + cf[9]) / S 
+			} else if (cf[7] > cf[11]) { 
+				var S = Math.sqrt(1.0 + cf[7] - cf[3] - cf[11]) * 2
+				qw = (cf[5] - cf[9]) / S
+				qx = (cf[4] + cf[6]) / S 
+				qy = S / 4
+				qz = (cf[8] + cf[10]) / S 
+			} else { 
+				var S = Math.sqrt(1.0 + cf[11] - cf[3] - cf[7]) * 2
+				qw = (cf[6] - cf[4]) / S
+				qx = (cf[5] + cf[9]) / S
+				qy = (cf[8] + cf[10]) / S
+				qz = S / 4
+			}
 
-	typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXParseContentUrl = function parseContentUrl(url) {
-		if(typeof(url) !== "string" || url.length === 0)
-			return null;
+			return [ qx, qy, qz, qw ]
+		}
 
-		url = url.trim()
+		parse(model) {
+			assert(model instanceof Model, "Invalid model")
 
-		var match = url.match(/^rbxassetid:\/\/(\d+)/)
-		if(match)
-			return +match[1];
-
-		match = url.match(/https?:\/\/(?:assetgame\.|www\.|)roblox.com\/asset\/?\?id=(\d+)/)
-		if(match)
-			return +match[1];
-
-		console.log("Couldn't parse content url " + url)
-		return null
-	};
-
-	typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXInstance = RBXInstance;
-	typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXProperty = RBXProperty;
-	typeof ANTI=="undefined" && (ANTI={}), ANTI.RBXEnum = RBXEnum;
-
-	typeof ANTI=="undefined" && (ANTI={}), ANTI.ParseAnimationData = (function() {
-		return function(data) {
-			var sequence = data[0]
-			if(sequence.ClassName !== "KeyframeSequence")
-				throw new TypeError("Not a KeyframeSequence");
-
-			sequence.Children.sort((a,b) => a.Time - b.Time)
-
-			var anim = {
-				length: sequence.Children[sequence.Children.length-1].Time,
+			const sequence = model[0]
+			assert(sequence instanceof Instance && sequence.ClassName === "KeyframeSequence", "Not a keyframesequence")
+			
+			const keyframes = sequence.Children
+				.filter(x => x.ClassName === "Keyframe")
+				.sort((a,b) => a.Time - b.Time)
+			
+			this.result = {
+				length: keyframes[keyframes.length - 1].Time,
 				loop: !!sequence.Loop,
 				keyframes: {}
 			}
 
-			function parsePose(poseInst, kfInst) {
-				if(poseInst.ClassName !== "Pose")
-					return;
-
-				var cf = poseInst.CFrame
-				var qw, qx, qy, qz
-				var trace = cf[3] + cf[7] + cf[11]
-				
-				if(trace > 0) {
-					var S = Math.sqrt(1 + trace) * 2
-					qw = S / 4
-					qx = (cf[10] - cf[8]) / S
-					qy = (cf[5] - cf[9]) / S
-					qz = (cf[6] - cf[4]) / S
-				} else if ((cf[3] > cf[7]) && (cf[3] > cf[11])) { 
-					var S = Math.sqrt(1.0 + cf[3] - cf[7] - cf[11]) * 2
-					qw = (cf[10] - cf[8]) / S
-					qx = S / 4
-					qy = (cf[4] + cf[6]) / S 
-					qz = (cf[5] + cf[9]) / S 
-				} else if (cf[7] > cf[11]) { 
-					var S = Math.sqrt(1.0 + cf[7] - cf[3] - cf[11]) * 2
-					qw = (cf[5] - cf[9]) / S
-					qx = (cf[4] + cf[6]) / S 
-					qy = S / 4
-					qz = (cf[8] + cf[10]) / S 
-				} else { 
-					var S = Math.sqrt(1.0 + cf[11] - cf[3] - cf[7]) * 2
-					qw = (cf[6] - cf[4]) / S
-					qx = (cf[5] + cf[9]) / S
-					qy = (cf[8] + cf[10]) / S
-					qz = S / 4
-				}
-
-				var name = poseInst.Name
-				if(!anim.keyframes[name]) anim.keyframes[name] = [];
-
-				var pose = anim.keyframes[name].push({
-					time: kfInst.Time,
-					pos: [ cf[0], cf[1], cf[2] ],
-					rot: [ qx, qy, qz, qw ],
-				})
-
-				poseInst.Children.forEach(childInst => parsePose(childInst, kfInst))
-			}
-
-			sequence.Children.forEach(kfInst => {
-				if(kfInst.ClassName !== "Keyframe")
-					return;
-
-				kfInst.Children.forEach(rootPoseInst => {
-					if(rootPoseInst.ClassName !== "Pose")
-						return;
-
-					rootPoseInst.Children.forEach(poseInst => parsePose(poseInst, kfInst))
+			keyframes.forEach(keyframe => {
+				keyframe.Children.forEach(rootPose => {
+					if(rootPose.ClassName !== "Pose") return;
+					rootPose.Children.forEach(pose => this.parsePose(pose, keyframe))
 				})
 			})
 
-			return anim
+			return this.result
 		}
-	})();
 
-	typeof ANTI=="undefined" && (ANTI={}), ANTI.ParseRBXM = (function() {
-		// http://www.classy-studios.com/Downloads/RobloxFileSpec.pdf
-		var ParseRBXBin = (function() {
-			var headerBytes = [ 0x3C, 0x72, 0x6F, 0x62, 0x6C, 0x6F, 0x78, 0x21, 0x89, 0xFF, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00 ]
-			var footerBytes = [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3C, 0x2F, 0x72, 0x6F, 0x62, 0x6C, 0x6F, 0x78, 0x3E ]
-			var shortCFrames = [null,null,[1,0,0,0,1,0,0,0,1],[1,0,0,0,0,-1,0,1,0],null,[1,0,0,0,-1,0,0,0,-1],[1,0,0,0,0,1,0,-1,0],[0,1,0,1,0,0,0,0,-1],null,[0,0,1,1,0,0,0,1,0],[0,-1,0,1,0,0,0,0,1],null,[0,0,-1,1,0,0,0,-1,0],[0,1,0,0,0,1,1,0,0],[0,0,-1,0,1,0,1,0,0],null,[0,-1,0,0,0,-1,1,0,0],[0,0,1,0,-1,0,1,0,0],null,null,[-1,0,0,0,1,0,0,0,-1],[-1,0,0,0,0,1,0,1,0],null,[-1,0,0,0,-1,0,0,0,1],[-1,0,0,0,0,-1,0,-1,0],[0,1,0,-1,0,0,0,0,1],null,[0,0,-1,-1,0,0,0,1,0],[0,-1,0,-1,0,0,0,0,-1],null,[0,0,1,-1,0,0,0,-1,0],[0,1,0,0,0,-1,-1,0,0],[0,0,1,0,1,0,-1,0,0],null,[0,-1,0,0,0,1,-1,0,0],[0,0,-1,0,-1,0,-1,0,0]]
+		parsePose(pose, keyframe) {
+			if(pose.ClassName !== "Pose") return;
 
-			function toRBXFloat(value) {
-				return toFloat((value >> 1) + ((value & 1) * 2147483648))
-			}
+			const name = pose.Name
+			const cf = pose.CFrame
+			if(!this.result.keyframes[name]) this.result.keyframes[name] = [];
 
-			function toRBXSigned(value) {
-				return value % 2 === 1 ? -(value+1)/2 : value/2
-			}
-
-			return function(buffer) {
-				var reader = new ByteReader(buffer)
-
-				if(!reader.Match(headerBytes))
-					console.warn("[ParseRBXBin] Header bytes did not match");
-
-				var instCount = reader.UInt32LE()
-				var objCount = reader.UInt32LE()
-				reader.Jump(8)
-
-				var instList = new Array(instCount)
-				var objList = new Array(objCount)
-
-				for(var instIndex=0; instIndex<instCount; instIndex++) {
-					var blockName = reader.String(4)
-					if(blockName != "INST")
-						throw new Error("[ParseRBXBin] Expected INST, got '" + blockName + "'");
-
-					var lz4 = reader.LZ4()
-					var inst = new ByteReader(lz4)
-					var classId = inst.UInt32LE()
-					var nameLength = inst.UInt32LE()
-					var className = inst.String(nameLength)
-					var bonusData = inst.Byte()
-
-					var instData = instList[classId] = {
-						ClassName: className,
-						Objects: []
-					}
-
-					var count = inst.UInt32LE()
-					var interleaved = inst.RBXInterleaved32(count, toRBXSigned)
-					var objId = 0
-					for(var i=0; i<count; i++) {
-						objId += interleaved[i]
-
-						instData.Objects.push(objList[objId] = RBXInstance(className))
-					}
-				}
-
-				while(true) {
-					var blockName = reader.String(4)
-					if(blockName == "PRNT")
-						break;
-					else if(blockName != "PROP")
-						throw new Error("[ParseRBXBin] Expected PROP, got '" + blockName + "'");
-
-					var prop = new ByteReader(reader.LZ4())
-					var instData = instList[prop.UInt32LE()]
-					var propName = prop.String(prop.UInt32LE())
-					var dataType = prop.Byte()
-					var values = []
-
-					switch(dataType) {
-						case 0x1: // String
-							while(prop.remaining > 0) {
-								values.push(prop.String(prop.UInt32LE()))
-							}
-							break;
-						case 0x2: // Boolean
-							while(prop.remaining > 0) {
-								values.push(prop.Byte() == 0x1)
-							}
-							break;
-						case 0x3: // Int32
-							values = prop.RBXInterleaved32(prop.remaining/4, toRBXSigned)
-							break;
-						case 0x4: // Float
-							values = prop.RBXInterleaved32(prop.remaining/4, toRBXFloat)
-							break;
-						case 0x5: // Double
-							while(prop.remaining > 0) {
-								values.push(toDouble(prop.UInt32LE(), prop.UInt32LE()))
-							}
-							break;
-						case 0x7: // UDim2
-							var count = prop.remaining/16
-							var scaleX = prop.RBXInterleaved32(count, toRBXFloat)
-							var scaleY = prop.RBXInterleaved32(count, toRBXFloat)
-							var offsetX = prop.RBXInterleaved32(count, toRBXSigned)
-							var offsetY = prop.RBXInterleaved32(count, toRBXSigned)
-							for(var i=0; i<count; i++) {
-								values[i] = RBXProperty("UDim2", [
-									[ scaleX[i], offsetX[i] ],
-									[ scaleY[i], offsetY[i] ]
-								])
-							}
-							break;
-						case 0x8: // Ray
-							var count = prop.remaining/24
-							for(var i=0; i<count; i++) {
-								values[i] = RBXProperty("Ray", [
-									[ toFloat(prop.UInt32LE()), toFloat(prop.UInt32LE()), toFloat(prop.UInt32LE()) ],
-									[ toFloat(prop.UInt32LE()), toFloat(prop.UInt32LE()), toFloat(prop.UInt32LE()) ]
-								])
-							}
-							break;
-						case 0xB: // BrickColor
-							values = prop.RBXInterleaved32(prop.remaining/4)
-							break;
-						case 0xC: // Color3
-							var count = prop.remaining/12
-							var red = prop.RBXInterleaved32(count, toRBXFloat)
-							var green = prop.RBXInterleaved32(count, toRBXFloat)
-							var blue = prop.RBXInterleaved32(count, toRBXFloat)
-							for(var i=0; i<count; i++) {
-								values[i] = RBXProperty("Color3", [ red[i], green[i], blue[i] ])
-							}
-							break;
-						case 0xD: // Vector2
-							var count = prop.remaining/8
-							var vecX = prop.RBXInterleaved32(count, toRBXFloat)
-							var vecY = prop.RBXInterleaved32(count, toRBXFloat)
-							for(var i=0; i<count; i++) {
-								values[i] = RBXProperty("Vector2", [ vecX[i], vecY[i] ])
-							}
-							break;
-						case 0xE: // Vector3
-							var count = prop.remaining/12
-							var vecX = prop.RBXInterleaved32(count, toRBXFloat)
-							var vecY = prop.RBXInterleaved32(count, toRBXFloat)
-							var vecZ = prop.RBXInterleaved32(count, toRBXFloat)
-							for(var i=0; i<count; i++) {
-								values[i] = RBXProperty("Vector3", [ vecX[i], vecY[i], vecZ[i] ])
-							}
-							break;
-						case 0x10: // CFrame
-							var count = 0
-							while(prop.remaining > count*12) {
-								var type = prop.Byte()
-								var value = values[count++] = [0,0,0, 1,0,0, 0,1,0, 0,0,1]
-								if(type !== 0) {
-									if(!shortCFrames[type]) {
-										console.warn("[ParseRBXBin] Unknown shortCFrame " + type)
-										type = 2
-									}
-									var cfr = shortCFrames[type]
-
-									for(var i=0; i<9; i++)
-										value[i+3] = cfr[i];
-								} else {
-									for(var i=0; i<9; i++)
-										value[i+3] = prop.FloatLE();
-								}
-							}
-
-							var vecX = prop.RBXInterleaved32(count, toRBXFloat)
-							var vecY = prop.RBXInterleaved32(count, toRBXFloat)
-							var vecZ = prop.RBXInterleaved32(count, toRBXFloat)
-							for(var i=0; i<count; i++) {
-								values[i][0] = vecX[i]
-								values[i][1] = vecY[i]
-								values[i][2] = vecZ[i]
-
-								values[i] = RBXProperty("CFrame", values[i])
-							}
-							break;
-						case 0x12: // Enum / Token
-							values = prop.RBXInterleaved32(prop.remaining/4)
-							values.forEach((value, i) => values[i] = RBXEnum(value))
-							break;
-						case 0x13: // Referent
-							var count = prop.remaining/4
-							values = prop.RBXInterleaved32(count, toRBXSigned)
-							var objId = 0
-							for(var i=0; i<count; i++) {
-								objId += values[i]
-								values[i] = objList[objId]
-							}
-							break;
-
-						case 0x9: // Faces
-						case 0xA: // Axis
-						case 0x19: // PhysicalProperties
-							break;
-						default:
-							console.warn("[ParseRBXBin] Unknown dataType " + dataType + " for " + instData.ClassName + "." + propName);
-							break;
-					}
-
-					for(var i=0, l=values.length; i<l; i++) {
-						instData.Objects[i].setProperty(propName, values[i])
-					}
-				}
-
-				var result = []
-
-				var prnt = new ByteReader(reader.LZ4())
-				prnt.Byte()
-				var count = prnt.UInt32LE()
-				var refs = prnt.RBXInterleaved32(count, toRBXSigned)
-				var pars = prnt.RBXInterleaved32(count, toRBXSigned)
-
-				var objId = 0
-				var parId = 0
-				for(var i=0; i<count; i++) {
-					objId += refs[i]
-					parId += pars[i]
-
-					var obj = objList[objId]
-					if(parId === -1) {
-						result.push(obj)
-					} else {
-						obj.setParent(objList[parId])
-					}
-				}
-
-				var blockName = reader.String(3)
-				if(blockName !== "END")
-					throw new Error("[ParseRBXBin] Expected END, got '" + blockName + "'");
-
-				if(!reader.Match(footerBytes))
-					console.warn("[ParseRBXBin] Footer bytes did not match");
-
-				if(reader.remaining > 0)
-					console.warn("[ParseRBXBin] Unexpected " + reader.remaining + " bytes of data after finishing");
-
-				return result
-			}
-		})()
-
-		var ParseRBXXml = (function() {
-			function RBXXmlParser() {
-				this.refs = {}
-				this.refWait = []
-			}
-
-			Object.assign(RBXXmlParser.prototype, {
-				parseProperties(item, propertiesNode) {
-					propertiesNode.children.$forEach(propNode => {
-						var name = propNode.attributes.name.value
-						var value = propNode.textContent
-
-						switch(propNode.nodeName.toLowerCase()) {
-						case "content":
-						case "string":
-						case "protectedstring":
-							break;
-						case "double":
-						case "float":
-						case "int":
-							value = +value
-							break;
-						case "bool":
-							value = value == "true"
-							break;
-						case "token":
-							value = RBXEnum(+value)
-							break;
-						case "coordinateframe":
-							value = [ 0,0,0, 1,0,0, 0,1,0, 0,0,1 ]
-							var trans = { X:0,Y:1,Z:2, R00:3,R01:4,R02:5, R10:6,R11:7,R12:8, R20:9,R21:10,R22:11 }
-							propNode.children.$forEach(x => {
-								value[trans[x.nodeName.toUpperCase()]] = +x.textContent
-							})
-							value = RBXProperty("CFrame", value)
-							break;
-						case "vector3":
-							value = [ 0,0,0 ]
-							var trans = { X:0,Y:1,Z:2 }
-							propNode.children.$forEach(x => {
-								value[trans[x.nodeName.toUpperCase()]] = +x.textContent
-							})
-							value = RBXProperty("Vector3", value)
-							break;
-						case "ref":
-							if(value === "null")
-								value = null;
-							else if(this.refs[value])
-								value = this.refs[value];
-							else {
-								this.refWait.push({
-									ref: value,
-									target: item,
-									propName: name
-								})
-								value = null
-							}
-							break;
-						case "physicalproperties":
-						case "binarystring":
-							value = null
-							break;
-						default:
-							console.warn("[ParseRBXXml] Unknown dataType " + propNode.nodeName + " for " + name, propNode.innerHTML)
-							value = null
-							break;
-						}
-
-						item.setProperty(name, value)
-					})
-				},
-				parseItem(node) {
-					var item = RBXInstance(node.className)
-
-					var ref = node.getAttribute("referent")
-					if(ref) {
-						this.refs[ref] = item
-						this.refWait.filter(wait => wait.ref === ref).forEach(wait => {
-							this.refWait.splice(this.refWait.indexOf(wait), 1)
-							wait.target.setProperty(wait.propName, item)
-						})
-					}
-
-					node.children.$forEach(child => {
-						switch(child.nodeName) {
-						case "Item":
-							var childItem = this.parseItem(child)
-							childItem.setParent(item)
-							break;
-						case "Properties":
-							this.parseProperties(item, child)
-							break;
-						default:
-							console.log("Unknown xml node", child.nodeName);
-							break;
-						}
-					})
-
-					return item
-				},
-				parse(xmlString) {
-					var xml = null
-					try {
-						xml = new DOMParser().parseFromString(xmlString, "text/xml").documentElement
-					} catch(ex) {
-						throw new Error("[ParseRBXXml] Unable to parse xml")
-					}
-
-					this.refs = {}
-					this.refWait = []
-
-					var result = []
-
-					xml.children.$forEach(child => {
-						if(child.nodeName === "Item") {
-							result.push(this.parseItem(child))
-						}
-					})
-
-					return result
-				}
+			this.result.keyframes[name].push({
+				time: keyframe.Time,
+				pos: [ cf[0], cf[1], cf[2] ],
+				rot: AnimationParser.CFrameToQuat(cf)
 			})
 
-			return function(data) {
-				data = new TextDecoder("ascii").decode(data)
-				return new RBXXmlParser().parse(data)
-			}
-		})();
-
-		return function(data) {
-			if(data.byteLength < 9)
-				throw new TypeError("Not a valid .RBXM file");
-
-			var reader = new ByteReader(data) 
-			if(reader.String(7) != "<roblox")
-				throw new TypeError("Not a valid .RBXM file");
-
-			if(reader.Byte() === 0x21) {
-				return ParseRBXBin(data)
-			}
-
-			return ParseRBXXml(data)
+			pose.Children.forEach(child => this.parsePose(child, keyframe))
 		}
-	})();
+	}
 
-	typeof ANTI=="undefined" && (ANTI={}), ANTI.ParseMesh = (function() {
-		function ParseVersion1(reader, isVersion1) {
-			var text = reader.String(reader.remaining)
-			var lines = text.split("\n")
+	return {
+		Model,
+		Instance,
+		Property,
+		ByteReader,
+		ModelParser,
+		MeshParser,
+		AnimationParser,
 
-			if(lines.length !== 2)
-				throw new Error("Too many lines");
-
-			var faceCount = +lines[0]
-			var arr = lines[1].slice(1,-1).replace(/\s+/g,"").split("][")
-
-			if(arr.length !== faceCount*9)
-				console.log("Length mismatch", arr.length, faceCount*9);
-
-			var mesh = {}
-			var vertices = mesh.vertices = new Float32Array(faceCount*9)
-			var normals = mesh.normals = new Float32Array(faceCount*9)
-			var uvs = mesh.uvs = new Float32Array(faceCount*6)
-			var faces = mesh.faces = new Uint32Array(faceCount*3)
-
-			var verMul = isVersion1 ? 0.5 : 1;
-
-			for(var i=0, l=faceCount*3; i<l; i++) {
-				var j = i*3
-				var ver = arr[j].split(",")
-				var nor = arr[j+1].split(",")
-				var uv = arr[j+2].split(",")
-
-				vertices[j] = +ver[0] * verMul
-				vertices[j+1] = +ver[1] * verMul
-				vertices[j+2] = +ver[2] * verMul
-				normals[j] = +nor[0]
-				normals[j+1] = +nor[1]
-				normals[j+2] = +nor[2]
-				uvs[i*2] = +uv[0]
-				uvs[i*2+1] = +uv[1]
-				faces[i] = i
-			}
-
-			return mesh
-		}
-
-		function ParseVersion2(reader) {
-			console.assert(reader.Byte() === 0xC) // Possibly header length
-			console.assert(reader.Byte() === 0x0) // Unknown, usually 0
-			var vertexByteLength = reader.Byte() // Length of a single vert block
-			console.assert(reader.Byte() === 0xC) // Possibly face block length
-
-			var vertexCount = reader.UInt32LE()
-			var faceCount = reader.UInt32LE()
-
-			var itemCount = vertexCount * 3
-
-			var mesh = {}
-			var vertices = mesh.vertices = new Float32Array(vertexCount * 3)
-			var normals = mesh.normals = new Float32Array(vertexCount * 3)
-			var uvs = mesh.uvs = new Float32Array(vertexCount * 2)
-			var faces = mesh.faces = new Uint32Array(faceCount * 3)
-
-			for(var i=0; i<vertexCount; i++) {
-				var begin = reader.index
-
-				vertices[i*3] = reader.FloatLE()
-				vertices[i*3+1] = reader.FloatLE()
-				vertices[i*3+2] = reader.FloatLE()
-				normals[i*3] = reader.FloatLE()
-				normals[i*3+1] = reader.FloatLE()
-				normals[i*3+2] = reader.FloatLE()
-				uvs[i*2] = reader.FloatLE()
-				uvs[i*2+1] = 1-reader.FloatLE()
-
-				reader.Jump(vertexByteLength - (reader.index-begin))
-			}
-
-			for(var i=0; i<faceCount*3; i+=3) {
-				faces[i] = reader.UInt32LE()
-				faces[i+1] = reader.UInt32LE()
-				faces[i+2] = reader.UInt32LE()
-			}
-
-			if(reader.remaining > 0)
-				console.warn("[ParseVersion2] Unexpected " + reader.remaining + " bytes of data after finishing");
-
-			return mesh
-		}
-
-		return function(buffer) {
-			var reader = new ByteReader(buffer)
-			if(reader.String(8) != "version ")
-				throw new Error("Not a valid mesh file");
-
-			var version = reader.String(4)
-			var newline = reader.Byte()
-			if(!(newline === 0x0A || (newline === 0x0D && reader.Byte() == 0x0A)))
-				throw new Error("Invalid newline");
-
-			switch(version) {
-				case "1.00":
-					return ParseVersion1(reader, true)
-				case "1.01":
-					return ParseVersion1(reader, false)
-				case "2.00":
-					return ParseVersion2(reader)
+		parseContentUrl(urlString) {
+			if(typeof urlString !== "string" || !urlString.length) return null;
+			try {
+				const url = new URL(urlString)
+				switch(url.protocol) {
+				case "rbxassetid:": {
+					const id = parseInt(url.pathname.replace(/^\/*/,""), 10)
+					assert(!isNaN(id), "Invalid asset id")
+					return id
+				}
+				case "http:":
+				case "https:": {
+					assert(url.hostname.search(/^((assetgame|www|web)\.)?roblox\.com$/) !== -1, "Invalid hostname")
+					assert(url.pathname.search(/^\/asset\/?$/) !== -1, "Invalid pathname")
+					const id = parseInt(url.searchParams.get("id"), 10)
+					assert(!isNaN(id), "Missing or invalid asset id")
+					return id
+				}
 				default:
-					throw new Error("Invalid mesh version '" + version + "'");
+					throw new Error("Invalid protocol", url)
+				}
+			} catch(ex) {
+				console.error("Failed to parse url", urlString, ex);
 			}
+
+			return null
 		}
-	})();
+	}
 })();

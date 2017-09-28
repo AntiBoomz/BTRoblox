@@ -48,6 +48,8 @@ var propertyGroups = {
 
 var propertyOrder = []
 
+const TransProperties = { size: "Size", scale: "Scale" }
+
 Object.values(propertyGroups).forEach(group => { 
 	group.List.forEach((propName) => propertyOrder[propName] = group.Order)
 })
@@ -96,86 +98,64 @@ function Explorer() {
 			var title = `Properties - ${target.ClassName} "${target.Name}"`
 			domElement.$find(".btr-properties-header").textContent = title
 
-			target.Properties.sort((a,b) => {
+			Object.keys(target.Properties).sort((a,b) => {
 				var ao = propertyOrder[a]
 				var bo = propertyOrder[b]
 
 				var diff = (ao ? ao : propertyGroups.Data.Order) - (bo ? bo : propertyGroups.Data.Order)
 				return diff === 0 ? (a < b ? -1 : 1) : diff
-			}).forEach((name) => {
-				if(hiddenProperties.indexOf(name) !== -1)
-					return;
+			}).forEach(name => {
+				if(hiddenProperties.indexOf(name) !== -1) return;
+				const prop = target.Properties[name]
+				const displayName = TransProperties[name] || name
 
-				var value = target[name]
-
-				switch(name) {
-					case "size":
-						name = "Size"
-						break;
-					case "shape":
-						name = "Shape"
-						break;
-				}
-
-				var item = html`
+				const item = html`
 				<li class="btr-property-item">
-					<div class="btr-property-name" title="${name}">${name}</div>
+					<div class="btr-property-name" title="${displayName}">${displayName}</div>
 					<div class="btr-property-value"></div>
 				</li>`
 
-				var valuediv = item.$find(".btr-property-value")
+				const valuediv = item.$find(".btr-property-value")
+				let value = prop.value
 
-				switch(typeof(value)) {
-					case "number":
-						value = fixNum(value).toString()
-					case "string":
-						value = value.trim()
-						if(value.length > 120) {
-							var blobUrl = URL.createObjectURL(new Blob([value]))
-							value = value.substring(0, 120) + "..."
+				switch(prop.type) {
+				case "Number":
+					value = fixNum(value).toString()
+				case "String":
+					value = value.trim()
+					if(value.length > 120) {
+						var blobUrl = URL.createObjectURL(new Blob([value]))
+						value = value.substring(0, 120) + "..."
 
-							valuediv.append(html`<a class="more" target="_blank" href="${blobUrl}">...</a>`)
-						}
-						var input = html`<textarea title="${value}" onkeypress="return false"></textarea>`
-						input.value = value
-						valuediv.append(input)
-						break
-					case "boolean":
-						var input = html`<input type="checkbox" disabled="true">`
-						input.checked = value
-						valuediv.append(input)
-						break;
-					case "undefined":
-						break;
-					case "object":
-						if(value === null)
-							break;
-
-						if(value instanceof ANTI.RBXInstance) {
-							valuediv.textContent = value.Name
-							break;
-						} else if(value instanceof ANTI.RBXEnum) {
-							valuediv.textContent = "Enum " + value.Value
-							break;
-						} else if(value instanceof ANTI.RBXProperty) {
-							switch(value.type) {
-								case "CFrame":
-								case "Color3":
-								case "Vector2":
-								case "Vector3":
-									valuediv.textContent = fixNums(value).join(", ")
-									break;
-								case "UDim2":
-									var text = `{${fixNums(value[0]).join(", ")}}, {${fixNums(value[1]).join(", ")}}`
-									valuediv.textContent = text
-									break;
-								default: 
-									console.log("prop", name, value.type, value)
-							}
-							break;
-						}
-					default:
-						console.log(name, typeof(value), value);
+						valuediv.append(html`<a class="more" target="_blank" href="${blobUrl}">...</a>`)
+					}
+					var input = html`<textarea title="${value}" onkeypress="return false"></textarea>`
+					input.value = value
+					valuediv.append(input)
+					break
+				case "Boolean":
+					var input = html`<input type="checkbox" disabled="true">`
+					input.checked = value
+					valuediv.append(input)
+					break
+				case "Instance":
+					valuediv.textContent = value ? value.Name : ""
+					break
+				case "CFrame":
+				case "Color3":
+				case "Vector2":
+				case "Vector3":
+					valuediv.textContent = fixNums(value).join(", ")
+					break
+				case "Enum":
+					valuediv.textContent = "Enum " + value
+					break
+				case "UDim2":
+					var text = `{${fixNums(value[0]).join(", ")}}, {${fixNums(value[1]).join(", ")}}`
+					valuediv.textContent = text
+					break
+				default: 
+					console.log("Unknown property type", name, prop)
 				}
 
 				valuediv.setAttribute("title", valuediv.textContent)
