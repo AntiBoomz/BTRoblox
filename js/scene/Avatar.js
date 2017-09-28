@@ -1,10 +1,6 @@
-// BTR-RBXScene-Avatar.js
 "use strict"
 
-ANTI.RBXScene.Avatar = (function() {
-	var Animator = ANTI.RBXScene.Animator
-	var parseContentUrl = ANTI.RBXParseContentUrl
-
+RBXScene.Avatar = (function() {
 	function applyMesh(obj, mesh) {
 		var geom = obj.geometry
 
@@ -123,7 +119,7 @@ ANTI.RBXScene.Avatar = (function() {
 					part = joints[item.Name] = { name: item.Name, children: [], attachments: {} }
 
 					if(item.ClassName === "MeshPart") {
-						part.meshid = parseContentUrl(item.MeshID)
+						part.meshid = RBXParser.parseContentUrl(item.MeshID)
 					} else {
 						var formatted = item.Name.toLowerCase().replace(/\s/g, "")
 						part.meshid = chrome.runtime.getURL(`res/previewer/r6/${formatted}.mesh`)
@@ -159,10 +155,10 @@ ANTI.RBXScene.Avatar = (function() {
 		}
 
 		AssetCache.loadModel(modelUrl, model => {
-			var r6 = model.find(x => x.Name === "R6")
-			var r15 = model.find(x => x.Name === "R15")
+			const r6 = model.find(x => x.Name === "R6")
+			const r15 = model.find(x => x.Name === "R15")
 
-			resolve([ CreateTree(r6), CreateTree(r15) ])
+			resolve([CreateTree(r6), CreateTree(r15)])
 		})
 	})
 
@@ -397,7 +393,7 @@ ANTI.RBXScene.Avatar = (function() {
 
 	function Avatar() {
 		this.model = new THREE.Group()
-		this.animator = new Animator()
+		this.animator = new RBXScene.Animator()
 
 		this.accessories = []
 		this.bodyparts = []
@@ -411,7 +407,7 @@ ANTI.RBXScene.Avatar = (function() {
 
 	Object.assign(Avatar.prototype, {
 		init() {
-			console.assert(!this.hasInit, "already has init")
+			assert(!this.hasInit, "already has init")
 			this.hasInit = true
 
 			var textures = this.textures = {
@@ -492,12 +488,13 @@ ANTI.RBXScene.Avatar = (function() {
 							const BodyPartEnum = [ null, "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg" ]
 
 							R6Folder.Children.filter(x => x.ClassName === "CharacterMesh").forEach(charmesh => {
-								var target = BodyPartEnum[charmesh.BodyPart.Value]
-								if(!target)
-									return;
+								const target = BodyPartEnum[charmesh.BodyPart]
+								if(!target) return;
 
 								this.bodyparts.push({
-									target, asset,
+									target,
+									asset,
+									type: "R6",
 									meshId: charmesh.MeshId,
 									baseTexId: charmesh.BaseTextureId,
 									overTexId: charmesh.OverlayTextureId
@@ -512,11 +509,13 @@ ANTI.RBXScene.Avatar = (function() {
 									return;
 
 								var bodypart = {
-									target, asset,
+									target,
+									asset,
+									type: "R15",
 									joints: [],
 									attachments: [],
-									meshId: parseContentUrl(part.MeshID),
-									overTexId: parseContentUrl(part.TextureID)
+									meshId: RBXParser.parseContentUrl(part.MeshID),
+									overTexId: RBXParser.parseContentUrl(part.TextureID)
 								}
 
 								this.bodyparts.push(bodypart)
@@ -558,8 +557,8 @@ ANTI.RBXScene.Avatar = (function() {
 								return console.warn(`[RBXScene.Avatar] Missing attInst for ${assetId}`);
 
 							var attName = attInst.Name
-							var meshId = parseContentUrl(meshInst.MeshId)
-							var texId = parseContentUrl(meshInst.TextureId)
+							var meshId = RBXParser.parseContentUrl(meshInst.MeshId)
+							var texId = RBXParser.parseContentUrl(meshInst.TextureId)
 
 							if(!meshId) 
 								return console.warn(`[RBXScene.Avatar] Invalid meshId for ${assetId} '${meshInst.MeshId}'`);
@@ -607,7 +606,7 @@ ANTI.RBXScene.Avatar = (function() {
 							if(shirt.ClassName !== "Shirt")
 								return;
 
-							var texId = parseContentUrl(shirt.ShirtTemplate)
+							var texId = RBXParser.parseContentUrl(shirt.ShirtTemplate)
 							if(texId)
 								AssetCache.loadImage(texId, url => this.textures.shirt.image.src = url);
 						})
@@ -619,7 +618,7 @@ ANTI.RBXScene.Avatar = (function() {
 							if(tshirt.ClassName !== "ShirtGraphic")
 								return;
 
-							var texId = parseContentUrl(tshirt.Graphic)
+							var texId = RBXParser.parseContentUrl(tshirt.Graphic)
 							if(texId)
 								AssetCache.loadImage(texId, url => this.textures.tshirt.image.src = url);
 						})
@@ -631,7 +630,7 @@ ANTI.RBXScene.Avatar = (function() {
 							if(pants.ClassName !== "Pants")
 								return;
 
-							var texId = parseContentUrl(pants.PantsTemplate)
+							var texId = RBXParser.parseContentUrl(pants.PantsTemplate)
 							if(texId)
 								AssetCache.loadImage(texId, url => this.textures.pants.image.src = url);
 						})
@@ -643,7 +642,7 @@ ANTI.RBXScene.Avatar = (function() {
 							if(face.ClassName !== "Decal" || face.Name !== "face")
 								return;
 
-							var texId = parseContentUrl(face.Texture)
+							var texId = RBXParser.parseContentUrl(face.Texture)
 							if(texId)
 								AssetCache.loadImage(texId, url => this.headComposite.face.image.src = url);
 						})
@@ -753,7 +752,7 @@ ANTI.RBXScene.Avatar = (function() {
 			var changedAttachments = {}
 
 			this.bodyparts.forEach(bp => {
-				if(bp.hidden) return;
+				if(bp.hidden || bp.type !== this.playerType) return;
 				if(bp.meshId || bp.baseTexId || bp.overTexId) {
 					changedParts[bp.target] = {
 						meshId: bp.meshId,
@@ -773,6 +772,8 @@ ANTI.RBXScene.Avatar = (function() {
 					})
 				}
 			})
+
+			console.log(changedParts)
 
 			Object.entries(this.parts).forEach(([partName, part]) => {
 				var change = changedParts[partName]

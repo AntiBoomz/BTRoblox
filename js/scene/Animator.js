@@ -1,7 +1,6 @@
-// BTR-RBXScene-Animator.js
 "use strict"
 
-ANTI.RBXScene.Animator = (function() {
+RBXScene.Animator = (function() {
 	function mod(a,b){ return((a%b)+b)%b }
 	//function fix(n){ return (mod(n,Math.PI*2)+Math.PI)%(Math.PI*2)-Math.PI }
 	function fix(n) {

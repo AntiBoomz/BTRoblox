@@ -440,8 +440,8 @@ function Create3dPreview(readyCb) {
 	})
 
 	execScripts(["lib/three.min.js", "js/RBXParser.js", "js/RBXScene.js"], () => {
-		ANTI.RBXScene.ready(RBXScene => {
-			scene = window.scene = preview.scene = new RBXScene()
+		RBXScene.ready(() => {
+			scene = window.scene = preview.scene = new RBXScene.Scene()
 			container.append(scene.canvas)
 
 			if(preview.playerType) scene.avatar.setPlayerType(preview.playerType);

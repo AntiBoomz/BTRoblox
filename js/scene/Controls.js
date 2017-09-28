@@ -1,7 +1,6 @@
-// BTR-RBXScene-Controls.js
 "use strict"
 
-ANTI.RBXScene.Controls = (function() {
+RBXScene.Controls = (function() {
 	function Controls(scene) {
 		this.scene = scene
 		this.focus = new THREE.Vector3(0, 4, 0)
