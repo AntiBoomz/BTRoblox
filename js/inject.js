@@ -318,6 +318,17 @@
 
 				if(Roblox.FriendsRunningGameInstances) createPager(Roblox.FriendsRunningGameInstances, true);
 				if(Roblox.AllRunningGameInstances) createPager(Roblox.AllRunningGameInstances);
+			} else if(page === "develop") {
+				if(Roblox.BuildPage) {
+					Roblox.BuildPage.GameShowcase = new Proxy(Roblox.BuildPage.GameShowcase || {}, {
+						set(target, name, value) {
+							target[name] = value
+							const table = document.querySelector(`.item-table[data-rootplace-id="${name}"]`)
+							if(table) table.dataset.inShowcase = value;
+							return true
+						}
+					})
+				}
 			}
 		}
 

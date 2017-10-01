@@ -658,25 +658,29 @@ pageInit.messages = function() {
 }
 
 pageInit.develop = function() {
-	Observer.all("#MyCreationsTab .item-table[data-in-showcase][data-type='universes']", table => {
-		table.$find(".details-table>tbody").append(html`<tr><td><a class='btr-showcase-status'/></td></tr>`)
+	Observer.one("#MyCreationsTab", tab => {
+		const observer = CreateObserver(tab, { permanent: true })
 
-		table.$on("click", ".btr-showcase-status", () => {
-			const placeId = parseInt(table.getAttribute("data-rootplace-id"), 10)
-			const isVisible = table.getAttribute("data-in-showcase").toLowerCase() === "true"
+		observer.all(".item-table[data-in-showcase][data-type='universes']", table => {
+			table.$find(".details-table>tbody").append(html`<tr><td><a class='btr-showcase-status'/></td></tr>`)
 
-			if(isNaN(placeId)) return;
+			table.$on("click", ".btr-showcase-status", () => {
+				const placeId = parseInt(table.getAttribute("data-rootplace-id"), 10)
+				const isVisible = table.getAttribute("data-in-showcase").toLowerCase() === "true"
 
-			getXsrfToken(async token => {
-				const response = await fetch("/game/toggle-profile", {
-					method: "POST",
-					credentials: "include",
-					headers: { "X-CSRF-TOKEN": token },
-					body: new URLSearchParams({ placeId, addToProfile: !isVisible })
+				if(isNaN(placeId)) return;
+
+				getXsrfToken(async token => {
+					const response = await fetch("/game/toggle-profile", {
+						method: "POST",
+						credentials: "include",
+						headers: { "X-CSRF-TOKEN": token },
+						body: new URLSearchParams({ placeId, addToProfile: !isVisible })
+					})
+
+					const json = await response.json()
+					if(json.isValid) table.setAttribute("data-in-showcase", json.data.inShowcase);
 				})
-
-				const json = await response.json()
-				if(json.isValid) table.setAttribute("data-in-showcase", json.data.inShowcase);
 			})
 		})
 	})
