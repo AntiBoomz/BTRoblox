@@ -670,17 +670,26 @@ pageInit.develop = function() {
 
 				if(isNaN(placeId)) return;
 
-				getXsrfToken(async token => {
-					const response = await fetch("/game/toggle-profile", {
+				const toggleProfile = token => {
+					fetch("/game/toggle-profile", {
 						method: "POST",
 						credentials: "include",
 						headers: { "X-CSRF-TOKEN": token },
 						body: new URLSearchParams({ placeId, addToProfile: !isVisible })
-					})
+					}).then(async response => {
+						if(!response.ok) {
+							assert(!response.headers.get("X-CSRF-TOKEN"))
+							return toggleProfile(response.headers.get("X-CSRF-TOKEN"))
+						}
 
-					const json = await response.json()
-					if(json.isValid) table.setAttribute("data-in-showcase", json.data.inShowcase);
-				})
+						const json = await response.json()
+						if(json.isValid) {
+							table.setAttribute("data-in-showcase", json.data.inShowcase)
+						}
+					})
+				}
+
+				getXsrfToken(toggleProfile)
 			})
 		})
 	})
