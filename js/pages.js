@@ -1341,13 +1341,6 @@ pageInit.catalog = function() {
 	if(!settings.catalog.enabled) return;
 	Observer.one("body", body => body.classList.add("btr-inventory"))
 
-	modifyTemplate("rbx-pagination", template => {
-		const input = html`
-		<input type=text id=rbx-current-page class=btr-pager-input ng-value=pagination.curPage|number 
-		ng-keyup="$event.keyCode===13&&pagination.pageUpdated('next', pagination.curPage=$event.target.value.split(',').join('')-1)">`
-		template.$find("#rbx-current-page").replaceWith(input)
-	})
-
 	modifyTemplate("catalog-item-card", template => {
 		template.$find(".item-card-container").classList.add("btr-item-card-container")
 
