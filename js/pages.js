@@ -134,26 +134,37 @@ function execScripts(list, cb) {
 	}
 }
 
-let XsrfPromise;
-function getXsrfToken(callback) {
-	if(!XsrfPromise) {
-		XsrfPromise = new Promise(resolve => {
-			Observer.one(
-				"script:not([src])",
-				x => x.textContent.indexOf("XsrfToken.setToken") !== -1,
-				x => {
-					const match = x.textContent.match(/setToken\('(.*)'\)/)
-					if(match) {
-						resolve(match[1])
-					} else {
-						console.log("Getting XsrfToken failed")
-					}
-				}
-			)
-		})
+
+let cachedXsrfToken
+
+Observer.one(
+	"script:not([src])",
+	x => x.textContent.indexOf("XsrfToken.setToken") !== -1,
+	x => {
+		const match = x.textContent.match(/setToken\('(.*)'\)/)
+		if(match) cachedXsrfToken = match[1];
+	}
+)
+
+function csrfFetch(url, init) {
+	if(!init) init = {};
+	if(!init.headers) init.headers = {};
+	init.headers["X-CSRF-TOKEN"] = cachedXsrfToken
+
+	let retryCount = 0
+
+	const handle = response => {
+		if(response.status === 403 && response.statusText === "XSRF Token Validation Failed") {
+			if(++retryCount < 2) {
+				init.headers["X-CSRF-TOKEN"] = response.headers.get("X-CSRF-TOKEN")
+				return fetch(url, init).then(handle)
+			}
+		}
+
+		return response
 	}
 
-	XsrfPromise.then(callback)
+	return fetch(url, init).then(handle)
 }
 
 function startDownload(blob, fileName) {
@@ -554,8 +565,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 		})
 	}
 
-	document.documentElement
-	.$on("click", ".btr-version-revert", e => {
+	document.documentElement.$on("click", ".btr-version-revert", e => {
 		if(isBusy) return;
 
 		const versionId = parseInt(e.currentTarget.getAttribute("data-versionId"), 10)
@@ -563,14 +573,11 @@ function CreateNewVersionHistory(assetId, assetType) {
 
 		isBusy = true
 
-		getXsrfToken(async token => {
-			const response = await fetch("/places/revert", {
-				method: "POST",
-				credentials: "include",
-				headers: { "X-CSRF-TOKEN": token },
-				body: new URLSearchParams({ assetVersionID: versionId })
-			})
-
+		csrfFetch("/places/revert", {
+			method: "POST",
+			credentials: "include",
+			body: new URLSearchParams({ assetVersionID: versionId })
+		}).then(response => {
 			isBusy = false
 			if(response.status === 200) loadPage(1);
 		})
@@ -670,26 +677,16 @@ pageInit.develop = function() {
 
 				if(isNaN(placeId)) return;
 
-				const toggleProfile = token => {
-					fetch("/game/toggle-profile", {
-						method: "POST",
-						credentials: "include",
-						headers: { "X-CSRF-TOKEN": token },
-						body: new URLSearchParams({ placeId, addToProfile: !isVisible })
-					}).then(async response => {
-						if(!response.ok) {
-							assert(!response.headers.get("X-CSRF-TOKEN"))
-							return toggleProfile(response.headers.get("X-CSRF-TOKEN"))
-						}
-
-						const json = await response.json()
-						if(json.isValid) {
-							table.setAttribute("data-in-showcase", json.data.inShowcase)
-						}
-					})
-				}
-
-				getXsrfToken(toggleProfile)
+				csrfFetch("/game/toggle-profile", {
+					method: "POST",
+					credentials: "include",
+					body: new URLSearchParams({ placeId, addToProfile: !isVisible })
+				}).then(async response => {
+					const json = await response.json()
+					if(json.isValid) {
+						table.setAttribute("data-in-showcase", json.data.inShowcase)
+					}
+				})
 			})
 		})
 	})
@@ -1978,23 +1975,17 @@ pageInit.profile = function(userId) {
 		})
 		.$on("click", ".btr-btn-toggle-profile", () => {
 			const placeId = e.currentTarget.getAttribute("data-placeid")
-			getXsrfToken(token => {
-				fetch("/game/toggle-profile", {
-					method: "POST",
-					credentials: "include",
-					headers: { "X-CSRF-TOKEN": token },
-					body: new URLSearchParams({ placeId, addToProfile: false })
-				})
+			csrfFetch("/game/toggle-profile", {
+				method: "POST",
+				credentials: "include",
+				body: new URLSearchParams({ placeId, addToProfile: false })
 			})
 		})
 		.$on("click", ".btr-btn-shutdown-all", () => {
-			getXsrfToken(token => {
-				fetch("/Games/shutdown-all-instances", {
-					method: "POST",
-					credentials: "include",
-					headers: { "X-CSRF-TOKEN": token },
-					body: new URLSearchParams({ placeId })
-				})
+			csrfFetch("/Games/shutdown-all-instances", {
+				method: "POST",
+				credentials: "include",
+				body: new URLSearchParams({ placeId })
 			})
 		})
 
@@ -2492,22 +2483,18 @@ pageInit.inventory = function() {
 					const url = `//api.roblox.com/Marketplace/ProductInfo?assetId=${item.assetId}`
 					fetch(url).then(async response => {
 						const data = await response.json()
-						if(validAssetTypes.indexOf(data.AssetTypeId) === -1)
-							return console.log("Bad assetType", data);
+						if(validAssetTypes.indexOf(data.AssetTypeId) === -1) return console.log("Bad assetType", data);
 
-						getXsrfToken(token => {
-							fetch("/asset/delete-from-inventory", {
-								method: "POST",
-								credentials: "include",
-								headers: { "X-CSRF-TOKEN": token },
-								body: new URLSearchParams({ assetId: item.assetId })
-							}).then(() => {
-								item.obj.remove()
-								if(--itemsLeft === 0) {
-									isRemoving = false
-									InjectJS.send("refreshInventory")
-								}
-							})
+						csrfFetch("/asset/delete-from-inventory", {
+							method: "POST",
+							credentials: "include",
+							body: new URLSearchParams({ assetId: item.assetId })
+						}).then(() => {
+							item.obj.remove()
+							if(--itemsLeft === 0) {
+								isRemoving = false
+								InjectJS.send("refreshInventory")
+							}
 						})
 					})
 
