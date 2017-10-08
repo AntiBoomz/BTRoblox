@@ -9,7 +9,8 @@ const AssetCache = (() => {
 		const cache = {}
 
 		return (url, cb) => {
-			if(typeof url !== "string" || !isNaN(url)) url = `https://www.roblox.com/asset/?id=${url}`;
+			if(!isNaN(url)) url = `https://www.roblox.com/asset/?id=${url}`;
+			try { new URL(url) } catch(ex) { throw ex }
 
 			let promise = cache[url]
 			if(!promise) {
@@ -25,6 +26,7 @@ const AssetCache = (() => {
 	}
 
 	return {
+		loadAnimation: createMethod(buffer => new RBXParser.AnimationParser().parse(new RBXParser.ModelParser().parse(buffer))),
 		loadModel: createMethod(buffer => new RBXParser.ModelParser().parse(buffer)),
 		loadMesh: createMethod(buffer => new RBXParser.MeshParser().parse(buffer)),
 		loadImage: createMethod(buffer => URL.createObjectURL(new Blob([buffer]))),

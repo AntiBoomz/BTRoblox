@@ -2,7 +2,6 @@
 
 const RBXScene = (() => {
 	const components = [
-		"js/scene/Animator.js",
 		"js/scene/Controls.js",
 		"js/scene/Avatar.js"
 	]

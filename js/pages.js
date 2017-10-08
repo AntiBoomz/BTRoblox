@@ -4,11 +4,6 @@ const pageInit = {}
 const startDate = new Date()
 
 
-const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34, 35, 37, 39]
-const AnimationPreviewAssetTypeIds = [24, 32, 48, 49, 50, 51, 52, 53, 54, 55, 56]
-const WearableAssetTypeIds = [2, 8, 11, 12, 18, 27, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47]
-const UniqueWearableAssetTypeIds = [2, 11, 12, 18, 27, 28, 29, 30, 31]
-const InvalidDownloadableAssetTypeIds = [5, 6, 7, 16, 21, 32, 33, 34, 35, 37]
 const AssetTypeIds = (() => {
 	const acc = ["Hair", "Face", "Neck", "Shoulder", "Front", "Back", "Waist"]
 	const anim = ["Climb", "Death", "Fall", "Idle", "Jump", "Run", "Swim", "Walk", "Pose"]
@@ -25,6 +20,11 @@ const AssetTypeIds = (() => {
 		...anim // 56
 	]
 })();
+const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34, 35, 37, 39]
+const AnimationPreviewAssetTypeIds = [24, 32, 48, 49, 50, 51, 52, 53, 54, 55, 56]
+const WearableAssetTypeIds = [2, 8, 11, 12, 17, 18, 27, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47]
+const UniqueWearableAssetTypeIds = [2, 11, 12, 17, 18, 27, 28, 29, 30, 31] // Used in RBXPreview.js
+const InvalidDownloadableAssetTypeIds = [5, 6, 7, 16, 21, 32, 33, 34, 35, 37]
 const ContainerAssetTypeIds = {
 	2: { typeId: 1, filter: x => x.ClassName === "ShirtGraphic", prop: "Graphic" },
 	11: { typeId: 1, filter: x => x.ClassName === "Shirt", prop: "ShirtTemplate" },
@@ -35,62 +35,11 @@ const ContainerAssetTypeIds = {
 }
 
 
-const avatarApi = {
-	baseUrl: "https://avatar.roblox.com/v1/",
-	get(path, ...args) {
-		let [data, cb] = args
-		if(typeof data === "function") {
-			cb = data
-			data = null
-		}
-
-		const url = this.baseUrl + path + "?" + new URLSearchParams(data).toString()
-		fetch(url, {
-			method: "GET",
-			headers: { "X-CSRF-TOKEN": this.csrfToken },
-			credentials: "include"
-		}).then(async response => cb(await response.json()))
-	},
-	post(url, ...args) {
-		let [data, cb] = args
-		if(typeof data === "function") {
-			cb = data
-			data = null
-		}
-
-		const url = this.baseUrl + path
-		fetch(url, {
-			method: "POST",
-			headers: { "X-CSRF-TOKEN": this.csrfToken },
-			body: JSON.stringify(data)
-		}).then(async response => cb(await response.json()))
-	},
-
-	getRules(cb) { this.get("avatar-rules", cb) },
-	getData(cb) { this.get("avatar", cb) },
-
-	setType(type, cb) { this.post("avatar/set-player-avatar-type", { playerAvatarType: type }, cb) },
-	setBodyColors(dict, cb) {	this.post("avatar/set-body-colors", dict, cb) },
-	setScales(width, height, cb) { this.post("avatar/set-scales", { width, height }, cb) },
-	setWearing(list, cb) { this.post("avatar/set-wearing-assets", { assetIds: list }, cb) },
-	wear(assetId, cb) { this.post("avatar/wear-asset", { assetId }, cb) },
-	unwear(assetId, cb) { this.post("avatar/unwear-asset", { assetId }, cb) },
-
-	createOutfit(data, cb) { this.post("outfits/create", data, cb) },
-	updateOutfit(id, data, cb) { this.post(`outfits/${id}/update`, data, cb) },
-	wearOutfit(id, cb) { this.post(`outfits/${id}/wear`, cb) },
-	deleteOutfit(id, cb) { this.post(`outfits/${id}/delete`, cb) },
-	getOutfitPage(page, amt, cb) {
-		loggedInUserPromise.then(userId => this.get(`users/${userId}/outfits`, { page, itemsPerPage: amt }, cb))
-	}
-}
-
 
 async function getProductInfo(assetId) {
 	const response = await fetch(`https://api.roblox.com/marketplace/productinfo?assetId=${assetId}`)
 	return response.json()
 }
-
 
 function downloadFile(url, type) {
 	return new Promise(resolve => MESSAGING.send("downloadFile", url, resolve))
@@ -100,10 +49,10 @@ function downloadFile(url, type) {
 			const response = await fetch(bloburl)
 			URL.revokeObjectURL(bloburl)
 			switch(type) {
-				case "blob": return response.blob()
-				case "text": return response.text()
-				case "json": return response.json()
-				default: return response.arrayBuffer()
+			case "blob": return response.blob()
+			case "text": return response.text()
+			case "json": return response.json()
+			default: return response.arrayBuffer()
 			}
 		})
 }
@@ -291,178 +240,6 @@ function createPager(noSelect) {
 	}
 
 	return pager
-}
-
-function Create3dPreview(readyCb) {
-	const container = html`
-	<div style="width:100%;height:100%;">
-		<div class='btr-switch' style='position:absolute;top:6px;right:6px;'>
-			<div class='btr-switch-off'>R6</div>
-			<div class='btr-switch-on'>R15</div>
-			<input type='checkbox'> 
-			<div class='btr-switch-flip'>
-				<div class='btr-switch-off'>R6</div>
-				<div class='btr-switch-on'>R15</div>
-			</div>
-		</div>
-		<div class='input-group-btn' style='position:absolute;top:6px;left:6px;width:140px;display:none'>
-			<button type='button' class='input-dropdown-btn' data-toggle='dropdown'>
-				<span class='rbx-selection-label' data-bind='label'></span>
-				<span class='icon-down-16x16'></span>
-			</button>
-			<ul data-toggle='dropdown-menu' class='dropdown-menu' role='menu'></ul>
-		</div>
-	</div>`
-
-	const modeSwitch = container.$find(".btr-switch input")
-	const dropdown = container.$find(".input-group-btn")
-
-	let rulesPromise = null
-	let scene = null
-
-	let animDebounce = 0
-	let appDebounce = 0
-
-	let currentAnim = null
-	const preview = {
-		domElement: container,
-		switch: modeSwitch,
-
-		setPlayerType(playerType) {
-			assert(playerType === "R6" || playerType === "R15")
-			this.playerType = playerType
-
-			const isChecked = playerType === "R15"
-			if(modeSwitch.checked !== isChecked) {
-				modeSwitch.checked = isChecked
-				modeSwitch.$trigger("change")
-			}
-
-			if(scene) scene.avatar.setPlayerType(playerType);
-		},
-		loadDefaultAppearance(modifierCb) {
-			if(!rulesPromise) rulesPromise = new Promise(resolve => avatarApi.getRules(resolve));
-
-			avatarApi.getData(data => {
-				if(modifierCb) modifierCb(data);
-
-				this.applyAppearance(data)
-			})
-		},
-		applyAppearance(data) {
-			this.appearanceData = data
-			if(!scene) return;
-
-			if(!rulesPromise) rulesPromise = new Promise(resolve => avatarApi.getRules(resolve));
-
-			const appKey = ++appDebounce
-			rulesPromise.then(rules => {
-				if(appDebounce !== appKey) return;
-
-				if(data.playerAvatarType && !this.playerType) preview.setPlayerType(data.playerAvatarType);
-
-				if(data.bodyColors) {
-					const bodyColors = {}
-
-					Object.entries(data.bodyColors).forEach(([name, value]) => {
-						const index = name.toLowerCase().replace(/colorid$/, "")
-						const bodyColor = rules.bodyColorsPalette.find(x => x.brickColorId === value)
-						bodyColors[index] = bodyColor.hexColor
-					})
-
-					scene.avatar.setBodyColors(bodyColors)
-				}
-
-				if(data.assets) {
-					data.assets.forEach(assetInfo => {
-						scene.avatar.addAsset(assetInfo.id, assetInfo.assetType.id)
-					})
-				}
-			})
-		},
-		addDropdown(id, name) {
-			const menu = dropdown.$find(".dropdown-menu")
-			menu.append(html`<li data-name="${name}" data-assetId="${id}"><a href="#">${name}</a></li>`)
-
-			if(menu.children.length === 2) dropdown.style.display = "";
-		},
-		setDropdown(name) {
-			dropdown.$find("[data-bind='label']").textContent = name
-		},
-		playAnimation(animId, matchPlayerType, cb) {
-			function playAnimation(anim) {
-				if(matchPlayerType) {
-					const R15BodyPartNames = [
-						"LeftFoot", "LeftHand", "LeftLowerArm", "LeftLowerLeg", "LeftUpperArm", "LeftUpperLeg", "LowerTorso",
-						"RightFoot", "RightHand", "RightLowerArm", "RightLowerLeg", "RightUpperArm", "RightUpperLeg", "UpperTorso"
-					]
-
-					const isR15 = R15BodyPartNames.some(x => x in anim.keyframes)
-					preview.setPlayerType(isR15 ? "R15" : "R6")
-				}
-
-				currentAnim = anim
-				if(scene) {
-					scene.avatar.animator.play(anim)
-				}
-			}
-
-
-			const animIndex = ++animDebounce
-
-			AssetCache.loadModel(animId, model => {
-				if(!model) {
-					console.log("Failed to load animation: Invalid model", animId)
-					if(cb) cb(new Error("Invalid model"));
-					return
-				}
-
-				if(animDebounce !== animIndex) return;
-
-				let anim
-				try {
-					anim = new RBXParser.AnimationParser().parse(model)
-				} catch(ex) {
-					console.log("Failed to load animation:", ex)
-					if(cb) cb(ex);
-					return
-				}
-
-				playAnimation(anim)
-				if(cb) cb(null);
-			})
-
-			return this
-		}
-	}
-
-	dropdown.$on("click", ".dropdown-menu>li[data-name]", e => {
-		const animName = e.currentTarget.getAttribute("data-name")
-		const animId = e.currentTarget.getAttribute("data-assetId")
-		if(animName && animId) {
-			preview.setDropdown(animName)
-			preview.playAnimation(animId)
-		}
-	})
-
-	modeSwitch.$on("change", () => {
-		const playerType = modeSwitch.checked ? "R15" : "R6"
-		preview.setPlayerType(playerType)
-	})
-
-	execScripts(["lib/three.min.js", "js/RBXParser.js", "js/RBXScene.js"], () => {
-		RBXScene.ready(() => {
-			scene = window.scene = preview.scene = new RBXScene.Scene()
-			container.append(scene.canvas)
-
-			if(preview.playerType) scene.avatar.setPlayerType(preview.playerType);
-			if(currentAnim) scene.avatar.animator.play(currentAnim);
-			if(preview.appearanceData) preview.applyAppearance(preview.appearanceData);
-			if(readyCb) readyCb(scene, preview);
-		})
-	})
-
-	return preview
 }
 
 function CreateNewVersionHistory(assetId, assetType) {
@@ -755,94 +532,6 @@ pageInit.itemdetails = function(assetId) {
 			})
 		}
 
-		function enablePreview(readyCb) {
-			const container = html`<div class="item-thumbnail-container btr-preview-container">`
-			let visible = false
-			let initialized = false
-			let oldContainer = null
-
-			const preview = Create3dPreview(scene => {
-				if(readyCb) readyCb(scene, preview);
-
-				if(visible) scene.start();
-			})
-			container.append(preview.domElement)
-
-			preview.toggleVisible = function(bool) {
-				visible = typeof bool === "boolean" ? bool : !visible
-				if(!oldContainer) return;
-
-				if(visible) {
-					if(!initialized) {
-						initialized = true
-
-						if(preview.onInit) preview.onInit();
-					}
-					oldContainer.style.display = "none"
-					oldContainer.after(container)
-					if(preview.scene) preview.scene.start();
-				} else {
-					container.remove()
-					oldContainer.style.display = ""
-					if(preview.scene) preview.scene.stop();
-				}
-			}
-
-			preview.createButtons = function() {
-				const cont = html`<div class="btr-thumb-btn-container">
-					<div class="btr-thumb-btn rbx-btn-control-sm btr-hats-btn"><span class="btr-icon-hat"></span></div>
-					<div class="btr-thumb-btn rbx-btn-control-sm btr-body-btn"><span class="btr-icon-body"></span></div>
-					<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn checked"><span class="btr-icon-preview"></span></div>
-				</div>`
-
-				preview.domElement.append(cont)
-
-				const outCont = html`<div class="btr-thumb-btn-container">
-					<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn"><span class="btr-icon-preview"></span></div>
-				</div>`
-
-				if(oldContainer) oldContainer.$find("#AssetThumbnail").append(outCont);
-
-				document.$on("click", ".btr-preview-btn", () => preview.toggleVisible())
-				.$on("click", ".btr-hats-btn", ev => {
-					if(!preview.scene) return;
-
-					const self = ev.currentTarget
-					const checked = !self.classList.contains("checked")
-					self.classList.toggle("checked", checked)
-
-					preview.scene.avatar.accessories.forEach(acc => {
-						if(acc.asset.assetId === assetId) return;
-						acc.obj.visible = !checked
-					})
-				})
-				.$on("click", ".btr-body-btn", ev => {
-					if(!preview.scene) return;
-
-					const self = ev.currentTarget
-					const checked = !self.classList.contains("checked")
-					self.classList.toggle("checked", checked)
-
-					preview.scene.avatar.bodyparts.forEach(bp => {
-						if(bp.asset.assetId === assetId) return;
-						bp.hidden = checked
-					})
-					preview.scene.avatar.refreshBodyParts()
-				})
-			}
-
-
-			Observer.one("#AssetThumbnail", oldCont => {
-				oldContainer = oldCont.parentNode
-				preview.toggleVisible(visible)
-
-				if(preview.outCont)	oldContainer.$find("#AssetThumbnail").append(preview.outCont);
-			})
-
-
-			return preview
-		}
-
 		const canAccessPromise = new Promise(resolve => {
 			if(assetTypeId !== 10) return resolve(true);
 			Observer.one("#item-container", itemCont => {
@@ -853,139 +542,123 @@ pageInit.itemdetails = function(assetId) {
 			})
 		})
 
-		execScripts(["js/RBXParser.js", "js/AssetCache.js"], () => {
+		execScripts(["js/RBXParser.js", "js/AssetCache.js", "js/RBXPreview.js"], () => {
+			const previewAnim = settings.itemdetails.animationPreview && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1
+			const previewAsset = true && WearableAssetTypeIds.indexOf(assetTypeId) !== -1
 
-			if(settings.itemdetails.animationPreview && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1) {
-				const preview = enablePreview(scene => {
-					scene.avatar.animator.onstop = () => {
-						setTimeout(() => scene.avatar.animator.play(), 2000)
-					}
-				})
+			if(previewAnim || previewAsset || assetTypeId === 32) {
+				let preview
 
-				const parseAnimPackage = (id, cb) => {
-					AssetCache.loadModel(id, model => {
-						const dict = {}
-						const folder = model.find(x => x.ClassName === "Folder" && x.Name === "R15Anim")
-						folder.Children.filter(x => x.ClassName === "StringValue").forEach(value => {
-							const animName = value.Name
+				const doPreview = (assetId, assetTypeId) => {
+					const isAnim = AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1
+					const isAsset = WearableAssetTypeIds.indexOf(assetTypeId) !== -1
+					if(!isAnim && !isAsset && assetTypeId !== 32) return;
 
-							value.Children.forEach((anim, i) => {
-								if(anim.ClassName !== "Animation") return;
-
-								const animId = RBXParser.parseContentUrl(anim.AnimationId)
-								if(animId) {
-									const index = animName + (i === 0 ? "" : `_${i + 1}`)
-									dict[index] = animId
-								}
+					if(assetTypeId === 32) {
+						AssetCache.loadText(assetId, text => text.split(";").forEach(itemId => {
+							fetch(`//api.roblox.com/marketplace/productinfo?assetId=${itemId}`).then(async response => {
+								const json = await response.json()
+								doPreview(itemId, json.AssetTypeId)
 							})
+						}))
+
+						return
+					}
+
+					if(!preview) {
+						const container = html`
+						<div class="item-thumbnail-container btr-preview-container">
+							<div class="btr-thumb-btn-container">
+								<div class="btr-thumb-btn rbx-btn-control-sm btr-hats-btn"><span class="btr-icon-hat"></span></div>
+								<div class="btr-thumb-btn rbx-btn-control-sm btr-body-btn"><span class="btr-icon-body"></span></div>
+								<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn checked"><span class="btr-icon-preview"></span></div>
+							</div>
+						</div>`
+
+						Observer.one("#AssetThumbnail", thumb => {
+							thumb.append(html`<div class="btr-thumb-btn-container">
+								<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn"><span class="btr-icon-preview"></span></div>
+							</div>`)
 						})
 
-						cb(dict)
-					})
-				}
+						preview = new RBXPreview.Previewer()
+						container.append(preview.container)
 
-				const enable = () => {
-					preview.toggleVisible(true)
-					preview.createButtons()
-					preview.loadDefaultAppearance(data => {
-						delete data.playerAvatarType;
-					})
-				}
-
-				const loadAnimations = () => {
-					switch(assetTypeId) {
-					case 32: // Package
-						AssetCache.loadText(assetId, text => {
-							const assetIds = text.split(";")
-							let first = true
-
-							function addAnims(anims) {
-								Object.entries(anims).forEach(([name, animId]) => {
-									preview.addDropdown(animId, name)
-									if(first) {
-										first = false
-										preview.setDropdown(name)
-										preview.playAnimation(animId, true)
-									}
-								})
+						const toggleEnabled = enabled => {
+							const oldCont = $("#AssetThumbnail").parentNode
+							if(enabled) {
+								oldCont.style.display = "none"
+								oldCont.after(container)
+							} else {
+								oldCont.style.display = ""
+								container.remove()
 							}
 
-							parseAnimPackage(assetIds[0], anims => {
-								if(Object.keys(anims).length === 0) return;
-
-								enable()
-								addAnims(anims)
-
-								for(let i = 1; i < assetIds.length; i++) {
-									parseAnimPackage(assetIds[i], addAnims)
-								}
-							})
-						})
-						break;
-					case 24: // Custom Animation
-						preview.playAnimation(assetId, true, err => {
-							if(!err) enable();
-						})
-						break;
-					default: // PlayerAnimation
-						parseAnimPackage(assetId, anims => {
-							if(Object.keys(anims).length === 0) return preview.destroy();
-
-							enable()
-
-							let first = true
-							Object.entries(anims).forEach(([name, animId]) => {
-								preview.addDropdown(animId, name)
-								if(first) {
-									first = false
-									preview.setDropdown(name)
-									preview.playAnimation(animId, true)
-								}
-							})
-						})
-						break;
-					}
-				}
-
-				if(settings.itemdetails.animationPreviewAutoLoad) {
-					loadAnimations()
-				} else {
-					preview.onInit = loadAnimations
-				}
-			} else if(true && WearableAssetTypeIds.indexOf(assetTypeId) !== -1) {
-				const preview = enablePreview()
-				preview.createButtons()
-
-				preview.onInit = () => {
-					preview.loadDefaultAppearance(data => {
-						const assets = data.assets
-
-						if(UniqueWearableAssetTypeIds.indexOf(assetTypeId) !== -1) {
-							for(let i = 0; i < assets.length; i++) {
-								const assetInfo = assets[i]
-								if(assetInfo.assetType.id === assetTypeId) {
-									assets.splice(i--, 1)
-									break;
-								}
-							}
+							preview.setEnabled(enabled)
 						}
 
-						assets.push({
-							id: assetId,
-							assetType: {
-								id: assetTypeId
-							}
-						})
-					})
 
-					function updateAnim() {
-						const animId = preview.playerType === "R15" ? 507766388 : 180435571
-						preview.playAnimation(animId)
+						if(previewAnim && settings.itemdetails.animationPreviewAutoLoad) {
+							onDocumentReady(() => toggleEnabled(true))
+						}
+
+						document.$on("click", ".btr-preview-btn", ev => {
+							const self = ev.currentTarget
+							const checked = !self.classList.contains("checked")
+
+							toggleEnabled(checked)
+						})
+						.$on("click", ".btr-hats-btn", ev => {
+							const self = ev.currentTarget
+							const disabled = !self.classList.contains("checked")
+							self.classList.toggle("checked", disabled)
+
+							preview.setAccessoriesVisible(!disabled)
+						})
+						.$on("click", ".btr-body-btn", ev => {
+							const self = ev.currentTarget
+							const disabled = !self.classList.contains("checked")
+							self.classList.toggle("checked", disabled)
+
+							preview.setPackagesVisible(!disabled)
+						})
 					}
 
-					preview.switch.$on("change", updateAnim)
-					updateAnim()
+					if(isAnim) {
+						preview.disableDefaultAnimations = true
+
+						if(assetTypeId === 24) {
+							preview.onInit(() => {
+								preview.addAnimation(String(assetId), assetId)
+							})
+						} else {
+							preview.onInit(() => {
+								AssetCache.loadModel(assetId, model => {
+									const folder = model.find(x => x.ClassName === "Folder" && x.Name === "R15Anim")
+									if(!folder) return;
+
+									folder.Children.filter(x => x.ClassName === "StringValue").forEach(value => {
+										const animName = value.Name
+
+										value.Children.forEach((anim, i) => {
+											if(anim.ClassName !== "Animation") return;
+
+											const name = animName + (i === 0 ? "" : `_${i + 1}`)
+											const animId = RBXParser.parseContentUrl(anim.AnimationId)
+											if(!animId) return;
+
+											preview.addAnimation(name, animId)
+										})
+									})
+								})
+							})
+						}
+					} else if(isAsset) {
+						preview.addAsset(assetId, assetTypeId, { previewTarget: true })
+					}
 				}
+
+				doPreview(assetId, assetTypeId)
 			}
 
 			canAccessPromise.then(canAccess => {
@@ -998,12 +671,12 @@ pageInit.itemdetails = function(assetId) {
 				if(settings.itemdetails.downloadButton && InvalidDownloadableAssetTypeIds.indexOf(assetTypeId) === -1) {
 					const btn = html`<a class="btr-download-button"><div class="btr-icon-download"></div></a>`
 					let dlPromise
-					
+
 					Observer.one("#item-container > .section-content", cont => {
 						cont.append(btn)
 						cont.parentNode.classList.add("btr-download-btn-shown")
 					})
-	
+
 					function doNamedDownload(event) {
 						event.preventDefault()
 						if(!dlPromise) {
