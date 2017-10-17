@@ -60,7 +60,7 @@ const GroupShouts = (() => {
 			const poster = posterLink.textContent
 			let posterid = parseInt(posterLink.href.match(/\/users\/(\d+)/)[1], 10)
 			const date = item.querySelector(".text-date-hint").textContent
-			const body = item.querySelector(".feedtext").textContent.replace(/^"(.*)"$/, "$1") + "hi5i"
+			const body = item.querySelector(".feedtext").textContent.replace(/^"(.*)"$/, "$1")
 
 			if(isNaN(posterid)) posterid = -1;
 
