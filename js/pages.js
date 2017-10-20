@@ -510,7 +510,7 @@ pageInit.itemdetails = function(assetId) {
 				cont.parentNode.classList.add("btr-explorer-btn-shown")
 			})
 
-			btn.$on("click", () => {
+			btn.$find(".btr-explorer-button").$on("click", () => {
 				if(!explorer) return false;
 
 				if(!explorerInitialized) {
