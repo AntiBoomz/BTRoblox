@@ -1,152 +1,78 @@
 "use strict"
 
 const $ = (() => {
-	var $ = document.querySelector.bind(document)
+	const $ = document.querySelector.bind(document)
 	$.all = document.querySelectorAll.bind(document)
 
-	function HandleEvent(e) {
-		var events = this.$events
-		if(!events) return;
-
-		var listeners = events[e.type]
-		if(!listeners) return;
-
-		var selectiveListeners = []
-		var selfListeners = []
-
-		listeners.forEach(listener => {
-			if(!listener.selector) {
-				selfListeners.push(listener)
-			} else {
-				selectiveListeners.push(listener)
-			}
-		})
-
-		var shouldPropagate = true
-		var shouldImmediatePropagate = true
-
-		function stopPropagation() {
-			shouldPropagate = false
-			return e.__proto__.stopPropagation.apply(e, arguments)
-		}
-
-		function stopImmediatePropagation() {
-			shouldImmediatePropagate = false
-			shouldPropagate = false
-			return e.__proto__.stopImmediatePropagation.apply(e, arguments)
-		}
-
-		e.stopPropagation = stopPropagation
-		e.stopImmediatePropagation = stopImmediatePropagation
-
-		if(selectiveListeners.length) {
-			for(let i=0, len=e.path.indexOf(this); i < len; i++) {
-				var node = e.path[i]
-
-				for(let i=0, len=selectiveListeners.length; i < len; i++) {
-					var listener = selectiveListeners[i]
-					var query = this.querySelectorAll(listener.selector)
-					if(!query || Array.prototype.indexOf.call(query, node) === -1) continue;
-
-					Object.defineProperty(e, "currentTarget", { value: node, enumerable: true, configurable: true })
-					if(listener.callback.call(node, e) === false) {
-						e.preventDefault()
-					}
-					delete e.currentTarget
-
-					if(!shouldImmediatePropagate) break;
-				}
-
-				if(!shouldPropagate) break;
-			}
-		}
-
-		if(selfListeners.length && shouldPropagate && shouldImmediatePropagate) {
-			for(var i=0, len=selfListeners.length; i < len; i++) {
-				var listener = selfListeners[i]
-
-				if(listener.callback.call(this, e) === false) {
-					e.preventDefault()
-				}
-
-				if(!shouldImmediatePropagate) break;
-			}
-		}
-
-		delete e.stopPropagation
-		delete e.stopImmediatePropagation
-	}
-
 	Object.defineProperties(EventTarget.prototype, Object.getOwnPropertyDescriptors({
-		$on() {
-			var eventNames = arguments[0]
-			var callback = arguments[1]
-			var once = arguments[2]
-			var selector = null
-
-			if(typeof(callback) === "string") {
-				selector = arguments[1]
-				callback = arguments[2]
-				once = arguments[3]
-			}
+		$on(eventNames, selector, callback, once) {
+			if(typeof selector === "function") [selector, callback, once] = [null, selector, callback];
 
 			eventNames.split(" ").forEach(eventType => {
-				if(!eventType.length)
-					return;
+				if(!eventType.length) return;
+				if(!this.$events) Object.defineProperty(this, "$events", { value: {} });
 
-				if(!this.$events)
-					Object.defineProperty(this, "$events", { value: {} });
+				let listeners = this.$events[eventType]
+				if(!listeners) listeners = this.$events[eventType] = [];
 
-				var listeners = this.$events[eventType]
+				const listener = {
+					selector,
+					callback,
+					once,
+					handler(...args) {
+						const event = args[0]
+						if(!selector) return callback.apply(this, args);
 
-				if(!listeners)
-					listeners = this.$events[eventType] = [];
+						const query = this.$findAll(selector)
+						const final = event.path.indexOf(this)
 
-				var listener = {
-					selector: selector,
-					callback: callback,
-					once: once,
+						const sP = event.stopPropagation
+						let hasStoppedPropagation = false
+						event.stopPropagation = function(...args) {
+							hasStoppedPropagation = true
+							return sP.apply(this, args)
+						}
+
+						for(let i = 0; i < final; i++) {
+							const node = event.path[i]
+							const index = Array.prototype.indexOf.call(query, node)
+							if(index === -1) continue;
+
+							Object.defineProperty(event, "currentTarget", { value: node, configurable: true })
+							callback.apply(this, args)
+							delete event.currentTarget
+
+							if(hasStoppedPropagation) break;
+						}
+					}
 				}
 
 				listeners.push(listener)
-
-				if(!this.$isListening)
-					Object.defineProperty(this, "$isListening", { value: {} });
-
-				if(!this.$isListening[eventType]) {
-					this.$isListening[eventType] = true
-					this.addEventListener(eventType, HandleEvent, true)
-				}
+				this.addEventListener(eventType, listener.handler, true)
 			})
 
 			return this
 		},
-		$once() {
-			var onceIndex = typeof(arguments[1]) === "string" ? 3 : 2
-			arguments[onceIndex] = true
-			return this.$on.apply(this, arguments)
+		$once(...args) {
+			return this.$on(...args, true)
 		},
 		$off(eventNames, selector, callback) {
 			if(!this.$events) return this;
-
-			if(typeof(selector) !== "string")
-				callback = selector, selector = null;
+			if(typeof selector !== "string") [selector, callback] = [null, selector];
 
 			eventNames.split(" ").forEach(eventType => {
-				if(!eventType.length)
-					return;
+				if(!eventType.length) return;
+				if(!this.$events) return;
 
-				var listeners = this.$events[eventType]
+				const listeners = this.$events[eventType]
 				if(!listeners) return;
 
-				if(selector == null && callback == null)
-					delete this.$events[eventType];
-				else {
-					for(var i=0; i < listeners.length; i++) {
-						var listener = listeners[i]
-						if((selector && listener.selector === selector) || (callback && listener.callback === callback)) {
-							listeners.splice(i--, 1)
-						}
+				const removeAll = selector == null && callback == null
+				for(let i = 0; i < listeners.length; i++) {
+					const listener = listeners[i]
+					if(removeAll || (selector && listener.selector === selector) || (callback && listener.callback === callback)) {
+						listeners.splice(i--, 1)
+						this.removeEventListener(eventType, listener.handler)
 					}
 				}
 			})
@@ -154,14 +80,6 @@ const $ = (() => {
 			return this
 		},
 		$trigger(type, init) { return this.dispatchEvent(new Event(type, init)), this },
-	}))
-
-	Object.defineProperties(Element.prototype, Object.getOwnPropertyDescriptors({
-		$class(name, value) { return value === undefined ? this.classList.contains(name) : (this.classList.toggle(name, value), this) }
-	}))
-
-	Object.defineProperties(HTMLElement.prototype, Object.getOwnPropertyDescriptors({
-		$style(name, value) { return value === undefined ? getComputedStyle(this)[name] : (this.style[name] = value, this) },
 	}))
 
 	function qs(fn) {
