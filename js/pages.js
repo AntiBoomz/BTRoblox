@@ -1491,7 +1491,7 @@ pageInit.profile = function(userId) {
 	</div>`
 
 	Observer.one("body", body => body.classList.add("btr-profile"))
-	.one(".profile-container>.rbx-tabs-horizontal", cont => cont.before(left, right, bottom))
+	.one(".profile-container .rbx-tabs-horizontal", cont => cont.before(left, right, bottom))
 	.one(".profile-about-content", desc => {
 		left.$find(".placeholder-desc").replaceWith(desc)
 
