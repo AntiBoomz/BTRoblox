@@ -486,51 +486,7 @@ pageInit.itemdetails = function(assetId) {
 	.one(".item-type-field-container .field-content", typeLabel => {
 		const assetTypeName = typeLabel.textContent.trim()
 		const assetTypeId = AssetTypeIds.indexOf(assetTypeName)
-
 		if(assetTypeId === -1) return;
-
-		function enableExplorer() {
-			let explorerInitialized = false
-			let explorer = null
-
-			execScripts(["js/Explorer.js"], () => { explorer = new Explorer() })
-
-			const btn = html`
-			<div>
-				<a class="btr-explorer-button" data-toggle="popover" data-bind="btr-explorer-content">
-					<span class="btr-icon-explorer"</span>
-				</a>
-				<div class="rbx-popover-content" data-toggle="btr-explorer-content">
-					<div class="btr-explorer-parent"></div>
-				</div>
-			</div>`
-
-			Observer.one("#item-container > .section-content", cont => {
-				cont.append(btn)
-				cont.parentNode.classList.add("btr-explorer-btn-shown")
-			})
-
-			btn.$find(".btr-explorer-button").$on("click", () => {
-				if(!explorer) return false;
-
-				if(!explorerInitialized) {
-					explorerInitialized = true
-
-					if(assetTypeId === 32) { // Package, I disabled package exploring elsewhere
-						AssetCache.loadText(assetId, text => text.split(";").forEach(id => {
-							AssetCache.loadModel(id, model => explorer.addView(id.toString(), model))
-						}))
-					} else {
-						AssetCache.loadModel(assetId, model => explorer.addView("Main", model))
-					}
-				}
-
-				setTimeout(() => {
-					const parent = $("div:not(.rbx-popover-content)>.btr-explorer-parent")
-					if(parent) parent.replaceWith(explorer.domElement);
-				}, 0)
-			})
-		}
 
 		const canAccessPromise = new Promise(resolve => {
 			if(assetTypeId !== 10) return resolve(true);
@@ -542,133 +498,168 @@ pageInit.itemdetails = function(assetId) {
 			})
 		})
 
-		execScripts(["js/RBXParser.js", "js/AssetCache.js", "js/RBXPreview.js"], () => {
+		const gCPCache = {}
+		const getCachedProductInfo = id => (gCPCache[id] = gCPCache[id] || getProductInfo(id));
+
+		execScripts(["js/RBXParser.js", "js/AssetCache.js"], () => {
 			const previewAnim = settings.itemdetails.animationPreview && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1
 			const previewAsset = true && WearableAssetTypeIds.indexOf(assetTypeId) !== -1
 
 			if(previewAnim || previewAsset || assetTypeId === 32) {
-				let preview
-				let assetCounter = 0
+				execScripts(["js/RBXPreview.js"], () => {
+					let preview
 
-				const doPreview = (assetId, assetTypeId, assetIndex) => {
-					if(assetIndex == null) assetIndex = assetCounter++;
-					const isAnim = AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1
-					const isAsset = WearableAssetTypeIds.indexOf(assetTypeId) !== -1
-					if(!isAnim && !isAsset && assetTypeId !== 32) return;
+					const doPreview = (assetId, assetTypeId) => {
+						const isAnim = AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1
+						const isAsset = WearableAssetTypeIds.indexOf(assetTypeId) !== -1
+						if(!isAnim && !isAsset && assetTypeId !== 32) return;
 
-					if(assetTypeId === 32) {
-						AssetCache.loadText(assetId, text => text.split(";").forEach(itemId => {
-							const childIndex = assetCounter++
-							fetch(`//api.roblox.com/marketplace/productinfo?assetId=${itemId}`).then(async response => {
-								const json = await response.json()
-								doPreview(itemId, json.AssetTypeId, childIndex)
+						if(assetTypeId === 32) {
+							AssetCache.loadText(assetId, text => text.split(";").forEach(itemId => {
+								getCachedProductInfo(itemId).then(json => doPreview(itemId, json.AssetTypeId))
+							}))
+							return
+						}
+
+						if(!preview) {
+							const container = html`
+							<div class="item-thumbnail-container btr-preview-container">
+								<div class="btr-thumb-btn-container">
+									<div class="btr-thumb-btn rbx-btn-control-sm btr-hats-btn"><span class="btr-icon-hat"></span></div>
+									<div class="btr-thumb-btn rbx-btn-control-sm btr-body-btn"><span class="btr-icon-body"></span></div>
+									<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn checked"><span class="btr-icon-preview"></span></div>
+								</div>
+							</div>`
+
+							Observer.one("#AssetThumbnail", thumb => {
+								thumb.append(html`<div class="btr-thumb-btn-container">
+									<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn"><span class="btr-icon-preview"></span></div>
+								</div>`)
 							})
-						}))
 
-						return
-					}
+							preview = new RBXPreview.Previewer()
+							container.append(preview.container)
 
-					if(!preview) {
-						const container = html`
-						<div class="item-thumbnail-container btr-preview-container">
-							<div class="btr-thumb-btn-container">
-								<div class="btr-thumb-btn rbx-btn-control-sm btr-hats-btn"><span class="btr-icon-hat"></span></div>
-								<div class="btr-thumb-btn rbx-btn-control-sm btr-body-btn"><span class="btr-icon-body"></span></div>
-								<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn checked"><span class="btr-icon-preview"></span></div>
-							</div>
-						</div>`
+							const toggleEnabled = enabled => {
+								const oldCont = $("#AssetThumbnail").parentNode
+								if(enabled) {
+									oldCont.style.display = "none"
+									oldCont.after(container)
+								} else {
+									oldCont.style.display = ""
+									container.remove()
+								}
 
-						Observer.one("#AssetThumbnail", thumb => {
-							thumb.append(html`<div class="btr-thumb-btn-container">
-								<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn"><span class="btr-icon-preview"></span></div>
-							</div>`)
-						})
-
-						preview = new RBXPreview.Previewer()
-						container.append(preview.container)
-
-						const toggleEnabled = enabled => {
-							const oldCont = $("#AssetThumbnail").parentNode
-							if(enabled) {
-								oldCont.style.display = "none"
-								oldCont.after(container)
-							} else {
-								oldCont.style.display = ""
-								container.remove()
+								preview.setEnabled(enabled)
 							}
 
-							preview.setEnabled(enabled)
-						}
 
+							if(previewAnim && settings.itemdetails.animationPreviewAutoLoad) {
+								onDocumentReady(() => toggleEnabled(true))
+							}
 
-						if(previewAnim && settings.itemdetails.animationPreviewAutoLoad) {
-							onDocumentReady(() => toggleEnabled(true))
-						}
+							document.$on("click", ".btr-preview-btn", ev => {
+								const self = ev.currentTarget
+								const checked = !self.classList.contains("checked")
 
-						document.$on("click", ".btr-preview-btn", ev => {
-							const self = ev.currentTarget
-							const checked = !self.classList.contains("checked")
-
-							toggleEnabled(checked)
-						})
-						.$on("click", ".btr-hats-btn", ev => {
-							const self = ev.currentTarget
-							const disabled = !self.classList.contains("checked")
-							self.classList.toggle("checked", disabled)
-
-							preview.setAccessoriesVisible(!disabled)
-						})
-						.$on("click", ".btr-body-btn", ev => {
-							const self = ev.currentTarget
-							const disabled = !self.classList.contains("checked")
-							self.classList.toggle("checked", disabled)
-
-							preview.setPackagesVisible(!disabled)
-						})
-					}
-
-					if(isAnim) {
-						preview.disableDefaultAnimations = true
-
-						if(assetTypeId === 24) {
-							preview.onInit(() => {
-								preview.addAnimation(String(assetId), assetId, assetIndex)
+								toggleEnabled(checked)
 							})
-						} else {
-							preview.onInit(() => {
-								AssetCache.loadModel(assetId, model => {
-									const folder = model.find(x => x.ClassName === "Folder" && x.Name === "R15Anim")
-									if(!folder) return;
+							.$on("click", ".btr-hats-btn", ev => {
+								const self = ev.currentTarget
+								const disabled = !self.classList.contains("checked")
+								self.classList.toggle("checked", disabled)
 
-									folder.Children.filter(x => x.ClassName === "StringValue").forEach(value => {
-										const animName = value.Name
+								preview.setAccessoriesVisible(!disabled)
+							})
+							.$on("click", ".btr-body-btn", ev => {
+								const self = ev.currentTarget
+								const disabled = !self.classList.contains("checked")
+								self.classList.toggle("checked", disabled)
 
-										value.Children.forEach((anim, i) => {
-											if(anim.ClassName !== "Animation") return;
+								preview.setPackagesVisible(!disabled)
+							})
+						}
 
-											const name = animName + (i === 0 ? "" : `_${i + 1}`)
-											const animId = RBXParser.parseContentUrl(anim.AnimationId)
-											if(!animId) return;
+						if(isAnim) {
+							preview.disableDefaultAnimations = true
 
-											preview.addAnimation(name, animId, assetIndex)
+							if(assetTypeId === 24) {
+								preview.onInit(() => {
+									preview.addAnimation(String(assetId), assetId)
+								})
+							} else {
+								preview.onInit(() => {
+									AssetCache.loadModel(assetId, model => {
+										const folder = model.find(x => x.ClassName === "Folder" && x.Name === "R15Anim")
+										if(!folder) return;
+
+										folder.Children.filter(x => x.ClassName === "StringValue").forEach(value => {
+											const animName = value.Name
+
+											value.Children.filter(x => x.ClassName === "Animation").forEach((anim, i) => {
+												const name = animName + (i === 0 ? "" : `_${i + 1}`)
+												const animId = RBXParser.parseContentUrl(anim.AnimationId)
+												if(!animId) return;
+
+												preview.addAnimation(name, animId)
+											})
 										})
 									})
 								})
-							})
+							}
+						} else if(isAsset) {
+							preview.addAsset(assetId, assetTypeId, { previewTarget: true })
 						}
-					} else if(isAsset) {
-						preview.addAsset(assetId, assetTypeId, { previewTarget: true })
 					}
-				}
 
-				doPreview(assetId, assetTypeId)
+					doPreview(assetId, assetTypeId)
+				})
 			}
 
 			canAccessPromise.then(canAccess => {
 				if(!canAccess) return;
 
 				if(settings.itemdetails.explorerButton && InvalidExplorableAssetTypeIds.indexOf(assetTypeId) === -1) {
-					enableExplorer()
+					let explorerInitialized = false
+					let explorer = null
+
+					execScripts(["js/Explorer.js"], () => { explorer = new Explorer() })
+
+					const btn = html`
+					<div>
+						<a class="btr-explorer-button" data-toggle="popover" data-bind="btr-explorer-content">
+							<span class="btr-icon-explorer"</span>
+						</a>
+						<div class="rbx-popover-content" data-toggle="btr-explorer-content">
+							<div class="btr-explorer-parent"></div>
+						</div>
+					</div>`
+
+					Observer.one("#item-container > .section-content", cont => {
+						cont.append(btn)
+						cont.parentNode.classList.add("btr-explorer-btn-shown")
+					})
+
+					btn.$find(".btr-explorer-button").$on("click", () => {
+						if(!explorer) return false;
+
+						if(!explorerInitialized) {
+							explorerInitialized = true
+
+							if(assetTypeId === 32) { // Package, I disabled package exploring elsewhere
+								AssetCache.loadText(assetId, text => text.split(";").forEach(id => {
+									AssetCache.loadModel(id, model => explorer.addView(id.toString(), model))
+								}))
+							} else {
+								AssetCache.loadModel(assetId, model => explorer.addView("Main", model))
+							}
+						}
+
+						setTimeout(() => {
+							const parent = $("div:not(.rbx-popover-content)>.btr-explorer-parent")
+							if(parent) parent.replaceWith(explorer.domElement);
+						}, 0)
+					})
 				}
 
 				if(settings.itemdetails.downloadButton && InvalidDownloadableAssetTypeIds.indexOf(assetTypeId) === -1) {
@@ -735,7 +726,7 @@ pageInit.itemdetails = function(assetId) {
 				}
 			})
 
-			if(true && (assetTypeId === 1 || assetTypeId === 13)) {
+			if(settings.itemdetails.imageBackgrounds && (assetTypeId === 1 || assetTypeId === 13)) {
 				Observer.one("#AssetThumbnail", thumb => {
 					const btns = html`
 					<div class="btr-bg-btn-cont">
@@ -769,7 +760,7 @@ pageInit.itemdetails = function(assetId) {
 				})
 			}
 
-			if(true && assetTypeId === 13) {
+			if(settings.itemdetails.whiteDecalThumbnailFix && assetTypeId === 13) {
 				const transparentTexture = "https://t6.rbxcdn.com/3707fe58b613498a0f1fc7d11faeccf3"
 
 				Observer.one(`#AssetThumbnail .thumbnail-span img`, img => {
@@ -797,7 +788,7 @@ pageInit.itemdetails = function(assetId) {
 				})
 			}
 
-			if(true && assetTypeId === 32) {
+			if(settings.itemdetails.thisPackageContains && assetTypeId === 32) {
 				const cont = html`
 				<div class="btr-package-contents">
 					<div class="container-header">
@@ -830,7 +821,7 @@ pageInit.itemdetails = function(assetId) {
 							</div>
 						</li>`
 
-						getProductInfo(childId).then(data => {
+						getCachedProductInfo(childId).then(data => {
 							if(data.IsForSale) {
 								if(data.PriceInRobux) {
 									card.$find(".item-card-price").innerHTML = htmlstring`

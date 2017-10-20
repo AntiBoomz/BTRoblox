@@ -102,7 +102,10 @@ const DEFAULT_SETTINGS = {
 		animationPreviewAutoLoad: true,
 		explorerButton: true,
 		downloadButton: true,
-		contentButton: true
+		contentButton: true,
+		imageBackgrounds: true,
+		whiteDecalThumbnailFix: true,
+		thisPackageContains: true
 	},
 	chat: {
 		enabled: true

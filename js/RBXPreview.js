@@ -45,6 +45,7 @@ const RBXPreview = (() => {
 
 			const ptSwitch = this.ptSwitch = this.container.$find(".btr-switch > input")
 			const dropdown = this.dropdown = this.container.$find(".input-group-btn")
+			this.menu = dropdown.$find(".dropdown-menu")
 
 			ptSwitch.$on("change", () => {
 				this.setPlayerType(ptSwitch.checked ? "R15" : "R6")
@@ -227,32 +228,20 @@ const RBXPreview = (() => {
 					const isR15 = R15BodyPartNames.some(x => x in data.keyframes)
 					this.setPlayerType(isR15 ? "R15" : "R6")
 				}
-				
+
 				this.playAnimation(data)
 			})
 		}
 
-		addAnimation(name, assetId, groupIndex) {
-			const group = groupIndex || 0
+		addAnimation(name, assetId) {
 			const index = this.animList.length
 			this.animList[index] = { name, assetId }
 
-			const menu = this.dropdown.$find(".dropdown-menu")
-			const elem = html`<li><a href=#>${name}</a></li>`
-			elem.dataset.id = index
-			elem.dataset.group = group
-
-			if(menu.children.length) {
-				let prev = menu.lastElementChild
-				while(prev && prev.dataset.group > group) prev = prev.previousSibling;
-				if(prev) prev.after(elem);
-				else menu.prepend(elem);
-			} else {
-				menu.append(elem)
-			}
+			const elem = html`<li data-id=${index}><a href=#>${name}</a></li>`
+			this.menu.append(elem)
 
 			if(index === 1) this.dropdown.style.display = "";
-			if(index === 0 && this.selectedAnimation == null && this.scene) this.selectAnimation(0, true);
+			if(this.selectedAnimation == null && index === 0) this.selectAnimation(index, true);
 		}
 	}
 
