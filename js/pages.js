@@ -548,17 +548,20 @@ pageInit.itemdetails = function(assetId) {
 
 			if(previewAnim || previewAsset || assetTypeId === 32) {
 				let preview
+				let assetCounter = 0
 
-				const doPreview = (assetId, assetTypeId) => {
+				const doPreview = (assetId, assetTypeId, assetIndex) => {
+					if(assetIndex == null) assetIndex = assetCounter++;
 					const isAnim = AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1
 					const isAsset = WearableAssetTypeIds.indexOf(assetTypeId) !== -1
 					if(!isAnim && !isAsset && assetTypeId !== 32) return;
 
 					if(assetTypeId === 32) {
 						AssetCache.loadText(assetId, text => text.split(";").forEach(itemId => {
+							const childIndex = assetCounter++
 							fetch(`//api.roblox.com/marketplace/productinfo?assetId=${itemId}`).then(async response => {
 								const json = await response.json()
-								doPreview(itemId, json.AssetTypeId)
+								doPreview(itemId, json.AssetTypeId, childIndex)
 							})
 						}))
 
@@ -629,7 +632,7 @@ pageInit.itemdetails = function(assetId) {
 
 						if(assetTypeId === 24) {
 							preview.onInit(() => {
-								preview.addAnimation(String(assetId), assetId)
+								preview.addAnimation(String(assetId), assetId, assetIndex)
 							})
 						} else {
 							preview.onInit(() => {
@@ -647,7 +650,7 @@ pageInit.itemdetails = function(assetId) {
 											const animId = RBXParser.parseContentUrl(anim.AnimationId)
 											if(!animId) return;
 
-											preview.addAnimation(name, animId)
+											preview.addAnimation(name, animId, assetIndex)
 										})
 									})
 								})

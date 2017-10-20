@@ -213,39 +213,46 @@ const RBXPreview = (() => {
 
 			this.dropdown.$find("[data-bind='label']").textContent = anim.name
 
-			if(anim.cached) {
-				this.playAnimation(anim.cached)
-			} else {
-				if(!anim.promise) anim.promise = new Promise(resolve => AssetCache.loadAnimation(anim.assetId, resolve))
+			if(!anim.promise) anim.promise = new Promise(resolve => AssetCache.loadAnimation(anim.assetId, resolve));
 
-				this.stopAnimation()
-				anim.promise.then(data => {
-					if(!data) return;
-					anim.cached = data
+			this.stopAnimation()
+			anim.promise.then(data => {
+				if(this.selectedAnimation !== index) return;
+				if(matchPlayerType) {
+					const R15BodyPartNames = [
+						"LeftFoot", "LeftHand", "LeftLowerArm", "LeftLowerLeg", "LeftUpperArm", "LeftUpperLeg", "LowerTorso",
+						"RightFoot", "RightHand", "RightLowerArm", "RightLowerLeg", "RightUpperArm", "RightUpperLeg", "UpperTorso"
+					]
 
-					if(matchPlayerType) {
-						const R15BodyPartNames = [
-							"LeftFoot", "LeftHand", "LeftLowerArm", "LeftLowerLeg", "LeftUpperArm", "LeftUpperLeg", "LowerTorso",
-							"RightFoot", "RightHand", "RightLowerArm", "RightLowerLeg", "RightUpperArm", "RightUpperLeg", "UpperTorso"
-						]
-
-						const isR15 = R15BodyPartNames.some(x => x in data.keyframes)
-						this.setPlayerType(isR15 ? "R15" : "R6")
-					}
-
-					this.playAnimation(data)
-				})
-			}
+					const isR15 = R15BodyPartNames.some(x => x in data.keyframes)
+					this.setPlayerType(isR15 ? "R15" : "R6")
+				}
+				
+				this.playAnimation(data)
+			})
 		}
 
-		addAnimation(name, assetId) {
-			this.animList.push({ name, assetId })
+		addAnimation(name, assetId, groupIndex) {
+			const group = groupIndex || 0
+			const index = this.animList.length
+			this.animList[index] = { name, assetId }
 
 			const menu = this.dropdown.$find(".dropdown-menu")
-			menu.append(html`<li data-id=${this.animList.length - 1}><a href=#>${name}</a></li>`)
-			if(menu.children.length === 2) this.dropdown.style.display = "";
+			const elem = html`<li><a href=#>${name}</a></li>`
+			elem.dataset.id = index
+			elem.dataset.group = group
 
-			if(this.animList.length === 1 && this.scene) this.selectAnimation(0, true);
+			if(menu.children.length) {
+				let prev = menu.lastElementChild
+				while(prev && prev.dataset.group > group) prev = prev.previousSibling;
+				if(prev) prev.after(elem);
+				else menu.prepend(elem);
+			} else {
+				menu.append(elem)
+			}
+
+			if(index === 1) this.dropdown.style.display = "";
+			if(index === 0 && this.selectedAnimation == null && this.scene) this.selectAnimation(0, true);
 		}
 	}
 
