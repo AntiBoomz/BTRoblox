@@ -1,14 +1,9 @@
 "use strict"
 
 const RBXScene = (() => {
-	const components = [
-		"js/scene/Controls.js",
-		"js/scene/Avatar.js"
-	]
-
 	let isReady = false
 	const componentsReady = new Promise(resolve => {
-		execScripts(components, () => {
+		execScripts(["js/scene/Avatar.js"], () => {
 			RBXScene.Avatar.ready(() => {
 				isReady = true
 				resolve(RBXScene)
@@ -16,12 +11,62 @@ const RBXScene = (() => {
 		})
 	})
 
+	const PCSS = `
+	#define NUM_SAMPLES 17
+	#define NUM_RINGS 11
+
+	vec2 poissonDisk[NUM_SAMPLES];
+	void initPoissonSamples( const in vec2 randomSeed ) {
+		float ANGLE_STEP = PI2 * float( NUM_RINGS ) / float( NUM_SAMPLES );
+		float INV_NUM_SAMPLES = 1.0 / float( NUM_SAMPLES );
+		// jsfiddle that shows sample pattern: https://jsfiddle.net/a16ff1p7/
+		float angle = rand( randomSeed ) * PI2;
+		float radius = INV_NUM_SAMPLES;
+		float radiusStep = radius;
+		for( int i = 0; i < NUM_SAMPLES; i ++ ) {
+			poissonDisk[i] = vec2( cos( angle ), sin( angle ) ) * pow( radius, 0.75 );
+			radius += radiusStep;
+			angle += ANGLE_STEP;
+		}
+	}
+
+	float PCSS ( sampler2D shadowMap, vec4 coords ) {
+		vec2 uv = coords.xy;
+		float zReceiver = coords.z; // Assumed to be eye-space z in this code
+		initPoissonSamples( uv );
+
+		float filterRadius = .075 / zReceiver;
+		int sum = 0;
+		vec2 from;
+		vec2 to = poissonDisk[0];
+		vec2 diff;
+		for(int i = 1; i < NUM_SAMPLES; i++) {
+			from = to;
+			to = poissonDisk[i];
+			for(int j = 0; j < 5; j++) {
+				vec2 step = (from + (to-from) * (float(j) / 5.0)) * filterRadius;
+				float depth = unpackRGBAToDepth( texture2D( shadowMap, uv + step ) );
+				if(zReceiver > depth) sum++;
+	
+				float depth2 = unpackRGBAToDepth( texture2D( shadowMap, uv + -step.yx ) );
+				if(zReceiver > depth2) sum++;
+			}
+		}
+
+		if(sum == 0) return 1.0;
+		return 1.0 - float(sum) / (2.0 * float(NUM_SAMPLES * 5));
+	}
+	`
+
+	const PCSS_GET = `
+			return PCSS( shadowMap, shadowCoord );
+			`
+
 	class Scene {
 		constructor() {
 			assert(isReady, "Not ready yet")
 
 			this._prevRes = { width: -1, height: -1 }
-			this._updateListeners = []
 
 			this.cameraMinZoom = 5
 			this.cameraMaxZoom = 15
@@ -32,44 +77,37 @@ const RBXScene = (() => {
 			this.isDragging = false
 
 			const renderer = this.renderer = new THREE.WebGLRenderer({
-				antialias: true,
-				alpha: true
+				antialias: true
 			})
-			renderer.shadowMap.type = THREE.BasicShadowMap
+			renderer.setClearColor(0xFFFFFF)
 			renderer.shadowMap.enabled = true
 
 			const canvas = this.canvas = renderer.domElement
 			const scene = this.scene = new THREE.Scene()
-			const camera = this.camera = new THREE.PerspectiveCamera(60, canvas.clientWidth/canvas.clientHeight, 0.1, 1000)
-			const controls = this.controls = new RBXScene.Controls(this)
+			const camera = this.camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 1000)
 			const avatar = this.avatar = new RBXScene.Avatar()
-
-			this.update(() => avatar.animator && avatar.animator.update())
 			scene.add(avatar.model)
 
-			const ambientLight = new THREE.AmbientLight(0x909090)
+			const ambientLight = new THREE.AmbientLight(0x7F7F7F)
 			scene.add(ambientLight)
 
-			const sunLight = new THREE.DirectionalLight(0x505050)
-			sunLight.position.set(.2, .7, -.5).normalize().multiplyScalar(10)
-			sunLight.castShadow = false
+			const sunLight = new THREE.DirectionalLight(0xACACAC)
+			sunLight.position.set(-0.474891931, 0.822536945, 0.312906593).multiplyScalar(15)
+			sunLight.castShadow = true
+			sunLight.shadow.mapSize.width = 128
+			sunLight.shadow.mapSize.height = 128
+			sunLight.shadow.camera.left = -8
+			sunLight.shadow.camera.right = 8
+			sunLight.shadow.camera.bottom = -8
+			sunLight.shadow.camera.top = 8
+			sunLight.shadow.camera.near = 1
+			sunLight.shadow.camera.far = 22
 			scene.add(sunLight)
 
-			const shadowLight = new THREE.DirectionalLight(0x404040)
-			shadowLight.position.set(0, 1, 0).normalize().multiplyScalar(10)
-			shadowLight.castShadow = true
-			shadowLight.shadow.mapSize.width = 512
-			shadowLight.shadow.mapSize.height = 512
-
-			shadowLight.shadow.camera.near = 1
-			shadowLight.shadow.camera.far = 10.2
-			shadowLight.shadow.camera.left = -2.5
-			shadowLight.shadow.camera.bottom = -2.5
-			shadowLight.shadow.camera.right = 2.5
-			shadowLight.shadow.camera.top = 2.5
-
-			scene.add(shadowLight)
-
+			const light2 = new THREE.DirectionalLight(0x444444)
+			light2.position.copy(sunLight.position).negate()
+			light2.castShadow = false
+			scene.add(light2)
 
 			const stand = new THREE.Mesh(
 				new THREE.CylinderGeometry(2.5, 2.5, .1, 48),
@@ -86,19 +124,14 @@ const RBXScene = (() => {
 			)
 			ground.rotation.x = -Math.PI / 2
 			ground.position.y = -.1
-
+			ground.receiveShadow = true
 			scene.add(ground)
 
-			controls.mousedrag((moveX, moveY) => {
-				if(avatar) {
-					avatar.model.rotation.y += 2 * Math.PI * moveX / canvas.clientWidth
-				}
+			const shader = THREE.ShaderChunk.shadowmap_pars_fragment
+			THREE.ShaderChunk.shadowmap_pars_fragment = shader
+				.replace("#ifdef USE_SHADOWMAP", `#ifdef USE_SHADOWMAP ${PCSS}`)
+				.replace("#if defined( SHADOWMAP_TYPE_PCF )", `#if defined( SHADOWMAP_TYPE_PCF ) ${PCSS_GET}`)
 
-				controls.rotation.x += 2 * Math.PI * moveY / canvas.clientHeight
-				if(controls.rotation.x < -1.4) {
-					controls.rotation.x = -1.4
-				} else if(controls.rotation.x > 1.4) {
-					controls.rotation.x = 1.4
 			this.listeners = [
 				{
 					target: canvas,
