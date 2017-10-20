@@ -23,6 +23,14 @@ const RBXScene = (() => {
 			this._prevRes = { width: -1, height: -1 }
 			this._updateListeners = []
 
+			this.cameraMinZoom = 5
+			this.cameraMaxZoom = 15
+			this.cameraZoom = 10
+			this.cameraFocus = new THREE.Vector3(0, 4, 0)
+			this.cameraRotation = new THREE.Euler(.05, 0, 0, "YXZ")
+			this.prevDragEvent = null
+			this.isDragging = false
+
 			const renderer = this.renderer = new THREE.WebGLRenderer({
 				antialias: true,
 				alpha: true
@@ -91,35 +99,76 @@ const RBXScene = (() => {
 					controls.rotation.x = -1.4
 				} else if(controls.rotation.x > 1.4) {
 					controls.rotation.x = 1.4
+			this.listeners = [
+				{
+					target: canvas,
+					events: {
+						mousedown(event) {
+							if(event.button === 0) {
+								this.prevDragEvent = event
+								this.isDragging = true
+							}
+
+							event.preventDefault()
+						},
+						mousewheel(event) {
+							const deltaY = event.deltaY
+
+							if(deltaY > 0) {
+								this.cameraZoom = Math.min(this.cameraMaxZoom, this.cameraZoom + 1)
+							} else if(deltaY < 0) {
+								this.cameraZoom = Math.max(this.cameraMinZoom, this.cameraZoom - 1)
+							}
+
+							event.preventDefault()
+						},
+						contextmenu(event) {
+							event.preventDefault()
+						}
+					}
+				},
+				{
+					target: window,
+					events: {
+						mousemove(event) {
+							if(!this.isDragging) return;
+							const moveX = event.clientX - this.prevDragEvent.clientX
+							const moveY = event.clientY - this.prevDragEvent.clientY
+							this.prevDragEvent = event
+
+							const rotX = this.cameraRotation.x + 2 * Math.PI * moveY / this.canvas.clientHeight
+							this.cameraRotation.x = Math.max(-1.4, Math.min(1.4, rotX))
+							this.cameraRotation.y -= 2 * Math.PI * moveX / this.canvas.clientWidth
+						},
+						mouseup(event) {
+							if(!this.isDragging) return;
+
+							if(event.button === 0) {
+								this.isDragging = false
+							}
+						},
+						resize() {
+							const width = this.canvas.clientWidth
+							const height = this.canvas.clientHeight
+
+							this.renderer.setSize(width, height)
+
+							this.camera.aspect = width / height
+							this.camera.updateProjectionMatrix()
+						}
+					}
 				}
+			]
+
+			this.listeners.forEach(x => {
+				Object.entries(x.events).forEach(([eventName, fn]) => {
+					const bound = x.events[eventName] = fn.bind(this)
+					x.target.addEventListener(eventName, bound)
+				})
 			})
-
-			controls.zoom = 10
-			const minZoom = 5
-			const maxZoom = 15
-			controls.mousewheel((deltaX, deltaY) => {
-				if(deltaY > 0) {
-					controls.zoom = Math.min(maxZoom, controls.zoom + 1)
-				} else if(deltaY < 0) {
-					controls.zoom = Math.max(minZoom, controls.zoom - 1)
-				}
-			})
-
-			this.oncanvasresize = () => {
-				const width = canvas.clientWidth
-				const height = canvas.clientHeight
-
-				renderer.setSize(width, height)
-
-				camera.aspect = width / height
-				camera.updateProjectionMatrix()
-			}
-
-			window.addEventListener("resize", this.oncanvasresize)
 		}
 
-
-		_update() {
+		update() {
 			const parent = this.canvas.parentNode
 			if(parent) {
 				const width = parent.clientWidth
@@ -131,33 +180,39 @@ const RBXScene = (() => {
 					res.height = height
 
 					this.renderer.setSize(width, height)
-					this.camera.aspect = height == 0 ? 0 : width / height
+					this.camera.aspect = height === 0 ? 0 : width / height
 					this.camera.updateProjectionMatrix()
 				}
 			}
 
-			for(let i = 0, l = this._updateListeners.length; i < l; i++) {
-				this._updateListeners[i]()
+			if(this.avatar && this.avatar.animator) {
+				this.avatar.animator.update()
+			}
+
+			{
+				const cameraDir = new THREE.Vector3(0, 0, 1).applyEuler(this.cameraRotation)
+				this.camera.position.copy(this.cameraFocus).addScaledVector(cameraDir, -this.cameraZoom)
+
+				const groundDiff = .05 - this.camera.position.y
+				if(cameraDir.y > 0 && groundDiff > 0) {
+					this.camera.position.addScaledVector(cameraDir, groundDiff / cameraDir.y)
+				}
+
+				this.camera.lookAt(this.cameraFocus)
 			}
 
 			this.renderer.render(this.scene, this.camera)
 		}
 
-		update(fn) {
-			if(arguments.length > 0) {
-				assert(typeof fn === "function", "Listener should be a function")
-				this._updateListeners.push(fn)
-				return;
-			}
-
-			console.log("Manual")
-			this._update()
-		}
-
 		remove() {
 			if(this.started) this.stop();
 			this.canvas.remove()
-			window.removeEventListener("resize", this.oncanvasresize)
+
+			this.listeners.forEach(x => {
+				Object.entries(x.events).forEach(([eventName, fn]) => {
+					x.target.addEventListener(eventName, fn)
+				})
+			})
 		}
 
 		start() {
@@ -167,8 +222,7 @@ const RBXScene = (() => {
 			if(!this.avatar.hasInit) this.avatar.init();
 
 			const innerUpdate = () => {
-				this._update()
-				cancelAnimationFrame(this._afId)
+				this.update()
 				this._afId = requestAnimationFrame(innerUpdate)
 			}
 
@@ -178,6 +232,7 @@ const RBXScene = (() => {
 		stop() {
 			assert(this.started, "Already stopped")
 			this.started = false
+
 			cancelAnimationFrame(this._afId)
 			delete this._afId
 		}
