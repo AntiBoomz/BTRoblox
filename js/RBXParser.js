@@ -794,11 +794,13 @@ const RBXParser = (() => {
 			const name = pose.Name
 			const cf = pose.CFrame
 			if(!this.result.keyframes[name]) this.result.keyframes[name] = [];
-
+			
 			this.result.keyframes[name].push({
 				time: keyframe.Time,
 				pos: [ cf[0], cf[1], cf[2] ],
-				rot: AnimationParser.CFrameToQuat(cf)
+				rot: AnimationParser.CFrameToQuat(cf),
+				easingdir: pose.EasingDirection,
+				easingstyle: pose.EasingStyle
 			})
 
 			pose.Children.forEach(child => this.parsePose(child, keyframe))
