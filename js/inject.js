@@ -316,7 +316,7 @@
 					}, ".btr-server-input")
 				}
 
-				if(Roblox.FriendsRunningGameInstances) createPager(Roblox.FriendsRunningGameInstances, true);
+			//	if(Roblox.FriendsRunningGameInstances) createPager(Roblox.FriendsRunningGameInstances, true);
 				if(Roblox.AllRunningGameInstances) createPager(Roblox.AllRunningGameInstances);
 			} else if(page === "develop") {
 				if(Roblox.BuildPage) {
