@@ -69,7 +69,7 @@ const RBXScene = (() => {
 			this._prevRes = { width: -1, height: -1 }
 
 			this.cameraMinZoom = 5
-			this.cameraMaxZoom = 15
+			this.cameraMaxZoom = 25
 			this.cameraZoom = 10
 			this.cameraFocus = new THREE.Vector3(0, 4, 0)
 			this.cameraRotation = new THREE.Euler(.05, 0, 0, "YXZ")
@@ -137,9 +137,10 @@ const RBXScene = (() => {
 					target: canvas,
 					events: {
 						mousedown(event) {
-							if(event.button === 0) {
+							if(!this.isDragging && (event.button === 0 || event.button === 2)) {
 								this.prevDragEvent = event
 								this.isDragging = true
+								this.dragButton = event.button
 							}
 
 							event.preventDefault()
@@ -175,9 +176,14 @@ const RBXScene = (() => {
 						},
 						mouseup(event) {
 							if(!this.isDragging) return;
-
-							if(event.button === 0) {
+							if(event.button === this.dragButton) {
 								this.isDragging = false
+							}
+						},
+						contextmenu(event) {
+							if(event.button === 2 && event.button === this.dragButton) {
+								this.dragButton = null
+								event.preventDefault()
 							}
 						},
 						resize() {
