@@ -264,210 +264,139 @@ Date.prototype.format = function(format) {
 
 
 function CreateObserver(target, params) {
-	var options = Object.assign({ childList: true, subtree: true }, params || {})
-	var connected = false
-	var observeList = []
-
-	if(!options.permanent) {
-		onDocumentReady(() => {
-			observeList = []
-		})
-	}
+	const options = Object.assign({ childList: true, subtree: true }, params || {})
+	const isPermanent = !!options.permanent
+	let observeList = []
+	let connected = false
 
 
-	var mo = new MutationObserver(mutations => {
-		for(var index=0; index < observeList.length; index++) {
-			var item = observeList[index]
+	const arrayFind = Array.prototype.find
+	const arrayIndexOf = Array.prototype.indexOf
 
-			switch(item.type) {
-				case "one":
-					var elem = null
+	
+	const observer = new MutationObserver(mutations => {
+		for(let index = 0; index < observeList.length; index++) {
+			const item = observeList[index]
 
-					if(!item.filter) {
-						elem = target.querySelector(item.selector)
-					} else {
-						//var elems = target.querySelectorAll(item.selector)
-
-						for(var i=0; i < mutations.length; i++) {
-							var addedNodes = mutations[i].addedNodes
-							for(var j=0; j < addedNodes.length; j++) {
-								var node = addedNodes[j]
-								if(node.nodeType !== 1 || !node.matches(item.selector)) continue; //  || Array.prototype.indexOf.call(elems, node) === -1
-								if(!item.filter(node)) continue;
-								
-								elem = node
-								break
-							}
-
-							if(elem) break;
-						}
-					}
-
-					if(!elem) break;
-					observeList.splice(index--, 1)
-
-					if(!item.partial) {
-						try { item.callback(elem) }
-						catch(ex) { console.error("[MutationObserver]", ex) }
-					} else {
-						item.whole.result[item.index] = elem
-
-						if(--item.whole.resultsLeft === 0) {
-							try { item.whole.callback.apply(null, item.whole.result) }
-							catch(ex) { console.error("[MutationObserver]", ex) }
-						}
-					}
-				break;
-				case "all":
-					//var elems = target.querySelectorAll(item.selector)
-					//if(!elems.length) break;
-
-					for(var i=0; i < mutations.length; i++) {
-						var addedNodes = mutations[i].addedNodes
-						for(var j=0; j < addedNodes.length; j++) {
-							var node = addedNodes[j]
-							if(node.nodeType !== 1 || !node.matches(item.selector)) continue; //  || Array.prototype.indexOf.call(elems, node) === -1
-							if(item.filter && !item.filter(node)) continue;
-
-							try { item.callback(node) }
-							catch(ex) { console.error("[MutationObserver]", ex) }
-						}
-					}
-				break;
-			}
-		}
-
-		if(connected && observeList.length === 0) {
-			connected = false
-			mo.disconnect()
-		}
-	})
-
-	function firstCheck(item) {
-		switch(item.type) {
-			case "one":
-				var elem
-
+			if(!item.persistent) {
+				let elem
 				if(item.filter) {
-					var elems = target.querySelectorAll(item.selector)
-
-					for(var i=0; i < elems.length; i++) {
-						if(item.filter(elems[i])) {
-							elem = elems[i]
-							break
-						}
-					}
+					elem = arrayFind.call(target.querySelectorAll(item.selector), x => item.filter(x))
 				} else {
 					elem = target.querySelector(item.selector)
 				}
 
 				if(elem) {
-					if(!item.partial) {
-						try { item.callback(elem) }
+					observeList.splice(index--, 1)
+					item.whole.result[item.index] = elem
+
+					if(--item.whole.resultsLeft === 0) {
+						try { item.whole.callback.apply(null, item.whole.result) }
 						catch(ex) { console.error("[MutationObserver]", ex) }
-					} else {
-						item.whole.result[item.index] = elem
-
-						if(--item.whole.resultsLeft === 0) {
-							try { item.whole.callback.apply(null, item.whole.result) }
-							catch(ex) { console.error("[MutationObserver]", ex) }
-						}
 					}
-
-					return true
-				}
-				break
-			case "all":
-				var elems = target.querySelectorAll(item.selector)
-
-				for(var i=0; i < elems.length; i++) {
-					if(item.filter && !item.filter(elems[i])) continue;
-
-					try { item.callback(elems[i]) }
-					catch(ex) { console.error("[MutationObserver]", ex) }
-				}
-				break
-		}
-
-		return false
-	}
-
-
-	return {
-		one() {
-			var selector = arguments[0]
-			var filter, callback
-
-			if(arguments.length === 2) {
-				callback = arguments[1]
-			} else if(arguments.length === 3) {
-				filter = arguments[1]
-				callback = arguments[2]
-			}
-
-			var items = []
-
-			if(Array.isArray(selector)) {
-				var whole = {
-					result: [],
-					resultsLeft: selector.length,
-					callback: callback
-				}
-
-				for(var i=0; i < selector.length; i++) {
-					var item = {
-						whole, filter,
-						type: "one",
-						partial: true,
-						selector: selector[i],
-						index: i
-					}
-
-					items.push(item)
 				}
 			} else {
-				var item = {
-					selector, filter, callback,
-					type: "one"
-				}
+				const elems = target.querySelectorAll(item.selector)
 
-				items.push(item)
+				mutations.forEach(mut => {
+					mut.addedNodes.forEach(node => {
+						if(arrayIndexOf.call(elems, node) !== -1) {
+							if(item.filter && !item.filter(node)) return;
+
+							try { item.callback(node) }
+							catch(ex) { console.error("[MutationObserver]", ex) }
+						}
+					})
+				})
+			}
+		}
+
+		if(connected && observeList.length === 0) {
+			connected = false
+			observer.disconnect()
+		}
+	})
+
+	return {
+		one(selectors, filter, callback) {
+			if(!callback) {
+				callback = filter
+				filter = null
 			}
 
-			items.forEach(item => !firstCheck(item) && observeList.push(item))
+			if(!Array.isArray(selectors)) {
+				selectors = [selectors]
+			}
 
+			const whole = {
+				callback,
+				result: [],
+				resultsLeft: selectors.length
+			}
+
+			selectors.forEach((selector, index) => {
+				const item = {
+					whole, filter, selector, index,
+					persistent: false
+				}
+
+				let elem
+				if(item.filter) {
+					elem = arrayFind.call(target.querySelectorAll(item.selector), x => item.filter(x))
+				} else {
+					elem = target.querySelector(item.selector)
+				}
+
+				if(elem) {
+					item.whole.result[item.index] = elem
+
+					if(--item.whole.resultsLeft === 0) {
+						try { item.whole.callback.apply(null, item.whole.result) }
+						catch(ex) { console.error("[MutationObserver]", ex) }
+					}
+				} else {
+					if(!isPermanent && document.readyState !== "loading") {
+						console.warn("observer.one called when not loading and not permanent, not listening")
+						return
+					}
+					observeList.push(item)
+				}
+			})
+			
 			if(!connected && observeList.length > 0) {
 				connected = true
-				mo.observe(target, options)
+				observer.observe(target, options)
 			}
 
 			return this
 		},
-		all() {
-			var selector = arguments[0]
-			var filter, callback
-
-			if(arguments.length === 2) {
-				callback = arguments[1]
-			} else if(arguments.length === 3) {
-				filter = arguments[1]
-				callback = arguments[2]
+		all(selector, filter, callback) {
+			if(!callback) {
+				callback = filter
+				filter = null
+			}
+			
+			const item = {
+				selector, filter, callback,
+				persistent: true
 			}
 
-			var item = {
-				type: "all",
+			const elems = target.querySelectorAll(item.selector)
+			elems.forEach(elem => {
+				if(item.filter && !item.filter(elem)) return;
+				try { item.callback(elem) }
+				catch(ex) { console.error("[MutationObserver]", ex) }
+			})
 
-				selector: selector,
-				filter: filter,
-				callback: callback
-			}
-
-			firstCheck(item)
-			observeList.push(item)
-
-			if(!connected) {
-				connected = true
-				mo.observe(target, options)
+			if(!isPermanent && document.readyState !== "loading") {
+				console.warn("observer.all called when not loading and not permanent, not listening")
+				return
+			} else {
+				observeList.push(item)
+				if(!connected) {
+					connected = true
+					observer.observe(target, options)
+				}
 			}
 
 			return this
