@@ -1,40 +1,33 @@
 "use strict"
 
 const Blogfeed = (() => {
-	const feedUrl = "https://blog.roblox.com/feed/"
-	let cachedFeedRaw
+	// "https://blog.roblox.com/feed/"
+	const feedUrl = "https://blog.roblox.com/wp-json/wp/v2/posts?per_page=3&context=embed"
 	let cachedFeed
+	let lastRequest = 0
+
+	const htmlStripper = document.createElement("div")
+	const striphtml = html => (htmlStripper.innerHTML=html,htmlStripper.textContent)
 
 	return {
 		get(cb) {
-			fetch(feedUrl).then(response => {
-				response.text().then(feed => {
-					if(feed === cachedFeedRaw) return;
-					cachedFeedRaw = feed
+			if(Date.now() - lastRequest > 3000) {
+				lastRequest = Date.now()
+				fetch(feedUrl).then(response => {
+					response.json().then(json => {
+						cachedFeed = json.map(post => ({
+							url: post.link,
+							date: post.date,
+							title: striphtml(post.title.rendered).trim(),
+							desc: striphtml(post.excerpt.rendered).trim()
+						}))
 
-					const responseData = []
-					const doc = new DOMParser().parseFromString(feed, "text/xml")
-					const items = doc.querySelectorAll("item")
 
-					for(let i = 0; i < 3; i++) {
-						const item = items[i]
-						const url = item.querySelector("link").textContent
-						const title = item.querySelector("title").textContent
-						const published = Date.parse(item.querySelector("pubDate").textContent)
-						const descDoc = new DOMParser().parseFromString(item.querySelector("description").textContent, "text/html")
-						descDoc.querySelector("p:last-child").remove()
-						const desc = descDoc.body.textContent.trim()
-						const creator = item.querySelector("creator").textContent
-
-						responseData.push({ url, title, published, desc, creator })
-					}
-
-					cachedFeed = responseData
-					STORAGE.set({ cachedBlogFeed: cachedFeed })
-
-					if(typeof cb === "function") cb(cachedFeed);
+						STORAGE.set({ cachedBlogFeed: cachedFeed })
+						if(typeof cb === "function") cb(cachedFeed);
+					})
 				})
-			})
+			}
 
 			return cachedFeed
 		}

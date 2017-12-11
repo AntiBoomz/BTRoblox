@@ -391,7 +391,7 @@ function Init() {
 			blogfeed.innerHTML = ""
 
 			data.forEach(item => {
-				const relativeDate = new Date(item.published).relativeFormat("(z 'ago')")
+				const relativeDate = new Date(item.date).relativeFormat("(z 'ago')")
 				blogfeed.append(html`
 				<a class="btr_feed" href="${item.url}">
 					<div class="btr_feedtitle">
@@ -399,8 +399,8 @@ function Init() {
 						<span class="btr_feeddate">${relativeDate}</span>
 					</div>
 					<div class="btr_feeddesc">${item.desc}</div>
-					<div class="btr_feedcreator">by ${item.creator}</div>
 				</a>`)
+				// <div class="btr_feedcreator">by ${item.creator}</div>
 			})
 
 			blogfeed.style.display = ""
