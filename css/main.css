@@ -1,46 +1,11 @@
 /* Top bar */
 
-#header.rbx-header {
-	min-width: 500px;
-}
-
-#header.rbx-header .rbx-navbar.col-md-4 {
-	width: 30%;
-	min-width: 400px;
-}
-
-#header.rbx-header .rbx-navbar>li {
-	width: 20%;
-}
-
-#header.rbx-header .rbx-navbar-right {
-	width: 280px;
-}
-
-@media (max-width: 1150px) and (min-width: 992px) {
-	#header.rbx-header .rbx-navbar-search {
-		width: calc(60% - 450px);
-	}
-}
-
-@media (max-width: 991px) and (min-width: 544px) {
-	#header.rbx-header .rbx-navbar-right {
-		width: 250px;
-	}
-
-	#header.rbx-header .rbx-navbar-search {
-		width: calc(65% - 220px); /*32.5%;*/
-	}
-}
-
-@media (max-width: 543px) {
-	.rbx-header .rbx-navbar-right .rbx-navbar-icon-group .navbar-icon-item {
-		width: 16%;
-	}
+#header .rbx-navbar {
+	display: flex;
 }
 
 #header .rbx-nav-collapse .rbx-nav-notification {
-	display:none;
+	display: none;
 }
 
 
@@ -170,160 +135,104 @@ a:hover .icon-nav-message-btr {
 	margin:-4px -4px 0 0;
 }
 
-/* Ads */
-
-/*
-.btr-hide-ads .ads-container,
-.btr-hide-ads .abp, 
-.btr-hide-ads .abp-spacer, 
-.btr-hide-ads .abp-container,
-.btr-hide-ads .top-abp-container,
-.btr-hide-ads #AdvertisingLeaderboard,
-.btr-hide-ads #AdvertisementRight,
-.btr-hide-ads #MessagesAdSkyscraper,
-.btr-hide-ads .Ads_WideSkyscraper,
-.btr-hide-ads iframe[src*="roblox.com/userads/"],
-.btr-hide-ads .profile-ads-container,
-.btr-hide-ads #ad {
-	display:none !important;
-}
-*/
-
-
-/* 3d avatar stuff */
-
-.btr-3d-avatar-modebtns {
-	position:absolute;
-	height:20px;
-	right:10px;
-	top:10px;
-	overflow:hidden;
-	border-radius:3px;
-}
-
-.btr-3d-avatar-modebtns btn {
-	display:block;
-	height:20px;
-	padding:0 4px;
-	margin-top:0px;
-	background:rgb(120,120,120);
-	color:rgb(170,170,170);
-	float:right;
-	cursor:pointer;
-}
-
-.btr-3d-avatar-modebtns btn:hover {
-	background:rgb(140,140,140);
-}
-
-.btr-3d-avatar-modebtns btn.selected {
-	background:rgb(170,170,170);
-	color:white;
-}
-
 /* Sidebar Blog Feed */
 
 .btr_feed {
-	display:block;
-	font-size:11px;
-	padding-left:8px;
-	padding-right:4px;
-	padding-top:4px;
-	padding-bottom:4px;
-	background-color:transparent;
-	text-decoration:none;
-	overflow:hidden;
+	display: block;
+	font-size: 12px;
+	padding-left: 8px;
+	padding-right: 4px;
+	padding-top: 4px;
+	padding-bottom: 4px;
+	background-color: transparent;
+	text-decoration: none;
+	overflow: hidden;
 }
 
 .btr_feed:hover {
-	background:rgba(0,0,0,0.08);
+	background: rgba(0,0,0,0.08);
 }
 
 .btr_feedcreator, .btr_feeddate {
-	color:#777;
-	font-size:10px;
-	font-weight:normal;
-	margin:0 !important;
-}
-
-.btr_feedactdate {
-	display:none !important;
+	color: #777;
+	font-size: 10px;
+	font-weight: normal;
+	margin: 0 !important;
 }
 
 .btr_feedtitle {
-	color:#555;
-	font-weight:bold;
-	line-height:12px;
-	font-size:11px;
+	color: #555;
+	font-weight: bold;
+	line-height: 12px;
+	font-size: 12px;
 }
 
 .btr_feeddesc {
-	overflow:hidden;
-	max-height:0;
-	width:100%;
-	padding-right:25px; /* Yay for haxy hiding of scrollbars!*/
-	color:#444;
-	font-weight:300;
-	transition:max-height 0.4s;
-	margin-top:4px;
-	margin-bottom:0px;
-	font-size:11px;
+	overflow: hidden;
+	max-height: 0;
+	width: 100%;
+	color: #444;
+	font-weight: 300;
+	transition: max-height 0.4s;
+	margin-top: 4px;
+	margin-bottom: 0px;
+	font-size: 11px;
 }
 
 .btr_feed:hover > .btr_feeddesc {
-	max-height:180px;
-	margin-bottom:4px;
+	max-height: 180px;
+	margin-bottom: 4px;
 }
 
 .btr_grouprank {
-	color:#222;
-	font-size:12px;
-	font-weight:600;
+	color: #222;
+	font-size: 12px;
+	font-weight: 600;
 }
 
 
 /* Navigation */
 
 .btr_icon-nav-friend {
-	background-position:0 -28px;
+	background-position: 0 -28px;
 }
 
 a:hover .btr_icon-nav-friend {
-	background-position:-28px -28px;
+	background-position: -28px -28px;
 }
 
 .btr_icon-nav-message {
-	background-position:0 0;
+	background-position: 0 0;
 }
 
 a:hover .btr_icon-nav-message {
-	background-position:-28px 0;
+	background-position: -28px 0;
 }
 
 .btr_icon-nav-bc {
-	background-position:0 -56px;
+	background-position: 0 -56px;
 }
 
 a:hover .btr_icon-nav-bc {
-	background-position:-28px -56px;
+	background-position: -28px -56px;
 }
 
 #nav-bc:hover {
-	color:#00a2ff;
+	color: #00a2ff;
 }
 
 .rbx-scrollbar li span[class^="btr_icon"], .rbx-header .rbx-navbar-icon-group li span[class^="btr_icon"] {
-	vertical-align:middle;
-	margin:0;
+	vertical-align: middle;
+	margin: 0;
 }
 
-.btr_icon-nav-friend,.btr_icon-nav-message,.btr_icon-nav-bc {
-	background-image:url('chrome-extension://__MSG_@@extension_id__/res/nav2.svg');
-	background-repeat:no-repeat;
-	background-size:auto auto;
-	width:28px;
-	height:28px;
-	display:inline-block;
+.btr_icon-nav-friend, .btr_icon-nav-message, .btr_icon-nav-bc {
+	background-image: url('chrome-extension://__MSG_@@extension_id__/res/nav2.svg');
+	background-repeat: no-repeat;
+	background-size: auto auto;
+	width: 28px;
+	height: 28px;
+	display: inline-block;
 }
 
 .btr-nav-notif {
@@ -347,14 +256,6 @@ a:hover .btr_icon-nav-bc {
 	border: 2px solid #0074bd;
 }
 
-.btr_hidden {
-	display:none !important;
-}
-
-.btr_downloadLink {
-	margin-left:6px;
-}
-
 
 
 /* PAGER */
@@ -364,64 +265,25 @@ a:hover .btr_icon-nav-bc {
 }
 
 .btr-pager-holder input.pager-cur {
-	width:32px;
-	height:28px;
+	width: 32px;
+	height: 28px;
 
-	background-color:white;
-	border:1px solid #B8B8B8;
-	border-radius:3px;
+	background-color: white;
+	border: 1px solid #B8B8B8;
+	border-radius: 3px;
 
-	margin:0;
-	margin-right:6px;
+	margin: 0;
+	margin-right: 6px;
+	padding: 0;
 
-	padding:0;
-
-	text-align:center;
+	text-align: center;
 }
 
 /* Backup from roblox's css */
-.btr-pager-holder { box-sizing:border-box; font-size:16px; }
-.btr-pager-holder * { box-sizing:inherit; }
+.btr-pager-holder {box-sizing:border-box;font-size:16px;}
+.btr-pager-holder * {box-sizing:inherit;}
 .btr-pager-holder .pager{padding-left:0;margin:20px 0;list-style:none;text-align:center;}.btr-pager-holder .pager:before,.btr-pager-holder .pager:after{content:" ";display:table;}.btr-pager-holder .pager:after{clear:both;}.btr-pager-holder .pager li{float:left;}.btr-pager-holder .pager li a{margin:0 9px 0 0;height:32px;width:32px;color:#191919;padding:3px 0 0 0;text-align:center;}.btr-pager-holder .pager li span{border:0 none;padding:5px 5px 0 0;display:inline-block;}.btr-pager-holder .pager .first,.btr-pager-holder .pager .last,.btr-pager-holder .pager .pager-prev,.btr-pager-holder .pager .pager-next{-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}.btr-pager-holder .pager .first a,.btr-pager-holder .pager .last a,.btr-pager-holder .pager .pager-prev a,.btr-pager-holder .pager .pager-next a{margin-left:0;background-color:#fff;border:1px solid #B8B8B8;border-radius:3px;display:inline-block;}.btr-pager-holder .pager .first a:hover,.btr-pager-holder .pager .last a:hover,.btr-pager-holder .pager .pager-prev a:hover,.btr-pager-holder .pager .pager-next a:hover{background-color:#F2F2F2;}.btr-pager-holder .pager .first a:hover span,.btr-pager-holder .pager .last a:hover span,.btr-pager-holder .pager .pager-prev a:hover span,.btr-pager-holder .pager .pager-next a:hover span{background-color:#F2F2F2;}.btr-pager-holder .pager .first a span,.btr-pager-holder .pager .last a span,.btr-pager-holder .pager .pager-prev a span,.btr-pager-holder .pager .pager-next a span{background-color:#fff;background-size:40px auto;width:20px;height:20px;}.btr-pager-holder .pager .pager-cur a{border:0 none;}.btr-pager-holder .pager .first span{background-position:0 -820px;}.btr-pager-holder .pager .last span{background-position:0 -800px;}.btr-pager-holder .pager .pager-prev span{background-position:0 -300px;}.btr-pager-holder .pager .pager-next span{background-position:0 -280px;}.btr-pager-holder .pager .pager-cur a{border:1px solid #B8B8B8;}.btr-pager-holder .pager .pager-total a:hover{border:0 none;}.btr-pager-holder .pager .disabled>a,.btr-pager-holder .pager .disabled>a:hover,.btr-pager-holder .pager .disabled>a:focus{cursor:default;background-color:#F2F2F2;border:1px solid #E3E3E3;}.btr-pager-holder .pager .disabled>a span,.btr-pager-holder .pager .disabled>a:hover span,.btr-pager-holder .pager .disabled>a:focus span{background-color:#F2F2F2;}.btr-pager-holder .pager .disabled>a .icon-left,.btr-pager-holder .pager .disabled>a:hover .icon-left,.btr-pager-holder .pager .disabled>a:focus .icon-left{background-position:0 -960px;}.btr-pager-holder .pager .disabled>a .icon-right,.btr-pager-holder .pager .disabled>a:hover .icon-right,.btr-pager-holder .pager .disabled>a:focus .icon-right{background-position:0 -940px;}.btr-pager-holder .pager .disabled>a .icon-first-page,.btr-pager-holder .pager .disabled>a:hover .icon-first-page,.btr-pager-holder .pager .disabled>a:focus .icon-first-page{background-position:0 -1000px;}.btr-pager-holder .pager .disabled>a .icon-last-page,.btr-pager-holder .pager .disabled>a:hover .icon-last-page,.btr-pager-holder .pager .disabled>a:focus .icon-last-page{background-position:0 -980px;}.btr-pager-holder{text-align:center;width:100%;}.btr-pager-holder:before,.btr-pager-holder:after{content:" ";display:table;}.btr-pager-holder:after{clear:both;}.btr-pager-holder .pager{display:inline-block;margin:0 auto;width:auto;}
 
-/* Mediaplayer */
-
-
-body .btr-MediaPlayerControls {
-	cursor: pointer;
-	position: absolute;
-	bottom: 4px;
-	right: 2px;
-
-	height: 28px;
-	width: 28px;
-}
-
-.btr-MediaPlayerControls.icon-play {
-	background-position: 0 -308px;
-	background-size: 56px auto;
-}
-.btr-MediaPlayerControls.icon-play:hover {
-	background-position: -28px -308px;
-}
-.btr-MediaPlayerControls.icon-pause {
-	background-position: 0 -336px;
-	background-size: 56px auto;
-}
-.btr-MediaPlayerControls.icon-pause:hover {
-	background-position: -28px -336px;
-}
-
-.btr-MediaPlayerControls.icon-loading,
-.btr-MediaPlayerControls.icon-loading:hover {
-	background-position: 0 -900px; /* 1260/28*height */
-	background-size: 40px auto;
-	height: 20px;
-	width: 20px;
-
-	bottom: 8px;
-	right: 6px;
-}
 
 /* Switch */
 
@@ -759,16 +621,6 @@ body .btr-MediaPlayerControls {
 	background-color: #F9F9F9;
 }
 
-/* Ew */
-
-#downloadInstallerIFrame {
-	border: none;
-}
-
-.rbx-header .age-bracket-label {
-	display: none !important;
-}
-
 /* Settings */
 
 .btr-settings-modal {
@@ -933,4 +785,14 @@ body input.btr-settings-enabled-toggle {
 
 .btr-settings-content select {
 	display: block;
+}
+
+/* Ew */
+
+#downloadInstallerIFrame {
+	border: none;
+}
+
+.rbx-header .age-bracket-label {
+	display: none !important;
 }

@@ -1416,7 +1416,7 @@ pageInit.profile = function(userId) {
 	if(!settings.profile.enabled) return;
 
 	const left = html`
-	<div class="btr-profile-col-2 btr-profile-left">
+	<div class="btr-profile-left">
 		<div class="btr-profile-about profile-about">
 			<div class="container-header"><h3>About</h3></div>
 			<div class="section-content">
@@ -1452,7 +1452,7 @@ pageInit.profile = function(userId) {
 	</div>`
 
 	const right = html`
-	<div class="btr-profile-col-2 btr-profile-right">
+	<div class="btr-profile-right">
 		<div class="placeholder-games">
 			<div class="container-header"><h3>Games</h3></div>
 			<div class="section-content">
@@ -1479,13 +1479,16 @@ pageInit.profile = function(userId) {
 	</div>`
 
 	const bottom = html`
-	<div class="btr-profile-col-1 btr-profile-bottom">
+	<div class="btr-profile-bottom">
 		<div class="placeholder-collections" style="display:none"></div>
 		<div class="placeholder-inventory" style="display:none"></div>
 	</div>`
 
 	Observer.one("body", body => body.classList.add("btr-profile"))
-	.one(".profile-container .rbx-tabs-horizontal", cont => cont.before(left, right, bottom))
+	.one(".profile-container .rbx-tabs-horizontal", cont => {
+		cont.before(left, right, bottom)
+		cont.parentNode.classList.add("btr-profile-container")
+	})
 	.one(".profile-about-content", desc => {
 		left.$find(".placeholder-desc").replaceWith(desc)
 
@@ -1674,21 +1677,21 @@ pageInit.profile = function(userId) {
 					<span class="btr-game-title">${title}</span>
 				</div>
 				<div class="btr-game-content">
-					<div class="btr-profile-col-1 btr-game-thumb-container">
+					<div class="btr-game-thumb-container">
 						<a href="${url}"><img class="btr-game-thumb"></a>
 						<a href="${url}"><img class="btr-game-icon" src="${iconThumb}"></a>
 					</div>
-					<div class="btr-profile-col-1 btr-game-desc linkify">
+					<div class="btr-game-desc linkify">
 						<span class="btr-game-desc-content">${desc}</span>
 					</div>
-					<div class="btr-profile-col-1 btr-game-info">
-						<div class="btr-profile-col-2 btr-game-playbutton-container">
+					<div class="btr-game-info">
+						<div class="btr-game-playbutton-container">
 							<div class="btr-game-playbutton VisitButton VisitButtonPlayGLI btn-primary-lg"
 								placeid="${placeId}" data-action="play" data-is-membership-level-ok="true">
 								Play
 							</div>
 						</div>
-						<div class="btr-profile-col-2 btr-game-stats"></div>
+						<div class="btr-game-stats"></div>
 					</div>
 				</div>
 			</li>`

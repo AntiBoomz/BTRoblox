@@ -294,29 +294,25 @@ function Init() {
 		const newRegex = /((?:(?:https?:\/\/)(?:[\w-]+\.)+\w{2,}|(?:[\w-]+\.)+(?:com|net|uk|org|info|tv|gg|io))(?:\/(?:[\w!$&'"()*+,\-.:;=@_~]|%[0-9A-Fa-f]{2})*)*(?:\?(?:[\w!$&'"()*+,\-.:;=@_~?/]|%[0-9A-Fa-f]{2})*)?(?:#(?:[\w!$&'"()*+,\-.:;=@_~?/]|%[0-9A-Fa-f]{2})*)?)(\b)/
 		linkify.setAttribute("data-regex", newRegex.source)
 	})
-	.one(".rbx-navbar-right-search", () => {
-		const header = $("#header.rbx-header")
-		const navbars = header.$find(".nav.rbx-navbar")
-
-		navbars.$find(".buy-robux").parentNode.remove()
-		navbars.prepend(html`<li><a class="nav-menu-title" href="/Home">Home</a></li>`)
-		navbars.append(html`<li><a class="nav-menu-title" href="/Forum/default.aspx">Forum</a></li>`)
-
-		loggedInUserPromise.then(userId => {
-			if(userId === -1) return;
-
-			$("#navbar-robux").after(friends)
-			friends.after(messages)
-
-			$(".rbx-popover-content[data-toggle='popover-setting']>ul")
-				.prepend(html`<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>`)
-		})
+	.one("#navbar-robux", robux => {
+		robux.after(friends)
+		friends.after(messages)
 	})
-	.one(".rbx-upgrade-now", () => {
-		$.all("#nav-home, #nav-message, #nav-forum").forEach(node => { node.parentNode.style.display = "none" })
-		$(".rbx-upgrade-now").style.display = "none"
+	.one("#navbar-setting .rbx-popover-content > ul", list => {
+		list.prepend(html`<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>`)
+	})
+	.all("#header .rbx-navbar", bar => {
+		bar.$find(".buy-robux").parentNode.remove()
+		bar.prepend(html`<li><a class="nav-menu-title" href="/Home">Home</a></li>`)
+	//	bar.append(html`<li><a class="nav-menu-title" href="/Forum/default.aspx">Forum</a></li>`)
+	})
+	.one(".rbx-upgrade-now", x => {
+		const list = x.parentNode
 
-		$("#nav-forum").parentNode.after(html`
+		list.$find("#nav-home").parentNode.remove()
+		list.$find(".rbx-upgrade-now").remove()
+
+		list.$find("#nav-blog").parentNode.before(html`
 		<li>
 			<a href="/Upgrades/BuildersClubMemberships.aspx" id="nav-bc">
 				<span class='icon-nav-bc-btr'></span>
@@ -324,18 +320,19 @@ function Init() {
 			</a>
 		</li>`)
 
-		const trade = $("#nav-trade")
+		const trade = list.$find("#nav-trade")
 		trade.href = "/My/Money.aspx"
 		trade.$find("span:not([class^='icon-nav'])").textContent = "Money"
 
-		if(settings.general.showBlogFeed) $("#nav-blog").after(blogfeed);
+		if(settings.general.showBlogFeed) list.$find("#nav-blog").after(blogfeed);
 
-		const navFriends = $("#nav-friends")
-		const navMessages = $("#nav-message")
+		const navFriends = list.$find("#nav-friends")
+		const navMessages = list.$find("#nav-message")
+		navMessages.style.display = "none"
 
 		function updateFriends() {
 			const notif = friends.$find(".btr-nav-notif")
-			const count = navFriends.getAttribute("data-count")
+			const count = navFriends.dataset.count
 
 			friends.$find("a").href = navFriends.href
 			notif.textContent = count
@@ -344,7 +341,7 @@ function Init() {
 
 		function updateMessages() {
 			const notif = messages.$find(".btr-nav-notif")
-			const count = navMessages.getAttribute("data-count")
+			const count = navMessages.dataset.count
 
 			messages.$find("a").href = navMessages.href
 			notif.textContent = count
