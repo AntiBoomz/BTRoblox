@@ -1,14 +1,13 @@
 (function() {
-	var ContentJS = {
-		send: function(action) {
-			document.dispatchEvent(new CustomEvent("content." + action, {detail: Array.prototype.slice.call(arguments, 1)}))
+	const ContentJS = {
+		send(action, ...args) {
+			document.dispatchEvent(
+				new CustomEvent("content." + action, { detail: args })
+			)
 		},
-		listen: function(actionList,callback) {
-			var realCallback = function(event) {
-				callback.apply(this, event.detail)
-			}
-			actionList.split(" ").forEach(function(action) {
-				document.addEventListener("inject."+action,realCallback)
+		listen(actionList, callback) {
+			actionList.split(" ").forEach(action => {
+				document.addEventListener("inject." + action, ev => callback(...ev.detail))
 			})
 		}
 	}

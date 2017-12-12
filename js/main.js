@@ -94,7 +94,7 @@ function Init() {
 	</li>`
 
 	const blogfeed = html`
-	<div id="btr_blogfeed" style="display:none;">Blog feed enabled</div>`
+	<div id="btr-blogfeed" style="display:none;">Blog feed enabled</div>`
 
 	const settingsDiv = html`
 	<div class="btr-settings-modal">
@@ -391,16 +391,15 @@ function Init() {
 			blogfeed.innerHTML = ""
 
 			data.forEach(item => {
-				const relativeDate = new Date(item.date).relativeFormat("(z 'ago')")
 				blogfeed.append(html`
-				<a class="btr_feed" href="${item.url}">
-					<div class="btr_feedtitle">
+				<a class="btr-feed" href="${item.url}">
+					<div class="btr-feedtitle">
 						${item.title}
-						<span class="btr_feeddate">${relativeDate}</span>
+						<span class="btr-feeddate">${$.dateSince(item.date)} ago</span>
 					</div>
-					<div class="btr_feeddesc">${item.desc}</div>
+					<div class="btr-feeddesc">${item.desc}</div>
 				</a>`)
-				// <div class="btr_feedcreator">by ${item.creator}</div>
+				// <div class="btr-feedcreator">by ${item.creator}</div>
 			})
 
 			blogfeed.style.display = ""

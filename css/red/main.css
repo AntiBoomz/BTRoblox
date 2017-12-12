@@ -10,8 +10,7 @@ body .btr-nav-notif {
 
 html body .forum-table-header,
 html body .forum-table-header th,
-html body .forum-table-footer,
-body #btr_title {
+html body .forum-table-footer {
 	background:rgb(170,0,0);
 }
 

@@ -78,24 +78,12 @@ body .badge-container .badge-row .badge-stats-container {
 	margin-top:18px;
 }
 
-body .badge-container .badge-row.btr_notowned {
+body .badge-container .badge-row.btr-notowned {
 	opacity: .6;
 	transition: all 1s;
 }
 
-.btr_loading {
-	background: url('chrome-extension://__MSG_@@extension_id__/res/progressIndicator.gif') transparent no-repeat center;
-	position: absolute;
-	width: 52px;
-	height: 20px;
-	top: 50%;
-	left: 50%;
-	margin-left: -24px;
-	margin-top: -14px;
-	z-index: 2;
-}
-
-body .badge-container .badge-row.btr_badgeownedloading:before {
+body .badge-container .badge-row.btr-badgeownedloading:before {
 	position: absolute;
 	content: "";
 	width: 16px;

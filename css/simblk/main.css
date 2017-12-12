@@ -23,14 +23,14 @@ html .container-footer .footer-links li a:not(.privacy):hover {
 	color: rgba(255, 255, 255, 1);
 }
 
-html .btr_feedtitle,
-html .btr_feeddesc,
+html .btr-feedtitle,
+html .btr-feeddesc,
 html .container-footer .footer-links li a {
 	color: rgba(255, 255, 255, .7);
 }
 
-html .btr_feeddate, 
-html .btr_feedcreator {
+html .btr-feeddate, 
+html .btr-feedcreator {
 	color: rgba(255, 255, 255, .5);
 }
 

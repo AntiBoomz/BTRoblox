@@ -1,19 +1,39 @@
 "use strict"
 
 const $ = (() => {
-	const $ = document.querySelector.bind(document)
-	$.all = document.querySelectorAll.bind(document)
+	const $ = function(selector) { return this.find(document, selector) }
+	$.all = function(selector) { return this.findAll(document, selector) }
+		
 
-	Object.defineProperties(EventTarget.prototype, Object.getOwnPropertyDescriptors({
-		$on(eventNames, selector, callback, once) {
+	const Months = [
+		"January", "February", "March", "April", "May", "June", 
+		"July", "August", "September", "October", "November", "December"
+	]
+
+	const Days = [
+		"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+	]
+
+	const Fixed = (num, len) => ("00" + num).slice(-len)
+
+
+	Object.assign($, {
+		find(self, selector) {
+			return self.querySelector(selector.replace(/(^|,)\s*(?=>)/g, "$&:scope"))
+		},
+		findAll(self, selector) {
+			return self.querySelectorAll(selector.replace(/(^|,)\s*(?=>)/g, "$&:scope"))
+		},
+
+		on(self, eventNames, selector, callback, once) {
 			if(typeof selector === "function") [selector, callback, once] = [null, selector, callback];
 
 			eventNames.split(" ").forEach(eventType => {
 				if(!eventType.length) return;
-				if(!this.$events) Object.defineProperty(this, "$events", { value: {} });
+				if(!self.$events) Object.defineProperty(self, "$events", { value: {} });
 
-				let listeners = this.$events[eventType]
-				if(!listeners) listeners = this.$events[eventType] = [];
+				let listeners = self.$events[eventType]
+				if(!listeners) listeners = self.$events[eventType] = [];
 
 				const listener = {
 					selector,
@@ -21,25 +41,25 @@ const $ = (() => {
 					once,
 					handler(...args) {
 						const event = args[0]
-						if(!selector) return callback.apply(this, args);
+						if(!selector) return callback.apply(self, args);
 
-						const query = this.$findAll(selector)
-						const final = event.path.indexOf(this)
+						const query = self.$findAll(selector)
+						const final = event.path.indexOf(self)
 
 						const sP = event.stopPropagation
 						let hasStoppedPropagation = false
 						event.stopPropagation = function(...args) {
 							hasStoppedPropagation = true
-							return sP.apply(this, args)
+							return sP.apply(self, args)
 						}
 
 						for(let i = 0; i < final; i++) {
 							const node = event.path[i]
-							const index = Array.prototype.indexOf.call(query, node)
+							const index = Array.prototype.indexOf(query, node)
 							if(index === -1) continue;
 
 							Object.defineProperty(event, "currentTarget", { value: node, configurable: true })
-							callback.apply(this, args)
+							callback.apply(self, args)
 							delete event.currentTarget
 
 							if(hasStoppedPropagation) break;
@@ -48,23 +68,23 @@ const $ = (() => {
 				}
 
 				listeners.push(listener)
-				this.addEventListener(eventType, listener.handler, true)
+				self.addEventListener(eventType, listener.handler, true)
 			})
 
-			return this
+			return self
 		},
-		$once(...args) {
-			return this.$on(...args, true)
+		once(...args) {
+			return this.on(...args, true)
 		},
-		$off(eventNames, selector, callback) {
-			if(!this.$events) return this;
+		off(self, eventNames, selector, callback) {
+			if(!self.$events) return self;
 			if(typeof selector !== "string") [selector, callback] = [null, selector];
 
 			eventNames.split(" ").forEach(eventType => {
 				if(!eventType.length) return;
-				if(!this.$events) return;
+				if(!self.$events) return;
 
-				const listeners = this.$events[eventType]
+				const listeners = self.$events[eventType]
 				if(!listeners) return;
 
 				const removeAll = selector == null && callback == null
@@ -72,36 +92,101 @@ const $ = (() => {
 					const listener = listeners[i]
 					if(removeAll || (selector && listener.selector === selector) || (callback && listener.callback === callback)) {
 						listeners.splice(i--, 1)
-						this.removeEventListener(eventType, listener.handler)
+						self.removeEventListener(eventType, listener.handler)
 					}
 				}
 			})
 
-			return this
+			return self
 		},
-		$trigger(type, init) { return this.dispatchEvent(new Event(type, init)), this },
-	}))
+		trigger(self, type, init) { return self.dispatchEvent(new Event(type, init)), self },
 
-	function qs(fn) {
-		return function(selector) {
-			selector = selector.replace(/(^|,)\s*(?=>)/g, "$&:scope")
-			return fn.call(this, selector)
+		each(self, cb) { Array.prototype.forEach.call(self, cb) },
+
+		dateFormat(date, format) {
+			if(typeof date === "string") {
+				date = new Date(date)
+			}
+
+			return format.replace(/a|A|Z|S(SS)?|ss?|mm?|HH?|hh?|D{1,4}|M{1,4}|YY(YY)?|'([^']|'')*'/g, str => {
+				switch(str[0]) {
+				case "'": return str.slice(1, -1).replace(/''/g, "'")
+				case "a": return date.getHours() < 12 ? "am" : "pm"
+				case "A": return date.getHours() < 12 ? "AM" : "PM"
+				case "Z": return (("+" + -date.getTimezoneOffset() / 60).replace(/^\D?(\D)/, "$1").replace(/^(.)(.)$/, "$10$2") + "00")
+				case "Y": return ("" + date.getFullYear()).slice(-str.length)
+				case "M": return str.length > 2 ? Months[date.getMonth()].slice(0, str.length > 3 ? 9 : 3) : Fixed(date.getMonth() + 1, str.length)
+				case "D": return str.length > 2 ? Days[date.getDay()].slice(0, str.length > 3 ? 9 : 3)
+												: str.length === 2 ? Fixed(date.getDate(), 2) : date.getDate()
+				case "H": return Fixed(date.getHours(), str.length)
+				case "h": return Fixed(date.getHours() % 12 || 12, str.length)
+				case "m": return Fixed(date.getMinutes(), str.length)
+				case "s": return Fixed(date.getSeconds(), str.length)
+				case "S": return Fixed(date.getMilliseconds(), str.length)
+				default: return "dapoop?"
+				}
+			})
+		},
+		dateSince(date, relativeTo) {
+			if(relativeTo instanceof Date) {
+				relativeTo = relativeTo.getTime()
+			} else if(typeof relativeTo === "string") {
+				relativeTo = new Date(relativeTo).getTime()
+			} else if(!relativeTo) {
+				relativeTo = Date.now()
+			}
+
+			if(typeof date === "string") date = new Date(date);
+
+			const since = (relativeTo - date.getTime()) / 1000
+
+			const y = Math.floor(since / 3600 / 24 / 365)
+			if(y >= 1) return Math.floor(y) + " year" + (y < 2 ? "" : "s");
+
+			const M = Math.floor(since / 3600 / 24 / 31)
+			if(M >= 1) return Math.floor(M) + " month" + (M < 2 ? "" : "s");
+
+			const w = Math.floor(since / 3600 / 24 / 7)
+			if(w >= 1) return Math.floor(w) + " week" + (w < 2 ? "" : "s");
+
+			const d = Math.floor(since / 3600 / 24)
+			if(d >= 1) return Math.floor(d) + " day" + (d < 2 ? "" : "s");
+
+			const h = Math.floor(since / 3600)
+			if(h >= 1) return Math.floor(h) + " hour" + (h < 2 ? "" : "s");
+
+			const m = Math.floor(since / 60)
+			if(m >= 1) return Math.floor(m) + " minute" + (m < 2 ? "" : "s");
+
+			const s = Math.floor(since)
+			return Math.floor(s) + " second" + (Math.floor(s) === 1 ? "" : "s")
 		}
-	}
+	})
 
-	Element.prototype.$find = qs(Element.prototype.querySelector)
-	Element.prototype.$findAll = qs(Element.prototype.querySelectorAll)
 
-	Document.prototype.$find = qs(Document.prototype.querySelector)
-	Document.prototype.$findAll = qs(Document.prototype.querySelectorAll)
+	Object.assign(EventTarget.prototype, {
+		$on(...args) { return $.on(this, ...args) },
+		$off(...args) { return $.off(this, ...args) },
+		$once(...args) { return $.once(this, ...args) },
+		$trigger(...args) { return $.trigger(this, ...args) },
+	})
 
-	DocumentFragment.prototype.$find = qs(DocumentFragment.prototype.querySelector)
-	DocumentFragment.prototype.$findAll = qs(DocumentFragment.prototype.querySelectorAll)
+	Object.assign(Date.prototype, {
+		$format(...args) { return $.dateFormat(this, ...args) },
+		$since(...args) { return $.dateSince(this, ...args) }
+	})
 
-	HTMLCollection.prototype.$forEach = Array.prototype.forEach
-
+	const types = [Element, Document, DocumentFragment]
+	types.forEach(x => {
+		Object.assign(x.prototype, {
+			$find(...args) { return $.find(this, ...args) },
+			$findAll(...args) { return $.findAll(this, ...args) }
+		})
+	})
+	
 	return $
 })();
+
 
 const htmlstring = function(pieces) {
 	const escapeMap = {
@@ -134,146 +219,15 @@ const html = function() {
 	return template.content.firstElementChild || template.content.firstChild
 }
 
-
-Date.prototype.relativeFormat = function(format, relativeTo) {
-	if(relativeTo == null)
-		relativeTo = Date.now();
-	else if(relativeTo instanceof Date)
-		relativeTo = relativeTo.getTime();
-
-	var timeDiff = (relativeTo - this) / 1000
-
-	var s = Math.floor(timeDiff)
-	var m = Math.floor(timeDiff/60)
-	var h = Math.floor(timeDiff/3600)
-	var d = Math.floor(timeDiff/3600/24)
-	var w = Math.floor(timeDiff/3600/24/7)
-	var M = Math.floor(timeDiff/3600/24/31)
-	var y = Math.floor(timeDiff/3600/24/365)
-
-	var get = function(a,b,c) {
-		return a+(c==1?b.substring(0,1):" "+b+(a!=1?"s":""))
-	}
-
-	var replaceFunc = function(str) {
-		var c = str.charAt(0),
-			z = str.match("zz?([012])"),
-			l = z?str.length-1:str.length,
-			z = z&&parseInt(z[1])||0,
-			res = c == 's' 
-				? get(s,"second",l)
-				: c == 'm'
-				? get(m,"minute",l)
-				: c == "h"
-				? get(h,"hour",l)
-				: c == "w"
-				? get(w,"week",l)
-				: c == "M"
-				? get(M,"month",l)
-				: c == "y"
-				? get(y,"year",l)
-				: c == "z"
-				? 	( y > 0
-					? z==0&&get(y,"year",l)||z==1&&get(M%12,"month",l)||z==2&&get(d%31,"day",l)
-					: M > 0
-					? z==0&&get(M%12,"month",l)||z==1&&get(d%31,"day",l)||z==2&&get(d%24,"hour",l)
-					: d > 0
-					? z==0&&get(d%31,"day",l)||z==1&&get(h%24,"hour",l)||z==2&&get(m%60,"minute",l)
-					: h > 0
-					? z==0&&get(h%24,"hour",l)||z==1&&get(m%60,"minute",l)||z==2&&get(s%60,"second",l)
-					: m > 0
-					? z==0&&get(m%60,"minute",l)||z==1&&get(s%60,"second",l)||''
-					: get(s%60,"second",l) 
-					)
-				: "'scuse me?"
-
-		return res
-	}
-
-	return format.replace(/([smhdwMy]{1,2}|z{1,2}[012]?)((?=(?:[^'\\]*(?:\\.|'(?:[^'\\]*\\.)*[^'\\]*'))*[^']*$))/g, replaceFunc).replace(/'([^']*)'/g, "$1")
-};
-
-/*
-	Date.format cheatsheet
-
-	Mask ||	Desc
-	a 		Lowercase time marker, am or pm
-	A 		Uppercase time marker, AM or PM
-	Z 		Timezone of date, +0300
-	S 		Milliseconds
-	s 		Seconds, no leading zero
-	ss 		Seconds, leading zero
-	m 		Minutes, no leading zero
-	mm 		Minutes, leading zero
-	h 		Hours, no leading zero, 12 hour clock
-	hh 		Hours, leading zero, 12 hour clock
-	H 		Hours, no leading zero, 24 hour clock
-	HH 		Hours, leading zero, 24 hour clock
-	D 		Date as digits, no leading zero
-	DD 		Date as digits, leading zero
-	DDD 	Day of the week, three letters
-	DDDD 	Day of the week, full name
-	M 		Month as digits, no leading zero
-	MM 		Month as digits, leading zero
-	MMM 	Month, three letters
-	MMMM 	Month, full name
-	YY 		Year, latter two numbers
-	YYYY 	Full year
-	'asd'	Literal string, quoters are removed
-*/
-
-var D = "Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday".split(","),
-	M = "January,February,March,April,May,June,July,August,September,October,November,December".split(",");
-
-Date.prototype.format = function(format) {
-	var me = this;
-	return format.replace(/a|A|Z|S(SS)?|ss?|mm?|HH?|hh?|D{1,4}|M{1,4}|YY(YY)?|'([^']|'')*'/g, function(str) {
-		var c1 = str.charAt(0),
-				ret = str.charAt(0) == "'"
-				? (c1=0) || str.slice(1, -1).replace(/''/g, "'")
-				: str == "a"
-					? (me.getHours() < 12 ? "am" : "pm")
-					: str == "A"
-						? (me.getHours() < 12 ? "AM" : "PM")
-						: str == "Z"
-							? (("+" + -me.getTimezoneOffset() / 60).replace(/^\D?(\D)/, "$1").replace(/^(.)(.)$/, "$10$2") + "00")
-							: c1 == "S"
-								? me.getMilliseconds()
-								: c1 == "s"
-									? me.getSeconds()
-									: c1 == "H"
-										? me.getHours()
-										: c1 == "h"
-											? (me.getHours() % 12) || 12
-											: (c1 == "D" && str.length > 2)
-												? D[me.getDay()].slice(0, str.length > 3 ? 9 : 3)
-												: c1 == "D"
-													? me.getDate()
-													: (c1 == "M" && str.length > 2)
-														? M[me.getMonth()].slice(0, str.length > 3 ? 9 : 3)
-														: c1 == "m"
-															? me.getMinutes()
-															: c1 == "M"
-																? me.getMonth() + 1
-																: ("" + me.getFullYear()).slice(-str.length);
-		return c1 && str.length < 4 && ("" + ret).length < str.length
-			? ("00" + ret).slice(-str.length)
-			: ret;
-	});
-};
-
-
 function CreateObserver(target, params) {
 	const options = Object.assign({ childList: true, subtree: true }, params || {})
 	const isPermanent = !!options.permanent
 	let observeList = []
 	let connected = false
 
-
 	const arrayFind = Array.prototype.find
 	const arrayIndexOf = Array.prototype.indexOf
 
-	
 	const observer = new MutationObserver(mutations => {
 		for(let index = 0; index < observeList.length; index++) {
 			const item = observeList[index]

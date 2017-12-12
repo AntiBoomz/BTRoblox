@@ -8,225 +8,14 @@
 	display: none;
 }
 
-
-/* btr-no-hamburger */
-
-.btr-no-hamburger #header .rbx-navbar-header {
-	max-width:120px;
-}
-.btr-no-hamburger #header .icon-logo-r {
-	display:none;
-}
-.btr-no-hamburger #header .icon-logo {
-	display:block;
-}
-.btr-no-hamburger #header .logo-transitional {
-	background-image: url("/images/Logo/roblox_logo.svg");
-	background-repeat: no-repeat;
-	background-size: auto auto;
-	width: 118px;
-	height: 30px;
-	display: inline-block;
-	vertical-align: middle;
-	background-size: 118px 30px;
-}
-
-.btr-no-hamburger #header .rbx-nav-collapse {
-	display:none;
-}
-
-.btr-no-hamburger .rbx-left-col {
-	width:175px;
-	box-shadow:0 0 3px rgba(25,25,25,0.3);
-}
-
-.btr-no-hamburger .rbx-left-col .rbx-scrollbar {
-	width:175px;
-}
-
-@media (max-width:1688px) {
-	body.btr-no-hamburger .container-main,
-	body.btr-no-hamburger .nav-container .nav-content {
-		margin-left:175px;
-	}
-}
-
-
-
-/* Navigation buttons etc */
-
-.icon-nav-friend-btr,.icon-nav-message-btr,.icon-nav-bc-btr {
-	background-image:url('chrome-extension://__MSG_@@extension_id__/res/nav2.svg');
-	background-repeat:no-repeat;
-	background-size:auto auto;
-	width:28px;
-	height:28px;
-	display:inline-block;
-}
-
-#nav-message .notification-blue, #nav-friends .notification-blue {
-	display:none;
-}
-
-.icon-nav-bc-btr {
-	background-position:0 -56px;
-}
-
-a:hover .icon-nav-bc-btr {
-	background-position:-28px -56px;
-}
-
-#nav-bc:hover {
-	color:#00a2ff;
-}
-
-
-.icon-nav-friend-btr {
-	background-position:0 -28px;
-}
-
-a:hover .icon-nav-friend-btr {
-	background-position:-28px -28px;
-}
-
-
-.icon-nav-message-btr {
-	background-position:0 0;
-}
-
-a:hover .icon-nav-message-btr {
-	background-position:-28px 0;
-}
-
-/* Text overflow */
-
-.btr-text-overflow {
-	position:relative;
-	white-space:nowrap;
-	overflow:hidden;
-}
-
-.btr-text-overflow:after {
-	position:absolute;
-	right:0;
-	top:0;
-	bottom:0;
-	width:10%;
-	content:"";
-	background:linear-gradient(to right,transparent 0,white 90%);
-	pointer-events:none;
-}
-
-/* New Chat */
-
-.btr-newchat .chat-container.collapsed .chat-main {
-	width:54px;
-}
-
-.btr-newchat .chat-container #chat-group-create-btn {
-	display:none;
-}
-
-.btr-newchat .chat-container #chat-friend-list {
-	max-height:362px;
-}
-
-.btr-newchat .chat-container .chat-main .chat-header .notification-red {
-	margin:-4px -4px 0 0;
-}
-
-/* Sidebar Blog Feed */
-
-.btr_feed {
-	display: block;
-	font-size: 12px;
-	padding-left: 8px;
-	padding-right: 4px;
-	padding-top: 4px;
-	padding-bottom: 4px;
-	background-color: transparent;
-	text-decoration: none;
-	overflow: hidden;
-}
-
-.btr_feed:hover {
-	background: rgba(0,0,0,0.08);
-}
-
-.btr_feedcreator, .btr_feeddate {
-	color: #777;
-	font-size: 10px;
-	font-weight: normal;
-	margin: 0 !important;
-}
-
-.btr_feedtitle {
-	color: #555;
-	font-weight: bold;
-	line-height: 12px;
-	font-size: 12px;
-}
-
-.btr_feeddesc {
-	overflow: hidden;
-	max-height: 0;
-	width: 100%;
-	color: #444;
-	font-weight: 300;
-	transition: max-height 0.4s;
-	margin-top: 4px;
-	margin-bottom: 0px;
-	font-size: 11px;
-}
-
-.btr_feed:hover > .btr_feeddesc {
-	max-height: 180px;
-	margin-bottom: 4px;
-}
-
-.btr_grouprank {
-	color: #222;
-	font-size: 12px;
-	font-weight: 600;
+#header .age-bracket-label {
+	display: none;
 }
 
 
 /* Navigation */
 
-.btr_icon-nav-friend {
-	background-position: 0 -28px;
-}
-
-a:hover .btr_icon-nav-friend {
-	background-position: -28px -28px;
-}
-
-.btr_icon-nav-message {
-	background-position: 0 0;
-}
-
-a:hover .btr_icon-nav-message {
-	background-position: -28px 0;
-}
-
-.btr_icon-nav-bc {
-	background-position: 0 -56px;
-}
-
-a:hover .btr_icon-nav-bc {
-	background-position: -28px -56px;
-}
-
-#nav-bc:hover {
-	color: #00a2ff;
-}
-
-.rbx-scrollbar li span[class^="btr_icon"], .rbx-header .rbx-navbar-icon-group li span[class^="btr_icon"] {
-	vertical-align: middle;
-	margin: 0;
-}
-
-.btr_icon-nav-friend, .btr_icon-nav-message, .btr_icon-nav-bc {
+.icon-nav-friend-btr, .icon-nav-message-btr, .icon-nav-bc-btr {
 	background-image: url('chrome-extension://__MSG_@@extension_id__/res/nav2.svg');
 	background-repeat: no-repeat;
 	background-size: auto auto;
@@ -235,7 +24,24 @@ a:hover .btr_icon-nav-bc {
 	display: inline-block;
 }
 
-.btr-nav-notif {
+.icon-nav-bc-btr { background-position: 0 -56px; }
+a:hover .icon-nav-bc-btr { background-position: -28px -56px; }
+
+.icon-nav-friend-btr { background-position: 0 -28px; }
+a:hover .icon-nav-friend-btr { background-position: -28px -28px; }
+
+.icon-nav-message-btr { background-position: 0 0; }
+a:hover .icon-nav-message-btr { background-position: -28px 0; }
+
+#nav-message .notification-blue, #nav-friends .notification-blue {
+	display: none;
+}
+
+#nav-bc:hover {
+	color: #00a2ff;
+}
+
+#header .btr-nav-notif {
 	box-sizing: content-box;
 	position: absolute;
 	display: block;
@@ -257,6 +63,122 @@ a:hover .btr_icon-nav-bc {
 }
 
 
+/* btr-no-hamburger */
+
+.btr-no-hamburger #header .rbx-navbar-header {
+	max-width: 120px;
+}
+.btr-no-hamburger #header .icon-logo-r {
+	display: none;
+}
+.btr-no-hamburger #header .icon-logo {
+	display: block;
+}
+.btr-no-hamburger #header .logo-transitional {
+	background-image: url("/images/Logo/roblox_logo.svg");
+	background-repeat: no-repeat;
+	background-size: auto auto;
+	width: 118px;
+	height: 30px;
+	display: inline-block;
+	vertical-align: middle;
+	background-size: 118px 30px;
+}
+
+.btr-no-hamburger #header .rbx-nav-collapse {
+	display: none;
+}
+
+.btr-no-hamburger .rbx-left-col {
+	width: 175px;
+	box-shadow: 0 0 3px rgba(25,25,25,0.3);
+}
+
+.btr-no-hamburger .rbx-left-col .rbx-scrollbar {
+	width: 175px;
+}
+
+@media (max-width:1688px) {
+	body.btr-no-hamburger .container-main,
+	body.btr-no-hamburger .nav-container .nav-content {
+		margin-left: 175px;
+	}
+}
+
+
+/* New Chat */
+
+.btr-newchat .chat-container.collapsed .chat-main {
+	width: 54px;
+}
+
+.btr-newchat .chat-container #chat-group-create-btn {
+	display: none;
+}
+
+.btr-newchat .chat-container #chat-friend-list {
+	max-height: 362px;
+}
+
+.btr-newchat .chat-container .chat-main .chat-header .notification-red {
+	margin: -10px -16px 0 0;
+}
+
+
+/* Sidebar Blog Feed */
+
+.btr-feed {
+	display: block;
+	font-size: 12px;
+	padding-left: 8px;
+	padding-right: 4px;
+	padding-top: 4px;
+	padding-bottom: 4px;
+	background-color: transparent;
+	text-decoration: none;
+	overflow: hidden;
+}
+
+.btr-feed:hover {
+	background: rgba(0,0,0,0.08);
+}
+
+.btr-feedcreator, .btr-feeddate {
+	color: #777;
+	font-size: 10px;
+	font-weight: normal;
+	margin: 0 !important;
+}
+
+.btr-feedtitle {
+	color: #555;
+	font-weight: bold;
+	line-height: 12px;
+	font-size: 12px;
+}
+
+.btr-feeddesc {
+	overflow: hidden;
+	max-height: 0;
+	width: 100%;
+	color: #444;
+	font-weight: 300;
+	transition: max-height 0.4s;
+	margin-top: 4px;
+	margin-bottom: 0px;
+	font-size: 11px;
+}
+
+.btr-feed:hover > .btr-feeddesc {
+	max-height: 180px;
+	margin-bottom: 4px;
+}
+
+.btr-grouprank {
+	color: #222;
+	font-size: 12px;
+	font-weight: 600;
+}
 
 /* PAGER */
 
@@ -621,6 +543,7 @@ a:hover .btr_icon-nav-bc {
 	background-color: #F9F9F9;
 }
 
+
 /* Settings */
 
 .btr-settings-modal {
@@ -638,8 +561,8 @@ a:hover .btr_icon-nav-bc {
 	z-index: 10000;
 }
 
-.btr-settings-modal * {
-	box-sizing: border-box;
+btr.settings-modal, .btr-settings-modal * {
+	box-sizing: border-box !important;
 }
 
 .btr-settings {
@@ -787,12 +710,9 @@ body input.btr-settings-enabled-toggle {
 	display: block;
 }
 
+
 /* Ew */
 
 #downloadInstallerIFrame {
 	border: none;
-}
-
-.rbx-header .age-bracket-label {
-	display: none !important;
 }

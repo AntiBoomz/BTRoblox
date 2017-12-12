@@ -290,7 +290,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 					</div>
 					<div class="version-thumb-container"><img class="version-thumb" style="display:none"></div>
 					<div class="version-number">Version ${item.VersionNumber}</div>
-					<div class="version-date">${new Date(item.Created).format("M/D/YY hh:mm A")}</div>
+					<div class="version-date">${new Date(item.Created).$format("M/D/YY hh:mm A")}</div>
 				</div>
 			</li>`
 
@@ -402,7 +402,7 @@ pageInit.home = function() {
 		const fixedDate = RobloxTime(span.textContent.replace("|", ""))
 		if(fixedDate) {
 			span.setAttribute("btr-timestamp", "")
-			span.textContent = fixedDate.format("MMM D, YYYY | hh:mm A")
+			span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A")
 		}
 	})
 }
@@ -415,7 +415,7 @@ pageInit.messages = function() {
 			const fixedDate = RobloxTime(span.textContent.replace("|", ""))
 			if(fixedDate) {
 				span.setAttribute("btr-timestamp", "")
-				span.textContent = fixedDate.format("MMM D, YYYY | hh:mm A")
+				span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A")
 			}
 		})
 		.all(".roblox-message-body", msg => {
@@ -423,7 +423,7 @@ pageInit.messages = function() {
 			const fixedDate = RobloxTime(span.textContent.replace("|", ""))
 			if(fixedDate) {
 				span.setAttribute("btr-timestamp", "")
-				span.textContent = fixedDate.format("MMM D, YYYY | hh:mm A")
+				span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A")
 			}
 		})
 	})
@@ -479,7 +479,7 @@ pageInit.itemdetails = function(assetId) {
 			const fixedDate = RobloxTime(span.textContent.replace("|", ""))
 			if(fixedDate) {
 				span.setAttribute("btr-timestamp", "")
-				span.textContent = fixedDate.format("MMM D, YYYY | hh:mm A")
+				span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A")
 			}
 		})
 	})
@@ -915,9 +915,9 @@ pageInit.gamedetails = function(placeId) {
 				const info = badgeInfo[badgeId]
 
 				if(info) {
-					row.classList.toggle("btr_notowned", !info.IsOwned)
+					row.classList.toggle("btr-notowned", !info.IsOwned)
 				} else {
-		//			row.classList.add("btr_badgeownedloading")
+		//			row.classList.add("btr-badgeownedloading")
 					badgeInfo[badgeId] = {
 						btrElement: row
 					}
@@ -935,8 +935,8 @@ pageInit.gamedetails = function(placeId) {
 					const info = badgeInfo[data.BadgeAssetId]
 					if(info) {
 						Object.assign(info, data)
-						info.btrElement.classList.toggle("btr_notowned", !info.IsOwned)
-		//				info.btrElement.classList.remove("btr_badgeownedloading")
+						info.btrElement.classList.toggle("btr-notowned", !info.IsOwned)
+		//				info.btrElement.classList.remove("btr-badgeownedloading")
 					} else {
 						badgeInfo[data.BadgeAssetId] = data
 					}
@@ -954,7 +954,7 @@ pageInit.gamedetails = function(placeId) {
 		xhr.onload = function() {
 			const data = this.response
 			const serverDate = new Date(this.getResponseHeader("Date"))
-			stat.$find(".text-lead").textContent = new Date(data.Updated).relativeFormat("zz 'ago'", serverDate)
+			stat.$find(".text-lead").textContent = `${$.dateSince(data.Updated, serverDate)} ago`
 		}
 
 		xhr.send()
@@ -989,7 +989,7 @@ pageInit.gamedetails = function(placeId) {
 			const fixedDate = RobloxTime(span.textContent.replace("|", ""))
 			if(fixedDate) {
 				span.setAttribute("btr-timestamp", "")
-				span.textContent = fixedDate.format("MMM D, YYYY | hh:mm A")
+				span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A")
 			}
 		})
 	})
@@ -1035,7 +1035,7 @@ pageInit.catalog = function() {
 		if(!promise) promise = productCache[assetId] = getProductInfo(assetId);
 
 		promise.then(data => {
-			const updated = new Date(data.Updated).relativeFormat("zz 'ago'", startDate)
+			const updated = `${$.dateSince(data.Updated, startDate)} ago`
 			const sales = data.Sales
 
 			const ulabel = self.$find(".btr-updated-label")
@@ -1317,14 +1317,14 @@ pageInit.groups = function() {
 		const fixedDate = RobloxTime(span.textContent)
 		if(fixedDate) {
 			span.setAttribute("btr-timestamp", "")
-			span.textContent = fixedDate.relativeFormat("zz 'ago'", startDate)
-			span.title = fixedDate.format("M/D/YYYY h:mm:ss A")
+			span.textContent = `${$.dateSince(fixedDate, startDate)} ago`
+			span.title = fixedDate.$format("M/D/YYYY h:mm:ss A")
 		}
 	})
 	.one("#ctl00_cphRoblox_GroupWallPane_GroupWallUpdatePanel", wall => {
 		CreateObserver(wall, { permanent: true, subtree: false })
 		.all(".AlternatingItemTemplateOdd, .AlternatingItemTemplateEven", post => {
-			post.classList.add("btr_comment")
+			post.classList.add("btr-comment")
 
 			const content = post.$find(".RepeaterText")
 			const postDate = post.$find(".GroupWall_PostDate")
@@ -1377,12 +1377,12 @@ pageInit.groups = function() {
 				postBtns.append(exileButton)
 			}
 
-			dateSpan.classList.add("btr_groupwallpostdate")
+			dateSpan.classList.add("btr-groupwallpostdate")
 			const fixedDate = RobloxTime(dateSpan.textContent)
 			if(fixedDate) {
 				dateSpan.setAttribute("btr-timestamp", "")
-				dateSpan.textContent = fixedDate.relativeFormat("zz 'ago'")
-				dateSpan.title = fixedDate.format("M/D/YYYY h:mm:ss A")
+				dateSpan.textContent = `${$.dateSince(fixedDate)} ago`
+				dateSpan.title = fixedDate.$format("M/D/YYYY h:mm:ss A")
 			}
 
 			let groupId
@@ -1395,14 +1395,14 @@ pageInit.groups = function() {
 			}
 
 			if(groupId && userId) {
-				const span = html`<span class="btr_grouprank"></span>`
+				const span = html`<span class="btr-grouprank"></span>`
 				userLink.append(span)
 				
 				let promise = rankNameCache[userId]
 				if(!promise) promise = rankNameCache[userId] = new Promise(resolve => MESSAGING.send("getRankName", { userId, groupId }, resolve));
 				
 				promise.then(rankname => {
-					userLink.append(html`<span class="btr_grouprank">(${rankname})</span>`)
+					userLink.append(html`<span class="btr-grouprank">(${rankname})</span>`)
 				})
 			}
 		})
@@ -1627,7 +1627,7 @@ pageInit.profile = function(userId) {
 		function loadPage(page) {
 			pager.setPage(page)
 
-			hlist.children.$forEach((obj, index) => {
+			$.each(hlist.children, (obj, index) => {
 				obj.classList.toggle("visible", Math.floor(index / pageSize) + 1 === page)
 			})
 
@@ -1865,7 +1865,7 @@ pageInit.profile = function(userId) {
 		function loadPage(page) {
 			pager.setPage(page)
 
-			hlist.children.$forEach((obj, index) => {
+			$.each(hlist.children, (obj, index) => {
 				obj.classList.toggle("visible", Math.floor(index / pageSize) + 1 === page)
 			})
 		}
