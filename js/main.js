@@ -423,25 +423,31 @@ function PreInit() {
 	if(document.contentType !== "text/html") return;
 
 	currentPage = GET_PAGE(pathname)
-	STORAGE.get(["settings", "cachedBlogFeed", "directoryEntry"], data => {
+	STORAGE.get(["settings", "cachedBlogFeed", "themes"], data => {
 		settings = data.settings ? data.settings : JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
 		blogFeedData = data.cachedBlogFeed
 
-		const cssFiles = ["main.css"]
-		if(currentPage && currentPage.css) cssFiles.push(...currentPage.css);
-
-		const cssGroups = ["css/", `css/${settings.general.theme}/`]
-		const parent = document.head || document.documentElement
-		cssGroups.forEach(group => cssFiles.forEach(path => {
-			if(data.directoryEntry && data.directoryEntry.indexOf(group + path) === -1) return;
-
+		const cssParent = document.head || document.documentElement
+		const injectCSS = path => {
 			const link = document.createElement("link")
 			link.rel = "stylesheet"
-			link.href = chrome.runtime.getURL(group + path)
+			link.href = chrome.runtime.getURL("css/" + path)
+			cssParent.append(link)
+		}
 
-			parent.append(link)
-		}))
+		const cssFiles = ["main.css", ...(currentPage && currentPage.css || [])]
+		cssFiles.forEach(injectCSS)
 
+		if(data.themes) {
+			const theme = settings.general.theme
+			const themeData = data.themes[theme]
+
+			if(themeData) {
+				cssFiles.forEach(file => file in themeData && injectCSS(`${theme}/${file}`))
+			}
+		}
+
+		hasDataLoaded = true
 		if(haveContentScriptsLoaded) Init();
 	})
 }

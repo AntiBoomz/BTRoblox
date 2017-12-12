@@ -19,7 +19,7 @@
 			"js/background/messaging.js",
 			"js/background/groupshout.js",
 			"js/background/contextmenu.js",
-			"js/background/directoryentry.js"
+			"js/background/themes.js"
 		],
 		"persistent": false
 	},
