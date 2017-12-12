@@ -26,20 +26,19 @@ const Settings = (() => {
 	}
 
 	const onChangeListeners = []
-	let getPromise
-	return {
-		get(cb) {
-			if(!getPromise) {
-				getPromise = new Promise(resolve => {
-					STORAGE.get(["settings"], data => {
-						if(data.settings instanceof Object) {
-							applySettings(data.settings)
-						}
-						resolve(settings)
-					})
-				})
+	const getPromise = new Promise(resolve => {
+		STORAGE.get(["settings"], data => {
+			if(data.settings instanceof Object) {
+				applySettings(data.settings)
 			}
 
+			STORAGE.set({ settings })
+			resolve(settings)
+		})
+	})
+
+	return {
+		get(cb) {
 			getPromise.then(cb)
 		},
 		set(data) {
