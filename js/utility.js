@@ -1,8 +1,8 @@
 "use strict"
 
 const $ = (() => {
-	const $ = function(selector) { return this.find(document, selector) }
-	$.all = function(selector) { return this.findAll(document, selector) }
+	const $ = function(selector) { return $.find(document, selector) }
+	$.all = function(selector) { return $.findAll(document, selector) }
 		
 
 	const Months = [
@@ -41,25 +41,25 @@ const $ = (() => {
 					once,
 					handler(...args) {
 						const event = args[0]
-						if(!selector) return callback.apply(self, args);
+						if(!selector) return callback.apply(this, args);
 
-						const query = self.$findAll(selector)
-						const final = event.path.indexOf(self)
+						const query = this.$findAll(selector)
+						const final = event.path.indexOf(this)
 
 						const sP = event.stopPropagation
 						let hasStoppedPropagation = false
 						event.stopPropagation = function(...args) {
 							hasStoppedPropagation = true
-							return sP.apply(self, args)
+							return sP.apply(this, args)
 						}
 
 						for(let i = 0; i < final; i++) {
 							const node = event.path[i]
-							const index = Array.prototype.indexOf(query, node)
+							const index = Array.prototype.indexOf.call(query, node)
 							if(index === -1) continue;
 
 							Object.defineProperty(event, "currentTarget", { value: node, configurable: true })
-							callback.apply(self, args)
+							callback.apply(this, args)
 							delete event.currentTarget
 
 							if(hasStoppedPropagation) break;
