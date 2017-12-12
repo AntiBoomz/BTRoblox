@@ -28,7 +28,6 @@
 		"*://m.roblox.com/",
 		"*://api.roblox.com/",
 		"*://avatar.roblox.com/",
-		"*://forum.roblox.com/",
 		"*://blog.roblox.com/",
 		"*://*.rbxcdn.com/",
 		"storage",
@@ -44,7 +43,7 @@
 	],
 	"content_scripts": [
 		{
-			"matches": ["*://www.roblox.com/*", "*://forum.roblox.com/*"],
+			"matches": ["*://www.roblox.com/*"],
 			"exclude_matches": [
 				"*://*.roblox.com/userads/*",
 				"*://*.roblox.com/user-sponsorship/*",

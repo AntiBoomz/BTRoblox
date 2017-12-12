@@ -21,10 +21,6 @@ const PAGE_INFO = {
 		matches: ["^/develop"],
 		css: ["develop.css"]
 	},
-	forum: {
-		matches: ["^/forum/"],
-		css: ["forum.css"]
-	},
 	gamedetails: {
 		matches: ["^/games/(\\d+)/"],
 		css: ["gamedetails.css"]
