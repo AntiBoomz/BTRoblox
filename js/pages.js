@@ -1184,7 +1184,6 @@ pageInit.configureplace = function(placeId) {
 	if(!settings.versionhistory.enabled) return;
 
 	const newVersionHistory = CreateNewVersionHistory(placeId, "place")
-	let jszipPromise = null
 
 	Observer.one("#versionHistoryItems", cont => cont.replaceWith(newVersionHistory))
 	.one("#versionHistory>.headline h2", header => {
@@ -1194,111 +1193,147 @@ pageInit.configureplace = function(placeId) {
 	document.$on("click", ".btr-downloadAsZip:not(.disabled)", e => {
 		const btn = e.currentTarget
 		const origText = btn.textContent
-		let loadedCount = 0
-		let versionCount = 0
 
 		const placeNameInput = $("#basicSettings>input")
 		const fileName = (placeNameInput ? placeNameInput.value : "place").replace(/[^\w \-.]+/g, "").replace(/ {2,}/g, " ").trim()
 
 		btn.classList.add("disabled")
-		btn.textContent = "Preparing..."
+		btn.textContent = "Loading versions..."
 
-		if(!jszipPromise) jszipPromise = new Promise(resolve => execScripts(["lib/jszip.min.js"], resolve));
+		const files = []
+		const centralDirectory = []
+		let numFiles = 0
+		let fileOffset = 0
+		let centralLength = 0
 
-		jszipPromise.then(() => {
-			const zip = new JSZip()
-			const queue = []
-			let finishedLoading = false
-			let activeLoaders = 0
+		let totalVersions
+		let nextVersion = 1
+		let loadersAlive = 5
 
-			function loadPage(page, cb) {
-				const url = `//api.roblox.com/assets/${placeId}/versions?page=${page}`
-				fetch(url, { credentials: "include" }).then(async response => {
-					const json = await response.json()
-					cb(json)
+		const crcTable = []
+		for(let i = 0; i < 256; i++) {
+			let n = i
+			for(let j = 0; j < 8; j++) n = n & 1 ? (n >>> 1) ^ 0xEDB88320 : (n >>> 1);
+
+			crcTable[i] = n
+		}
+
+		const crc32 = buffer => {
+			let crc = -1
+			
+			for(let i = 0, l = buffer.byteLength; i < l; i++) {
+				crc = (crc >>> 8) ^ crcTable[(crc ^ buffer[i]) & 0xFF]
+			}
+
+			return ~crc
+		}
+
+		const loadFile = () => {
+			if(nextVersion > totalVersions) {
+				if(--loadersAlive === 0) {
+					btn.textContent = "Generating file..."
+
+					const eoc = new Uint8Array(22)
+					const eview = new DataView(eoc.buffer)
+					eview.setUint32(0, 0x06054b50, true)
+					eview.setUint16(8, numFiles, true)
+					eview.setUint16(10, numFiles, true)
+					eview.setUint32(12, centralLength, true)
+					eview.setUint32(16, fileOffset, true)
+
+					const blob = new Blob([...files, ...centralDirectory, eoc])
+					const bloburl = URL.createObjectURL(blob)
+
+					btn.classList.remove("disabled")
+					btn.textContent = origText
+
+					startDownload(bloburl, `${fileName}.zip`)
+				}
+				return
+			}
+
+			const version = nextVersion++
+			let retryTime = 1000
+
+			const tryDownload = () => {
+				downloadAsset({ id: placeId, version }).then(file => {
+					const nameStr = `${fileName}-${version}.rbxl`
+					const name = new TextEncoder().encode(nameStr)
+
+					const date = new Date()
+					const modTime = (((date.getHours() << 6) | date.getMinutes()) << 5) | date.getSeconds() / 2
+					const modDate = ((((date.getFullYear() - 1980) << 4) | (date.getMonth() + 1)) << 5) | date.getDate()
+
+					const cfile = file
+					const crc = crc32(new Uint8Array(file))
+
+					const header = new Uint8Array(30 + name.byteLength)
+					const hview = new DataView(header.buffer)
+					hview.setUint32(0, 0x04034b50, true)
+					hview.setUint32(4, 0x08080014, true)
+					hview.setUint16(10, modTime, true)
+					hview.setUint16(12, modDate, true)
+					hview.setUint32(14, crc, true)
+					hview.setUint32(18, cfile.byteLength, true)
+					hview.setUint32(22, file.byteLength, true)
+					hview.setUint16(26, name.byteLength, true)
+					header.set(name, 30)
+
+					const footer = new Uint8Array(16)
+					const fview = new DataView(footer.buffer)
+					fview.setUint32(0, 0x08074b50, true)
+					fview.setUint32(4, crc, true)
+					fview.setUint32(8, cfile.byteLength, true)
+					fview.setUint32(12, file.byteLength, true)
+
+					const central = new Uint8Array(46 + name.byteLength)
+					const cview = new DataView(central.buffer)
+					cview.setUint32(0, 0x02014b50, true)
+					cview.setUint16(4, 0x0014, true)
+					central.set(header.subarray(4, 30), 6)
+					cview.setUint32(42, fileOffset, true)
+					central.set(name, 46)
+
+					files.push(header.buffer, cfile, footer.buffer)
+					centralDirectory.push(central.buffer)
+					fileOffset += header.byteLength + cfile.byteLength + footer.byteLength
+					centralLength += central.byteLength
+
+					numFiles++
+					btn.textContent = `Downloading ${numFiles}/${totalVersions}`
+
+					setTimeout(loadFile, 100)
+				}).catch(ex => {
+					console.error(ex)
+					setTimeout(tryDownload, retryTime)
+					retryTime *= 1.5
 				})
 			}
+			tryDownload()
+		}
 
-			function loadFile() {
-				if(queue.length === 0) {
-					if(finishedLoading) {
-						if(--activeLoaders === 0) {
-							btn.textContent = "Generating .zip..."
+		const url = `https://api.roblox.com/assets/${placeId}/versions`
+		fetch(url, { credentials: "include" }).then(async resp => {
+			let json
+			try { json = await resp.json() }
+			catch(ex) { console.warn(ex) }
 
-							const options = {
-								type: "blob",
-								compression: "DEFLATE",
-								compressionOptions: { level: 6 },
-								streamFiles: true
-							}
+			if(!json || !json.length) {
+				btn.textContent = "Failed..."
 
-							zip.generateAsync(options).then(blob => {
-								btn.classList.remove("disabled")
-								btn.textContent = origText
-								startDownload(URL.createObjectURL(blob), `${fileName}.zip`)
-							})
-						}
-						return;
-					}
-
-					return setTimeout(loadFile, 100);
-				}
-
-				const data = queue.shift()
-				btn.textContent = `Downloading ${++loadedCount}/${versionCount}`
-
-				function tryDownload() {
-					downloadAsset({ id: placeId, version: data.VersionNumber })
-						.then(buffer => {
-							zip.file(`${fileName}-${data.VersionNumber}.rbxl`, buffer)
-							setTimeout(loadFile, 100)
-						})
-						.catch(ex => {
-							console.warn(ex)
-							setTimeout(tryDownload, 1000)
-						})
-				}
-
-				tryDownload()
+				setTimeout(() => {
+					btn.classList.remove("disabled")
+					btn.textContent = origText
+				}, 2000)
+				
+				return
 			}
-
-			btn.textContent = "Fetching version info..."
-			loadPage(1, json => {
-				if(!json.length) {
-					btn.textContent = "Failed..."
-
-					setTimeout(() => {
-						btn.classList.remove("disabled")
-						btn.textContent = origText
-					}, 2000)
-
-					return;
-				}
-				versionCount = json[0].VersionNumber
-				const maxPage = Math.floor((versionCount - 1) / json.length) + 1
-				let curPage = 2
-
-				queue.push(...json)
-
-				function nextPage() {
-					if(curPage > maxPage) {
-						finishedLoading = true
-						return;
-					}
-
-					loadPage(curPage++, list => {
-						queue.push(...list)
-						nextPage()
-					})
-				}
-
-				nextPage()
-
-				for(let i = 0; i < 5; i++) {
-					activeLoaders++
-					loadFile()
-				}
-			})
+			
+			totalVersions = json[0].VersionNumber
+	
+			for(let i = 0, l = loadersAlive; i < l; i++) {
+				loadFile()
+			}
 		})
 	})
 }
