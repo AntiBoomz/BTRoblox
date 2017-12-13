@@ -302,17 +302,20 @@ function Init() {
 		list.prepend(html`<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>`)
 	})
 	.all("#header .rbx-navbar", bar => {
-		bar.$find(".buy-robux").parentNode.remove()
+		const buyRobux = bar.$find(".buy-robux")
+		if(buyRobux) buyRobux.parentNode.remove();
 		bar.prepend(html`<li><a class="nav-menu-title" href="/Home">Home</a></li>`)
-	//	bar.append(html`<li><a class="nav-menu-title" href="/Forum/default.aspx">Forum</a></li>`)
 	})
-	.one(".rbx-upgrade-now", x => {
-		const list = x.parentNode
+	.one("#nav-blog", blog => {
+		const list = blog.parentNode.parentNode
 
-		list.$find("#nav-home").parentNode.remove()
-		list.$find(".rbx-upgrade-now").remove()
+		const home = list.$find("#nav-home")
+		if(home) home.parentNode.remove();
 
-		list.$find("#nav-blog").parentNode.before(html`
+		const upgrade = list.$find(".rbx-upgrade-now")
+		if(upgrade) upgrade.remove();
+
+		blog.parentNode.before(html`
 		<li>
 			<a href="/Upgrades/BuildersClubMemberships.aspx" id="nav-bc">
 				<span class='icon-nav-bc-btr'></span>
@@ -320,11 +323,15 @@ function Init() {
 			</a>
 		</li>`)
 
-		const trade = list.$find("#nav-trade")
-		trade.href = "/My/Money.aspx"
-		trade.$find("span:not([class^='icon-nav'])").textContent = "Money"
+		if(settings.general.showBlogFeed) blog.after(blogfeed);
 
-		if(settings.general.showBlogFeed) list.$find("#nav-blog").after(blogfeed);
+		const trade = list.$find("#nav-trade")
+		if(trade) {
+			trade.href = "/My/Money.aspx"
+			const label = trade.$find("span:not([class^='icon-nav'])")
+			if(label) label.textContent = "Money";
+		}
+
 
 		const navFriends = list.$find("#nav-friends")
 		const navMessages = list.$find("#nav-message")
@@ -423,7 +430,7 @@ function PreInit() {
 
 	currentPage = GET_PAGE(pathname)
 	STORAGE.get(["settings", "cachedBlogFeed", "themes"], data => {
-		settings = data.settings ? data.settings : JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
+		settings = data.settings || JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
 		blogFeedData = data.cachedBlogFeed
 
 		const cssParent = document.head || document.documentElement
