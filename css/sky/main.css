@@ -1,5 +1,5 @@
 html body {
-	background: #9AE4E8 url('chrome-extension://__MSG_@@extension_id__/res/skyBg.png') left 40px no-repeat fixed;
+	background: #9AE4E8 url(/res/skyBg.png) left 40px no-repeat fixed;
 }
 
 html .container-main>.content,

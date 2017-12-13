@@ -1,5 +1,5 @@
 html body {
-	background: #212121 url('chrome-extension://__MSG_@@extension_id__/res/bgTexture.png') left top repeat fixed;
+	background: #212121 url(/res/bgTexture.png) left top repeat fixed;
 }
 
 html .rbx-header {

@@ -65,7 +65,7 @@
 .btr-icon-download,
 .btr-icon-content {
 	display: inline-block;
-	background-image: url('chrome-extension://__MSG_@@extension_id__/res/icons.svg');
+	background-image: url(/res/icons.svg);
 	background-repeat: no-repeat;
 	background-size: auto auto;
 	width: 28px;
@@ -128,7 +128,7 @@ a:not(.disabled) > .btr-icon-content:hover {
 .btr-thumb-btn [class^="btr-icon"] {
 	flex: 0 0 auto;
 	display: inline-block;
-	background-image: url('chrome-extension://__MSG_@@extension_id__/res/previewer/icons.svg');
+	background-image: url(/res/previewer/icons.svg);
 	background-repeat: no-repeat;
 	background-size: auto auto;
 	width: 28px;

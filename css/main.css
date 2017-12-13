@@ -16,7 +16,7 @@
 /* Navigation */
 
 .icon-nav-friend-btr, .icon-nav-message-btr, .icon-nav-bc-btr {
-	background-image: url('chrome-extension://__MSG_@@extension_id__/res/nav2.svg');
+	background-image: url(/res/nav2.svg);
 	background-repeat: no-repeat;
 	background-size: auto auto;
 	width: 28px;
@@ -431,7 +431,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	margin: 3px;
 	margin-right: 4px;
 
-	background-image: url('chrome-extension://__MSG_@@extension_id__/res/icon-explorer.png');
+	background-image: url(/res/icon-explorer.png);
 	background-repeat: no-repeat;
 	background-size: auto 16px;
 }

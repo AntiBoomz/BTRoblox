@@ -24,7 +24,7 @@
 
 	padding-left: 18px;
 	font-size: 13px;
-	background-image: url("chrome-extension://__MSG_@@extension_id__/res/showcase-status.png");
+	background-image: url(/res/showcase-status.png);
 	background-repeat: no-repeat;
 	display: block;
 	height: 15px;

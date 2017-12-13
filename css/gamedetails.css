@@ -88,7 +88,7 @@ body .badge-container .badge-row.btr-badgeownedloading:before {
 	content: "";
 	width: 16px;
 	height: 16px;
-	background: url('chrome-extension://__MSG_@@extension_id__/res/loading1.gif') transparent no-repeat;
+	background: url(/res/loading1.gif) transparent no-repeat;
 	opacity: 0.5;
 }
 
