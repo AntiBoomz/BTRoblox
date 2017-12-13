@@ -84,7 +84,7 @@ const DEFAULT_SETTINGS = {
 		theme: "default",
 		showBlogFeed: true,
 
-		showAds: false,
+		showAds: true,
 		noHamburger: true,
 
 		chatEnabled: true
