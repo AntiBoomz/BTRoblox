@@ -63,7 +63,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 }
 
 
-/* btr-no-hamburger */
+/* btr-no-hamburger TODO: Make sure this stuff is right */
 
 .btr-no-hamburger #header .rbx-navbar-header {
 	max-width: 120px;
@@ -554,6 +554,9 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	right: 0;
 	bottom: 0;
 
+	font-size: 16px;
+	font-weight: 300;
+
 	align-items: center;
 	justify-content: center;
 
@@ -561,8 +564,10 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	z-index: 10000;
 }
 
-btr.settings-modal, .btr-settings-modal * {
-	box-sizing: border-box !important;
+.btr-settings-modal,
+.btr-settings-modal * {
+	font-family: "Source Sans Pro", Arial, Helvetica, sans-serif;
+	box-sizing: border-box;
 }
 
 .btr-settings {
@@ -626,6 +631,7 @@ body input.btr-settings-enabled-toggle {
 	width: 60px;
 	height: 24px;
 	padding: 2px;
+	margin: 0;
 
 	-webkit-appearance: none;
 	background: #B8B8B8;
@@ -692,18 +698,62 @@ body input.btr-settings-enabled-toggle {
 	display: inline-block;
 	color: #191919;
 	font-size: 21px;
+	margin: 5px 0;
+	padding: 0;
+	line-height: 1em;
 }
 
 .btr-settings-content checkbox {
 	display: inline-block;
-	width: 49%;
+	width: 50%;
 
-	margin-top: 4px;
+	margin: 4px 0 0;
 }
 
 .btr-settings-content checkbox label {
 	margin-left: 4px;
 	font-size: 16px;
+}
+
+.btr-settings-checkbox input[type="checkbox"] {
+	position: absolute;
+	visibility: hidden;
+}
+
+.btr-settings-checkbox input[type="checkbox"] + label {
+	position: relative;
+	display: inline-block;
+	background: none;
+	height: 16px;
+	padding-left: 20px;
+
+	vertical-align: middle;
+	line-height: 16px;
+	font-weight: 300;
+
+	user-select: none;
+	cursor: pointer;
+}
+
+.btr-settings-checkbox input[type="checkbox"] + label:before {
+	content: "";
+	display: inline-block;
+	background-color: #fff;
+	background-repeat: no-repeat;
+	background-size: 14px auto;
+	width: 16px;
+	height: 16px;
+	position: absolute;
+	left: 0;
+	top: 0;
+	border: 1px solid #B8B8B8;
+	border-radius: 3px;
+	box-sizing: border-box;
+}
+
+.btr-settings-checkbox input[type="checkbox"]:checked + label:before {
+	background-image: url(/res/checkbox.svg);
+	background-color: #00A2FF;
 }
 
 .btr-settings-content select {

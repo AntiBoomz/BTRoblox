@@ -219,7 +219,7 @@ function Init() {
 					const input = html`<input id=btr-settings-input-${labelCounter} type=checkbox>`
 					const label = html`<label for=btr-settings-input-${labelCounter++}>${checkbox.getAttribute("label")}`
 
-					checkbox.classList.add("checkbox")
+					checkbox.classList.add("btr-settings-checkbox")
 
 					checkbox.append(input)
 					checkbox.append(label)
