@@ -6,7 +6,7 @@ const PAGE_INFO = {
 		css: ["avatar.css"]
 	},
 	catalog: {
-		matches: ["^/catalog/$"],
+		matches: ["^/catalog/?$"],
 		css: ["catalog.css"]
 	},
 	configureplace: {
