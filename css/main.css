@@ -601,13 +601,25 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 }
 
 .btr-settings-footer {
-	flex: 0 1 auto;
+	display: flex;
+	flex: 0 0 auto;
 	height: 24px;
 	line-height: 24px;
 
+	padding: 0 4px;
+
 	padding-right: 4px;
 	border-top: 1px solid #E8E8E8;
+}
 
+.btr-settings-footer-version {
+	flex: 1;
+	text-align: left;
+	font-weight: bold;
+}
+
+.btr-settings-footer-text {
+	flex: 1;
 	text-align: right;
 }
 

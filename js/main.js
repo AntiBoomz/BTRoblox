@@ -144,7 +144,8 @@ function Init() {
 				</group>
 			</div>
 			<div class="btr-settings-footer">
-				Refresh the page to apply settings
+				<div class="btr-settings-footer-version">v${chrome.runtime.getManifest().version}</div>
+				<div class="btr-settings-footer-text">Refresh the page to apply settings</div>
 			</div>
 		</div>
 	</div>`
