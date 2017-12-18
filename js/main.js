@@ -402,8 +402,8 @@ function Init() {
 				blogfeed.append(html`
 				<a class="btr-feed" href="${item.url}">
 					<div class="btr-feedtitle">
-						${item.title}
-						<span class="btr-feeddate">${$.dateSince(item.date)} ago</span>
+						${item.title.trim() + " "}
+						<span class="btr-feeddate">(${$.dateSince(item.date)} ago)</span>
 					</div>
 					<div class="btr-feeddesc">${item.desc}</div>
 				</a>`)
