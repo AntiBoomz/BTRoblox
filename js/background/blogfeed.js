@@ -23,7 +23,7 @@ const Blogfeed = (() => {
 						}))
 
 
-						STORAGE.set({ cachedBlogFeed: cachedFeed })
+						STORAGE.set({ cachedBlogFeedV2: cachedFeed })
 						if(typeof cb === "function") cb(cachedFeed);
 					})
 				})

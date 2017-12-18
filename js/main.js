@@ -413,8 +413,8 @@ function Init() {
 			blogfeed.style.display = ""
 		}
 
-		if(blogFeedData) updateBlogFeed(blogFeedData);
 		MESSAGING.send("requestBlogFeed", updateBlogFeed)
+		if(blogFeedData) updateBlogFeed(blogFeedData);
 	}
 
 	if(currentPage && pageInit[currentPage.name]) {
@@ -430,9 +430,9 @@ function PreInit() {
 	if(document.contentType !== "text/html") return;
 
 	currentPage = GET_PAGE(pathname)
-	STORAGE.get(["settings", "cachedBlogFeed", "themes"], data => {
+	STORAGE.get(["settings", "cachedBlogFeedV2", "themes"], data => {
 		settings = data.settings || JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
-		blogFeedData = data.cachedBlogFeed
+		blogFeedData = data.cachedBlogFeedV2
 
 		const cssParent = document.head || document.documentElement
 		const injectCSS = path => {
