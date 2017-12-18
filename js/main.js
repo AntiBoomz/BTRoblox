@@ -414,11 +414,16 @@ function Init() {
 		}
 
 		MESSAGING.send("requestBlogFeed", updateBlogFeed)
-		if(blogFeedData) updateBlogFeed(blogFeedData);
+
+		if(blogFeedData) {
+			try { updateBlogFeed(blogFeedData) }
+			catch(ex) { console.error(ex) }
+		}
 	}
 
 	if(currentPage && pageInit[currentPage.name]) {
-		pageInit[currentPage.name].apply(currentPage, currentPage.matches)
+		try { pageInit[currentPage.name].apply(currentPage, currentPage.matches) }
+		catch(ex) { console.error(ex) }
 	}
 
 	onDocumentReady(() => {
