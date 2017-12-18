@@ -136,9 +136,13 @@ const $ = (() => {
 				relativeTo = Date.now()
 			}
 
-			if(typeof date === "string") date = new Date(date);
+			if(date instanceof Date) {
+				date = date.getTime()
+			} else if(typeof date === "string") {
+				date = new Date(date).getTime()
+			}
 
-			const since = (relativeTo - date.getTime()) / 1000
+			const since = (relativeTo - date) / 1000
 
 			const y = Math.floor(since / 3600 / 24 / 365)
 			if(y >= 1) return Math.floor(y) + " year" + (y < 2 ? "" : "s");
