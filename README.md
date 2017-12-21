@@ -382,7 +382,7 @@ Universe APIs
 
     ```json
     {
-     "UniverseId": 13058
+        "UniverseId": 13058
     }
     ```
 
