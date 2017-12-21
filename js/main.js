@@ -55,7 +55,7 @@ function modifyTemplate(id, callback) {
 			callback: function(template) {
 				modify(template.html(), (html) => template.html(html))
 			}
-		})*/
+		}) */
 
 		const name = `TEMPLATE_${id}`
 		InjectJS.listen(name, data => {
@@ -279,89 +279,89 @@ function Init() {
 	})
 
 	Observer
-	.one("head", head => {
-		const script = document.createElement("script")
-		script.type = "text/javascript"
-		script.src = chrome.runtime.getURL("js/inject.js")
+		.one("head", head => {
+			const script = document.createElement("script")
+			script.type = "text/javascript"
+			script.src = chrome.runtime.getURL("js/inject.js")
 
-		head.append(script)
-	})
-	.one("body", body => {
-		body.classList.toggle("btr-no-hamburger", settings.general.noHamburger)
-		body.classList.toggle("btr-hide-ads", !settings.general.showAds)
-		body.classList.toggle("btr-newchat", settings.general.chatEnabled && settings.chat.enabled)
-	})
-	.one("#roblox-linkify", linkify => {
-		const newRegex = /((?:(?:https?:\/\/)(?:[\w-]+\.)+\w{2,}|(?:[\w-]+\.)+(?:com|net|uk|org|info|tv|gg|io))(?:\/(?:[\w!$&'"()*+,\-.:;=@_~]|%[0-9A-Fa-f]{2})*)*(?:\?(?:[\w!$&'"()*+,\-.:;=@_~?/]|%[0-9A-Fa-f]{2})*)?(?:#(?:[\w!$&'"()*+,\-.:;=@_~?/]|%[0-9A-Fa-f]{2})*)?)(\b)/
-		linkify.setAttribute("data-regex", newRegex.source)
-	})
-	.one("#navbar-robux", robux => {
-		robux.after(friends)
-		friends.after(messages)
-	})
-	.one("#navbar-setting .rbx-popover-content > ul", list => {
-		list.prepend(html`<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>`)
-	})
-	.all("#header .rbx-navbar", bar => {
-		const buyRobux = bar.$find(".buy-robux")
-		if(buyRobux) buyRobux.parentNode.remove();
-		bar.prepend(html`<li><a class="nav-menu-title" href="/Home">Home</a></li>`)
-	})
-	.one("#nav-blog", blog => {
-		const list = blog.parentNode.parentNode
+			head.append(script)
+		})
+		.one("body", body => {
+			body.classList.toggle("btr-no-hamburger", settings.general.noHamburger)
+			body.classList.toggle("btr-hide-ads", !settings.general.showAds)
+			body.classList.toggle("btr-newchat", settings.general.chatEnabled && settings.chat.enabled)
+		})
+		.one("#roblox-linkify", linkify => {
+			const newRegex = /((?:(?:https?:\/\/)(?:[\w-]+\.)+\w{2,}|(?:[\w-]+\.)+(?:com|net|uk|org|info|tv|gg|io))(?:\/(?:[\w!$&'"()*+,\-.:;=@_~]|%[0-9A-Fa-f]{2})*)*(?:\?(?:[\w!$&'"()*+,\-.:;=@_~?/]|%[0-9A-Fa-f]{2})*)?(?:#(?:[\w!$&'"()*+,\-.:;=@_~?/]|%[0-9A-Fa-f]{2})*)?)(\b)/
+			linkify.setAttribute("data-regex", newRegex.source)
+		})
+		.one("#navbar-robux", robux => {
+			robux.after(friends)
+			friends.after(messages)
+		})
+		.one("#navbar-setting .rbx-popover-content > ul", list => {
+			list.prepend(html`<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>`)
+		})
+		.all("#header .rbx-navbar", bar => {
+			const buyRobux = bar.$find(".buy-robux")
+			if(buyRobux) buyRobux.parentNode.remove();
+			bar.prepend(html`<li><a class="nav-menu-title" href="/Home">Home</a></li>`)
+		})
+		.one("#nav-blog", blog => {
+			const list = blog.parentNode.parentNode
 
-		const home = list.$find("#nav-home")
-		if(home) home.parentNode.remove();
+			const home = list.$find("#nav-home")
+			if(home) home.parentNode.remove();
 
-		const upgrade = list.$find(".rbx-upgrade-now")
-		if(upgrade) upgrade.remove();
+			const upgrade = list.$find(".rbx-upgrade-now")
+			if(upgrade) upgrade.remove();
 
-		blog.parentNode.before(html`
-		<li>
-			<a href="/Upgrades/BuildersClubMemberships.aspx" id="nav-bc">
-				<span class='icon-nav-bc-btr'></span>
-				<span>Builders Club</span>
-			</a>
-		</li>`)
+			blog.parentNode.before(html`
+			<li>
+				<a href="/Upgrades/BuildersClubMemberships.aspx" id="nav-bc">
+					<span class='icon-nav-bc-btr'></span>
+					<span>Builders Club</span>
+				</a>
+			</li>`)
 
-		if(settings.general.showBlogFeed) blog.after(blogfeed);
+			if(settings.general.showBlogFeed) blog.after(blogfeed);
 
-		const trade = list.$find("#nav-trade")
-		if(trade) {
-			trade.href = "/My/Money.aspx"
-			const label = trade.$find("span:not([class^='icon-nav'])")
-			if(label) label.textContent = "Money";
-		}
+			const trade = list.$find("#nav-trade")
+			if(trade) {
+				trade.href = "/My/Money.aspx"
+				const label = trade.$find("span:not([class^='icon-nav'])")
+				if(label) label.textContent = "Money";
+			}
 
 
-		const navFriends = list.$find("#nav-friends")
-		const navMessages = list.$find("#nav-message")
-		navMessages.style.display = "none"
+			const navFriends = list.$find("#nav-friends")
+			const navMessages = list.$find("#nav-message")
+			navMessages.style.display = "none"
 
-		function updateFriends() {
-			const notif = friends.$find(".btr-nav-notif")
-			const count = navFriends.dataset.count
+			function updateFriends() {
+				const notif = friends.$find(".btr-nav-notif")
+				const count = navFriends.dataset.count
 
-			friends.$find("a").href = navFriends.href
-			notif.textContent = count
-			notif.style.display = count > 0 ? "" : "none"
-		}
+				friends.$find("a").href = navFriends.href
+				notif.textContent = count
+				notif.style.display = count > 0 ? "" : "none"
+			}
 
-		function updateMessages() {
-			const notif = messages.$find(".btr-nav-notif")
-			const count = navMessages.dataset.count
+			function updateMessages() {
+				const notif = messages.$find(".btr-nav-notif")
+				const count = navMessages.dataset.count
 
-			messages.$find("a").href = navMessages.href
-			notif.textContent = count
-			notif.style.display = count > 0 ? "" : "none"
-		}
+				messages.$find("a").href = navMessages.href
+				notif.textContent = count
+				notif.style.display = count > 0 ? "" : "none"
+			}
 
-		new MutationObserver(updateFriends).observe(navFriends, { attributes: true, attributeFilter: ["href", "data-count"] })
-		new MutationObserver(updateMessages).observe(navMessages, { attributes: true, attributeFilter: ["href", "data-count"] })
+			new MutationObserver(updateFriends).observe(navFriends, { attributes: true, attributeFilter: ["href", "data-count"] })
+			new MutationObserver(updateMessages).observe(navMessages, { attributes: true, attributeFilter: ["href", "data-count"] })
 
-		updateFriends()
-		updateMessages()
-	})
+			updateFriends()
+			updateMessages()
+		})
 
 	if(!settings.general.chatEnabled) {
 		Observer.one("#chat-container", cont => cont.remove())
@@ -378,20 +378,20 @@ function Init() {
 			.profile-ads-container,#ad,iframe[src*="roblox.com/user-sponsorship/"]`
 
 		CreateObserver(document, { permanent: true })
-		.all(adSelector, ad => ad.remove())
-		.all("script:not([src])", x => {
-			const cont = x.innerHTML
-			if(
-				cont.indexOf("google-analytics.com") !== -1 ||
-				cont.indexOf("googletagservices.com") !== -1 ||
-				cont.indexOf("scorecardresearch.com") !== -1 ||
-				cont.indexOf("cedexis.com") !== -1
-			) {
-				x.remove()
-			} else if(cont.indexOf("Roblox.EventStream.Init") !== -1) { // Stops e.png logging
-				x.innerHTML = x.innerHTML.replace(/"[^"]*"/g, `""`)
-			}
-		})
+			.all(adSelector, ad => ad.remove())
+			.all("script:not([src])", x => {
+				const cont = x.innerHTML
+				if(
+					cont.indexOf("google-analytics.com") !== -1 ||
+					cont.indexOf("googletagservices.com") !== -1 ||
+					cont.indexOf("scorecardresearch.com") !== -1 ||
+					cont.indexOf("cedexis.com") !== -1
+				) {
+					x.remove()
+				} else if(cont.indexOf("Roblox.EventStream.Init") !== -1) { // Stops e.png logging
+					x.innerHTML = x.innerHTML.replace(/"[^"]*"/g, `""`)
+				}
+			})
 	}
 
 	if(settings.general.showBlogFeed) {
