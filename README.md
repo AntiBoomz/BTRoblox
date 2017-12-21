@@ -8,7 +8,7 @@ BTROBLOX
 * [Roblox Mesh Format (wiki)](http://wiki.roblox.com/index.php?title=Roblox_Mesh_Format) [(backup)](https://pastebin.com/yCknWRaj)
 * [API Docs](#api-docs)
 * [Undocumented APIs](#undocumented-apis)
-  * [Group APIs](#group-apis)
+<!---  * [Group APIs](#group-apis)-->
   * [Friend APIs](#friend-apis)
   * [User APIs](#user-apis)
   * [Asset APIs](#asset-apis)
@@ -171,12 +171,12 @@ API Docs
 
 Undocumented APIs
 =================
-
+<!--
 Group APIs
 ----------
 #### Get members of a group (as an admin)
 * https://www.roblox.com/groups/1225129/groupmembers-html?pageNum=1&roleSetIdToSearch=0
-
+-->
 
 Friend APIs
 -----------
@@ -242,12 +242,12 @@ User APIs
   ```
 
 #### Get presence of multiple users
-* https://www.roblox.com/presence/users?userIds=261&userIds=4719353
+* https://www.roblox.com/presence/users?userIds=261&userIds=4719353&userIds=13645&userIds=5736873
   ```json
-  [
+  [¨
       {
           "UserPresenceType": 0,
-          "LastLocation": "Website",
+          "LastLocation": "Offline",
           "AbsolutePlaceUrl": null,
           "PlaceId": null,
           "GameId": null,
@@ -256,13 +256,33 @@ User APIs
           "EndpointType": "Presence"
       },
       {
-          "UserPresenceType": 2,
-          "LastLocation": "Crossroads",
+          "UserPresenceType": 1,
+          "LastLocation": "Online",
           "AbsolutePlaceUrl": null,
-          "PlaceId": 1818,
-          "GameId": "f35b6d10-1864-4b3a-a77c-fa7f0661c9ce",
-          "IsGamePlayableOnCurrentDevice": true,
+          "PlaceId": null,
+          "GameId": null,
+          "IsGamePlayableOnCurrentDevice": false,
           "UserId": 4719353,
+          "EndpointType": "Presence"
+      },
+      {
+          "UserPresenceType": 2,
+          "LastLocation": "Playing Jailbreak",
+          "AbsolutePlaceUrl": null,
+          "PlaceId": 606849621,
+          "GameId": "b44569db-8c5f-4a4c-b6ee-e3f8aa4486ce",
+          "IsGamePlayableOnCurrentDevice": true,
+          "UserId": 13645,
+          "EndpointType": "Presence"
+      },
+      {
+          "UserPresenceType": 3,
+          "LastLocation": "Creating Welcome to ROBLOX Building",
+          "AbsolutePlaceUrl": null,
+          "PlaceId": 41324860,
+          "GameId": null,
+          "IsGamePlayableOnCurrentDevice": true,
+          "UserId": 1,
           "EndpointType": "Presence"
       }
   ]
