@@ -1,30 +1,10 @@
 "use strict"
 
-const GroupShouts = (() => {
-	const groupshouts = {
-		version: 3
-	}
-	let notifAudio
+{
+	const groupShoutCache = {}
 
-	const createNotif = (notifId, options, success, click) => {
-		chrome.notifications.create(notifId, options, success)
-
-		if(typeof click === "function") {
-			const onclick = id => {
-				if(id !== notifId) return;
-				click()
-			}
-
-			const onclose = id => {
-				if(id !== notifId) return;
-				chrome.notifications.onClicked.removeListener(onclick)
-				chrome.notifications.onClosed.removeListener(onclose)
-			}
-
-			chrome.notifications.onClicked.addListener(onclick)
-			chrome.notifications.onClosed.addListener(onclose)
-		}
-	}
+	try { Object.assign(groupShoutCache, JSON.parse(localStorage.getItem("groupShoutCache"))) }
+	catch(ex) {}
 
 	const executeCheck = async () => {
 		let doc
@@ -44,110 +24,84 @@ const GroupShouts = (() => {
 
 		items.forEach(item => {
 			const link = item.querySelector(".list-content a:first-child")
-			const groupUrl = link.href
 			const groupName = link.textContent
+			const groupId = parseInt(link.href.replace(/^.+\/my\/groups.aspx?.*&?gid=(\d+).*$/i, "$1"), 10)
 
-			if(groupUrl.indexOf("groups.aspx") === -1) return;
-
-			let groupId = groupUrl.match(/gid=(\d+)/)
-			groupId = groupId ? parseInt(groupId[1], 10) : null
-			if(groupId == null || isNaN(groupId) || groupsDone[groupId]) return;
-
+			if(Number.isNaN(groupId) || groupsDone[groupId]) return;
 			groupsDone[groupId] = true
 
-			const groupEmblem = item.querySelector(".header-thumb").getAttribute("src")
-			const posterLink = item.querySelector(".text-name")
-			const poster = posterLink.textContent
-			let posterid = parseInt(posterLink.href.match(/\/users\/(\d+)/)[1], 10)
-			const date = item.querySelector(".text-date-hint").textContent
+			const groupEmblem = item.querySelector(".header-thumb").src
+			const posterName = item.querySelector(".text-name").textContent
 			const body = item.querySelector(".feedtext").textContent.replace(/^"(.*)"$/, "$1")
+			const date = Date.parse(item.querySelector(".text-date-hint").textContent.replace("|", ""))
 
-			if(isNaN(posterid)) posterid = -1;
+			if(Number.isNaN(date)) return console.warn("Failed to parse date");
 
-			const lastShout = groupshouts[groupId]
-			if(!lastShout || lastShout.posterid !== posterid || lastShout.body !== body || lastShout.date !== date) {
-				groupshouts[groupId] = { poster, posterid, body, date }
-				STORAGE.set({ groupshouts })
+			const lastShoutDate = groupShoutCache[groupId]
+			if(lastShoutDate !== date) {
+				groupShoutCache[groupId] = date
+				localStorage.setItem("groupShoutCache", JSON.stringify(groupShoutCache))
 
-				if(!lastShout) return; // Don't show anything on first init
-
-				createNotif(`groupshout-${groupId}`, {
-					type: "basic",
-					title: groupName,
-					iconUrl: groupEmblem,
-					message: body,
-					contextMessage: poster,
-
-					priority: 2,
-					requireInteraction: true,
-					isClickable: true
-				}, () => {
-					if(hasPlayedSound) return;
-					hasPlayedSound = true
-
-					if(!notifAudio) notifAudio = new Audio("res/notification.mp3");
-					notifAudio.play()
-				}, () => {
-					chrome.tabs.create({ url: groupUrl })
-				})
+				if(lastShoutDate) {
+					chrome.notifications.create(`groupshout-${groupId}`, {
+						type: "basic",
+						title: groupName,
+						iconUrl: groupEmblem,
+						message: body,
+						contextMessage: posterName,
+	
+						priority: 2,
+						requireInteraction: true,
+						isClickable: true
+					}, () => {
+						if(hasPlayedSound) return;
+						hasPlayedSound = true
+	
+						const audio = new Audio("res/notification.mp3")
+						audio.play()
+					})
+				}
 			}
 		})
 	}
 
-	const startChecking = () => {
-		chrome.alarms.get("GroupShouts", alarm => {
-			if(!alarm) {
-				chrome.alarms.create("GroupShouts", {
-					delayInMinutes: 1,
-					periodInMinutes: 1
-				})
-			}
-		})
-	}
-
-	const stopChecking = () => {
-		chrome.alarms.clear("GroupShouts")
-	}
+	chrome.notifications.onClicked.addListener(notifId => {
+		if(notifId.startsWith("groupshout-")) {
+			const groupId = notifId.slice(11)
+			chrome.tabs.create({ url: `https://www.roblox.com/my/groups.aspx?gid=${groupId}` })
+		}
+	})
 
 	chrome.alarms.onAlarm.addListener(alarm => {
 		if(alarm.name === "GroupShouts") executeCheck();
 	})
 
-	let isFirstLoad = false
-	chrome.runtime.onInstalled.addListener(() => { isFirstLoad = true })
+	chrome.runtime.onInstalled.addListener(() => {
+		let previousCheck = 0
 
-	STORAGE.get(["groupshouts"], data => {
-		if(data.groupshouts && data.groupshouts.version === groupshouts.version) Object.assign(groupshouts, data.groupshouts);
-
-		Settings.get(settings => {
-			const shouldCheckShouts = () => settings.groups.enabled && settings.groups.shoutAlerts
-			let isChecking = shouldCheckShouts()
-
-			if(isChecking) {
-				startChecking()
-				if(isFirstLoad) executeCheck();
-			} else {
-				stopChecking()
-			}
-
-			let previousCheck = 0
-			Settings.onChange(() => {
-				const shouldCheck = shouldCheckShouts()
-				if(isChecking !== shouldCheck) {
-					isChecking = shouldCheck
-
-					if(isChecking) {
-						startChecking()
-						if(Date.now() - previousCheck > 1) { // Just so that spam-changing the option wont flood requests
-							previousCheck = Date.now()
-							executeCheck()
+		const onUpdate = () => {
+			Settings.get(settings => {
+				if(settings.groups.enabled && settings.groups.shoutAlerts) {
+					chrome.alarms.get("GroupShouts", alarm => {
+						if(!alarm) {
+							chrome.alarms.create("GroupShouts", {
+								delayInMinutes: 1,
+								periodInMinutes: 1
+							})
 						}
-					} else {
-						stopChecking()
+					})
+
+					if(Date.now() - previousCheck > 1000) { // Stop check flooding on change
+						previousCheck = Date.now()
+						executeCheck()
 					}
+				} else {
+					chrome.alarms.clear("GroupShouts")
 				}
 			})
-		})
+		}
+
+		Settings.onChange(onUpdate)
+		onUpdate()
 	})
-	return {}
-})();
+}
