@@ -192,32 +192,31 @@ const $ = (() => {
 })();
 
 
-const htmlstring = function(pieces) {
+const htmlstring = function(pieces, ...args) {
 	const escapeMap = {
 		"&": "&amp;",
 		"<": "&lt;",
 		">": "&gt;",
-		'"': "&quot;",
+		"\"": "&quot;",
 		"'": "&#39;",
 		"/": "&#x2F;"
 	}
 
-	var escapePiece = s => s.replace(/[^\S ]+/g, "").replace(/ {2,}/g, " ");
-	var escapeArg = s => s.toString().replace(/[&<>"'\/]/g, x => escapeMap[x])
+	const escapePiece = s => s.replace(/[^\S ]+/g, "").replace(/ {2,}/g, " ");
+	const escapeArg = s => s.toString().replace(/[&<>"'/]/g, x => escapeMap[x])
 
-	var result = escapePiece(pieces[0])
+	let result = escapePiece(pieces[0])
 
-	for(var i=1, len=arguments.length; i<len; i++) {
-		var escaped = arguments[i]
-		result += escapeArg(arguments[i]) + escapePiece(pieces[i])
+	for(let i = 0, len = args.length; i < len; i++) {
+		result += escapeArg(args[i]) + escapePiece(pieces[i + 1])
 	}
 
 	return result
 }
 
-const html = function() {
-	var result = htmlstring.apply(this, arguments)
-	var template = document.createElement("template")
+const html = function(...args) {
+	const result = htmlstring.apply(this, args)
+	const template = document.createElement("template")
 	template.innerHTML = result
 
 	return template.content.firstElementChild || template.content.firstChild
