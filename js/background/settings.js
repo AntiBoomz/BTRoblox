@@ -28,6 +28,13 @@ const Settings = (() => {
 	const onChangeListeners = []
 	let getPromise
 
+	chrome.runtime.onInstalled.addListener(() => {
+		// Update cached settings on install
+		Settings.get(() => {
+			STORAGE.set({ settings })
+		})
+	})
+
 	return {
 		get(cb) {
 			if(!getPromise) {
@@ -46,14 +53,16 @@ const Settings = (() => {
 		},
 		set(data) {
 			if(!(data instanceof Object)) throw new TypeError("data should be an object");
-
-			if(applySettings(data)) {
-				STORAGE.set({ settings })
-				onChangeListeners.forEach(fn => fn(settings))
-			}
+			Settings.get(() => {
+				if(applySettings(data)) {
+					STORAGE.set({ settings })
+					onChangeListeners.forEach(fn => fn(settings))
+				}
+			})
 		},
 		onChange(cb) {
 			onChangeListeners.push(cb)
 		}
 	}
 })();
+
