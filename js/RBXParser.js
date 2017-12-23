@@ -829,7 +829,7 @@ const RBXParser = (() => {
 				case "http:":
 				case "https:": {
 					assert(url.hostname.search(/^((assetgame|www|web)\.)?roblox\.com$/) !== -1, "Invalid hostname")
-					assert(url.pathname.search(/^\/asset\/?$/) !== -1, "Invalid pathname")
+					assert(url.pathname.replace(/\/{2,}/g, "/").search(/^\/asset\/?$/) !== -1, "Invalid pathname")
 					const id = parseInt(url.searchParams.get("id"), 10)
 					assert(!isNaN(id), "Missing or invalid asset id")
 					return id
