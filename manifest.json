@@ -44,11 +44,6 @@
 	"content_scripts": [
 		{
 			"matches": ["*://www.roblox.com/*"],
-			"exclude_matches": [
-				"*://*.roblox.com/userads/*",
-				"*://*.roblox.com/user-sponsorship/*",
-				"*://*.roblox.com/build/upload*"
-			],
 			"js": ["js/constants.js", "js/utility.js", "js/main.js", "js/pages.js"],
 			"run_at": "document_start",
 			"all_frames": true

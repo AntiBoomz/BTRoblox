@@ -1,5 +1,12 @@
 "use strict"
 
+const EXCLUDED_PAGES = [
+	"^/userads/",
+	"^/user-sponsorship/",
+	"^/build/upload",
+	"^/Feeds/GetUserFeed"
+]
+
 const PAGE_INFO = {
 	avatar: {
 		matches: ["^/my/avatar"],
@@ -73,6 +80,7 @@ const GET_PAGE = function(path) {
 		for(let i = 0; i < page.matches.length; i++) {
 			const matches = path.match(page.matches[i])
 			if(matches) return Object.assign({}, page, { name, matches: matches.slice(1) });
+const IS_PAGE_EXCLUDED = path => EXCLUDED_PAGES.some(patt => new RegExp(patt, "i").test(path))
 		}
 	}
 

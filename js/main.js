@@ -1,7 +1,6 @@
 "use strict"
 
 const getURL = chrome.runtime.getURL
-const pathname = window.location.pathname.toLowerCase()
 const Observer = CreateObserver(document)
 
 let hasDataLoaded = false
@@ -433,8 +432,9 @@ function Init() {
 
 function PreInit() {
 	if(document.contentType !== "text/html") return;
+	if(IS_PAGE_EXCLUDED(window.location.pathname)) return;
 
-	currentPage = GET_PAGE(pathname)
+	currentPage = GET_PAGE(window.location.pathname)
 	STORAGE.get(["settings", "cachedBlogFeedV2", "themes"], data => {
 		settings = data.settings || JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
 		blogFeedData = data.cachedBlogFeedV2
