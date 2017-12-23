@@ -24,7 +24,47 @@ const RBXPreview = (() => {
 
 	class Previewer {
 		constructor() {
-			this.container = html`<div style="width:100%; height:100%">
+			this.enabled = false
+			this.initialized = false
+
+			this._onInit = []
+		}
+
+		onInit(cb) {
+			if(this.initialized) cb();
+			else this._onInit.push(cb);
+		}
+
+		setEnabled(bool) {
+			bool = !!bool;
+			if(this.enabled === bool) return;
+			this.enabled = bool
+
+			if(!this.initialized) {
+				this.initialized = true
+
+				execScripts(["lib/three.min.js", "js/RBXParser.js", "js/scene/Scene.js"], () => {
+					RBXScene.ready(() => {
+						this._onInit.forEach(cb => cb.call(this))
+						delete this._onInit
+
+						this.container.append(this.scene.canvas)
+						if(this.enabled) this.scene.start();
+					})
+				})
+
+			} else if(this.scene) {
+				if(this.enabled) this.scene.start();
+				else this.scene.stop();
+			}
+		}
+	}
+
+	class AvatarPreviewer extends Previewer {
+		constructor() {
+			super()
+			this.container = html`
+			<div style="width:100%; height:100%">
 				<div class=btr-switch style="position:absolute;top:6px;right:6px">
 					<div class=btr-switch-off>R6</div>
 					<div class=btr-switch-on>R15</div>
@@ -55,77 +95,46 @@ const RBXPreview = (() => {
 				this.selectAnimation(+ev.currentTarget.dataset.id)
 			})
 
-			this.enabled = false
-			this.initialized = false
-
-			this._onInit = []
 			this.animList = []
 			this.assets = []
-		}
 
-		onInit(cb) {
-			if(this.initialized) cb();
-			else this._onInit.push(cb);
-		}
+			this.onInit(() => {
+				const scene = this.scene = new RBXScene.AvatarScene()
 
-		setEnabled(bool) {
-			bool = !!bool;
-			if(this.enabled === bool) return;
-			this.enabled = bool
+				scene.avatar.setPlayerType("R6")
+				if(this.animList.length) this.selectAnimation(0, true);
+				if(this.assets.length) this.assets.forEach(asset => scene.avatar.addAsset(asset));
 
-			if(!this.initialized) {
-				this.initialized = true
+				if(this.areAccessoriesVisible === false) this.setAccessoriesVisible(false);
+				if(this.arePackagesVisible === false) this.setPackagesVisible(false);
 
-				execScripts(["lib/three.min.js", "js/RBXParser.js", "js/RBXScene.js"], () => {
-					RBXScene.ready(() => {
-						const scene = this.scene = window.scene = new RBXScene.Scene()
-						this.container.append(scene.canvas)
+				getDefaultAppearance((data, rules) => {
+					// Body Colors
+					const bodyColors = {}
 
-						this._onInit.forEach(cb => cb.call(this))
-						delete this._onInit
+					Object.entries(data.bodyColors).forEach(([name, value]) => {
+						const index = name.toLowerCase().replace(/colorid$/, "")
+						const bodyColor = rules.bodyColorsPalette.find(x => x.brickColorId === value)
+						bodyColors[index] = bodyColor.hexColor
+					})
 
-						this.scene.avatar.setPlayerType("R6")
-						if(this.animList.length) this.selectAnimation(0, true);
-						if(this.assets.length) this.assets.forEach(asset => scene.avatar.addAsset(asset));
+					scene.avatar.setBodyColors(bodyColors)
 
-						if(this.areAccessoriesVisible === false) this.setAccessoriesVisible(false);
-						if(this.arePackagesVisible === false) this.setPackagesVisible(false);
+					// Player Type
+					if(this.animList.length === 0) {
+						this.setPlayerType(this.playerType || data.playerAvatarType)
+					}
 
-						getDefaultAppearance((data, rules) => {
-							// Body Colors
-							const bodyColors = {}
-
-							Object.entries(data.bodyColors).forEach(([name, value]) => {
-								const index = name.toLowerCase().replace(/colorid$/, "")
-								const bodyColor = rules.bodyColorsPalette.find(x => x.brickColorId === value)
-								bodyColors[index] = bodyColor.hexColor
-							})
-
-							scene.avatar.setBodyColors(bodyColors)
-
-							// Player Type
-							if(this.animList.length === 0) {
-								this.setPlayerType(this.playerType || data.playerAvatarType)
-							}
-
-							// Assets
-							data.assets.forEach(asset => {
-								this.addAsset(asset.id, asset.assetType.id)
-							})
-						})
-
-						this.scene.avatar.animator.onstop = function() {
-							setTimeout(() => this.play(), 2000)
-						}
-
-						if(this.enabled) scene.start();
+					// Assets
+					data.assets.forEach(asset => {
+						this.addAsset(asset.id, asset.assetType.id)
 					})
 				})
 
-			} else if(this.scene) {
-				if(this.enabled) this.scene.start();
-				else this.scene.stop();
-			}
+				scene.avatar.animator.onstop = function() {
+					setTimeout(() => this.play(), 2000)
+				}
+			})
 		}
 
 		setPlayerType(type) {
@@ -245,7 +254,27 @@ const RBXPreview = (() => {
 		}
 	}
 
+	class ModelPreviewer extends Previewer {
+		constructor() {
+			super()
+			this.container = html`
+			<div style="width:100%; height:100%">
+			</div>`
+
+			this.onInit(() => {
+				const scene = this.scene = new RBXScene.ModelScene()
+				if(this.model) scene.loadModel(this.model);
+			})
+		}
+
+		setModel(model) {
+			this.model = model
+			if(this.scene) this.scene.loadModel(this.model);
+		}
+	}
+
 	return {
-		Previewer
+		AvatarPreviewer,
+		ModelPreviewer
 	}
 })();
