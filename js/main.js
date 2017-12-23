@@ -48,14 +48,6 @@ function modifyTemplate(id, callback) {
 			end(doc.body.innerHTML)
 		}
 
-		/* Please stop changing how templates work, roblox!
-		Observer.add({
-			selector: "#" + id,
-			callback: function(template) {
-				modify(template.html(), (html) => template.html(html))
-			}
-		}) */
-
 		const name = `TEMPLATE_${id}`
 		InjectJS.listen(name, data => {
 			modify(data, html => InjectJS.send(name, html))
@@ -304,7 +296,7 @@ function Init() {
 		.all("#header .rbx-navbar", bar => {
 			const buyRobux = bar.$find(".buy-robux")
 			if(buyRobux) buyRobux.parentNode.remove();
-			bar.prepend(html`<li><a class="nav-menu-title" href="/Home">Home</a></li>`)
+			bar.prepend(html`<li><a class="nav-menu-title" href="/home">Home</a></li>`)
 		})
 		.one("#nav-blog", blog => {
 			const list = blog.parentNode.parentNode
@@ -317,7 +309,7 @@ function Init() {
 
 			blog.parentNode.before(html`
 			<li>
-				<a href="/Upgrades/BuildersClubMemberships.aspx" id="nav-bc">
+				<a href="/premium/membership" id="nav-bc">
 					<span class='icon-nav-bc-btr'></span>
 					<span>Builders Club</span>
 				</a>
@@ -327,7 +319,7 @@ function Init() {
 
 			const trade = list.$find("#nav-trade")
 			if(trade) {
-				trade.href = "/My/Money.aspx"
+				trade.href = "/my/money.aspx"
 				const label = trade.$find("span:not([class^='icon-nav'])")
 				if(label) label.textContent = "Money";
 			}

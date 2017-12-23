@@ -74,13 +74,15 @@ const PAGE_INFO = {
 	}
 }
 
-const GET_PAGE = function(path) {
-	for(const name in PAGE_INFO) {
-		const page = PAGE_INFO[name]
-		for(let i = 0; i < page.matches.length; i++) {
-			const matches = path.match(page.matches[i])
-			if(matches) return Object.assign({}, page, { name, matches: matches.slice(1) });
 const IS_PAGE_EXCLUDED = path => EXCLUDED_PAGES.some(patt => new RegExp(patt, "i").test(path))
+
+const GET_PAGE = path => {
+	for(const [name, page] of Object.entries(PAGE_INFO)) {
+		for(const pattern of page.matches) {
+			const matches = path.match(new RegExp(pattern, "i"))
+			if(matches) {
+				return Object.assign({}, page, { name, matches: matches.slice(1) })
+			}
 		}
 	}
 

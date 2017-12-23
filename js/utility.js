@@ -117,7 +117,7 @@ const $ = (() => {
 				case "Y": return ("" + date.getFullYear()).slice(-str.length)
 				case "M": return str.length > 2 ? Months[date.getMonth()].slice(0, str.length > 3 ? 9 : 3) : Fixed(date.getMonth() + 1, str.length)
 				case "D": return str.length > 2 ? Days[date.getDay()].slice(0, str.length > 3 ? 9 : 3)
-												: str.length === 2 ? Fixed(date.getDate(), 2) : date.getDate()
+					: str.length === 2 ? Fixed(date.getDate(), 2) : date.getDate()
 				case "H": return Fixed(date.getHours(), str.length)
 				case "h": return Fixed(date.getHours() % 12 || 12, str.length)
 				case "m": return Fixed(date.getMinutes(), str.length)
@@ -348,13 +348,13 @@ function CreateObserver(target, params) {
 
 			if(!isPermanent && document.readyState !== "loading") {
 				console.warn("observer.all called when not loading and not permanent, not listening")
-				return
-			} else {
-				observeList.push(item)
-				if(!connected) {
-					connected = true
-					observer.observe(target, options)
-				}
+				return this
+			}
+			
+			observeList.push(item)
+			if(!connected) {
+				connected = true
+				observer.observe(target, options)
 			}
 
 			return this
