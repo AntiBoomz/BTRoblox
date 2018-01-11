@@ -706,30 +706,38 @@ pageInit.itemdetails = function(assetId) {
 						const doNamedDownload = event => {
 							event.preventDefault()
 							if(!dlPromise) {
-								dlPromise = downloadAsset(assetId, "blob")
-									.then(blob => URL.createObjectURL(blob))
+								dlPromise = downloadAsset(assetId, "arraybuffer")
+									.then(ab => {
+										console.log()
+										const blobUrl = URL.createObjectURL(new Blob([ab]))
+
+										const title = $("#item-container .item-name-container h2")
+										let fileName = title ? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-") : new URL(btn.href).pathname
+									
+										switch(assetTypeId) {
+										case 1:
+											fileName += ".png"
+											break;
+										case 3:
+											switch(new TextDecoder("ascii").decode(ab.slice(0, 4))) {
+											case "RIFF": fileName += ".wav"; break
+											case "OggS": fileName += ".ogg"; break
+											default: fileName += ".mp3"
+											}
+
+											break;
+										case 4:
+											fileName += ".mesh"
+											break;
+										default:
+											fileName += ".rbxm"
+										}
+
+										return [ blobUrl, fileName ]
+									})
 							}
 		
-							dlPromise.then(bloburl => {
-								const title = $("#item-container .item-name-container h2")
-								let fileName = title ? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-") : new URL(btn.href).pathname
-							
-								switch(assetTypeId) {
-								case 1:
-									fileName += ".png"
-									break;
-								case 3:
-									fileName += ".mp3"
-									break;
-								case 4:
-									fileName += ".mesh"
-									break;
-								default:
-									fileName += ".rbxm"
-								}
-		
-								startDownload(bloburl, fileName)
-							})
+							dlPromise.then(data => startDownload(...data))
 						}
 		
 						btn.href = `/asset/?id=${assetId}`
