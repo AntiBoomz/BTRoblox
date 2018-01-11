@@ -289,7 +289,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 					</div>
 					<div class="version-thumb-container"><img class="version-thumb" style="display:none"></div>
 					<div class="version-number">Version ${item.VersionNumber}</div>
-					<div class="version-date">${new Date(item.Created).$format("M/D/YY hh:mm A")}</div>
+					<div class="version-date">${new Date(item.Created).$format("M/D/YY hh:mm A (T)")}</div>
 				</div>
 			</li>`
 
@@ -402,7 +402,7 @@ pageInit.home = function() {
 		const fixedDate = RobloxTime(span.textContent.replace("|", ""))
 		if(fixedDate) {
 			span.setAttribute("btr-timestamp", "")
-			span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A")
+			span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
 		}
 	})
 }
@@ -415,7 +415,7 @@ pageInit.messages = function() {
 				const fixedDate = RobloxTime(span.textContent.replace("|", ""))
 				if(fixedDate) {
 					span.setAttribute("btr-timestamp", "")
-					span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A")
+					span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
 				}
 			})
 			.all(".roblox-message-body", msg => {
@@ -423,7 +423,7 @@ pageInit.messages = function() {
 				const fixedDate = RobloxTime(span.textContent.replace("|", ""))
 				if(fixedDate) {
 					span.setAttribute("btr-timestamp", "")
-					span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A")
+					span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
 				}
 			})
 	})
@@ -480,7 +480,7 @@ pageInit.itemdetails = function(assetId) {
 					const fixedDate = RobloxTime(span.textContent.replace("|", ""))
 					if(fixedDate) {
 						span.setAttribute("btr-timestamp", "")
-						span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A")
+						span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
 					}
 				})
 		})
@@ -1030,7 +1030,7 @@ pageInit.gamedetails = function(placeId) {
 					const fixedDate = RobloxTime(span.textContent.replace("|", ""))
 					if(fixedDate) {
 						span.setAttribute("btr-timestamp", "")
-						span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A")
+						span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
 					}
 				})
 		})
@@ -1397,7 +1397,7 @@ pageInit.groups = function() {
 			if(fixedDate) {
 				span.setAttribute("btr-timestamp", "")
 				span.textContent = `${$.dateSince(fixedDate, startDate)} ago`
-				span.title = fixedDate.$format("M/D/YYYY h:mm:ss A")
+				span.title = fixedDate.$format("M/D/YYYY h:mm:ss A (T)")
 			}
 		})
 		.one("#ctl00_cphRoblox_GroupWallPane_GroupWallUpdatePanel", wall => {
@@ -1461,7 +1461,7 @@ pageInit.groups = function() {
 					if(fixedDate) {
 						dateSpan.setAttribute("btr-timestamp", "")
 						dateSpan.textContent = `${$.dateSince(fixedDate)} ago`
-						dateSpan.title = fixedDate.$format("M/D/YYYY h:mm:ss A")
+						dateSpan.title = fixedDate.$format("M/D/YYYY h:mm:ss A (T)")
 					}
 
 					let groupId

@@ -108,12 +108,13 @@ const $ = (() => {
 				date = new Date(date)
 			}
 
-			return format.replace(/a|A|Z|S(SS)?|ss?|mm?|HH?|hh?|D{1,4}|M{1,4}|YY(YY)?|'([^']|'')*'/g, str => {
+			return format.replace(/a|A|Z|T|S(SS)?|ss?|mm?|HH?|hh?|D{1,4}|M{1,4}|YY(YY)?|'([^']|'')*'/g, str => {
 				switch(str[0]) {
 				case "'": return str.slice(1, -1).replace(/''/g, "'")
 				case "a": return date.getHours() < 12 ? "am" : "pm"
 				case "A": return date.getHours() < 12 ? "AM" : "PM"
 				case "Z": return (("+" + -date.getTimezoneOffset() / 60).replace(/^\D?(\D)/, "$1").replace(/^(.)(.)$/, "$10$2") + "00")
+				case "T": return date.toLocaleTimeString("en-us", {timeZoneName: "short"}).split(" ")[2]
 				case "Y": return ("" + date.getFullYear()).slice(-str.length)
 				case "M": return str.length > 2 ? Months[date.getMonth()].slice(0, str.length > 3 ? 9 : 3) : Fixed(date.getMonth() + 1, str.length)
 				case "D": return str.length > 2 ? Days[date.getDay()].slice(0, str.length > 3 ? 9 : 3)
