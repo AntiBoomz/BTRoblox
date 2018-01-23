@@ -988,8 +988,10 @@ pageInit.gamedetails = function(placeId) {
 		})
 		.one("#carousel-game-details", details => details.setAttribute("data-is-video-autoplayed-on-ready", "false"))
 		.one(".game-stats-container .game-stat", x => x.$find(".text-label").textContent === "Updated", stat => {
+			const cacheBuster = Math.floor(Math.random() * 1e9)
+
 			const xhr = new XMLHttpRequest()
-			xhr.open("GET", `https://api.roblox.com/marketplace/productinfo?assetId=${placeId}`)
+			xhr.open("GET", `https://api.roblox.com/marketplace/productinfo?assetId=${placeId}&_=${cacheBuster}`)
 			xhr.responseType = "json"
 
 			xhr.onload = function() {
