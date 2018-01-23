@@ -141,8 +141,12 @@
 	line-height: 1.5em;
 }
 
+.btr-profile .profile-about-content .profile-about-text.para-overflow-toggle:not(.para-height) {
+	padding-bottom: 20px;
+}
+
 .btr-profile .profile-about-content .profile-about-text.para-height {
-	max-height: 220px;
+	max-height: 240px;
 }
 
 .btr-profile .profile-about-content .profile-about-text:after {
