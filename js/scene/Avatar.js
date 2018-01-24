@@ -160,6 +160,12 @@ Object.assign(RBXScene, (() => {
 		"RightFoot", "RightHand", "RightLowerArm", "RightLowerLeg", "RightUpperArm", "RightUpperLeg", "UpperTorso"
 	]
 
+	const HeadMeshes = {
+		6340170: "headA", 6340101: "headB", 6340258: "headC", 6340192: "headD", 8330576: "headE", 6340161: "headF", 
+		8330389: "headG", 6340208: "headH", 6340141: "headI", 6340133: "headJ", 8330578: "headK", 6340269: "headL", 
+		6340154: "headM", 6340198: "headN", 6340213: "headO", 6340227: "headP"
+	}
+
 	const bounce = x => (x < 0.36363636
 		? 7.5625 * x ** 2 : x < 0.72727272
 		? 7.5625 * (x - 0.54545454) ** 2 + 0.75 : x < 0.90909090
@@ -640,19 +646,30 @@ Object.assign(RBXScene, (() => {
 				})
 				break
 			case 17: // Head
-				AssetCache.loadModel(assetId, model => {
-					const mesh = model.find(x => x.ClassName === "SpecialMesh")
-					if(!mesh) return;
+				if(assetId in HeadMeshes) {
+					const meshUrl = chrome.runtime.getURL(`res/previewer/heads/${HeadMeshes[assetId]}.mesh`)
 					this.bodyparts.push({
 						asset,
 						target: "Head",
-						meshId: RBXParser.parseContentUrl(mesh.MeshId),
-						baseTexId: RBXParser.parseContentUrl(mesh.TextureId),
-						scale: mesh.Scale
+						meshId: meshUrl
 					})
 
 					this.refreshBodyParts()
-				})
+				} else {
+					AssetCache.loadModel(assetId, model => {
+						const mesh = model.find(x => x.ClassName === "SpecialMesh")
+						if(!mesh) return;
+						this.bodyparts.push({
+							asset,
+							target: "Head",
+							meshId: RBXParser.parseContentUrl(mesh.MeshId),
+							baseTexId: RBXParser.parseContentUrl(mesh.TextureId),
+							scale: mesh.Scale
+						})
+	
+						this.refreshBodyParts()
+					})
+				}
 				break
 			case 18: // Face
 				AssetCache.loadModel(assetId, model => {
