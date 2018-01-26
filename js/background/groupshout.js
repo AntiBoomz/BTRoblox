@@ -76,32 +76,31 @@
 		if(alarm.name === "GroupShouts") executeCheck();
 	})
 
-	chrome.runtime.onInstalled.addListener(() => {
-		let previousCheck = 0
 
-		const onUpdate = () => {
-			Settings.get(settings => {
-				if(settings.groups.enabled && settings.groups.shoutAlerts) {
-					chrome.alarms.get("GroupShouts", alarm => {
-						if(!alarm) {
-							chrome.alarms.create("GroupShouts", {
-								delayInMinutes: 1,
-								periodInMinutes: 1
-							})
-						}
-					})
+	let previousCheck = 0
 
-					if(Date.now() - previousCheck > 1000) { // Stop check flooding on change
-						previousCheck = Date.now()
-						executeCheck()
+	const onUpdate = () => {
+		Settings.get(settings => {
+			if(settings.groups.enabled && settings.groups.shoutAlerts) {
+				chrome.alarms.get("GroupShouts", alarm => {
+					if(!alarm) {
+						chrome.alarms.create("GroupShouts", {
+							delayInMinutes: 1,
+							periodInMinutes: 1
+						})
 					}
-				} else {
-					chrome.alarms.clear("GroupShouts")
-				}
-			})
-		}
+				})
 
-		Settings.onChange(onUpdate)
-		onUpdate()
-	})
+				if(Date.now() - previousCheck > 1000) { // Stop check flooding on change
+					previousCheck = Date.now()
+					executeCheck()
+				}
+			} else {
+				chrome.alarms.clear("GroupShouts")
+			}
+		})
+	}
+
+	Settings.onChange(onUpdate)
+	chrome.runtime.onInstalled.addListener(onUpdate)
 }
