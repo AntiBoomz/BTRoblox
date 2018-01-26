@@ -25,6 +25,7 @@
 	},
 	"permissions": [
 		"*://www.roblox.com/",
+		"*://web.roblox.com/",
 		"*://m.roblox.com/",
 		"*://api.roblox.com/",
 		"*://avatar.roblox.com/",
@@ -43,7 +44,7 @@
 	],
 	"content_scripts": [
 		{
-			"matches": ["*://www.roblox.com/*"],
+			"matches": ["*://www.roblox.com/*", "*://web.roblox.com/*"],
 			"js": ["js/constants.js", "js/utility.js", "js/main.js", "js/pages.js"],
 			"run_at": "document_start",
 			"all_frames": true
