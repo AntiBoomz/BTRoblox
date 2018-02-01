@@ -1,4 +1,6 @@
-(() => {
+"use strict"
+
+{
 	const defaultThemes = ["dark", "red", "simblk", "sky"]
 	const themes = {}
 
@@ -29,4 +31,4 @@
 			})
 		})
 	})
-})();
+}
