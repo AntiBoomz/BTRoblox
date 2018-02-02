@@ -1,7 +1,8 @@
 BTROBLOX
 ========
 
-* [Roblox Mesh Format (wiki)](http://wiki.roblox.com/index.php?title=Roblox_Mesh_Format) [(backup)](https://pastebin.com/yCknWRaj)
+* [Roblox Mesh Format (wiki)](http://wiki.roblox.com/index.php?title=Roblox_Mesh_Format)
+<!--Backup: https://pastebin.com/yCknWRaj-->
 * [API Docs](#api-docs)
 * [Undocumented APIs](#undocumented-apis)
     * [Friend APIs](#friend-apis)
@@ -13,12 +14,14 @@ BTROBLOX
 API Docs
 ========
 
+* https://accountsettings.roblox.com/docs
 * https://api.roblox.com/docs
 * https://auth.roblox.com/docs
 * https://avatar.roblox.com/docs
 * https://billing.roblox.com/docs
 * https://chat.roblox.com/docs
 * https://develop.roblox.com/docs
+* https://games.roblox.com/docs/
 * https://groups.roblox.com/docs
 * https://inventory.roblox.com/docs
 * https://notifications.roblox.com/docs
@@ -159,7 +162,7 @@ User APIs
 #### Get presence of multiple users
 * https://www.roblox.com/presence/users?userIds=261&userIds=4719353&userIds=13645&userIds=5736873
     ```json
-    [¨
+    [
         {
             "UserPresenceType": 0,
             "LastLocation": "Offline",
@@ -245,8 +248,7 @@ Place APIs
                 "FormatName": null,
                 "Description": "The rarest badge of them all! Obtain all other badges for this MVP badge. You\u0027ll also get an exclusive wheel for any of your vehicles!",
                 "AssetRestrictionIcon": null
-            },
-            ...
+            }
         ]
     }
     ```
