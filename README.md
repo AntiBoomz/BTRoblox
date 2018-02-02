@@ -1,8 +1,7 @@
 BTROBLOX
 ========
 
-* [Roblox Mesh Format (wiki)](http://wiki.roblox.com/index.php?title=Roblox_Mesh_Format)
-<!--Backup: https://pastebin.com/yCknWRaj-->
+* [Roblox Mesh Format (wiki)](http://wiki.roblox.com/index.php?title=Roblox_Mesh_Format) <!--Backup: https://pastebin.com/yCknWRaj-->
 * [API Docs](#api-docs)
 * [Undocumented APIs](#undocumented-apis)
     * [Friend APIs](#friend-apis)
