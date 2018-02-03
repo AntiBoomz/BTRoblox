@@ -1,4 +1,6 @@
-(function() {
+"use strict"
+
+{
 	const ContentJS = {
 		send(action, ...args) {
 			document.dispatchEvent(
@@ -13,46 +15,41 @@
 	}
 
 	function HijackAngular(module, objects) {
-		module._invokeQueue.forEach((x,i) => {
-			var newhandler = objects[x[2][0]]
+		module._invokeQueue.forEach(x => {
+			const newhandler = objects[x[2][0]]
 
-			if(typeof(newhandler) == "function") {
-				var data = x[2][1]
-				var oldhandler = data[data.length-1]
+			if(typeof newhandler === "function") {
+				const data = x[2][1]
+				const oldhandler = data[data.length - 1]
 
-				data[data.length-1] = function() {
-					return newhandler.apply(this, [ oldhandler, arguments ])
+				data[data.length - 1] = function(...args) {
+					return newhandler.call(this, oldhandler, args)
 				}
 			}
 		})
 	}
 
-	var templates = []
-	var modifiedTemplates = {}
-
-	function OnTemplateListen(id) {
-		templates.push(id)
-	}
+	const modifiedTemplates = {}
 
 	function DoTemplates(templates) {
-		var args = ["$templateCache", ($templateCache) => {
-			templates.forEach((id) => {
-				if(!(id in modifiedTemplates)) {
-					var data = $templateCache.get(id)
-					if(data) {
-						ContentJS.listen("TEMPLATE_" + id, (newdata) => {
-							modifiedTemplates[id] = newdata
-						})
-						ContentJS.send("TEMPLATE_" + id, data)
-					}
+		const args = ["$templateCache", $templateCache => {
+			templates.forEach(id => {
+				if(id in modifiedTemplates) return;
+				const data = $templateCache.get(id)
+
+				if(data) {
+					ContentJS.listen("TEMPLATE_" + id, newdata => {
+						modifiedTemplates[id] = newdata
+					})
+					ContentJS.send("TEMPLATE_" + id, data)
 				}
 			})
 
-			for(var name in modifiedTemplates) {
+			Object.entries(modifiedTemplates).forEach(([name, template]) => {
 				if($templateCache.get(name)) {
-					$templateCache.put(name, modifiedTemplates[name])
+					$templateCache.put(name, template)
 				}
-			}
+			})
 		}]
 
 		const templateApps = ["chatAppHtmlTemplateApp", "pageTemplateApp", "baseTemplateApp"]
@@ -61,26 +58,23 @@
 		})
 	}
 
-	function OnInit(settings, page, matches, templates) {
-		if(typeof(jQuery) === "undefined") return;
-		if(typeof(angular) !== "undefined") {
+	function OnInit(settings, currentPage, matches, templates) {
+		if(typeof jQuery === "undefined") return;
+		if(typeof angular !== "undefined") {
 			DoTemplates(templates)
 
 			if(settings.chat.enabled) {
 				try {
 					HijackAngular(angular.module("chat"), {
-						chatController: function(func,args) {
-							var scope = args[0], 
-								chatService = args[1];
-							func.apply(this,args)
+						chatController(func, args) {
+							const scope = args[0]
+							func.apply(this, args)
 
-							var library = scope.chatLibrary
-							var width = library.chatLayout.widthOfChat
+							const library = scope.chatLibrary
+							const width = library.chatLayout.widthOfChat
 
-							scope.$watch(function() {
-								return library.chatLayout.collapsed;
-							},function(value) {
-								library.chatLayout.widthOfChat = value ? 54+6 : width;
+							scope.$watch(() => library.chatLayout.collapsed, value => {
+								library.chatLayout.widthOfChat = value ? 54 + 6 : width;
 								library.dialogDict.collapsed = value;
 							})
 						}
@@ -88,20 +82,20 @@
 				} catch(ex) {}
 			}
 
-			if(page === "inventory" && settings.inventory.enabled && settings.inventory.inventoryTools) {
+			if(currentPage === "inventory" && settings.inventory.enabled && settings.inventory.inventoryTools) {
 				try {
-					HijackAngular(angular.module("assetsExplorer"),{
-						assetsService: function(handler,args) {
-							var result = handler.apply(this,args)
+					HijackAngular(angular.module("assetsExplorer"), {
+						assetsService(handler, args) {
+							const result = handler.apply(this, args)
+							const tbuat = result.beginUpdateAssetsItems
 
-							var tbuat = result.beginUpdateAssetsItems
-							result.beginUpdateAssetsItems = function() {
-								var promise = tbuat.apply(result,arguments)
+							result.beginUpdateAssetsItems = function(...iargs) {
+								const promise = tbuat.apply(result, iargs)
 								ContentJS.send("inventoryUpdateBegin")
-								promise.then(function() {
-									setTimeout(function() {
+								promise.then(() => {
+									setTimeout(() => {
 										ContentJS.send("inventoryUpdateEnd")
-									},0)
+									}, 0)
 								})
 								return promise
 							}
@@ -112,19 +106,93 @@
 				} catch(ex) {}
 			}
 
-			if(page === "messages") {
+			if(currentPage === "messages") {
 				try {
-					HijackAngular(angular.module("messages"),{
-						rbxMessagesNav: function(handler,args) {
-							var result = handler.apply(this,args)
-							var link = result.link
+					HijackAngular(angular.module("messages"), {
+						rbxMessagesNav(handler, args) {
+							const result = handler.apply(this, args)
+							const link = result.link
+							let isWorking = false
+		
+							function getMessages(page, callback) {
+								$.get(`/messages/api/get-messages?messageTab=0&pageNumber=${page}&pageSize=20`, callback)
+							}
+		
+							function getMessageCount(callback) {
+								$.get("/messages/api/get-my-unread-messages-count", callback)
+							}
+		
+							function markMessagesAsRead(list, callback) {
+								$.post("/messages/api/mark-messages-read", { messageIds: list }, callback)
+							}
+		
+							function markAllAsRead() {
+								if(isWorking) return;
+								isWorking = true
+									
+								const messages = []
+								const pages = []
+								let running = 0
+								let maxPage = 0
+								let count = 0
+
+								const progress = $("<progress value='0' max='0' style='width:100%'>")
+									.insertAfter(".roblox-messages-btns")
+
+								function checkForUnread(data) {
+									Object.values(data.Collection).forEach(msg => {
+										if(!msg.IsRead) {
+											messages.push(msg.Id)
+										}
+									})
+	
+									progress.val(messages.length)
+								}
+
+								function readPage(page) {
+									if(page < maxPage && messages.length < count) {
+										if(pages[page] === true) {
+											readPage(page + 1)
+											return;
+										}
+	
+										getMessages(page, data => {
+											checkForUnread(data)
+											readPage(page + 1)
+										})
+									} else if(--running === 0) {
+										markMessagesAsRead(messages, () => {
+											window.location.reload()
+										})
+									}
+								}
+		
+								getMessageCount(countData => {
+									if(countData.count === 0) {
+										window.location.reload()
+										return;
+									}
+		
+									count = countData.count
+									progress.attr("max", count)
+		
+									getMessages(0, data => {
+										maxPage = data.TotalPages
+										checkForUnread(data)
+										for(let i = 0; i < 4; i++) {
+											running++
+											readPage(1 + Math.floor(i / 4 * maxPage))
+										}
+									})
+								})
+							}
 
 							result.link = function(u) {
 								u.keyDown = function($event) {
-									if($event.which == 13) {
-										var value = $event.target.textContent*1
-										if(!isNaN(value)) {
-											args[1].search({page:value})
+									if($event.which === 13) {
+										const value = $event.target.textContent * 1
+										if(!Number.isNaN(value)) {
+											args[1].search({ page: value })
 										} else {
 											$event.target.textContent = u.currentStatus.currentPage
 										}
@@ -132,89 +200,16 @@
 										$event.preventDefault()
 									}
 								}
-								var isWorking = false
 
-								function getMessages(page,callback) {
-									$.get("/messages/api/get-messages?messageTab=0&pageNumber="+page+"&pageSize=20",callback)
-								}
-
-								function getMessageCount(callback) {
-									$.get("/messages/api/get-my-unread-messages-count",callback)
-								}
-
-								function markMessagesAsRead(list,callback) {
-									$.post("/messages/api/mark-messages-read",{"messageIds":list},callback)
-								}
-
-								u.markAllAsRead = function() {
-									if(isWorking) return;
-									isWorking = true
-
-									getMessageCount(function(data) {
-										if(data.count == 0) {
-											location.reload()
-											return;
-										}
-
-										var count = data.count
-
-										var progress = $("<progress value='0' max='0' style='width:100%'>")
-											.attr("max",count)
-											.insertAfter(".roblox-messages-btns")
-
-										var running = 0
-										var messages = []
-										var pages = []
-										var maxPage = 0
-
-										function checkForUnread(data) {
-											for(var i in data.Collection) {
-												var msg = data.Collection[i]
-												if(!msg.IsRead)
-													messages.push(msg.Id)
-											}
-
-											progress.val(messages.length)
-										}
-
-										function readPage(page) {
-											if(page < maxPage && messages.length < count) {
-												if(pages[page] == true) {
-													readPage(page+1)
-													return;
-												}
-												getMessages(page,function(data) {
-													checkForUnread(data)
-													readPage(page+1)
-												})
-											} else {
-												if(--running == 0) {
-													markMessagesAsRead(messages,function() {
-														location.reload()
-													})
-												}
-											}
-										}
-
-										getMessages(0,function(data) {
-											maxPage = data.TotalPages
-											checkForUnread(data)
-											for(var i=0;i<4;i++) {
-												running++
-												readPage(1+Math.floor(i/4*maxPage))
-											}
-										})
-									})
-								}
-								return link.apply(this,arguments)
+								u.markAllAsRead = markAllAsRead
+								
+								return link.apply(this, args)
 							}
 
 							return result
 						}
 					})
-				} catch(ex) {
-					// Nothing
-				}
+				} catch(ex) {}
 			}
 		}
 
@@ -224,7 +219,7 @@
 				Roblox.PrerollPlayer.waitForPreroll = x => $.Deferred().resolve(x);
 			}
 
-			if(page === "gamedetails" && settings.gamedetails.enabled) {
+			if(currentPage === "gamedetails" && settings.gamedetails.enabled) {
 				const placeId = matches[0]
 
 				$(() => {
@@ -242,8 +237,8 @@
 
 					$(`${prefix}-running-games-load-more`).hide() // Hide Load More
 
-					const pager = $(
-					`<div class='btr-server-pager'>
+					const pager = $(`
+					<div class='btr-server-pager'>
 						<button type='button' class='btn-control-sm btr-server-first'>First</button>
 						<button type='button' class='btn-control-sm btr-server-prev'>Prev</button>
 						<span style='margin:0 10px;vertical-align:middle;line-height:100%'>
@@ -251,8 +246,7 @@
 						</span>
 						<button type='button' class='btn-control-sm btr-server-next'>Next</button>
 						<button type='button' class='btn-control-sm btr-server-last'>Last</button>
-					</div>`
-					).appendTo(`${prefix}-running-games-footer`);
+					</div>`).appendTo(`${prefix}-running-games-footer`);
 
 					const updatePager = function() {
 						const curPage = Math.floor(curIndex / 10) + 1
@@ -284,40 +278,41 @@
 						}
 					})
 
-					pager.on("click", ".btr-server-last:not(.disabled)", () => {
-						gameInstance.fetchServers(placeId, maxSize - maxSize % 10)
-					})
-					.on("click", ".btr-server-next:not(.disabled)", () => {
-						gameInstance.fetchServers(placeId, Math.min(maxSize - (maxSize % 10), curIndex + 10))
-					})
-					.on("click", ".btr-server-prev:not(.disabled)", () => {
-						gameInstance.fetchServers(placeId, Math.max(0, curIndex - 10))
-					})
-					.on("click", ".btr-server-first:not(.disabled)", () => {
-						gameInstance.fetchServers(placeId, 0)
-					})
-					.on({
-						blur() {
-							const maxPage = Math.floor(maxSize / 10) + 1
-							const text = $(this).val()
-							let num = parseInt(text, 10)
+					pager
+						.on("click", ".btr-server-last:not(.disabled)", () => {
+							gameInstance.fetchServers(placeId, maxSize - maxSize % 10)
+						})
+						.on("click", ".btr-server-next:not(.disabled)", () => {
+							gameInstance.fetchServers(placeId, Math.min(maxSize - (maxSize % 10), curIndex + 10))
+						})
+						.on("click", ".btr-server-prev:not(.disabled)", () => {
+							gameInstance.fetchServers(placeId, Math.max(0, curIndex - 10))
+						})
+						.on("click", ".btr-server-first:not(.disabled)", () => {
+							gameInstance.fetchServers(placeId, 0)
+						})
+						.on({
+							blur() {
+								const maxPage = Math.floor(maxSize / 10) + 1
+								const text = $(this).val()
+								let num = parseInt(text, 10)
 
-							if(!isNaN(num)) {
-								num = Math.min(maxPage, Math.max(1, num))
-								gameInstance.fetchServers(placeId, (num - 1) * 10)
+								if(!Number.isNaN(num)) {
+									num = Math.min(maxPage, Math.max(1, num))
+									gameInstance.fetchServers(placeId, (num - 1) * 10)
+								}
+							},
+							keypress(e) {
+								if (e.which === 13) {
+									$(this).blur()
+								}
 							}
-						},
-						keypress(e) {
-							if (e.which === 13) {
-								$(this).blur()
-							}
-						}
-					}, ".btr-server-input")
+						}, ".btr-server-input")
 				}
 
-			//	if(Roblox.FriendsRunningGameInstances) createPager(Roblox.FriendsRunningGameInstances, true);
+				// if(Roblox.FriendsRunningGameInstances) createPager(Roblox.FriendsRunningGameInstances, true);
 				if(Roblox.AllRunningGameInstances) createPager(Roblox.AllRunningGameInstances);
-			} else if(page === "develop") {
+			} else if(currentPage === "develop") {
 				if(Roblox.BuildPage) {
 					Roblox.BuildPage.GameShowcase = new Proxy(Roblox.BuildPage.GameShowcase || {}, {
 						set(target, name, value) {
@@ -336,7 +331,7 @@
 
 			prm.add_pageLoaded(() => ContentJS.send("ajaxUpdate"))
 
-			if(page === "groups" && settings.groups.enabled) {
+			if(currentPage === "groups" && settings.groups.enabled) {
 				prm.add_pageLoaded(() => $(".GroupWallPane .linkify").linkify())
 			}
 		}
@@ -346,4 +341,4 @@
 	ContentJS.listen("refreshInventory", () => $(".btr-it-reload").click())
 
 	ContentJS.send("INJECT_INIT")
-})();
+}
