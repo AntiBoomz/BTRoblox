@@ -124,7 +124,8 @@ const DEFAULT_SETTINGS = {
 	},
 	groups: {
 		enabled: true,
-		shoutAlerts: true
+		shoutAlerts: true,
+		expandGroupList: true
 	},
 	inventory: {
 		enabled: true,
