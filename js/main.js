@@ -133,6 +133,8 @@ function Init() {
 				</group>
 				<group label="Version History Changes" path="versionhistory" toggleable>
 				</group>
+				<group label="WIP" minimizable minimized id=btr-settings-wip>
+				</group>
 			</div>
 			<div class="btr-settings-footer">
 				<div class="btr-settings-footer-version">v${chrome.runtime.getManifest().version}</div>
@@ -141,32 +143,47 @@ function Init() {
 		</div>
 	</div>`
 
-	document.$on("click", ".btr-settings-toggle", () => {
-		const visible = settingsDiv.parentNode !== document.body
+	function initSettingsDiv() {
+		let resolve
+		const initSettingsPromise = new Promise(x => resolve = x)
 
-		if(visible) document.body.appendChild(settingsDiv);
-		else settingsDiv.remove();
+		const content = settingsDiv.$find(".btr-settings-content")
 
-		if(!settingsDiv.hasAttribute("loaded")) {
-			settingsDiv.setAttribute("loaded", "")
-			const content = settingsDiv.$find(".btr-settings-content")
+		content.addEventListener("mousewheel", e => {
+			if(e.deltaY < 0 && content.scrollTop === 0) return e.preventDefault();
+			if(e.deltaY > 0 && content.scrollTop >= content.scrollHeight - content.clientHeight) return e.preventDefault();
+		})
 
-			content.addEventListener("mousewheel", e => {
-				if(e.deltaY < 0 && content.scrollTop === 0) return e.preventDefault();
-				if(e.deltaY > 0 && content.scrollTop >= content.scrollHeight - content.clientHeight) return e.preventDefault();
-			})
+		const settingsDone = {}
+		let labelCounter = 0
 
-			const settingsDone = {}
-			let labelCounter = 0
-			let wipGroup
+		Array.from(content.children).forEach(group => {
+			const title = html`<h4>${group.getAttribute("label")}</h4>`
+			group.prepend(title)
 
-			Array.from(content.children).forEach(group => {
+			if(group.hasAttribute("minimizable")) {
+				const updateGroup = () => {
+					if(group.hasAttribute("minimized")) {
+						group.style.height = `${title.clientHeight}px`
+					} else {
+						group.style.height = `${group.scrollHeight}px`
+					}
+				}
+
+				title.$on("click", () => {
+					if(group.hasAttribute("minimized")) {
+						group.removeAttribute("minimized")
+					} else {
+						group.setAttribute("minimized", "")
+					}
+					updateGroup()
+				})
+				initSettingsPromise.then(updateGroup)
+			}
+
+			if(group.hasAttribute("path")) {
 				const groupPath = group.getAttribute("path")
 				const settingsGroup = settings[groupPath]
-				const title = html`<h4>${group.getAttribute("label")}</h4>`
-				group.prepend(title)
-				title.after(html`<br>`)
-
 				settingsDone[groupPath] = {}
 
 				if(group.hasAttribute("toggleable")) {
@@ -189,7 +206,7 @@ function Init() {
 						MESSAGING.send("setSetting", { [groupPath]: { enabled: input.checked } })
 						update(input.checked)
 					})
-					setTimeout(update, 0, input.checked)
+					initSettingsPromise.then(() => update(input.checked))
 
 					settingsDone[groupPath].enabled = true
 				}
@@ -226,36 +243,47 @@ function Init() {
 
 					settingsDone[groupPath][settingName] = true
 				})
+			}
+		})
+
+		const wipGroup = settingsDiv.$find("#btr-settings-wip")
+
+		Object.entries(settings).forEach(([groupPath, settingsGroup]) => {
+			Object.entries(settingsGroup).forEach(([settingName, settingValue]) => {
+				if(groupPath in settingsDone && settingName in settingsDone[groupPath]) return;
+
+				if(typeof settingValue === "boolean") {
+					const checkbox = html`<checkbox></checkbox>`
+					const input = html`<input id=btr-settings-input-${labelCounter} type=checkbox>`
+					const label = html`<label for=btr-settings-input-${labelCounter++}>${groupPath}.${settingName}`
+
+					checkbox.append(input)
+					checkbox.append(label)
+					wipGroup.append(checkbox)
+
+					input.checked = !!settingValue
+					input.$on("change", () => {
+						settingsGroup[settingName] = input.checked
+						MESSAGING.send("setSetting", { [groupPath]: { [settingName]: input.checked } })
+					})
+				} else {
+					wipGroup.append(html`<div>${groupPath}.${settingName} (${typeof settingValue})`)
+				}
 			})
+		})
 
-			Object.entries(settings).forEach(([groupPath, settingsGroup]) => {
-				Object.entries(settingsGroup).forEach(([settingName, settingValue]) => {
-					if(groupPath in settingsDone && settingName in settingsDone[groupPath]) return;
+		resolve()
+	}
 
-					if(!wipGroup) {
-						wipGroup = html`<group><h4>WIP</h4><br></group>`
-						content.append(wipGroup)
-					}
+	document.$on("click", ".btr-settings-toggle", () => {
+		const visible = settingsDiv.parentNode !== document.body
 
-					if(typeof settingValue === "boolean") {
-						const checkbox = html`<checkbox></checkbox>`
-						const input = html`<input id=btr-settings-input-${labelCounter} type=checkbox>`
-						const label = html`<label for=btr-settings-input-${labelCounter++}>${groupPath}.${settingName}`
+		if(visible) document.body.appendChild(settingsDiv);
+		else settingsDiv.remove();
 
-						checkbox.append(input)
-						checkbox.append(label)
-						wipGroup.append(checkbox)
-
-						input.checked = !!settingValue
-						input.$on("change", () => {
-							settingsGroup[settingName] = input.checked
-							MESSAGING.send("setSetting", { [groupPath]: { [settingName]: input.checked } })
-						})
-					} else {
-						wipGroup.append(html`<div>${groupPath}.${settingName} (${typeof settingValue})`)
-					}
-				})
-			})
+		if(!settingsDiv.hasAttribute("loaded")) {
+			settingsDiv.setAttribute("loaded", "")
+			initSettingsDiv()
 		}
 	})
 

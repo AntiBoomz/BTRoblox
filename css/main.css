@@ -615,7 +615,6 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 .btr-settings-footer-version {
 	flex: 1;
 	text-align: left;
-	font-weight: bold;
 }
 
 .btr-settings-footer-text {
@@ -626,21 +625,25 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 .btr-settings-header-title {
 	display: inline-block;
 	margin-left: 4px;
+	font-weight: bold;
 }
 
 .btr-settings-header-close {
 	float: right;
 	margin-right: 2px;
 	padding: 0 6px;
+	font-weight: bold;
 	text-align: center;
 	cursor: pointer;
 }
 
 body input.btr-settings-enabled-toggle {
-	position: relative;
+	position: absolute;
+	top: 8px;
+	right: 8px;
 	display: block;
 	float: right;
-	width: 60px;
+	width: 54px;
 	height: 24px;
 	padding: 2px;
 	margin: 0;
@@ -699,20 +702,55 @@ body input.btr-settings-enabled-toggle {
 	display: block;
 	position: relative;
 	padding: 8px;
-	padding-bottom: 20px;
+	padding-bottom: 12px;
 }
 
 .btr-settings-content group:not(:first-child) {
 	border-top: 1px solid #E8E8E8;
 }
 
-.btr-settings-content group>h4 {
-	display: inline-block;
+.btr-settings-content group > h4 {
+	display: block;
 	color: #191919;
 	font-size: 21px;
-	margin: 5px 0;
+	margin: 0 0 5px;
 	padding: 0;
 	line-height: 1em;
+}
+
+.btr-settings-content group[minimizable] {
+	transition: height .2s;
+	overflow: hidden;
+}
+
+.btr-settings-content group[minimizable] h4 {
+	cursor: pointer;
+	margin: -8px -14px 0;
+	padding: 12px 14px;
+}
+
+.btr-settings-content group[minimizable] h4:hover {
+	background: rgba(0, 0, 0, .02);
+}
+
+.btr-settings-content group[minimizable] h4:after {
+	content: "";
+	display: block;
+	position: absolute;
+	width: 12px;
+	height: 12px;
+	top: 20px;
+	right: 18px;
+
+	transform: rotate(45deg);
+	border-color: #191919;
+	border-width: 1px 0 0 1px;
+	border-style: solid;
+}
+
+.btr-settings-content group[minimizable][minimized] h4:after {
+	top: 14px;
+	border-width: 0 1px 1px 0;
 }
 
 .btr-settings-content checkbox {
