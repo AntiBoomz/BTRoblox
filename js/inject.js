@@ -11,7 +11,7 @@
 			actionList.split(" ").forEach(action => {
 				document.addEventListener("inject." + action, ev => {
 					let detail = ev.detail
-					
+
 					// And for firefox to not error
 					if(typeof detail === "string") {
 						detail = JSON.parse(detail)
@@ -120,7 +120,6 @@
 					HijackAngular(angular.module("messages"), {
 						rbxMessagesNav(handler, args) {
 							const result = handler.apply(this, args)
-							const link = result.link
 							let isWorking = false
 		
 							function getMessages(page, callback) {
@@ -196,6 +195,7 @@
 								})
 							}
 
+							const link = result.link
 							result.link = function(u) {
 								u.keyDown = function($event) {
 									if($event.which === 13) {
@@ -212,13 +212,13 @@
 
 								u.markAllAsRead = markAllAsRead
 								
-								return link.apply(this, args)
+								return link.call(this, u)
 							}
 
 							return result
 						}
 					})
-				} catch(ex) {}
+				} catch(ex) { console.log(ex) }
 			}
 		}
 
