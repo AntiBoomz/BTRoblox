@@ -470,9 +470,12 @@ function Init() {
 
 function PreInit() {
 	if(document.contentType !== "text/html") return;
-	if(IS_PAGE_EXCLUDED(window.location.pathname)) return;
+	const pathname = window.location.pathname
+	
+	const exclude = EXCLUDED_PAGES.some(patt => new RegExp(patt, "i").test(pathname))
+	if(exclude) return;
 
-	currentPage = GET_PAGE(window.location.pathname)
+	currentPage = GET_PAGE(pathname)
 	STORAGE.get(["settings", "cachedBlogFeedV2"], data => {
 		settings = data.settings || JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
 		blogFeedData = data.cachedBlogFeedV2
@@ -494,7 +497,7 @@ function PreInit() {
 				injectCSS(`${theme}/${file}`)
 			}
 		})
-		
+
 		hasDataLoaded = true
 		if(haveContentScriptsLoaded) Init();
 	})

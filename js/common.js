@@ -74,8 +74,6 @@ const PAGE_INFO = {
 	}
 }
 
-const IS_PAGE_EXCLUDED = path => EXCLUDED_PAGES.some(patt => new RegExp(patt, "i").test(path))
-
 const GET_PAGE = path => {
 	for(const [name, page] of Object.entries(PAGE_INFO)) {
 		for(const pattern of page.matches) {
