@@ -18,6 +18,10 @@ body.btr-embed .page-content>h1 {
 	display: none !important;
 }
 
+body.btr-embed .category-tabs {
+	padding-bottom: 60px;
+}
+
 body .page-content {
 	padding-top: 16px;
 }
