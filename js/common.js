@@ -16,14 +16,6 @@ const PAGE_INFO = {
 		matches: ["^/catalog/?$"],
 		css: ["catalog.css"]
 	},
-	configureplace: {
-		matches: ["^/places/(\\d+)/update"],
-		css: ["placeconfig.css"]
-	},
-	configureuniverse: {
-		matches: ["^/universes/configure"],
-		css: ["universeconfig.css"]
-	},
 	develop: {
 		matches: ["^/develop"],
 		css: ["develop.css"]
@@ -68,9 +60,17 @@ const PAGE_INFO = {
 		matches: ["^/my/money"],
 		css: ["money.css"]
 	},
+	placeconfig: {
+		matches: ["^/places/(\\d+)/update"],
+		css: ["placeconfig.css"]
+	},
 	profile: {
 		matches: ["^/users/(\\d+)/profile"],
 		css: ["profile.css"]
+	},
+	universeconfig: {
+		matches: ["^/universes/configure"],
+		css: ["universeconfig.css"]
 	}
 }
 

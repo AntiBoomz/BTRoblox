@@ -1092,7 +1092,7 @@ pageInit.catalog = function() {
 	})
 }
 
-pageInit.configureuniverse = function() {
+pageInit.universeconfig = function() {
 	if(!settings.universeconfig.enabled) return;
 	Observer.one("body", body => body.classList.add("btr-uconf"))
 
@@ -1224,7 +1224,7 @@ pageInit.configureuniverse = function() {
 		})
 }
 
-pageInit.configureplace = function(placeId) {
+pageInit.placeconfig = function(placeId) {
 	if(!settings.versionhistory.enabled) return;
 
 	const newVersionHistory = CreateNewVersionHistory(placeId, "place")
