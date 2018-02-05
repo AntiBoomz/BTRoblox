@@ -15,7 +15,7 @@
 
 	"background": {
 		"scripts": [
-			"js/constants.js",
+			"js/common.js",
 			"js/background/settings.js",
 			"js/background/blogfeed.js",
 			"js/background/messaging.js",
@@ -46,7 +46,7 @@
 	"content_scripts": [
 		{
 			"matches": ["*://www.roblox.com/*", "*://web.roblox.com/*"],
-			"js": ["js/constants.js", "js/utility.js", "js/main.js", "js/pages.js"],
+			"js": ["js/common.js", "js/utility.js", "js/main.js", "js/pages.js"],
 			"run_at": "document_start",
 			"all_frames": true
 		}
