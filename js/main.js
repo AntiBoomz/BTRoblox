@@ -471,7 +471,7 @@ function Init() {
 function PreInit() {
 	if(document.contentType !== "text/html") return;
 	const pathname = window.location.pathname
-	
+
 	const exclude = EXCLUDED_PAGES.some(patt => new RegExp(patt, "i").test(pathname))
 	if(exclude) return;
 
@@ -488,9 +488,10 @@ function PreInit() {
 			cssParent.append(link)
 		}
 
-		const theme = settings.general.theme
-		const cssFiles = ["main.css", ...(currentPage && currentPage.css || [])]
+		const cssFiles = ["main.css"]
+		if(currentPage) cssFiles.push(...currentPage.css);
 
+		const theme = settings.general.theme
 		cssFiles.forEach(file => {
 			injectCSS(file)
 			if(theme !== "default") {
