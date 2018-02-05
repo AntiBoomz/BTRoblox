@@ -473,7 +473,7 @@ function PreInit() {
 	if(IS_PAGE_EXCLUDED(window.location.pathname)) return;
 
 	currentPage = GET_PAGE(window.location.pathname)
-	STORAGE.get(["settings", "cachedBlogFeedV2", "themes"], data => {
+	STORAGE.get(["settings", "cachedBlogFeedV2"], data => {
 		settings = data.settings || JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
 		blogFeedData = data.cachedBlogFeedV2
 
@@ -485,18 +485,16 @@ function PreInit() {
 			cssParent.append(link)
 		}
 
+		const theme = settings.general.theme
 		const cssFiles = ["main.css", ...(currentPage && currentPage.css || [])]
-		cssFiles.forEach(injectCSS)
 
-		if(data.themes) {
-			const theme = settings.general.theme
-			const themeData = data.themes[theme]
-
-			if(themeData) {
-				cssFiles.forEach(file => file in themeData && injectCSS(`${theme}/${file}`))
+		cssFiles.forEach(file => {
+			injectCSS(file)
+			if(theme !== "default") {
+				injectCSS(`${theme}/${file}`)
 			}
-		}
-
+		})
+		
 		hasDataLoaded = true
 		if(haveContentScriptsLoaded) Init();
 	})

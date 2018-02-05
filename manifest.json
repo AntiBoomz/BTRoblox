@@ -20,8 +20,7 @@
 			"js/background/blogfeed.js",
 			"js/background/messaging.js",
 			"js/background/groupshout.js",
-			"js/background/contextmenu.js",
-			"js/background/themes.js"
+			"js/background/contextmenu.js"
 		],
 		"persistent": false
 	},
