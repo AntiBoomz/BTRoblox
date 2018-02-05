@@ -7,8 +7,6 @@
 	"version": "2.3.12",
 	"minimum_chrome_version": "55",
 
-	"incognito": "split",
-
 	"icons": {
 		"128":"res/icon_128.png"
 	},
