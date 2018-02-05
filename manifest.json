@@ -13,6 +13,12 @@
 		"128":"res/icon_128.png"
 	},
 
+	"applications": {
+		"gecko": {
+			"id": "btroblox@antiboomz.com"
+		}
+	},
+
 	"background": {
 		"scripts": [
 			"js/common.js",

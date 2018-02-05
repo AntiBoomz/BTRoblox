@@ -43,8 +43,19 @@ const $ = (() => {
 						const event = args[0]
 						if(!selector) return callback.apply(this, args);
 
+						let path = event.path
+						if(!path) {
+							let target = event.target
+							path = [target]
+							while(target.parentNode) {
+								target = target.parentNode
+								path.push(target)
+							}
+							path.push(window)
+						}
+
 						const query = this.$findAll(selector)
-						const final = event.path.indexOf(this)
+						const final = path.indexOf(this)
 
 						const sP = event.stopPropagation
 						let hasStoppedPropagation = false
@@ -54,7 +65,7 @@ const $ = (() => {
 						}
 
 						for(let i = 0; i < final; i++) {
-							const node = event.path[i]
+							const node = path[i]
 							const index = Array.prototype.indexOf.call(query, node)
 							if(index === -1) continue;
 
@@ -168,27 +179,31 @@ const $ = (() => {
 		}
 	})
 
+	const Assign = (stuff, data) => {
+		stuff.forEach(constructor => {
+			Object.assign(constructor.prototype, data)
+		})
+	}
 
-	Object.assign(EventTarget.prototype, {
+	// Firefox xray stuff, custom constructors ._.'
+
+	Assign([window.EventTarget, EventTarget], {
 		$on(...args) { return $.on(this, ...args) },
 		$off(...args) { return $.off(this, ...args) },
 		$once(...args) { return $.once(this, ...args) },
 		$trigger(...args) { return $.trigger(this, ...args) },
 	})
 
-	Object.assign(Date.prototype, {
+	Assign([window.Date, Date], {
 		$format(...args) { return $.dateFormat(this, ...args) },
 		$since(...args) { return $.dateSince(this, ...args) }
 	})
 
-	const types = [Element, Document, DocumentFragment]
-	types.forEach(x => {
-		Object.assign(x.prototype, {
-			$find(...args) { return $.find(this, ...args) },
-			$findAll(...args) { return $.findAll(this, ...args) }
-		})
+	Assign([window.Element, Element, window.Document, Document, window.DocumentFragment, DocumentFragment], {
+		$find(...args) { return $.find(this, ...args) },
+		$findAll(...args) { return $.findAll(this, ...args) }
 	})
-	
+
 	return $
 })();
 

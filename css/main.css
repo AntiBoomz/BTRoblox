@@ -259,6 +259,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	padding: 0;
 
 	-webkit-appearance: none;
+	-moz-appearance: none;
 	background: none;
 	border: none;
 	cursor: pointer;
@@ -637,7 +638,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	cursor: pointer;
 }
 
-body input.btr-settings-enabled-toggle {
+.btr-settings-enabled-toggle {
 	position: absolute;
 	top: 8px;
 	right: 8px;
@@ -649,6 +650,7 @@ body input.btr-settings-enabled-toggle {
 	margin: 0;
 
 	-webkit-appearance: none;
+	-moz-appearance: none;
 	background: #B8B8B8;
 	border-radius: 12px;
 
@@ -661,7 +663,7 @@ body input.btr-settings-enabled-toggle {
 	cursor: pointer;
 }
 
-.btr-settings-enabled-toggle:checked {
+.btr-settings-enabled-toggle.checked {
 	background: #02b757;
 	text-align: left;
 }
@@ -680,22 +682,25 @@ body input.btr-settings-enabled-toggle {
 	user-select: none;
 }
 
-.btr-settings-enabled-toggle:checked:before {
+.btr-settings-enabled-toggle.checked:before {
 	left: auto;
 	right: 2px;
 }
 
 .btr-settings-enabled-toggle:after {
 	content: "OFF";
+	display: flex;
+	height: 100%;
 	margin-right: 6px;
 	margin-left: 6px;
-	display: inline;
 	user-select: none;
-	vertical-align: middle;
+	align-items: center;
+	justify-content: flex-end;
 }
 
-.btr-settings-enabled-toggle:checked:after {
+.btr-settings-enabled-toggle.checked:after {
 	content: "ON";
+	justify-content: flex-start;
 }
 
 .btr-settings-content group {
@@ -785,6 +790,10 @@ body input.btr-settings-enabled-toggle {
 	cursor: pointer;
 }
 
+.btr-settings-checkbox input[type="checkbox"][disabled] + label {
+	cursor: initial;
+}
+
 .btr-settings-checkbox input[type="checkbox"] + label:before {
 	content: "";
 	display: inline-block;
@@ -804,6 +813,10 @@ body input.btr-settings-enabled-toggle {
 .btr-settings-checkbox input[type="checkbox"]:checked + label:before {
 	background-image: url(/res/checkbox.svg);
 	background-color: #00A2FF;
+}
+
+.btr-settings-checkbox input[type="checkbox"][disabled] + label:before {
+	background-color: #B8B8B8;
 }
 
 .btr-settings-content select {

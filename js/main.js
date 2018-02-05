@@ -1,5 +1,6 @@
 "use strict"
 
+const IS_FIREFOX = typeof chrome !== "undefined" && typeof browser !== "undefined"
 const getURL = chrome.runtime.getURL
 const Observer = CreateObserver(document)
 
@@ -28,6 +29,7 @@ const InjectJS = {
 			return;
 		}
 
+		if(IS_FIREFOX) detail = JSON.stringify(detail);
 		document.dispatchEvent(new CustomEvent(`inject.${action}`, { detail }))
 	},
 
@@ -97,10 +99,10 @@ function Init() {
 			<div class="btr-settings-content">
 				<group label="General" path="general">
 					<select path="theme">
-						<option label="Default" value="default"/>
-						<option label="Simply Black" value="simblk"/>
-						<option label="Sky" value="sky"/>
-						<option label="Red" value="red"/>
+						<option value=default>Default</option>
+						<option value=simblk>Simply Black</option>
+						<option value=sky>Sky</option>
+						<option value=red>Red</option>
 					</select>
 
 					<checkbox label="Add Blog Feed to Sidebar" path="showBlogFeed"></checkbox>
@@ -188,25 +190,24 @@ function Init() {
 
 				if(group.hasAttribute("toggleable")) {
 					const inputList = group.getElementsByTagName("input")
-					const input = html`<input type=checkbox class=btr-settings-enabled-toggle>`
-					title.after(input)
+					const toggle = html`<div class=btr-settings-enabled-toggle>`
+					title.after(toggle)
 
 					const update = state => {
+						toggle.classList.toggle("checked", state)
 						Array.from(inputList).forEach(x => {
-							if(x === input) return;
-
 							if(!state) x.setAttribute("disabled", "");
 							else x.removeAttribute("disabled");
 						})
 					}
 
-					input.checked = !!settingsGroup.enabled
-					input.$on("change", () => {
-						settingsGroup.enabled = input.checked
-						MESSAGING.send("setSetting", { [groupPath]: { enabled: input.checked } })
-						update(input.checked)
+					toggle.$on("click", () => {
+						const checked = !settingsGroup.enabled
+						settingsGroup.enabled = checked
+						MESSAGING.send("setSetting", { [groupPath]: { enabled: checked } })
+						update(checked)
 					})
-					initSettingsPromise.then(() => update(input.checked))
+					initSettingsPromise.then(() => update(settingsGroup.enabled))
 
 					settingsDone[groupPath].enabled = true
 				}

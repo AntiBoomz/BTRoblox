@@ -251,7 +251,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 	let actualPageSize
 
 	async function getPage(page, target) {
-		const url = `//api.roblox.com/assets/${assetId}/versions?page=${page}`
+		const url = `https://api.roblox.com/assets/${assetId}/versions?page=${page}`
 		const response = await fetch(url, { credentials: "include" })
 		const json = await response.json()
 
@@ -350,7 +350,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 
 			isBusy = true
 
-			csrfFetch("/places/revert", {
+			csrfFetch("https://www.roblox.com/places/revert", {
 				method: "POST",
 				credentials: "include",
 				body: new URLSearchParams({ assetVersionID: versionId })
@@ -454,7 +454,7 @@ pageInit.develop = function() {
 
 				if(Number.isNaN(placeId)) return;
 
-				csrfFetch("/game/toggle-profile", {
+				csrfFetch("https://www.roblox.com/game/toggle-profile", {
 					method: "POST",
 					credentials: "include",
 					body: new URLSearchParams({ placeId, addToProfile: !isVisible })
@@ -813,7 +813,7 @@ pageInit.itemdetails = function(assetId) {
 							const imgId = RBXParser.parseContentUrl(decal.Texture)
 							if(!imgId) return;
 
-							const url = `/asset-thumbnail/json?width=420&height=420&format=png&assetId=${imgId}`
+							const url = `https://www.roblox.com/asset-thumbnail/json?width=420&height=420&format=png&assetId=${imgId}`
 							function fetchThumb() {
 								fetch(url).then(async response => {
 									const data = await response.json()
@@ -968,7 +968,7 @@ pageInit.gamedetails = function(placeId) {
 
 			if(settings.gamedetails.showBadgeOwned) {
 			//	onDocumentReady(() => {
-				const url = `//www.roblox.com/badges/list-badges-for-place?placeId=${placeId}`
+				const url = `https://www.roblox.com/badges/list-badges-for-place?placeId=${placeId}`
 				fetch(url, { credentials: "include" }).then(async response => {
 					const json = await response.json()
 
@@ -1173,7 +1173,7 @@ pageInit.universeconfig = function() {
 										const select = html`<select class=btr-asset-version-select></select>`
 										btn.append(select)
 
-										fetch(`//api.roblox.com/assets/${asset.Id}/versions`, { credentials: "include" })
+										fetch(`https://api.roblox.com/assets/${asset.Id}/versions`, { credentials: "include" })
 											.then(async resp => {
 												const json = await resp.json()
 												const verCount = json[0].VersionNumber
@@ -1728,14 +1728,14 @@ pageInit.profile = function(userId) {
 				})
 				.$on("click", ".btr-btn-toggle-profile", () => {
 					const placeId = e.currentTarget.getAttribute("data-placeid")
-					csrfFetch("/game/toggle-profile", {
+					csrfFetch("https://www.roblox.com/game/toggle-profile", {
 						method: "POST",
 						credentials: "include",
 						body: new URLSearchParams({ placeId, addToProfile: false })
 					})
 				})
 				.$on("click", ".btr-btn-shutdown-all", () => {
-					csrfFetch("/Games/shutdown-all-instances", {
+					csrfFetch("https://www.roblox.com/Games/shutdown-all-instances", {
 						method: "POST",
 						credentials: "include",
 						body: new URLSearchParams({ placeId })
@@ -1829,7 +1829,7 @@ pageInit.profile = function(userId) {
 					}
 
 					if(!isNaN(placeId)) {
-						const thumbUrl = `/asset-thumbnail/json?assetId=${placeId}&width=768&height=432&format=png`
+						const thumbUrl = `https://www.roblox.com/asset-thumbnail/json?assetId=${placeId}&width=768&height=432&format=png`
 						retryUntilFinal(thumbUrl, json => {
 							item.$find(".btr-game-thumb").src = json.Url
 						})
@@ -1853,7 +1853,7 @@ pageInit.profile = function(userId) {
 			const hlist = friends.$find(".hlist")
 
 			if(hlist.children.length === 9) {
-				const url = `//api.roblox.com/users/${userId}/friends`
+				const url = `https://api.roblox.com/users/${userId}/friends`
 				fetch(url).then(async response => {
 					const list = await response.json()
 					if(list.length <= 9) return;
@@ -1891,7 +1891,7 @@ pageInit.profile = function(userId) {
 		function loadPage(page, cursor) {
 			isLoading = true
 
-			const url = `/users/inventory/list-json?assetTypeId=21&itemsPerPage=10&userId=${userId}&cursor=${cursor}&pageNumber=${page}`
+			const url = `https://www.roblox.com/users/inventory/list-json?assetTypeId=21&itemsPerPage=10&userId=${userId}&cursor=${cursor}&pageNumber=${page}`
 			fetch(url).then(async response => {
 				const json = await response.json()
 				isLoading = false
@@ -2047,7 +2047,7 @@ pageInit.profile = function(userId) {
 				pageNumber: page
 			}).toString()
 
-			const url = `/users/favorites/list-json?${params}`
+			const url = `https://www.roblox.com/users/favorites/list-json?${params}`
 			fetch(url).then(async response => {
 				const json = await response.json()
 				isLoading = false
@@ -2094,7 +2094,7 @@ pageInit.profile = function(userId) {
 
 		dropdown.$on("click", ".dropdown-menu li", e => {
 			const category = +e.currentTarget.getAttribute("data-value")
-			if(isNaN(category)) return;
+			if(Number.isNaN(category)) return;
 
 			loadPage(category, 1)
 		})
@@ -2116,10 +2116,18 @@ pageInit.profile = function(userId) {
 		$.all(".btr-remove-on-profile-load").forEach(item => item.remove())
 
 		if(settings.profile.embedInventoryEnabled) {
-			bottom.$find(".placeholder-inventory").replaceWith(html`
+			const cont = html`
 			<div>
 				<iframe id="btr-injected-inventory" src="/users/${userId}/inventory" scrolling="no" sandbox="allow-same-origin allow-scripts allow-top-navigation-by-user-activation">
-			</div>`)
+			</div>`
+			bottom.$find(".placeholder-inventory").replaceWith(cont)
+
+			const iframe = cont.$find("iframe")
+			setInterval(() => {
+				try {
+					iframe.style.height = `${iframe.contentWindow.document.body.scrollHeight}px`
+				} catch(ex) {}
+			}, 100)
 		} else {
 			bottom.$find(".placeholder-inventory").remove()
 		}
@@ -2136,25 +2144,20 @@ pageInit.avatar = function() {
 }
 
 pageInit.inventory = function() {
-	if(settings.profile.embedInventoryEnabled && window.top.location !== location) {
-		const embedParent = window.top.document.$find("#btr-injected-inventory")
-
-		if(embedParent) {
-			Observer
-				.one("head", head => head.append(html`<base target="_top"></base>`))
-				.all("script:not([src])", script => {
-					const src = script.innerHTML
-					if(src.indexOf("top.location=self.location") !== -1 ||
-						src.indexOf("Roblox.DeveloperConsoleWarning.showWarning()") !== -1) {
-						script.remove()
-					}
-				})
-				.one("#chat-container", chat => chat.remove())
-				.one("body", body => {
-					body.classList.add("btr-embed")
-					setInterval(() => { embedParent.style.height = `${body.scrollHeight}px` }, 100)
-				})
-		}
+	if(settings.profile.embedInventoryEnabled && window.top !== window) {
+		Observer
+			.one("head", head => head.append(html`<base target="_top"></base>`))
+			.all("script:not([src])", script => {
+				const src = script.innerHTML
+				if(src.indexOf("top.location=self.location") !== -1 ||
+					src.indexOf("Roblox.DeveloperConsoleWarning.showWarning()") !== -1) {
+					script.remove()
+				}
+			})
+			.one("#chat-container", chat => chat.remove())
+			.one("body", body => {
+				body.classList.add("btr-embed")
+			})
 	}
 
 	if(!settings.inventory.enabled) return;
@@ -2236,12 +2239,12 @@ pageInit.inventory = function() {
 				function removeItem(index, retries) {
 					const item = items[index]
 					if(item) {
-						const url = `//api.roblox.com/Marketplace/ProductInfo?assetId=${item.assetId}`
+						const url = `https://api.roblox.com/Marketplace/ProductInfo?assetId=${item.assetId}`
 						fetch(url).then(async response => {
 							const data = await response.json()
 							if(validAssetTypes.indexOf(data.AssetTypeId) === -1) return console.log("Bad assetType", data);
 
-							csrfFetch("/asset/delete-from-inventory", {
+							csrfFetch("https://www.roblox.com/asset/delete-from-inventory", {
 								method: "POST",
 								credentials: "include",
 								body: new URLSearchParams({ assetId: item.assetId })
