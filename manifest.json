@@ -4,7 +4,7 @@
 	"name": "BTRoblox",
 	"short_name": "BTR",
 	"description": "Better Roblox - Making Roblox better!",
-	"version": "2.3.12",
+	"version": "2.3.13",
 	"minimum_chrome_version": "55",
 
 	"icons": {
@@ -13,7 +13,8 @@
 
 	"applications": {
 		"gecko": {
-			"id": "btroblox@antiboomz.com"
+			"id": "btroblox@antiboomz.com",
+			"update_url": "https://antiboomz.com/btroblox/updates.json"
 		}
 	},
 
