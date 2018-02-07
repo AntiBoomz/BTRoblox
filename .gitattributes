@@ -1,5 +1,6 @@
 .gitignore export-ignore
 .gitattributes export-ignore
+bin export-ignore
 res -diff -merge
-css/default -diff -merge
+css/default export-ignore
 README.md export-ignore
