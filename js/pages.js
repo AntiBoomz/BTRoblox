@@ -175,9 +175,8 @@ function GetAssetFileType(assetTypeId, buffer) {
 		
 		return "mp3"
 	case 4: return "mesh"
-	default: 
-		console.log(buffer[7])
-		return (buffer && buffer[7] !== 0x21) && "rbxmx" || "rbxm"
+	case 9: return (buffer && buffer[7] !== 0x21) && "rbxlx" || "rbxl"
+	default: return (buffer && buffer[7] !== 0x21) && "rbxmx" || "rbxm"
 	}
 }
 
