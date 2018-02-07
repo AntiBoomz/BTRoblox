@@ -158,6 +158,28 @@ function RobloxTime(dateString) {
 	return Date.parse(dateString) ? new Date(`${dateString} ${GetRobloxTimeZone()}`) : false
 }
 
+function GetAssetFileType(assetTypeId, buffer) {
+	if(buffer instanceof ArrayBuffer) buffer = new Uint8Array(buffer);
+
+	switch(assetTypeId) {
+	case 1: return "png"
+	case 3:
+		if(buffer) {
+			const header = new TextDecoder("ascii").decode(buffer.subarray(0, 4))
+			switch(header) {
+			case "RIFF": return "wav"
+			case "OggS": return "ogg"
+			default: return "mp3"
+			}
+		}
+		
+		return "mp3"
+	case 4: return "mesh"
+	default: 
+		console.log(buffer[7])
+		return (buffer && buffer[7] !== 0x21) && "rbxmx" || "rbxm"
+	}
+}
 
 function createPager(noSelect) {
 	const pager = html`
@@ -696,7 +718,6 @@ pageInit.itemdetails = function(assetId) {
 
 					if(settings.itemdetails.downloadButton && InvalidDownloadableAssetTypeIds.indexOf(assetTypeId) === -1) {
 						const btn = html`<a class="btr-download-button"><div class="btr-icon-download"></div></a>`
-						let dlPromise
 
 						Observer.one("#item-container > .section-content", cont => {
 							cont.append(btn)
@@ -705,39 +726,20 @@ pageInit.itemdetails = function(assetId) {
 
 						const doNamedDownload = event => {
 							event.preventDefault()
-							if(!dlPromise) {
-								dlPromise = downloadAsset(assetId, "arraybuffer")
-									.then(ab => {
-										console.log()
-										const blobUrl = URL.createObjectURL(new Blob([ab]))
 
-										const title = $("#item-container .item-name-container h2")
-										let fileName = title ? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-") : new URL(btn.href).pathname
-									
-										switch(assetTypeId) {
-										case 1:
-											fileName += ".png"
-											break;
-										case 3:
-											switch(new TextDecoder("ascii").decode(ab.slice(0, 4))) {
-											case "RIFF": fileName += ".wav"; break
-											case "OggS": fileName += ".ogg"; break
-											default: fileName += ".mp3"
-											}
+							downloadAsset(assetId, "arraybuffer").then(ab => {
+								const blobUrl = URL.createObjectURL(new Blob([ab]))
 
-											break;
-										case 4:
-											fileName += ".mesh"
-											break;
-										default:
-											fileName += ".rbxm"
-										}
+								const title = $("#item-container .item-name-container h2")
+								let fileName = title
+									? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-")
+									: new URL(btn.href).pathname
 
-										return [ blobUrl, fileName ]
-									})
-							}
-		
-							dlPromise.then(data => startDownload(...data))
+								fileName += `.${GetAssetFileType(assetTypeId, ab)}`
+
+								startDownload(blobUrl, fileName)
+								URL.revokeObjectURL(blobUrl)
+							})
 						}
 		
 						btn.href = `/asset/?id=${assetId}`
@@ -801,10 +803,10 @@ pageInit.itemdetails = function(assetId) {
 				}
 
 				if(settings.itemdetails.whiteDecalThumbnailFix && assetTypeId === 13) {
-					const transparentTexture = "https://t6.rbxcdn.com/3707fe58b613498a0f1fc7d11faeccf3"
+					// const transparentTexture = "https://t6.rbxcdn.com/3707fe58b613498a0f1fc7d11faeccf3"
 
-					Observer.one(`#AssetThumbnail .thumbnail-span img`, img => {
-						if(img.src !== transparentTexture) return;
+					Observer.one("#AssetThumbnail .thumbnail-span img", img => {
+						// if(img.src !== transparentTexture) return;
 
 						AssetCache.loadModel(assetId, model => {
 							const decal = model.find(x => x.ClassName === "Decal")
@@ -813,17 +815,12 @@ pageInit.itemdetails = function(assetId) {
 							const imgId = RBXParser.parseContentUrl(decal.Texture)
 							if(!imgId) return;
 
-							const url = `https://www.roblox.com/asset-thumbnail/json?width=420&height=420&format=png&assetId=${imgId}`
-							function fetchThumb() {
-								fetch(url).then(async response => {
-									const data = await response.json()
-
-									if(!data.Final) setTimeout(fetchThumb, 200);
-									else img.src = data.Url;
-								})
+							const preload = new Image()
+							preload.src = `https://assetgame.roblox.com/asset/?id=${imgId}`
+							preload.onload = () => {
+								preload.onload = null
+								img.src = preload.src
 							}
-
-							fetchThumb()
 						})
 					})
 				}
@@ -1040,6 +1037,26 @@ pageInit.gamedetails = function(placeId) {
 	onDocumentReady(() => {
 		if($("#AjaxCommentsContainer") == null) {
 			$("#about").append(html`<div class="section-content-off">Comments have been disabled for this place</div>`)
+		}
+
+		const placeEdit = $("#game-context-menu .dropdown-menu .VisitButtonEditGLI")
+		if(placeEdit) {
+			placeEdit.parentNode.after(html`
+			<li>
+				<a class=btr-download-place>Download</a>
+			</li>`)
+
+			document.$on("click", ".btr-download-place", () => {
+				downloadAsset(placeId, "arraybuffer").then(ab => {
+					const blobUrl = URL.createObjectURL(new Blob([ab]))
+
+					const splitPath = window.location.pathname.split("/")
+					const type = GetAssetFileType(9, ab)
+
+					startDownload(blobUrl, `${splitPath[splitPath.length - 1]}.${type}`)
+					URL.revokeObjectURL(blobUrl)
+				})
+			})
 		}
 	})
 }
