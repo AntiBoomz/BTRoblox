@@ -1,0 +1,62 @@
+{
+	"manifest_version": 2,
+
+	"name": "BTRoblox",
+	"short_name": "BTR",
+	"description": "Better Roblox - Making Roblox better!",
+	"version": "2.3.15",
+
+	"icons": {
+		"128":"res/icon_128.png"
+	},
+
+	"applications": {
+		"gecko": {
+			"id": "btroblox@antiboomz.com",
+			"update_url": "https://antiboomz.com/btroblox/updates.json"
+		}
+	},
+
+	"background": {
+		"persistent": false,
+		"scripts": [
+			"js/common.js",
+			"js/background/settings.js",
+			"js/background/blogfeed.js",
+			"js/background/messaging.js",
+			"js/background/groupshout.js",
+			"js/background/contextmenu.js"
+		]
+	},
+
+	"permissions": [
+		"*://www.roblox.com/",
+		"*://web.roblox.com/",
+		"*://m.roblox.com/",
+		"*://api.roblox.com/",
+		"*://avatar.roblox.com/",
+		"*://blog.roblox.com/",
+		"*://*.rbxcdn.com/",
+		"storage",
+		"notifications",
+		"alarms",
+		"contextMenus",
+		"clipboardWrite"
+	],
+
+	"web_accessible_resources": [
+		"js/inject.js",
+		"lib/*",
+		"css/*",
+		"res/*"
+	],
+
+	"content_scripts": [
+		{
+			"matches": ["*://www.roblox.com/*", "*://web.roblox.com/*"],
+			"js": ["js/common.js", "js/utility.js", "js/main.js", "js/pages.js"],
+			"run_at": "document_start",
+			"all_frames": true
+		}
+	]
+}
