@@ -5,18 +5,18 @@
 	"short_name": "BTR",
 	"description": "Better Roblox - Making Roblox better!",
 	"version": "2.3.15",
-	"minimum_chrome_version": "55",
+	"minimum_chrome_version": "55", // Chrome
 
 	"icons": {
 		"128":"res/icon_128.png"
 	},
 
-	"applications": {
-		"gecko": {
-			"id": "btroblox@antiboomz.com",
-			"update_url": "https://antiboomz.com/btroblox/updates.json"
-		}
-	},
+	"applications": { // Firefox
+		"gecko": { // Firefox
+			"id": "btroblox@antiboomz.com", // Firefox
+			"update_url": "https://antiboomz.com/btroblox/updates.json" // Firefox
+		} // Firefox
+	}, // Firefox
 
 	"background": {
 		"scripts": [
@@ -26,9 +26,10 @@
 			"js/background/messaging.js",
 			"js/background/groupshout.js",
 			"js/background/contextmenu.js"
-		],
-		"persistent": false
+		]
+		,"persistent": false // Chrome
 	},
+
 	"permissions": [
 		"*://www.roblox.com/",
 		"*://web.roblox.com/",
@@ -40,14 +41,17 @@
 		"storage",
 		"notifications",
 		"alarms",
+		"clipboardWrite", // Firefox
 		"contextMenus"
 	],
+
 	"web_accessible_resources": [
 		"js/inject.js",
 		"lib/*",
 		"css/*",
 		"res/*"
 	],
+
 	"content_scripts": [
 		{
 			"matches": ["*://www.roblox.com/*", "*://web.roblox.com/*"],
