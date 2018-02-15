@@ -99,61 +99,6 @@ Object.assign(RBXScene, (() => {
 			+ "/yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=="
 	}
 
-	const avatarTreePromise = new Promise(resolve => {
-		const modelUrl = chrome.runtime.getURL("res/previewer/avatars.rbxm")
-
-		function CreateTree(model) {
-			const joints = {}
-
-			function get(item) {
-				let part = joints[item.Name]
-				if(!part) {
-					part = joints[item.Name] = { name: item.Name, children: [], attachments: {} }
-
-					if(item.ClassName === "MeshPart") {
-						part.meshid = RBXParser.parseContentUrl(item.MeshID)
-					} else {
-						const formatted = item.Name.toLowerCase().replace(/\s/g, "")
-						part.meshid = chrome.runtime.getURL(`res/previewer/r6/${formatted}.mesh`)
-					}
-				}
-
-				return part
-			}
-
-			function recurse(item) {
-				if(item.ClassName === "Motor6D" && item.Part0 && item.Part1) {
-					const part0 = get(item.Part0)
-					const part1 = get(item.Part1)
-
-					part0.children.push(part1)
-					part1.parent = part0
-
-					part1.JointName = item.Name
-					part1.C0 = CFrame(...item.C0)
-					part1.C1 = InvertCFrame(CFrame(...item.C1))
-				} else if(item.ClassName === "Attachment" && !item.Name.endsWith("RigAttachment")) {
-					const part = get(item.Parent)
-					part.attachments[item.Name] = CFrame(...item.CFrame)
-				}
-
-				item.Children.forEach(recurse)
-			}
-
-			recurse(model)
-
-			const rootPart = Object.values(joints).find(x => x.parent == null)
-			return rootPart
-		}
-
-		AssetCache.loadModel(modelUrl, model => {
-			const r6 = model.find(x => x.Name === "R6")
-			const r15 = model.find(x => x.Name === "R15")
-
-			resolve([CreateTree(r6), CreateTree(r15)])
-		})
-	})
-
 	const R6BodyPartNames = [ "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg" ]
 	const R15BodyPartNames = [
 		"LeftFoot", "LeftHand", "LeftLowerArm", "LeftLowerLeg", "LeftUpperArm", "LeftUpperLeg", "LowerTorso",
@@ -166,17 +111,18 @@ Object.assign(RBXScene, (() => {
 		6340154: "headM", 6340198: "headN", 6340213: "headO", 6340227: "headP"
 	}
 
-	const bounce = x => (x < 0.36363636
-		? 7.5625 * x ** 2 : x < 0.72727272
-		? 7.5625 * (x - 0.54545454) ** 2 + 0.75 : x < 0.90909090
-		? 7.5625 * (x - 0.81818181) ** 2 + 0.9375
-		: 7.5625 * (x - 0.95454545) ** 2 + 0.984375);
+	const bounce = x => (
+		x < 0.36363636 ? 7.5625 * x ** 2
+			: x < 0.72727272 ? 7.5625 * (x - 0.54545454) ** 2 + 0.75
+				: x < 0.90909090 ? 7.5625 * (x - 0.81818181) ** 2 + 0.9375
+					: 7.5625 * (x - 0.95454545) ** 2 + 0.984375
+	);
 
 	const EasingStyles = [
 		[ // Linear
 			x => x, // In
 			x => x, // Out
-			x => x  // InOut
+			x => x // InOut
 		],
 		[ // Constant
 			() => 1,
@@ -201,6 +147,78 @@ Object.assign(RBXScene, (() => {
 			x => (x < .5 ? 0.5 - 0.5 * bounce(1 - 2 * x) : 1 - 0.5 * bounce(2 - 2 * x))
 		]
 	]
+
+	const avatarTreePromise = new Promise(resolve => {
+		function RecurseTree(model) {
+			const parts = {}
+
+			const recursePart = part => {
+				if(part.Name in parts) return parts[part.Name];
+				const partData = {
+					name: part.Name,
+					children: [],
+					attachments: {}
+				}
+
+				parts[part.Name] = partData
+
+				part.Children.forEach(item => {
+					if(item.ClassName === "Attachment" && !item.Name.endsWith("RigAttachment")) {
+						partData.attachments[item.Name] = CFrame(...item.CFrame)
+					} else if(item.ClassName === "Motor6D") {
+						const part0Data = recursePart(item.Part0)
+						const part1Data = recursePart(item.Part1)
+
+						part1Data.JointName = item.Name
+						part1Data.C0 = CFrame(...item.C0)
+						part1Data.C1 = InvertCFrame(CFrame(...item.C1))
+
+						part0Data.children.push(part1Data)
+					}
+				})
+
+				if(part.ClassName === "MeshPart") {
+					partData.meshid = RBXParser.parseContentUrl(part.MeshID)
+				} else if(part.Name === "Head") {
+					partData.meshid = chrome.runtime.getURL(`res/previewer/heads/head.mesh`)
+				} else if(R6BodyPartNames.indexOf(part.Name) !== -1) {
+					const fname = part.Name.toLowerCase().replace(/\s/g, "")
+					partData.meshid = chrome.runtime.getURL(`res/previewer/meshes/${fname}.mesh`)
+				}
+
+				return partData
+			}
+
+			model.Children.forEach(item => {
+				if(item.ClassName === "Part" || item.ClassName === "MeshPart") {
+					recursePart(item)
+				}
+			})
+
+			console.log(parts)
+
+			return parts.HumanoidRootPart
+		}
+
+		const R6Promise = new Promise(resolveTree => {
+			const path = chrome.runtime.getURL("res/previewer/character.rbxm")
+			AssetCache.loadModel(path, model => {
+				const tree = RecurseTree(model[0])
+				resolveTree(tree)
+			})
+		})
+
+		const R15Promise = new Promise(resolveTree => {
+			const path = chrome.runtime.getURL("res/previewer/characterR15.rbxm")
+			AssetCache.loadModel(path, model => {
+				const tree = RecurseTree(model[0])
+				resolveTree(tree)
+			})
+		})
+
+		Promise.all([R6Promise, R15Promise]).then(resolve)
+	})
+
 
 	class Animator {
 		constructor(joints) {
@@ -322,7 +340,7 @@ Object.assign(RBXScene, (() => {
 		update() {
 			const ctx = this.context
 
-			if(this.background){
+			if(this.background) {
 				ctx.fillStyle = this.background
 				ctx.fillRect(0, 0, this.width, this.height)
 			}
@@ -379,13 +397,13 @@ Object.assign(RBXScene, (() => {
 		textures.pants.image.addEventListener("load", () => this.update())
 		textures.tshirt.image.addEventListener("load", () => this.update())
 
-		let meshUrl = chrome.runtime.getURL("res/previewer/r6/shirtTemplate.mesh")
+		let meshUrl = chrome.runtime.getURL("res/previewer/compositing/CompositShirtTemplate.mesh")
 		AssetCache.loadMesh(meshUrl, mesh => applyMesh(shirtmesh, mesh))
 
-		meshUrl = chrome.runtime.getURL("res/previewer/r6/pantsTemplate.mesh")
+		meshUrl = chrome.runtime.getURL("res/previewer/compositing/CompositPantsTemplate.mesh")
 		AssetCache.loadMesh(meshUrl, mesh => applyMesh(pantsmesh, mesh))
 
-		meshUrl = chrome.runtime.getURL("res/previewer/r6/tshirtTemplate.mesh")
+		meshUrl = chrome.runtime.getURL("res/previewer/compositing/CompositTShirt.mesh")
 		AssetCache.loadMesh(meshUrl, mesh => applyMesh(tshirtmesh, mesh))
 
 		this.shouldUpdateBodyColors = true
@@ -460,21 +478,21 @@ Object.assign(RBXScene, (() => {
 			transparent: true,
 			map: textures.pants
 		}))
-		pantsmesh.position.set(0,0,.1)
+		pantsmesh.position.set(0, 0, .1)
 		this.scene.add(pantsmesh)
 
 		textures.tshirt.image.addEventListener("load", () => this.update())
 		textures.shirt.image.addEventListener("load", () => this.update())
 		textures.pants.image.addEventListener("load", () => this.update())
 
-		const meshUrl = chrome.runtime.getURL("res/previewer/r15/R15CompositTorsoBase.mesh")
+		const meshUrl = chrome.runtime.getURL("res/previewer/compositing/R15CompositTorsoBase.mesh")
 		AssetCache.loadMesh(meshUrl, mesh => {
 			applyMesh(shirtmesh, mesh)
 			applyMesh(pantsmesh, mesh)
 		})
 
 		this.afterComposite.push(() => {
-			this.context.drawImage(textures.tshirt.image, 2, 78, 126, 128)
+			this.context.drawImage(textures.tshirt.image, 2, 74, 128, 128)
 		})
 	}
 
@@ -535,8 +553,8 @@ Object.assign(RBXScene, (() => {
 			this.headComposite = new CompositeTexture(false, HeadCompositeConstructor, textures)
 			this.r6Composite = new CompositeTexture(true, R6CompositeConstructor, textures)
 
-			const leftMesh = chrome.runtime.getURL("res/previewer/r15/R15CompositLeftArmBase.mesh")
-			const rightMesh = chrome.runtime.getURL("res/previewer/r15/R15CompositRightArmBase.mesh")
+			const leftMesh = chrome.runtime.getURL("res/previewer/compositing/R15CompositLeftArmBase.mesh")
+			const rightMesh = chrome.runtime.getURL("res/previewer/compositing/R15CompositRightArmBase.mesh")
 
 			this.r15Composites = {
 				torso: new CompositeTexture(true, R15TorsoCompositeConstructor, textures),
@@ -548,14 +566,14 @@ Object.assign(RBXScene, (() => {
 
 			images.base.Head = createImage()
 			images.over.Head = createImage()
-			images.over.Head.defaultSrc = chrome.runtime.getURL("res/previewer/r6/face.png")
+			images.over.Head.defaultSrc = chrome.runtime.getURL("res/previewer/face.png")
 			textures.Head = mergeTexture(256, 256, this.headComposite.canvas, images.base.Head, images.over.Head)
 
 			R6BodyPartNames.forEach(name => {
 				const base = images.base[name] = createImage()
 				const over = images.over[name] = createImage()
 
-				textures[name] = mergeTexture(1024, 512, base, this.r6Composite.canvas, over)
+				textures[name] = mergeTexture(1024, 512, this.r6Composite.canvas, base, over)
 			})
 
 			R15BodyPartNames.forEach(name => {
@@ -647,7 +665,8 @@ Object.assign(RBXScene, (() => {
 				break
 			case 17: // Head
 				if(assetId in HeadMeshes) {
-					const meshUrl = chrome.runtime.getURL(`res/previewer/heads/${HeadMeshes[assetId]}.mesh`)
+					const name = HeadMeshes[assetId]
+					const meshUrl = chrome.runtime.getURL(`res/previewer/heads/${name}.mesh`)
 					this.bodyparts.push({
 						asset,
 						target: "Head",
