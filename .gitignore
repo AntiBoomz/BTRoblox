@@ -1,3 +1,4 @@
 .vscode
+archive
 bin/*
 !bin/archive.sh
