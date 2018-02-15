@@ -321,14 +321,14 @@ const RBXParser = (() => {
 					value = new Property("Enum", +value)
 					break;
 				case "coordinateframe":
-					value = [ 0,0,0, 1,0,0, 0,1,0, 0,0,1 ]
+					value = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 ]
 					for(let x of propNode.children) {
 						value[RBXXmlParser.CFrameTransform.indexOf(x.nodeName.toUpperCase())] = +x.textContent
 					}
 					value = new Property("CFrame", value)
 					break;
 				case "vector3":
-					value = [ 0,0,0 ]
+					value = [0, 0, 0]
 					for(let x of propNode.children) {
 						value[RBXXmlParser.Vector3Transform.indexOf(x.nodeName.toUpperCase())] = +x.textContent
 					}
@@ -338,14 +338,17 @@ const RBXParser = (() => {
 					value = new Property("Color3", [ +value >> 16 & 0xFF, +value >> 8 & 0xFF, +value & 0xFF ])
 					break
 				case "ref":
-					if(value === "null") value = null;
-					else if(this.refs[value]) value = this.refs[value];
-					else {
+					if(value === "null") {
+						value = null
+					} else if(value in this.refs) {
+						value = this.refs[value]
+					} else {
 						this.refWait.push({
 							ref: value,
-							target: item,
+							target: instance,
 							propName: name
 						})
+
 						value = null
 					}
 
