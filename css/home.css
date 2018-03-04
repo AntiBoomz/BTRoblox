@@ -1,12 +1,8 @@
 .btr-hide-ads .content {
-	max-width:970px;
+	max-width: 970px;
 }
 
 .btr-hide-ads #HomeContainer {
-	float:initial;
-	margin:0 auto;
-}
-
-ul.friend-list {
-	overflow:visible;
+	float: initial;
+	margin: 0 auto;
 }
