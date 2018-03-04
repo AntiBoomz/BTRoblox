@@ -47,7 +47,7 @@ body .btr-game-main-container {
 /* Badges */
 
 .btr-badges-container {
-	margin-top: 18px;
+	margin-bottom: 18px;
 }
 
 body .badge-container .badge-row { /* Badge height + 10px */
