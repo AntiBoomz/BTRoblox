@@ -195,8 +195,6 @@ Object.assign(RBXScene, (() => {
 				}
 			})
 
-			console.log(parts)
-
 			return parts.HumanoidRootPart
 		}
 
@@ -375,22 +373,25 @@ Object.assign(RBXScene, (() => {
 		this.camera.position.set(size / 2, size / 4, 10)
 		this.camera.rotation.set(0, 0, 0)
 
-		const shirtmesh = this.shirtmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
-			transparent: true,
-			map: textures.shirt
-		}))
-		this.scene.add(shirtmesh)
-
 		const pantsmesh = this.pantsmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
 			transparent: true,
 			map: textures.pants
 		}))
+		pantsmesh.renderOrder = 1
 		this.scene.add(pantsmesh)
+
+		const shirtmesh = this.shirtmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
+			transparent: true,
+			map: textures.shirt
+		}))
+		shirtmesh.renderOrder = 2
+		this.scene.add(shirtmesh)
 
 		const tshirtmesh = this.tshirtmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
 			transparent: true,
 			map: textures.tshirt
 		}))
+		tshirtmesh.renderOrder = 3
 		this.scene.add(tshirtmesh)
 
 		textures.shirt.image.addEventListener("load", () => this.update())
@@ -468,18 +469,19 @@ Object.assign(RBXScene, (() => {
 		this.camera.position.set(this.width/2, this.height/2, 10)
 		this.camera.rotation.set(0, 0, 0)
 
-		const shirtmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
-			transparent: true,
-			map: textures.shirt
-		}))
-		this.scene.add(shirtmesh)
-
 		const pantsmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
 			transparent: true,
 			map: textures.pants
 		}))
-		pantsmesh.position.set(0, 0, .1)
+		pantsmesh.renderOrder = 0
 		this.scene.add(pantsmesh)
+
+		const shirtmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
+			transparent: true,
+			map: textures.shirt
+		}))
+		shirtmesh.renderOrder = 1
+		this.scene.add(shirtmesh)
 
 		textures.tshirt.image.addEventListener("load", () => this.update())
 		textures.shirt.image.addEventListener("load", () => this.update())
