@@ -385,11 +385,6 @@ function Init() {
 
 	if(!settings.general.chatEnabled) {
 		Observer.one("#chat-container", cont => cont.remove())
-	} else {
-		modifyTemplate("chat-bar", template => {
-			const label = template.$find("#chat-main .chat-header-title")
-			label.textContent = "Chat"
-		})
 	}
 
 	if(!settings.general.showAds) {

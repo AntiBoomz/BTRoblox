@@ -124,6 +124,11 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	margin: -10px -16px 0 0;
 }
 
+.btr-newchat .chat-container.collapsed .chat-header .chat-header-title {
+	height: 16px;
+	overflow: hidden;
+}
+
 
 /* Sidebar Blog Feed */
 
