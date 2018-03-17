@@ -18,6 +18,7 @@ API Docs
 * https://auth.roblox.com/docs
 * https://avatar.roblox.com/docs
 * https://billing.roblox.com/docs
+* https://catalog.roblox.com/docs
 * https://chat.roblox.com/docs
 * https://develop.roblox.com/docs
 * https://games.roblox.com/docs/
