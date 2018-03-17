@@ -100,6 +100,7 @@ const RBXPreview = (() => {
 
 			this.onInit(() => {
 				const scene = this.scene = new RBXScene.AvatarScene()
+				window.scene = scene
 
 				scene.avatar.setPlayerType("R6")
 				if(this.animList.length) this.selectAnimation(0, true);
