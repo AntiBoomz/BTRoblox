@@ -13,9 +13,9 @@ const $ = (() => {
 	const Days = [
 		"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
 	]
-	const DTF = new Intl.DateTimeFormat("en-us", {timeZoneName: "short"})
-	const Fixed = (num, len) => ("00" + num).slice(-len)
 
+	const Fixed = (num, len) => ("00" + num).slice(-len)
+	const DTF = new Intl.DateTimeFormat("en-us", {timeZoneName: "short"})
 
 	Object.assign($, {
 		find(self, selector) {
@@ -238,23 +238,47 @@ const html = function(...args) {
 	return template.content.firstElementChild || template.content.firstChild
 }
 
+let mutobvCounter = 0
 function CreateObserver(target, params) {
 	const options = Object.assign({ childList: true, subtree: true }, params || {})
 	const isPermanent = !!options.permanent
-	let observeList = []
+	const observeList = []
 	let connected = false
 
 	const arrayFind = Array.prototype.find
-	const arrayIndexOf = Array.prototype.indexOf
+
+	let targetSelector
+	if(target === document) {
+		targetSelector = ":root"
+	} else {
+		const mutobvId = mutobvCounter++
+		target.setAttribute("mutobv", mutobvId)
+		targetSelector = `[mutobv="${mutobvId}"]`
+	}
 
 	const observer = new MutationObserver(mutations => {
+		const callbacks = []
+
 		for(let index = 0; index < observeList.length; index++) {
 			const item = observeList[index]
 
 			if(!item.persistent) {
 				let elem
 				if(item.filter) {
-					elem = arrayFind.call(target.querySelectorAll(item.selector), x => item.filter(x))
+					if(!item.gotFirst) {
+						const testElem = target.querySelector(item.selector)
+						if(testElem) {
+							if(item.filter(testElem)) {
+								elem = testElem
+							} else {
+								item.gotFirst = true
+							}
+						}
+					}
+
+					if(item.gotFirst) {
+						elem = arrayFind.call(target.querySelectorAll(item.selector), x => item.filter(x))
+					}
 				} else {
 					elem = target.querySelector(item.selector)
 				}
@@ -264,23 +288,21 @@ function CreateObserver(target, params) {
 					item.whole.result[item.index] = elem
 
 					if(--item.whole.resultsLeft === 0) {
-						try { item.whole.callback.apply(null, item.whole.result) }
-						catch(ex) { console.error("[MutationObserver]", ex) }
+						callbacks.push([item.whole.callback, item.whole.result])
 					}
 				}
 			} else {
-				const elems = target.querySelectorAll(item.selector)
-
-				mutations.forEach(mut => {
-					mut.addedNodes.forEach(node => {
-						if(arrayIndexOf.call(elems, node) !== -1) {
-							if(item.filter && !item.filter(node)) return;
-
-							try { item.callback(node) }
-							catch(ex) { console.error("[MutationObserver]", ex) }
+				for(let i = 0, mutLen = mutations.length; i < mutLen; i++) {
+					const addedNodes = mutations[i].addedNodes
+					for(let j = 0, addLen = addedNodes.length; j < addLen; j++) {
+						const node = addedNodes[j]
+						if(node.nodeType === 1 && node.matches(item.selector)) {
+							if(!item.filter || item.filter(node)) {
+								callbacks.push([item.callback, [node]])
+							}
 						}
-					})
-				})
+					}
+				}
 			}
 		}
 
@@ -288,6 +310,11 @@ function CreateObserver(target, params) {
 			connected = false
 			observer.disconnect()
 		}
+
+		callbacks.forEach(([fn, args]) => {
+			try { fn(...args) }
+			catch(ex) { console.error("[MutationObserver]", ex) }
+		})
 	})
 
 	return {
@@ -300,6 +327,10 @@ function CreateObserver(target, params) {
 			if(!Array.isArray(selectors)) {
 				selectors = [selectors]
 			}
+
+			selectors.forEach((sel, i) => {
+				selectors[i] = sel.replace(/(^|,)/g, `$1${targetSelector} `)
+			})
 
 			const whole = {
 				callback,
@@ -348,6 +379,8 @@ function CreateObserver(target, params) {
 				callback = filter
 				filter = null
 			}
+
+			selector = selector.replace(/(^|,)/g, `$1${targetSelector} `)
 			
 			const item = {
 				selector, filter, callback,
@@ -356,9 +389,10 @@ function CreateObserver(target, params) {
 
 			const elems = target.querySelectorAll(item.selector)
 			elems.forEach(elem => {
-				if(item.filter && !item.filter(elem)) return;
-				try { item.callback(elem) }
-				catch(ex) { console.error("[MutationObserver]", ex) }
+				if(!item.filter || item.filter(elem)) {
+					try { item.callback(elem) }
+					catch(ex) { console.error("[MutationObserver]", ex) }
+				}
 			})
 
 			if(!isPermanent && document.readyState !== "loading") {
