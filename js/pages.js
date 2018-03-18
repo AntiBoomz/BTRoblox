@@ -529,7 +529,6 @@ pageInit.itemdetails = function(assetId) {
 			execScripts(["js/RBXParser.js", "js/AssetCache.js"], () => {
 				const previewAnim = settings.itemdetails.animationPreview && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1
 				const previewAsset = true && WearableAssetTypeIds.indexOf(assetTypeId) !== -1
-				const previewModel = settings.itemdetails.modelPreviewWIP && assetTypeId === 10
 
 				if(previewAnim || previewAsset || previewModel || assetTypeId === 32) {
 					execScripts(["js/RBXPreview.js"], () => {
@@ -549,44 +548,34 @@ pageInit.itemdetails = function(assetId) {
 							preview.setEnabled(enabled)
 						}
 
-						const loadPreview = type => {
+						const loadPreview = () => {
 							if(preview) return;
 
-							if(type === "avatar") {
-								preview = new RBXPreview.AvatarPreviewer()
-								container = html`
-								<div class="item-thumbnail-container btr-preview-container">
-									<div class="btr-thumb-btn-container">
-										<div class="btr-thumb-btn rbx-btn-control-sm btr-hats-btn"><span class="btr-icon-hat"></span></div>
-										<div class="btr-thumb-btn rbx-btn-control-sm btr-body-btn"><span class="btr-icon-body"></span></div>
-										<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn checked"><span class="btr-icon-preview"></span></div>
-									</div>
-								</div>`
+							preview = new RBXPreview.AvatarPreviewer()
+							container = html`
+							<div class="item-thumbnail-container btr-preview-container">
+								<div class="btr-thumb-btn-container">
+									<div class="btr-thumb-btn rbx-btn-control-sm btr-hats-btn"><span class="btr-icon-hat"></span></div>
+									<div class="btr-thumb-btn rbx-btn-control-sm btr-body-btn"><span class="btr-icon-body"></span></div>
+									<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn checked"><span class="btr-icon-preview"></span></div>
+								</div>
+							</div>`
 
-								document
-									.$on("click", ".btr-hats-btn", ev => {
-										const self = ev.currentTarget
-										const disabled = !self.classList.contains("checked")
-										self.classList.toggle("checked", disabled)
+							document.$on("click", ".btr-hats-btn", ev => {
+								const self = ev.currentTarget
+								const disabled = !self.classList.contains("checked")
+								self.classList.toggle("checked", disabled)
 
-										preview.setAccessoriesVisible(!disabled)
-									})
-									.$on("click", ".btr-body-btn", ev => {
-										const self = ev.currentTarget
-										const disabled = !self.classList.contains("checked")
-										self.classList.toggle("checked", disabled)
+								preview.setAccessoriesVisible(!disabled)
+							})
+							
+							document.$on("click", ".btr-body-btn", ev => {
+								const self = ev.currentTarget
+								const disabled = !self.classList.contains("checked")
+								self.classList.toggle("checked", disabled)
 
-										preview.setPackagesVisible(!disabled)
-									})
-							} else if (type === "model") {
-								preview = new RBXPreview.ModelPreviewer()
-								container = html`
-								<div class="item-thumbnail-container btr-preview-container">
-									<div class="btr-thumb-btn-container">
-										<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn checked"><span class="btr-icon-preview"></span></div>
-									</div>
-								</div>`
-							}
+								preview.setPackagesVisible(!disabled)
+							})
 
 							container.append(preview.container)
 
@@ -597,13 +586,12 @@ pageInit.itemdetails = function(assetId) {
 								</div>`)
 							})
 
-							document
-								.$on("click", ".btr-preview-btn", ev => {
-									const self = ev.currentTarget
-									const checked = !self.classList.contains("checked")
+							document.$on("click", ".btr-preview-btn", ev => {
+								const self = ev.currentTarget
+								const checked = !self.classList.contains("checked")
 
-									toggleEnabled(checked)
-								})
+								toggleEnabled(checked)
+							})
 						}
 
 
@@ -621,7 +609,7 @@ pageInit.itemdetails = function(assetId) {
 								}
 	
 								if(!preview) {
-									loadPreview("avatar")
+									loadPreview()
 	
 									if(previewAnim && settings.itemdetails.animationPreviewAutoLoad) {
 										onDocumentReady(() => toggleEnabled(true))
@@ -661,14 +649,6 @@ pageInit.itemdetails = function(assetId) {
 							}
 	
 							doPreview(assetId, assetTypeId)
-						} else if(previewModel) {
-							loadPreview("model")
-
-							preview.onInit(() => {
-								AssetCache.loadModel(assetId, model => {
-									preview.setModel(model)
-								})
-							})
 						}
 					})
 				}

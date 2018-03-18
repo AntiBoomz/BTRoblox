@@ -109,9 +109,7 @@ const DEFAULT_SETTINGS = {
 		contentButton: true,
 		imageBackgrounds: true,
 		whiteDecalThumbnailFix: true,
-		thisPackageContains: true,
-
-		modelPreviewWIP: false
+		thisPackageContains: true
 	},
 	chat: {
 		enabled: true
