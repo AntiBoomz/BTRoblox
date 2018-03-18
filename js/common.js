@@ -95,7 +95,8 @@ const DEFAULT_SETTINGS = {
 		showAds: false,
 		noHamburger: true,
 
-		chatEnabled: true
+		chatEnabled: true,
+		fastSearch: true
 	},
 	catalog: {
 		enabled: true

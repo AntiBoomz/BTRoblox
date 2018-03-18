@@ -407,6 +407,218 @@ function Init() {
 			})
 	}
 
+	if(settings.general.fastSearch) {
+		const usernameRegex = /^\w+ ?_?\w+$/
+
+		Observer.one(["#navbar-universal-search #navbar-search-input", "#navbar-universal-search > ul"],
+			(input, list) => {
+				const requestCache = {}
+				const fsResults = []
+				let fsUpdateCounter = 0
+				let friendsPromise
+
+				list.$on("mouseover", ".rbx-navbar-search-option", ev => {
+					const last = list.$find(">.selected")
+					if(last) { last.classList.remove("selected") }
+					ev.currentTarget.classList.add("selected")
+				})
+
+				const makeItem = (json, hlFrom, hlTo) => {
+					if(hlFrom == null) {
+						hlFrom = 0
+						hlTo = json.Username.length
+					}
+					const item = html`
+					<li class="rbx-navbar-search-option rbx-clickable-li" data-searchurl=https://www.roblox.com/User.aspx?userName=${json.Username}&wot=>
+						<a class=btr-fastsearch-anchor href=https://www.roblox.com/User.aspx?userName=${json.Username}>
+							<div class=btr-fastsearch-avatar>
+								<img class=btr-fastsearch-thumbnail src=https://www.roblox.com/headshot-thumbnail/image?userId=${json.UserId}&width=48&height=48&format=png>
+								<div class=btr-fastsearch-status>
+								</div>
+							</div>
+							<div class=btr-fastsearch-text>
+								<div>${json.Username.slice(0, hlFrom)}<b>${json.Username.slice(hlFrom, hlTo)}</b>${json.Username.slice(hlTo)}</div>
+								<div class="btr-fastsearch-friendlabel text-label xsmall">You are friends</div>
+							</div>
+						</a>
+					</li>`
+
+					if(!json.IsFriend) {
+						item.$find(".btr-fastsearch-friendlabel").remove()
+					}
+
+					// Presence
+					if(!json.presence) {
+						const url = `https://www.roblox.com/presence/user?userId=${json.UserId}`
+						json.presence = fetch(url, { credentials: "include" })
+							.then(resp => resp.json())
+					}
+
+					json.presence.then(presence => {
+						switch(presence.UserPresenceType) {
+						case 0: break
+						case 2: {
+							item.$find(".btr-fastsearch-status").classList.add("game")
+							const followBtn = html`<button class="btr-fastsearch-follow btn-primary-xs">Join Game</button>`
+
+							if(presence.PlaceId) {
+								followBtn.setAttribute("onclick", `return Roblox.GameLauncher.followPlayerIntoGame(${json.UserId}), false`)
+							} else {
+								followBtn.classList.add("disabled")
+							}
+
+							item.$find(".btr-fastsearch-anchor").append(followBtn)
+							break
+						}
+						case 3:
+							item.$find(".btr-fastsearch-status").classList.add("studio")
+							break
+						default: item.$find(".btr-fastsearch-status").classList.add("online")
+						}
+					})
+
+					return item
+				}
+
+				const clearResults = () => {
+					fsResults.splice(0, fsResults.length).forEach(x => x.remove())
+					const sel = list.$find(">.selected")
+					if(!sel) {
+						list.children[0].classList.add("selected")
+					}
+				}
+
+				const updateFriendResults = () => {
+					clearResults()
+
+					const thisUpdate = ++fsUpdateCounter
+					const search = input.value.toLowerCase()
+					const sel = list.$find(">.selected")
+
+					if(!friendsPromise) {
+						friendsPromise = new Promise(resolve => {
+							const friendsList = []
+
+							loggedInUserPromise.then(userId => {
+								const url = `https://www.roblox.com/users/friends/list-json?pageSize=200&userId=${userId}`
+								fetch(url, { credentials: "include" }).then(async resp => {
+									const json = await resp.json()
+									json.Friends.forEach(friend => {
+										const item = {
+											IsFriend: true,
+											UserId: friend.UserId,
+											Username: friend.Username,
+											presence: Promise.resolve({
+												UserPresenceType: friend.InStudio ? 3 : friend.InGame ? 2 : friend.IsOnline ? 1 : 0,
+												LastLocation: friend.LastLocation,
+												PlaceId: friend.PlaceId
+											})
+										}
+										requestCache[friend.Username.toLowerCase()] = Promise.resolve(item)
+										friendsList.push(item)
+									})
+
+									resolve(friendsList)
+								})
+							})
+						})
+					}
+
+					friendsPromise.then(friendsList => {
+						if(fsUpdateCounter !== thisUpdate) { return }
+
+						const items = []
+						friendsList.forEach(friend => {
+							const index = friend.Username.toLowerCase().indexOf(search)
+							if(index === -1 || items.length >= 4) { return }
+
+							const item = makeItem(friend, index, index + search.length)
+							items.push({
+								s: Math.abs(friend.Username.length - search.length) + index,
+								item
+							})
+						})
+
+						if(items.length) {
+							const isFirst = fsResults.length === 0
+
+							items.sort((a, b) => a.s - b.s)
+								.forEach(x => {
+									const item = x.item
+									if(fsResults.length) {
+										fsResults[fsResults.length - 1].after(item)
+									} else {
+										list.prepend(item)
+									}
+									fsResults.push(item)
+								})
+							
+							if(isFirst && list.$find(">.selected") === sel) {
+								const first = items[0].item
+								if(sel) { sel.classList.remove("selected") }
+								first.classList.add("selected")
+							}
+						}
+					})
+				}
+
+				const updateExactResult = () => {
+					const thisUpdate = fsUpdateCounter
+					const search = input.value.toLowerCase()
+					const sel = list.$find(">.selected")
+
+					let cached = requestCache[search]
+					if(!cached) {
+						cached = requestCache[search] = fetch(`https://api.roblox.com/users/get-by-username?username=${search}`)
+							.then(async resp => {
+								const json = await resp.json()
+
+								return "Id" in json ? {
+									UserId: json.Id,
+									Username: json.Username
+								} : false
+							})
+					}
+
+					cached.then(json => {
+						if(!json || json.IsFriend || fsUpdateCounter !== thisUpdate) { return }
+
+						const item = makeItem(json)
+
+						if(fsResults.length) {
+							fsResults[fsResults.length - 1].after(item)
+						} else {
+							list.prepend(item)
+						}
+						fsResults.push(item)
+	
+						if(list.$find(">.selected") === sel && fsResults.length === 1) {
+							if(sel) { sel.classList.remove("selected") }
+							item.classList.add("selected")
+						}
+					})
+				}
+
+				let inputTimeout
+				let lastInput
+				input.$on("keyup", () => {
+					if(input.value === lastInput) { return }
+					lastInput = input.value
+
+					clearTimeout(inputTimeout)
+					if(usernameRegex.test(lastInput)) {
+						updateFriendResults()
+						inputTimeout = setTimeout(updateExactResult, 250)
+					} else {
+						clearResults()
+					}
+				})
+
+				list.prepend(fsResults)
+			}
+		)
+	}
+
 	if(settings.groups.expandGroupList) {
 		Observer.one("script:not([src])",
 			x => x.innerHTML.indexOf(`'windowDisplay': 8,`) !== -1,

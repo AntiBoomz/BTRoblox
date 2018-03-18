@@ -829,6 +829,67 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 }
 
 
+/* FastSearch */
+
+body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
+	position: relative;
+	display: flex;
+	align-items: center;
+	height: 48px;
+}
+
+.btr-fastsearch-avatar {
+	position: relative;
+	display: inline-block;
+	width: 36px;
+	height: 36px;
+	margin: -6px 6px -6px 0;
+}
+
+.btr-fastsearch-thumbnail {
+	overflow: hidden;
+	width: 100%;
+	height: 100%;
+	border-radius: 20px;
+	border: 1px solid #BEBEBE;
+}
+
+.btr-fastsearch-status {
+	display: none;
+	position: absolute;
+	background: lightgray;
+	width: 12px;
+	height: 12px;
+	right: 0;
+	bottom: 0;
+	border: 1px solid #BEBEBE;
+	border-radius: 12px;
+}
+
+.btr-fastsearch-status.online {
+	display: block;
+	background-color: #00A2FF;
+}
+
+.btr-fastsearch-status.game {
+	display: block;
+	background-color: #02b757;
+}
+
+.btr-fastsearch-status.studio {
+	display: block;
+	background-color: #F68802;
+}
+
+.btr-fastsearch-text {
+	flex: 1;
+}
+
+.btr-fastsearch-follow {
+	flex: 0;
+}
+
+
 /* Ew */
 
 #downloadInstallerIFrame {
