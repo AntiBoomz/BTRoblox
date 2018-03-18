@@ -591,6 +591,7 @@ pageInit.itemdetails = function(assetId) {
 							container.append(preview.container)
 
 							Observer.one("#AssetThumbnail", thumb => {
+								thumb.classList.add("btr-preview-enabled")
 								thumb.append(html`<div class="btr-thumb-btn-container">
 									<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn"><span class="btr-icon-preview"></span></div>
 								</div>`)

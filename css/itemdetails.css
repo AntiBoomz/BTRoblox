@@ -103,8 +103,13 @@ a:not(.disabled) > .btr-icon-content:hover {
 	right: 7px;
 }
 
-#AssetThumbnail[data-3d-thumbs-enabled] .btr-thumb-btn-container {
-	right: 53px;
+
+#AssetThumbnail[data-3d-thumbs-enabled].btr-preview-enabled .enable-three-dee {
+	right: 46px;
+}
+
+#AssetThumbnail[data-3d-thumbs-enabled] .btr-preview-btn {
+	margin-left: 50px;
 }
 
 
