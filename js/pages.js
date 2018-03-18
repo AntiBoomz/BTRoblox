@@ -84,19 +84,22 @@ function execScripts(list, cb) {
 
 
 let cachedXsrfToken
-
-Observer.one(
-	"script:not([src])",
-	x => x.textContent.indexOf("XsrfToken.setToken") !== -1,
-	x => {
-		const match = x.textContent.match(/setToken\('(.*)'\)/)
-		if(match) cachedXsrfToken = match[1];
-	}
-)
-
 function csrfFetch(url, init) {
 	if(!init) init = {};
 	if(!init.headers) init.headers = {};
+
+	if(cachedXsrfToken === undefined) {
+		cachedXsrfToken = null
+		Observer.one(
+			"script:not([src])",
+			x => x.textContent.indexOf("XsrfToken.setToken") !== -1,
+			x => {
+				const match = x.textContent.match(/setToken\('(.*)'\)/)
+				if(match) { cachedXsrfToken = match[1] }
+			}
+		)
+	}
+
 	init.headers["X-CSRF-TOKEN"] = cachedXsrfToken
 
 	let retryCount = 0
@@ -104,7 +107,7 @@ function csrfFetch(url, init) {
 	const handle = response => {
 		if(response.status === 403 && response.statusText === "XSRF Token Validation Failed") {
 			if(++retryCount < 2) {
-				init.headers["X-CSRF-TOKEN"] = response.headers.get("X-CSRF-TOKEN")
+				cachedXsrfToken = init.headers["X-CSRF-TOKEN"] = response.headers.get("X-CSRF-TOKEN")
 				return fetch(url, init).then(handle)
 			}
 		}
@@ -246,7 +249,7 @@ function createPager(noSelect) {
 		cur.$on("keydown", e => {
 			if(e.keyCode === 13 && pager.onsetpage) {
 				let page = parseInt(cur.value, 10)
-				if(isNaN(page)) return;
+				if(Number.isNaN(page)) return;
 
 				page = Math.max(1, Math.min(pager.maxPage, page))
 
@@ -791,7 +794,7 @@ pageInit.itemdetails = function(assetId) {
 							.$on("mouseenter", ".btr-bg-btn", ev => {
 								thumb.dataset.btrBg = ev.currentTarget.dataset.color
 							})
-							.$on("mouseleave", ".btr-bg-btn", ev => {
+							.$on("mouseleave", ".btr-bg-btn", () => {
 								thumb.dataset.btrBg = localStorage["btr-item-thumb-bg"]
 							})
 
@@ -873,7 +876,7 @@ pageInit.itemdetails = function(assetId) {
 								}
 
 								const creator = card.$find(".item-card-creator .text-link")
-								creator.href = `https//www.roblox.com/users/${data.Creator.Id}/profile`
+								creator.href = `https://www.roblox.com/users/${data.Creator.Id}/profile`
 								creator.textContent = data.Creator.Name
 
 								card.$find(".item-card-name").textContent = data.Name
@@ -1112,7 +1115,7 @@ pageInit.universeconfig = function() {
 	if(!settings.universeconfig.enabled) return;
 	Observer.one("body", body => body.classList.add("btr-uconf"))
 
-	const universeId = new URLSearchParams(location.search).get("id")
+	const universeId = new URLSearchParams(window.location.search).get("id")
 	if(!universeId) return;
 
 	Observer
@@ -1136,6 +1139,86 @@ pageInit.universeconfig = function() {
 				document.head.append(html`<link href="${chrome.runtime.getURL("lib/prism.css")}" rel="stylesheet" />`)
 				const prismPromise = new Promise(resolve => execScripts(["lib/prism.js"], resolve))
 
+				const createAlias = alias => {
+					const asset = alias.Asset
+					const li = html`<li class=btr-asset-item></li>`
+
+					const btn = html`
+					<div class=btr-asset-button>
+						${alias.Name}
+						<a class=btr-asset-link href=/library/${asset.Id}/${asset.Name.replace(/\W+/g, "-")}>🌐</a>
+					</div>`
+					li.append(btn)
+
+					const content = html`
+					<div class=btr-asset-content>
+						Unloaded
+					</div>`
+					li.append(content)
+
+					let hasLoaded = false
+
+					list.append(li)
+					btn.$on("click", ev => {
+						if(ev.target !== btn) return;
+						li.classList.toggle("open")
+
+						if(!hasLoaded) {
+							hasLoaded = true
+							content.innerHTML = ""
+
+							if(alias.Type === 1) {
+								const hl = html`<div class=btr-cc><pre class="language-lua line-numbers"><code class=language-lua></code></pre><div>`
+								const code = hl.$find("code")
+								content.append(hl)
+
+								const applySource = source => {
+									code.textContent = source.replace(/^--rbxsig.+\r?\n(?:--rbxassetid.+\r?\n)?/, "")
+									prismPromise.then(() => Prism.highlightElement(code))
+								}
+
+								downloadAsset(asset.Id, "text").then(applySource)
+
+								const select = html`<select class=btr-asset-version-select></select>`
+								btn.append(select)
+
+								fetch(`https://api.roblox.com/assets/${asset.Id}/versions`, { credentials: "include" }).then(async resp => {
+									const json = await resp.json()
+									const verCount = json[0].VersionNumber
+
+									for(let version = verCount; version > 0; version--) {
+										const option = html`<option value=${version}>Version ${version}</option>`
+										select.append(option)
+									}
+
+									select.firstElementChild.textContent += " (Current)"
+
+									select.value = verCount
+
+									const versionCache = []
+									let reqCounter = 0
+									select.$on("change", () => {
+										if(!versionCache[select.value]) {
+											versionCache[select.value] = downloadAsset(
+												{ id: asset.Id, version: select.value },
+												"text"
+											)
+
+											code.textContent = "loading..."
+										}
+
+										const reqId = ++reqCounter
+										versionCache[select.value].then(source => {
+											if(reqCounter !== reqId) return;
+											applySource(source)
+										})
+									})
+								})
+							}
+						}
+					})
+				}
+
 				const url = `https://api.roblox.com/universes/get-aliases?universeId=${universeId}&page=1`
 				fetch(url, { credentials: "include", headers: { useragent: "Roblox/WinInet" } })
 					.then(async resp => {
@@ -1146,86 +1229,7 @@ pageInit.universeconfig = function() {
 						list.innerHTML = ""
 						if(!json.Aliases.length) return list.append(html`<li>This game has no assets</li>`);
 
-						json.Aliases.forEach(alias => {
-							const asset = alias.Asset
-							const li = html`<li class=btr-asset-item></li>`
-
-							const btn = html`
-							<div class=btr-asset-button>
-								${alias.Name}
-								<a class=btr-asset-link href=/library/${asset.Id}/${asset.Name.replace(/\W+/g, "-")}>🌐</a>
-							</div>`
-							li.append(btn)
-
-							const content = html`
-							<div class=btr-asset-content>
-								Unloaded
-							</div>`
-							li.append(content)
-
-							let hasLoaded = false
-
-							list.append(li)
-							btn.$on("click", ev => {
-								if(ev.target !== btn) return;
-								li.classList.toggle("open")
-
-								if(!hasLoaded) {
-									hasLoaded = true
-									content.innerHTML = ""
-
-									if(alias.Type === 1) {
-										const hl = html`<div class=btr-cc><pre class="language-lua line-numbers"><code class=language-lua></code></pre><div>`
-										const code = hl.$find("code")
-										content.append(hl)
-
-										const applySource = source => {
-											code.textContent = source.replace(/^\-\-rbxsig.+\r?\n(?:\-\-rbxassetid.+\r?\n)?/, "")
-											Prism.highlightElement(code)
-										}
-
-										downloadAsset(asset.Id, "text").then(applySource)
-
-										const select = html`<select class=btr-asset-version-select></select>`
-										btn.append(select)
-
-										fetch(`https://api.roblox.com/assets/${asset.Id}/versions`, { credentials: "include" })
-											.then(async resp => {
-												const json = await resp.json()
-												const verCount = json[0].VersionNumber
-
-												for(let version = verCount; version > 0; version--) {
-													const option = html`<option value=${version}>Version ${version}</option>`
-													select.append(option)
-												}
-
-												select.firstElementChild.textContent += " (Current)"
-
-												select.value = verCount
-
-												const versionCache = []
-												let reqCounter = 0
-												select.$on("change", () => {
-													if(!versionCache[select.value]) {
-														versionCache[select.value] = downloadAsset(
-															{ id: asset.Id, version: select.value },
-															"text"
-														)
-
-														code.textContent = "loading..."
-													}
-
-													const reqId = ++reqCounter
-													versionCache[select.value].then(source => {
-														if(reqCounter !== reqId) return;
-														applySource(source)
-													})
-												})
-											})
-									}
-								}
-							})
-						})
+						json.Aliases.forEach(createAlias)
 					})
 			}
 
@@ -1844,7 +1848,7 @@ pageInit.profile = function(userId) {
 						})
 					}
 
-					if(!isNaN(placeId)) {
+					if(!Number.isNaN(placeId)) {
 						const thumbUrl = `https://www.roblox.com/asset-thumbnail/json?assetId=${placeId}&width=768&height=432&format=png`
 						retryUntilFinal(thumbUrl, json => {
 							item.$find(".btr-game-thumb").src = json.Url
@@ -2252,7 +2256,7 @@ pageInit.inventory = function() {
 				const validAssetTypes = [10, 13, 40, 3, 24]
 				let itemsLeft = items.length
 
-				function removeItem(index, retries) {
+				function removeItem(index) {
 					const item = items[index]
 					if(item) {
 						const url = `https://api.roblox.com/Marketplace/ProductInfo?assetId=${item.assetId}`
@@ -2282,5 +2286,4 @@ pageInit.inventory = function() {
 	}
 }
 
-haveContentScriptsLoaded = true
-if(hasDataLoaded) Init();
+PreInit()

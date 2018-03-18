@@ -1,79 +1,8 @@
 "use strict"
 
 const RBXParser = (() => {
-	class Model extends Array {
-	}
-
-	class Property {
-		constructor(type, value) {
-			this.type = type
-			this.value = value
-		}
-		toString() {
-			switch(this.type) {
-			case "Enum":
-				return "Enum " + this.value.toString()
-			case "Instance":
-				return this.value && this.value.Name || ""
-			case "CFrame":
-			case "Color3":
-			case "Vector2":
-			case "Vector3":
-				return this.value.join(", ")
-			case "UDim2":
-				return `{${this.value[0].join(", ")}} {${this.value[0].join(", ")}}`
-			default:
-				return this.value.toString()
-			}
-		}
-	}
-
-	class Instance {
-		constructor(className) {
-			assert(typeof className === "string")
-			Object.defineProperty(this, "Children", { value: [], enumerable: true, writable: false })
-			Object.defineProperty(this, "Properties", { value: [], enumerable: false, writable: false })
-			Instance.set(this, "ClassName", className)
-			Instance.set(this, "Parent", new Property("Instance", null))
-		}
-
-		static set(inst, name, prop) {
-			const prevProp = inst.Properties[name]
-
-			if(!(prop instanceof Property)) {
-				switch(typeof prop) {
-				case "string":
-					prop = new Property("String", prop)
-					break
-				case "number":
-					prop = new Property("Number", prop)
-					break
-				case "boolean":
-					prop = new Property("Boolean", prop)
-					break
-				default:
-					throw new Error("Invalid fast property assign")
-				}
-			}
-
-			if(prevProp) {
-				assert(prevProp.type === prop.type, "Property type mismatch")
-			}
-
-			Object.defineProperty(inst, name, { value: prop.value, writable: false, enumerable: true, configurable: true })
-			inst.Properties[name] = prop
-
-			if(name === "Parent") {
-				if(prevProp && prevProp.value instanceof Instance) {
-					const children = prevProp.value.Children
-					children.splice(children.indexOf(inst), 1)
-				}
-
-				if(prop.value instanceof Instance) {
-					prop.value.Children.push(inst)
-				}
-			}
-		}
+	const assert = (bool, ...msg) => {
+		if(!bool) throw new Error(...msg);
 	}
 
 	class ByteReader extends Uint8Array {
@@ -97,7 +26,7 @@ const RBXParser = (() => {
 				return frac === 0 ? Infinity : NaN
 			}
 
-			const double = 2 ** (exp - 1023) * (1+frac)
+			const double = 2 ** (exp - 1023) * (1 + frac)
 			return neg ? -double : double
 		}
 
@@ -105,7 +34,7 @@ const RBXParser = (() => {
 			if(buffer instanceof Uint8Array) {
 				super(buffer.buffer)
 			} else {
-				assert(buffer instanceof ArrayBuffer, "Not an arraybuffer")
+				assert(buffer instanceof ArrayBuffer, "buffer is not an ArrayBuffer")
 				super(buffer)
 			}
 
@@ -145,7 +74,7 @@ const RBXParser = (() => {
 		}
 		DoubleBE() { return ByteReader.ParseDouble(this.UInt32BE(), this.UInt32BE()) }
 
-		String(n) { 
+		String(n) {
 			const i = this.index
 			this.index += n
 			return new TextDecoder("ascii").decode(new Uint8Array(this.buffer, i, n))
@@ -204,12 +133,12 @@ const RBXParser = (() => {
 
 		// RBXInterleaved
 
-		_RBXInterleaved(count, fn) {
+		RBXInterleavedUint32(count, fn) {
 			const result = new Array(count)
 			const byteCount = count * 4
 
 			for(let i = 0; i < count; i++) {
-				const value = (this[this.index + i] << 24) 
+				const value = (this[this.index + i] << 24)
 					+ (this[this.index + (i + count) % byteCount] << 16)
 					+ (this[this.index + (i + count * 2) % byteCount] << 8)
 					+ this[this.index + (i + count * 3) % byteCount]
@@ -221,149 +150,219 @@ const RBXParser = (() => {
 			return result
 		}
 
-		RBXInterleavedFloat(count) {
-			return this._RBXInterleaved(count, value =>
-				ByteReader.ParseFloat((value >> 1) + ((value & 1) * 2147483648))
-			)
-		}
-
-		RBXInterleavedInt(count) {
-			return this._RBXInterleaved(count, value =>
+		RBXInterleavedInt32(count) {
+			return this.RBXInterleavedUint32(count, value =>
 				(value % 2 === 1 ? -(value + 1) / 2 : value / 2)
 			)
 		}
 
-		RBXInterleavedByte(count) {
-			return this._RBXInterleaved(count)
+		RBXInterleavedFloat(count) {
+			return this.RBXInterleavedUint32(count, value =>
+				ByteReader.ParseFloat((value >> 1) + ((value & 1) * 2147483648))
+			)
 		}
 	}
 
-	const peekMethods = [
-		"Byte", "UInt8", "UInt16LE", "UInt16BE", "UInt32LE", "UInt32BE",
-		"FloatLE", "FloatBE", "DoubleLE", "DoubleBE", "String"
-	]
+	{
+		const peekMethods = ["Byte", "UInt8", "UInt16LE", "UInt16BE", "UInt32LE", "UInt32BE", "FloatLE", "FloatBE", "DoubleLE", "DoubleBE", "String"]
+		peekMethods.forEach(key => {
+			const fn = ByteReader.prototype[key]
+			ByteReader.prototype["Peek" + key] = function(...args) {
+				const index = this.GetIndex()
+				const result = fn.apply(this, args)
+				this.SetIndex(index)
+				return result
+			}
+		})
+	}
 
-	peekMethods.forEach(key => {
-		const fn = ByteReader.prototype[key]
-		ByteReader.prototype["Peek" + key] = function(...args) {
-			const index = this.GetIndex()
-			const result = fn.apply(this, args)
-			this.SetIndex(index)
-			return result
+	class Instance {
+		static new(className) {
+			assert(typeof className === "string", "className is not a string")
+
+			let constructor
+			if(!constructor) {
+				eval(`constructor = class ${className} extends Instance { constructor() { super("${className}") } }`)
+				Instance.cache[className] = constructor
+			}
+
+			return new constructor()
 		}
-	})
 
+		constructor(className) {
+			assert(typeof className === "string", "className is not a string")
+			this.Children = []
+			this.Properties = []
+
+			this.setProperty("ClassName", className, "string")
+			this.setProperty("Name", "Instance", "string")
+			this.setProperty("Parent", null, "Instance")
+		}
+
+		setProperty(name, value, type) {
+			if(!type) {
+				if(typeof value === "boolean") {
+					type = "bool"
+				} else if(value instanceof Instance) {
+					type = "Instance"
+				} else {
+					throw new TypeError("You need to specify property type")
+				}
+			}
+
+			let descriptor = this.Properties[name]
+			if(descriptor) {
+				assert(descriptor.type === type, `Property type mismatch ${type} !== ${descriptor.type}`)
+
+				if(name === "Parent" && descriptor.value instanceof Instance) {
+					const index = descriptor.value.Children.indexOf(this)
+					if(index !== -1) {
+						descriptor.value.Children.splice(index, 1)
+					}
+				}
+
+				descriptor.value = value
+			} else {
+				descriptor = this.Properties[name] = { type, value }
+			}
+
+			if(name === "Parent") {
+				if(descriptor.value instanceof Instance) {
+					descriptor.value.Children.push(this)
+				}
+			}
+
+			if(name !== "Children" && name !== "Properties" && !(name in Object.getPrototypeOf(this))) {
+				this[name] = value
+			}
+		}
+
+		getProperty(name) {
+			const descriptor = this.Properties[name]
+			return descriptor ? descriptor.value : undefined
+		}
+
+		hasProperty(name) {
+			return name in this.Properties
+		}
+	}
+	Instance.cache = {}
+
+
+	const asciiDecoder = new TextDecoder("ascii")
+	const domParser = new DOMParser()
 	class RBXXmlParser {
 		parse(data) {
-			if(typeof data !== "string") data = new TextDecoder("ascii").decode(data);
+			if(typeof data !== "string") data = asciiDecoder.decode(data);
 
-			const xml = new DOMParser().parseFromString(data, "text/xml").documentElement
-			const result = new Model()
+			const xml = domParser.parseFromString(data, "text/xml").documentElement
+			const result = []
 
 			this.refs = {}
 			this.refWait = []
 
-			for(let child of xml.children) {
+			Object.values(xml.children).forEach(child => {
 				if(child.nodeName === "Item") {
 					result.push(this.parseItem(child))
 				}
-			}
+			})
 
 			return result
 		}
 
 		parseItem(node) {
-			const instance = new Instance(node.className)
+			const inst = Instance.new(node.className)
 			const referent = node.getAttribute("referent")
 
 			if(referent) {
-				this.refs[referent] = instance
-				this.refWait.filter(wait => wait.ref === referent).forEach(wait => {
-					this.refWait.splice(this.refWait.indexOf(wait), 1)
-					Instance.set(wait.target, wait.propName, new Property("Instance", instance))
+				this.refs[referent] = inst
+				this.refWait.forEach(wait => {
+					if(wait.id === referent) {
+						this.refWait.splice(this.refWait.indexOf(wait), 1)
+						wait.inst.setProperty(wait.name, inst, "Instance")
+					}
 				})
 			}
 
-			for(let childNode of node.children) {
+			Object.values(node.children).forEach(childNode => {
 				switch(childNode.nodeName) {
-				case "Item":
+				case "Item": {
 					const child = this.parseItem(childNode)
-					Instance.set(child, "Parent", new Property("Instance", instance))
-					break
-				case "Properties":
-					this.parseProperties(instance, childNode)
+					child.setProperty("Parent", inst)
 					break
 				}
-			}
+				case "Properties":
+					this.parseProperties(inst, childNode)
+					break
+				}
+			})
 
-			return instance
+			return inst
 		}
 
-		parseProperties(instance, targetNode) {
-			for(let propNode of targetNode.children) {
+		parseProperties(inst, targetNode) {
+			Object.values(targetNode.children).forEach(propNode => {
 				const name = propNode.attributes.name.value
+				const value = propNode.textContent
 
-				let value = propNode.textContent
 				switch(propNode.nodeName.toLowerCase()) {
 				case "content":
 				case "string":
 				case "protectedstring":
-					break;
-				case "double":
-				case "float":
-				case "int":
-					value = +value
-					break;
-				case "bool":
-					value = value === "true"
-					break;
-				case "token":
-					value = new Property("Enum", +value)
-					break;
-				case "coordinateframe":
-					value = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 ]
-					for(let x of propNode.children) {
-						value[RBXXmlParser.CFrameTransform.indexOf(x.nodeName.toUpperCase())] = +x.textContent
-					}
-					value = new Property("CFrame", value)
-					break;
-				case "vector3":
-					value = [0, 0, 0]
-					for(let x of propNode.children) {
-						value[RBXXmlParser.Vector3Transform.indexOf(x.nodeName.toUpperCase())] = +x.textContent
-					}
-					value = new Property("Vector3", value)
-					break;
-				case "color3uint8":
-					value = new Property("Color3", [ +value >> 16 & 0xFF, +value >> 8 & 0xFF, +value & 0xFF ])
-					break
-				case "ref":
-					if(value === "null") {
-						value = null
-					} else if(value in this.refs) {
-						value = this.refs[value]
-					} else {
-						this.refWait.push({
-							ref: value,
-							target: instance,
-							propName: name
-						})
+				case "binarystring": return inst.setProperty(name, value, "string")
+				case "double": return inst.setProperty(name, +value, "double")
+				case "float": return inst.setProperty(name, +value, "float")
+				case "int": return inst.setProperty(name, +value, "int")
+				case "int64": return inst.setProperty(name, value, "int64")
+				case "bool": return inst.setProperty(name, value.toLowerCase() === "true", "bool")
+				case "token": return inst.setProperty(name, +value, "Enum")
+				case "color3uint8": return inst.setProperty(name, [+value >> 16 & 0xFF, +value >> 8 & 0xFF, +value & 0xFF], "Color3")
+				case "coordinateframe": {
+					const cframe = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
+					Object.values(propNode.children).forEach(x => {
+						const index = RBXXmlParser.CFrameTransform.indexOf(x.nodeName.toUpperCase())
+						if(index !== -1) {
+							cframe[index] = +x.textContent
+						}
+					})
 
-						value = null
-					}
-
-					value = new Property("Instance", value)
-					break
-				case "physicalproperties":
-				case "binarystring":
-					continue
-				default:
-					console.warn("Unknown dataType " + propNode.nodeName + " for " + instance.ClassName, propNode.innerHTML)
-					continue
+					return inst.setProperty(name, cframe, "CFrame")
 				}
+				case "vector3": {
+					const vector3 = [0, 0, 0]
+					Object.values(propNode.children).forEach(x => {
+						const index = RBXXmlParser.Vector3Transform.indexOf(x.nodeName.toUpperCase())
+						if(index !== -1) {
+							vector3[index] = +x.textContent
+						}
+					})
 
-				Instance.set(instance, name, value)
-			}
+					return inst.setProperty(name, vector3, "Vector3")
+				}
+				case "physicalproperties": {
+					const props = { CustomPhysics: false, Density: null, Friction: null, Elasticity: null, FrictionWeight: null, ElasticityWeight: null }
+					Object.values(propNode.children).forEach(x => {
+						if(x.nodeName in props) {
+							props[x.nodeName] = x.nodeName === "CustomPhysics" ? x.textContent.toLowerCase() === "true" : +x.textContent
+						}
+					})
+
+					return inst.setProperty(name, props, "PhysicalProperties")
+				}
+				case "ref": {
+					const target = this.refs[value] || null
+					if(!target && value.toLowerCase() !== "null") {
+						this.refWait.push({
+							inst, name,
+							id: value
+						})
+					}
+
+					return inst.setProperty(name, target, "Instance")
+				}
+				default: console.warn(`[ParseRBXXml] Unknown dataType ${propNode.nodeName} for ${instance.ClassName}.${name}`, propNode.innerHTML)
+				}
+			})
 		}
 	}
 	RBXXmlParser.CFrameTransform = ["X", "Y", "Z", "R00", "R01", "R02", "R10", "R11", "R12", "R20", "R21", "R22"]
@@ -373,36 +372,36 @@ const RBXParser = (() => {
 		// http://www.classy-studios.com/Downloads/RobloxFileSpec.pdf
 		parse(buffer) {
 			const reader = this.reader = new ByteReader(buffer)
-			if(!reader.Match(RBXBinParser.HeaderBytes)) console.warn("Header bytes did not match (Did binary format change?)");
+			if(!reader.Match(RBXBinParser.HeaderBytes)) { console.warn("[ParseRBXBin] Header bytes did not match (Did binary format change?)") }
 
 			const groupsCount = reader.UInt32LE()
 			const instancesCount = reader.UInt32LE()
 			reader.Jump(8)
 
-			this.result = new Model()
+			this.result = []
 			this.groups = new Array(groupsCount)
 			this.instances = new Array(instancesCount)
 
-			for(let n = 0; n < groupsCount; n++) this.parseINST();
-			while(reader.PeekString(4) === "PROP") this.parsePROP();
+			for(let n = 0; n < groupsCount; n++) { this.parseINST() }
+			while(reader.PeekString(4) === "PROP") { this.parsePROP() }
 			this.parsePRNT()
 
-			assert(reader.String(3) === "END", "Invalid or missing END")
-			if(!reader.Match(RBXBinParser.FooterBytes)) console.warn("Footer bytes did not match (Did binary format change?)");
-			if(reader.GetRemaining() > 0) console.warn("Unexpected bonus data after model");
+			assert(reader.String(3) === "END", "[ParseRBXBin] Invalid or missing END")
+			if(!reader.Match(RBXBinParser.FooterBytes)) { console.warn("[ParseRBXBin] Footer bytes did not match (Did binary format change?)") }
+			if(reader.GetRemaining() > 0) { console.warn("[ParseRBXBin] Unexpected data after END") }
 
 			return this.result
 		}
 
 		parseINST() {
-			assert(this.reader.String(4) === "INST", "Invalid or missing INST")
+			assert(this.reader.String(4) === "INST", "[ParseRBXBin] Invalid or missing INST")
 			const sub = new ByteReader(this.reader.LZ4())
 
 			const groupId = sub.UInt32LE()
-			const className = sub.String( sub.UInt32LE() )
-			const bonus = sub.Byte() // Idk :<
+			const className = sub.String(sub.UInt32LE())
+			sub.Byte() // Bonus byte, idk the use
 			const instCount = sub.UInt32LE()
-			const instIds = sub.RBXInterleavedInt(instCount)
+			const instIds = sub.RBXInterleavedInt32(instCount)
 
 			const group = this.groups[groupId] = {
 				ClassName: className,
@@ -412,7 +411,7 @@ const RBXParser = (() => {
 			let instId = 0
 			for(let i = 0; i < instCount; i++) {
 				instId += instIds[i]
-				group.Objects.push( this.instances[instId] = new Instance(className) )
+				group.Objects.push(this.instances[instId] = Instance.new(className))
 			}
 		}
 
@@ -421,100 +420,107 @@ const RBXParser = (() => {
 			const sub = new ByteReader(this.reader.LZ4())
 
 			const group = this.groups[sub.UInt32LE()]
-			const prop = sub.String( sub.UInt32LE() )
+			const prop = sub.String(sub.UInt32LE())
 			const dataType = sub.Byte()
+			const typeName = RBXBinParser.DataTypes[dataType]
+
+			if(!typeName) {
+				console.warn(`[ParseRBXBin] Unknown dataType 0x${dataType.toString(16).toUpperCase()} for ${group.ClassName}.${prop}`)
+				return
+			}
 
 			let values = []
-			switch(dataType) {
-			case 0x1: // String
+			let valueType = typeName
+			switch(typeName) {
+			case "string":
 				while(sub.GetRemaining() > 0) {
 					values.push(sub.String(sub.UInt32LE()))
 				}
 				break;
-			case 0x2: // Boolean
+			case "bool":
 				while(sub.GetRemaining() > 0) {
 					values.push(sub.Byte() === 0x1)
 				}
 				break;
-			case 0x3: // Int32
-				values = sub.RBXInterleavedInt(sub.GetRemaining() / 4)
+			case "int":
+				values = sub.RBXInterleavedInt32(sub.GetRemaining() / 4)
 				break;
-			case 0x4: // Float
+			case "float":
 				values = sub.RBXInterleavedFloat(sub.GetRemaining() / 4)
 				break;
-			case 0x5: // Double
+			case "double":
 				while(sub.GetRemaining() > 0) {
 					values.push(ByteReader.ParseDouble(sub.UInt32LE(), sub.UInt32LE()))
 				}
 				break;
-			case 0x7: { // UDim2
-				const count = sub.GetRemaining()/16
+			case "UDim2": {
+				const count = sub.GetRemaining() / 16
 				const scaleX = sub.RBXInterleavedFloat(count)
 				const scaleY = sub.RBXInterleavedFloat(count)
-				const offsetX = sub.RBXInterleavedInt(count)
-				const offsetY = sub.RBXInterleavedInt(count)
+				const offsetX = sub.RBXInterleavedInt32(count)
+				const offsetY = sub.RBXInterleavedInt32(count)
 				for(let i = 0; i < count; i++) {
-					values[i] = new Property("UDim2", [
-						[ scaleX[i], offsetX[i] ],
-						[ scaleY[i], offsetY[i] ]
-					])
+					values[i] = [
+						[scaleX[i], offsetX[i]],
+						[scaleY[i], offsetY[i]]
+					]
 				}
 				break;
 			}
-			case 0x8: { // Ray
+			case "Ray": {
 				const count = sub.GetRemaining() / 24
 				for(let i = 0; i < count; i++) {
-					values[i] = new Property("Ray", [
-						[ sub.FloatLE(), sub.FloatLE(), sub.FloatLE() ],
-						[ sub.FloatLE(), sub.FloatLE(), sub.FloatLE() ]
-					])
+					values[i] = [
+						[sub.FloatLE(), sub.FloatLE(), sub.FloatLE()],
+						[sub.FloatLE(), sub.FloatLE(), sub.FloatLE()]
+					]
 				}
 				break
 			}
-			case 0xB: // BrickColor
-				values = sub.RBXInterleavedByte(sub.GetRemaining() / 4)
+			case "BrickColor":
+				values = sub.RBXInterleavedUint32(sub.GetRemaining() / 4)
 				break;
-			case 0xC: { // Color3
+			case "Color3": {
 				const count = sub.GetRemaining() / 12
 				const red = sub.RBXInterleavedFloat(count)
 				const green = sub.RBXInterleavedFloat(count)
 				const blue = sub.RBXInterleavedFloat(count)
 				for(let i = 0; i < count; i++) {
-					values[i] = new Property("Color3", [ red[i], green[i], blue[i] ])
+					values[i] = [red[i], green[i], blue[i]]
 				}
 				break
 			}
-			case 0xD: { // Vector2
+			case "Vector2": {
 				const count = sub.GetRemaining() / 8
 				const vecX = sub.RBXInterleavedFloat(count)
 				const vecY = sub.RBXInterleavedFloat(count)
 				for(let i = 0; i < count; i++) {
-					values[i] = new Property("Vector2", [ vecX[i], vecY[i] ])
+					values[i] = [vecX[i], vecY[i]]
 				}
 				break
 			}
-			case 0xE: { // Vector3
-				const count = sub.GetRemaining()/12
+			case "Vector3": {
+				const count = sub.GetRemaining() / 12
 				const vecX = sub.RBXInterleavedFloat(count)
 				const vecY = sub.RBXInterleavedFloat(count)
 				const vecZ = sub.RBXInterleavedFloat(count)
 				for(let i = 0; i < count; i++) {
-					values[i] = new Property("Vector3", [ vecX[i], vecY[i], vecZ[i] ])
+					values[i] = [vecX[i], vecY[i], vecZ[i]]
 				}
 				break
 			}
-			case 0x10: { // CFrame
+			case "CFrame": {
 				let count = 0
 				while(sub.GetRemaining() > count * 12) {
-					const value = values[count++] = [0,0,0, 1,0,0, 0,1,0, 0,0,1]
-					let type = sub.Byte()
+					const value = values[count++] = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
+					const type = sub.Byte()
 
 					if(type !== 0) {
 						const cframe = RBXBinParser.ShortCFrames[type]
-						assert(cframe, "Invalid shortened CFrame")
-						for(let i = 0; i < 9; i++) value[i+3] = cframe[i];
+						assert(cframe, "[ParseRBXBin] Invalid shorthand CFrame")
+						for(let i = 0; i < 9; i++) { value[i + 3] = cframe[i] }
 					} else {
-						for(let i = 0; i < 9; i++) value[i+3] = sub.FloatLE();
+						for(let i = 0; i < 9; i++) { value[i + 3] = sub.FloatLE() }
 					}
 				}
 
@@ -525,38 +531,103 @@ const RBXParser = (() => {
 					values[i][0] = vecX[i]
 					values[i][1] = vecY[i]
 					values[i][2] = vecZ[i]
-
-					values[i] = new Property("CFrame", values[i])
 				}
 				break
 			}
-			case 0x12: { // Enum / Token
+			case "Enum": {
 				const count = sub.GetRemaining() / 4
-				values = sub.RBXInterleavedByte(count).map(x => new Property("Enum", x))
+				values = sub.RBXInterleavedUint32(count)
 				break
 			}
-			case 0x13: { // Reference
+			case "Instance": {
 				const count = sub.GetRemaining() / 4
-				const refIds = sub.RBXInterleavedInt(count)
+				const refIds = sub.RBXInterleavedInt32(count)
 
 				let refId = 0
 				for(let i = 0; i < count; i++) {
 					refId += refIds[i]
-					values[i] = new Property("Instance", this.instances[refId])
+					values[i] = this.instances[refId]
 				}
 				break
 			}
-			case 0x9: // Faces
-			case 0xA: // Axis
-			case 0x19: // PhysicalProperties
-				break;
-			default:
-				console.warn("[ParseRBXBin] Unknown dataType " + dataType + " for " + group.ClassName + "." + prop);
-				break;
+			case "PhysicalProperties": {
+				let i = 0
+				while(sub.GetRemaining()) {
+					const enabled = sub.Byte() === 1
+					values[i++] = {
+						CustomPhysics: enabled,
+						Density: enabled ? sub.FloatLE() : null,
+						Friction: enabled ? sub.FloatLE() : null,
+						Elasticity: enabled ? sub.FloatLE() : null,
+						FrictionWeight: enabled ? sub.FloatLE() : null,
+						ElasticityWeight: enabled ? sub.FloatLE() : null
+					}
+				}
+				break
+			}
+			case "Color3uint8": {
+				const count = sub.GetRemaining() / 3
+				const rgb = sub.Array(sub.GetRemaining())
+
+				for(let i = 0; i < count; i++) {
+					values[i] = [rgb[i], rgb[i + count], rgb[i + count * 2]]
+				}
+				break
+			}
+			case "int64": {
+				const count = sub.GetRemaining() / 8
+				const bytes = sub.Array(sub.GetRemaining())
+
+				const int64add = (byte, power, result) => {
+					if(power > 5) {
+						power -= 5
+						const str = String(byte * (256 ** 5))
+						for(let i = 0, final = str.length - 1; i <= final; i++) {
+							int64add(
+								+str[final - i] * (10 ** i),
+								power,
+								result
+							)
+						}
+					} else {
+						const str = String(byte * (256 ** power))
+						for(let i = 0, final = str.length - 1; i <= final; i++) {
+							const n = (result[i] || 0) + (+str[final - i])
+							result[i] = n % 10
+							if(n >= 10) {
+								result[i + 1] = (result[i + 1] || 0) + (n - n % 10) / 10
+							}
+						}
+					}
+				}
+
+				for(let i = 0; i < count; i++) {
+					const result = [0]
+					const neg = bytes[i + count * 7] % 2 === 1
+
+					if(neg) {
+						bytes[i + count * 7]++
+					}
+
+					for(let j = 0; j < 8; j++) {
+						const byte = bytes[i + count * j]
+						int64add(
+							byte / 2,
+							7 - j,
+							result
+						)
+					}
+
+					values[i] = (neg ? "-" : "") + result.reduce((a, b) => b + a, "")
+				}
+
+				break
+			}
+			default: console.warn(`[ParseRBXBin] Unimplemented dataType '${typeName}' for ${group.ClassName}.${prop}`)
 			}
 
 			values.forEach((value, i) => {
-				Instance.set(group.Objects[i], prop, value)
+				group.Objects[i].setProperty(prop, value, valueType)
 			})
 		}
 
@@ -566,8 +637,8 @@ const RBXParser = (() => {
 
 			sub.Byte()
 			const parentCount = sub.UInt32LE()
-			const childIds = sub.RBXInterleavedInt(parentCount)
-			const parentIds = sub.RBXInterleavedInt(parentCount)
+			const childIds = sub.RBXInterleavedInt32(parentCount)
+			const parentIds = sub.RBXInterleavedInt32(parentCount)
 
 			let childId = 0
 			let parentId = 0
@@ -579,15 +650,19 @@ const RBXParser = (() => {
 				if(parentId === -1) {
 					this.result.push(child)
 				} else {
-					Instance.set(child, "Parent", new Property("Instance", this.instances[parentId]))
+					child.setProperty("Parent", this.instances[parentId], "Instance")
 				}
 			}
 		}
 	}
-	RBXBinParser.HeaderBytes = [ 0x3C, 0x72, 0x6F, 0x62, 0x6C, 0x6F, 0x78, 0x21, 0x89, 0xFF, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00 ]
-	RBXBinParser.FooterBytes = [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3C, 0x2F, 0x72, 0x6F, 0x62, 0x6C, 0x6F, 0x78, 0x3E ]
-	RBXBinParser.ShortCFrames = [null,null,[1,0,0,0,1,0,0,0,1],[1,0,0,0,0,-1,0,1,0],null,[1,0,0,0,-1,0,0,0,-1],[1,0,0,0,0,1,0,-1,0],[0,1,0,1,0,0,0,0,-1],null,[0,0,1,1,0,0,0,1,0],[0,-1,0,1,0,0,0,0,1],null,[0,0,-1,1,0,0,0,-1,0],[0,1,0,0,0,1,1,0,0],[0,0,-1,0,1,0,1,0,0],null,[0,-1,0,0,0,-1,1,0,0],[0,0,1,0,-1,0,1,0,0],null,null,[-1,0,0,0,1,0,0,0,-1],[-1,0,0,0,0,1,0,1,0],null,[-1,0,0,0,-1,0,0,0,1],[-1,0,0,0,0,-1,0,-1,0],[0,1,0,-1,0,0,0,0,1],null,[0,0,-1,-1,0,0,0,1,0],[0,-1,0,-1,0,0,0,0,-1],null,[0,0,1,-1,0,0,0,-1,0],[0,1,0,0,0,-1,-1,0,0],[0,0,1,0,1,0,-1,0,0],null,[0,-1,0,0,0,1,-1,0,0],[0,0,-1,0,-1,0,-1,0,0]]
-	
+	RBXBinParser.HeaderBytes = [0x3C, 0x72, 0x6F, 0x62, 0x6C, 0x6F, 0x78, 0x21, 0x89, 0xFF, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00]
+	RBXBinParser.FooterBytes = [0x00, 0x00, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3C, 0x2F, 0x72, 0x6F, 0x62, 0x6C, 0x6F, 0x78, 0x3E]
+	RBXBinParser.ShortCFrames = [null, null, [1, 0, 0, 0, 1, 0, 0, 0, 1], [1, 0, 0, 0, 0, -1, 0, 1, 0], null, [1, 0, 0, 0, -1, 0, 0, 0, -1], [1, 0, 0, 0, 0, 1, 0, -1, 0], [0, 1, 0, 1, 0, 0, 0, 0, -1], null, [0, 0, 1, 1, 0, 0, 0, 1, 0], [0, -1, 0, 1, 0, 0, 0, 0, 1], null, [0, 0, -1, 1, 0, 0, 0, -1, 0], [0, 1, 0, 0, 0, 1, 1, 0, 0], [0, 0, -1, 0, 1, 0, 1, 0, 0], null, [0, -1, 0, 0, 0, -1, 1, 0, 0], [0, 0, 1, 0, -1, 0, 1, 0, 0], null, null, [-1, 0, 0, 0, 1, 0, 0, 0, -1], [-1, 0, 0, 0, 0, 1, 0, 1, 0], null, [-1, 0, 0, 0, -1, 0, 0, 0, 1], [-1, 0, 0, 0, 0, -1, 0, -1, 0], [0, 1, 0, -1, 0, 0, 0, 0, 1], null, [0, 0, -1, -1, 0, 0, 0, 1, 0], [0, -1, 0, -1, 0, 0, 0, 0, -1], null, [0, 0, 1, -1, 0, 0, 0, -1, 0], [0, 1, 0, 0, 0, -1, -1, 0, 0], [0, 0, 1, 0, 1, 0, -1, 0, 0], null, [0, -1, 0, 0, 0, 1, -1, 0, 0], [0, 0, -1, 0, -1, 0, -1, 0, 0]]
+	RBXBinParser.DataTypes = [
+		null, "string", "bool", "int", "float", "double", null, "UDim2", "Ray", null, null, "BrickColor", "Color3", "Vector2", "Vector3", null,
+		"CFrame", null, "Enum", "Instance", null, null, null, null, null, "PhysicalProperties", "Color3uint8", "int64"
+	]
+
 	class ModelParser {
 		parse(buffer) {
 			assert(buffer.byteLength >= 9, "Not a balid RBXM file (too small)")
@@ -704,24 +779,24 @@ const RBXParser = (() => {
 
 			reader.SetIndex(begin + headerSize)
 			for(let i = 0; i < vertexCount; i++) {
-				vertices[i*3] = reader.FloatLE()
-				vertices[i*3+1] = reader.FloatLE()
-				vertices[i*3+2] = reader.FloatLE()
+				vertices[i * 3] = reader.FloatLE()
+				vertices[i * 3 + 1] = reader.FloatLE()
+				vertices[i * 3 + 2] = reader.FloatLE()
 
-				normals[i*3] = reader.FloatLE()
-				normals[i*3+1] = reader.FloatLE()
-				normals[i*3+2] = reader.FloatLE()
+				normals[i * 3] = reader.FloatLE()
+				normals[i * 3 + 1] = reader.FloatLE()
+				normals[i * 3 + 2] = reader.FloatLE()
 
-				uvs[i*2] = reader.FloatLE()
-				uvs[i*2+1] = 1-reader.FloatLE()
+				uvs[i * 2] = reader.FloatLE()
+				uvs[i * 2 + 1] = 1 - reader.FloatLE()
 
 				reader.Jump(vertexSize - 32)
 			}
 
 			for(let i = 0; i < faceCount; i++) {
-				faces[i*3] = reader.UInt32LE()
-				faces[i*3+1] = reader.UInt32LE()
-				faces[i*3+2] = reader.UInt32LE()
+				faces[i * 3] = reader.UInt32LE()
+				faces[i * 3 + 1] = reader.UInt32LE()
+				faces[i * 3 + 2] = reader.UInt32LE()
 
 				reader.Jump(faceSize - 12)
 			}
@@ -733,47 +808,50 @@ const RBXParser = (() => {
 
 	class AnimationParser {
 		static CFrameToQuat(cf) {
-			var qw, qx, qy, qz
-			var trace = cf[3] + cf[7] + cf[11]
+			const trace = cf[3] + cf[7] + cf[11]
+			let qw
+			let qx
+			let qy
+			let qz
 			
 			if(trace > 0) {
-				var S = Math.sqrt(1 + trace) * 2
+				const S = Math.sqrt(1 + trace) * 2
 				qw = S / 4
 				qx = (cf[10] - cf[8]) / S
 				qy = (cf[5] - cf[9]) / S
 				qz = (cf[6] - cf[4]) / S
-			} else if ((cf[3] > cf[7]) && (cf[3] > cf[11])) { 
-				var S = Math.sqrt(1.0 + cf[3] - cf[7] - cf[11]) * 2
+			} else if ((cf[3] > cf[7]) && (cf[3] > cf[11])) {
+				const S = Math.sqrt(1.0 + cf[3] - cf[7] - cf[11]) * 2
 				qw = (cf[10] - cf[8]) / S
 				qx = S / 4
-				qy = (cf[4] + cf[6]) / S 
-				qz = (cf[5] + cf[9]) / S 
-			} else if (cf[7] > cf[11]) { 
-				var S = Math.sqrt(1.0 + cf[7] - cf[3] - cf[11]) * 2
+				qy = (cf[4] + cf[6]) / S
+				qz = (cf[5] + cf[9]) / S
+			} else if (cf[7] > cf[11]) {
+				const S = Math.sqrt(1.0 + cf[7] - cf[3] - cf[11]) * 2
 				qw = (cf[5] - cf[9]) / S
-				qx = (cf[4] + cf[6]) / S 
+				qx = (cf[4] + cf[6]) / S
 				qy = S / 4
-				qz = (cf[8] + cf[10]) / S 
-			} else { 
-				var S = Math.sqrt(1.0 + cf[11] - cf[3] - cf[7]) * 2
+				qz = (cf[8] + cf[10]) / S
+			} else {
+				const S = Math.sqrt(1.0 + cf[11] - cf[3] - cf[7]) * 2
 				qw = (cf[6] - cf[4]) / S
 				qx = (cf[5] + cf[9]) / S
 				qy = (cf[8] + cf[10]) / S
 				qz = S / 4
 			}
 
-			return [ qx, qy, qz, qw ]
+			return [qx, qy, qz, qw]
 		}
 
-		parse(model) {
-			assert(model instanceof Model, "Invalid model")
+		parse(sequence) {
+			if(Array.isArray(sequence)) { sequence = sequence[0] }
 
-			const sequence = model[0]
-			assert(sequence instanceof Instance && sequence.ClassName === "KeyframeSequence", "Not a keyframesequence")
+			assert(sequence instanceof Instance, "sequence is not an Instance")
+			assert(sequence.ClassName === "KeyframeSequence", "sequence is not a KeyframeSequence")
 			
 			const keyframes = sequence.Children
 				.filter(x => x.ClassName === "Keyframe")
-				.sort((a,b) => a.Time - b.Time)
+				.sort((a, b) => a.Time - b.Time)
 			
 			this.result = {
 				length: keyframes[keyframes.length - 1].Time,
@@ -800,7 +878,7 @@ const RBXParser = (() => {
 			
 			this.result.keyframes[name].push({
 				time: keyframe.Time,
-				pos: [ cf[0], cf[1], cf[2] ],
+				pos: [cf[0], cf[1], cf[2]],
 				rot: AnimationParser.CFrameToQuat(cf),
 				easingdir: pose.EasingDirection,
 				easingstyle: pose.EasingStyle
@@ -811,10 +889,8 @@ const RBXParser = (() => {
 	}
 
 	return {
-		Model,
-		Instance,
-		Property,
 		ByteReader,
+		Instance,
 		ModelParser,
 		MeshParser,
 		AnimationParser,
@@ -825,8 +901,8 @@ const RBXParser = (() => {
 				const url = new URL(urlString)
 				switch(url.protocol) {
 				case "rbxassetid:": {
-					const id = parseInt(url.pathname.replace(/^\/*/,""), 10)
-					assert(!isNaN(id), "Invalid asset id")
+					const id = parseInt(url.pathname.replace(/^\/*/, ""), 10)
+					assert(!Number.isNaN(id), "Invalid asset id")
 					return id
 				}
 				case "http:":
@@ -834,7 +910,7 @@ const RBXParser = (() => {
 					assert(url.hostname.search(/^((assetgame|www|web)\.)?roblox\.com$/) !== -1, "Invalid hostname")
 					assert(url.pathname.replace(/\/{2,}/g, "/").search(/^\/asset\/?$/) !== -1, "Invalid pathname")
 					const id = parseInt(url.searchParams.get("id"), 10)
-					assert(!isNaN(id), "Missing or invalid asset id")
+					assert(!Number.isNaN(id), "Missing or invalid asset id")
 					return id
 				}
 				default:

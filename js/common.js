@@ -194,7 +194,7 @@ const MESSAGING = (() => {
 				if(!listenersByName[name]) {
 					listenersByName[name] = callback
 				} else {
-					console.warn("Listener '${name}' already exists")
+					console.warn(`Listener '${name}' already exists`)
 				}
 			}
 		}
@@ -213,7 +213,3 @@ const MESSAGING = (() => {
 		}
 	}
 })();
-
-const assert = (bool, ...msg) => {
-	if(!bool) throw new Error(...msg);
-}

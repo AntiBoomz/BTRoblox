@@ -94,20 +94,20 @@ Object.assign(RBXScene, (() => {
 	}
 
 	function solidColorDataURL(r, g, b) {
-		return "data:image/gif;base64,R0lGODlhAQABAPAA" 
-			+ btoa(String.fromCharCode(0, r, g, b, 255, 255)) 
+		return "data:image/gif;base64,R0lGODlhAQABAPAA"
+			+ btoa(String.fromCharCode(0, r, g, b, 255, 255))
 			+ "/yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=="
 	}
 
-	const R6BodyPartNames = [ "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg" ]
+	const R6BodyPartNames = ["Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
 	const R15BodyPartNames = [
 		"LeftFoot", "LeftHand", "LeftLowerArm", "LeftLowerLeg", "LeftUpperArm", "LeftUpperLeg", "LowerTorso",
 		"RightFoot", "RightHand", "RightLowerArm", "RightLowerLeg", "RightUpperArm", "RightUpperLeg", "UpperTorso"
 	]
 
 	const HeadMeshes = {
-		6340170: "headA", 6340101: "headB", 6340258: "headC", 6340192: "headD", 8330576: "headE", 6340161: "headF", 
-		8330389: "headG", 6340208: "headH", 6340141: "headI", 6340133: "headJ", 8330578: "headK", 6340269: "headL", 
+		6340170: "headA", 6340101: "headB", 6340258: "headC", 6340192: "headD", 8330576: "headE", 6340161: "headF",
+		8330389: "headG", 6340208: "headH", 6340141: "headI", 6340133: "headJ", 8330578: "headK", 6340269: "headL",
 		6340154: "headM", 6340198: "headN", 6340213: "headO", 6340227: "headP"
 	}
 
@@ -465,8 +465,8 @@ Object.assign(RBXScene, (() => {
 		this.width = 388
 		this.height = 272
 
-		this.camera = new THREE.OrthographicCamera(-this.width/2, this.width/2, this.height/2, -this.height/2, 0.1, 100)
-		this.camera.position.set(this.width/2, this.height/2, 10)
+		this.camera = new THREE.OrthographicCamera(-this.width / 2, this.width / 2, this.height / 2, -this.height / 2, 0.1, 100)
+		this.camera.position.set(this.width / 2, this.height / 2, 10)
 		this.camera.rotation.set(0, 0, 0)
 
 		const pantsmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
@@ -503,8 +503,8 @@ Object.assign(RBXScene, (() => {
 		this.width = 264
 		this.height = 284
 
-		this.camera = new THREE.OrthographicCamera(-this.width/2, this.width/2, this.height/2, -this.height/2, 0.1, 100)
-		this.camera.position.set(this.width/2, this.height/2, 10)
+		this.camera = new THREE.OrthographicCamera(-this.width / 2, this.width / 2, this.height / 2, -this.height / 2, 0.1, 100)
+		this.camera.position.set(this.width / 2, this.height / 2, 10)
 		this.camera.rotation.set(0, 0, 0)
 
 		const obj = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
@@ -538,7 +538,7 @@ Object.assign(RBXScene, (() => {
 		}
 
 		init() {
-			assert(!this.hasInit, "already has init")
+			if(this.hasInit) { throw new Error("Avatar has already been initialized") }
 			this.hasInit = true
 
 			const textures = this.textures = {
@@ -614,7 +614,7 @@ Object.assign(RBXScene, (() => {
 					const R15Folder = model.find(x => x.Name === "R15")
 
 					if(R6Folder) {
-						const BodyPartEnum = [ null, "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg" ]
+						const BodyPartEnum = [null, "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
 
 						R6Folder.Children.filter(x => x.ClassName === "CharacterMesh").forEach(charmesh => {
 							const target = BodyPartEnum[charmesh.BodyPart]
@@ -856,7 +856,7 @@ Object.assign(RBXScene, (() => {
 						joint.add(c1)
 						c1.add(childObj)
 
-						joints[child.JointName] = animJoints[child.name] = { 
+						joints[child.JointName] = animJoints[child.name] = {
 							c0,
 							c1,
 							joint,

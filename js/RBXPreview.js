@@ -52,7 +52,6 @@ const RBXPreview = (() => {
 						if(this.enabled) this.scene.start();
 					})
 				})
-
 			} else if(this.scene) {
 				if(this.enabled) this.scene.start();
 				else this.scene.stop();

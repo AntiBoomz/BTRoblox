@@ -4,8 +4,6 @@ const IS_FIREFOX = typeof chrome !== "undefined" && typeof browser !== "undefine
 const getURL = chrome.runtime.getURL
 const Observer = CreateObserver(document)
 
-let hasDataLoaded = false
-let haveContentScriptsLoaded = false
 let settings
 let currentPage
 let blogFeedData;
@@ -495,9 +493,6 @@ function PreInit() {
 			}
 		})
 
-		hasDataLoaded = true
-		if(haveContentScriptsLoaded) Init();
+		return Init()
 	})
 }
-
-PreInit()
