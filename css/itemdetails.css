@@ -139,6 +139,7 @@ a:not(.disabled) > .btr-icon-content:hover {
 	width: 28px;
 	height: 28px;
 	vertical-align: middle;
+	transform: translateZ(0); /* Fixes a weird rendery bug until it updates again */
 }
 
 .btr-icon-hat { background-position: 0 0; }
