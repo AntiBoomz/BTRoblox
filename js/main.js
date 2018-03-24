@@ -408,168 +408,210 @@ function Init() {
 	}
 
 	if(settings.general.fastSearch) {
+		const requestCache = {}
 		const usernameRegex = /^\w+ ?_?\w+$/
+		const promiseCache = {}
+		const fsResults = []
+		let fsUpdateCounter = 0
+		let friendsLoaded = false
+		let friendsPromise
+		let exactTimeout
 
-		Observer.one(["#navbar-universal-search #navbar-search-input", "#navbar-universal-search > ul"],
-			(input, list) => {
-				const requestCache = {}
-				const fsResults = []
-				let fsUpdateCounter = 0
-				let friendsPromise
+		try {
+			const data = JSON.parse(localStorage.getItem("btr-fastsearch-cache"))
+			Object.entries(data.friends).forEach(([name, id]) => {
+				requestCache[name.toLowerCase()] = {
+					Username: name,
+					UserId: id,
+					IsFriend: true
+				}
+			})
+		} catch(ex) {}
 
-				list.$on("mouseover", ".rbx-navbar-search-option", ev => {
-					const last = list.$find(">.selected")
-					if(last) { last.classList.remove("selected") }
-					ev.currentTarget.classList.add("selected")
-				})
+		const updateCache = () => {
+			const cache = {
+				friends: {}
+			}
 
-				const makeItem = (json, hlFrom, hlTo) => {
-					if(hlFrom == null) {
-						hlFrom = 0
-						hlTo = json.Username.length
+			Object.values(requestCache).forEach(json => {
+				if(json && json.IsFriend) {
+					cache.friends[json.Username] = json.UserId
+				}
+			})
+
+			localStorage.setItem("btr-fastsearch-cache", JSON.stringify(cache))
+		}
+
+
+		const makeItem = (json, hlFrom, hlTo) => {
+			if(hlFrom == null) {
+				hlFrom = 0
+				hlTo = json.Username.length
+			}
+			const item = html`
+			<li class="rbx-navbar-search-option rbx-clickable-li" data-searchurl=https://www.roblox.com/User.aspx?userName=${json.Username}&wot=>
+				<a class=btr-fastsearch-anchor href=https://www.roblox.com/User.aspx?userName=${json.Username}>
+					<div class=btr-fastsearch-avatar>
+						<img class=btr-fastsearch-thumbnail src=https://www.roblox.com/headshot-thumbnail/image?userId=${json.UserId}&width=48&height=48&format=png>
+						<div class=btr-fastsearch-status>
+						</div>
+					</div>
+					<div class=btr-fastsearch-text>
+						<div>${json.Username.slice(0, hlFrom)}<b>${json.Username.slice(hlFrom, hlTo)}</b>${json.Username.slice(hlTo)}</div>
+						<div class="btr-fastsearch-friendlabel text-label xsmall">You are friends</div>
+					</div>
+				</a>
+			</li>`
+
+			if(!json.IsFriend) {
+				item.$find(".btr-fastsearch-friendlabel").remove()
+			}
+
+			// Presence
+			if(!json.presence) {
+				const url = `https://www.roblox.com/presence/user?userId=${json.UserId}`
+				json.presence = fetch(url, { credentials: "include" })
+					.then(resp => resp.json())
+			}
+
+			json.presence.then(presence => {
+				switch(presence.UserPresenceType) {
+				case 0: break
+				case 2: {
+					item.$find(".btr-fastsearch-status").classList.add("game")
+					const followBtn = html`<button class="btr-fastsearch-follow btn-primary-xs">Join Game</button>`
+
+					if(presence.PlaceId) {
+						followBtn.setAttribute("onclick", `return Roblox.GameLauncher.followPlayerIntoGame(${json.UserId}), false`)
+					} else {
+						followBtn.classList.add("disabled")
 					}
-					const item = html`
-					<li class="rbx-navbar-search-option rbx-clickable-li" data-searchurl=https://www.roblox.com/User.aspx?userName=${json.Username}&wot=>
-						<a class=btr-fastsearch-anchor href=https://www.roblox.com/User.aspx?userName=${json.Username}>
-							<div class=btr-fastsearch-avatar>
-								<img class=btr-fastsearch-thumbnail src=https://www.roblox.com/headshot-thumbnail/image?userId=${json.UserId}&width=48&height=48&format=png>
-								<div class=btr-fastsearch-status>
-								</div>
-							</div>
-							<div class=btr-fastsearch-text>
-								<div>${json.Username.slice(0, hlFrom)}<b>${json.Username.slice(hlFrom, hlTo)}</b>${json.Username.slice(hlTo)}</div>
-								<div class="btr-fastsearch-friendlabel text-label xsmall">You are friends</div>
-							</div>
-						</a>
-					</li>`
 
-					if(!json.IsFriend) {
-						item.$find(".btr-fastsearch-friendlabel").remove()
-					}
+					item.$find(".btr-fastsearch-anchor").append(followBtn)
+					break
+				}
+				case 3:
+					item.$find(".btr-fastsearch-status").classList.add("studio")
+					break
+				default: item.$find(".btr-fastsearch-status").classList.add("online")
+				}
+			})
 
-					// Presence
-					if(!json.presence) {
-						const url = `https://www.roblox.com/presence/user?userId=${json.UserId}`
-						json.presence = fetch(url, { credentials: "include" })
-							.then(resp => resp.json())
-					}
+			return item
+		}
 
-					json.presence.then(presence => {
-						switch(presence.UserPresenceType) {
-						case 0: break
-						case 2: {
-							item.$find(".btr-fastsearch-status").classList.add("game")
-							const followBtn = html`<button class="btr-fastsearch-follow btn-primary-xs">Join Game</button>`
+		
+		const clearResults = list => {
+			fsResults.splice(0, fsResults.length).forEach(x => x.remove())
+			const sel = list.$find(">.selected")
+			if(!sel) {
+				list.children[0].classList.add("selected")
+			}
+		}
 
-							if(presence.PlaceId) {
-								followBtn.setAttribute("onclick", `return Roblox.GameLauncher.followPlayerIntoGame(${json.UserId}), false`)
-							} else {
-								followBtn.classList.add("disabled")
-							}
+		const updateResults = (search, list) => {
+			clearTimeout(exactTimeout)
+			clearResults(list)
 
-							item.$find(".btr-fastsearch-anchor").append(followBtn)
+			if(!usernameRegex.test(search)) { return }
+
+			const thisUpdate = ++fsUpdateCounter
+
+			const update = () => {
+				if(fsUpdateCounter !== thisUpdate) { return }
+				clearResults(list)
+
+				const matches = Object.entries(requestCache).filter(x => x[1] && (x[0] === search || x[1].IsFriend && (x.index = x[0].indexOf(search)) !== -1))
+
+				if(!matches.length) { return }
+
+				const sel = list.$find(">.selected")
+				if(sel) { sel.classList.remove("selected") }
+
+				matches.forEach(x => x.sort = x[0] === search ? 0 : Math.abs(x[0].length - search.length) + x.index + (!x[1].IsFriend ? 100 : 0))
+				matches.sort((a, b) => a.sort - b.sort)
+				const len = Math.min(4, matches.length)
+
+				// Show friends before exact match (if not friend)
+				const first = matches[0]
+				if(first[0] === search && !first[1].IsFriend) {
+					for(let i = 1; i < len; i++) {
+						const self = matches[i]
+						if(self[1].IsFriend) {
+							matches[i] = first
+							matches[i - 1] = self
+						} else {
 							break
 						}
-						case 3:
-							item.$find(".btr-fastsearch-status").classList.add("studio")
-							break
-						default: item.$find(".btr-fastsearch-status").classList.add("online")
-						}
-					})
-
-					return item
-				}
-
-				const clearResults = () => {
-					fsResults.splice(0, fsResults.length).forEach(x => x.remove())
-					const sel = list.$find(">.selected")
-					if(!sel) {
-						list.children[0].classList.add("selected")
 					}
 				}
 
-				const updateFriendResults = () => {
-					clearResults()
+				for(let i = 0; i < len; i++) {
+					const x = matches[i]
 
-					const thisUpdate = ++fsUpdateCounter
-					const search = input.value.toLowerCase()
-					const sel = list.$find(">.selected")
+					const json = x[1]
+					const item = makeItem(json, x.index, x.index + search.length)
 
-					if(!friendsPromise) {
-						friendsPromise = new Promise(resolve => {
-							const friendsList = []
-
-							loggedInUserPromise.then(userId => {
-								const url = `https://www.roblox.com/users/friends/list-json?pageSize=200&userId=${userId}`
-								fetch(url, { credentials: "include" }).then(async resp => {
-									const json = await resp.json()
-									json.Friends.forEach(friend => {
-										const item = {
-											IsFriend: true,
-											UserId: friend.UserId,
-											Username: friend.Username,
-											presence: Promise.resolve({
-												UserPresenceType: friend.InStudio ? 3 : friend.InGame ? 2 : friend.IsOnline ? 1 : 0,
-												LastLocation: friend.LastLocation,
-												PlaceId: friend.PlaceId
-											})
-										}
-										requestCache[friend.Username.toLowerCase()] = Promise.resolve(item)
-										friendsList.push(item)
-									})
-
-									resolve(friendsList)
-								})
-							})
-						})
+					if(fsResults.length) {
+						fsResults[fsResults.length - 1].after(item)
+					} else {
+						list.prepend(item)
 					}
+					fsResults.push(item)
 
-					friendsPromise.then(friendsList => {
-						if(fsUpdateCounter !== thisUpdate) { return }
+					if(i === 0) {
+						item.classList.add("selected")
+					}
+				}
+			}
+			
+			update()
 
-						const items = []
-						friendsList.forEach(friend => {
-							const index = friend.Username.toLowerCase().indexOf(search)
-							if(index === -1 || items.length >= 4) { return }
+			if(!friendsLoaded) {
+				if(!friendsPromise) {
+					friendsPromise = new Promise(resolve => {
+						const friendsList = []
 
-							const item = makeItem(friend, index, index + search.length)
-							items.push({
-								s: Math.abs(friend.Username.length - search.length) + index,
-								item
-							})
-						})
+						loggedInUserPromise.then(userId => {
+							const url = `https://www.roblox.com/users/friends/list-json?pageSize=200&userId=${userId}`
+							fetch(url, { credentials: "include" }).then(async resp => {
+								const json = await resp.json()
+								json.Friends.forEach(friend => {
+									const key = friend.Username.toLowerCase()
+									const item = {
+										IsFriend: true,
+										UserId: friend.UserId,
+										Username: friend.Username,
 
-						if(items.length) {
-							const isFirst = fsResults.length === 0
-
-							items.sort((a, b) => a.s - b.s)
-								.forEach(x => {
-									const item = x.item
-									if(fsResults.length) {
-										fsResults[fsResults.length - 1].after(item)
-									} else {
-										list.prepend(item)
+										presence: Promise.resolve({
+											UserPresenceType: friend.InStudio ? 3 : friend.InGame ? 2 : friend.IsOnline ? 1 : 0,
+											LastLocation: friend.LastLocation,
+											PlaceId: friend.PlaceId
+										})
 									}
-									fsResults.push(item)
+
+									requestCache[key] = item
+									friendsList[key] = true
 								})
-							
-							if(isFirst && list.$find(">.selected") === sel) {
-								const first = items[0].item
-								if(sel) { sel.classList.remove("selected") }
-								first.classList.add("selected")
-							}
-						}
+
+								Object.entries(requestCache).forEach(x => x[1].IsFriend && !friendsList[x[0]] && (x[1].IsFriend = false))
+
+								friendsLoaded = true
+								updateCache()
+								resolve()
+							})
+						})
 					})
 				}
 
-				const updateExactResult = () => {
-					const thisUpdate = fsUpdateCounter
-					const search = input.value.toLowerCase()
-					const sel = list.$find(">.selected")
+				friendsPromise.then(update)
+			}
 
-					let cached = requestCache[search]
+			exactTimeout = setTimeout(() => {
+				if(!(search in requestCache)) {
+					let cached = promiseCache[search]
 					if(!cached) {
-						cached = requestCache[search] = fetch(`https://api.roblox.com/users/get-by-username?username=${search}`)
+						cached = promiseCache[search] = fetch(`https://api.roblox.com/users/get-by-username?username=${search}`)
 							.then(async resp => {
 								const json = await resp.json()
 
@@ -581,37 +623,26 @@ function Init() {
 					}
 
 					cached.then(json => {
-						if(!json || json.IsFriend || fsUpdateCounter !== thisUpdate) { return }
-
-						const item = makeItem(json)
-
-						if(fsResults.length) {
-							fsResults[fsResults.length - 1].after(item)
-						} else {
-							list.prepend(item)
+						if(!(search in requestCache)) {
+							requestCache[search] = json
 						}
-						fsResults.push(item)
-	
-						if(list.$find(">.selected") === sel && fsResults.length === 1) {
-							if(sel) { sel.classList.remove("selected") }
-							item.classList.add("selected")
-						}
+
+						if(json) { update() }
 					})
 				}
+			}, 250)
+		}
 
-				let inputTimeout
-				let lastInput
+		Observer.one(["#navbar-universal-search #navbar-search-input", "#navbar-universal-search > ul"],
+			(input, list) => {
+				list.$on("mouseover", ".rbx-navbar-search-option", ev => {
+					const last = list.$find(">.selected")
+					if(last) { last.classList.remove("selected") }
+					ev.currentTarget.classList.add("selected")
+				})
+				
 				input.$on("keyup", () => {
-					if(input.value === lastInput) { return }
-					lastInput = input.value
-
-					clearTimeout(inputTimeout)
-					if(usernameRegex.test(lastInput)) {
-						updateFriendResults()
-						inputTimeout = setTimeout(updateExactResult, 250)
-					} else {
-						clearResults()
-					}
+					updateResults(input.value.toLowerCase(), list)
 				})
 
 				list.prepend(fsResults)
