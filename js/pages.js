@@ -880,6 +880,9 @@ pageInit.gamedetails = function(placeId) {
 	const newContainer = html`<div class="col-xs-12 btr-game-main-container section-content">`
 
 	Observer
+		.one("body", body => {
+			body.classList.add("btr-gamedetails")
+		})
 		.one(["#tab-about", "#tab-game-instances"], (aboutTab, gameTab) => {
 			aboutTab.$find(".text-lead").textContent = "Commentary"
 

@@ -23,7 +23,6 @@ body .btr-game-main-container {
 
 .btr-game-main-container .game-main-content {
 	background: none;
-	padding:;
 	padding-left: 0;
 	padding-right: 0;
 }
@@ -50,44 +49,44 @@ body .btr-game-main-container {
 	margin-bottom: 18px;
 }
 
-body .badge-container .badge-row { /* Badge height + 10px */
+.btr-badges-container .badge-row { /* Badge height + 10px */
 	min-height:110px;
 	max-height:160px; /* Regular height */
 	height:auto;
 }
 
-body .badge-container .badge-row .badge-image,
-body .badge-container .badge-row .badge-image img { /* Regular size is 150x150 */
+.btr-badges-container .badge-row .badge-image,
+.btr-badges-container .badge-row .badge-image img { /* Regular size is 150x150 */
 	width:100px;
 	height:100px;
 }
 
-body .badge-container .badge-row .badge-content {
+.btr-badges-container .badge-row .badge-content {
 	width:calc(100% - 100px);
 }
 
-body .badge-container .badge-row .badge-data-container {
+.btr-badges-container .badge-row .badge-data-container {
 	width:60%;
 }
 
-body .badge-container .badge-row .badge-data-container>p {
+.btr-badges-container .badge-row .badge-data-container>p {
 	height:72px;
 	margin:4px 4px;
 
 	overflow:hidden;
 }
 
-body .badge-container .badge-row .badge-stats-container {
+.btr-badges-container .badge-row .badge-stats-container {
 	width:40%;
 	margin-top:18px;
 }
 
-body .badge-container .badge-row.btr-notowned {
+.btr-badges-container .badge-row.btr-notowned {
 	opacity: .6;
 	transition: all 1s;
 }
 
-body .badge-container .badge-row.btr-badgeownedloading:before {
+.btr-badges-container .badge-row.btr-badgeownedloading:before {
 	position: absolute;
 	content: "";
 	width: 16px;
@@ -150,27 +149,27 @@ body .badge-container .badge-row.btr-badgeownedloading:before {
 
 /* VIP Servers */
 
-.rbx-vip-server-details {
+.btr-gamedetails .rbx-vip-server-details {
 	padding-top: 8px;
 }
 
-.rbx-vip-server-details .owner-avatar {
+.btr-gamedetails .rbx-vip-server-details .owner-avatar {
 	display: none !important;
 }
 
 /* Developer Store */
 
-#store .game-dev-store {
+.btr-gamedetails #store .game-dev-store {
 	padding: 0 4px; /* Overflow problems */
 }
 
 /* Other */
 
-.section-content-off {
+.btr-gamedetails .section-content-off {
 	background: transparent !important;
 }
 
-#my-recommended-games,
-#about #rbx-vip-servers {
+.btr-gamedetails #my-recommended-games,
+.btr-gamedetails #about #rbx-vip-servers {
 	display: none !important;
 }
