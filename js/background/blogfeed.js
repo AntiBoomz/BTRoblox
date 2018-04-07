@@ -6,8 +6,11 @@ const Blogfeed = (() => {
 	let cachedFeed
 	let lastRequest = 0
 
-	const htmlStripper = document.createElement("div")
-	const striphtml = html => (htmlStripper.innerHTML=html,htmlStripper.textContent)
+	const htmlStripper = document.createElement("template")
+	const striphtml = html => {
+		htmlStripper.innerHTML = html
+		return htmlStripper.textContent
+	}
 
 	return {
 		get(cb) {
