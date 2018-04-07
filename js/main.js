@@ -154,12 +154,18 @@ function Init() {
 					</div>
 				</div>
 				<div class=btr-filter-lists>
-					<ul class=btr-filter-groups>
-					</ul>
+					<div class=btr-filter-list>
+						<h5 class=btr-filter-list-header>Enabled</h5>
+						<ul class=btr-filter-enabled>
+						</ul>
+					</div>
 					<div class=btr-filter-center>
 					</div>
-					<ul class=btr-filter-chosen>
-					</ul>
+					<div class=btr-filter-list>
+						<h5 class=btr-filter-list-header>Disabled</h5>
+						<ul class=btr-filter-disabled>
+						</ul>
+					</div>
 				</div>
 			</div>
 			<div class=btr-settings-footer>
@@ -182,8 +188,8 @@ function Init() {
 
 		{ // Shout Filters
 			const filterContent = settingsDiv.$find("#btr-settings-shout-filters")
-			const groupsList = filterContent.$find(".btr-filter-groups")
-			const chosenList = filterContent.$find(".btr-filter-chosen")
+			const enabledList = filterContent.$find(".btr-filter-enabled")
+			const disabledList = filterContent.$find(".btr-filter-disabled")
 			const groups = []
 			const shoutFilters = {}
 			let currentList
@@ -196,20 +202,23 @@ function Init() {
 				let lastGroup
 				let lastChosen
 
+				const list0 = shoutFilters.mode === "blacklist" ? enabledList : disabledList
+				const list1 = shoutFilters.mode === "blacklist" ? disabledList : enabledList
+
 				groups.forEach(group => {
 					const tile = group.tile
 					const isChosen = currentList.indexOf(group.Id) !== -1
 
 					if(isChosen) {
-						if(!lastChosen && (tile.parentNode !== chosenList || tile.previousElementSibling)) {
-							chosenList.prepend(tile)
+						if(!lastChosen && (tile.parentNode !== list1 || tile.previousElementSibling)) {
+							list1.prepend(tile)
 						} else if(lastChosen && tile.previousElementSibling !== lastChosen) {
 							lastChosen.after(tile)
 						}
 						lastChosen = tile
 					} else {
-						if(!lastGroup && (tile.parentNode !== groupsList || tile.previousElementSibling)) {
-							groupsList.prepend(tile)
+						if(!lastGroup && (tile.parentNode !== list0 || tile.previousElementSibling)) {
+							list0.prepend(tile)
 						} else if(lastGroup && tile.previousElementSibling !== lastGroup) {
 							lastGroup.after(tile)
 						}
@@ -286,10 +295,7 @@ function Init() {
 				}
 			}
 
-			groupsList.$on("dragover", validDrag)
-			chosenList.$on("dragover", validDrag)
-
-			groupsList.$on("drop", ev => {
+			const dropEnable = ev => {
 				if(!isDataLoaded) { return }
 				if(ev.dataTransfer.types.indexOf("btr-group") === -1) { return }
 
@@ -304,9 +310,9 @@ function Init() {
 				}
 				ev.preventDefault()
 				ev.dataTransfer.clearData()
-			})
+			}
 
-			chosenList.$on("drop", ev => {
+			const dropDisable = ev => {
 				if(!isDataLoaded) { return }
 				if(ev.dataTransfer.types.indexOf("btr-group") === -1) { return }
 
@@ -320,6 +326,19 @@ function Init() {
 				}
 				ev.preventDefault()
 				ev.dataTransfer.clearData()
+			}
+
+			enabledList.$on("dragover", validDrag)
+			disabledList.$on("dragover", validDrag)
+
+			enabledList.$on("drop", ev => {
+				if(shoutFilters.mode === "blacklist") { dropEnable(ev) }
+				else { dropDisable(ev) }
+			})
+
+			disabledList.$on("drop", ev => {
+				if(shoutFilters.mode === "blacklist") { dropDisable(ev) }
+				else { dropEnable(ev) }
 			})
 
 			const blBtn = filterContent.$find(".btr-filter-blacklist")
@@ -332,14 +351,6 @@ function Init() {
 				blBtn.classList.toggle("btn-control-xs", !isBl)
 				wlBtn.classList.toggle("btn-secondary-xs", !isBl)
 				wlBtn.classList.toggle("btn-control-xs", isBl)
-
-				if(isBl) {
-					groupsList.style.order = "1"
-					chosenList.style.order = "3"
-				} else {
-					groupsList.style.order = "3"
-					chosenList.style.order = "1"
-				}
 
 				updateLists()
 			}
