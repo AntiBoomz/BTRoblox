@@ -409,7 +409,7 @@ function Init() {
 
 	if(settings.general.fastSearch) {
 		const requestCache = {}
-		const usernameRegex = /^\w+ ?_?\w+$/
+		const usernameRegex = /^\w+(?:[ _]?\w+)?$/
 		const promiseCache = {}
 		const fsResults = []
 		let fsUpdateCounter = 0
@@ -606,6 +606,8 @@ function Init() {
 
 				friendsPromise.then(update)
 			}
+
+			if(search.length < 3) { return }
 
 			exactTimeout = setTimeout(() => {
 				if(!(search in requestCache)) {
