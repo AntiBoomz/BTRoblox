@@ -884,7 +884,7 @@ pageInit.gamedetails = function(placeId) {
 			body.classList.add("btr-gamedetails")
 		})
 		.one(["#tab-about", "#tab-game-instances"], (aboutTab, gameTab) => {
-			aboutTab.$find(".text-lead").textContent = "Commentary"
+			aboutTab.$find(".text-lead").textContent = "Recommended"
 
 			aboutTab.classList.remove("active")
 			gameTab.classList.add("active")
@@ -913,7 +913,7 @@ pageInit.gamedetails = function(placeId) {
 		})
 		.one(".tab-content", cont => {
 			cont.classList.add("section")
-			CreateObserver(cont, { subtree: false }).all(".tab-pane", pane => {
+			CreateObserver(cont, { subtree: false }).all(".tab-pane:not(#about)", pane => {
 				pane.classList.add("section-content")
 			})
 		})
@@ -1021,10 +1021,6 @@ pageInit.gamedetails = function(placeId) {
 		})
 
 	onDocumentReady(() => {
-		if($("#AjaxCommentsContainer") == null) {
-			$("#about").append(html`<div class="section-content-off">Comments have been disabled for this place</div>`)
-		}
-
 		const placeEdit = $("#game-context-menu .dropdown-menu .VisitButtonEditGLI")
 		if(placeEdit) {
 			placeEdit.parentNode.after(html`

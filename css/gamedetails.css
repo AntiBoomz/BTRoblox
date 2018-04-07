@@ -169,7 +169,10 @@ body .btr-game-main-container {
 	background: transparent !important;
 }
 
-.btr-gamedetails #my-recommended-games,
 .btr-gamedetails #about #rbx-vip-servers {
 	display: none !important;
+}
+
+.btr-gamedetails #my-recommended-games .hlist {
+	text-align: center;
 }
