@@ -291,7 +291,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 	}
 
 	function constructPage(items, itemStart, itemEnd) {
-		versionList.innerHTML = ""
+		versionList.$empty()
 
 		for(let i = itemStart; i <= itemEnd; i++) {
 			const item = items[i]
@@ -1145,7 +1145,7 @@ pageInit.universeconfig = function() {
 
 						if(!hasLoaded) {
 							hasLoaded = true
-							content.innerHTML = ""
+							content.$empty()
 
 							if(alias.Type === 1) {
 								const hl = html`<div class=btr-cc><pre class="language-lua line-numbers"><code class=language-lua></code></pre><div>`
@@ -1206,7 +1206,7 @@ pageInit.universeconfig = function() {
 						console.log(json)
 
 						const list = cont.$find(".btr-asset-list")
-						list.innerHTML = ""
+						list.$empty()
 						if(!json.Aliases.length) return list.append(html`<li>This game has no assets</li>`);
 
 						json.Aliases.forEach(createAlias)
@@ -1901,7 +1901,7 @@ pageInit.profile = function(userId) {
 					pager.setPage(json.Data.Page)
 					pager.togglePrev(json.Data.previousPageCursor != null)
 					pager.toggleNext(json.Data.nextPageCursor != null)
-					hlist.innerHTML = ""
+					hlist.$empty
 
 					if(json.Data.Items.length === 0) {
 						const text = `${userId === loggedInUser ? "You have" : "This user has"} no badges`
@@ -1962,7 +1962,7 @@ pageInit.profile = function(userId) {
 
 				pager.setMaxPage(Math.floor((json.NumberOfGroups - 1) / pageSize) + 1)
 
-				hlist.innerHTML = ""
+				hlist.$empty
 				json.Groups.forEach((item, index) => {
 					const parent = html`
 					<li class="list-item game-card ${index < pageSize ? "visible" : ""}">
@@ -2056,7 +2056,7 @@ pageInit.profile = function(userId) {
 					pager.setPage(page)
 					pager.setMaxPage(Math.floor((json.Data.TotalItems - 1) / pageSize) + 1)
 
-					hlist.innerHTML = ""
+					hlist.$empty
 
 					const categoryName = dropdownLabel.textContent
 					header.textContent = `Favorite ${categoryName}`

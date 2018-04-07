@@ -25,6 +25,10 @@ const $ = (() => {
 			return self.querySelectorAll(selector.replace(/(^|,)\s*(?=>)/g, "$&:scope"))
 		},
 
+		empty(self) {
+			while(self.lastChild) { self.removeChild(self.lastChild) }
+		},
+
 		on(self, eventNames, selector, callback, once) {
 			if(typeof selector === "function") [selector, callback, once] = [null, selector, callback];
 
@@ -202,6 +206,10 @@ const $ = (() => {
 	Assign([window.Element, Element, window.Document, Document, window.DocumentFragment, DocumentFragment], {
 		$find(...args) { return $.find(this, ...args) },
 		$findAll(...args) { return $.findAll(this, ...args) }
+	})
+
+	Assign([window.Node, Node], {
+		$empty() { return $.empty(this) }
 	})
 
 	return $

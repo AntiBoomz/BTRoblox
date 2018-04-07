@@ -909,7 +909,7 @@ function Init() {
 
 	if(settings.general.navigationEnabled && settings.general.showBlogFeed) {
 		const updateBlogFeed = data => {
-			blogfeed.innerHTML = ""
+			blogfeed.$empty()
 
 			data.forEach(item => {
 				blogfeed.append(html`
