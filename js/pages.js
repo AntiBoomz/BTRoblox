@@ -658,9 +658,10 @@ pageInit.itemdetails = function(assetId) {
 
 					if(settings.itemdetails.explorerButton && InvalidExplorableAssetTypeIds.indexOf(assetTypeId) === -1) {
 						let explorerInitialized = false
-						let explorer = null
 
-						execScripts(["js/Explorer.js"], () => { explorer = new Explorer() })
+						const explorerPromise = new Promise(resolve => {
+							execScripts(["js/Explorer.js"], () => resolve(new Explorer()))
+						})
 
 						const btn = html`
 						<div>
@@ -677,25 +678,29 @@ pageInit.itemdetails = function(assetId) {
 							cont.parentNode.classList.add("btr-explorer-btn-shown")
 						})
 
-						btn.$find(".btr-explorer-button").$on("click", () => {
-							if(!explorer) return false;
+						document.body.$on("click", ".btr-explorer-parent", ev => {
+							ev.stopImmediatePropagation()
+						})
 
-							if(!explorerInitialized) {
-								explorerInitialized = true
+						CreateObserver(btn, { subtree: false }).all(".popover", popover => {
+							explorerPromise.then(explorer => {
+								if(!explorerInitialized) {
+									explorerInitialized = true
 
-								if(assetTypeId === 32) { // Package, I disabled package exploring elsewhere
-									AssetCache.loadText(assetId, text => text.split(";").forEach(id => {
-										AssetCache.loadModel(id, model => explorer.addView(id.toString(), model))
-									}))
-								} else {
-									AssetCache.loadModel(assetId, model => explorer.addView("Main", model))
+									if(assetTypeId === 32) { // Package, I disabled package exploring elsewhere
+										AssetCache.loadText(assetId, text => text.split(";").forEach(id => {
+											AssetCache.loadModel(id, model => explorer.addModel(id.toString(), model))
+										}))
+									} else {
+										AssetCache.loadModel(assetId, model => explorer.addModel("Main", model))
+									}
 								}
-							}
 
-							setTimeout(() => {
-								const parent = $("div:not(.rbx-popover-content)>.btr-explorer-parent")
-								if(parent) parent.replaceWith(explorer.domElement);
-							}, 0)
+								popover.$find(".btr-explorer-parent").replaceWith(explorer.element)
+
+								const popLeft = explorer.element.getBoundingClientRect().right + 276 >= document.documentElement.clientWidth
+								explorer.element.$find(".btr-properties").classList.toggle("left", popLeft)
+							})
 						})
 					}
 

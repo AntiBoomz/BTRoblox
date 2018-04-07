@@ -1,118 +1,140 @@
 "use strict"
 
-const rmdClassIcons = {
-	Keyframe: 60, Texture: 10, Message: 33, Sound: 11, RopeConstraint: 89, Status: 2, ReplicatedStorage: 70, ClickDetector: 41, Lighting: 13, Decal: 7, Weld: 34,
-	BindableEvent: 67, TremoloSoundEffect: 84, Sparkles: 42, SoundGroup: 85, StarterCharacterScripts: 78, PrismaticConstraint: 88, NetworkReplicator: 29,
-	Vector3Value: 4, ReverbSoundEffect: 84, ScreenGui: 47, SunRaysEffect: 83, UIGridLayout: 26, CompressorSoundEffect: 84, TrussPart: 1, FloorWire: 4, TextBox: 51,
-	PyramidPart: 1, IntValue: 4, ServerStorage: 69, Chat: 33, CustomEvent: 4, Workspace: 19, BodyPosition: 14, VehicleSeat: 35, SelectionBox: 54, CornerWedgePart: 1,
-	ArcHandles: 56, Handles: 53, Flag: 38, RightAngleRampPart: 1, UISizeConstraint: 26, ColorCorrectionEffect: 83, Animation: 60, UnionOperation: 73, PlayerScripts: 78,
-	StarterPlayerScripts: 78, SurfaceLight: 13, NetworkServer: 15, Pose: 60, LocalScript: 18, TouchTransmitter: 37, Explosion: 36, TextureTrail: 4, ModuleScript: 76,
-	Backpack: 20, ParticleEmitter: 80, Player: 12, ChatService: 33, BindableFunction: 66, RodConstraint: 90, TextLabel: 50, PlayerGui: 46, ImageLabel: 49, Platform: 35,
-	Seat: 35, FlagStand: 39, HingeConstraint: 87, CylinderMesh: 8, SpawnLocation: 25, Shirt: 43, IntConstrainedValue: 4, DistortionSoundEffect: 84, BodyVelocity: 14,
-	UIAspectRatioConstraint: 26, ForceField: 37, BodyGyro: 14, Hat: 45, BrickColorValue: 4, CharacterMesh: 60, StringValue: 4, Teams: 23, TestService: 68,
-	UITextSizeConstraint: 26, BlurEffect: 83, GuiMain: 47, Color3Value: 4, CoreGui: 46, BlockMesh: 8, ScrollingFrame: 48, SpotLight: 13, EchoSoundEffect: 84, Fire: 61,
-	Team: 24, RemoteFunction: 74, Camera: 5, NetworkClient: 16, AnimationTrack: 60, UIListLayout: 26, EqualizerSoundEffect: 84, MarketplaceService: 46, Players: 21,
-	ServerScriptService: 71, ImageButton: 52, BillboardGui: 64, MeshPart: 73, PartPairLasso: 57, ShirtGraphic: 40, BodyForce: 14, Tool: 17, BodyAngularVelocity: 14,
-	NegateOperation: 72, StarterPack: 20, NumberValue: 4, ReplicatedFirst: 70, PrismPart: 1, Part: 1, SpringConstraint: 91, CFrameValue: 4, Hint: 33, ParallelRampPart: 1,
-	TerrainRegion: 65, SurfaceSelection: 55, Dialog: 62, RocketPropulsion: 14, Folder: 77, DoubleConstrainedValue: 4, SelectionSphere: 54, Configuration: 58, Model: 2,
-	DialogChoice: 63, PointLight: 13, Accoutrement: 32, Smoke: 59, CustomEventReceiver: 4, SpecialMesh: 8, Sky: 28, SkateboardPlatform: 35, Accessory: 32, Pants: 44,
-	HopperBin: 22, BodyThrust: 14, Humanoid: 9, RayValue: 4, SelectionPointLasso: 57, TextButton: 51, StarterGear: 20, SurfaceGui: 64, StarterPlayer: 79,
-	ChorusSoundEffect: 84, Terrain: 65, SelectionPartLasso: 57, Debris: 30, WedgePart: 1, PitchShiftSoundEffect: 84, RemoteEvent: 75, ObjectValue: 4, JointInstance: 34,
-	AnimationController: 60, Frame: 48, SoundService: 31, StarterGui: 46, BallSocketConstraint: 86, FlangeSoundEffect: 84, Attachment: 81, BoolValue: 4, BloomEffect: 83,
-	GuiButton: 52, Script: 6
-}
+{
+	const rmdClassIcons = {
+		Keyframe: 60, Texture: 10, Message: 33, Sound: 11, RopeConstraint: 89, Status: 2, ReplicatedStorage: 70, ClickDetector: 41, Lighting: 13, Decal: 7, Weld: 34,
+		BindableEvent: 67, TremoloSoundEffect: 84, Sparkles: 42, SoundGroup: 85, StarterCharacterScripts: 78, PrismaticConstraint: 88, NetworkReplicator: 29,
+		Vector3Value: 4, ReverbSoundEffect: 84, ScreenGui: 47, SunRaysEffect: 83, UIGridLayout: 26, CompressorSoundEffect: 84, TrussPart: 1, FloorWire: 4, TextBox: 51,
+		PyramidPart: 1, IntValue: 4, ServerStorage: 69, Chat: 33, CustomEvent: 4, Workspace: 19, BodyPosition: 14, VehicleSeat: 35, SelectionBox: 54, CornerWedgePart: 1,
+		ArcHandles: 56, Handles: 53, Flag: 38, RightAngleRampPart: 1, UISizeConstraint: 26, ColorCorrectionEffect: 83, Animation: 60, UnionOperation: 73, PlayerScripts: 78,
+		StarterPlayerScripts: 78, SurfaceLight: 13, NetworkServer: 15, Pose: 60, LocalScript: 18, TouchTransmitter: 37, Explosion: 36, TextureTrail: 4, ModuleScript: 76,
+		Backpack: 20, ParticleEmitter: 80, Player: 12, ChatService: 33, BindableFunction: 66, RodConstraint: 90, TextLabel: 50, PlayerGui: 46, ImageLabel: 49, Platform: 35,
+		Seat: 35, FlagStand: 39, HingeConstraint: 87, CylinderMesh: 8, SpawnLocation: 25, Shirt: 43, IntConstrainedValue: 4, DistortionSoundEffect: 84, BodyVelocity: 14,
+		UIAspectRatioConstraint: 26, ForceField: 37, BodyGyro: 14, Hat: 45, BrickColorValue: 4, CharacterMesh: 60, StringValue: 4, Teams: 23, TestService: 68,
+		UITextSizeConstraint: 26, BlurEffect: 83, GuiMain: 47, Color3Value: 4, CoreGui: 46, BlockMesh: 8, ScrollingFrame: 48, SpotLight: 13, EchoSoundEffect: 84, Fire: 61,
+		Team: 24, RemoteFunction: 74, Camera: 5, NetworkClient: 16, AnimationTrack: 60, UIListLayout: 26, EqualizerSoundEffect: 84, MarketplaceService: 46, Players: 21,
+		ServerScriptService: 71, ImageButton: 52, BillboardGui: 64, MeshPart: 73, PartPairLasso: 57, ShirtGraphic: 40, BodyForce: 14, Tool: 17, BodyAngularVelocity: 14,
+		NegateOperation: 72, StarterPack: 20, NumberValue: 4, ReplicatedFirst: 70, PrismPart: 1, Part: 1, SpringConstraint: 91, CFrameValue: 4, Hint: 33, ParallelRampPart: 1,
+		TerrainRegion: 65, SurfaceSelection: 55, Dialog: 62, RocketPropulsion: 14, Folder: 77, DoubleConstrainedValue: 4, SelectionSphere: 54, Configuration: 58, Model: 2,
+		DialogChoice: 63, PointLight: 13, Accoutrement: 32, Smoke: 59, CustomEventReceiver: 4, SpecialMesh: 8, Sky: 28, SkateboardPlatform: 35, Accessory: 32, Pants: 44,
+		HopperBin: 22, BodyThrust: 14, Humanoid: 9, RayValue: 4, SelectionPointLasso: 57, TextButton: 51, StarterGear: 20, SurfaceGui: 64, StarterPlayer: 79,
+		ChorusSoundEffect: 84, Terrain: 65, SelectionPartLasso: 57, Debris: 30, WedgePart: 1, PitchShiftSoundEffect: 84, RemoteEvent: 75, ObjectValue: 4, JointInstance: 34,
+		AnimationController: 60, Frame: 48, SoundService: 31, StarterGui: 46, BallSocketConstraint: 86, FlangeSoundEffect: 84, Attachment: 81, BoolValue: 4, BloomEffect: 83,
+		GuiButton: 52, Script: 6
+	}
 
-const hiddenProperties = ["PhysicsData", "MeshData", "ChildData", "InitialSize", "formFactorRaw"]
+	const hiddenProperties = ["PhysicsData", "MeshData", "ChildData", "InitialSize", "formFactorRaw", "ScriptGuid"]
 
-const propertyGroups = {
-	Appearance: {
-		Order: 0,
-		List: [
-			"BrickColor", "Material", "Reflectance", "Transparency", "WaterColor", "WaterReflectance", "WaterTransparency", "WaterWaveSize",
-			"WaterWaveSpeed"
-		]
-	},
-	Data: { Order: 1, List: [] },
-	Camera: { Order: 2, List: ["CameraSubject", "CameraType"] },
-	Behavior: {
-		Order: 3,
-		List: [
-			"AllowThirdPartySales", "Archivable", "FallenPartsDestroyHeight", "FilteringEnabled", "Fravity", "PGSPhysicsSolverEnabled",
-			"StreamingEnabled", "CanCollide", "Locked", "Anchored", "LoadStringEnabled"
-		] 
-	},
-	Part: { Order: 4, List: ["Size", "Shape"] },
-	Fog: { Order: 4, List: ["FogColor", "FogEnd", "FogStart"] },
-	"Surface Inputs": {
-		Order: 5,
-		List: [
-			"BackParamA", "BackParamB", "BackSurfaceInput", "BottomParamA", "BottomParamB", "BottomSurfaceInput", "FrontParamA", "FrontParamB",
-			"FrontSurfaceInput", "LeftParamA", "LeftParamB", "LeftSurfaceInput", "RightParamA", "RightParamB", "RightSurfaceInput", "TopParamA",
-			"TopParamB", "TopSurfaceInput"
-		] 
-	},
-	Surface: { Order: 5, List: ["BackSurface", "BottomSurface", "FrontSurface", "LeftSurface", "RightSurface", "TopSurface"] }
-}
+	const propertyGroups = {
+		Appearance: {
+			Order: 0,
+			List: [
+				"BrickColor", "Material", "Reflectance", "Transparency", "WaterColor", "WaterReflectance", "WaterTransparency", "WaterWaveSize",
+				"WaterWaveSpeed"
+			]
+		},
+		Data: { Order: 1, List: [] },
+		Camera: { Order: 2, List: ["CameraSubject", "CameraType"] },
+		Behavior: {
+			Order: 3,
+			List: [
+				"AllowThirdPartySales", "Archivable", "FallenPartsDestroyHeight", "FilteringEnabled", "Fravity", "PGSPhysicsSolverEnabled",
+				"StreamingEnabled", "CanCollide", "Locked", "Anchored", "LoadStringEnabled"
+			] 
+		},
+		Part: { Order: 4, List: ["Size", "Shape"] },
+		Fog: { Order: 4, List: ["FogColor", "FogEnd", "FogStart"] },
+		"Surface Inputs": {
+			Order: 5,
+			List: [
+				"BackParamA", "BackParamB", "BackSurfaceInput", "BottomParamA", "BottomParamB", "BottomSurfaceInput", "FrontParamA", "FrontParamB",
+				"FrontSurfaceInput", "LeftParamA", "LeftParamB", "LeftSurfaceInput", "RightParamA", "RightParamB", "RightSurfaceInput", "TopParamA",
+				"TopParamB", "TopSurfaceInput"
+			] 
+		},
+		Surface: { Order: 5, List: ["BackSurface", "BottomSurface", "FrontSurface", "LeftSurface", "RightSurface", "TopSurface"] }
+	}
 
-const TransProperties = { size: "Size", scale: "Scale", shape: "Shape" }
+	const TransProperties = { size: "Size", scale: "Scale", shape: "Shape" }
 
-const propertyOrder = []
-Object.values(propertyGroups).forEach(group => {
-	group.List.forEach(propName => propertyOrder[propName] = group.Order)
-})
-
-
-function Explorer() {
-	this.isShown = false
-	this.views = []
-
-	const domElement = this.domElement = html`
-	<div class="btr-explorer-parent">
-		<div class="btr-explorer">
-			<div class="btr-explorer-header hidden"></div>
-			<div class="btr-explorer-loading" style="text-align:center;margin-top:12px;">Loading</div>
-		</div>
-		<div class="btr-properties">
-			<div class="btr-properties-header"></div>
-			<ul class="btr-properties-list">
-			</ul>
-		</div>
-	</div>"`
-
-	this.loadingElement = domElement.$find(".btr-explorer-loading")
-	let selection = []
+	const propertyOrder = []
+	Object.values(propertyGroups).forEach(group => {
+		group.List.forEach(propName => propertyOrder[propName] = group.Order)
+	})
 
 	function fixNum(v) { return Math.round(v * 1e3) / 1e3 }
 	function fixNums(arr) {
-		let copy = arr.slice(0)
+		const copy = arr.slice(0)
 		copy.forEach((v, i) => copy[i] = fixNum(v))
 		return copy
 	}
 
-	function setSelection(list) {
-		selection.forEach(item => item.classList.remove("selected"))
+	const sortProperties = (a, b) => {
+		const diff = (propertyOrder[a] || propertyGroups.Data.Order) - (propertyOrder[b] || propertyGroups.Data.Order)
+		return diff === 0 ? (a < b ? -1 : 1) : diff
+	}
 
-		selection = list
-		list.forEach(item => item.classList.add("selected"))
+	class Explorer {
+		constructor() {
+			this.models = []
+			this.selection = []
 
-		let propertyList = domElement.$find(".btr-properties-list")
-		propertyList.innerHTML = ""
+			const element = this.element = html`
+			<div class="btr-explorer-parent">
+				<div class="btr-explorer">
+					<div class="btr-explorer-header hidden"></div>
+					<div class="btr-explorer-loading" style="text-align:center;margin-top:12px;">Loading</div>
+				</div>
+				<div class="btr-properties">
+					<div class="btr-properties-header"></div>
+					<ul class="btr-properties-list">
+					</ul>
+				</div>
+			</div>"`
 
-		if(list.length) {
-			domElement.$find(".btr-properties").style.display = ""
-			let target = list[0].rbxinstance
+			element.$on("click", ".btr-explorer", () => this.select([]))
+				.$on("mousewheel", ".btr-explorer, .btr-properties-list", ev => {
+					if(!ev.shiftKey && ev.deltaY !== 0) {
+						const cont = ev.currentTarget
+						const up = ev.deltaY < 0
+						if(up && cont.scrollTop === 0 || !up && cont.scrollTop === cont.scrollHeight - cont.clientHeight) {
+							ev.preventDefault()
+						}
+					}
+				})
+			
+			this.select([])
+		}
 
-			let title = `Properties - ${target.ClassName} "${target.Name}"`
-			domElement.$find(".btr-properties-header").textContent = title
+		select(items) {
+			const oldItems = this.selection
+			this.selection = items
 
-			Object.keys(target.Properties).sort((a, b) => {
-				let ao = propertyOrder[a]
-				let bo = propertyOrder[b]
+			oldItems.forEach(item => { item.element.classList.remove("selected") })
+			items.forEach(item => { item.element.classList.add("selected") })
 
-				let diff = (ao || propertyGroups.Data.Order) - (bo || propertyGroups.Data.Order)
-				return diff === 0 ? (a < b ? -1 : 1) : diff
-			}).forEach(name => {
-				if(hiddenProperties.indexOf(name) !== -1) return;
+			const properties = this.element.$find(".btr-properties")
+			const header = properties.$find(".btr-properties-header")
+			const propertyList = properties.$find(".btr-properties-list")
+			propertyList.$empty()
+
+			if(!items.length) {
+				header.textContent = "Properties"
+				properties.style.display = "none"
+				return
+			}
+
+			properties.style.display = ""
+
+			const target = items[0]
+			header.textContent = `Properties - ${target.ClassName} "${target.Name}"`
+
+			const names = Object.keys(target.Properties)
+				.filter(propName => hiddenProperties.indexOf(propName) === -1)
+				.sort(sortProperties)
+			
+			for(let i = 0, length = names.length; i < length; i++) {
+				const name = names[i]
 				const prop = target.Properties[name]
 				const displayName = TransProperties[name] || name
 
@@ -123,7 +145,7 @@ function Explorer() {
 				</li>`
 
 				const valuediv = item.$find(".btr-property-value")
-				let value = prop.value
+				const value = prop.value
 
 				switch(prop.type) {
 				case "int64": {
@@ -137,21 +159,33 @@ function Explorer() {
 					break
 				}
 				case "string": {
-					value = value.trim()
-					if(value.length > 120) {
-						const blobUrl = URL.createObjectURL(new Blob([value]))
-						value = value.substring(0, 117) + "..."
+					const input = html`<input type=text>`
 
-						valuediv.append(html`<a class="more" target="_blank" href="${blobUrl}">...</a>`)
+					if(value.length > 120) {
+						input.value = input.title = value.slice(0, 117) + "..."
+
+						const more = html`<a class=more>...</a>`
+
+						more.$on("click", () => {
+							const doc = window.open("", "_blank").document
+							const pre = doc.createElement("pre")
+							pre.textContent = value
+							doc.body.append(pre)
+						})
+
+						valuediv.append(more)
+					} else {
+						input.value = input.title = value
 					}
-					const input = html`<textarea title="${value}" onkeypress="return false"></textarea>`
-					input.value = value
+
+					input.$on("keydown", ev => ev.preventDefault())
 					valuediv.append(input)
 					break
 				}
 				case "bool": {
-					const input = html`<input type="checkbox" disabled="true">`
+					const input = html`<input type=checkbox>`
 					input.checked = value
+					input.$on("click", ev => ev.preventDefault())
 					valuediv.append(input)
 					break
 				}
@@ -180,99 +214,75 @@ function Explorer() {
 					valuediv.textContent = String(value)
 				}
 
-				valuediv.setAttribute("title", valuediv.textContent)
-				propertyList.append(item)
-			})
-		} else {
-			domElement.$find(".btr-properties").style.display = "none"
-			domElement.$find(".btr-properties-header").textContent = "Properties"
-		}
-	}
-
-	setSelection([])
-
-	domElement.$on("click", e => e.stopPropagation())
-		.$on("click", ".btr-explorer", e => setSelection([]))
-		.$on("click", ".hasChildren>.btr-explorer-more", e => {
-			e.stopPropagation()
-			e.currentTarget.parentNode.classList.toggle("closed")
-		}).$on("click", ".btr-explorer-item", e => {
-			e.stopPropagation()
-			setSelection([e.currentTarget])
-		})
-.$on("mousewheel", ".btr-explorer, .btr-properties-list", e => {
-			if(e.shiftKey) return;
-
-			let el = e.currentTarget
-			if((e.deltaY > 0 && el.scrollTop === el.scrollHeight - el.clientHeight) || (e.deltaY < 0 && el.scrollTop === 0)) {
-				return false
-			}
-		})
-.$on("click", ".btr-explorer-view-btn:not(.selected)", e => {
-			let id = e.target.getAttribute("data-index")
-			if(this.selectedView) {
-				this.selectedView.button.classList.remove("selected")
-				this.selectedView.domElement.classList.add("hidden")
-			}
-
-			this.selectedView = this.views[id]
-			this.selectedView.button.classList.add("selected")
-			this.selectedView.domElement.classList.remove("hidden")
-		})
-}
-
-Object.assign(Explorer.prototype, {
-	addView(title, model) {
-		let view = {}
-		this.views.push(view)
-
-		view.title = title
-		view.model = model
-
-		let domElement = view.domElement = html`<ul class="btr-explorer-list"></ul>`
-		let btn = view.button = html`<div class="btr-explorer-view-btn" data-index="${this.views.length - 1}">${view.title}</div>`
-
-		if(this.views.length === 1) {
-			btn.classList.add("selected")
-			this.selectedView = view
-			this.loadingElement.remove()
-		} else {
-			domElement.classList.add("hidden")
-		}
-
-		if(this.views.length === 2) {
-			this.domElement.$find(".btr-explorer-header").classList.remove("hidden")
-		}
-
-		function createElements(target, parentElement) {
-			let item = html`
-			<li class='btr-explorer-item-container'>
-				<div class='btr-explorer-more'></div>
-				<div class='btr-explorer-item'>
-					<div class='btr-explorer-icon' style='background-position:-${(rmdClassIcons[target.ClassName] || 0) * 16}px 0;'></div>
-					${target.Name}
-				</div>
-			</li>`
-			parentElement.append(item)
-
-			item.$find(".btr-explorer-item").rbxinstance = target
-
-			if(target.Children.length > 0) {
-				item.classList.add("hasChildren")
-				let childList = html`<ul class="btr-explorer-childlist"></ul>`
-				item.append(childList)
-
-				for(let i = 0; i < target.Children.length; i++) {
-					createElements(target.Children[i], childList)
+				if(!valuediv.title) {
+					valuediv.title = valuediv.textContent
 				}
+
+				propertyList.append(item)
 			}
 		}
 
-		for(let i = 0; i < model.length; i++) {
-			createElements(model[i], domElement)
-		}
+		addModel(title, model) {
+			const lists = this.element.$find(".btr-explorer")
+			const header = this.element.$find(".btr-explorer-header")
+			const element = html`<ul class=btr-explorer-list></ul>`
+			const btn = html`<div class=btr-explorer-view-btn>${title}</div>`
 
-		this.domElement.$find(".btr-explorer-header").append(btn)
-		this.domElement.$find(".btr-explorer").append(domElement)
+			if(this.models.length) {
+				header.classList.remove("hidden")
+				element.classList.add("hidden")
+			} else {
+				btn.classList.add("selected")
+				this.element.$find(".btr-explorer-loading").remove()
+			}
+
+			btn.$on("click", () => {
+				lists.$findAll(">.btr-explorer-list").forEach(x => x.classList.add("hidden"))
+				element.classList.remove("hidden")
+				header.$findAll(">.btr-explorer-view-btn").forEach(x => x.classList.remove("selected"))
+				btn.classList.add("selected")
+				this.select([])
+			})
+
+			const create = (inst, parent) => {
+				const icon = rmdClassIcons[inst.ClassName] || 0
+				const item = html`
+				<li class=btr-explorer-item-container>
+					<div class=btr-explorer-more></div>
+					<div class=btr-explorer-item>
+						<div class=btr-explorer-icon style="background-position:-${icon * 16}px 0"></div>
+						${inst.Name}
+					</div>
+				</li>`
+
+				const itemBtn = inst.element = item.$find(".btr-explorer-item")
+				itemBtn.$on("click", ev => {
+					this.select([inst])
+					ev.stopPropagation()
+				})
+
+				item.$find(".btr-explorer-more").$on("click", ev => {
+					ev.currentTarget.parentNode.classList.toggle("closed")
+					ev.stopPropagation()
+				})
+
+				if(inst.Children.length) {
+					item.classList.add("btr-explorer-has-children")
+					const childList = html`<ul class=btr-explorer-childlist></ul>`
+					inst.Children.forEach(child => create(child, childList))
+					item.append(childList)
+				}
+
+				parent.append(item)
+			}
+
+			model.forEach(inst => create(inst, element))
+
+			header.append(btn)
+			lists.append(element)
+			this.models.push(model)
+		}
 	}
-})
+
+	window.Explorer = Explorer
+}
