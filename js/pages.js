@@ -530,7 +530,7 @@ pageInit.itemdetails = function(assetId) {
 				const previewAnim = settings.itemdetails.animationPreview && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1
 				const previewAsset = true && WearableAssetTypeIds.indexOf(assetTypeId) !== -1
 
-				if(previewAnim || previewAsset || previewModel || assetTypeId === 32) {
+				if(previewAnim || previewAsset || assetTypeId === 32) {
 					execScripts(["js/RBXPreview.js"], () => {
 						let preview
 						let container
