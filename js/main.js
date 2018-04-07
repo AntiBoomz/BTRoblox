@@ -292,8 +292,6 @@ function Init() {
 			groupsList.$on("drop", ev => {
 				if(!isDataLoaded) { return }
 				if(ev.dataTransfer.types.indexOf("btr-group") === -1) { return }
-				ev.preventDefault()
-				ev.dataTransfer.clearData()
 
 				const id = +ev.dataTransfer.getData("btr-group")
 				const index = currentList.indexOf(id)
@@ -304,13 +302,13 @@ function Init() {
 					const key = shoutFilters.mode === "blacklist" ? "shoutFilterBlacklist" : "shoutFilterWhitelist"
 					MESSAGING.send(key, { id, state: false })
 				}
+				ev.preventDefault()
+				ev.dataTransfer.clearData()
 			})
 
 			chosenList.$on("drop", ev => {
 				if(!isDataLoaded) { return }
 				if(ev.dataTransfer.types.indexOf("btr-group") === -1) { return }
-				ev.preventDefault()
-				ev.dataTransfer.clearData()
 
 				const id = +ev.dataTransfer.getData("btr-group")
 				if(currentList.indexOf(id) === -1) {
@@ -320,6 +318,8 @@ function Init() {
 					const key = shoutFilters.mode === "blacklist" ? "shoutFilterBlacklist" : "shoutFilterWhitelist"
 					MESSAGING.send(key, { id, state: true })
 				}
+				ev.preventDefault()
+				ev.dataTransfer.clearData()
 			})
 
 			const blBtn = filterContent.$find(".btr-filter-blacklist")
