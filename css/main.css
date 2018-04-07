@@ -1,9 +1,5 @@
 /* Top bar */
 
-#header .rbx-navbar {
-	display: flex;
-}
-
 #header .rbx-nav-collapse .rbx-nav-notification {
 	display: none;
 }
@@ -108,23 +104,23 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 
 /* New Chat */
 
-.btr-newchat .chat-container.collapsed .chat-main {
+.btr-small-chat-button .chat-container.collapsed .chat-main {
 	width: 54px;
 }
 
-.btr-newchat .chat-container #chat-group-create-btn {
+.btr-small-chat-button .chat-container #chat-group-create-btn {
 	display: none;
 }
 
-.btr-newchat .chat-container #chat-friend-list {
+.btr-small-chat-button .chat-container #chat-friend-list {
 	max-height: 362px;
 }
 
-.btr-newchat .chat-container .chat-main .chat-header .notification-red {
+.btr-small-chat-button .chat-container .chat-main .chat-header .notification-red {
 	margin: -10px -16px 0 0;
 }
 
-.btr-newchat .chat-container.collapsed .chat-header .chat-header-title {
+.btr-small-chat-button .chat-container.collapsed .chat-header .chat-header-title {
 	height: 16px;
 	overflow: hidden;
 }

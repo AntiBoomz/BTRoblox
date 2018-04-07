@@ -90,13 +90,14 @@ const GET_PAGE = path => {
 const DEFAULT_SETTINGS = {
 	general: {
 		theme: "default",
-		showBlogFeed: true,
-
 		showAds: false,
 		noHamburger: true,
-
 		chatEnabled: true,
-		fastSearch: true
+		smallChatButton: true,
+		fastSearch: true,
+
+		navigationEnabled: true,
+		showBlogFeed: true
 	},
 	catalog: {
 		enabled: true
@@ -111,9 +112,6 @@ const DEFAULT_SETTINGS = {
 		imageBackgrounds: true,
 		whiteDecalThumbnailFix: true,
 		thisPackageContains: true
-	},
-	chat: {
-		enabled: true
 	},
 	gamedetails: {
 		enabled: true,

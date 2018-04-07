@@ -88,52 +88,56 @@ function Init() {
 	<div id="btr-blogfeed" style="display:none;">Blog feed enabled</div>`
 
 	const settingsDiv = html`
-	<div class="btr-settings-modal">
-		<div class="btr-settings">
-			<div class="btr-settings-header">
-				<div class="btr-settings-header-title">BTRoblox</div>
+	<div class=btr-settings-modal>
+		<div class=btr-settings>
+			<div class=btr-settings-header>
+				<div class=btr-settings-header-title>BTRoblox</div>
 				<div class="btr-settings-header-close btr-settings-toggle">⨯</div>
 			</div>
-			<div class="btr-settings-content">
-				<group label="General" path="general">
-					<select path="theme">
+				<group label=General path=general>
+					<select path=theme>
 						<option value=default>Default</option>
 						<option value=simblk>Simply Black</option>
 						<option value=sky>Sky</option>
 						<option value=red>Red</option>
 					</select>
 
-					<checkbox label="Add Blog Feed to Sidebar" path="showBlogFeed"></checkbox>
-					<checkbox label="Show Ads" path="showAds"></checkbox>
-					<checkbox label="Keep Sidebar Open" path="noHamburger"></checkbox>
-					<checkbox label="Show Chat" path="chatEnabled"></checkbox>
+					<checkbox label="Show Ads" path=showAds></checkbox>
+					<checkbox label="Fast Search" path=fastSearch></checkbox>
+					<div>
+						<checkbox label="Show Chat" path=chatEnabled></checkbox>
+						<checkbox label="Minimize Chat" path=smallChatButton require=chatEnabled></checkbox>
+					</div>
 				</group>
-				<group label="Profile Changes" path="profile" toggleable>
-					<checkbox label="Embed Inventory" path="embedInventoryEnabled"></checkbox>
+				<group label=Navigation path=general toggleable=navigationEnabled>
+					<checkbox label="Keep Sidebar Open" path=noHamburger></checkbox>
+					<checkbox label="Add Blog Feed to Sidebar" path=showBlogFeed></checkbox>
 				</group>
-				<group label="Groups Changes" path="groups" toggleable>
-					<checkbox label="Group Shout Notifications" path="shoutAlerts"></checkbox>
+				<group label=Profile path=profile toggleable>
+					<checkbox label="Embed Inventory" path=embedInventoryEnabled></checkbox>
 				</group>
-				<group label="Game Details Page Changes" path="gamedetails" toggleable>
-					<checkbox label="Highlight Owned Badges" path="showBadgeOwned"></checkbox>
+				<group label=Groups path=groups toggleable>
+						<checkbox label="Group Shout Notifications" path=shoutAlerts></checkbox>
 				</group>
-				<group label="Item Details Changes" path="itemdetails" toggleable>
-					<checkbox label="Animation Previewer" path="animationPreview"></checkbox>
-					<checkbox label="Auto-Load Animation Previewer" path="animationPreviewAutoLoad"></checkbox>
-					<checkbox label="Show Explorer Button" path="explorerButton"></checkbox>
-					<checkbox label="Show Download Button" path="downloadButton"></checkbox>
-					<checkbox label="Show Content Button" path="contentButton"></checkbox>
+				<group label="Game Details" path=gamedetails toggleable>
+					<checkbox label="Highlight Owned Badges" path=showBadgeOwned></checkbox>
 				</group>
-				<group label="Inventory Changes" path="inventory" toggleable>
-					<checkbox label="Inventory Tools" path="inventoryTools"></checkbox>
+				<group label="Item Details" path=itemdetails toggleable>
+					<checkbox label="Animation Previewer" path=animationPreview></checkbox>
+					<checkbox label="Auto-Load Animation Previewer" path=animationPreviewAutoLoad></checkbox>
+					<checkbox label="Show Explorer Button" path=explorerButton></checkbox>
+					<checkbox label="Show Download Button" path=downloadButton></checkbox>
+					<checkbox label="Show Content Button" path=contentButton></checkbox>
+					<checkbox label="Show 'This Package Contains'" path=thisPackageContains></checkbox>
 				</group>
-				<group label="Catalog Changes" path="catalog" toggleable>
+				<group label=Inventory path=inventory toggleable>
+					<checkbox label="Inventory Tools" path=inventoryTools></checkbox>
 				</group>
-				<group label="Chat Changes" path="chat" toggleable>
+				<group label=Catalog path=catalog toggleable>
 				</group>
-				<group label="Version History Changes" path="versionhistory" toggleable>
+				<group label="Version History" path=versionhistory toggleable>
 				</group>
-				<group label="WIP" minimizable minimized id=btr-settings-wip>
+				<group label=WIP minimizable minimized id=btr-settings-wip>
 				</group>
 			</div>
 			<div class="btr-settings-footer">
@@ -187,6 +191,7 @@ function Init() {
 				settingsDone[groupPath] = {}
 
 				if(group.hasAttribute("toggleable")) {
+					const toggleSetting = group.getAttribute("toggleable") || "enabled"
 					const inputList = group.getElementsByTagName("input")
 					const toggle = html`<div class=btr-settings-enabled-toggle>`
 					title.after(toggle)
@@ -194,20 +199,25 @@ function Init() {
 					const update = state => {
 						toggle.classList.toggle("checked", state)
 						Array.from(inputList).forEach(x => {
-							if(!state) x.setAttribute("disabled", "");
-							else x.removeAttribute("disabled");
+							if(!state) { x.setAttribute("disabled", "") }
+							else { x.removeAttribute("disabled") }
+						})
+
+						group.$findAll(`[require="${toggleSetting}"] > input`).forEach(x => {
+							if(!state) { x.setAttribute("disabled", "") }
+							else { x.removeAttribute("disabled") }
 						})
 					}
 
 					toggle.$on("click", () => {
-						const checked = !settingsGroup.enabled
-						settingsGroup.enabled = checked
-						MESSAGING.send("setSetting", { [groupPath]: { enabled: checked } })
+						const checked = !settingsGroup[toggleSetting]
+						settingsGroup[toggleSetting] = checked
+						MESSAGING.send("setSetting", { [groupPath]: { [toggleSetting]: checked } })
 						update(checked)
 					})
-					initSettingsPromise.then(() => update(settingsGroup.enabled))
+					initSettingsPromise.then(() => update(settingsGroup[toggleSetting]))
 
-					settingsDone[groupPath].enabled = true
+					settingsDone[groupPath][toggleSetting] = true
 				}
 
 				Array.from(group.getElementsByTagName("select")).forEach(select => {
@@ -232,12 +242,18 @@ function Init() {
 					checkbox.append(input)
 					checkbox.append(label)
 
-					if(!(settingName in settingsGroup)) label.textContent += " (Bad setting)";
+					if(!(settingName in settingsGroup)) { label.textContent += " (Bad setting)" }
+					if(checkbox.hasAttribute("require") && !settingsGroup[checkbox.getAttribute("require")]) { input.setAttribute("disabled", "") }
 
 					input.checked = !!settingsGroup[settingName]
 					input.$on("change", () => {
 						settingsGroup[settingName] = input.checked
 						MESSAGING.send("setSetting", { [groupPath]: { [settingName]: input.checked } })
+
+						group.$findAll(`[require="${settingName}"] > input`).forEach(x => {
+							if(!input.checked) { x.setAttribute("disabled", "") }
+							else {x.removeAttribute("disabled") }
+						})
 					})
 
 					settingsDone[groupPath][settingName] = true
@@ -307,13 +323,14 @@ function Init() {
 		.one("body", body => {
 			body.classList.toggle("btr-no-hamburger", settings.general.noHamburger)
 			body.classList.toggle("btr-hide-ads", !settings.general.showAds)
-			body.classList.toggle("btr-newchat", settings.general.chatEnabled && settings.chat.enabled)
+			body.classList.toggle("btr-small-chat-button", settings.general.chatEnabled && settings.general.smallChatButton)
 		})
 		.one("#roblox-linkify", linkify => {
 			const newRegex = /((?:(?:https?:\/\/)(?:[\w-]+\.)+\w{2,}|(?:[\w-]+\.)+(?:com|net|uk|org|info|tv|gg|io))(?:\/(?:[\w!$&'"()*+,\-.:;=@_~]|%[0-9A-Fa-f]{2})*)*(?:\?(?:[\w!$&'"()*+,\-.:;=@_~?/]|%[0-9A-Fa-f]{2})*)?(?:#(?:[\w!$&'"()*+,\-.:;=@_~?/]|%[0-9A-Fa-f]{2})*)?)(\b)/
 			linkify.setAttribute("data-regex", newRegex.source)
 		})
 		.one("#navbar-robux", robux => {
+			if(!settings.general.navigationEnabled) { return }
 			robux.after(friends)
 			friends.after(messages)
 		})
@@ -321,18 +338,21 @@ function Init() {
 			list.prepend(html`<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>`)
 		})
 		.all("#header .rbx-navbar", bar => {
+			if(!settings.general.navigationEnabled) { return }
 			const buyRobux = bar.$find(".buy-robux")
-			if(buyRobux) buyRobux.parentNode.remove();
+			if(buyRobux) { buyRobux.parentNode.style.display = "none" }
+
 			bar.prepend(html`<li><a class="nav-menu-title" href="/home">Home</a></li>`)
 		})
 		.one("#nav-blog", blog => {
+			if(!settings.general.navigationEnabled) { return }
 			const list = blog.parentNode.parentNode
 
 			const home = list.$find("#nav-home")
-			if(home) home.parentNode.remove();
+			if(home) { home.parentNode.remove() }
 
 			const upgrade = list.$find(".rbx-upgrade-now")
-			if(upgrade) upgrade.remove();
+			if(upgrade) { upgrade.remove() }
 
 			blog.parentNode.before(html`
 			<li>
@@ -342,7 +362,7 @@ function Init() {
 				</a>
 			</li>`)
 
-			if(settings.general.showBlogFeed) blog.after(blogfeed);
+			if(settings.general.navigationEnabled && settings.general.showBlogFeed) { blog.after(blogfeed) }
 
 			const trade = list.$find("#nav-trade")
 			if(trade) {
@@ -670,7 +690,7 @@ function Init() {
 		)
 	}
 
-	if(settings.general.showBlogFeed) {
+	if(settings.general.navigationEnabled && settings.general.showBlogFeed) {
 		const updateBlogFeed = data => {
 			blogfeed.innerHTML = ""
 

@@ -72,7 +72,7 @@
 		if(typeof angular !== "undefined") {
 			DoTemplates(templates)
 
-			if(settings.chat.enabled) {
+			if(settings.general.smallChatButton) {
 				try {
 					HijackAngular(angular.module("chat"), {
 						chatController(func, args) {
