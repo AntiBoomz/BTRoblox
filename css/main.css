@@ -681,6 +681,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	background: #fff;
 	border-radius: 10px;
 	user-select: none;
+	-moz-user-select: none;
 }
 
 .btr-settings-enabled-toggle.checked:before {
@@ -695,6 +696,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	margin-right: 6px;
 	margin-left: 6px;
 	user-select: none;
+	-moz-user-select: none;
 	align-items: center;
 	justify-content: flex-end;
 }
@@ -788,6 +790,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	font-weight: 300;
 
 	user-select: none;
+	-moz-user-select: none;
 	cursor: pointer;
 }
 
@@ -884,6 +887,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	display: flex;
 	margin-top: 12px;
 	user-select: none;
+	-moz-user-select: none;
 }
 
 .btr-filter-groups, .btr-filter-chosen {
@@ -919,6 +923,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	align-items: center;
 	cursor: pointer;
 	user-select: none;
+	-moz-user-select: none;
 
 	background: white;
 	box-shadow: 0 0 2px 0 rgba(0, 0, 0, .1);
