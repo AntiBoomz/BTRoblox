@@ -394,7 +394,7 @@ function Init() {
 			if(group.hasAttribute("path")) {
 				const groupPath = group.getAttribute("path")
 				const settingsGroup = settings[groupPath]
-				settingsDone[groupPath] = {}
+				settingsDone[groupPath] = settingsDone[groupPath] || {}
 
 				if(group.hasAttribute("toggleable")) {
 					const toggleSetting = group.getAttribute("toggleable") || "enabled"
