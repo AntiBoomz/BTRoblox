@@ -79,7 +79,7 @@ const $ = (() => {
 				}
 
 				listeners.push(listener)
-				self.addEventListener(eventType, listener.handler, true)
+				self.addEventListener(eventType, listener.handler, false)
 			})
 
 			return self
