@@ -233,7 +233,7 @@ function Init() {
 							const tile = group.tile = html`
 							<li class=btr-filter-group title="${group.Name}" draggable=true>
 								<div class=btr-filter-group-icon>
-									<img src="${group.EmblemUrl}" draggable=false>
+									<img src="https://assetgame.roblox.com/asset-thumbnail/image?assetId=${group.EmblemId}&width=150&height=150&format=png" draggable=false>
 								</div>
 								<div class=btr-filter-group-title>
 									${group.Name}
