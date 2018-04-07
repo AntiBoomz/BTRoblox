@@ -2,6 +2,19 @@
 
 {
 	const groupShoutCache = {}
+	const shoutFilterPromise = new Promise(resolve => {
+		STORAGE.get("shoutFilters", data => {
+			if("shoutFilters" in data) {
+				resolve(data.shoutFilters)
+			} else {
+				resolve({
+					mode: "blacklist",
+					blacklist: [],
+					whitelist: []
+				})
+			}
+		})
+	})
 
 	try { Object.assign(groupShoutCache, JSON.parse(localStorage.getItem("groupShoutCache"))) }
 	catch(ex) {}
@@ -18,6 +31,7 @@
 			return
 		}
 
+		const shoutFilters = await shoutFilterPromise
 		const items = doc.documentElement.querySelectorAll(".feeds .list-item")
 		const groupsDone = {}
 		let hasPlayedSound = false
@@ -27,22 +41,24 @@
 			const groupName = link.textContent
 			const groupId = parseInt(link.href.replace(/^.+\/my\/groups.aspx?.*&?gid=(\d+).*$/i, "$1"), 10)
 
-			if(Number.isNaN(groupId) || groupsDone[groupId]) return;
+			if(!Number.isSafeInteger(groupId) || groupsDone[groupId]) { return }
 			groupsDone[groupId] = true
 
 			const groupEmblem = item.querySelector(".header-thumb").src
 			const posterName = item.querySelector(".text-name").textContent
 			const body = item.querySelector(".feedtext").textContent.replace(/^"(.*)"$/, "$1")
 			const date = Date.parse(item.querySelector(".text-date-hint").textContent.replace("|", ""))
-
-			if(Number.isNaN(date)) return console.warn("Failed to parse date");
+			if(Number.isNaN(date)) { return console.warn("Failed to parse date") }
 
 			const lastShoutDate = groupShoutCache[groupId]
 			if(lastShoutDate !== date) {
 				groupShoutCache[groupId] = date
 				localStorage.setItem("groupShoutCache", JSON.stringify(groupShoutCache))
 
-				if(lastShoutDate) {
+				const skipNotif = shoutFilters.mode === "blacklist" && shoutFilters.blacklist.indexOf(groupId) !== -1
+					|| shoutFilters.mode === "whitelist" && shoutFilters.whitelist.indexOf(groupId) === -1
+					
+				if(lastShoutDate && !skipNotif) {
 					chrome.notifications.create(`groupshout-${groupId}`, {
 						type: "basic",
 						title: groupName,
@@ -100,6 +116,62 @@
 			}
 		})
 	}
+
+	MESSAGING.listen({
+		getShoutFilters(data, respond) {
+			shoutFilterPromise.then(shoutFilters => {
+				respond(shoutFilters)
+			})
+		},
+		setShoutFilterMode(mode, respond) {
+			if(mode !== "blacklist" && mode !== "whitelist") { return respond(false) }
+
+			shoutFilterPromise.then(shoutFilters => {
+				shoutFilters.mode = mode
+				STORAGE.set({ shoutFilters })
+			})
+
+			respond(true)
+		},
+		shoutFilterBlacklist(data, respond) {
+			const id = data.id
+			const state = !!data.state
+
+			if(!Number.isSafeInteger(id)) { return respond(false) }
+
+			shoutFilterPromise.then(shoutFilters => {
+				const index = shoutFilters.blacklist.indexOf(id)
+				if(state && index === -1) {
+					shoutFilters.blacklist.push(id)
+					STORAGE.set({ shoutFilters })
+				} else if(!state && index !== -1) {
+					shoutFilters.blacklist.splice(index, 1)
+					STORAGE.set({ shoutFilters })
+				}
+			})
+
+			respond(true)
+		},
+		shoutFilterWhitelist(data, respond) {
+			const id = data.id
+			const state = !!data.state
+
+			if(!Number.isSafeInteger(id)) { return respond(false) }
+
+			shoutFilterPromise.then(shoutFilters => {
+				const index = shoutFilters.whitelist.indexOf(id)
+				if(state && index === -1) {
+					shoutFilters.whitelist.push(id)
+					STORAGE.set({ shoutFilters })
+				} else if(!state && index !== -1) {
+					shoutFilters.whitelist.splice(index, 1)
+					STORAGE.set({ shoutFilters })
+				}
+			})
+			
+			respond(true)
+		}
+	})
 
 	Settings.onChange(onUpdate)
 	chrome.runtime.onInstalled.addListener(onUpdate)

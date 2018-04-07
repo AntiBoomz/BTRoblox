@@ -94,6 +94,7 @@ function Init() {
 				<div class=btr-settings-header-title>BTRoblox</div>
 				<div class="btr-settings-header-close btr-settings-toggle">⨯</div>
 			</div>
+			<div class=btr-settings-content id=btr-settings-main>
 				<group label=General path=general>
 					<select path=theme>
 						<option value=default>Default</option>
@@ -117,7 +118,10 @@ function Init() {
 					<checkbox label="Embed Inventory" path=embedInventoryEnabled></checkbox>
 				</group>
 				<group label=Groups path=groups toggleable>
+					<div>
 						<checkbox label="Group Shout Notifications" path=shoutAlerts></checkbox>
+						<button id=btr-open-shout-filter class=btn-control-xs>Modify Shout Filters</button>
+					</div>
 				</group>
 				<group label="Game Details" path=gamedetails toggleable>
 					<checkbox label="Highlight Owned Badges" path=showBadgeOwned></checkbox>
@@ -140,9 +144,27 @@ function Init() {
 				<group label=WIP minimizable minimized id=btr-settings-wip>
 				</group>
 			</div>
-			<div class="btr-settings-footer">
-				<div class="btr-settings-footer-version">v${chrome.runtime.getManifest().version}</div>
-				<div class="btr-settings-footer-text">Refresh the page to apply settings</div>
+			<div class=btr-settings-content id=btr-settings-shout-filters style=display:none>
+				<div class=btr-filter-header>
+					<button id=btr-close-shout-filter class=btn-control-sm><span class=icon-left></span></button>
+					<h4>Group Shout Filters</h4>
+					<div class=btr-filter-type-list>
+						<button class=btr-filter-blacklist title="Blacklist: Select groups to not get notifications from"></button>
+						<button class=btr-filter-whitelist title="Whitelist: Select groups to get notifications from"></button>
+					</div>
+				</div>
+				<div class=btr-filter-lists>
+					<ul class=btr-filter-groups>
+					</ul>
+					<div class=btr-filter-center>
+					</div>
+					<ul class=btr-filter-chosen>
+					</ul>
+				</div>
+			</div>
+			<div class=btr-settings-footer>
+				<div class=btr-settings-footer-version>v${chrome.runtime.getManifest().version}</div>
+				<div class=btr-settings-footer-text>Refresh the page to apply settings</div>
 			</div>
 		</div>
 	</div>`
@@ -151,13 +173,197 @@ function Init() {
 		let resolve
 		const initSettingsPromise = new Promise(x => resolve = x)
 
-		const content = settingsDiv.$find(".btr-settings-content")
+		const content = settingsDiv.$find("#btr-settings-main")
 
-		content.addEventListener("mousewheel", e => {
+		content.$on("mousewheel", e => {
 			if(e.deltaY < 0 && content.scrollTop === 0) return e.preventDefault();
 			if(e.deltaY > 0 && content.scrollTop >= content.scrollHeight - content.clientHeight) return e.preventDefault();
 		})
 
+		{ // Shout Filters
+			const filterContent = settingsDiv.$find("#btr-settings-shout-filters")
+			const groupsList = filterContent.$find(".btr-filter-groups")
+			const chosenList = filterContent.$find(".btr-filter-chosen")
+			const groups = []
+			const shoutFilters = {}
+			let currentList
+			let areFiltersInitialized = false
+			let areGroupsLoaded = false
+			let isDataLoaded = false
+
+			const updateLists = () => {
+				if(!areGroupsLoaded || !isDataLoaded) { return }
+				let lastGroup
+				let lastChosen
+
+				groups.forEach(group => {
+					const tile = group.tile
+					const isChosen = currentList.indexOf(group.Id) !== -1
+
+					if(isChosen) {
+						if(!lastChosen && (tile.parentNode !== chosenList || tile.previousElementSibling)) {
+							chosenList.prepend(tile)
+						} else if(lastChosen && tile.previousElementSibling !== lastChosen) {
+							lastChosen.after(tile)
+						}
+						lastChosen = tile
+					} else {
+						if(!lastGroup && (tile.parentNode !== groupsList || tile.previousElementSibling)) {
+							groupsList.prepend(tile)
+						} else if(lastGroup && tile.previousElementSibling !== lastGroup) {
+							lastGroup.after(tile)
+						}
+						lastGroup = tile
+					}
+				})
+			}
+
+			settingsDiv.$find("#btr-open-shout-filter").$on("click", () => {
+				content.style.display = "none"
+				filterContent.style.display = ""
+
+				if(!areFiltersInitialized) {
+					areFiltersInitialized = true
+
+					loggedInUserPromise.then(async userId => {
+						const resp = await fetch(`https://api.roblox.com/users/${userId}/groups`)
+						const json = await resp.json()
+
+						json.forEach(group => {
+							const tile = group.tile = html`
+							<li class=btr-filter-group title="${group.Name}" draggable=true>
+								<div class=btr-filter-group-icon>
+									<img src="${group.EmblemUrl}" draggable=false>
+								</div>
+								<div class=btr-filter-group-title>
+									${group.Name}
+								</div>
+							</li>`
+
+							tile.$on("dragstart", ev => {
+								ev.dataTransfer.clearData()
+								ev.dataTransfer.setData("btr-group", group.Id)
+							})
+
+							tile.$on("dblclick", () => {
+								if(!isDataLoaded) { return }
+								const index = currentList.indexOf(group.Id)
+
+								if(index !== -1) { currentList.splice(index, 1) }
+								else { currentList.push(group.Id) }
+								updateLists()
+
+								const key = shoutFilters.mode === "blacklist" ? "shoutFilterBlacklist" : "shoutFilterWhitelist"
+								MESSAGING.send(key, { id: group.Id, state: index === -1 })
+							})
+
+							groups.push(group)
+						})
+
+						areGroupsLoaded = true
+						updateLists()
+					})
+
+					MESSAGING.send("getShoutFilters", data => {
+						Object.assign(shoutFilters, data)
+						currentList = shoutFilters[shoutFilters.mode]
+						isDataLoaded = true
+						updateFilterMode()
+						updateLists()
+					})
+				}
+			})
+
+			filterContent.$find("#btr-close-shout-filter").$on("click", () => {
+				content.style.display = ""
+				filterContent.style.display = "none"
+			})
+
+			const validDrag = ev => {
+				if(!isDataLoaded) { return }
+				if(ev.dataTransfer.types.indexOf("btr-group") !== -1) {
+					ev.preventDefault()
+				}
+			}
+
+			groupsList.$on("dragover", validDrag)
+			chosenList.$on("dragover", validDrag)
+
+			groupsList.$on("drop", ev => {
+				if(!isDataLoaded) { return }
+				if(ev.dataTransfer.types.indexOf("btr-group") === -1) { return }
+				ev.preventDefault()
+				ev.dataTransfer.clearData()
+
+				const id = +ev.dataTransfer.getData("btr-group")
+				const index = currentList.indexOf(id)
+				if(index !== -1) {
+					currentList.splice(index, 1)
+					updateLists()
+
+					const key = shoutFilters.mode === "blacklist" ? "shoutFilterBlacklist" : "shoutFilterWhitelist"
+					MESSAGING.send(key, { id, state: false })
+				}
+			})
+
+			chosenList.$on("drop", ev => {
+				if(!isDataLoaded) { return }
+				if(ev.dataTransfer.types.indexOf("btr-group") === -1) { return }
+				ev.preventDefault()
+				ev.dataTransfer.clearData()
+
+				const id = +ev.dataTransfer.getData("btr-group")
+				if(currentList.indexOf(id) === -1) {
+					currentList.push(id)
+					updateLists()
+
+					const key = shoutFilters.mode === "blacklist" ? "shoutFilterBlacklist" : "shoutFilterWhitelist"
+					MESSAGING.send(key, { id, state: true })
+				}
+			})
+
+			const blBtn = filterContent.$find(".btr-filter-blacklist")
+			const wlBtn = filterContent.$find(".btr-filter-whitelist")
+
+			const updateFilterMode = () => {
+				const isBl = shoutFilters.mode === "blacklist"
+
+				blBtn.classList.toggle("btn-secondary-xs", isBl)
+				blBtn.classList.toggle("btn-control-xs", !isBl)
+				wlBtn.classList.toggle("btn-secondary-xs", !isBl)
+				wlBtn.classList.toggle("btn-control-xs", isBl)
+
+				if(isBl) {
+					groupsList.style.order = "1"
+					chosenList.style.order = "3"
+				} else {
+					groupsList.style.order = "3"
+					chosenList.style.order = "1"
+				}
+
+				updateLists()
+			}
+
+			blBtn.$on("click", () => {
+				if(!isDataLoaded) { return }
+				shoutFilters.mode = "blacklist"
+				currentList = shoutFilters[shoutFilters.mode]
+				MESSAGING.send("setShoutFilterMode", shoutFilters.mode)
+
+				updateFilterMode()
+			})
+
+			wlBtn.$on("click", () => {
+				if(!isDataLoaded) { return }
+				shoutFilters.mode = "whitelist"
+				currentList = shoutFilters[shoutFilters.mode]
+				MESSAGING.send("setShoutFilterMode", shoutFilters.mode)
+
+				updateFilterMode()
+			})
+		}
+
+		// Settings
 		const settingsDone = {}
 		let labelCounter = 0
 

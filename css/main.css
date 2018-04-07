@@ -825,6 +825,132 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 }
 
 
+
+#btr-settings-shout-filters {
+	display: flex;
+	flex-direction: column;
+	height: 600px;
+}
+
+#btr-close-shout-filter {
+	float: left;
+	padding: 3px;
+	margin-right: 6px;
+}
+
+#btr-close-shout-filter span {
+	width: 20px;
+	height: 20px;
+	background-size: 40px auto;
+	background-position: 0 -300px;
+}
+
+#btr-settings-shout-filters h4 {
+	display: inline-block;
+}
+
+.btr-filter-type-list {
+	float: right;
+}
+
+.btr-filter-blacklist, .btr-filter-whitelist {
+	width: 60px;
+	text-align: center;
+}
+
+.btr-filter-blacklist:before, .btr-filter-whitelist:before {
+	content: " ";
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	background-image: url(/res/filterlist.svg);
+	background-size: 200% auto;
+}
+
+.btn-secondary-xs.btr-filter-blacklist:before, .btn-secondary-xs.btr-filter-whitelist:before {
+	filter: invert(100%);
+}
+
+.btr-filter-whitelist {
+	margin-left: 6px;
+}
+
+.btr-filter-whitelist:before {
+	background-position: 100% 0;
+}
+
+.btr-filter-lists {
+	flex: 1 1 auto;
+	display: flex;
+	margin-top: 12px;
+	user-select: none;
+}
+
+.btr-filter-groups, .btr-filter-chosen {
+	flex: 0 0 auto;
+	width: 49%;
+	padding: 6px;
+
+	background: #FAFAFA;
+	overflow-y: scroll;
+	box-shadow: inset 0 0 2px 0 rgba(0, 0, 0, .1);
+}
+
+.btr-filter-groups {
+	order: 1;
+}
+
+.btr-filter-center {
+	flex: 1 1 auto;
+	order: 2;
+}
+
+.btr-filter-chosen {
+	order: 3;
+}
+
+.btr-filter-group {
+	display: flex;
+	width: 100%;
+	height: 52px;
+	padding: 2px;
+	margin-bottom: 4px;
+
+	align-items: center;
+	cursor: pointer;
+	user-select: none;
+
+	background: white;
+	box-shadow: 0 0 2px 0 rgba(0, 0, 0, .1);
+}
+
+.btr-filter-group:hover {
+	box-shadow: 0 0 4px 0 rgba(0, 0, 0, .2);
+}
+
+.btr-filter-group:active {
+	background: #F5F5F5;
+}
+
+.btr-filter-group-icon {
+	flex: 0 0 auto;
+	width: 50px;
+	height: 50px;
+}
+
+.btr-filter-group-icon img {
+	width: 100%;
+	height: 100%;
+}
+
+.btr-filter-group-title {
+	flex: 1;
+	padding: 6px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+
 /* FastSearch */
 
 body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
