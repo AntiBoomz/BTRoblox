@@ -596,13 +596,13 @@ pageInit.itemdetails = function(assetId) {
 
 
 						if(previewAnim || previewAsset) {
-							const doPreview = (assetId, assetTypeId) => {
-								const isAnim = AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1
-								const isAsset = WearableAssetTypeIds.indexOf(assetTypeId) !== -1
-								if(!isAnim && !isAsset && assetTypeId !== 32) return;
+							const doPreview = (id, typeId) => {
+								const isAnim = AnimationPreviewAssetTypeIds.indexOf(typeId) !== -1
+								const isAsset = WearableAssetTypeIds.indexOf(typeId) !== -1
+								if(!isAnim && !isAsset && typeId !== 32) return;
 	
-								if(assetTypeId === 32) {
-									AssetCache.loadText(assetId, text => text.split(";").forEach(itemId => {
+								if(typeId === 32) {
+									AssetCache.loadText(id, text => text.split(";").forEach(itemId => {
 										getCachedProductInfo(itemId).then(json => doPreview(itemId, json.AssetTypeId))
 									}))
 									return
@@ -619,13 +619,13 @@ pageInit.itemdetails = function(assetId) {
 								if(isAnim) {
 									preview.disableDefaultAnimations = true
 	
-									if(assetTypeId === 24) {
+									if(typeId === 24) {
 										preview.onInit(() => {
-											preview.addAnimation(String(assetId), assetId)
+											preview.addAnimation(String(id), id)
 										})
 									} else {
 										preview.onInit(() => {
-											AssetCache.loadModel(assetId, model => {
+											AssetCache.loadModel(id, model => {
 												const folder = model.find(x => x.ClassName === "Folder" && x.Name === "R15Anim")
 												if(!folder) return;
 	
@@ -644,7 +644,7 @@ pageInit.itemdetails = function(assetId) {
 										})
 									}
 								} else if(isAsset) {
-									preview.addAsset(assetId, assetTypeId, { previewTarget: true })
+									preview.addAsset(id, typeId, { previewTarget: true })
 								}
 							}
 	
