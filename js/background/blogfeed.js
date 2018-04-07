@@ -9,7 +9,7 @@ const Blogfeed = (() => {
 	const htmlStripper = document.createElement("template")
 	const striphtml = html => {
 		htmlStripper.innerHTML = html
-		return htmlStripper.textContent
+		return htmlStripper.content.textContent
 	}
 
 	return {
