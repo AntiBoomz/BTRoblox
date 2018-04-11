@@ -403,7 +403,7 @@ function CreateObserver(target, params) {
 				}
 			})
 
-			if(!isPermanent && document.readyState !== "loading") {
+			if(!isPermanent && document.readyState === "complete") {
 				console.warn("observer.all called when not loading and not permanent, not listening")
 				return this
 			}

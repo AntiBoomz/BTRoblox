@@ -1,5 +1,59 @@
 "use strict"
 
+const DOLLARS_PER_ROBUX_RATIO = 350 / 100000;
+
+const DEFAULT_SETTINGS = {
+	general: {
+		theme: "default",
+		showAds: false,
+		noHamburger: true,
+		chatEnabled: true,
+		smallChatButton: true,
+		fastSearch: true,
+		robuxToDollars: false,
+
+		navigationEnabled: true,
+		showBlogFeed: true
+	},
+	catalog: {
+		enabled: true
+	},
+	itemdetails: {
+		enabled: true,
+		animationPreview: true,
+		animationPreviewAutoLoad: true,
+		explorerButton: true,
+		downloadButton: true,
+		contentButton: true,
+		imageBackgrounds: true,
+		whiteDecalThumbnailFix: true,
+		thisPackageContains: true
+	},
+	gamedetails: {
+		enabled: true,
+		showBadgeOwned: true
+	},
+	groups: {
+		enabled: true,
+		shoutAlerts: true,
+		expandGroupList: true
+	},
+	inventory: {
+		enabled: true,
+		inventoryTools: true
+	},
+	profile: {
+		enabled: true,
+		embedInventoryEnabled: true
+	},
+	versionhistory: {
+		enabled: true
+	},
+	universeconfig: {
+		enabled: false
+	}
+};
+
 const EXCLUDED_PAGES = [
 	"^/userads/",
 	"^/user-sponsorship/",
@@ -86,57 +140,6 @@ const GET_PAGE = path => {
 
 	return null
 }
-
-const DEFAULT_SETTINGS = {
-	general: {
-		theme: "default",
-		showAds: false,
-		noHamburger: true,
-		chatEnabled: true,
-		smallChatButton: true,
-		fastSearch: true,
-
-		navigationEnabled: true,
-		showBlogFeed: true
-	},
-	catalog: {
-		enabled: true
-	},
-	itemdetails: {
-		enabled: true,
-		animationPreview: true,
-		animationPreviewAutoLoad: true,
-		explorerButton: true,
-		downloadButton: true,
-		contentButton: true,
-		imageBackgrounds: true,
-		whiteDecalThumbnailFix: true,
-		thisPackageContains: true
-	},
-	gamedetails: {
-		enabled: true,
-		showBadgeOwned: true
-	},
-	groups: {
-		enabled: true,
-		shoutAlerts: true,
-		expandGroupList: true
-	},
-	inventory: {
-		enabled: true,
-		inventoryTools: true
-	},
-	profile: {
-		enabled: true,
-		embedInventoryEnabled: true
-	},
-	versionhistory: {
-		enabled: true
-	},
-	universeconfig: {
-		enabled: false
-	}
-};
 
 const STORAGE = chrome.storage.local;
 const MESSAGING = (() => {

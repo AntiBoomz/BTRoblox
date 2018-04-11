@@ -437,6 +437,48 @@ pageInit.home = function() {
 	})
 }
 
+pageInit.money = function() {
+	if(settings.general.robuxToDollars) {
+		Observer
+			.one("#MyTransactions_tab table > tbody", table => {
+				CreateObserver(table, { permanent: true, subtree: false })
+					.all(".datarow", item => {
+						const label = item.$find(".Amount .robux")
+						if(!label) { return }
+						const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+						label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
+					})
+			})
+			.one("#Summary_tab table > tbody", table => {
+				CreateObserver(table)
+					.one(".robux", label => {
+						const usdLabel = html`<span style=color:#060;font-size:12px;font-weight:bold;></span>`
+						label.after(usdLabel)
+
+						const update = () => {
+							const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+							usdLabel.textContent = ` ($${usd})`
+						}
+
+						new MutationObserver(update).observe(label, { childList: true })
+						update()
+					})
+					.all("td.Credit", label => {
+						const update = () => {
+							if(label.$find("span")) { return }
+							const text = label.textContent.replace(/,/g, "").trim()
+							if(!text) { return }
+							const usd = RobuxToUSD(text)
+							label.append(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
+						}
+
+						new MutationObserver(update).observe(label, { childList: true })
+						update()
+					})
+			})
+	}
+}
+
 pageInit.messages = function() {
 	Observer.one(".roblox-messages-container", container => {
 		CreateObserver(container, { permanent: true })
@@ -501,6 +543,38 @@ pageInit.develop = function() {
 
 pageInit.itemdetails = function(assetId) {
 	if(!settings.itemdetails.enabled) return;
+
+	if(settings.general.robuxToDollars) {
+		Observer
+			.one(".icon-robux-price-container .text-robux-lg", label => {
+				const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+				label.after(
+					html`<span class=text-robux-lg>&nbsp;($${usd})</span>`
+				)
+			})
+			.one(".recommended-items .item-card-price .text-robux", label => {
+				label.style.display = "inline"
+				label.textContent += ` ($\{{::(item.Item.Price*${DOLLARS_PER_ROBUX_RATIO})|number:2}})`
+				label.title = "R$ " + label.textContent
+			})
+			.one("#item-average-price", label => {
+				const observer = new MutationObserver(() => {
+					observer.disconnect()
+					const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+					label.textContent += ` ($${usd})`
+				})
+
+				observer.observe(label, { childList: true })
+			})
+			.one(".resellers", resellers => {
+				CreateObserver(resellers, { permanent: true })
+					.all(".list-item", item => {
+						const label = item.$find(".reseller-price-container .text-robux")
+						const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+						label.textContent += ` ($${usd})`
+					})
+			})
+	}
 
 	Observer
 		.one("#AjaxCommentsContainer .comments", cont => {
@@ -889,6 +963,17 @@ pageInit.gamedetails = function(placeId) {
 	if(!settings.gamedetails.enabled) return;
 
 	const newContainer = html`<div class="col-xs-12 btr-game-main-container section-content">`
+
+	if(settings.general.robuxToDollars) {
+		Observer.one("#rbx-passes-container", passes => {
+			CreateObserver(passes, { permanent: true, subtree: false })
+				.all(".list-item", item => {
+					const label = item.$find(".text-robux")
+					const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+					label.after(html`<span class=text-robux style=float:right>&nbsp;($${usd})</span>`)
+				})
+		})
+	}
 
 	Observer
 		.one("body", body => {
