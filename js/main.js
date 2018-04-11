@@ -27,13 +27,18 @@ const InjectJS = {
 			return;
 		}
 
-		if(IS_FIREFOX) detail = JSON.stringify(detail);
+		if(IS_FIREFOX) {
+			detail = cloneInto(detail, window.wrappedJSObject)
+		}
+
 		document.dispatchEvent(new CustomEvent(`inject.${action}`, { detail }))
 	},
 
 	listen(actionList, callback) {
-		function cb(event) { callback.apply(this, event.detail) }
-		actionList.split(" ").forEach(action => document.addEventListener(`content.${action}`, cb))
+		const cb = ev => callback(...ev.detail)
+		actionList.split(" ").forEach(action => {
+			document.addEventListener(`content.${action}`, cb)
+		})
 	}
 }
 

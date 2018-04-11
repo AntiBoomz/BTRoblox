@@ -8,17 +8,9 @@
 			)
 		},
 		listen(actionList, callback) {
+			const cb = ev => callback(...ev.detail)
 			actionList.split(" ").forEach(action => {
-				document.addEventListener("inject." + action, ev => {
-					let detail = ev.detail
-
-					// And for firefox to not error
-					if(typeof detail === "string") {
-						detail = JSON.parse(detail)
-					}
-
-					callback(...detail)
-				})
+				document.addEventListener("inject." + action, cb)
 			})
 		}
 	}
