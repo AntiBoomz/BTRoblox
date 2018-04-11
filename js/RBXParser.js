@@ -180,6 +180,7 @@ const RBXParser = (() => {
 		static new(className) {
 			assert(typeof className === "string", "className is not a string")
 
+			/*
 			let constructor
 			if(!constructor) {
 				eval(`constructor = class ${className} extends Instance { constructor() { super("${className}") } }`)
@@ -187,6 +188,9 @@ const RBXParser = (() => {
 			}
 
 			return new constructor()
+			*/
+
+			return new Instance(className)
 		}
 
 		constructor(className) {
