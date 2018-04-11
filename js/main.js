@@ -758,14 +758,14 @@ function Init() {
 				if(fsUpdateCounter !== thisUpdate) { return }
 				clearResults(list)
 
-				const matches = Object.entries(requestCache).filter(x => x[1] && (x[0] === search || x[1].IsFriend && (x.index = x[0].indexOf(search)) !== -1))
-
+				const matches = Object.entries(requestCache)
+					.filter(x => x[1] && (x[0] === search || x[1].IsFriend && (x.index = x[0].indexOf(search)) !== -1))
 				if(!matches.length) { return }
 
 				const sel = list.$find(">.selected")
 				if(sel) { sel.classList.remove("selected") }
 
-				matches.forEach(x => x.sort = x[0] === search ? 0 : Math.abs(x[0].length - search.length) + x.index + (!x[1].IsFriend ? 100 : 0))
+				matches.forEach(x => x.sort = x[0] === search ? 0 : Math.abs(x[0].length - search.length) / 3 + x.index + (!x[1].IsFriend ? 100 : 0))
 				matches.sort((a, b) => a.sort - b.sort)
 				const len = Math.min(4, matches.length)
 
@@ -794,6 +794,7 @@ function Init() {
 					} else {
 						list.prepend(item)
 					}
+
 					fsResults.push(item)
 
 					if(i === 0) {
