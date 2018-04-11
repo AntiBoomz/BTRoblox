@@ -96,6 +96,9 @@ API Docs
 Undocumented APIs
 =================
 
+* https://www.roblox.com/places/api-get-details?assetId=606849621
+* https://www.roblox.com/users/profile/playergames-json?userId=4719353
+
 Friend APIs
 -----------
 #### Get status of online friends
