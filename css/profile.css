@@ -125,7 +125,7 @@
 	opacity: 0;
 	pointer-events: none;
 	transition: opacity 0.3s;
-	z-index: 100;
+	z-index: 10000;
 }
 
 .btr-profile .profile-avatar-right.visible {
