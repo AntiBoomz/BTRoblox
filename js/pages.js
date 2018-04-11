@@ -965,14 +965,23 @@ pageInit.gamedetails = function(placeId) {
 	const newContainer = html`<div class="col-xs-12 btr-game-main-container section-content">`
 
 	if(settings.general.robuxToDollars) {
-		Observer.one("#rbx-passes-container", passes => {
-			CreateObserver(passes, { permanent: true, subtree: false })
-				.all(".list-item", item => {
-					const label = item.$find(".text-robux")
-					const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
-					label.after(html`<span class=text-robux style=float:right>&nbsp;($${usd})</span>`)
-				})
-		})
+		Observer
+			.one("#rbx-passes-container", passes => {
+				CreateObserver(passes, { permanent: true, subtree: false })
+					.all(".list-item", item => {
+						const label = item.$find(".text-robux")
+						const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+						label.after(html`<span class=text-robux style=float:right>&nbsp;($${usd})</span>`)
+					})
+			})
+			.one("#rbx-gear-container", gears => {
+				CreateObserver(gears, { permanent: true, subtree: false })
+					.all(".list-item", item => {
+						const label = item.$find(".text-robux")
+						const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+						label.after(html`<span class=text-robux style=float:right>&nbsp;($${usd})</span>`)
+					})
+			})
 	}
 
 	Observer
