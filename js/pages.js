@@ -932,7 +932,7 @@ pageInit.gamedetails = function(placeId) {
 			badges.classList.add("col-xs-12", "btr-badges-container")
 			newContainer.after(badges)
 
-			const badgeInfo = {}
+			const isOwned = {}
 
 			CreateObserver(badges).all(".badge-row .badge-stats-container", stats => {
 				const row = stats.closest(".badge-row")
@@ -947,12 +947,11 @@ pageInit.gamedetails = function(placeId) {
 					if(!match) return;
 
 					const badgeId = +match[1]
-					const info = badgeInfo[badgeId]
 
-					if(info) {
-						row.classList.toggle("btr-notowned", !info.IsOwned)
+					if(badgeId in isOwned) {
+						row.classList.toggle("btr-notowned", !isOwned[badgeId])
 					} else {
-						badgeInfo[badgeId] = row
+						isOwned[badgeId] = row
 					}
 				}
 			})
@@ -963,11 +962,11 @@ pageInit.gamedetails = function(placeId) {
 					const json = await response.json()
 
 					json.GameBadges.forEach(data => {
-						const elem = badgeInfo[data.BadgeAssetId]
+						const elem = isOwned[data.BadgeAssetId]
 						if(elem) {
-							elem.classList.toggle("btr-notowned", !info.IsOwned)
+							elem.classList.toggle("btr-notowned", !data.IsOwned)
 						} else {
-							badgeInfo[data.BadgeAssetId] = data
+							isOwned[data.BadgeAssetId] = data.IsOwned
 						}
 					})
 				})
