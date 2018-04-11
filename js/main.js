@@ -896,23 +896,6 @@ function Init() {
 		)
 	}
 
-	if(settings.groups.expandGroupList) {
-		Observer.one("script:not([src])",
-			x => x.innerHTML.indexOf(`'windowDisplay': 8,`) !== -1,
-			x => {
-				x.innerHTML = x.innerHTML.replace(/'windowDisplay': 8/, "'windowDisplay': 16")
-
-				setTimeout(() => {
-					const outer = $(".CarouselPager .content-outer")
-					const inner = $(".CarouselPager .content-inner")
-					if(outer && inner && outer.clientHeight >= inner.clientHeight) {
-						outer.style.height = "auto"
-						inner.style.position = "relative"
-					}
-				}, 0)
-			}
-		)
-	}
 
 	if(settings.general.navigationEnabled && settings.general.showBlogFeed) {
 		const updateBlogFeed = data => {
