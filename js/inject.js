@@ -340,6 +340,7 @@
 
 	ContentJS.listen("INIT", OnInit)
 	ContentJS.listen("refreshInventory", () => $(".btr-it-reload").click())
+	ContentJS.listen("linkify", cl => $(`.${cl}`).linkify())
 
 	ContentJS.send("INJECT_INIT")
 }

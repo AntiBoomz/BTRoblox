@@ -420,6 +420,12 @@ function CreateNewVersionHistory(assetId, assetType) {
 	return versionHistory
 }
 
+function Linkify(elem) {
+	const className = "btr-linkify-pls"
+	elem.classList.add(className)
+	InjectJS.send("linkify", className)
+	elem.classList.remove(className)
+}
 
 pageInit.home = function() {
 	Observer.all(".feeds .list-item .text-date-hint", span => {
@@ -1570,6 +1576,9 @@ pageInit.profile = function(userId) {
 		<div class="placeholder-inventory" style="display:none"></div>
 	</div>`
 
+	const gamesRequest = fetch(`https://www.roblox.com/users/profile/playergames-json?userId=${userId}`)
+		.then(async response => (await response.json()).Games)
+	
 	Observer
 		.one("body", body => body.classList.add("btr-profile"))
 		.one(".profile-container .rbx-tabs-horizontal", cont => {
@@ -1759,6 +1768,8 @@ pageInit.profile = function(userId) {
 				const url = slide.$find(".slide-item-emblem-container>a").href
 				const iconThumb = slide.$find(".slide-item-image").getAttribute("data-src")
 
+				const gamePromise = gamesRequest.then(list => list.find(x => +x.PlaceID === +placeId))
+
 				const item = html`
 				<li class="btr-game">
 					<div class="btr-game-button">
@@ -1790,7 +1801,7 @@ pageInit.profile = function(userId) {
 				loggedInUserPromise.then(loggedInUser => {
 					if(userId !== loggedInUser) return;
 
-					item.$find(".btr-game-button").append(html`
+					const dropdown = html`
 					<span class="btr-game-dropdown">
 						<a class="rbx-menu-item" data-toggle="popover" data-container="body" 
 							data-bind="btr-placedrop-${placeId}" style="float:right;margin-top:-4px;">
@@ -1798,18 +1809,24 @@ pageInit.profile = function(userId) {
 						</a>
 						<div data-toggle="btr-placedrop-${placeId}" style="display:none">
 							<ul class="dropdown-menu" role="menu">
-								<li><div onclick="Roblox.GameLauncher.buildGameInStudio(${placeId})"><a>Build</a></div></li>
-								<li><div onclick="Roblox.GameLauncher.editGameInStudio(${placeId})"><a>Edit</a></div></li>
-								<li><a href="/places/${placeId}/update"><div>Configure this Place</div></a></li>
-								<li><a href="/my/newuserad.aspx?targetid=${placeId}&targettype=asset"><div>Advertise this Place</div></a></li>
-								<li><a href="/develop?selectedPlaceId=${placeId}&View=21"><div>Create a Badge for this Place</div></a></li>
-								<li><a href="/develop?selectedPlaceId=${placeId}&View=34"><div>Create a Game Pass</div></a></li>
+								<li><a onclick=Roblox.GameLauncher.editGameInStudio(${placeId})><div>Edit</div></a></li>
 								<li><a href="/places/${placeId}/stats"><div>Developer Stats</div></a></li>
+								<li><a href="/places/${placeId}/update"><div>Configure this Place</div></a></li>
 								<li><a class="btr-btn-toggle-profile" data-placeid="${placeId}"><div>Remove from Profile</div></a></li>
 								<li><a class="btr-btn-shutdown-all" data-placeid="${placeId}"><div>Shut Down All Instances</div></a></li>
 							</ul>
 						</div>
-					</span>`)
+					</span>`
+
+					item.$find(".btr-game-button").append(dropdown)
+
+					gamePromise.then(data => {
+						if(!data) { return }
+
+						dropdown.$find(".dropdown-menu").children[2].after(
+							html`<li><a href=/universes/configure?id=${data.UniverseID}><div>Configure this Game</div></a></li>`
+						)
+					})
 				})
 
 				hlist.append(item)
@@ -1849,8 +1866,25 @@ pageInit.profile = function(userId) {
 				}
 
 				// scrollHeight is not set before appending
-				const descElem = item.$find(".btr-game-desc")
-				if(descElem.scrollHeight > 170) descElem.append(html`<span class="btr-toggle-description">Read More</span>`);
+				const updateDesc = () => {
+					const descElem = item.$find(".btr-game-desc")
+					const add = descElem.scrollHeight > 170
+					const toggle = descElem.$find(".btr-toggle-description")
+
+					if(add && !toggle) { descElem.append(html`<span class="btr-toggle-description">Read More</span>`) }
+					else if(!add && toggle) { toggle.remove() }
+				}
+				
+				
+				updateDesc()
+				gamePromise.then(data => {
+					if(!data) { return }
+
+					const content = item.$find(".btr-game-desc-content")
+					content.textContent = data.Description
+					Linkify(content)
+					updateDesc()
+				})
 			})
 		})
 		.one(".home-friends", friends => {
