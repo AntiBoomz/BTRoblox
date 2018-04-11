@@ -2229,14 +2229,16 @@ pageInit.profile = function(userId) {
 			})
 		}
 
-		dropdown.$on("click", ".dropdown-menu li", e => {
-			const category = +e.currentTarget.getAttribute("data-value")
-			if(Number.isNaN(category)) return;
+		const onclick = ev => {
+			const cat = +ev.currentTarget.getAttribute("data-value")
+			if(Number.isSafeInteger(cat)) {
+				loadPage(cat, 1)
+			}
+		}
 
-			loadPage(category, 1)
-		})
+		dropdown.$findAll(".dropdown-menu li").forEach(btn => btn.$on("click", onclick))
+
 		pager.onsetpage = page => loadPage(lastCategory, page)
-
 		onDocumentReady(() => loadPage(9, 1))
 	}
 
