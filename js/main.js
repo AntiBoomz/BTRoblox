@@ -899,6 +899,42 @@ function Init() {
 		)
 	}
 
+	if(settings.general.robuxToDollars) {
+		Observer.one("#nav-robux-balance", bal => {
+			const btn = html`
+			<li><a href=/develop/developer-exchange class=rbx-menu-item></a></li>`
+
+			const update = () => {
+				const matches = bal.textContent.trim().match(/^([\d,]+)\sRobux$/)
+				if(!matches) { return }
+				const amt = parseInt(matches[0].replace(/,/g, ""), 10)
+
+				if(!Number.isSafeInteger(amt)) { return }
+				btn.firstChild.textContent = `$${RobuxToUSD(amt)} USD`
+				bal.parentNode.after(btn)
+			}
+
+			const observer = new MutationObserver(update)
+			observer.observe(bal, { childList: true })
+			update()
+		})
+
+		modifyTemplate("catalog-item-card", template => {
+			const label = template.$find(".item-card-price")
+			if(!label) { return }
+			label.style.display = "flex"
+
+			const div = html`<div style="flex:1 1 auto"></div>`
+			while(label.firstChild) { div.append(label.firstChild) }
+
+			label.append(div)
+
+			const text = `($\{{::((item.BestPrice||item.Price)*${DOLLARS_PER_ROBUX_RATIO})|number:2}})`
+			label.append(html`
+			<div style="flex:0 1 auto;padding-left:4px;overflow:hidden;text-overflow:ellipsis;" class=text-robux title="${text}" ng-cloak> ${text}</div>
+			`)
+		})
+	}
 
 	if(settings.general.navigationEnabled && settings.general.showBlogFeed) {
 		const updateBlogFeed = data => {
