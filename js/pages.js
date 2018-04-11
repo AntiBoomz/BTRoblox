@@ -991,7 +991,9 @@ pageInit.gamedetails = function(placeId) {
 			xhr.onload = function() {
 				const data = this.response
 				const serverDate = new Date(this.getResponseHeader("Date"))
-				stat.$find(".text-lead").textContent = `${$.dateSince(data.Updated, serverDate)} ago`
+				const label = stat.$find(".text-lead")
+				label.title = label.textContent
+				label.textContent = `${$.dateSince(data.Updated, serverDate)} ago`
 			}
 
 			xhr.send()
