@@ -1906,7 +1906,7 @@ pageInit.profile = function(userId) {
 					pager.setPage(json.Data.Page)
 					pager.togglePrev(json.Data.previousPageCursor != null)
 					pager.toggleNext(json.Data.nextPageCursor != null)
-					hlist.$empty
+					hlist.$empty()
 
 					if(json.Data.Items.length === 0) {
 						const text = `${userId === loggedInUser ? "You have" : "This user has"} no badges`
@@ -1966,8 +1966,8 @@ pageInit.profile = function(userId) {
 				const json = await response.json()
 
 				pager.setMaxPage(Math.floor((json.NumberOfGroups - 1) / pageSize) + 1)
+				hlist.$empty()
 
-				hlist.$empty
 				json.Groups.forEach((item, index) => {
 					const parent = html`
 					<li class="list-item game-card ${index < pageSize ? "visible" : ""}">
@@ -2060,8 +2060,7 @@ pageInit.profile = function(userId) {
 				if(json && json.IsValid) {
 					pager.setPage(page)
 					pager.setMaxPage(Math.floor((json.Data.TotalItems - 1) / pageSize) + 1)
-
-					hlist.$empty
+					hlist.$empty()
 
 					const categoryName = dropdownLabel.textContent
 					header.textContent = `Favorite ${categoryName}`
