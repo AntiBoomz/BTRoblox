@@ -43,12 +43,13 @@ const InjectJS = {
 }
 
 const templateListeners = {}
+const domParser = new DOMParser()
 function modifyTemplate(id, callback) {
 	if(!templateListeners[id]) {
 		const listeners = templateListeners[id] = []
 
 		const modify = function(html, end) {
-			const doc = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html")
+			const doc = domParser.parseFromString(`<body>${html}</body>`, "text/html")
 			listeners.forEach(fn => fn(doc.body))
 			end(doc.body.innerHTML)
 		}
@@ -926,7 +927,6 @@ function Init() {
 					</div>
 					<div class="btr-feeddesc">${item.desc}</div>
 				</a>`)
-				// <div class="btr-feedcreator">by ${item.creator}</div>
 			})
 
 			blogfeed.style.display = ""

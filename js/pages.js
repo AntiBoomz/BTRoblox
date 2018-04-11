@@ -952,40 +952,31 @@ pageInit.gamedetails = function(placeId) {
 					if(info) {
 						row.classList.toggle("btr-notowned", !info.IsOwned)
 					} else {
-					//	row.classList.add("btr-badgeownedloading")
-						badgeInfo[badgeId] = {
-							btrElement: row
-						}
+						badgeInfo[badgeId] = row
 					}
 				}
 			})
 
 			if(settings.gamedetails.showBadgeOwned) {
-			//	onDocumentReady(() => {
 				const url = `https://www.roblox.com/badges/list-badges-for-place?placeId=${placeId}`
 				fetch(url, { credentials: "include" }).then(async response => {
 					const json = await response.json()
 
 					json.GameBadges.forEach(data => {
-						const info = badgeInfo[data.BadgeAssetId]
-						if(info) {
-							Object.assign(info, data)
-							info.btrElement.classList.toggle("btr-notowned", !info.IsOwned)
-						//	info.btrElement.classList.remove("btr-badgeownedloading")
+						const elem = badgeInfo[data.BadgeAssetId]
+						if(elem) {
+							elem.classList.toggle("btr-notowned", !info.IsOwned)
 						} else {
 							badgeInfo[data.BadgeAssetId] = data
 						}
 					})
 				})
-			//	})
 			}
 		})
 		.one("#carousel-game-details", details => details.setAttribute("data-is-video-autoplayed-on-ready", "false"))
 		.one(".game-stats-container .game-stat", x => x.$find(".text-label").textContent === "Updated", stat => {
-			const cacheBuster = Math.floor(Math.random() * 1e9)
-
 			const xhr = new XMLHttpRequest()
-			xhr.open("GET", `https://api.roblox.com/marketplace/productinfo?assetId=${placeId}&_=${cacheBuster}`)
+			xhr.open("GET", `https://api.roblox.com/marketplace/productinfo?assetId=${placeId}`)
 			xhr.responseType = "json"
 
 			xhr.onload = function() {
@@ -1036,10 +1027,9 @@ pageInit.gamedetails = function(placeId) {
 	onDocumentReady(() => {
 		const placeEdit = $("#game-context-menu .dropdown-menu .VisitButtonEditGLI")
 		if(placeEdit) {
-			placeEdit.parentNode.after(html`
-			<li>
-				<a class=btr-download-place>Download</a>
-			</li>`)
+			placeEdit.parentNode.parentNode.append(
+				html`<li><a class=btr-download-place><div>Download</div></a></li>`
+			)
 
 			document.$on("click", ".btr-download-place", () => {
 				downloadAsset(placeId, "arraybuffer").then(ab => {
@@ -1894,23 +1884,19 @@ pageInit.profile = function(userId) {
 			const hlist = friends.$find(".hlist")
 
 			if(hlist.children.length === 9) {
-				const url = `https://api.roblox.com/users/${userId}/friends`
-				fetch(url).then(async response => {
+				fetch(`https://api.roblox.com/users/${userId}/friends`).then(async response => {
 					const list = await response.json()
-					if(list.length <= 9) return;
-					const item = list[9]
-
-					const profileUrl = `/users/${item.Id}/profile`
-					const thumbUrl = `/Thumbs/Avatar.ashx?x=100&y=100&userId=${item.Id}`
+					if(list.length < 10) { return }
+					const friend = list[9]
 
 					hlist.append(html`
 					<li class="list-item friend">
 						<div class="avatar-container">
-							<a href="${profileUrl}" class="avatar avatar-card-fullbody friend-link" title="${item.Username}">
+							<a href="/users/${friend.Id}/profile" class="avatar avatar-card-fullbody friend-link" title="${friend.Username}">
 								<span class="avatar-card-link friend-avatar">
-									<img alt="${item.Username}" class="avatar-card-image" src="${thumbUrl}">
+									<img alt="${friend.Username}" class="avatar-card-image" src="/avatar-thumbnail/image?userId=${friend.Id}&width=100&height=100&format=png">
 								</span>
-								<span class="text-overflow friend-name">${item.Username}</span>
+								<span class="text-overflow friend-name">${friend.Username}</span>
 							</a>
 						</div>
 					</li>`)
