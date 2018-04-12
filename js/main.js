@@ -566,7 +566,7 @@ function Init() {
 		.all("#header .rbx-navbar", bar => {
 			if(!settings.general.navigationEnabled) { return }
 			const buyRobux = bar.$find(".buy-robux")
-			if(buyRobux) { buyRobux.parentNode.style.display = "none" }
+			if(buyRobux) { buyRobux.parentNode.remove() }
 
 			bar.prepend(html`<li><a class=nav-menu-title href=/home>Home</a></li>`)
 
