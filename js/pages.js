@@ -1076,7 +1076,7 @@ pageInit.gamedetails = function(placeId) {
 				const data = this.response
 				const serverDate = new Date(this.getResponseHeader("Date"))
 				const label = stat.$find(".text-lead")
-				label.title = label.textContent
+				label.title = new Date(data.Updated).$format("M/D/YYYY h:mm:ss A (T)")
 				label.textContent = `${$.dateSince(data.Updated, serverDate)} ago`
 			}
 
