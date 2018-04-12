@@ -568,7 +568,22 @@ function Init() {
 			const buyRobux = bar.$find(".buy-robux")
 			if(buyRobux) { buyRobux.parentNode.style.display = "none" }
 
-			bar.prepend(html`<li><a class="nav-menu-title" href="/home">Home</a></li>`)
+			bar.prepend(html`<li><a class=nav-menu-title href=/home>Home</a></li>`)
+
+			// Roblox+ button fix kekekekeke
+			if(bar.children.length > 2) {
+				const trap = html`<li style=display:none><a class=nav-menu-title href=/kek>kek</a></li>`
+				const trap2 = html`<li style=display:none><a class=nav-menu-title href=/derp>derp</a></li>`
+
+				bar.children[2].before(trap)
+				trap.after(trap2)
+				onDocumentReady(() => setTimeout(() => {
+					if(trap.textContent === "kek" && trap2.textContent === "derp") {
+						trap.remove()
+						trap2.remove()
+					}
+				}, 2000))
+			}
 		})
 		.one("#nav-blog", blog => {
 			if(!settings.general.navigationEnabled) { return }
