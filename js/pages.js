@@ -1479,7 +1479,62 @@ pageInit.placeconfig = function(placeId) {
 	})
 }
 
+pageInit.groupadmin = function() {
+	if(settings.general.robuxToDollars) {
+		Observer
+			.one("#GroupTitle .robux", label => {
+				const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+				label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
+			})
+			.one("#revenue .summary .summary-container", summary => {
+				CreateObserver(summary, { permanent: true, subtree: false })
+					.all(".columns-container", cont => {
+						cont.$findAll(".robux").forEach(label => {
+							const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+							label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
+						})
+
+						cont.$findAll("td.credit").forEach(label => {
+							if(!label.textContent) { return }
+							const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+							label.append(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
+						})
+					})
+			})
+			.one("#revenue .line-item tbody", table => {
+				CreateObserver(table, { permanent: true, subtree: false })
+					.all("tr", row => {
+						const label = row.$find(".robux")
+						if(!label) { return }
+						const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+						label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
+					})
+			})
+	}
+
+	Observer.one("#JoinRequests", requests => {
+		CreateObserver(requests, { permanent: true, subtree: false })
+			.all("#JoinRequestsList", list => {
+				list.$findAll("tbody > tr > td:nth-child(3)").forEach(label => {
+					const fixedDate = RobloxTime(label.textContent)
+					if(!fixedDate) { return }
+					label.setAttribute("btr-timestamp", "")
+					label.textContent = `${$.dateSince(fixedDate, new Date())} ago`
+					label.title = fixedDate.$format("M/D/YYYY h:mm:ss A (T)")
+				})
+			})
+	})
+}
+
 pageInit.groups = function() {
+	if(settings.general.robuxToDollars) {
+		Observer.one("#ctl00_cphRoblox_rbxGroupFundsPane_GroupFunds .robux", label => {
+			label.style.display = "inline-block" // To fix whitespace
+			const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+			label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
+		})
+	}
+
 	if(!settings.groups.enabled) return;
 
 	const rankNameCache = {}
