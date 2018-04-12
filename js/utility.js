@@ -14,7 +14,11 @@ const $ = (() => {
 		"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
 	]
 
-	const Fixed = (num, len) => ("00" + num).slice(-len)
+	const Fixed = (num, len) => {
+		const str = String(num)
+		const amt = len - str.length
+		return amt > 0 ? "0".repeat(amt) + str : str
+	}
 	const DTF = new Intl.DateTimeFormat("en-us", {timeZoneName: "short"})
 
 	Object.assign($, {
