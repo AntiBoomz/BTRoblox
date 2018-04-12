@@ -340,7 +340,12 @@
 
 	ContentJS.listen("INIT", OnInit)
 	ContentJS.listen("refreshInventory", () => $(".btr-it-reload").click())
-	ContentJS.listen("linkify", cl => window.Roblox && Roblox.Linkify && $(`.${cl}`).linkify())
+	ContentJS.listen("linkify", cl => {
+		const target = $(`.${cl}`)
+		target.removeClass(cl)
+		if(window.Roblox && Roblox.Linkify) { target.linkify() }
+		else { target.addClass("linkify") }
+	})
 
 	ContentJS.send("INJECT_INIT")
 }

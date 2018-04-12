@@ -294,7 +294,7 @@
 .btr-profile .btr-games-list .btr-game-desc {
 	position: relative;
 	width: 100%;
-	padding: 8px 16px 0;
+	padding: 6px 16px;
 	margin-top: 16px;
 
 	max-height: 168px;
@@ -326,6 +326,12 @@
 .btr-profile .btr-games-list .btr-game-desc .btr-toggle-description:hover {
 	cursor: pointer;
 	text-decoration: underline;
+}
+
+.btr-profile .btr-games-list .btr-game-desc-content.btr-no-description:after {
+	display: block;
+	content: "This game has no description";
+	color: #757575;
 }
 
 .btr-profile .btr-games-list .btr-game-info {

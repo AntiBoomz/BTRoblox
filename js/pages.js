@@ -420,11 +420,11 @@ function CreateNewVersionHistory(assetId, assetType) {
 	return versionHistory
 }
 
+let linkifyCounter = 0
 function Linkify(elem) {
-	const className = "btr-linkify-pls"
+	const className = `btr-linkify-pls-${linkifyCounter++}`
 	elem.classList.add(className)
 	InjectJS.send("linkify", className)
-	elem.classList.remove(className)
 }
 
 pageInit.home = function() {
@@ -1883,7 +1883,7 @@ pageInit.profile = function(userId) {
 							<a href="${url}"><img class="btr-game-thumb"></a>
 							<a href="${url}"><img class="btr-game-icon" src="${iconThumb}"></a>
 						</div>
-						<div class="btr-game-desc linkify">
+						<div class="btr-game-desc">
 							<span class="btr-game-desc-content">${desc}</span>
 						</div>
 						<div class="btr-game-info">
@@ -1968,24 +1968,23 @@ pageInit.profile = function(userId) {
 					item.$getThumbnail = getThumbnail
 				}
 
-				// scrollHeight is not set before appending
+				const descElem = item.$find(".btr-game-desc")
+				const descContent = item.$find(".btr-game-desc-content")
+
 				const updateDesc = () => {
-					const descElem = item.$find(".btr-game-desc")
 					const add = descElem.scrollHeight > 170
 					const toggle = descElem.$find(".btr-toggle-description")
 
 					if(add && !toggle) { descElem.append(html`<span class="btr-toggle-description">Read More</span>`) }
 					else if(!add && toggle) { toggle.remove() }
+
+					descContent.classList.toggle("btr-no-description", descContent.textContent.trim() === "")
 				}
-				
 				
 				updateDesc()
 				gamePromise.then(data => {
-					if(!data) { return }
-
-					const content = item.$find(".btr-game-desc-content")
-					content.textContent = data.Description
-					Linkify(content)
+					if(data) { descContent.textContent = data.Description }
+					Linkify(descContent)
 					updateDesc()
 				})
 			})
