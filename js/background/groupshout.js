@@ -51,7 +51,7 @@
 			if(Number.isNaN(date)) { return console.warn("Failed to parse date") }
 
 			const lastShoutDate = groupShoutCache[groupId]
-			if(lastShoutDate !== date) {
+			if(date > lastShoutDate) {
 				groupShoutCache[groupId] = date
 				localStorage.setItem("groupShoutCache", JSON.stringify(groupShoutCache))
 
