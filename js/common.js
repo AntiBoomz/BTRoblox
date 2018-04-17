@@ -48,9 +48,6 @@ const DEFAULT_SETTINGS = {
 	},
 	versionhistory: {
 		enabled: true
-	},
-	universeconfig: {
-		enabled: false
 	}
 }
 
