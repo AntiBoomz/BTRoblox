@@ -40,7 +40,7 @@
 			List: [
 				"AllowThirdPartySales", "Archivable", "FallenPartsDestroyHeight", "FilteringEnabled", "Fravity", "PGSPhysicsSolverEnabled",
 				"StreamingEnabled", "CanCollide", "Locked", "Anchored", "LoadStringEnabled"
-			] 
+			]
 		},
 		Part: { Order: 4, List: ["Size", "Shape"] },
 		Fog: { Order: 4, List: ["FogColor", "FogEnd", "FogStart"] },
@@ -50,7 +50,7 @@
 				"BackParamA", "BackParamB", "BackSurfaceInput", "BottomParamA", "BottomParamB", "BottomSurfaceInput", "FrontParamA", "FrontParamB",
 				"FrontSurfaceInput", "LeftParamA", "LeftParamB", "LeftSurfaceInput", "RightParamA", "RightParamB", "RightSurfaceInput", "TopParamA",
 				"TopParamB", "TopSurfaceInput"
-			] 
+			]
 		},
 		Surface: { Order: 5, List: ["BackSurface", "BottomSurface", "FrontSurface", "LeftSurface", "RightSurface", "TopSurface"] }
 	}

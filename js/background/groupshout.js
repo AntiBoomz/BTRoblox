@@ -70,7 +70,7 @@
 						requireInteraction: true,
 						isClickable: true
 					}, () => {
-						if(hasPlayedSound) return;
+						if(hasPlayedSound) { return }
 						hasPlayedSound = true
 	
 						const audio = new Audio("res/notification.mp3")
@@ -89,7 +89,7 @@
 	})
 
 	chrome.alarms.onAlarm.addListener(alarm => {
-		if(alarm.name === "GroupShouts") executeCheck();
+		if(alarm.name === "GroupShouts") { executeCheck() }
 	})
 
 

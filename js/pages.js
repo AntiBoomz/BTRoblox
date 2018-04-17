@@ -19,7 +19,8 @@ const AssetTypeIds = (() => {
 		...acc, // 47
 		...anim // 56
 	]
-})();
+})()
+
 const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34, 35, 37]
 const AnimationPreviewAssetTypeIds = [24, 32, 48, 49, 50, 51, 52, 53, 54, 55, 56]
 const WearableAssetTypeIds = [2, 8, 11, 12, 17, 18, 27, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47]
@@ -43,7 +44,7 @@ async function getProductInfo(assetId) {
 function downloadFile(url, type) {
 	return new Promise(resolve => MESSAGING.send("downloadFile", url, resolve))
 		.then(async bloburl => {
-			if(!bloburl) throw new Error("Failed to download file");
+			if(!bloburl) { throw new Error("Failed to download file") }
 
 			const response = await fetch(bloburl)
 			URL.revokeObjectURL(bloburl)
@@ -57,7 +58,7 @@ function downloadFile(url, type) {
 }
 
 function downloadAsset(params, type) {
-	if(!(params instanceof Object)) params = { id: params };
+	if(!(params instanceof Object)) { params = { id: params } }
 	params = new URLSearchParams(params).toString()
 	const url = `https://www.roblox.com/asset/?${params}`
 
@@ -85,8 +86,8 @@ function execScripts(list, cb) {
 
 let cachedXsrfToken
 function csrfFetch(url, init) {
-	if(!init) init = {};
-	if(!init.headers) init.headers = {};
+	if(!init) { init = {} }
+	if(!init.headers) { init.headers = {} }
 
 	if(cachedXsrfToken === undefined) {
 		cachedXsrfToken = null
@@ -162,7 +163,7 @@ function RobloxTime(dateString) {
 }
 
 function GetAssetFileType(assetTypeId, buffer) {
-	if(buffer instanceof ArrayBuffer) buffer = new Uint8Array(buffer);
+	if(buffer instanceof ArrayBuffer) { buffer = new Uint8Array(buffer) }
 
 	switch(assetTypeId) {
 	case 1: return "png"
@@ -233,8 +234,8 @@ function createPager(noSelect) {
 		pager.maxPage = 1
 
 		Object.assign(pager, {
-			onprevpage() { if(this.curPage > 1 && this.onsetpage) this.onsetpage(this.curPage - 1); },
-			onnextpage() { if(this.curPage < this.maxPage && this.onsetpage) this.onsetpage(this.curPage + 1); },
+			onprevpage() { if(this.curPage > 1 && this.onsetpage) { this.onsetpage(this.curPage - 1) } },
+			onnextpage() { if(this.curPage < this.maxPage && this.onsetpage) { this.onsetpage(this.curPage + 1) } },
 
 			setMaxPage(maxPage) {
 				this.maxPage = maxPage
@@ -249,7 +250,7 @@ function createPager(noSelect) {
 		cur.$on("keydown", e => {
 			if(e.keyCode === 13 && pager.onsetpage) {
 				let page = parseInt(cur.value, 10)
-				if(Number.isNaN(page)) return;
+				if(Number.isNaN(page)) { return }
 
 				page = Math.max(1, Math.min(pager.maxPage, page))
 
@@ -295,7 +296,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 
 		for(let i = itemStart; i <= itemEnd; i++) {
 			const item = items[i]
-			if(!item) break;
+			if(!item) { break }
 
 			const card = html`
 			<li class="list-item">
@@ -343,7 +344,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 
 
 	function loadPage(page) {
-		if(isBusy) return;
+		if(isBusy) { return }
 		isBusy = true
 
 		const promises = []
@@ -367,10 +368,10 @@ function CreateNewVersionHistory(assetId, assetType) {
 
 	document.documentElement
 		.$on("click", ".btr-version-revert", e => {
-			if(isBusy) return;
+			if(isBusy) { return }
 
 			const versionId = parseInt(e.currentTarget.getAttribute("data-versionId"), 10)
-			if(Number.isNaN(versionId)) return;
+			if(Number.isNaN(versionId)) { return }
 
 			isBusy = true
 
@@ -380,14 +381,14 @@ function CreateNewVersionHistory(assetId, assetType) {
 				body: new URLSearchParams({ assetVersionID: versionId })
 			}).then(response => {
 				isBusy = false
-				if(response.status === 200) loadPage(1);
+				if(response.status === 200) { loadPage(1) }
 			})
 		})
 		.$on("click", ".btr-version-download", e => {
-			if(isBusy) return;
+			if(isBusy) { return }
 
 			const version = parseInt(e.currentTarget.getAttribute("data-version"), 10)
-			if(Number.isNaN(version)) return;
+			if(Number.isNaN(version)) { return }
 
 			isBusy = true
 
@@ -510,7 +511,7 @@ pageInit.messages = function() {
 		<button class="btr-markAllAsReadInbox btn-control-sm" ng-click="markAllAsRead()">
 			Mark All As Read
 		</button>`)
-	});
+	})
 }
 
 pageInit.develop = function() {
@@ -524,7 +525,7 @@ pageInit.develop = function() {
 				const placeId = parseInt(table.getAttribute("data-rootplace-id"), 10)
 				const isVisible = table.getAttribute("data-in-showcase").toLowerCase() === "true"
 
-				if(Number.isNaN(placeId)) return;
+				if(Number.isNaN(placeId)) { return }
 
 				csrfFetch("https://www.roblox.com/game/toggle-profile", {
 					method: "POST",
@@ -542,7 +543,7 @@ pageInit.develop = function() {
 }
 
 pageInit.itemdetails = function(assetId) {
-	if(!settings.itemdetails.enabled) return;
+	if(!settings.itemdetails.enabled) { return }
 
 	if(settings.general.robuxToDollars) {
 		Observer
@@ -591,12 +592,12 @@ pageInit.itemdetails = function(assetId) {
 		.one(".item-type-field-container .field-content", typeLabel => {
 			const assetTypeName = typeLabel.textContent.trim()
 			const assetTypeId = AssetTypeIds.indexOf(assetTypeName)
-			if(assetTypeId === -1) return;
+			if(assetTypeId === -1) { return }
 
 			const canAccessPromise = new Promise(resolve => {
-				if(assetTypeId !== 10) return resolve(true);
+				if(assetTypeId !== 10) { return resolve(true) }
 				Observer.one("#item-container", itemCont => {
-					if(itemCont.dataset.userassetId) return resolve(true);
+					if(itemCont.dataset.userassetId) { return resolve(true) }
 					Observer.one(".price-container .action-button > *", btn => {
 						resolve(btn.nodeName === "BUTTON" && !btn.disabled)
 					})
@@ -604,7 +605,7 @@ pageInit.itemdetails = function(assetId) {
 			})
 
 			const gCPCache = {}
-			const getCachedProductInfo = id => (gCPCache[id] = gCPCache[id] || getProductInfo(id));
+			const getCachedProductInfo = id => (gCPCache[id] = gCPCache[id] || getProductInfo(id))
 
 			execScripts(["js/RBXParser.js", "js/AssetCache.js"], () => {
 				const previewAnim = settings.itemdetails.animationPreview && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1
@@ -629,7 +630,7 @@ pageInit.itemdetails = function(assetId) {
 						}
 
 						const loadPreview = () => {
-							if(preview) return;
+							if(preview) { return }
 
 							preview = new RBXPreview.AvatarPreviewer()
 							container = html`
@@ -679,7 +680,7 @@ pageInit.itemdetails = function(assetId) {
 							const doPreview = (id, typeId) => {
 								const isAnim = AnimationPreviewAssetTypeIds.indexOf(typeId) !== -1
 								const isAsset = WearableAssetTypeIds.indexOf(typeId) !== -1
-								if(!isAnim && !isAsset && typeId !== 32) return;
+								if(!isAnim && !isAsset && typeId !== 32) { return }
 	
 								if(typeId === 32) {
 									AssetCache.loadText(id, text => text.split(";").forEach(itemId => {
@@ -707,7 +708,7 @@ pageInit.itemdetails = function(assetId) {
 										preview.onInit(() => {
 											AssetCache.loadModel(id, model => {
 												const folder = model.find(x => x.ClassName === "Folder" && x.Name === "R15Anim")
-												if(!folder) return;
+												if(!folder) { return }
 	
 												folder.Children.filter(x => x.ClassName === "StringValue").forEach(value => {
 													const animName = value.Name
@@ -715,7 +716,7 @@ pageInit.itemdetails = function(assetId) {
 													value.Children.filter(x => x.ClassName === "Animation").forEach((anim, i) => {
 														const name = animName + (i === 0 ? "" : `_${i + 1}`)
 														const animId = RBXParser.parseContentUrl(anim.AnimationId)
-														if(!animId) return;
+														if(!animId) { return }
 	
 														preview.addAnimation(name, animId)
 													})
@@ -734,7 +735,7 @@ pageInit.itemdetails = function(assetId) {
 				}
 
 				canAccessPromise.then(canAccess => {
-					if(!canAccess) return;
+					if(!canAccess) { return }
 
 					if(settings.itemdetails.explorerButton && InvalidExplorableAssetTypeIds.indexOf(assetTypeId) === -1) {
 						let explorerInitialized = false
@@ -825,10 +826,10 @@ pageInit.itemdetails = function(assetId) {
 		
 						AssetCache.loadModel(assetId, model => {
 							const inst = model.find(assetTypeContainer.filter)
-							if(!inst) return;
+							if(!inst) { return }
 		
 							const actId = RBXParser.parseContentUrl(inst[assetTypeContainer.prop])
-							if(!actId) return;
+							if(!actId) { return }
 		
 							btn.href = `/catalog/${actId}`
 							btn.classList.remove("disabled")
@@ -851,7 +852,7 @@ pageInit.itemdetails = function(assetId) {
 							const color = ev.currentTarget.dataset.color
 							const prev = btns.$find(".selected")
 
-							if(prev) prev.classList.remove("selected");
+							if(prev) { prev.classList.remove("selected") }
 							ev.currentTarget.classList.add("selected")
 
 							thumb.dataset.btrBg = color
@@ -878,10 +879,10 @@ pageInit.itemdetails = function(assetId) {
 
 						AssetCache.loadModel(assetId, model => {
 							const decal = model.find(x => x.ClassName === "Decal")
-							if(!decal) return;
+							if(!decal) { return }
 
 							const imgId = RBXParser.parseContentUrl(decal.Texture)
-							if(!imgId) return;
+							if(!imgId) { return }
 
 							const preload = new Image()
 							preload.src = `https://assetgame.roblox.com/asset/?id=${imgId}`
@@ -960,7 +961,7 @@ pageInit.itemdetails = function(assetId) {
 }
 
 pageInit.gamedetails = function(placeId) {
-	if(!settings.gamedetails.enabled) return;
+	if(!settings.gamedetails.enabled) { return }
 
 	const newContainer = html`<div class="col-xs-12 btr-game-main-container section-content">`
 
@@ -1038,7 +1039,7 @@ pageInit.gamedetails = function(placeId) {
 
 				if(settings.gamedetails.showBadgeOwned) {
 					const match = url.match(/catalog\/(\d+)\//)
-					if(!match) return;
+					if(!match) { return }
 
 					const badgeId = +match[1]
 
@@ -1083,10 +1084,10 @@ pageInit.gamedetails = function(placeId) {
 			xhr.send()
 		})
 		.one(".rbx-visit-button-closed, #MultiplayerVisitButton", btn => {
-			if(btn.classList.contains("rbx-visit-button-closed")) return;
+			if(btn.classList.contains("rbx-visit-button-closed")) { return }
 
 			const rootPlaceId = btn.getAttribute("placeid")
-			if(placeId === rootPlaceId) return;
+			if(placeId === rootPlaceId) { return }
 
 			const box = html`
 			<div class='btr-universe-box'>
@@ -1140,7 +1141,7 @@ pageInit.gamedetails = function(placeId) {
 }
 
 pageInit.catalog = function() {
-	if(!settings.catalog.enabled) return;
+	if(!settings.catalog.enabled) { return }
 	Observer.one("body", body => body.classList.add("btr-inventory"))
 
 	modifyTemplate("catalog-item-card", template => {
@@ -1162,15 +1163,15 @@ pageInit.catalog = function() {
 	document.$on("mouseover", ".btr-item-card-container", ev => {
 		const self = ev.currentTarget
 
-		if(self.dataset.btrHoverInit === "true") return;
+		if(self.dataset.btrHoverInit === "true") { return }
 		self.dataset.btrHoverInit = "true"
 
 		const matches = self.closest("a").href.match(/\/catalog\/(\d+)/)
-		if(!matches) return;
+		if(!matches) { return }
 
 		const assetId = matches[1]
 		let promise = productCache[assetId]
-		if(!promise) promise = productCache[assetId] = getProductInfo(assetId);
+		if(!promise) { promise = productCache[assetId] = getProductInfo(assetId) }
 
 		promise.then(data => {
 			const updated = `${$.dateSince(data.Updated, startDate)} ago`
@@ -1188,11 +1189,11 @@ pageInit.catalog = function() {
 }
 
 pageInit.universeconfig = function() {
-	if(!settings.universeconfig.enabled) return;
+	if(!settings.universeconfig.enabled) { return }
 	Observer.one("body", body => body.classList.add("btr-uconf"))
 
 	const universeId = new URLSearchParams(window.location.search).get("id")
-	if(!universeId) return;
+	if(!universeId) { return }
 
 	Observer
 		.one(`#navbar .verticaltab[data-maindiv="developerProducts"]`, devProd => {
@@ -1236,7 +1237,7 @@ pageInit.universeconfig = function() {
 
 					list.append(li)
 					btn.$on("click", ev => {
-						if(ev.target !== btn) return;
+						if(ev.target !== btn) { return }
 						li.classList.toggle("open")
 
 						if(!hasLoaded) {
@@ -1285,7 +1286,7 @@ pageInit.universeconfig = function() {
 
 										const reqId = ++reqCounter
 										versionCache[select.value].then(source => {
-											if(reqCounter !== reqId) return;
+											if(reqCounter !== reqId) { return }
 											applySource(source)
 										})
 									})
@@ -1303,7 +1304,7 @@ pageInit.universeconfig = function() {
 
 						const list = cont.$find(".btr-asset-list")
 						list.$empty()
-						if(!json.Aliases.length) return list.append(html`<li>This game has no assets</li>`);
+						if(!json.Aliases.length) { return list.append(html`<li>This game has no assets</li>`) }
 
 						json.Aliases.forEach(createAlias)
 					})
@@ -1321,7 +1322,7 @@ pageInit.universeconfig = function() {
 }
 
 pageInit.placeconfig = function(placeId) {
-	if(!settings.versionhistory.enabled) return;
+	if(!settings.versionhistory.enabled) { return }
 
 	const newVersionHistory = CreateNewVersionHistory(placeId, "place")
 
@@ -1354,7 +1355,7 @@ pageInit.placeconfig = function(placeId) {
 		const crcTable = []
 		for(let i = 0; i < 256; i++) {
 			let n = i
-			for(let j = 0; j < 8; j++) n = n & 1 ? (n >>> 1) ^ 0xEDB88320 : (n >>> 1);
+			for(let j = 0; j < 8; j++) { n = n & 1 ? (n >>> 1) ^ 0xEDB88320 : (n >>> 1) }
 
 			crcTable[i] = n
 		}
@@ -1535,7 +1536,7 @@ pageInit.groups = function() {
 		})
 	}
 
-	if(!settings.groups.enabled) return;
+	if(!settings.groups.enabled) { return }
 
 	const rankNameCache = {}
 
@@ -1572,7 +1573,7 @@ pageInit.groups = function() {
 					content.append(postBtns)
 
 					const firstBtn = postBtns.firstChild
-					while(postDate.firstElementChild) firstBtn.before(postDate.firstElementChild);
+					while(postDate.firstElementChild) { firstBtn.before(postDate.firstElementChild) }
 
 					postDate.parentNode.remove()
 
@@ -1596,8 +1597,8 @@ pageInit.groups = function() {
 						}
 					} else {
 						deleteButton = html`<a class="btn-control btn-control-medium disabled">Delete</a>`
-						if(exileButton) exileButton.before(deleteButton);
-						else postBtns.append(deleteButton)
+						if(exileButton) { exileButton.before(deleteButton) }
+						else { postBtns.append(deleteButton) }
 					}
 
 					if(exileButton) {
@@ -1631,7 +1632,7 @@ pageInit.groups = function() {
 						userLink.append(span)
 						
 						let promise = rankNameCache[userId]
-						if(!promise) promise = rankNameCache[userId] = new Promise(resolve => MESSAGING.send("getRankName", { userId, groupId }, resolve));
+						if(!promise) { promise = rankNameCache[userId] = new Promise(resolve => MESSAGING.send("getRankName", { userId, groupId }, resolve)) }
 						
 						promise.then(rankname => {
 							userLink.append(html`<span class="btr-grouprank">(${rankname})</span>`)
@@ -1663,7 +1664,7 @@ pageInit.groups = function() {
 }
 
 pageInit.profile = function(userId) {
-	if(!settings.profile.enabled) return;
+	if(!settings.profile.enabled) { return }
 
 	const left = html`
 	<div class="btr-profile-left">
@@ -1753,7 +1754,7 @@ pageInit.profile = function(userId) {
 			left.$find(".placeholder-footer").replaceWith(footer)
 
 			const tooltip = footer.$find(".tooltip-pastnames")
-			if(tooltip) tooltip.setAttribute("data-container", "body"); // Display tooltip over side panel
+			if(tooltip) { tooltip.setAttribute("data-container", "body") } // Display tooltip over side panel
 		})
 		.one(".profile-about .profile-social-networks", social => left.$find(".btr-profile-about .container-header").append(social))
 		.one(".profile-header-top .header-caption", () => { // Wait for the first element after status
@@ -1831,7 +1832,7 @@ pageInit.profile = function(userId) {
 
 			toggleItems.$on("click", toggleVisible)
 			document.body.$on("click", ev => {
-				if(!avatarRight.contains(ev.target) && avatarRight.classList.contains("visible")) toggleVisible(ev);
+				if(!avatarRight.contains(ev.target) && avatarRight.classList.contains("visible")) { toggleVisible(ev) }
 			})
 		})
 		.one(".profile-stats-container", stats => {
@@ -1958,7 +1959,7 @@ pageInit.profile = function(userId) {
 				item.$find(".btr-game-stats").append(slide.$find(".slide-item-stats>.hlist"))
 
 				loggedInUserPromise.then(loggedInUser => {
-					if(userId !== loggedInUser) return;
+					if(userId !== loggedInUser) { return }
 
 					const dropdown = html`
 					<span class="btr-game-dropdown">
@@ -1998,8 +1999,8 @@ pageInit.profile = function(userId) {
 						fetch(thumbUrl).then(async response => {
 							const json = await response.json()
 
-							if(json && json.Final) cb(json);
-							else setTimeout(retryUntilFinal, 500, thumbUrl, cb);
+							if(json && json.Final) { cb(json) }
+							else { setTimeout(retryUntilFinal, 500, thumbUrl, cb) }
 						})
 					}
 
@@ -2227,7 +2228,7 @@ pageInit.profile = function(userId) {
 		favorites.$find(".container-header .btn-more").after(dropdown)
 
 		function loadPage(category, page) {
-			if(isLoading) return;
+			if(isLoading) { return }
 			isLoading = true
 
 			lastCategory = category
@@ -2355,7 +2356,7 @@ pageInit.inventory = function() {
 			})
 	}
 
-	if(!settings.inventory.enabled) return;
+	if(!settings.inventory.enabled) { return }
 
 	if(settings.inventory.inventoryTools) {
 		modifyTemplate("assets-list", template => {
@@ -2406,13 +2407,13 @@ pageInit.inventory = function() {
 				updateButtons()
 			})
 			.$on("click", ".item-card-link", () => {
-				if($(".btr-it-box:checked") != null) return false;
+				if($(".btr-it-box:checked") != null) { return false }
 			})
 			.$on("click", ".btr-it-remove", () => {
-				if(isRemoving) return;
+				if(isRemoving) { return }
 
 				const checked = $.all(".btr-it-box:checked")
-				if(!checked.length) return;
+				if(!checked.length) { return }
 
 				isRemoving = true
 				const items = []
@@ -2437,7 +2438,7 @@ pageInit.inventory = function() {
 						const url = `https://api.roblox.com/Marketplace/ProductInfo?assetId=${item.assetId}`
 						fetch(url).then(async response => {
 							const data = await response.json()
-							if(validAssetTypes.indexOf(data.AssetTypeId) === -1) return console.log("Bad assetType", data);
+							if(validAssetTypes.indexOf(data.AssetTypeId) === -1) { return console.log("Bad assetType", data) }
 
 							csrfFetch("https://www.roblox.com/asset/delete-from-inventory", {
 								method: "POST",

@@ -37,4 +37,4 @@ MESSAGING.listen({
 
 		Promise.all(promises).then(respond)
 	}
-});
+})

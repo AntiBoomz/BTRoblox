@@ -8,7 +8,7 @@ const Settings = (() => {
 
 		function recurse(par, obj) {
 			Object.keys(obj).forEach(index => {
-				if(!(index in par)) return;
+				if(!(index in par)) { return }
 				const oldVal = par[index]
 				const newVal = obj[index]
 
@@ -52,7 +52,7 @@ const Settings = (() => {
 			getPromise.then(cb)
 		},
 		set(data) {
-			if(!(data instanceof Object)) throw new TypeError("data should be an object");
+			if(!(data instanceof Object)) { throw new TypeError("data should be an object") }
 			Settings.get(() => {
 				if(applySettings(data)) {
 					STORAGE.set({ settings })
@@ -64,5 +64,5 @@ const Settings = (() => {
 			onChangeListeners.push(cb)
 		}
 	}
-})();
+})()
 

@@ -2,13 +2,13 @@
 
 const RBXParser = (() => {
 	const assert = (bool, ...msg) => {
-		if(!bool) throw new Error(...msg);
+		if(!bool) { throw new Error(...msg) }
 	}
 
 	class ByteReader extends Uint8Array {
 		static ParseFloat(long) {
 			const exp = (long >> 23) & 255
-			if(exp === 0) return 0;
+			if(exp === 0) { return 0 }
 			const float = 2 ** (exp - 127) * (1 + (long & 0x7FFFFF) / 0x7FFFFF)
 			return long > 0x7FFFFFFF ? -float : float
 		}
@@ -19,7 +19,7 @@ const RBXParser = (() => {
 			const neg = long0 & 2147483648
 
 			if(exp === 0) {
-				if(frac === 0) return -0;
+				if(frac === 0) { return -0 }
 				const double = 2 ** (exp - 1023) * frac
 				return neg ? -double : double
 			} else if(exp === 2047) {
@@ -55,7 +55,7 @@ const RBXParser = (() => {
 			const begin = this.index
 			this.index += arr.length
 			for(let i = 0; i < arr.length; i++) {
-				if(arr[i] !== this[begin + i]) return false;
+				if(arr[i] !== this[begin + i]) { return false }
 			}
 			return true
 		}
@@ -99,7 +99,7 @@ const RBXParser = (() => {
 					while(true) {
 						const lenByte = this.Byte()
 						litLen += lenByte
-						if(lenByte !== 0xFF) break;
+						if(lenByte !== 0xFF) { break }
 					}
 				}
 
@@ -107,7 +107,7 @@ const RBXParser = (() => {
 					data[index++] = this.Byte()
 				}
 
-				if(index >= decomLength) break;
+				if(index >= decomLength) { break }
 
 				const offset = this.UInt16LE()
 				let len = token & 0xF
@@ -116,7 +116,7 @@ const RBXParser = (() => {
 					while(true) {
 						const lenByte = this.Byte()
 						len += lenByte
-						if(lenByte !== 0xFF) break;
+						if(lenByte !== 0xFF) { break }
 					}
 				}
 
@@ -257,7 +257,7 @@ const RBXParser = (() => {
 	const domParser = new DOMParser()
 	class RBXXmlParser {
 		parse(data) {
-			if(typeof data !== "string") data = asciiDecoder.decode(data);
+			if(typeof data !== "string") { data = asciiDecoder.decode(data) }
 
 			const xml = domParser.parseFromString(data, "text/xml").documentElement
 			const result = []
@@ -440,23 +440,23 @@ const RBXParser = (() => {
 				while(sub.GetRemaining() > 0) {
 					values.push(sub.String(sub.UInt32LE()))
 				}
-				break;
+				break
 			case "bool":
 				while(sub.GetRemaining() > 0) {
 					values.push(sub.Byte() === 0x1)
 				}
-				break;
+				break
 			case "int":
 				values = sub.RBXInterleavedInt32(sub.GetRemaining() / 4)
-				break;
+				break
 			case "float":
 				values = sub.RBXInterleavedFloat(sub.GetRemaining() / 4)
-				break;
+				break
 			case "double":
 				while(sub.GetRemaining() > 0) {
 					values.push(ByteReader.ParseDouble(sub.UInt32LE(), sub.UInt32LE()))
 				}
-				break;
+				break
 			case "UDim2": {
 				const count = sub.GetRemaining() / 16
 				const scaleX = sub.RBXInterleavedFloat(count)
@@ -469,7 +469,7 @@ const RBXParser = (() => {
 						[scaleY[i], offsetY[i]]
 					]
 				}
-				break;
+				break
 			}
 			case "Ray": {
 				const count = sub.GetRemaining() / 24
@@ -483,7 +483,7 @@ const RBXParser = (() => {
 			}
 			case "BrickColor":
 				values = sub.RBXInterleavedUint32(sub.GetRemaining() / 4)
-				break;
+				break
 			case "Color3": {
 				const count = sub.GetRemaining() / 12
 				const red = sub.RBXInterleavedFloat(count)
@@ -675,7 +675,7 @@ const RBXParser = (() => {
 			if(typeof buffer === "string" && !buffer.startsWith("<roblox ")) {
 				format = "xml"
 			} else {
-				if(typeof buffer === "string") buffer = new TextEncoder().encode(buffer).buffer;
+				if(typeof buffer === "string") { buffer = new TextEncoder().encode(buffer).buffer }
 				const reader = new ByteReader(buffer)
 				assert(reader.String(7) === "<roblox", "Not a valid RBXM file (invalid header)")
 				format = reader.Byte() === 0x21 ? "bin" : "xml"
@@ -697,7 +697,7 @@ const RBXParser = (() => {
 			if(typeof buffer === "string" && buffer.startsWith("version 1.0")) {
 				format = "text"
 			} else {
-				if(typeof buffer === "string") buffer = new TextEncoder().encode(buffer);
+				if(typeof buffer === "string") { buffer = new TextEncoder().encode(buffer) }
 				const reader = new ByteReader(buffer)
 				assert(reader.String(8) === "version ", "Invalid mesh file")
 
@@ -721,7 +721,7 @@ const RBXParser = (() => {
 		}
 
 		parseText(buffer) {
-			if(typeof buffer !== "string") buffer = new TextDecoder().decode(buffer);
+			if(typeof buffer !== "string") { buffer = new TextDecoder().decode(buffer) }
 			const lines = buffer.split(/\r?\n/)
 			assert(lines.length === 3, "Invalid mesh version 1 file (Wrong amount of lines)")
 
@@ -805,7 +805,7 @@ const RBXParser = (() => {
 				reader.Jump(faceSize - 12)
 			}
 
-			if(reader.GetRemaining() > 0) console.warn("Leftover data in mesh");
+			if(reader.GetRemaining() > 0) { console.warn("Leftover data in mesh") }
 			return { vertices, normals, uvs, faces }
 		}
 	}
@@ -865,7 +865,7 @@ const RBXParser = (() => {
 
 			keyframes.forEach(keyframe => {
 				keyframe.Children.forEach(rootPose => {
-					if(rootPose.ClassName !== "Pose") return;
+					if(rootPose.ClassName !== "Pose") { return }
 					rootPose.Children.forEach(pose => this.parsePose(pose, keyframe))
 				})
 			})
@@ -874,11 +874,11 @@ const RBXParser = (() => {
 		}
 
 		parsePose(pose, keyframe) {
-			if(pose.ClassName !== "Pose") return;
+			if(pose.ClassName !== "Pose") { return }
 
 			const name = pose.Name
 			const cf = pose.CFrame
-			if(!this.result.keyframes[name]) this.result.keyframes[name] = [];
+			if(!this.result.keyframes[name]) { this.result.keyframes[name] = [] }
 			
 			this.result.keyframes[name].push({
 				time: keyframe.Time,
@@ -900,7 +900,7 @@ const RBXParser = (() => {
 		AnimationParser,
 
 		parseContentUrl(urlString) {
-			if(typeof urlString !== "string" || !urlString.length) return null;
+			if(typeof urlString !== "string" || !urlString.length) { return null }
 			try {
 				const url = new URL(urlString)
 				switch(url.protocol) {
@@ -921,10 +921,10 @@ const RBXParser = (() => {
 					throw new Error("Invalid protocol", url)
 				}
 			} catch(ex) {
-				console.error("Failed to parse url", urlString, ex);
+				console.error("Failed to parse url", urlString, ex)
 			}
 
 			return null
 		}
 	}
-})();
+})()

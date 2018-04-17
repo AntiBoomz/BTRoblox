@@ -9,13 +9,13 @@ const AssetCache = (() => {
 		const cache = {}
 
 		return (url, cb) => {
-			if(!isNaN(url)) url = `https://www.roblox.com/asset/?id=${url}`;
+			if(!Number.isNaN(url)) { url = `https://www.roblox.com/asset/?id=${url}` }
 			try { new URL(url) } catch(ex) { throw ex }
 
 			let promise = cache[url]
 			if(!promise) {
 				let assetPromise = assetCache[url]
-				if(!assetPromise) assetPromise = assetCache[url] = downloadFile(url);
+				if(!assetPromise) { assetPromise = assetCache[url] = downloadFile(url) }
 
 				promise = cache[url] = assetPromise.then(buffer => constructor(buffer))
 				promise.catch(ex => console.error("Failed to load asset", url, ex))
@@ -35,4 +35,4 @@ const AssetCache = (() => {
 		loadBlob: createMethod(buffer => new Blob([buffer])),
 		loadText: createMethod(buffer => new TextDecoder().decode(buffer))
 	}
-})();
+})()

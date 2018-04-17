@@ -6,7 +6,7 @@ const $ = (() => {
 		
 
 	const Months = [
-		"January", "February", "March", "April", "May", "June", 
+		"January", "February", "March", "April", "May", "June",
 		"July", "August", "September", "October", "November", "December"
 	]
 
@@ -19,7 +19,8 @@ const $ = (() => {
 		const amt = len - str.length
 		return amt > 0 ? "0".repeat(amt) + str : str
 	}
-	const DTF = new Intl.DateTimeFormat("en-us", {timeZoneName: "short"})
+
+	const DTF = new Intl.DateTimeFormat("en-us", { timeZoneName: "short" })
 
 	Object.assign($, {
 		find(self, selector) {
@@ -34,14 +35,14 @@ const $ = (() => {
 		},
 
 		on(self, eventNames, selector, callback, once) {
-			if(typeof selector === "function") [selector, callback, once] = [null, selector, callback];
+			if(typeof selector === "function") { [selector, callback, once] = [null, selector, callback] }
 
 			eventNames.split(" ").forEach(eventType => {
-				if(!eventType.length) return;
-				if(!self.$events) Object.defineProperty(self, "$events", { value: {} });
+				if(!eventType.length) { return }
+				if(!self.$events) { Object.defineProperty(self, "$events", { value: {} }) }
 
 				let listeners = self.$events[eventType]
-				if(!listeners) listeners = self.$events[eventType] = [];
+				if(!listeners) { listeners = self.$events[eventType] = [] }
 
 				const listener = {
 					selector,
@@ -49,7 +50,7 @@ const $ = (() => {
 					once,
 					handler(...args) {
 						const event = args[0]
-						if(!selector) return callback.apply(this, args);
+						if(!selector) { return callback.apply(this, args) }
 
 						let path = event.path
 						if(!path) {
@@ -67,21 +68,21 @@ const $ = (() => {
 
 						const sP = event.stopPropagation
 						let hasStoppedPropagation = false
-						event.stopPropagation = function(...args) {
+						event.stopPropagation = function(...spArgs) {
 							hasStoppedPropagation = true
-							return sP.apply(this, args)
+							return sP.apply(this, spArgs)
 						}
 
 						for(let i = 0; i < final; i++) {
 							const node = path[i]
 							const index = Array.prototype.indexOf.call(query, node)
-							if(index === -1) continue;
+							if(index === -1) { continue }
 
 							Object.defineProperty(event, "currentTarget", { value: node, configurable: true })
 							callback.apply(this, args)
 							delete event.currentTarget
 
-							if(hasStoppedPropagation) break;
+							if(hasStoppedPropagation) { break }
 						}
 					}
 				}
@@ -96,15 +97,15 @@ const $ = (() => {
 			return this.on(...args, true)
 		},
 		off(self, eventNames, selector, callback) {
-			if(!self.$events) return self;
-			if(typeof selector !== "string") [selector, callback] = [null, selector];
+			if(!self.$events) { return self }
+			if(typeof selector !== "string") { [selector, callback] = [null, selector] }
 
 			eventNames.split(" ").forEach(eventType => {
-				if(!eventType.length) return;
-				if(!self.$events) return;
+				if(!eventType.length) { return }
+				if(!self.$events) { return }
 
 				const listeners = self.$events[eventType]
-				if(!listeners) return;
+				if(!listeners) { return }
 
 				const removeAll = selector == null && callback == null
 				for(let i = 0; i < listeners.length; i++) {
@@ -118,7 +119,10 @@ const $ = (() => {
 
 			return self
 		},
-		trigger(self, type, init) { return self.dispatchEvent(new Event(type, init)), self },
+		trigger(self, type, init) {
+			self.dispatchEvent(new Event(type, init))
+			return self
+		},
 
 		each(self, cb) { Array.prototype.forEach.call(self, cb) },
 
@@ -165,22 +169,22 @@ const $ = (() => {
 			const since = (relativeTo - date) / 1000
 
 			const y = Math.floor(since / 3600 / 24 / 365)
-			if(y >= 1) return Math.floor(y) + " year" + (y < 2 ? "" : "s");
+			if(y >= 1) { return Math.floor(y) + " year" + (y < 2 ? "" : "s") }
 
 			const M = Math.floor(since / 3600 / 24 / 31)
-			if(M >= 1) return Math.floor(M) + " month" + (M < 2 ? "" : "s");
+			if(M >= 1) { return Math.floor(M) + " month" + (M < 2 ? "" : "s") }
 
 			const w = Math.floor(since / 3600 / 24 / 7)
-			if(w >= 1) return Math.floor(w) + " week" + (w < 2 ? "" : "s");
+			if(w >= 1) { return Math.floor(w) + " week" + (w < 2 ? "" : "s") }
 
 			const d = Math.floor(since / 3600 / 24)
-			if(d >= 1) return Math.floor(d) + " day" + (d < 2 ? "" : "s");
+			if(d >= 1) { return Math.floor(d) + " day" + (d < 2 ? "" : "s") }
 
 			const h = Math.floor(since / 3600)
-			if(h >= 1) return Math.floor(h) + " hour" + (h < 2 ? "" : "s");
+			if(h >= 1) { return Math.floor(h) + " hour" + (h < 2 ? "" : "s") }
 
 			const m = Math.floor(since / 60)
-			if(m >= 1) return Math.floor(m) + " minute" + (m < 2 ? "" : "s");
+			if(m >= 1) { return Math.floor(m) + " minute" + (m < 2 ? "" : "s") }
 
 			const s = Math.floor(since)
 			return Math.floor(s) + " second" + (Math.floor(s) === 1 ? "" : "s")
@@ -199,7 +203,7 @@ const $ = (() => {
 		$on(...args) { return $.on(this, ...args) },
 		$off(...args) { return $.off(this, ...args) },
 		$once(...args) { return $.once(this, ...args) },
-		$trigger(...args) { return $.trigger(this, ...args) },
+		$trigger(...args) { return $.trigger(this, ...args) }
 	})
 
 	Assign([window.Date, Date], {
@@ -217,7 +221,7 @@ const $ = (() => {
 	})
 
 	return $
-})();
+})()
 
 
 const htmlstring = function(pieces, ...args) {
@@ -230,7 +234,7 @@ const htmlstring = function(pieces, ...args) {
 		"/": "&#x2F;"
 	}
 
-	const escapePiece = s => s.replace(/[^\S ]+/g, "").replace(/ {2,}/g, " ");
+	const escapePiece = s => s.replace(/[^\S ]+/g, "").replace(/ {2,}/g, " ")
 	const escapeArg = s => s.toString().replace(/[&<>"'/]/g, x => escapeMap[x])
 
 	let result = escapePiece(pieces[0])

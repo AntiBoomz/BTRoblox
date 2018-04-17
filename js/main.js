@@ -6,7 +6,7 @@ const Observer = CreateObserver(document)
 
 let settings
 let currentPage
-let blogFeedData;
+let blogFeedData
 
 let loggedInUser = -1
 let loggedInUserPromise = null
@@ -15,7 +15,7 @@ const InjectJS = {
 	_queue: [],
 	_started: false,
 	_start() {
-		if(this._started) return;
+		if(this._started) { return }
 		this._started = true
 		this._queue.forEach(args => this.send(...args))
 		this._queue = []
@@ -24,7 +24,7 @@ const InjectJS = {
 	send(action, ...detail) {
 		if(!this._started) {
 			this._queue.push([action, ...detail])
-			return;
+			return
 		}
 
 		if(IS_FIREFOX) {
@@ -72,7 +72,7 @@ function onDocumentReady(cb) {
 }
 
 const RobuxToUSD = amt => (amt * DOLLARS_PER_ROBUX_RATIO).toFixed(2)
-	.replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/yg, "$1,");
+	.replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/yg, "$1,")
 
 function Init() {
 	InjectJS.listen("INJECT_INIT", () => InjectJS._start())
@@ -191,8 +191,8 @@ function Init() {
 		const content = settingsDiv.$find("#btr-settings-main")
 
 		content.$on("mousewheel", e => {
-			if(e.deltaY < 0 && content.scrollTop === 0) return e.preventDefault();
-			if(e.deltaY > 0 && content.scrollTop >= content.scrollHeight - content.clientHeight) return e.preventDefault();
+			if(e.deltaY < 0 && content.scrollTop === 0) { return e.preventDefault() }
+			if(e.deltaY > 0 && content.scrollTop >= content.scrollHeight - content.clientHeight) { return e.preventDefault() }
 		})
 
 		{ // Shout Filters
@@ -478,7 +478,7 @@ function Init() {
 
 						group.$findAll(`[require="${settingName}"] > input`).forEach(x => {
 							if(!input.checked) { x.setAttribute("disabled", "") }
-							else {x.removeAttribute("disabled") }
+							else { x.removeAttribute("disabled") }
 						})
 					})
 
@@ -491,7 +491,7 @@ function Init() {
 
 		Object.entries(settings).forEach(([groupPath, settingsGroup]) => {
 			Object.entries(settingsGroup).forEach(([settingName, settingValue]) => {
-				if(groupPath in settingsDone && settingName in settingsDone[groupPath]) return;
+				if(groupPath in settingsDone && settingName in settingsDone[groupPath]) { return }
 
 				if(typeof settingValue === "boolean") {
 					const checkbox = html`<checkbox></checkbox>`
@@ -519,8 +519,8 @@ function Init() {
 	document.$on("click", ".btr-settings-toggle", () => {
 		const visible = settingsDiv.parentNode !== document.body
 
-		if(visible) document.body.appendChild(settingsDiv);
-		else settingsDiv.remove();
+		if(visible) { document.body.appendChild(settingsDiv) }
+		else { settingsDiv.remove() }
 
 		if(!settingsDiv.hasAttribute("loaded")) {
 			settingsDiv.setAttribute("loaded", "")
@@ -609,7 +609,7 @@ function Init() {
 			if(trade) {
 				trade.href = "/my/money.aspx"
 				const label = trade.$find("span:not([class^='icon-nav'])")
-				if(label) label.textContent = "Money";
+				if(label) { label.textContent = "Money" }
 			}
 
 
@@ -988,11 +988,11 @@ function Init() {
 }
 
 function PreInit() {
-	if(document.contentType !== "text/html") return;
+	if(document.contentType !== "text/html") { return }
 	const pathname = window.location.pathname
 
 	const exclude = EXCLUDED_PAGES.some(patt => new RegExp(patt, "i").test(pathname))
-	if(exclude) return;
+	if(exclude) { return }
 
 	currentPage = GET_PAGE(pathname)
 	STORAGE.get(["settings", "cachedBlogFeedV2"], data => {
@@ -1008,7 +1008,7 @@ function PreInit() {
 		}
 
 		const cssFiles = ["main.css"]
-		if(currentPage) cssFiles.push(...currentPage.css);
+		if(currentPage) { cssFiles.push(...currentPage.css) }
 
 		const theme = settings.general.theme
 		cssFiles.forEach(file => {

@@ -35,7 +35,7 @@
 	function DoTemplates(templates) {
 		const args = ["$templateCache", $templateCache => {
 			templates.forEach(id => {
-				if(id in modifiedTemplates) return;
+				if(id in modifiedTemplates) { return }
 				const data = $templateCache.get(id)
 
 				if(data) {
@@ -60,7 +60,7 @@
 	}
 
 	function OnInit(settings, currentPage, matches, templates) {
-		if(typeof jQuery === "undefined") return;
+		if(typeof jQuery === "undefined") { return }
 		if(typeof angular !== "undefined") {
 			DoTemplates(templates)
 
@@ -75,8 +75,8 @@
 							const width = library.chatLayout.widthOfChat
 
 							scope.$watch(() => library.chatLayout.collapsed, value => {
-								library.chatLayout.widthOfChat = value ? 54 + 6 : width;
-								library.dialogDict.collapsed = value;
+								library.chatLayout.widthOfChat = value ? 54 + 6 : width
+								library.dialogDict.collapsed = value
 							})
 						}
 					})
@@ -127,7 +127,7 @@
 							}
 		
 							function markAllAsRead() {
-								if(isWorking) return;
+								if(isWorking) { return }
 								isWorking = true
 									
 								const messages = []
@@ -153,7 +153,7 @@
 									if(page < maxPage && messages.length < count) {
 										if(pages[page] === true) {
 											readPage(page + 1)
-											return;
+											return
 										}
 	
 										getMessages(page, data => {
@@ -170,7 +170,7 @@
 								getMessageCount(countData => {
 									if(countData.count === 0) {
 										window.location.reload()
-										return;
+										return
 									}
 		
 									count = countData.count
@@ -217,7 +217,7 @@
 
 		if(typeof Roblox !== "undefined") {
 			if(!settings.general.showAds && Roblox.PrerollPlayer) {
-				Roblox.PrerollPlayer.waitForPreroll = x => $.Deferred().resolve(x);
+				Roblox.PrerollPlayer.waitForPreroll = x => $.Deferred().resolve(x)
 			}
 
 			if(currentPage === "gamedetails" && settings.gamedetails.enabled) {
@@ -247,7 +247,7 @@
 						</span>
 						<button type='button' class='btn-control-sm btr-server-next'>Next</button>
 						<button type='button' class='btn-control-sm btr-server-last'>Last</button>
-					</div>`).appendTo(`${prefix}-running-games-footer`);
+					</div>`).appendTo(`${prefix}-running-games-footer`)
 
 					const updatePager = function() {
 						const curPage = Math.floor(curIndex / 10) + 1
@@ -312,14 +312,14 @@
 				}
 
 				// if(Roblox.FriendsRunningGameInstances) createPager(Roblox.FriendsRunningGameInstances, true);
-				if(Roblox.AllRunningGameInstances) createPager(Roblox.AllRunningGameInstances);
+				if(Roblox.AllRunningGameInstances) { createPager(Roblox.AllRunningGameInstances) }
 			} else if(currentPage === "develop") {
 				if(Roblox.BuildPage) {
 					Roblox.BuildPage.GameShowcase = new Proxy(Roblox.BuildPage.GameShowcase || {}, {
 						set(target, name, value) {
 							target[name] = value
 							const table = document.querySelector(`.item-table[data-rootplace-id="${name}"]`)
-							if(table) table.dataset.inShowcase = value;
+							if(table) { table.dataset.inShowcase = value }
 							return true
 						}
 					})

@@ -1,6 +1,6 @@
 "use strict"
 
-const DOLLARS_PER_ROBUX_RATIO = 350 / 100000;
+const DOLLARS_PER_ROBUX_RATIO = 350 / 100000
 
 const DEFAULT_SETTINGS = {
 	general: {
@@ -52,7 +52,7 @@ const DEFAULT_SETTINGS = {
 	universeconfig: {
 		enabled: false
 	}
-};
+}
 
 const EXCLUDED_PAGES = [
 	"^/userads/",
@@ -141,7 +141,7 @@ const GET_PAGE = path => {
 	return null
 }
 
-const STORAGE = chrome.storage.local;
+const STORAGE = chrome.storage.local
 const MESSAGING = (() => {
 	const IS_BACKGROUND_SCRIPT = chrome.extension
 		&& chrome.extension.getBackgroundPage
@@ -151,7 +151,7 @@ const MESSAGING = (() => {
 		const listenersByName = {}
 
 		const onConnect = port => {
-			if(!port.name) return port.disconnect();
+			if(!port.name) { return port.disconnect() }
 			const listener = listenersByName[port.name]
 
 			const onMessage = msg => {
@@ -161,7 +161,7 @@ const MESSAGING = (() => {
 					const respond = (response, isFinal) => {
 						if(port) {
 							port.postMessage(response)
-							if(isFinal !== false) port.disconnect()
+							if(isFinal !== false) { port.disconnect() }
 						} else {
 							console.warn("Tried to respond to a closed port")
 						}
@@ -202,7 +202,10 @@ const MESSAGING = (() => {
 
 	return {
 		send(name, data, callback) {
-			if(typeof data === "function") callback = data, data = null;
+			if(typeof data === "function") {
+				callback = data
+				data = null
+			}
 
 			const port = chrome.runtime.connect({ name })
 			port.postMessage(data)
@@ -212,4 +215,4 @@ const MESSAGING = (() => {
 			}
 		}
 	}
-})();
+})()

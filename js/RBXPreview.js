@@ -31,13 +31,13 @@ const RBXPreview = (() => {
 		}
 
 		onInit(cb) {
-			if(this.initialized) cb();
-			else this._onInit.push(cb);
+			if(this.initialized) { cb() }
+			else { this._onInit.push(cb) }
 		}
 
 		setEnabled(bool) {
-			bool = !!bool;
-			if(this.enabled === bool) return;
+			bool = !!bool
+			if(this.enabled === bool) { return }
 			this.enabled = bool
 
 			if(!this.initialized) {
@@ -49,12 +49,12 @@ const RBXPreview = (() => {
 						delete this._onInit
 
 						this.container.append(this.scene.canvas)
-						if(this.enabled) this.scene.start();
+						if(this.enabled) { this.scene.start() }
 					})
 				})
 			} else if(this.scene) {
-				if(this.enabled) this.scene.start();
-				else this.scene.stop();
+				if(this.enabled) { this.scene.start() }
+				else { this.scene.stop() }
 			}
 		}
 	}
@@ -102,11 +102,11 @@ const RBXPreview = (() => {
 				window.scene = scene
 
 				scene.avatar.setPlayerType("R6")
-				if(this.animList.length) this.selectAnimation(0, true);
-				if(this.assets.length) this.assets.forEach(asset => scene.avatar.addAsset(asset));
+				if(this.animList.length) { this.selectAnimation(0, true) }
+				if(this.assets.length) { this.assets.forEach(asset => scene.avatar.addAsset(asset)) }
 
-				if(this.areAccessoriesVisible === false) this.setAccessoriesVisible(false);
-				if(this.arePackagesVisible === false) this.setPackagesVisible(false);
+				if(this.areAccessoriesVisible === false) { this.setAccessoriesVisible(false) }
+				if(this.arePackagesVisible === false) { this.setPackagesVisible(false) }
 
 				getDefaultAppearance((data, rules) => {
 					// Body Colors
@@ -139,14 +139,14 @@ const RBXPreview = (() => {
 
 		setPlayerType(type) {
 			this.playerType = type
-			if(this.scene) this.scene.avatar.setPlayerType(type);
+			if(this.scene) { this.scene.avatar.setPlayerType(type) }
 			this.ptSwitch.checked = type === "R15"
 
 			if(!this.animList.length && this.disableDefaultAnimations !== true) {
 				const animId = type === "R15" ? 507766388 : 180435571
 				this.stopAnimation()
 				AssetCache.loadAnimation(animId, anim => {
-					if(!anim || this.currentAnimation !== null) return;
+					if(!anim || this.currentAnimation !== null) { return }
 					this.playAnimation(anim)
 				})
 			}
@@ -156,7 +156,7 @@ const RBXPreview = (() => {
 			this.arePackagesVisible = bool
 			if(this.scene) {
 				this.scene.avatar.bodyparts.forEach(bp => {
-					if(bp.asset.info && bp.asset.info.previewTarget) return;
+					if(bp.asset.info && bp.asset.info.previewTarget) { return }
 					bp.hidden = !bool
 				})
 				this.scene.avatar.refreshBodyParts()
@@ -167,7 +167,7 @@ const RBXPreview = (() => {
 			this.areAccessoriesVisible = bool
 			if(this.scene) {
 				this.scene.avatar.accessories.forEach(acc => {
-					if(acc.asset.info && acc.asset.info.previewTarget) return;
+					if(acc.asset.info && acc.asset.info.previewTarget) { return }
 					acc.obj.visible = bool
 				})
 			}
@@ -179,42 +179,42 @@ const RBXPreview = (() => {
 			if(UniqueWearableAssetTypeIds.indexOf(assetTypeId) !== -1) {
 				const old = this.assets.find(x => x.assetTypeId === assetTypeId)
 				if(old) {
-					if(old.info && old.info.previewTarget) return;
+					if(old.info && old.info.previewTarget) { return }
 					this.removeAsset(old)
 				}
 			}
 
 			this.assets.push(asset)
-			if(this.scene) this.scene.avatar.addAsset(asset);
+			if(this.scene) { this.scene.avatar.addAsset(asset) }
 		}
 
 		removeAsset(asset) {
 			const index = this.assets.indexOf(asset)
-			if(index === -1) return;
+			if(index === -1) { return }
 
 			this.assets.splice(index, 1)
 			if(this.scene) {
 				const avatar = this.scene.avatar
 
 				const bp = avatar.bodyparts.findIndex(x => x.asset === asset)
-				if(bp !== -1) avatar.bodyparts.splice(bp, 1);
+				if(bp !== -1) { avatar.bodyparts.splice(bp, 1) }
 
 				const acc = avatar.accessories.findIndex(x => x.asset === asset)
-				if(acc !== -1) avatar.accessories.splice(acc, 1);
+				if(acc !== -1) { avatar.accessories.splice(acc, 1) }
 
 				avatar.refresh()
 			}
 		}
 
 		playAnimation(anim) {
-			if(this.currentAnimation === anim) return;
+			if(this.currentAnimation === anim) { return }
 			this.currentAnimation = anim
-			if(this.scene) this.scene.avatar.animator.play(anim);
+			if(this.scene) { this.scene.avatar.animator.play(anim) }
 		}
 
 		stopAnimation() {
 			this.currentAnimation = null
-			if(this.scene) this.scene.avatar.animator.pause();
+			if(this.scene) { this.scene.avatar.animator.pause() }
 		}
 
 		selectAnimation(index, matchPlayerType) {
@@ -223,11 +223,11 @@ const RBXPreview = (() => {
 
 			this.dropdown.$find("[data-bind='label']").textContent = anim.name
 
-			if(!anim.promise) anim.promise = new Promise(resolve => AssetCache.loadAnimation(anim.assetId, resolve));
+			if(!anim.promise) { anim.promise = new Promise(resolve => AssetCache.loadAnimation(anim.assetId, resolve)) }
 
 			this.stopAnimation()
 			anim.promise.then(data => {
-				if(this.selectedAnimation !== index) return;
+				if(this.selectedAnimation !== index) { return }
 				if(matchPlayerType) {
 					const R15BodyPartNames = [
 						"LeftFoot", "LeftHand", "LeftLowerArm", "LeftLowerLeg", "LeftUpperArm", "LeftUpperLeg", "LowerTorso",
@@ -249,32 +249,12 @@ const RBXPreview = (() => {
 			const elem = html`<li data-id=${index}><a href=#>${name}</a></li>`
 			this.menu.append(elem)
 
-			if(index === 1) this.dropdown.style.display = "";
-			if(this.selectedAnimation == null && index === 0) this.selectAnimation(index, true);
-		}
-	}
-
-	class ModelPreviewer extends Previewer {
-		constructor() {
-			super()
-			this.container = html`
-			<div style="width:100%; height:100%">
-			</div>`
-
-			this.onInit(() => {
-				const scene = this.scene = new RBXScene.ModelScene()
-				if(this.model) scene.loadModel(this.model);
-			})
-		}
-
-		setModel(model) {
-			this.model = model
-			if(this.scene) this.scene.loadModel(this.model);
+			if(index === 1) { this.dropdown.style.display = "" }
+			if(this.selectedAnimation == null && index === 0) { this.selectAnimation(index, true) }
 		}
 	}
 
 	return {
-		AvatarPreviewer,
-		ModelPreviewer
+		AvatarPreviewer
 	}
-})();
+})()

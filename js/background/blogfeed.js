@@ -27,7 +27,7 @@ const Blogfeed = (() => {
 
 
 						STORAGE.set({ cachedBlogFeedV2: cachedFeed })
-						if(typeof cb === "function") cb(cachedFeed);
+						if(typeof cb === "function") { cb(cachedFeed) }
 					})
 				})
 			}
@@ -35,4 +35,4 @@ const Blogfeed = (() => {
 			return cachedFeed
 		}
 	}
-})();
+})()
