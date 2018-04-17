@@ -741,10 +741,10 @@ Object.assign(RBXScene, (() => {
 
 					const cframe = attInst.CFrame
 
-					if(meshInst.Offset) {
-						cframe[0] += meshInst.Offset[0]
-						cframe[1] += meshInst.Offset[1]
-						cframe[2] += meshInst.Offset[2]
+					if(meshInst.Offset) { // cframe is C1, so negate offset
+						cframe[0] -= meshInst.Offset[0]
+						cframe[1] -= meshInst.Offset[1]
+						cframe[2] -= meshInst.Offset[2]
 					}
 
 					if(meshInst.Scale) obj.scale.set(...meshInst.Scale);
