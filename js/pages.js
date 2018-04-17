@@ -1404,7 +1404,7 @@ pageInit.groups = function() {
 	}
 
 	if(!settings.groups.enabled) { return }
-
+	const notInGroup = window.location.pathname.search(/^\/groups\/group.aspx/i) !== -1
 	const rankNameCache = {}
 
 	Observer
@@ -1422,6 +1422,9 @@ pageInit.groups = function() {
 			}
 		})
 		.one("#ctl00_cphRoblox_GroupWallPane_GroupWallUpdatePanel", wall => {
+			const script = Array.from($.all("script")).find(x => x.innerHTML.indexOf("Roblox.ExileModal.InitializeGlobalVars") !== -1)
+			const groupId = script ? parseInt(script.innerHTML.replace(/^.*InitializeGlobalVars\(\d+, (\d+).*$/m, "$1"), 10) : NaN
+
 			CreateObserver(wall, { permanent: true, subtree: false })
 				.all(".AlternatingItemTemplateOdd, .AlternatingItemTemplateEven", post => {
 					post.classList.add("btr-comment")
@@ -1433,8 +1436,8 @@ pageInit.groups = function() {
 					const dateSpan = postDate.firstElementChild
 
 					const defBtns = Array.from(postBtns.children)
-					let deleteButton = defBtns.find(x => x.textContent.indexOf("Delete") !== -1)
-					let exileButton = defBtns.find(x => x.textContent.indexOf("Exile User") !== -1)
+					const deleteButton = defBtns.find(x => x.textContent.indexOf("Delete") !== -1)
+					const exileButton = defBtns.find(x => x.textContent.indexOf("Exile User") !== -1)
 
 					content.prepend(userLink)
 					content.append(postBtns)
@@ -1462,19 +1465,19 @@ pageInit.groups = function() {
 								onAccept() { ${deleteButton.href.substring(11)} }
 							});`
 						}
-					} else {
-						deleteButton = html`<a class="btn-control btn-control-medium disabled">Delete</a>`
-						if(exileButton) { exileButton.before(deleteButton) }
-						else { postBtns.append(deleteButton) }
+					} else if(!notInGroup) {
+						const btn = html`<a class="btn-control btn-control-medium disabled">Delete</a>`
+						if(exileButton) { exileButton.before(btn) }
+						else { postBtns.append(btn) }
 					}
 
 					if(exileButton) {
 						exileButton.textContent = "Exile User"
 						exileButton.classList.add("btn-control", "btn-control-medium")
 						exileButton.style = ""
-					} else {
-						exileButton = html`<a class="btn-control btn-control-medium disabled">Exile User</a>`
-						postBtns.append(exileButton)
+					} else if(!notInGroup) {
+						const btn = html`<a class="btn-control btn-control-medium disabled">Exile User</a>`
+						postBtns.append(btn)
 					}
 
 					dateSpan.classList.add("btr-groupwallpostdate")
@@ -1485,16 +1488,10 @@ pageInit.groups = function() {
 						dateSpan.title = fixedDate.$format("M/D/YYYY h:mm:ss A (T)")
 					}
 
-					let groupId
-					let userId
-					try {
-						groupId = $("#ClanInvitationData").getAttribute("data-group-id") || document.location.search.match("gid=(\\d+)")[1]
-						userId = userLink.$find("a").href.match(/users\/(\d+)/)[1]
-					} catch(ex) {
-						// Do nothing
-					}
-
-					if(groupId && userId) {
+					const anchor = userLink.$find("a")
+					const userId = anchor ? parseInt(anchor.href.replace(/^.*\/users\/(\d+)\/.*$/, "$1"), 10) : NaN
+					
+					if(Number.isSafeInteger(groupId) && Number.isSafeInteger(userId)) {
 						const span = html`<span class="btr-grouprank"></span>`
 						userLink.append(span)
 						
