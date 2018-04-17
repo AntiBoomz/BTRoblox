@@ -1742,6 +1742,7 @@ pageInit.profile = function(userId) {
 		.one(".profile-container .rbx-tabs-horizontal", cont => {
 			cont.before(left, right, bottom)
 			cont.parentNode.classList.add("btr-profile-container")
+			cont.setAttribute("ng-if", "false") // Let's make angular clean it up :)
 		})
 		.one(".profile-about-content", desc => {
 			left.$find(".placeholder-desc").replaceWith(desc)
@@ -2153,6 +2154,7 @@ pageInit.profile = function(userId) {
 				const json = await response.json()
 
 				pager.setMaxPage(Math.floor((json.NumberOfGroups - 1) / pageSize) + 1)
+				if(json.NumberOfGroups === 0) { return }
 				hlist.$empty()
 
 				json.Groups.forEach((item, index) => {
