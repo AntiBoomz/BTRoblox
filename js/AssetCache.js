@@ -9,7 +9,7 @@ const AssetCache = (() => {
 		const cache = {}
 
 		return (url, cb) => {
-			if(!Number.isNaN(url)) { url = `https://www.roblox.com/asset/?id=${url}` }
+			if(Number.isSafeInteger(+url)) { url = `https://www.roblox.com/asset/?id=${url}` }
 			try { new URL(url) } catch(ex) { throw ex }
 
 			let promise = cache[url]
