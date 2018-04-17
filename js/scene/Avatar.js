@@ -41,7 +41,7 @@ Object.assign(RBXScene, (() => {
 	}
 
 	function createTexture(img) {
-		if(!img) img = createImage();
+		if(!img) { img = createImage() }
 
 		const texture = new THREE.Texture(img)
 		texture.minFilter = THREE.LinearFilter
@@ -72,7 +72,7 @@ Object.assign(RBXScene, (() => {
 
 			stack.forEach(img => {
 				if(img instanceof HTMLCanvasElement || img.src !== "") {
-					ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+					ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
 				}
 			})
 
@@ -153,7 +153,7 @@ Object.assign(RBXScene, (() => {
 			const parts = {}
 
 			const recursePart = part => {
-				if(part.Name in parts) return parts[part.Name];
+				if(part.Name in parts) { return parts[part.Name] }
 				const partData = {
 					name: part.Name,
 					children: [],
@@ -232,7 +232,7 @@ Object.assign(RBXScene, (() => {
 		}
 
 		play(anim) {
-			if(anim) this.anim = anim;
+			if(anim) { this.anim = anim }
 
 			this.playing = true
 			this.timePosition = 0
@@ -249,7 +249,7 @@ Object.assign(RBXScene, (() => {
 		}
 
 		update() {
-			if(!this.playing || !this.anim || !this.joints) return;
+			if(!this.playing || !this.anim || !this.joints) { return }
 
 			const time = performance.now() / 1000
 			const delta = time - this.previousUpdate
@@ -263,8 +263,8 @@ Object.assign(RBXScene, (() => {
 					this.playing = false
 					this.timePosition = 0
 
-					if(this.onstop) this.onstop()
-					return;
+					if(this.onstop) { this.onstop() }
+					return
 				}
 			}
 
@@ -277,7 +277,7 @@ Object.assign(RBXScene, (() => {
 
 			const nextQuat = new THREE.Quaternion()
 			Object.entries(this.anim.keyframes).forEach(([name, keyframes]) => {
-				if(!this.joints[name]) return;
+				if(!this.joints[name]) { return }
 
 				const joint = this.joints[name].joint
 				const next = keyframes.find(x => x.time >= currentTime)
@@ -308,7 +308,7 @@ Object.assign(RBXScene, (() => {
 	class CompositeTexture {
 		constructor(hasThree, constructorFn, ...args) {
 			if(hasThree) {
-				if(!compositeRenderer) compositeRenderer = new THREE.WebGLRenderer({ alpha: true });
+				if(!compositeRenderer) { compositeRenderer = new THREE.WebGLRenderer({ alpha: true }) }
 
 				this.scene = new THREE.Scene()
 				this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100)
@@ -330,7 +330,7 @@ Object.assign(RBXScene, (() => {
 			this.canvas.width = this.width
 			this.canvas.height = this.height
 
-			if(this.camera) this.camera.updateProjectionMatrix();
+			if(this.camera) { this.camera.updateProjectionMatrix() }
 
 			this.update()
 		}
@@ -349,7 +349,7 @@ Object.assign(RBXScene, (() => {
 			}
 
 			this.beforeComposite.forEach(fn => fn())
-			if(this.scene) ctx.drawImage(compositeRenderer.domElement, 0, 0, this.width, this.height);
+			if(this.scene) { ctx.drawImage(compositeRenderer.domElement, 0, 0, this.width, this.height) }
 			this.afterComposite.forEach(fn => fn())
 
 			this.canvas.dispatchEvent(new CustomEvent("compositeupdate"))
@@ -593,7 +593,7 @@ Object.assign(RBXScene, (() => {
 			this.r6Composite.update()
 
 			Object.entries(this.r15Composites).forEach(([name, composite]) => {
-				if(!bodyColors[name]) return;
+				if(!bodyColors[name]) { return }
 
 				composite.background = bodyColors[name]
 				composite.update()
@@ -618,7 +618,7 @@ Object.assign(RBXScene, (() => {
 
 						R6Folder.Children.filter(x => x.ClassName === "CharacterMesh").forEach(charmesh => {
 							const target = BodyPartEnum[charmesh.BodyPart]
-							if(!target) return;
+							if(!target) { return }
 
 							this.bodyparts.push({
 								target,
@@ -634,7 +634,7 @@ Object.assign(RBXScene, (() => {
 					if(R15Folder) {
 						R15Folder.Children.filter(x => x.ClassName === "MeshPart").forEach(part => {
 							const target = part.Name
-							if(R15BodyPartNames.indexOf(target) === -1) return;
+							if(R15BodyPartNames.indexOf(target) === -1) { return }
 
 							const bodypart = {
 								target,
@@ -669,6 +669,7 @@ Object.assign(RBXScene, (() => {
 				if(assetId in HeadMeshes) {
 					const name = HeadMeshes[assetId]
 					const meshUrl = chrome.runtime.getURL(`res/previewer/heads/${name}.mesh`)
+
 					this.bodyparts.push({
 						asset,
 						target: "Head",
@@ -679,7 +680,8 @@ Object.assign(RBXScene, (() => {
 				} else {
 					AssetCache.loadModel(assetId, model => {
 						const mesh = model.find(x => x.ClassName === "SpecialMesh")
-						if(!mesh) return;
+						if(!mesh) { return }
+
 						this.bodyparts.push({
 							asset,
 							target: "Head",
@@ -695,7 +697,8 @@ Object.assign(RBXScene, (() => {
 			case 18: // Face
 				AssetCache.loadModel(assetId, model => {
 					const face = model.find(x => x.ClassName === "Decal" && x.Name === "face")
-					if(!face) return;
+					if(!face) { return }
+
 					this.bodyparts.push({
 						asset,
 						isFace: true,
@@ -705,29 +708,29 @@ Object.assign(RBXScene, (() => {
 
 					this.refreshBodyParts()
 				})
-				break;
+				break
 			// Accessories
 			case 8: case 41: case 42: case 43:
 			case 44: case 45: case 46: case 47:
 				AssetCache.loadModel(assetId, model => {
 					const accInst = model.find(x => x.ClassName === "Accessory")
-					if(!accInst) return;
+					if(!accInst) { return }
 
 					const hanInst = accInst.Children.find(x => x.Name === "Handle")
-					if(!hanInst) return;
+					if(!hanInst) { return }
 
 					const meshInst = hanInst.Children.find(x => x.ClassName === "SpecialMesh")
 					const attInst = hanInst.Children.find(x => x.ClassName === "Attachment")
-					if(!meshInst) return console.warn(`[RBXScene.Avatar] Missing meshInst for ${assetId}`);
+					if(!meshInst) { return console.warn(`[RBXScene.Avatar] Missing meshInst for ${assetId}`) }
 
-					if(!attInst) return console.warn(`[RBXScene.Avatar] Missing attInst for ${assetId}`);
+					if(!attInst) { return console.warn(`[RBXScene.Avatar] Missing attInst for ${assetId}`) }
 
 					const attName = attInst.Name
 					const meshId = RBXParser.parseContentUrl(meshInst.MeshId)
 					const texId = RBXParser.parseContentUrl(meshInst.TextureId)
 
-					if(!meshId) return console.warn(`[RBXScene.Avatar] Invalid meshId for ${assetId} '${meshInst.MeshId}'`);
-					if(!texId) console.warn(`[RBXScene.Avatar] Invalid texId for ${assetId} '${meshInst.MeshId}'`);
+					if(!meshId) { return console.warn(`[RBXScene.Avatar] Invalid meshId for ${assetId} '${meshInst.MeshId}'`) }
+					if(!texId) { console.warn(`[RBXScene.Avatar] Invalid texId for ${assetId} '${meshInst.MeshId}'`) }
 
 					const tex = createTexture()
 					const mat = new THREE.MeshLambertMaterial({ map: tex })
@@ -737,7 +740,7 @@ Object.assign(RBXScene, (() => {
 					AssetCache.loadMesh(meshId, mesh => applyMesh(obj, mesh))
 
 					tex.image.src = solidColorDataURL(163, 162, 165)
-					if(texId) AssetCache.loadImage(texId, url => { tex.image.src = url });
+					if(texId) { AssetCache.loadImage(texId, url => { tex.image.src = url }) }
 
 					const cframe = attInst.CFrame
 
@@ -747,7 +750,7 @@ Object.assign(RBXScene, (() => {
 						cframe[2] -= meshInst.Offset[2]
 					}
 
-					if(meshInst.Scale) obj.scale.set(...meshInst.Scale);
+					if(meshInst.Scale) { obj.scale.set(...meshInst.Scale) }
 
 					const matrix = InvertCFrame(CFrame(...cframe))
 					obj.position.setFromMatrixPosition(matrix)
@@ -756,43 +759,42 @@ Object.assign(RBXScene, (() => {
 					this.accessories.push({ attName, obj, asset })
 
 					const attachment = this.attachments[attName]
-					if(attachment) attachment.obj.add(obj);
+					if(attachment) { attachment.obj.add(obj) }
 				})
-				break;
+				break
 			case 11:
 				AssetCache.loadModel(assetId, model => {
 					const shirt = model.find(x => x.ClassName === "Shirt")
-					if(!shirt) return;
+					if(!shirt) { return }
 
 					const texId = RBXParser.parseContentUrl(shirt.ShirtTemplate)
-					if(texId) AssetCache.loadImage(texId, url => { this.textures.shirt.image.src = url });
+					if(texId) { AssetCache.loadImage(texId, url => { this.textures.shirt.image.src = url }) }
 				})
-				break;
+				break
 			case 2:
 				AssetCache.loadModel(assetId, model => {
 					const tshirt = model.find(x => x.ClassName === "ShirtGraphic")
-					if(!tshirt) return;
+					if(!tshirt) { return }
 
 					const texId = RBXParser.parseContentUrl(tshirt.Graphic)
-					if(texId) AssetCache.loadImage(texId, url => { this.textures.tshirt.image.src = url });
+					if(texId) { AssetCache.loadImage(texId, url => { this.textures.tshirt.image.src = url }) }
 				})
-				break;
+				break
 			case 12:
 				AssetCache.loadModel(assetId, model => {
 					const pants = model.find(x => x.ClassName === "Pants")
-					if(!pants) return;
+					if(!pants) { return }
 
 					const texId = RBXParser.parseContentUrl(pants.PantsTemplate)
-					if(texId) AssetCache.loadImage(texId, url => { this.textures.pants.image.src = url });
+					if(texId) { AssetCache.loadImage(texId, url => { this.textures.pants.image.src = url }) }
 				})
-				break;
-			default:
-				console.log("Unimplemented asset type", assetTypeId, assetId);
+				break
+			default: console.log("Unimplemented asset type", assetTypeId, assetId)
 			}
 		}
 
 		setPlayerType(playerType) {
-			if(this.playerType === playerType) return;
+			if(this.playerType === playerType) { return }
 			this.playerType = playerType
 			this.refresh()
 		}
@@ -801,15 +803,15 @@ Object.assign(RBXScene, (() => {
 			const ptKey = ++this.ptDebounce
 
 			avatarTreePromise.then(([R6Tree, R15Tree]) => {
-				if(this.ptDebounce !== ptKey) return;
+				if(this.ptDebounce !== ptKey) { return }
 
 				if(this.root) {
 					this.model.remove(this.root)
 
 					const recDispose = tar => {
 						if(tar.isMesh) {
-							if(tar.geometry) tar.geometry.dispose();
-							if(tar.material) tar.material.dispose();
+							if(tar.geometry) { tar.geometry.dispose() }
+							if(tar.material) { tar.material.dispose() }
 						}
 
 						tar.children.forEach(recDispose)
@@ -883,7 +885,7 @@ Object.assign(RBXScene, (() => {
 
 				this.accessories.forEach(acc => {
 					const attachment = acc.attachment = this.attachments[acc.attName]
-					if(attachment) attachment.obj.add(acc.obj);
+					if(attachment) { attachment.obj.add(acc.obj) }
 				})
 
 				this.refreshBodyParts()
@@ -896,18 +898,18 @@ Object.assign(RBXScene, (() => {
 			const changedAttachments = {}
 
 			this.bodyparts.forEach(bp => {
-				if(bp.hidden || (bp.type && bp.type !== this.playerType)) return;
+				if(bp.hidden || (bp.type && bp.type !== this.playerType)) { return }
 				if(bp.meshId || bp.baseTexId || bp.overTexId) {
 					const change = changedParts[bp.target] = changedParts[bp.target] || {}
-					if(bp.meshId) change.meshId = bp.meshId;
-					if(bp.baseTexId) change.baseTexId = bp.baseTexId;
-					if(bp.overTexId) change.overTexId = bp.overTexId;
-					if(bp.scale) change.scale = bp.scale;
+					if(bp.meshId) { change.meshId = bp.meshId }
+					if(bp.baseTexId) { change.baseTexId = bp.baseTexId }
+					if(bp.overTexId) { change.overTexId = bp.overTexId }
+					if(bp.scale) { change.scale = bp.scale }
 				}
 
 				if(bp.joints) {
 					bp.joints.forEach(data => {
-						if(!changedJoints[data.jointName]) changedJoints[data.jointName] = {};
+						if(!changedJoints[data.jointName]) { changedJoints[data.jointName] = {} }
 						changedJoints[data.jointName][bp.target] = data.cframe
 					})
 				}
@@ -943,15 +945,15 @@ Object.assign(RBXScene, (() => {
 				if(baseImg && baseImg.rbxTexId !== baseTexId) {
 					baseImg.rbxTexId = baseTexId
 					baseImg.src = baseImg.defaultSrc || ""
-					if(baseTexId > 0) AssetCache.loadImage(baseTexId, url => baseImg.rbxTexId === baseTexId && (baseImg.src = url));
-					else baseImg.$trigger("load"); // Need to trigger load to update textures
+					if(baseTexId > 0) { AssetCache.loadImage(baseTexId, url => baseImg.rbxTexId === baseTexId && (baseImg.src = url)) }
+					else { baseImg.$trigger("load") } // Need to trigger load to update textures
 				}
 
 				if(overImg && overImg.rbxTexId !== overTexId) {
 					overImg.rbxTexId = overTexId
 					overImg.src = overImg.defaultSrc || ""
-					if(overTexId > 0) AssetCache.loadImage(overTexId, url => overImg.rbxTexId === overTexId && (overImg.src = url));
-					else overImg.$trigger("load"); // Need to trigger load to update textures
+					if(overTexId > 0) { AssetCache.loadImage(overTexId, url => overImg.rbxTexId === overTexId && (overImg.src = url)) }
+					else { overImg.$trigger("load") } // Need to trigger load to update textures
 				}
 			})
 
