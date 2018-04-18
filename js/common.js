@@ -100,7 +100,7 @@ const PAGE_INFO = {
 		css: ["inventory.css"]
 	},
 	itemdetails: {
-		matches: ["^/catalog/(\\d+)/", "^/library/(\\d+)/"],
+		matches: ["^/(?:catalog|library|game-pass)/(\\d+)/"],
 		css: ["itemdetails.css"]
 	},
 	messages: {
