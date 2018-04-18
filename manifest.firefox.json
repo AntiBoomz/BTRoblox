@@ -4,7 +4,7 @@
 	"name": "BTRoblox",
 	"short_name": "BTR",
 	"description": "Better Roblox - Making Roblox better!",
-	"version": "2.4.2",
+	"version": "2.4.3",
 
 	"icons": {
 		"128":"res/icon_128.png"
