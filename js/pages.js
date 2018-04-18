@@ -1174,16 +1174,11 @@ pageInit.catalog = function() {
 		if(!promise) { promise = productCache[assetId] = getProductInfo(assetId) }
 
 		promise.then(data => {
-			const updated = `${$.dateSince(data.Updated, startDate)} ago`
-			const sales = data.Sales
-
 			const ulabel = self.$find(".btr-updated-label")
-			ulabel.textContent = updated
-			ulabel.title = updated
+			ulabel.textContent = ulabel.title = `${$.dateSince(data.Updated, startDate)} ago`
 
 			const slabel = self.$find(".btr-sales-label")
-			slabel.textContent = sales
-			slabel.title = sales
+			slabel.textContent = slabel.title = FormatNumber(data.Sales)
 		})
 	})
 }

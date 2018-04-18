@@ -71,8 +71,9 @@ function onDocumentReady(cb) {
 	}
 }
 
-const RobuxToUSD = amt => (amt * DOLLARS_PER_ROBUX_RATIO).toFixed(2)
-	.replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/yg, "$1,")
+const FormatNumber = num => String(num).replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/yg, "$1,")
+const RobuxToUSD = amt => FormatNumber((amt * DOLLARS_PER_ROBUX_RATIO).toFixed(2))
+	
 
 function Init() {
 	InjectJS.listen("INJECT_INIT", () => InjectJS._start())
