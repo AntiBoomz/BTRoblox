@@ -1447,19 +1447,18 @@ pageInit.groups = function() {
 						deleteButton.classList.add("btn-control", "btn-control-medium")
 						deleteButton.style = ""
 
-						if(deleteButton.href.startsWith("javascript")) {
-							deleteButton.href = `
-							javascript:Roblox.GenericConfirmation.open({
-								titleText: "Delete This Comment?",
-								bodyContent: "Are you sure you wish to delete this comment?",
-								acceptText: "Delete",
-								declineText: "Cancel",
-								escClose: true,
-								acceptColor: Roblox.GenericConfirmation.green,
-								imageUrl: "/images/Icons/img-alert.png",
-								onAccept() { ${deleteButton.href.substring(11)} }
-							});`
-						}
+						deleteButton.setAttribute("onclick", `
+						const self = this;
+						return Roblox.GenericConfirmation.open({
+							titleText: "Delete This Comment?",
+							bodyContent: "Are you sure you wish to delete this comment?",
+							acceptText: "Delete",
+							declineText: "Cancel",
+							escClose: true,
+							acceptColor: Roblox.GenericConfirmation.green,
+							imageUrl: "/images/Icons/img-alert.png",
+							onAccept() { self.removeAttribute("onclick"); self.click(); }
+						}), false`)
 					} else if(!notInGroup) {
 						const btn = html`<a class="btn-control btn-control-medium disabled">Delete</a>`
 						if(exileButton) { exileButton.before(btn) }
