@@ -19,7 +19,12 @@
 	try { Object.assign(groupShoutCache, JSON.parse(localStorage.getItem("groupShoutCache"))) }
 	catch(ex) {}
 
+	let isChecking = false
+
 	const executeCheck = async () => {
+		if(isChecking) { return }
+		isChecking = true
+
 		let doc
 		try {
 			const response = await fetch("https://www.roblox.com/Feeds/GetUserFeed", { credentials: "include" })
@@ -30,6 +35,8 @@
 			console.error(ex)
 			return
 		}
+
+		isChecking = false
 
 		const shoutFilters = await shoutFilterPromise
 		const items = doc.documentElement.querySelectorAll(".feeds .list-item")
@@ -51,14 +58,13 @@
 			if(Number.isNaN(date)) { return console.warn("Failed to parse date") }
 
 			const lastShoutDate = groupShoutCache[groupId]
-			if(date > lastShoutDate) {
+			if(!lastShoutDate || date > lastShoutDate) {
 				groupShoutCache[groupId] = date
-				localStorage.setItem("groupShoutCache", JSON.stringify(groupShoutCache))
 
 				const skipNotif = shoutFilters.mode === "blacklist" && shoutFilters.blacklist.indexOf(groupId) !== -1
 					|| shoutFilters.mode === "whitelist" && shoutFilters.whitelist.indexOf(groupId) === -1
 					
-				if(lastShoutDate && !skipNotif) {
+				if(!groupShoutCache.firstInstall && !skipNotif) {
 					chrome.notifications.create(`groupshout-${groupId}`, {
 						type: "basic",
 						title: groupName,
@@ -79,6 +85,9 @@
 				}
 			}
 		})
+
+		delete groupShoutCache.firstInstall
+		localStorage.setItem("groupShoutCache", JSON.stringify(groupShoutCache))
 	}
 
 	chrome.notifications.onClicked.addListener(notifId => {
@@ -94,25 +103,31 @@
 
 
 	let previousCheck = 0
+	let wasEnabled = null
 
 	const onUpdate = () => {
 		Settings.get(settings => {
-			if(settings.groups.enabled && settings.groups.shoutAlerts) {
-				chrome.alarms.get("GroupShouts", alarm => {
-					if(!alarm) {
-						chrome.alarms.create("GroupShouts", {
-							delayInMinutes: 1,
-							periodInMinutes: 1
-						})
-					}
-				})
+			const isEnabled = settings.groups.enabled && settings.groups.shoutAlerts
+			if(wasEnabled !== isEnabled) {
+				wasEnabled = isEnabled
 
-				if(Date.now() - previousCheck > 1000) { // Stop check flooding on change
-					previousCheck = Date.now()
-					executeCheck()
+				if(isEnabled) {
+					chrome.alarms.get("GroupShouts", alarm => {
+						if(!alarm) {
+							chrome.alarms.create("GroupShouts", {
+								delayInMinutes: 1,
+								periodInMinutes: 1
+							})
+						}
+					})
+	
+					if(Date.now() - previousCheck > 1000) { // Stop check flooding on change
+						previousCheck = Date.now()
+						executeCheck()
+					}
+				} else {
+					chrome.alarms.clear("GroupShouts")
 				}
-			} else {
-				chrome.alarms.clear("GroupShouts")
 			}
 		})
 	}
@@ -174,5 +189,12 @@
 	})
 
 	Settings.onChange(onUpdate)
-	chrome.runtime.onInstalled.addListener(onUpdate)
+	chrome.runtime.onInstalled.addListener(details => {
+		if(details.reason === "install") {
+			groupShoutCache.firstInstall = true
+			localStorage.setItem("groupShoutCache", JSON.stringify(groupShoutCache))
+		}
+
+		onUpdate()
+	})
 }
