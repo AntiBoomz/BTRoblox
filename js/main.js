@@ -906,7 +906,10 @@ function Init() {
 					ev.currentTarget.classList.add("selected")
 				})
 				
+				let lastValue
 				input.$on("keyup", () => {
+					if(input.value === lastValue) { return }
+					lastValue = input.value
 					updateResults(input.value.toLowerCase(), list)
 				})
 
