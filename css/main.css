@@ -1035,3 +1035,9 @@ body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
 #downloadInstallerIFrame {
 	border: none;
 }
+
+.btr-hide-ads .ads-container,.btr-hide-ads .abp,.btr-hide-ads .abp-spacer,.btr-hide-ads .abp-container,
+.btr-hide-ads .top-abp-container,.btr-hide-ads #AdvertisingLeaderboard,.btr-hide-ads .btr-hide-ads #AdvertisementRight,
+.btr-hide-ads #MessagesAdSkyscraper,.btr-hide-ads .Ads_WideSkyscraper,.btr-hide-ads .profile-ads-container,.btr-hide-ads #ad {
+	display: none !important;
+}

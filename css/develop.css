@@ -19,35 +19,35 @@
 	width: 630px;
 }
 
-.item-table .btr-showcase-status {
+.item-table .btr-listed-status {
 	margin-top: 1px;
 
 	padding-left: 18px;
 	font-size: 13px;
-	background-image: url(/res/showcase-status.png);
+	background-image: url(/res/icon-listed.png);
 	background-repeat: no-repeat;
 	display: block;
 	height: 15px;
 }
 
-.item-table[data-in-showcase$='alse'] .btr-showcase-status {
+.item-table[data-in-showcase$='alse'] .btr-listed-status {
 	background-position:0 -30px;
 }
 
-.item-table[data-in-showcase$='alse'] .btr-showcase-status:hover {
+.item-table[data-in-showcase$='alse'] .btr-listed-status:hover {
 	background-position: 0 -45px;
 	text-decoration: none;
 }
 
-.item-table:not([data-in-showcase$='alse']) .btr-showcase-status:hover {
+.item-table:not([data-in-showcase$='alse']) .btr-listed-status:hover {
 	background-position: 0 -15px;
 	text-decoration: none;
 }
 
-.item-table[data-in-showcase$='alse'] .btr-showcase-status:after {
-	content: "Hidden";
+.item-table[data-in-showcase$='alse'] .btr-listed-status:after {
+	content: "Unlisted";
 }
 
-.item-table:not([data-in-showcase$='alse']) .btr-showcase-status:after {
-	content: "Visible";
+.item-table:not([data-in-showcase$='alse']) .btr-listed-status:after {
+	content: "Listed";
 }

@@ -91,14 +91,13 @@ function csrfFetch(url, init) {
 
 	if(cachedXsrfToken === undefined) {
 		cachedXsrfToken = null
-		Observer.one(
-			"script:not([src])",
-			x => x.textContent.indexOf("XsrfToken.setToken") !== -1,
-			x => {
-				const match = x.textContent.match(/setToken\('(.*)'\)/)
-				if(match) { cachedXsrfToken = match[1] }
+		document.$watch("body").$then().$watchAll("script", (script, stop) => {
+			const match = script.innerHTML.match(/XsrfToken.setToken\('([^']+)'\)/)
+			if(match) {
+				cachedXsrfToken = match[1]
+				stop()
 			}
-		)
+		})
 	}
 
 	init.headers["X-CSRF-TOKEN"] = cachedXsrfToken
@@ -429,42 +428,33 @@ function Linkify(elem) {
 }
 
 pageInit.home = function() {
-	Observer.all(".feeds .list-item .text-date-hint", span => {
-		const fixedDate = RobloxTime(span.textContent.replace("|", ""))
-		if(fixedDate) {
-			span.setAttribute("btr-timestamp", "")
-			span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
-		}
-	})
+	document.$watch("#feed-container").$then().$watch(".feeds").$then()
+		.$watchAll(".list-item", item => {
+			const span = item.$find(".text-date-hint")
+			if(!span) { return } // Feed can have other kind of items too
+
+			const fixedDate = RobloxTime(span.textContent.replace("|", ""))
+			if(fixedDate) {
+				span.setAttribute("btr-timestamp", "")
+				span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
+			}
+		})
 }
 
 pageInit.money = function() {
 	if(settings.general.robuxToDollars) {
-		Observer
-			.one("#MyTransactions_tab table > tbody", table => {
-				CreateObserver(table, { permanent: true, subtree: false })
-					.all(".datarow", item => {
-						const label = item.$find(".Amount .robux")
-						if(!label) { return }
-						const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
-						label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
-					})
+		document.$watch("#MyTransactions_tab").$then().$watch("table > tbody").$then()
+			.$watchAll(".datarow", item => {
+				item.$watch(".Amount .robux", label => {
+					const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+					label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
+				})
 			})
-			.one("#Summary_tab table > tbody", table => {
-				CreateObserver(table)
-					.one(".robux", label => {
-						const usdLabel = html`<span style=color:#060;font-size:12px;font-weight:bold;></span>`
-						label.after(usdLabel)
-
-						const update = () => {
-							const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
-							usdLabel.textContent = ` ($${usd})`
-						}
-
-						new MutationObserver(update).observe(label, { childList: true })
-						update()
-					})
-					.all("td.Credit", label => {
+		
+		document.$watch("#Summary_tab").$then().$watch("table > tbody").$then()
+			.$watchAll("tr", row => {
+				if(!row.className) {
+					row.$watch(".Credit", label => {
 						const update = () => {
 							if(label.$find("span")) { return }
 							const text = label.textContent.replace(/,/g, "").trim()
@@ -476,30 +466,53 @@ pageInit.money = function() {
 						new MutationObserver(update).observe(label, { childList: true })
 						update()
 					})
+				} else if(row.className === "total") {
+					row.$watch(".robux", label => {
+						const usdLabel = html`<span style=color:#060;font-size:12px;font-weight:bold;></span>`
+						label.after(usdLabel)
+	
+						const update = () => {
+							const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+							usdLabel.textContent = ` ($${usd})`
+						}
+	
+						new MutationObserver(update).observe(label, { childList: true })
+						update()
+					})
+				}
 			})
 	}
 }
 
 pageInit.messages = function() {
-	Observer.one(".roblox-messages-container", container => {
-		CreateObserver(container, { permanent: true })
-			.all(".messageDivider", row => {
-				const span = row.$find(".message-summary-date")
-				const fixedDate = RobloxTime(span.textContent.replace("|", ""))
-				if(fixedDate) {
-					span.setAttribute("btr-timestamp", "")
-					span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
-				}
-			})
-			.all(".roblox-message-body", msg => {
-				const span = msg.$find(".subject .date")
-				const fixedDate = RobloxTime(span.textContent.replace("|", ""))
-				if(fixedDate) {
-					span.setAttribute("btr-timestamp", "")
-					span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
-				}
-			})
-	})
+	document.$watch(".roblox-messages-container").$then()
+		.$watchAll(".rbx-tab-content", container => {
+			const inbox = container.$find("#MessagesInbox")
+			if(inbox) {
+				inbox.$watchAll(".roblox-message-row", row => {
+					const span = row.$find(".message-summary-date")
+					if(!span) { return }
+					const fixedDate = RobloxTime(span.textContent.replace("|", ""))
+					if(fixedDate) {
+						span.setAttribute("btr-timestamp", "")
+						span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
+					}
+				})
+			}
+
+			const content = container.$find(".tab-content")
+			if(content) {
+				content.$watch(">.roblox-message-body", body => {
+					const span = body.$find(".message-detail .date")
+					if(!span) { return }
+					const fixedDate = RobloxTime(span.textContent.replace("|", ""))
+					if(fixedDate) {
+						span.setAttribute("btr-timestamp", "")
+						span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
+					}
+				})
+			}
+		})
 
 	modifyTemplate("messages-nav", template => {
 		const curPage = template.$find(".CurrentPage")
@@ -515,15 +528,15 @@ pageInit.messages = function() {
 }
 
 pageInit.develop = function() {
-	Observer.one("#MyCreationsTab", tab => {
-		const observer = CreateObserver(tab, { permanent: true })
+	document.$watch("#build-page").$then().$watch(".items-container").$then()
+		.$watchAll(".item-table", table => {
+			if(table.dataset.type !== "universes") { return }
+			const btn = html`<tr><td><a class='btr-listed-status'/></td></tr>`
+			table.$find(".details-table>tbody").append(btn)
 
-		observer.all(".item-table[data-in-showcase][data-type='universes']", table => {
-			table.$find(".details-table>tbody").append(html`<tr><td><a class='btr-showcase-status'/></td></tr>`)
-
-			table.$on("click", ".btr-showcase-status", () => {
-				const placeId = parseInt(table.getAttribute("data-rootplace-id"), 10)
-				const isVisible = table.getAttribute("data-in-showcase").toLowerCase() === "true"
+			btn.$on("click", () => {
+				const placeId = parseInt(table.dataset.rootplaceId, 10)
+				const isVisible = table.dataset.inShowcase.toLowerCase() === "true"
 
 				if(Number.isNaN(placeId)) { return }
 
@@ -539,26 +552,24 @@ pageInit.develop = function() {
 				})
 			})
 		})
-	})
 }
 
 pageInit.itemdetails = function(assetId) {
 	if(!settings.itemdetails.enabled) { return }
 
 	if(settings.general.robuxToDollars) {
-		Observer
-			.one(".icon-robux-price-container .text-robux-lg", label => {
-				const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
-				label.after(
-					html`<span class=text-robux-lg>&nbsp;($${usd})</span>`
-				)
-			})
-			.one(".recommended-items .item-card-price .text-robux", label => {
+		document.$watch(".icon-robux-price-container .text-robux-lg", label => {
+			const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+			label.after(
+				html`<span class=text-robux-lg>&nbsp;($${usd})</span>`
+			)
+		})
+			.$watch(".recommended-items .item-card-price .text-robux", label => {
 				label.style.display = "inline"
 				label.textContent += ` ($\{{::(item.Item.Price*${DOLLARS_PER_ROBUX_RATIO})|number:2}})`
 				label.title = "R$ " + label.textContent
 			})
-			.one("#item-average-price", label => {
+			.$watch("#item-average-price", label => {
 				const observer = new MutationObserver(() => {
 					observer.disconnect()
 					const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
@@ -567,429 +578,423 @@ pageInit.itemdetails = function(assetId) {
 
 				observer.observe(label, { childList: true })
 			})
-			.one(".resellers", resellers => {
-				CreateObserver(resellers, { permanent: true })
-					.all(".list-item", item => {
-						const label = item.$find(".reseller-price-container .text-robux")
-						const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
-						label.textContent += ` ($${usd})`
-					})
-			})
+			.$watch(".resellers .vlist").$then()
+				.$watchAll(".list-item", item => {
+					const label = item.$find(".reseller-price-container .text-robux")
+					const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+					label.textContent += ` ($${usd})`
+				})
 	}
 
-	Observer
-		.one("#AjaxCommentsContainer .comments", cont => {
-			CreateObserver(cont, { permanent: true, subtree: false })
-				.all(".comment-item", comment => {
-					const span = comment.$find(".text-date-hint")
-					const fixedDate = RobloxTime(span.textContent.replace("|", ""))
-					if(fixedDate) {
-						span.setAttribute("btr-timestamp", "")
-						span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
-					}
-				})
+	document.$watch("#AjaxCommentsContainer").$then().$watch(".comments").$then()
+		.$watchAll(".comment-item", comment => {
+			const span = comment.$find(".text-date-hint")
+			const fixedDate = RobloxTime(span.textContent.replace("|", ""))
+			if(fixedDate) {
+				span.setAttribute("btr-timestamp", "")
+				span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
+			}
 		})
-		.one(".item-type-field-container .field-content", typeLabel => {
-			const assetTypeName = typeLabel.textContent.trim()
-			const assetTypeId = AssetTypeIds.indexOf(assetTypeName)
-			if(assetTypeId === -1) { return }
+	
+	document.$watch(".item-type-field-container .field-content", typeLabel => {
+		const assetTypeName = typeLabel.textContent.trim()
+		const assetTypeId = AssetTypeIds.indexOf(assetTypeName)
+		if(assetTypeId === -1) { return }
 
-			const canAccessPromise = new Promise(resolve => {
-				if(assetTypeId !== 10) { return resolve(true) }
-				Observer.one("#item-container", itemCont => {
-					if(itemCont.dataset.userassetId) { return resolve(true) }
-					Observer.one(".price-container .action-button > *", btn => {
-						resolve(btn.nodeName === "BUTTON" && !btn.disabled)
-					})
+		const canAccessPromise = new Promise(resolve => {
+			if(assetTypeId !== 10) { return resolve(true) }
+			document.$watch("#item-container", itemCont => {
+				if(itemCont.dataset.userassetId) { return resolve(true) }
+				document.$watch(".price-container .action-button > button", btn => {
+					resolve(btn.nodeName === "BUTTON" && !btn.disabled)
 				})
 			})
+		})
 
-			const gCPCache = {}
-			const getCachedProductInfo = id => (gCPCache[id] = gCPCache[id] || getProductInfo(id))
+		const gCPCache = {}
+		const getCachedProductInfo = id => (gCPCache[id] = gCPCache[id] || getProductInfo(id))
 
-			execScripts(["js/RBXParser.js", "js/AssetCache.js"], () => {
-				const previewAnim = settings.itemdetails.animationPreview && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1
-				const previewAsset = true && WearableAssetTypeIds.indexOf(assetTypeId) !== -1
+		execScripts(["js/RBXParser.js", "js/AssetCache.js"], () => {
+			const previewAnim = settings.itemdetails.animationPreview && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1
+			const previewAsset = true && WearableAssetTypeIds.indexOf(assetTypeId) !== -1
 
-				if(previewAnim || previewAsset || assetTypeId === 32) {
-					execScripts(["js/RBXPreview.js"], () => {
-						let preview
-						let container
+			if(previewAnim || previewAsset || assetTypeId === 32) {
+				execScripts(["js/RBXPreview.js"], () => {
+					let preview
+					let container
 
-						const toggleEnabled = enabled => {
-							const oldCont = $("#AssetThumbnail").parentNode
-							if(enabled) {
-								oldCont.style.display = "none"
-								oldCont.after(container)
-							} else {
-								oldCont.style.display = ""
-								container.remove()
-							}
-
-							preview.setEnabled(enabled)
+					const toggleEnabled = enabled => {
+						const oldCont = $("#AssetThumbnail").parentNode
+						if(enabled) {
+							oldCont.style.display = "none"
+							oldCont.after(container)
+						} else {
+							oldCont.style.display = ""
+							container.remove()
 						}
 
-						const loadPreview = () => {
-							if(preview) { return }
+						preview.setEnabled(enabled)
+					}
 
-							preview = new RBXPreview.AvatarPreviewer()
-							container = html`
-							<div class="item-thumbnail-container btr-preview-container">
-								<div class="btr-thumb-btn-container">
-									<div class="btr-thumb-btn rbx-btn-control-sm btr-hats-btn"><span class="btr-icon-hat"></span></div>
-									<div class="btr-thumb-btn rbx-btn-control-sm btr-body-btn"><span class="btr-icon-body"></span></div>
-									<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn checked"><span class="btr-icon-preview"></span></div>
-								</div>
-							</div>`
+					const loadPreview = () => {
+						if(preview) { return }
 
-							document.$on("click", ".btr-hats-btn", ev => {
-								const self = ev.currentTarget
-								const disabled = !self.classList.contains("checked")
-								self.classList.toggle("checked", disabled)
-
-								preview.setAccessoriesVisible(!disabled)
-							})
-							
-							document.$on("click", ".btr-body-btn", ev => {
-								const self = ev.currentTarget
-								const disabled = !self.classList.contains("checked")
-								self.classList.toggle("checked", disabled)
-
-								preview.setPackagesVisible(!disabled)
-							})
-
-							container.append(preview.container)
-
-							Observer.one("#AssetThumbnail", thumb => {
-								thumb.classList.add("btr-preview-enabled")
-								thumb.append(html`<div class="btr-thumb-btn-container">
-									<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn"><span class="btr-icon-preview"></span></div>
-								</div>`)
-							})
-
-							document.$on("click", ".btr-preview-btn", ev => {
-								const self = ev.currentTarget
-								const checked = !self.classList.contains("checked")
-
-								toggleEnabled(checked)
-							})
-						}
-
-
-						if(previewAnim || previewAsset) {
-							const doPreview = (id, typeId) => {
-								const isAnim = AnimationPreviewAssetTypeIds.indexOf(typeId) !== -1
-								const isAsset = WearableAssetTypeIds.indexOf(typeId) !== -1
-								if(!isAnim && !isAsset && typeId !== 32) { return }
-	
-								if(typeId === 32) {
-									AssetCache.loadText(id, text => text.split(";").forEach(itemId => {
-										getCachedProductInfo(itemId).then(json => doPreview(itemId, json.AssetTypeId))
-									}))
-									return
-								}
-	
-								if(!preview) {
-									loadPreview()
-	
-									if(previewAnim && settings.itemdetails.animationPreviewAutoLoad) {
-										onDocumentReady(() => toggleEnabled(true))
-									}
-								}
-	
-								if(isAnim) {
-									preview.disableDefaultAnimations = true
-	
-									if(typeId === 24) {
-										preview.onInit(() => {
-											preview.addAnimation(String(id), id)
-										})
-									} else {
-										preview.onInit(() => {
-											AssetCache.loadModel(id, model => {
-												const folder = model.find(x => x.ClassName === "Folder" && x.Name === "R15Anim")
-												if(!folder) { return }
-	
-												folder.Children.filter(x => x.ClassName === "StringValue").forEach(value => {
-													const animName = value.Name
-	
-													value.Children.filter(x => x.ClassName === "Animation").forEach((anim, i) => {
-														const name = animName + (i === 0 ? "" : `_${i + 1}`)
-														const animId = RBXParser.parseContentUrl(anim.AnimationId)
-														if(!animId) { return }
-	
-														preview.addAnimation(name, animId)
-													})
-												})
-											})
-										})
-									}
-								} else if(isAsset) {
-									preview.addAsset(id, typeId, { previewTarget: true })
-								}
-							}
-	
-							doPreview(assetId, assetTypeId)
-						}
-					})
-				}
-
-				canAccessPromise.then(canAccess => {
-					if(!canAccess) { return }
-
-					if(settings.itemdetails.explorerButton && InvalidExplorableAssetTypeIds.indexOf(assetTypeId) === -1) {
-						let explorerInitialized = false
-
-						const explorerPromise = new Promise(resolve => {
-							execScripts(["js/Explorer.js"], () => resolve(new Explorer()))
-						})
-
-						const btn = html`
-						<div>
-							<a class="btr-explorer-button" data-toggle="popover" data-bind="btr-explorer-content">
-								<span class="btr-icon-explorer"</span>
-							</a>
-							<div class="rbx-popover-content" data-toggle="btr-explorer-content">
-								<div class="btr-explorer-parent"></div>
+						preview = new RBXPreview.AvatarPreviewer()
+						container = html`
+						<div class="item-thumbnail-container btr-preview-container">
+							<div class="btr-thumb-btn-container">
+								<div class="btr-thumb-btn rbx-btn-control-sm btr-hats-btn"><span class="btr-icon-hat"></span></div>
+								<div class="btr-thumb-btn rbx-btn-control-sm btr-body-btn"><span class="btr-icon-body"></span></div>
+								<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn checked"><span class="btr-icon-preview"></span></div>
 							</div>
 						</div>`
 
-						Observer.one("#item-container > .section-content", cont => {
-							cont.append(btn)
-							cont.parentNode.classList.add("btr-explorer-btn-shown")
+						document.$on("click", ".btr-hats-btn", ev => {
+							const self = ev.currentTarget
+							const disabled = !self.classList.contains("checked")
+							self.classList.toggle("checked", disabled)
+
+							preview.setAccessoriesVisible(!disabled)
+						})
+						
+						document.$on("click", ".btr-body-btn", ev => {
+							const self = ev.currentTarget
+							const disabled = !self.classList.contains("checked")
+							self.classList.toggle("checked", disabled)
+
+							preview.setPackagesVisible(!disabled)
 						})
 
-						document.body.$on("click", ".btr-explorer-parent", ev => {
-							ev.stopImmediatePropagation()
+						container.append(preview.container)
+
+						document.$watch("#AssetThumbnail", thumb => {
+							thumb.classList.add("btr-preview-enabled")
+							thumb.append(html`<div class="btr-thumb-btn-container">
+								<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn"><span class="btr-icon-preview"></span></div>
+							</div>`)
 						})
 
-						CreateObserver(btn, { subtree: false }).all(".popover", popover => {
-							explorerPromise.then(explorer => {
-								if(!explorerInitialized) {
-									explorerInitialized = true
+						document.$on("click", ".btr-preview-btn", ev => {
+							const self = ev.currentTarget
+							const checked = !self.classList.contains("checked")
 
-									if(assetTypeId === 32) { // Package, I disabled package exploring elsewhere
-										AssetCache.loadText(assetId, text => text.split(";").forEach(id => {
-											AssetCache.loadModel(id, model => explorer.addModel(id.toString(), model))
-										}))
-									} else {
-										AssetCache.loadModel(assetId, model => explorer.addModel("Main", model))
-									}
+							toggleEnabled(checked)
+						})
+					}
+
+
+					if(previewAnim || previewAsset) {
+						const doPreview = (id, typeId) => {
+							const isAnim = AnimationPreviewAssetTypeIds.indexOf(typeId) !== -1
+							const isAsset = WearableAssetTypeIds.indexOf(typeId) !== -1
+							if(!isAnim && !isAsset && typeId !== 32) { return }
+
+							if(typeId === 32) {
+								AssetCache.loadText(id, text => text.split(";").forEach(itemId => {
+									getCachedProductInfo(itemId).then(json => doPreview(itemId, json.AssetTypeId))
+								}))
+								return
+							}
+
+							if(!preview) {
+								loadPreview()
+
+								if(previewAnim && settings.itemdetails.animationPreviewAutoLoad) {
+									onDocumentReady(() => toggleEnabled(true))
 								}
+							}
 
-								popover.$find(".btr-explorer-parent").replaceWith(explorer.element)
+							if(isAnim) {
+								preview.disableDefaultAnimations = true
 
-								const popLeft = explorer.element.getBoundingClientRect().right + 276 >= document.documentElement.clientWidth
-								explorer.element.$find(".btr-properties").classList.toggle("left", popLeft)
-							})
-						})
-					}
+								if(typeId === 24) {
+									preview.onInit(() => {
+										preview.addAnimation(String(id), id)
+									})
+								} else {
+									preview.onInit(() => {
+										AssetCache.loadModel(id, model => {
+											const folder = model.find(x => x.ClassName === "Folder" && x.Name === "R15Anim")
+											if(!folder) { return }
 
-					if(settings.itemdetails.downloadButton && InvalidDownloadableAssetTypeIds.indexOf(assetTypeId) === -1) {
-						const btn = html`<a class="btr-download-button"><div class="btr-icon-download"></div></a>`
+											folder.Children.filter(x => x.ClassName === "StringValue").forEach(value => {
+												const animName = value.Name
 
-						Observer.one("#item-container > .section-content", cont => {
-							cont.append(btn)
-							cont.parentNode.classList.add("btr-download-btn-shown")
-						})
+												value.Children.filter(x => x.ClassName === "Animation").forEach((anim, i) => {
+													const name = animName + (i === 0 ? "" : `_${i + 1}`)
+													const animId = RBXParser.parseContentUrl(anim.AnimationId)
+													if(!animId) { return }
 
-						const doNamedDownload = event => {
-							event.preventDefault()
-
-							downloadAsset(assetId, "arraybuffer").then(ab => {
-								const blobUrl = URL.createObjectURL(new Blob([ab]))
-
-								const title = $("#item-container .item-name-container h2")
-								let fileName = title
-									? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-")
-									: new URL(btn.href).pathname
-
-								fileName += `.${GetAssetFileType(assetTypeId, ab)}`
-
-								startDownload(blobUrl, fileName)
-								URL.revokeObjectURL(blobUrl)
-							})
+													preview.addAnimation(name, animId)
+												})
+											})
+										})
+									})
+								}
+							} else if(isAsset) {
+								preview.addAsset(id, typeId, { previewTarget: true })
+							}
 						}
-		
-						btn.href = `/asset/?id=${assetId}`
-						btn.$on("click", doNamedDownload)
-					}
 
-					const assetTypeContainer = ContainerAssetTypeIds[assetTypeId]
-					if(settings.itemdetails.contentButton && assetTypeContainer) {
-						const btn = html`<a class="btr-content-button disabled" href="#"><div class="btr-icon-content"></div></a>`
-		
-						Observer.one("#item-container > .section-content", cont => {
-							cont.append(btn)
-							cont.parentNode.classList.add("btr-content-btn-shown")
-						})
-		
-						AssetCache.loadModel(assetId, model => {
-							const inst = model.find(assetTypeContainer.filter)
-							if(!inst) { return }
-		
-							const actId = RBXParser.parseContentUrl(inst[assetTypeContainer.prop])
-							if(!actId) { return }
-		
-							btn.href = `/catalog/${actId}`
-							btn.classList.remove("disabled")
-						})
+						doPreview(assetId, assetTypeId)
 					}
 				})
+			}
 
-				if(settings.itemdetails.imageBackgrounds && (assetTypeId === 1 || assetTypeId === 13)) {
-					Observer.one("#AssetThumbnail", thumb => {
-						const btns = html`
-						<div class="btr-bg-btn-cont">
-							<div class="btr-bg-btn" data-color="white"></div>
-							<div class="btr-bg-btn" data-color="black"></div>
-							<div class="btr-bg-btn" data-color="none"></div>
-						</div>`
+			canAccessPromise.then(canAccess => {
+				if(!canAccess) { return }
 
-						thumb.append(btns)
+				if(settings.itemdetails.explorerButton && InvalidExplorableAssetTypeIds.indexOf(assetTypeId) === -1) {
+					let explorerInitialized = false
 
-						btns.$on("click", ".btr-bg-btn", ev => {
-							const color = ev.currentTarget.dataset.color
-							const prev = btns.$find(".selected")
-
-							if(prev) { prev.classList.remove("selected") }
-							ev.currentTarget.classList.add("selected")
-
-							thumb.dataset.btrBg = color
-							localStorage["btr-item-thumb-bg"] = color
-						})
-							.$on("mouseenter", ".btr-bg-btn", ev => {
-								thumb.dataset.btrBg = ev.currentTarget.dataset.color
-							})
-							.$on("mouseleave", ".btr-bg-btn", () => {
-								thumb.dataset.btrBg = localStorage["btr-item-thumb-bg"]
-							})
-
-
-						const selectedBg = localStorage["btr-item-thumb-bg"] || "white"
-						btns.$find(`[data-color="${selectedBg}"]`).click()
+					const explorerPromise = new Promise(resolve => {
+						execScripts(["js/Explorer.js"], () => resolve(new Explorer()))
 					})
-				}
 
-				if(settings.itemdetails.whiteDecalThumbnailFix && assetTypeId === 13) {
-					// const transparentTexture = "https://t6.rbxcdn.com/3707fe58b613498a0f1fc7d11faeccf3"
-
-					Observer.one("#AssetThumbnail .thumbnail-span img", img => {
-						// if(img.src !== transparentTexture) return;
-
-						AssetCache.loadModel(assetId, model => {
-							const decal = model.find(x => x.ClassName === "Decal")
-							if(!decal) { return }
-
-							const imgId = RBXParser.parseContentUrl(decal.Texture)
-							if(!imgId) { return }
-
-							const preload = new Image()
-							preload.src = `https://assetgame.roblox.com/asset/?id=${imgId}`
-							preload.onload = () => {
-								preload.onload = null
-								img.src = preload.src
-							}
-						})
-					})
-				}
-
-				if(settings.itemdetails.thisPackageContains && assetTypeId === 32) {
-					const cont = html`
-					<div class="btr-package-contents">
-						<div class="container-header">
-							<h3>This Package Contains...</h3>
+					const btn = html`
+					<div>
+						<a class="btr-explorer-button" data-toggle="popover" data-bind="btr-explorer-content">
+							<span class="btr-icon-explorer"</span>
+						</a>
+						<div class="rbx-popover-content" data-toggle="btr-explorer-content">
+							<div class="btr-explorer-parent"></div>
 						</div>
-						<ul class="hlist">
-						</ul>
 					</div>`
 
-					const assetThumb = "https://assetgame.roblox.com/asset-thumbnail/image?width=150&height=150&format=png&assetId="
-
-					AssetCache.loadText(assetId, text => {
-						text.split(";").forEach(childId => {
-							const card = html`
-							<li class="list-item item-card">
-								<div class="item-card-container">
-									<a class="item-card-link" href="https://www.roblox.com/catalog/${childId}/">
-										<div class="item-card-thumb-container">
-											<img class="item-card-thumb" src="${assetThumb}${childId}">
-										</div>
-										<div class="text-overflow item-card-name">Loading</div>
-									</a>
-									<div class="text-overflow item-card-creator">
-										<span class="xsmall text-label">By</span>
-										<a class="xsmall text-overflow text-link">ROBLOX</a>
-									</div>
-									<div class="text-overflow item-card-price">
-										<span class="text-label">Offsale</span>
-									</div>
-								</div>
-							</li>`
-
-							getCachedProductInfo(childId).then(data => {
-								if(data.IsForSale) {
-									if(data.PriceInRobux) {
-										card.$find(".item-card-price").innerHTML = htmlstring`
-										<span class="icon-robux-16x16"></span>
-										<span class="text-robux">${data.PriceInRobux}</span>`
-									} else {
-										const label = card.$find(".item-card-price .text-label")
-										label.classList.add("text-robux")
-										label.textContent = "Free"
-									}
-								} else {
-									card.$find(".item-card-price .text-label").textContent = "Offsale"
-								}
-
-								const creator = card.$find(".item-card-creator .text-link")
-								creator.href = `https://www.roblox.com/users/${data.Creator.Id}/profile`
-								creator.textContent = data.Creator.Name
-
-								card.$find(".item-card-name").textContent = data.Name
-								card.$find(".item-card-link").href += data.Name.replace(/[^a-zA-Z0-9]+/g, "-")
-							})
-
-							cont.$find(".hlist").append(card)
-						})
+					document.$watch("#item-container").$then().$watch(">.section-content", cont => {
+						cont.append(btn)
+						cont.parentNode.classList.add("btr-explorer-btn-shown")
 					})
 
-					Observer.one("#item-container>.section-content", content => content.after(cont))
+					document.body.$on("click", ".btr-explorer-parent", ev => {
+						ev.stopImmediatePropagation()
+					})
+
+					btn.$watchAll(".popover", popover => {
+						explorerPromise.then(explorer => {
+							if(!explorerInitialized) {
+								explorerInitialized = true
+
+								if(assetTypeId === 32) { // Package, I disabled package exploring elsewhere
+									AssetCache.loadText(assetId, text => text.split(";").forEach(id => {
+										AssetCache.loadModel(id, model => explorer.addModel(id.toString(), model))
+									}))
+								} else {
+									AssetCache.loadModel(assetId, model => explorer.addModel("Main", model))
+								}
+							}
+
+							popover.$find(".btr-explorer-parent").replaceWith(explorer.element)
+
+							const popLeft = explorer.element.getBoundingClientRect().right + 276 >= document.documentElement.clientWidth
+							explorer.element.$find(".btr-properties").classList.toggle("left", popLeft)
+						})
+					})
+				}
+
+				if(settings.itemdetails.downloadButton && InvalidDownloadableAssetTypeIds.indexOf(assetTypeId) === -1) {
+					const btn = html`<a class="btr-download-button"><div class="btr-icon-download"></div></a>`
+
+					document.$watch("#item-container").$then().$watch(">.section-content", cont => {
+						cont.append(btn)
+						cont.parentNode.classList.add("btr-download-btn-shown")
+					})
+
+					const doNamedDownload = event => {
+						event.preventDefault()
+
+						downloadAsset(assetId, "arraybuffer").then(ab => {
+							const blobUrl = URL.createObjectURL(new Blob([ab]))
+
+							const title = $("#item-container .item-name-container h2")
+							let fileName = title
+								? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-")
+								: new URL(btn.href).pathname
+
+							fileName += `.${GetAssetFileType(assetTypeId, ab)}`
+
+							startDownload(blobUrl, fileName)
+							URL.revokeObjectURL(blobUrl)
+						})
+					}
+	
+					btn.href = `/asset/?id=${assetId}`
+					btn.$on("click", doNamedDownload)
+				}
+
+				const assetTypeContainer = ContainerAssetTypeIds[assetTypeId]
+				if(settings.itemdetails.contentButton && assetTypeContainer) {
+					const btn = html`<a class="btr-content-button disabled" href="#"><div class="btr-icon-content"></div></a>`
+	
+					document.$watch("#item-container").$then().$watch(">.section-content", cont => {
+						cont.append(btn)
+						cont.parentNode.classList.add("btr-content-btn-shown")
+					})
+	
+					AssetCache.loadModel(assetId, model => {
+						const inst = model.find(assetTypeContainer.filter)
+						if(!inst) { return }
+	
+						const actId = RBXParser.parseContentUrl(inst[assetTypeContainer.prop])
+						if(!actId) { return }
+	
+						btn.href = `/catalog/${actId}`
+						btn.classList.remove("disabled")
+					})
 				}
 			})
+
+			if(settings.itemdetails.imageBackgrounds && (assetTypeId === 1 || assetTypeId === 13)) {
+				document.$watch("#AssetThumbnail", thumb => {
+					const btns = html`
+					<div class="btr-bg-btn-cont">
+						<div class="btr-bg-btn" data-color="white"></div>
+						<div class="btr-bg-btn" data-color="black"></div>
+						<div class="btr-bg-btn" data-color="none"></div>
+					</div>`
+
+					thumb.append(btns)
+
+					btns.$on("click", ".btr-bg-btn", ev => {
+						const color = ev.currentTarget.dataset.color
+						const prev = btns.$find(".selected")
+
+						if(prev) { prev.classList.remove("selected") }
+						ev.currentTarget.classList.add("selected")
+
+						thumb.dataset.btrBg = color
+						localStorage["btr-item-thumb-bg"] = color
+					})
+						.$on("mouseenter", ".btr-bg-btn", ev => {
+							thumb.dataset.btrBg = ev.currentTarget.dataset.color
+						})
+						.$on("mouseleave", ".btr-bg-btn", () => {
+							thumb.dataset.btrBg = localStorage["btr-item-thumb-bg"]
+						})
+
+
+					const selectedBg = localStorage["btr-item-thumb-bg"] || "white"
+					btns.$find(`[data-color="${selectedBg}"]`).click()
+				})
+			}
+
+			if(settings.itemdetails.whiteDecalThumbnailFix && assetTypeId === 13) {
+				// const transparentTexture = "https://t6.rbxcdn.com/3707fe58b613498a0f1fc7d11faeccf3"
+
+				document.$watch("#AssetThumbnail").$then().$watch(".thumbnail-span img", img => {
+					// if(img.src !== transparentTexture) return;
+
+					AssetCache.loadModel(assetId, model => {
+						const decal = model.find(x => x.ClassName === "Decal")
+						if(!decal) { return }
+
+						const imgId = RBXParser.parseContentUrl(decal.Texture)
+						if(!imgId) { return }
+
+						const preload = new Image()
+						preload.src = `https://assetgame.roblox.com/asset/?id=${imgId}`
+						preload.onload = () => {
+							preload.onload = null
+							img.src = preload.src
+						}
+					})
+				})
+			}
+
+			if(settings.itemdetails.thisPackageContains && assetTypeId === 32) {
+				const cont = html`
+				<div class="btr-package-contents">
+					<div class="container-header">
+						<h3>This Package Contains...</h3>
+					</div>
+					<ul class="hlist">
+					</ul>
+				</div>`
+
+				const assetThumb = "https://assetgame.roblox.com/asset-thumbnail/image?width=150&height=150&format=png&assetId="
+
+				AssetCache.loadText(assetId, text => {
+					text.split(";").forEach(childId => {
+						const card = html`
+						<li class="list-item item-card">
+							<div class="item-card-container">
+								<a class="item-card-link" href="https://www.roblox.com/catalog/${childId}/">
+									<div class="item-card-thumb-container">
+										<img class="item-card-thumb" src="${assetThumb}${childId}">
+									</div>
+									<div class="text-overflow item-card-name">Loading</div>
+								</a>
+								<div class="text-overflow item-card-creator">
+									<span class="xsmall text-label">By</span>
+									<a class="xsmall text-overflow text-link">ROBLOX</a>
+								</div>
+								<div class="text-overflow item-card-price">
+									<span class="text-label">Offsale</span>
+								</div>
+							</div>
+						</li>`
+
+						getCachedProductInfo(childId).then(data => {
+							if(data.IsForSale) {
+								if(data.PriceInRobux) {
+									card.$find(".item-card-price").innerHTML = htmlstring`
+									<span class="icon-robux-16x16"></span>
+									<span class="text-robux">${data.PriceInRobux}</span>`
+								} else {
+									const label = card.$find(".item-card-price .text-label")
+									label.classList.add("text-robux")
+									label.textContent = "Free"
+								}
+							} else {
+								card.$find(".item-card-price .text-label").textContent = "Offsale"
+							}
+
+							const creator = card.$find(".item-card-creator .text-link")
+							creator.href = `https://www.roblox.com/users/${data.Creator.Id}/profile`
+							creator.textContent = data.Creator.Name
+
+							card.$find(".item-card-name").textContent = data.Name
+							card.$find(".item-card-link").href += data.Name.replace(/[^a-zA-Z0-9]+/g, "-")
+						})
+
+						cont.$find(".hlist").append(card)
+					})
+				})
+
+				document.$watch("#item-container").$then().$watch(">.section-content", content => content.after(cont))
+			}
 		})
+	})
 }
 
 pageInit.gamedetails = function(placeId) {
 	if(!settings.gamedetails.enabled) { return }
 
-	const newContainer = html`<div class="col-xs-12 btr-game-main-container section-content">`
+	const newContainer = html`
+	<div class="col-xs-12 btr-game-main-container section-content">
+		<div class=placeholder-main></div>
+	</div>`
 
 	if(settings.general.robuxToDollars) {
-		Observer
-			.one("#rbx-passes-container", passes => {
-				CreateObserver(passes, { permanent: true, subtree: false })
-					.all(".list-item", item => {
-						const label = item.$find(".text-robux")
-						const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
-						label.after(html`<span class=text-robux style=float:right>&nbsp;($${usd})</span>`)
-					})
+		document.$watch("#rbx-passes-container").$then()
+			.$watchAll(".list-item", item => {
+				const label = item.$find(".text-robux")
+				if(!label) { return }
+				const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+				label.after(html`<span class=text-robux style=float:right>&nbsp;($${usd})</span>`)
 			})
-			.one("#rbx-gear-container", gears => {
-				CreateObserver(gears, { permanent: true, subtree: false })
-					.all(".list-item", item => {
-						const label = item.$find(".text-robux")
-						const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
-						label.after(html`<span class=text-robux style=float:right>&nbsp;($${usd})</span>`)
-					})
+		
+		document.$watch("#rbx-gear-container").$then()
+			.$watchAll(".list-item", item => {
+				const label = item.$find(".text-robux")
+				if(!label) { return }
+				const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+				label.after(html`<span class=text-robux style=float:right>&nbsp;($${usd})</span>`)
 			})
 	}
 
-	Observer
-		.one("body", body => {
-			body.classList.add("btr-gamedetails")
-		})
-		.one(["#tab-about", "#tab-game-instances"], (aboutTab, gameTab) => {
+	document.$watch("body", body => body.classList.add("btr-gamedetails")).$then()
+		.$watch(["#tab-about", "#tab-game-instances"], (aboutTab, gameTab) => {
 			aboutTab.$find(".text-lead").textContent = "Recommended"
 
 			aboutTab.classList.remove("active")
@@ -999,17 +1004,17 @@ pageInit.gamedetails = function(placeId) {
 			parent.append(aboutTab)
 			parent.prepend(gameTab)
 		})
-		.one(["#about", "#game-instances"], (about, games) => {
+		.$watch(["#about", "#game-instances"], (about, games) => {
 			about.classList.remove("active")
 			games.classList.add("active")
 		})
-		.one(".game-main-content", mainCont => {
+		.$watch(".game-main-content", mainCont => {
 			mainCont.classList.remove("section-content")
 			mainCont.before(newContainer)
-			newContainer.prepend(mainCont)
+			newContainer.$find(".placeholder-main").replaceWith(mainCont)
 		})
-		.one(".game-about-container>.section-content", descCont => {
-			const aboutCont = descCont.parentNode
+		.$watch(".game-about-container", aboutCont => {
+			const descCont = aboutCont.$find(">.section-content")
 
 			descCont.classList.remove("section-content")
 			descCont.classList.add("btr-description")
@@ -1017,21 +1022,21 @@ pageInit.gamedetails = function(placeId) {
 
 			aboutCont.remove()
 		})
-		.one(".tab-content", cont => {
+		.$watch(".tab-content", cont => {
 			cont.classList.add("section")
-			CreateObserver(cont, { subtree: false }).all(".tab-pane:not(#about)", pane => {
-				pane.classList.add("section-content")
+			cont.$watchAll(".tab-pane", pane => {
+				if(pane.id !== "about") {
+					pane.classList.add("section-content")
+				}
 			})
 		})
-		.one(".badge-container", badges => {
+		.$watch(".badge-container", badges => {
 			badges.classList.add("col-xs-12", "btr-badges-container")
 			newContainer.after(badges)
 
 			const isOwned = {}
 
-			CreateObserver(badges).all(".badge-row .badge-stats-container", stats => {
-				const row = stats.closest(".badge-row")
-
+			badges.$watch(">.stack-list").$then().$watchAll(".badge-row", row => {
 				const url = row.$find(".badge-image>a").href
 				const label = row.$find(".badge-name")
 				label.innerHTML = htmlstring`<a href="${url}">${label.textContent}</a>`
@@ -1067,8 +1072,11 @@ pageInit.gamedetails = function(placeId) {
 				})
 			}
 		})
-		.one("#carousel-game-details", details => details.setAttribute("data-is-video-autoplayed-on-ready", "false"))
-		.one(".game-stats-container .game-stat", x => x.$find(".text-label").textContent === "Updated", stat => {
+		.$watch("#carousel-game-details", details => details.setAttribute("data-is-video-autoplayed-on-ready", "false"))
+		.$watch(".game-stats-container", x => x.$find(".text-label").textContent === "Updated", stats => {
+			const stat = Array.prototype.find.call(stats.children, x => x.$find(".text-label").textContent === "Updated")
+			if(!stat) { return }
+
 			const xhr = new XMLHttpRequest()
 			xhr.open("GET", `https://api.roblox.com/marketplace/productinfo?assetId=${placeId}`)
 			xhr.responseType = "json"
@@ -1083,39 +1091,51 @@ pageInit.gamedetails = function(placeId) {
 
 			xhr.send()
 		})
-		.one(".rbx-visit-button-closed, #MultiplayerVisitButton", btn => {
-			if(btn.classList.contains("rbx-visit-button-closed")) { return }
+		.$watch(".game-play-button-container", cont => {
+			const makeBox = (rootPlaceId, rootPlaceName) => {
+				if(+rootPlaceId === +placeId) { return }
 
-			const rootPlaceId = btn.getAttribute("placeid")
-			if(placeId === rootPlaceId) { return }
+				const box = html`
+				<div class='btr-universe-box'>
+					This place is part of 
+					<a class='btr-universe-name text-link' href='//www.roblox.com/games/${rootPlaceId}/'>${rootPlaceName || "..."}</a>
+					<div class='VisitButton VisitButtonPlayGLI btr-universe-visit-button' placeid='${rootPlaceId}' data-action='play' data-is-membership-level-ok='true'>
+						<a class='btn-secondary-md'>Play</a>
+					</div>
+				</div>`
 
-			const box = html`
-			<div class='btr-universe-box'>
-				This place is part of 
-				<a class='btr-universe-name text-link' href='//www.roblox.com/games/${rootPlaceId}/'></a>
-				<div class='VisitButton VisitButtonPlayGLI btr-universe-visit-button' placeid='${rootPlaceId}' data-action='play' data-is-membership-level-ok='true'>
-					<a class='btn-secondary-md'>Play</a>
-				</div>
-			</div>`
+				newContainer.prepend(box)
 
-			const anchor = box.$find(".btr-universe-name")
+				if(!rootPlaceName) {
+					const anchor = box.$find(".btr-universe-name")
+					getProductInfo(rootPlaceId).then(data => {
+						anchor.textContent = data.Name
+						anchor.href += data.Name.replace(/\W+/g, " ").trim().replace(/ +/g, "-")
+					})
+				}
+			}
 
-			newContainer.prepend(box)
-			getProductInfo(rootPlaceId).then(data => {
-				anchor.textContent = data.Name
-				anchor.href += data.Name.replace(/[^\w\-\s]+/g, "").replace(/\s+/g, "-")
+			const playButton = cont.$find("#MultiplayerVisitButton")
+			if(playButton) {
+				makeBox(playButton.getAttribute("placeid"))
+				return
+			}
+
+			const buyButton = cont.$find(".PurchaseButton")
+			if(buyButton) {
+				makeBox(buyButton.dataset.itemId, buyButton.dataset.itemName)
+				return
+			}
+
+			const url = `https://api.roblox.com/universes/get-universe-places?placeId=${placeId}`
+			fetch(url).then(async resp => {
+				const json = await resp.json()
+				const rootPlaceId = json.RootPlace
+				if(rootPlaceId === placeId) { return }
+
+				const rootPlace = json.Places.find(x => x.PlaceId === rootPlaceId)
+				makeBox(rootPlaceId, rootPlace ? rootPlace.Name : "")
 			})
-		})
-		.one("#AjaxCommentsContainer .comments", cont => {
-			CreateObserver(cont, { permanent: true, subtree: false })
-				.all(".comment-item", comment => {
-					const span = comment.$find(".text-date-hint")
-					const fixedDate = RobloxTime(span.textContent.replace("|", ""))
-					if(fixedDate) {
-						span.setAttribute("btr-timestamp", "")
-						span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
-					}
-				})
 		})
 
 	onDocumentReady(() => {
@@ -1141,8 +1161,27 @@ pageInit.gamedetails = function(placeId) {
 }
 
 pageInit.catalog = function() {
+	if(settings.general.robuxToDollars) {
+		modifyTemplate("catalog-item-card", template => {
+			const label = template.$find(".item-card-price")
+			if(!label) { return }
+			label.style.display = "flex"
+
+			const div = html`<div style="flex:1 1 auto"></div>`
+			while(label.firstChild) { div.append(label.firstChild) }
+
+			label.append(div)
+
+			const text = `($\{{::((item.BestPrice||item.Price)*${DOLLARS_PER_ROBUX_RATIO})|number:2}})`
+			label.title = `{{::item.IsFree && "Free " || "R$ "}}{{::(item.BestPrice||item.Price)|number:0}} ${text}`
+			label.append(html`
+			<div style="flex:0 1 auto;padding-left:4px;overflow:hidden;text-overflow:ellipsis;" ng-if=item.BestPrice||item.Price class=text-robux ng-cloak> ${text}</div>
+			`)
+		})
+	}
+
 	if(!settings.catalog.enabled) { return }
-	Observer.one("body", body => body.classList.add("btr-inventory"))
+	document.$watch("body", body => body.classList.add("btr-inventory"))
 
 	modifyTemplate("catalog-item-card", template => {
 		template.$find(".item-card-container").classList.add("btr-item-card-container")
@@ -1188,9 +1227,9 @@ pageInit.placeconfig = function(placeId) {
 
 	const newVersionHistory = CreateNewVersionHistory(placeId, "place")
 
-	Observer
-		.one("#versionHistoryItems", cont => cont.replaceWith(newVersionHistory))
-		.one("#versionHistory>.headline h2", header => {
+	document.$watch("#versionHistory").$then()
+		.$watch("#versionHistoryItems", cont => cont.replaceWith(newVersionHistory))
+		.$watch(">.headline h2", header => {
 			header.after(html`<a class="btn btn-secondary-sm btr-downloadAsZip" style="float:right;margin-top:4px;">Download as .zip</a>`)
 		})
 
@@ -1342,56 +1381,9 @@ pageInit.placeconfig = function(placeId) {
 	})
 }
 
-pageInit.groupadmin = function() {
-	if(settings.general.robuxToDollars) {
-		Observer
-			.one("#GroupTitle .robux", label => {
-				const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
-				label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
-			})
-			.one("#revenue .summary .summary-container", summary => {
-				CreateObserver(summary, { permanent: true, subtree: false })
-					.all(".columns-container", cont => {
-						cont.$findAll(".robux").forEach(label => {
-							const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
-							label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
-						})
-
-						cont.$findAll("td.credit").forEach(label => {
-							if(!label.textContent) { return }
-							const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
-							label.append(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
-						})
-					})
-			})
-			.one("#revenue .line-item tbody", table => {
-				CreateObserver(table, { permanent: true, subtree: false })
-					.all("tr", row => {
-						const label = row.$find(".robux")
-						if(!label) { return }
-						const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
-						label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
-					})
-			})
-	}
-
-	Observer.one("#JoinRequests", requests => {
-		CreateObserver(requests, { permanent: true, subtree: false })
-			.all("#JoinRequestsList", list => {
-				list.$findAll("tbody > tr > td:nth-child(3)").forEach(label => {
-					const fixedDate = RobloxTime(label.textContent)
-					if(!fixedDate) { return }
-					label.setAttribute("btr-timestamp", "")
-					label.textContent = `${$.dateSince(fixedDate, new Date())} ago`
-					label.title = fixedDate.$format("M/D/YYYY h:mm:ss A (T)")
-				})
-			})
-	})
-}
-
 pageInit.groups = function() {
 	if(settings.general.robuxToDollars) {
-		Observer.one("#ctl00_cphRoblox_rbxGroupFundsPane_GroupFunds .robux", label => {
+		document.$watch("#ctl00_cphRoblox_rbxGroupFundsPane_GroupFunds").$then().$watch(".robux", label => {
 			label.style.display = "inline-block" // To fix whitespace
 			const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
 			label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
@@ -1402,13 +1394,12 @@ pageInit.groups = function() {
 	const notInGroup = window.location.pathname.search(/^\/groups\/group.aspx/i) !== -1
 	const rankNameCache = {}
 
-	Observer
-		.one("body", body => body.classList.add("btr-groups"))
-		.one(["#GroupDescP pre", "#GroupDesc_Full"], (desc, fullDesc) => {
+	document.$watch("body", body => body.classList.add("btr-groups")).$then()
+		.$watch(["#GroupDescP pre", "#GroupDesc_Full"], (desc, fullDesc) => {
 			desc.textContent = fullDesc.value
 			fullDesc.remove()
 		})
-		.one("#ctl00_cphRoblox_GroupStatusPane_StatusDate", span => {
+		.$watch("#ctl00_cphRoblox_GroupStatusPane_StatusDate", span => {
 			const fixedDate = RobloxTime(span.textContent)
 			if(fixedDate) {
 				span.setAttribute("btr-timestamp", "")
@@ -1416,109 +1407,151 @@ pageInit.groups = function() {
 				span.title = fixedDate.$format("M/D/YYYY h:mm:ss A (T)")
 			}
 		})
-		.one("#ctl00_cphRoblox_GroupWallPane_GroupWallUpdatePanel", wall => {
+		.$watch("#ctl00_cphRoblox_GroupWallPane_GroupWallUpdatePanel", wall => {
 			const script = Array.from($.all("script")).find(x => x.innerHTML.indexOf("Roblox.ExileModal.InitializeGlobalVars") !== -1)
 			const groupId = script ? parseInt(script.innerHTML.replace(/^.*InitializeGlobalVars\(\d+, (\d+).*$/m, "$1"), 10) : NaN
 
-			CreateObserver(wall, { permanent: true, subtree: false })
-				.all(".AlternatingItemTemplateOdd, .AlternatingItemTemplateEven", post => {
-					post.classList.add("btr-comment")
+			wall.$watchAll("div", post => {
+				if(!post.matches(".AlternatingItemTemplateOdd, .AlternatingItemTemplateEven")) { return }
+				post.classList.add("btr-comment")
 
-					const content = post.$find(".RepeaterText")
-					const postDate = post.$find(".GroupWall_PostDate")
-					const postBtns = post.$find(".GroupWall_PostBtns")
-					const userLink = post.$find(".UserLink")
-					const dateSpan = postDate.firstElementChild
+				const content = post.$find(".RepeaterText")
+				const postDate = post.$find(".GroupWall_PostDate")
+				const postBtns = post.$find(".GroupWall_PostBtns")
+				const userLink = post.$find(".UserLink")
+				const dateSpan = postDate.firstElementChild
 
-					const defBtns = Array.from(postBtns.children)
-					const deleteButton = defBtns.find(x => x.textContent.indexOf("Delete") !== -1)
-					const exileButton = defBtns.find(x => x.textContent.indexOf("Exile User") !== -1)
+				const defBtns = Array.from(postBtns.children)
+				const deleteButton = defBtns.find(x => x.textContent.indexOf("Delete") !== -1)
+				const exileButton = defBtns.find(x => x.textContent.indexOf("Exile User") !== -1)
 
-					content.prepend(userLink)
-					content.append(postBtns)
+				content.prepend(userLink)
+				content.append(postBtns)
 
-					const firstBtn = postBtns.firstChild
-					while(postDate.firstElementChild) { firstBtn.before(postDate.firstElementChild) }
+				const firstBtn = postBtns.firstChild
+				while(postDate.firstElementChild) { firstBtn.before(postDate.firstElementChild) }
 
-					postDate.parentNode.remove()
+				postDate.parentNode.remove()
 
-					if(deleteButton) {
-						deleteButton.textContent = "Delete"
-						deleteButton.classList.add("btn-control", "btn-control-medium")
-						deleteButton.style = ""
+				if(deleteButton) {
+					deleteButton.textContent = "Delete"
+					deleteButton.classList.add("btn-control", "btn-control-medium")
+					deleteButton.style = ""
 
-						deleteButton.setAttribute("onclick", `
-						const self = this;
-						return Roblox.GenericConfirmation.open({
-							titleText: "Delete This Comment?",
-							bodyContent: "Are you sure you wish to delete this comment?",
-							acceptText: "Delete",
-							declineText: "Cancel",
-							escClose: true,
-							acceptColor: Roblox.GenericConfirmation.green,
-							imageUrl: "/images/Icons/img-alert.png",
-							onAccept() { self.removeAttribute("onclick"); self.click(); }
-						}), false`)
-					} else if(!notInGroup) {
-						const btn = html`<a class="btn-control btn-control-medium disabled">Delete</a>`
-						if(exileButton) { exileButton.before(btn) }
-						else { postBtns.append(btn) }
-					}
+					deleteButton.setAttribute("onclick", `
+					const self = this;
+					return Roblox.GenericConfirmation.open({
+						titleText: "Delete This Comment?",
+						bodyContent: "Are you sure you wish to delete this comment?",
+						acceptText: "Delete",
+						declineText: "Cancel",
+						escClose: true,
+						acceptColor: Roblox.GenericConfirmation.green,
+						imageUrl: "/images/Icons/img-alert.png",
+						onAccept() { self.removeAttribute("onclick"); self.click(); }
+					}), false`)
+				} else if(!notInGroup) {
+					const btn = html`<a class="btn-control btn-control-medium disabled">Delete</a>`
+					if(exileButton) { exileButton.before(btn) }
+					else { postBtns.append(btn) }
+				}
 
-					if(exileButton) {
-						exileButton.textContent = "Exile User"
-						exileButton.classList.add("btn-control", "btn-control-medium")
-						exileButton.style = ""
-					} else if(!notInGroup) {
-						const btn = html`<a class="btn-control btn-control-medium disabled">Exile User</a>`
-						postBtns.append(btn)
-					}
+				if(exileButton) {
+					exileButton.textContent = "Exile User"
+					exileButton.classList.add("btn-control", "btn-control-medium")
+					exileButton.style = ""
+				} else if(!notInGroup) {
+					const btn = html`<a class="btn-control btn-control-medium disabled">Exile User</a>`
+					postBtns.append(btn)
+				}
 
-					dateSpan.classList.add("btr-groupwallpostdate")
-					const fixedDate = RobloxTime(dateSpan.textContent)
-					if(fixedDate) {
-						dateSpan.setAttribute("btr-timestamp", "")
-						dateSpan.textContent = `${$.dateSince(fixedDate)} ago`
-						dateSpan.title = fixedDate.$format("M/D/YYYY h:mm:ss A (T)")
-					}
+				dateSpan.classList.add("btr-groupwallpostdate")
+				const fixedDate = RobloxTime(dateSpan.textContent)
+				if(fixedDate) {
+					dateSpan.setAttribute("btr-timestamp", "")
+					dateSpan.textContent = `${$.dateSince(fixedDate)} ago`
+					dateSpan.title = fixedDate.$format("M/D/YYYY h:mm:ss A (T)")
+				}
 
-					const anchor = userLink.$find("a")
-					const userId = anchor ? parseInt(anchor.href.replace(/^.*\/users\/(\d+)\/.*$/, "$1"), 10) : NaN
+				const anchor = userLink.$find("a")
+				const userId = anchor ? parseInt(anchor.href.replace(/^.*\/users\/(\d+)\/.*$/, "$1"), 10) : NaN
+				
+				if(Number.isSafeInteger(groupId) && Number.isSafeInteger(userId)) {
+					const span = html`<span class="btr-grouprank"></span>`
+					userLink.append(span)
 					
-					if(Number.isSafeInteger(groupId) && Number.isSafeInteger(userId)) {
-						const span = html`<span class="btr-grouprank"></span>`
-						userLink.append(span)
-						
-						let promise = rankNameCache[userId]
-						if(!promise) { promise = rankNameCache[userId] = new Promise(resolve => MESSAGING.send("getRankName", { userId, groupId }, resolve)) }
-						
-						promise.then(rankname => {
-							userLink.append(html`<span class="btr-grouprank">(${rankname})</span>`)
-						})
-					}
-				})
+					let promise = rankNameCache[userId]
+					if(!promise) { promise = rankNameCache[userId] = new Promise(resolve => MESSAGING.send("getRankName", { userId, groupId }, resolve)) }
+					
+					promise.then(rankname => {
+						userLink.append(html`<span class="btr-grouprank">(${rankname})</span>`)
+					})
+				}
+			})
 		})
 	
 	if(settings.groups.expandGroupList) {
-		Observer.one("script:not([src])",
-			x => x.innerHTML.indexOf(`'windowDisplay': 8,`) !== -1,
-			x => {
+		document.$watch("body").$then()
+			.$watchAll("script", (x, stop) => {
+				if(!x.innerHTML.includes(`'windowDisplay': 8,`)) { return }
 				x.innerHTML = x.innerHTML.replace(/'windowDisplay': 8/, "'windowDisplay': 16")
+
+				stop()
 
 				setTimeout(() => {
 					const outer = $(".CarouselPager .content-outer")
-					const inner = $(".CarouselPager .content-inner")
-					if(outer && inner && outer.clientHeight >= inner.clientHeight) {
-						outer.style.height = "auto"
-						inner.style.position = "relative"
-					}
+					const inner = outer.$find(".content-inner")
+					outer.style.maxHeight = outer.style.height
+					outer.style.height = "auto"
+					inner.style.position = "relative"
 				}, 0)
-			}
-		)
+			})
 	}
 
 	// TODO: Group audit timestamps (separate)
-	// TODO: Group admin timestamps (separate)
+}
+
+pageInit.groupadmin = function() {
+	if(settings.general.robuxToDollars) {
+		document.$watch("#GroupTitle").$then().$watch(".robux", label => {
+			const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+			label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
+		})
+		
+		document.$watch("#revenue").$then()
+			.$watch(".summary .summary-container").$then()
+				.$watchAll(".columns-container", cont => {
+					cont.$findAll(".robux").forEach(label => {
+						const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+						label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
+					})
+
+					cont.$findAll("td.credit").forEach(label => {
+						if(!label.textContent) { return }
+						const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+						label.append(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
+					})
+				})
+			.$back()
+			.$watch(".line-item tbody").$then()
+				.$watchAll("tr", row => {
+					const label = row.$find(".robux")
+					if(!label) { return }
+					const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+					label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
+				})
+	}
+
+	document.$watch("#JoinRequests").$then()
+		.$watchAll("#JoinRequestsList", list => {
+			list.$findAll("tbody > tr > td:nth-child(3)").forEach(label => {
+				const fixedDate = RobloxTime(label.textContent)
+				if(!fixedDate) { return }
+				label.setAttribute("btr-timestamp", "")
+				label.textContent = `${$.dateSince(fixedDate, new Date())} ago`
+				label.title = fixedDate.$format("M/D/YYYY h:mm:ss A (T)")
+			})
+		})
 }
 
 pageInit.profile = function(userId) {
@@ -1596,26 +1629,27 @@ pageInit.profile = function(userId) {
 	const gamesRequest = fetch(`https://www.roblox.com/users/profile/playergames-json?userId=${userId}`)
 		.then(async response => (await response.json()).Games)
 	
-	Observer
-		.one("body", body => body.classList.add("btr-profile"))
-		.one(".profile-container .rbx-tabs-horizontal", cont => {
+	document.$watch("body", body => body.classList.add("btr-profile")).$watch(".profile-container").$then()
+		.$watch(".rbx-tabs-horizontal", cont => {
 			cont.before(left, right, bottom)
 			cont.parentNode.classList.add("btr-profile-container")
 			cont.setAttribute("ng-if", "false") // Let's make angular clean it up :)
 		})
-		.one(".profile-about-content", desc => {
+		.$watch(".profile-about-content", desc => {
 			left.$find(".placeholder-desc").replaceWith(desc)
 
 			desc.$find(".profile-about-content-text").classList.add("linkify")
 		})
-		.one(".profile-about-footer", footer => {
+		.$watch(".profile-about-footer", footer => {
 			left.$find(".placeholder-footer").replaceWith(footer)
 
 			const tooltip = footer.$find(".tooltip-pastnames")
 			if(tooltip) { tooltip.setAttribute("data-container", "body") } // Display tooltip over side panel
 		})
-		.one(".profile-about .profile-social-networks", social => left.$find(".btr-profile-about .container-header").append(social))
-		.one(".profile-header-top .header-caption", () => { // Wait for the first element after status
+		.$watch(".profile-about .profile-social-networks", social => {
+			left.$find(".btr-profile-about .container-header").append(social)
+		})
+		.$watch(".profile-header-top .header-caption", () => { // Wait for the first element after status
 			const status = $(".profile-avatar-status")
 			const statusDiv = html`<div class="btr-header-status-parent"></div>`
 			left.$find(".placeholder-status").replaceWith(statusDiv)
@@ -1633,30 +1667,14 @@ pageInit.profile = function(userId) {
 				if(status.classList.contains("icon-game")) {
 					statusText.classList.add("btr-status-ingame")
 					statusLabel.textContent = statusTitle
-
-					Observer.one("script:not([src])", x => x.innerHTML.indexOf("play_placeId") !== -1, script => {
-						const matches = script.innerHTML.match(/play_placeId\s*=\s*(\d+)/)
-						if(matches && matches[1] !== "0") {
-							const placeId = matches[1]
-							let urlTitle = statusTitle.replace(/\s+/g, "-").replace(/[^\w-]/g, "")
-
-							const anchor = html`<a href="/games/${placeId}/${urlTitle}" title="${statusTitle}"></a>`
-							statusText.replaceWith(anchor)
-							anchor.append(statusText)
-
-							const onclick = `Roblox.GameLauncher.followPlayerIntoGame(${userId})`
-							anchor.append(html`
-							<a class="btr-header-status-follow-button" title="Follow" onclick="${onclick}">\uD83D\uDEAA</a>`)
-
-							if(statusTitle === "In Game") {
-								getProductInfo(placeId).then(data => {
-									urlTitle = data.Name.replace(/\s+/g, "-").replace(/[^\w-]/g, "")
-									anchor.href = `/games/${placeId}/${urlTitle}`
-									statusLabel.textContent = data.Name
-								})
-							}
-						}
-					})
+					
+					const link = status.parentElement
+					if(link.href.includes("PlaceId=")) {
+						const anchor = html`<a href="${link.href}" title="${status.title}"></a>`
+						statusText.before(anchor)
+						anchor.prepend(statusText)
+						anchor.after(html`<a class="btr-header-status-follow-button" title="Follow" onclick="Roblox.GameLauncher.followPlayerIntoGame(${userId})">\uD83D\uDEAA</a>`)
+					}
 				} else if(status.classList.contains("icon-studio")) {
 					statusText.classList.add("btr-status-studio")
 					statusLabel.textContent = statusTitle
@@ -1666,7 +1684,7 @@ pageInit.profile = function(userId) {
 				}
 			}
 		})
-		.one(".profile-avatar", avatar => {
+		.$watch(".profile-avatar", avatar => {
 			left.$find(".placeholder-avatar").replaceWith(avatar)
 			avatar.$find(".container-header").remove()
 
@@ -1693,19 +1711,18 @@ pageInit.profile = function(userId) {
 				if(!avatarRight.contains(ev.target) && avatarRight.classList.contains("visible")) { toggleVisible(ev) }
 			})
 		})
-		.one(".profile-stats-container", stats => {
+		.$watch(".profile-stats-container", stats => {
 			stats.closest(".profile-statistics").remove()
 			left.$find(".placeholder-stats").replaceWith(stats)
 		})
-		.one("#about>.section>.container-header>h3", x => x.textContent.indexOf("Roblox Badges") !== -1, h3 => {
-			const badges = h3.parentNode.parentNode
+		.$watch(".see-more-roblox-badges-button", btn => {
+			const badges = btn.parentElement.parentElement
 			left.$find(".placeholder-robloxbadges").replaceWith(badges)
 
 			badges.classList.add("btr-profile-robloxbadges")
-			// badges.$find(".assets-count").remove()
-			badges.$find(".btn-more").setAttribute("ng-show", badges.$find(".badge-list").children.length > 10 ? "true" : "false")
+			badges.$find(".btn-more").setAttribute("ng-show", badges.$find(".badge-list").children.length > 10)
 		})
-		.one("#games-switcher", switcher => {
+		.$watch("#games-switcher", switcher => {
 			const games = switcher.parentNode
 			right.$find(".placeholder-games").replaceWith(games)
 
@@ -1716,7 +1733,7 @@ pageInit.profile = function(userId) {
 			grid.setAttribute("ng-cloak", "")
 
 			const cont = html`<div id="games-switcher" class="section-content" ng-hide="isGridOn"></div>`
-			switcher.classList.add("btr-remove-on-profile-load")
+			switcher.setAttribute("ng-if", "false") // Let's make angular clean it up :)
 			switcher.style.display = "none"
 			switcher.after(cont)
 
@@ -1776,8 +1793,7 @@ pageInit.profile = function(userId) {
 
 			pager.onsetpage = loadPage
 
-			CreateObserver(switcher).all(".hlist .slide-item-container .slide-item-stats>.hlist", stats => {
-				const slide = stats.closest(".slide-item-container")
+			switcher.$watch(">.hlist").$then().$watchAll(".slide-item-container", slide => {
 				const index = +slide.getAttribute("data-index")
 				const placeId = slide.$find(".slide-item-image").getAttribute("data-emblem-id")
 
@@ -1885,26 +1901,27 @@ pageInit.profile = function(userId) {
 
 				const descElem = item.$find(".btr-game-desc")
 				const descContent = item.$find(".btr-game-desc-content")
+				const descToggle = html`<span class="btr-toggle-description">Read More</span>`
 
 				const updateDesc = () => {
-					const add = descElem.scrollHeight > 170
-					const toggle = descElem.$find(".btr-toggle-description")
-
-					if(add && !toggle) { descElem.append(html`<span class="btr-toggle-description">Read More</span>`) }
-					else if(!add && toggle) { toggle.remove() }
+					if(descContent.offsetHeight > 170) {
+						descElem.append(descToggle)
+					} else {
+						descToggle.remove()
+					}
 
 					descContent.classList.toggle("btr-no-description", descContent.textContent.trim() === "")
 				}
-				
-				updateDesc()
+
+				onDocumentReady(updateDesc)
 				gamePromise.then(data => {
 					if(data) { descContent.textContent = data.Description }
 					Linkify(descContent)
-					updateDesc()
+					if(document.readyState !== "loading") { updateDesc() }
 				})
 			})
 		})
-		.one(".home-friends", friends => {
+		.$watch(".home-friends", friends => {
 			right.$find(".placeholder-friends").replaceWith(friends)
 			const hlist = friends.$find(".hlist")
 
@@ -1928,8 +1945,8 @@ pageInit.profile = function(userId) {
 				})
 			}
 		})
-		.one(".favorite-games-container", favorites => favorites.remove())
-		.one(".profile-collections", collections => bottom.$find(".placeholder-collections").replaceWith(collections))
+		.$watch(".favorite-games-container", favorites => favorites.remove())
+		.$watch(".profile-collections", collections => bottom.$find(".placeholder-collections").replaceWith(collections))
 
 	function initPlayerBadges() {
 		const badges = left.$find(".btr-profile-playerbadges")
@@ -2167,30 +2184,15 @@ pageInit.profile = function(userId) {
 			oldContainer.remove()
 		}
 
-		$.all(".btr-remove-on-profile-load").forEach(item => item.remove())
-
 		if(settings.profile.embedInventoryEnabled) {
 			const cont = html`
 			<div>
 				<iframe id="btr-injected-inventory" src="/users/${userId}/inventory" scrolling="no" sandbox="allow-same-origin allow-scripts allow-top-navigation-by-user-activation">
 			</div>`
 			bottom.$find(".placeholder-inventory").replaceWith(cont)
-
-			const iframe = cont.$find("iframe")
-			setInterval(() => {
-				try {
-					iframe.style.height = `${iframe.contentWindow.document.body.scrollHeight}px`
-				} catch(ex) {}
-			}, 100)
 		} else {
 			bottom.$find(".placeholder-inventory").remove()
 		}
-
-		/*
-		document.$findAll(`.profile-container>div>div[class^="placeholder-"]`).forEach(item => {
-			item.style.display = ""
-			item.classList.forEach(className => className.startsWith("placeholder-") && item.classList.remove(className))
-		}) */
 	})
 }
 
@@ -2199,18 +2201,33 @@ pageInit.avatar = function() {
 
 pageInit.inventory = function() {
 	if(settings.profile.embedInventoryEnabled && window.top !== window) {
-		Observer
-			.one("head", head => head.append(html`<base target="_top"></base>`))
-			.all("script:not([src])", script => {
-				const src = script.innerHTML
-				if(src.indexOf("top.location=self.location") !== -1 ||
-					src.indexOf("Roblox.DeveloperConsoleWarning.showWarning()") !== -1) {
+		document.$watch("head", head => head.append(html`<base target="_top"></base>`))
+			.$watch("body", body => {
+				body.classList.add("btr-embed")
+
+				const iframe = window.parent.document.getElementById("btr-injected-inventory")
+				let requested = false
+
+				new MutationObserver(() => {
+					if(!requested) {
+						requested = true
+						setTimeout(() => {
+							iframe.style.height = `${body.clientHeight}px`
+							requested = false
+						}, 200)
+					}
+				}).observe(body, { childList: true, subtree: true })
+			}).$then()
+			.$watch("#chat-container", chat => chat.remove())
+			.$watchAll("script", script => {
+				if(script.innerHTML.includes("Roblox.DeveloperConsoleWarning.showWarning()")) {
 					script.remove()
 				}
 			})
-			.one("#chat-container", chat => chat.remove())
-			.one("body", body => {
-				body.classList.add("btr-embed")
+			.$watch(".container-main").$then().$watchAll("script", script => {
+				if(script.innerHTML.includes("top.location=self.location")) {
+					script.remove()
+				}
 			})
 	}
 
@@ -2319,5 +2336,3 @@ pageInit.inventory = function() {
 			})
 	}
 }
-
-PreInit()

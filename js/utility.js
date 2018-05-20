@@ -21,8 +21,321 @@ const $ = (() => {
 	}
 
 	const DTF = new Intl.DateTimeFormat("en-us", { timeZoneName: "short" })
+	const immediateChannel = new MessageChannel()
+	const immediateCallbacks = { counter: 0 }
+
+	immediateChannel.port1.onmessage = ev => {
+		const fn = immediateCallbacks[ev.data]
+		delete immediateCallbacks[ev.data]
+		fn()
+	}
+
+	const Observers = new WeakMap()
+	const DirectObservers = new WeakMap()
+
+	const handleMutations = (mut, self) => {
+		const listeners = self.listeners
+
+		if(listeners.length) {
+			for(let i = listeners.length; i--;) {
+				const item = listeners[i]
+				const elem = item.getter()
+
+				if(elem) {
+					const last = listeners.pop()
+					if(item !== last) { listeners[i] = last }
+
+					item.resolve(elem)
+				}
+			}
+		}
+
+		if(!listeners.length) {
+			self.disconnect()
+			Observers.delete(self.target)
+		}
+	}
+
+	const handleDirectMutations = (mutations, self) => {
+		const listeners = self.listeners
+
+		if(listeners.length) {
+			for(let k = listeners.length; k--;) {
+				const item = listeners[k]
+
+				if(!item.stopped) {
+					for(let i = mutations.length; i--;) {
+						const addedNodes = mutations[i].addedNodes
+						for(let j = addedNodes.length; j--;) {
+							const node = addedNodes[j]
+							if(node.nodeType !== 1) { continue }
+
+							let matches = false
+							switch(item.type) {
+							case "name": matches = node.nodeName.toLowerCase() === item.selector; break
+							case "class": matches = node.classList.contains(item.selector); break
+							case "id": matches = node.id === item.selector; break
+							}
+			
+							if(matches) {
+								if(item.callback) { item.callback(node, () => item.stopped = true) }
+								if(item.once) {
+									item.stopped = true
+									i = 0 // To break mutations loop
+									break
+								}
+							}
+						}
+					}
+				}
+
+				if(item.stopped) {
+					const last = listeners.pop()
+					if(item !== last) { listeners[k] = last }
+				}
+			}
+		}
+
+		if(!listeners.length) {
+			self.disconnect()
+			DirectObservers.delete(self.target)
+		}
+	}
+
+	const watchAllSelectorRegex = /^((?:#|\.)?[\w-]+)$/
+	const watcherProto = {
+		$watch(...args) {
+			let finishResolve
+			const finishPromise = new Promise(resolve => finishResolve = resolve)
+
+			this.targetPromise.then(target => {
+				target.$watch(...args).finishPromise.then(finishResolve)
+			})
+
+			return {
+				targetPromise: this.targetPromise,
+				finishPromise,
+				__proto__: watcherProto
+			}
+		},
+		$watchAll(...args) {
+			this.targetPromise.then(target => {
+				target.$watchAll(...args)
+			})
+
+			return this
+		},
+		$then() {
+			if(!this.finishPromise) { throw new Error("Tried to call $then before $watch") }
+			
+			return {
+				parent: this,
+				targetPromise: this.finishPromise,
+				finishPromise: null,
+				__proto__: watcherProto
+			}
+		},
+		$back() {
+			if(!this.parent) { throw new Error("Tried to call $back before $then") }
+
+			return this.parent
+		}
+	}
 
 	Object.assign($, {
+		watch(target, selectors, filter, callback) {
+			if(!callback) {
+				callback = filter
+				filter = null
+			}
+
+			if((target instanceof Document) || (target instanceof DocumentFragment)) {
+				target = target.documentElement
+			}
+
+			if(!Array.isArray(selectors)) {
+				selectors = [selectors]
+			}
+
+			let observer = Observers.get(target)
+
+			const promises = selectors.map(selector => new Promise(resolve => {
+				const fixedSelector = selector.replace(/(^|,)(?=\s*>)/g, "$1:scope")
+				let getter
+
+				if(selector.indexOf(",") === -1 && document.contains(target)) {
+					const idMatch = selector.match(/^\s*#([\w-]+)\s*$/)
+					if(idMatch) {
+						const id = idMatch[1]
+						getter = () => {
+							const elem = document.getElementById(id)
+
+							if(elem && !target.contains(elem)) {
+								getter = () => target.querySelector(fixedSelector)
+								return getter()
+							}
+							
+							return elem
+						}
+					}
+
+					const classMatch = selector.match(/^\s*\.([\w-]+)\s*$/)
+					if(classMatch) {
+						const className = classMatch[1]
+						const collection = document.getElementsByClassName(className)
+						if(collection.length < 10) {
+							getter = () => {
+								if(collection.length >= 10) {
+									getter = () => target.querySelector(fixedSelector)
+									return getter()
+								}
+
+								for(let i = 0, len = collection.length; i < len; i++) {
+									const elem = collection[i]
+									if(target.contains(elem)) {
+										return elem
+									}
+								}
+
+								return null
+							}
+						}
+					}
+
+					const directMatch = selector.match(/^\s*>\s*((?:\.|#)?[\w-]+)\s*$/)
+					if(directMatch) {
+						const match = directMatch[1]
+
+						let item
+						if(match[0] === ".") {
+							item = { type: "class", selector: match.slice(1), callback: resolve, once: true }
+						} else if(match[0] === "#") {
+							item = { type: "id", selector: match.slice(1), callback: resolve, once: true }
+						} else {
+							item = { type: "name", selector: match, callback: resolve, once: true }
+						}
+
+						const spent = Array.prototype.some.call(target.children, node => {
+							let matches = false
+
+							switch(item.type) {
+							case "name": matches = node.nodeName.toLowerCase() === item.selector; break
+							case "class": matches = node.classList.contains(item.selector); break
+							case "id": matches = node.id === item.selector; break
+							}
+
+							if(matches) {
+								item.callback(node)
+								if(item.once) { return true }
+							}
+
+							return false
+						})
+
+						if(!spent) {
+							let observer = DirectObservers.get(target)
+							if(!observer) {
+								observer = new MutationObserver(handleDirectMutations)
+								DirectObservers.set(target, observer)
+
+								observer.listeners = [item]
+								observer.target = target
+
+								observer.observe(target, { childList: true, subtree: false })
+							} else {
+								observer.listeners.push(item)
+							}
+						}
+						return
+					}
+				}
+
+				if(!getter) { getter = () => target.querySelector(fixedSelector) }
+
+				const elem = getter()
+
+				if(elem) {
+					resolve(elem)
+				} else {
+					if(!observer) {
+						observer = new MutationObserver(handleMutations)
+						Observers.set(target, observer)
+	
+						observer.listeners = []
+						observer.target = target
+	
+						observer.observe(target, { childList: true, subtree: true })
+					}
+
+					observer.listeners.push({ getter, resolve })
+				}
+			}))
+
+			const finishPromise = Promise.all(promises).then(elems => {
+				if(callback) { callback(...elems) }
+				return elems[0]
+			})
+
+			return {
+				targetPromise: Promise.resolve(target),
+				finishPromise,
+				__proto__: watcherProto
+			}
+		},
+
+		watchAll(target, selector, callback) {
+			if(!watchAllSelectorRegex.test(selector)) {
+				throw new Error(`Invalid selector '${selector}', only simple selectors allowed`)
+			}
+
+			let item
+			if(selector[0] === ".") {
+				item = { type: "class", selector: selector.slice(1), callback }
+			} else if(selector[0] === "#") {
+				item = { type: "id", selector: selector.slice(1), callback }
+			} else {
+				item = { type: "name", selector, callback }
+			}
+
+			const spent = Array.prototype.some.call(target.children, node => {
+				let matches = false
+
+				switch(item.type) {
+				case "name": matches = node.nodeName.toLowerCase() === item.selector; break
+				case "class": matches = node.classList.contains(item.selector); break
+				case "id": matches = node.id === item.selector; break
+				}
+
+				if(matches) {
+					if(item.callback) { item.callback(node, () => item.stopped = true) }
+					if(item.once) { return true }
+				}
+
+				return false
+			})
+
+			if(!spent) {
+				let observer = DirectObservers.get(target)
+				if(!observer) {
+					observer = new MutationObserver(handleDirectMutations)
+					DirectObservers.set(target, observer)
+
+					observer.listeners = [item]
+					observer.target = target
+
+					observer.observe(target, { childList: true, subtree: false })
+				} else {
+					observer.listeners.push(item)
+				}
+			}
+		},
+
+		setImmediate(cb, ...args) {
+			const key = String(immediateCallbacks.counter++)
+			immediateCallbacks[key] = () => cb(...args)
+			immediateChannel.port2.postMessage(key)
+		},
+
 		find(self, selector) {
 			return self.querySelector(selector.replace(/(^|,)\s*(?=>)/g, "$&:scope"))
 		},
@@ -213,7 +526,9 @@ const $ = (() => {
 
 	Assign([window.Element, Element, window.Document, Document, window.DocumentFragment, DocumentFragment], {
 		$find(...args) { return $.find(this, ...args) },
-		$findAll(...args) { return $.findAll(this, ...args) }
+		$findAll(...args) { return $.findAll(this, ...args) },
+		$watch(...args) { return $.watch(this, ...args) },
+		$watchAll(...args) { return $.watchAll(this, ...args) }
 	})
 
 	Assign([window.Node, Node], {
@@ -235,7 +550,7 @@ const htmlstring = function(pieces, ...args) {
 	}
 
 	const escapePiece = s => s.replace(/[^\S ]+/g, "").replace(/ {2,}/g, " ")
-	const escapeArg = s => s.toString().replace(/[&<>"'/]/g, x => escapeMap[x])
+	const escapeArg = s => String(s).replace(/[&<>"'/]/g, x => escapeMap[x])
 
 	let result = escapePiece(pieces[0])
 
@@ -252,177 +567,4 @@ const html = function(...args) {
 	template.innerHTML = result
 
 	return template.content.firstElementChild || template.content.firstChild
-}
-
-let mutobvCounter = 0
-function CreateObserver(target, params) {
-	const options = Object.assign({ childList: true, subtree: true }, params || {})
-	const isPermanent = !!options.permanent
-	const observeList = []
-	let connected = false
-
-	const arrayFind = Array.prototype.find
-
-	let targetSelector
-	if(target === document) {
-		targetSelector = ":root"
-	} else {
-		const mutobvId = mutobvCounter++
-		target.setAttribute("mutobv", mutobvId)
-		targetSelector = `[mutobv="${mutobvId}"]`
-	}
-
-	const observer = new MutationObserver(mutations => {
-		const callbacks = []
-
-		for(let index = 0; index < observeList.length; index++) {
-			const item = observeList[index]
-
-			if(!item.persistent) {
-				let elem
-				if(item.filter) {
-					if(!item.gotFirst) {
-						const testElem = target.querySelector(item.selector)
-						if(testElem) {
-							if(item.filter(testElem)) {
-								elem = testElem
-							} else {
-								item.gotFirst = true
-							}
-						}
-					}
-
-					if(item.gotFirst) {
-						elem = arrayFind.call(target.querySelectorAll(item.selector), x => item.filter(x))
-					}
-				} else {
-					elem = target.querySelector(item.selector)
-				}
-
-				if(elem) {
-					observeList.splice(index--, 1)
-					item.whole.result[item.index] = elem
-
-					if(--item.whole.resultsLeft === 0) {
-						callbacks.push([item.whole.callback, item.whole.result])
-					}
-				}
-			} else {
-				for(let i = 0, mutLen = mutations.length; i < mutLen; i++) {
-					const addedNodes = mutations[i].addedNodes
-					for(let j = 0, addLen = addedNodes.length; j < addLen; j++) {
-						const node = addedNodes[j]
-						if(node.nodeType === 1 && node.matches(item.selector)) {
-							if(!item.filter || item.filter(node)) {
-								callbacks.push([item.callback, [node]])
-							}
-						}
-					}
-				}
-			}
-		}
-
-		if(connected && observeList.length === 0) {
-			connected = false
-			observer.disconnect()
-		}
-
-		callbacks.forEach(([fn, args]) => {
-			try { fn(...args) }
-			catch(ex) { console.error("[MutationObserver]", ex) }
-		})
-	})
-
-	return {
-		one(selectors, filter, callback) {
-			if(!callback) {
-				callback = filter
-				filter = null
-			}
-
-			if(!Array.isArray(selectors)) {
-				selectors = [selectors]
-			}
-
-			selectors.forEach((sel, i) => {
-				selectors[i] = sel.replace(/(^|,)/g, `$1${targetSelector} `)
-			})
-
-			const whole = {
-				callback,
-				result: [],
-				resultsLeft: selectors.length
-			}
-
-			selectors.forEach((selector, index) => {
-				const item = {
-					whole, filter, selector, index,
-					persistent: false
-				}
-
-				let elem
-				if(item.filter) {
-					elem = arrayFind.call(target.querySelectorAll(item.selector), x => item.filter(x))
-				} else {
-					elem = target.querySelector(item.selector)
-				}
-
-				if(elem) {
-					item.whole.result[item.index] = elem
-
-					if(--item.whole.resultsLeft === 0) {
-						try { item.whole.callback.apply(null, item.whole.result) }
-						catch(ex) { console.error("[MutationObserver]", ex) }
-					}
-				} else {
-					if(!isPermanent && document.readyState !== "loading") {
-						console.warn("observer.one called when not loading and not permanent, not listening")
-						return
-					}
-					observeList.push(item)
-				}
-			})
-			
-			if(!connected && observeList.length > 0) {
-				connected = true
-				observer.observe(target, options)
-			}
-
-			return this
-		},
-		all(selector, filter, callback) {
-			if(!callback) {
-				callback = filter
-				filter = null
-			}
-
-			selector = selector.replace(/(^|,)/g, `$1${targetSelector} `)
-			
-			const item = {
-				selector, filter, callback,
-				persistent: true
-			}
-
-			const elems = target.querySelectorAll(item.selector)
-			elems.forEach(elem => {
-				if(!item.filter || item.filter(elem)) {
-					try { item.callback(elem) }
-					catch(ex) { console.error("[MutationObserver]", ex) }
-				}
-			})
-
-			if(!isPermanent && document.readyState !== "loading") {
-				console.warn("observer.all called when not loading and not permanent, not listening")
-				return this
-			}
-			
-			observeList.push(item)
-			if(!connected) {
-				connected = true
-				observer.observe(target, options)
-			}
-
-			return this
-		}
-	}
 }
