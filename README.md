@@ -262,7 +262,6 @@ Universe APIs
 #### Get info about an universe
 * https://api.roblox.com/universes/get-info?universeId=13058
     * Also accepts `placeId`
-    * Requires `User-Agent: Roblox/WinInet` header
 
     ```json
     {
@@ -277,7 +276,6 @@ Universe APIs
 
 #### Get assets in an universe
 * https://api.roblox.com/universes/get-aliases?universeId=265920480&page=1
-    * Requires `User-Agent: Roblox/WinInet` header
     * Requires studio access to the universe
 
     ```json
@@ -365,7 +363,6 @@ Universe APIs
 #### Get places in an universe
 * https://api.roblox.com/universes/get-universe-places?universeId=13058&page=1
     * Also accepts `placeId`
-    * Requires `User-Agent: Roblox/WinInet` header
 
     ```json
     {
@@ -383,7 +380,6 @@ Universe APIs
 
 #### Get universe containing place
 * https://api.roblox.com/universes/get-universe-containing-place?placeid=1818
-    * Requires `User-Agent: Roblox/WinInet` header
 
     ```json
     {
