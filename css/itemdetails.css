@@ -106,6 +106,7 @@ a:not(.disabled) > .btr-icon-content:hover {
 
 #AssetThumbnail[data-3d-thumbs-enabled].btr-preview-enabled .enable-three-dee {
 	right: 46px;
+	z-index: 2; /* otherwise margin goes over */
 }
 
 #AssetThumbnail[data-3d-thumbs-enabled] .btr-preview-btn {
