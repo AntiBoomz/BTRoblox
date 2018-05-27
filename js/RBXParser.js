@@ -320,7 +320,8 @@ const RBXParser = (() => {
 				case "int64": return inst.setProperty(name, value, "int64")
 				case "bool": return inst.setProperty(name, value.toLowerCase() === "true", "bool")
 				case "token": return inst.setProperty(name, +value, "Enum")
-				case "color3uint8": return inst.setProperty(name, [+value >> 16 & 0xFF, +value >> 8 & 0xFF, +value & 0xFF], "Color3")
+				case "color3":
+				case "color3uint8": return inst.setProperty(name, [+value >> 16 & 255, +value >> 8 & 255, +value & 255], "Color3")
 				case "coordinateframe": {
 					const cframe = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
 					Object.values(propNode.children).forEach(x => {
@@ -364,7 +365,7 @@ const RBXParser = (() => {
 
 					return inst.setProperty(name, target, "Instance")
 				}
-				default: console.warn(`[ParseRBXXml] Unknown dataType ${propNode.nodeName} for ${instance.ClassName}.${name}`, propNode.innerHTML)
+				default: console.warn(`[ParseRBXXml] Unknown dataType ${propNode.nodeName} for ${inst.ClassName}.${name}`, propNode.innerHTML)
 				}
 			})
 		}
