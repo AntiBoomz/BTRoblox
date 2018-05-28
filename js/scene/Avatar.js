@@ -611,7 +611,7 @@ Object.assign(RBXScene, (() => {
 			case 27: case 28: case 29: case 30: case 31:
 				AssetCache.loadModel(assetId, model => {
 					const R6Folder = model.find(x => x.Name === "R6")
-					const R15Folder = model.find(x => x.Name === "R15")
+					const R15Folder = model.find(x => x.Name === "R15Fixed") || model.find(x => x.Name === "R15")
 
 					if(R6Folder) {
 						const BodyPartEnum = [null, "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
@@ -876,7 +876,7 @@ Object.assign(RBXScene, (() => {
 					this.model.position.set(0, 3, 0)
 					this.root = CreateModel(R6Tree)
 				} else {
-					this.model.position.set(0, 2.33, 0)
+					this.model.position.set(0, 2.35, 0)
 					this.root = CreateModel(R15Tree)
 				}
 
