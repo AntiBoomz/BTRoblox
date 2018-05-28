@@ -21,10 +21,14 @@ API Docs
 * https://catalog.roblox.com/docs
 * https://chat.roblox.com/docs
 * https://develop.roblox.com/docs
-* https://games.roblox.com/docs/
+* https://gamepersistence.roblox.com/docs (empty)
+* https://games.roblox.com/docs
 * https://groups.roblox.com/docs
 * https://inventory.roblox.com/docs
+* https://locale.roblox.com/docs
 * https://notifications.roblox.com/docs
+* https://presence.roblox.com/docs
+* https://textfilter.roblox.com/docs (empty)
 
 <!--
 #### Roblox Subdomains
