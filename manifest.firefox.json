@@ -18,7 +18,7 @@
 	},
 
 	"background": {
-		"persistent": false,
+		"persistent": true,
 		"scripts": [
 			"js/common.js",
 			"js/background/settings.js",
