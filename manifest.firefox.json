@@ -35,11 +35,11 @@
 		"*://m.roblox.com/",
 		"*://api.roblox.com/",
 		"*://avatar.roblox.com/",
+		"*://groups.roblox.com/",
 		"*://blog.roblox.com/",
 		"*://*.rbxcdn.com/",
 		"storage",
 		"notifications",
-		"alarms",
 		"contextMenus",
 		"clipboardWrite"
 	],
