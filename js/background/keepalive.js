@@ -22,6 +22,6 @@ const KeepAlive = {
 			return
 		}
 
-		chrome.runtime.sendMessage("keepalive")
+		chrome.runtime.sendMessage("keepalive", () => chrome.runtime.lastError)
 	}, 10e3)
 }

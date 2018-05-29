@@ -41,7 +41,13 @@ MESSAGING.listen({
 
 	_execScripts(list, respond, port) {
 		const promises = list.map(path => new Promise(resolve => {
-			chrome.tabs.executeScript(port.sender.tab.id, { file: path, runAt: "document_start", frameId: port.sender.frameId }, resolve)
+			chrome.tabs.executeScript(port.sender.tab.id, { file: path, runAt: "document_start", frameId: port.sender.frameId }, () => {
+				const err = chrome.runtime.lastError
+				if(err) {
+					console.warn("Execute Scripts failure:")
+				}
+				resolve()
+			})
 		}))
 
 		Promise.all(promises).then(respond)
