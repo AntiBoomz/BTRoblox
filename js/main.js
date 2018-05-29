@@ -1,6 +1,5 @@
 "use strict"
 
-const IS_FIREFOX = typeof chrome !== "undefined" && typeof browser !== "undefined"
 const getURL = chrome.runtime.getURL
 
 let settings
