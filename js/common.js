@@ -6,7 +6,7 @@ const DOLLARS_PER_ROBUX_RATIO = 350 / 100000
 const DEFAULT_SETTINGS = {
 	general: {
 		theme: "default",
-		showAds: false,
+		showAds: true,
 		noHamburger: true,
 		chatEnabled: true,
 		smallChatButton: true,
@@ -23,9 +23,9 @@ const DEFAULT_SETTINGS = {
 		enabled: true,
 		animationPreview: true,
 		animationPreviewAutoLoad: true,
-		explorerButton: true,
-		downloadButton: true,
-		contentButton: true,
+		explorerButton: false,
+		downloadButton: false,
+		contentButton: false,
 		imageBackgrounds: true,
 		whiteDecalThumbnailFix: true,
 		thisPackageContains: true
