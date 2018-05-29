@@ -146,10 +146,12 @@ const MESSAGING = (() => {
 
 	if(IS_BACKGROUND_SCRIPT) {
 		const listenersByName = {}
+		const ports = []
 
 		const onConnect = port => {
 			if(!port.name) { return port.disconnect() }
 			const listener = listenersByName[port.name]
+			ports.push(port)
 
 			const onMessage = msg => {
 				port.onMessage.removeListener(onMessage)
@@ -170,6 +172,9 @@ const MESSAGING = (() => {
 			}
 
 			const onDisconnect = () => {
+				const index = ports.indexOf(port)
+				if(index !== -1) { ports.splice(index, 1) }
+				
 				port.onMessage.removeListener(onMessage)
 				port.onDisconnect.removeListener(onDisconnect)
 				port = null
@@ -182,6 +187,7 @@ const MESSAGING = (() => {
 		chrome.runtime.onConnect.addListener(onConnect)
 
 		return {
+			ports,
 			listen(name, callback) {
 				if(typeof name === "object") {
 					Object.entries(name).forEach(([key, fn]) => this.listen(key, fn))

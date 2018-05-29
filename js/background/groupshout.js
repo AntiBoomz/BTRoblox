@@ -32,7 +32,7 @@
 	}
 
 	const executeCheck = async () => {
-		if(KeepAlive.shouldRestart) { return } // Allow background scripts to restart
+		if(KeepAlive.shouldRestart && MESSAGING.ports.length === 0) { return } // Allow background scripts to restart
 
 		const userId = await fetch("https://www.roblox.com/game/GetCurrentUser.ashx", { credentials: "include" })
 			.then(resp => resp.text())
