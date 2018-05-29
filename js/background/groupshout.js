@@ -44,21 +44,18 @@
 
 		const shoutFilters = await shoutFilterPromise
 		const notifications = []
+		let changed = false
 
 		json.data.forEach(({ group }) => {
 			const shout = group.shout
-			if(!shout || !shout.body) {
-				groupShoutCache[group.id] = 0
-				return
-			}
 
-			const hash = doHash(shout.body + shout.poster.userId)
+			const hash = (!shout || !shout.body) ? 0 : doHash(shout.body + shout.poster.userId)
 			const lastHash = groupShoutCache[group.id]
-
 			if(lastHash !== hash) {
 				groupShoutCache[group.id] = hash
+				changed = true
 
-				if(typeof lastHash !== "number") { return }
+				if(typeof lastHash !== "number" || hash === 0) { return }
 
 				const blacklist = shoutFilters.mode === "blacklist"
 				const includes = shoutFilters[shoutFilters.mode].includes(+group.id)
@@ -125,7 +122,9 @@
 			tryGetThumbnails(notifications, false)
 		}
 
-		localStorage.setItem("groupShoutCache", JSON.stringify(groupShoutCache))
+		if(changed) {
+			localStorage.setItem("groupShoutCache", JSON.stringify(groupShoutCache))
+		}
 	}
 
 	chrome.notifications.onClicked.addListener(notifId => {
