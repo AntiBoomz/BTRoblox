@@ -116,34 +116,38 @@ Friend APIs
             "LastOnline": "2017-04-05T13:30:22.7503794-05:00",
             "LastLocation": "Mobile Website",
             "LocationType": 0,
-            "PlaceId": null
+            "PlaceId": null,
+            "UserName": "Shedletsky"
         },
         {
             "VisitorId": 262,
             "GameId": null,
             "IsOnline": true,
             "LastOnline": "2017-04-05T13:17:56.6780147-05:00",
-            "LastLocation": "Website",
+            "LastLocation": "Online",
             "LocationType": 2,
-            "PlaceId": null
+            "PlaceId": null,
+            "UserName": "pescatello"
         },
         {
             "VisitorId": 263,
             "GameId": null,
             "IsOnline": true,
             "LastOnline": "2017-04-05T13:29:21.7378218-05:00",
-            "LastLocation": "Studio - Crossroads",
+            "LastLocation": "Creating Crossroads",
             "LocationType": 3,
-            "PlaceId": null
+            "PlaceId": null,
+            "UserName": "tklbckekskl"
         },
         {
             "VisitorId": 264,
             "GameId": "f35b6d10-1864-4b3a-a77c-fa7f0661c9ce",
             "IsOnline": true,
             "LastOnline": "2017-04-05T13:29:23.0887607-05:00",
-            "LastLocation": "Crossroads",
+            "LastLocation": "Playing Crossroads",
             "LocationType": 4,
-            "PlaceId": 1818
+            "PlaceId": 1818,
+            "UserName": "wex"
         }
     ]
     ```
@@ -301,60 +305,7 @@ Universe APIs
                     "Id": 718028943,
                     "DomainFactories": {
                         "AssetTypeFactory": {},
-                        "AssetFactory": {},
-                        "AssetVersionFactory": {},
-                        "RawContentFactory": {},
-                        "AssetReviewAccessor": {},
-                        "AliasFactory": {},
-                        "BadgeTypeFactory": {},
-                        "AnimationFactory": {},
-                        "ArmsFactory": {},
-                        "AudioFactory": {},
-                        "BackAccessoryFactory": {},
-                        "BadgeFactory": {},
-                        "BadgeGiverFactory": {},
-                        "DecalFactory": {},
-                        "FaceAccessoryFactory": {},
-                        "FaceFactory": {},
-                        "FrontAccessoryFactory": {},
-                        "GamePassFactory": {},
-                        "GearFactory": {},
-                        "HairAccessoryFactory": {},
-                        "HatFactory": {},
-                        "HeadFactory": {},
-                        "HtmlFactory": {},
-                        "ImageFactory": {},
-                        "LeftArmFactory": {},
-                        "LeftLegFactory": {},
-                        "LegsFactory": {},
-                        "LuaFactory": {},
-                        "MeshFactory": {},
-                        "MeshPartFactory": {},
-                        "ModelFactory": {},
-                        "NeckAccessoryFactory": {},
-                        "PackageFactory": {},
-                        "PantsFactory": {},
-                        "PlaceFactory": {},
-                        "PluginFactory": {},
-                        "RightArmFactory": {},
-                        "RightLegFactory": {},
-                        "ShirtFactory": {},
-                        "ShoulderAccessoryFactory": {},
-                        "SolidModelFactory": {},
-                        "TeeShirtFactory": {},
-                        "TextFactory": {},
-                        "TorsoFactory": {},
-                        "WaistAccessoryFactory": {},
-                        "YouTubeVideoFactory": {},
-                        "ClimbAnimationFactory": {},
-                        "DeathAnimationFactory": {},
-                        "FallAnimationFactory": {},
-                        "IdleAnimationFactory": {},
-                        "JumpAnimationFactory": {},
-                        "RunAnimationFactory": {},
-                        "SwimAnimationFactory": {},
-                        "WalkAnimationFactory": {},
-                        "PoseAnimationFactory": {}
+                        ...
                     }
                 },
                 "Version": null
