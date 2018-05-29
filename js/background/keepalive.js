@@ -23,5 +23,5 @@ const KeepAlive = {
 		}
 
 		chrome.runtime.sendMessage("keepalive")
-	}, 5e3)
+	}, 10e3)
 }
