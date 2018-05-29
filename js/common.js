@@ -23,9 +23,9 @@ const DEFAULT_SETTINGS = {
 		enabled: true,
 		animationPreview: true,
 		animationPreviewAutoLoad: true,
-		explorerButton: false,
-		downloadButton: false,
-		contentButton: false,
+		explorerButton: true,
+		downloadButton: true,
+		contentButton: true,
 		imageBackgrounds: true,
 		whiteDecalThumbnailFix: true,
 		thisPackageContains: true
