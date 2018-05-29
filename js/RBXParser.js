@@ -313,7 +313,7 @@ const RBXParser = (() => {
 				case "content":
 				case "string":
 				case "protectedstring":
-				case "binarystring": return inst.setProperty(name, value, "string")
+				case "binarystring": return inst.setProperty(name, value.trim(), "string")
 				case "double": return inst.setProperty(name, +value, "double")
 				case "float": return inst.setProperty(name, +value, "float")
 				case "int": return inst.setProperty(name, +value, "int")
