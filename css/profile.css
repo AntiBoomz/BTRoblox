@@ -228,6 +228,13 @@
 	display: block;
 }
 
+.btr-profile .btr-games-list .btr-game-dropdown {
+	position: absolute;
+	right: 13px;
+	top: 1px;
+	z-index: 10;
+}
+
 .btr-profile .btr-games-list .btr-game-button {
 	position: relative;
 	padding: 4px 12px;
@@ -255,15 +262,10 @@
 
 .btr-profile .btr-games-list .btr-game-content {
 	position: relative;
-	padding:0 6px;
+	padding: 0 6px;
 
 	overflow: hidden;
 	max-height: 0;
-	transition: max-height .2s;
-}
-
-.btr-profile .btr-games-list .btr-game.selected .btr-game-content {
-	max-height: 1000px;
 }
 
 .btr-profile .btr-games-list .btr-game-thumb-container {
@@ -275,6 +277,8 @@
 .btr-profile .btr-games-list .btr-game-thumb {
 	border: none;
 	width: 100%;
+	border-bottom-left-radius: 5px;
+	border-bottom-right-radius: 5px;
 }
 
 .btr-profile .btr-games-list .btr-game-thumb:not([src]) {

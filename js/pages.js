@@ -35,6 +35,14 @@ const ContainerAssetTypeIds = {
 	40: { typeId: 4, filter: x => x.ClassName === "MeshPart", prop: "MeshID" }
 }
 
+const ProhibitedReasons = {
+	UniverseDoesNotHaveARootPlace: "This game has no root place.",
+	UniverseRootPlaceIsNotActive: "This game is not active",
+	InsufficientPermissionFriendsOnly: "This game is friends only.",
+	InsufficientPermissionGroupOnly: "Group members only.",
+	UnderReview: "This game is under moderation review."
+}
+
 
 async function getProductInfo(assetId) {
 	const response = await fetch(`https://api.roblox.com/marketplace/productinfo?assetId=${assetId}`)
@@ -1625,9 +1633,6 @@ pageInit.profile = function(userId) {
 		<div class="placeholder-collections" style="display:none"></div>
 		<div class="placeholder-inventory" style="display:none"></div>
 	</div>`
-
-	const gamesRequest = fetch(`https://www.roblox.com/users/profile/playergames-json?userId=${userId}`)
-		.then(async response => (await response.json()).Games)
 	
 	document.$watch("body", body => body.classList.add("btr-profile")).$watch(".profile-container").$then()
 		.$watch(".rbx-tabs-horizontal", cont => {
@@ -1745,14 +1750,43 @@ pageInit.profile = function(userId) {
 			const pager = createPager()
 			hlist.after(pager)
 
-			function select(item) {
+			let selected
+
+			function select(item, instant) {
 				if(item.$getThumbnail) {
 					item.$getThumbnail()
 					delete item.$getThumbnail
 				}
 
-				item.classList.toggle("selected")
-				hlist.$findAll(".btr-game.selected").forEach(x => x !== item && x.classList.remove("selected"))
+				const duration = instant ? 0 : .25
+
+				if(selected) {
+					selected.classList.remove("selected")
+
+					const content = selected.$find(".btr-game-content")
+					const height = content.scrollHeight
+
+					content.style.maxHeight = `${height}px`
+					content.style.transition = `max-height ${duration}s`
+
+					$.setImmediate(() => content.style.maxHeight = "")
+					clearTimeout(selected.$animTimeout)
+				}
+
+				if(selected !== item) {
+					selected = item
+					item.classList.add("selected")
+
+					const content = item.$find(".btr-game-content")
+					const height = content.scrollHeight
+
+					content.style.maxHeight = `${height}px`
+					content.style.transition = `max-height ${duration}s`
+
+					item.$animTimeout = setTimeout(() => content.style.maxHeight = "none", duration * 1e3)
+				} else {
+					selected = null
+				}
 			}
 
 			function loadPage(page) {
@@ -1766,7 +1800,6 @@ pageInit.profile = function(userId) {
 			}
 
 			hlist
-				.$on("click", ".btr-game-button", e => !e.target.matches(".btr-game-dropdown *") && select(e.currentTarget.parentNode))
 				.$on("click", ".btr-toggle-description", e => {
 					const btn = e.currentTarget
 					const desc = btn.parentNode
@@ -1792,17 +1825,40 @@ pageInit.profile = function(userId) {
 				})
 
 			pager.onsetpage = loadPage
+			
+			const placeIdList = []
+			let lastGamePromise
 
 			switcher.$watch(">.hlist").$then().$watchAll(".slide-item-container", slide => {
-				const index = +slide.getAttribute("data-index")
-				const placeId = slide.$find(".slide-item-image").getAttribute("data-emblem-id")
+				const index = +slide.dataset.index
+				const placeId = slide.$find(".slide-item-image").dataset.emblemId
 
 				const title = slide.$find(".slide-item-name").textContent
 				const desc = slide.$find(".slide-item-description").textContent
 				const url = slide.$find(".slide-item-emblem-container>a").href
 				const iconThumb = slide.$find(".slide-item-image").getAttribute("data-src")
 
-				const gamePromise = gamesRequest.then(list => list.find(x => +x.PlaceID === +placeId))
+				placeIdList.push(placeId)
+				if(!lastGamePromise) {
+					lastGamePromise = new Promise(resolve => {
+						$.setImmediate(() => {
+							lastGamePromise = null
+							const list = placeIdList.splice(0, placeIdList.length).join("&placeIds=")
+							const fetchUrl = `https://games.roblox.com/v1/games/multiget-place-details?placeIds=${list}`
+
+							fetch(fetchUrl, { credentials: "include" }).then(resp => {
+								if(!resp.ok) {
+									console.warn("[BTRoblox]: Failed to load place details")
+									return
+								}
+
+								resolve(resp.json())
+							})
+						})
+					})
+				}
+
+				const gamePromise = lastGamePromise.then(a => a.find(b => +b.placeId === +placeId))
 
 				const item = html`
 				<li class="btr-game">
@@ -1811,16 +1867,17 @@ pageInit.profile = function(userId) {
 					</div>
 					<div class="btr-game-content">
 						<div class="btr-game-thumb-container">
-							<a href="${url}"><img class="btr-game-thumb"></a>
-							<a href="${url}"><img class="btr-game-icon" src="${iconThumb}"></a>
+							<a href="${url}">
+								<img class="btr-game-thumb">
+								<img class="btr-game-icon" src="${iconThumb}">
+							</a>
 						</div>
 						<div class="btr-game-desc">
 							<span class="btr-game-desc-content">${desc}</span>
 						</div>
 						<div class="btr-game-info">
 							<div class="btr-game-playbutton-container">
-								<div class="btr-game-playbutton VisitButton VisitButtonPlayGLI btn-primary-lg"
-									placeid="${placeId}" data-action="play" data-is-membership-level-ok="true">
+								<div class="btr-game-playbutton btn-primary-lg VisitButtonPlay" placeid="${placeId}">
 									Play
 								</div>
 							</div>
@@ -1832,13 +1889,16 @@ pageInit.profile = function(userId) {
 				item.classList.toggle("visible", (index / pageSize) < 1)
 				item.$find(".btr-game-stats").append(slide.$find(".slide-item-stats>.hlist"))
 
+				item.$find(".btr-game-button").$on("click", () => {
+					select(item)
+				})
+
 				loggedInUserPromise.then(loggedInUser => {
 					if(userId !== loggedInUser) { return }
 
 					const dropdown = html`
-					<span class="btr-game-dropdown">
-						<a class="rbx-menu-item" data-toggle="popover" data-container="body" 
-							data-bind="btr-placedrop-${placeId}" style="float:right;margin-top:-4px;">
+					<div class="btr-game-dropdown">
+						<a class="rbx-menu-item" data-toggle="popover" data-container="body" data-bind="btr-placedrop-${placeId}">
 							<span class="icon-more"></span>
 						</a>
 						<div data-toggle="btr-placedrop-${placeId}" style="display:none">
@@ -1847,18 +1907,17 @@ pageInit.profile = function(userId) {
 								<li><a href="/places/${placeId}/stats"><div>Developer Stats</div></a></li>
 								<li><a href="/places/${placeId}/update"><div>Configure this Place</div></a></li>
 								<li><a class="btr-btn-toggle-profile" data-placeid="${placeId}"><div>Remove from Profile</div></a></li>
-								<li><a class="btr-btn-shutdown-all" data-placeid="${placeId}"><div>Shut Down All Instances</div></a></li>
 							</ul>
 						</div>
-					</span>`
+					</div>`
 
-					item.$find(".btr-game-button").append(dropdown)
+					item.$find(".btr-game-button").before(dropdown)
 
 					gamePromise.then(data => {
 						if(!data) { return }
 
 						dropdown.$find(".dropdown-menu").children[2].after(
-							html`<li><a href=/universes/configure?id=${data.UniverseID}><div>Configure this Game</div></a></li>`
+							html`<li><a href=/universes/configure?id=${data.universeId}><div>Configure this Game</div></a></li>`
 						)
 					})
 				})
@@ -1884,20 +1943,17 @@ pageInit.profile = function(userId) {
 						})
 					}
 
-					if(!Number.isNaN(placeId)) {
-						const thumbUrl = `https://www.roblox.com/asset-thumbnail/json?assetId=${placeId}&width=768&height=432&format=png`
+					if(Number.isSafeInteger(+placeId)) {
+						const thumbUrl = `https://www.roblox.com/asset-thumbnail/json?assetId=${placeId}&width=768&height=432&format=jpeg`
 						retryUntilFinal(thumbUrl, json => {
 							item.$find(".btr-game-thumb").src = json.Url
 						})
 					}
 				}
 
-				if(index === 0) {
-					item.classList.add("selected")
-					getThumbnail()
-				} else {
-					item.$getThumbnail = getThumbnail
-				}
+				item.$getThumbnail = getThumbnail
+
+				if(index === 0) { select(item, true) }
 
 				const descElem = item.$find(".btr-game-desc")
 				const descContent = item.$find(".btr-game-desc-content")
@@ -1913,9 +1969,19 @@ pageInit.profile = function(userId) {
 					descContent.classList.toggle("btr-no-description", descContent.textContent.trim() === "")
 				}
 
-				onDocumentReady(updateDesc)
+				updateDesc()
 				gamePromise.then(data => {
-					if(data) { descContent.textContent = data.Description }
+					if(data) {
+						descContent.textContent = data.description
+
+						if(!data.isPlayable) {
+							const btn = item.$find(".btr-game-playbutton")
+							btn.classList.remove("VisitPlayButton")
+							btn.setAttribute("disabled", "")
+							btn.title = ProhibitedReasons[data.reasonProhibited] || data.reasonProhibited
+						}
+					}
+
 					Linkify(descContent)
 					if(document.readyState !== "loading") { updateDesc() }
 				})
