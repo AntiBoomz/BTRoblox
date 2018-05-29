@@ -6,7 +6,9 @@ BTROBLOX
 * [Undocumented APIs](#undocumented-apis)
     * [Friend APIs](#friend-apis)
     * [User APIs](#user-apis)
+    * [Group APIs](#group-apis)
     * [Asset APIs](#asset-apis)
+    * [Place APIs](#place-apis)
     * [Universe APIs](#universe-apis)
 
 
