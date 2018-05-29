@@ -1,7 +1,6 @@
 "use strict"
 
 {
-	const useAlarms = false
 	const groupShoutCache = { version: 2 }
 	const shoutFilterPromise = new Promise(resolve => {
 		STORAGE.get("shoutFilters", data => {
@@ -24,8 +23,6 @@
 		}
 	} catch(ex) {}
 
-	let isChecking = false
-
 	const doHash = s => {
 		let hash = 0
 		for(let i = s.length; i--;) {
@@ -35,9 +32,7 @@
 	}
 
 	const executeCheck = async () => {
-		if(isChecking) { return }
-
-		isChecking = true
+		if(KeepAlive.shouldRestart) { return } // Allow background scripts to restart
 
 		const userId = await fetch("https://www.roblox.com/game/GetCurrentUser.ashx", { credentials: "include" })
 			.then(resp => resp.text())
@@ -46,8 +41,6 @@
 
 		const json = await fetch(`https://groups.roblox.com/v1/users/${userId}/groups/roles`)
 			.then(resp => resp.json())
-
-		isChecking = false
 
 		const shoutFilters = await shoutFilterPromise
 		const notifications = []
@@ -142,14 +135,6 @@
 		}
 	})
 
-	if(useAlarms) {
-		chrome.alarms.onAlarm.addListener(alarm => {
-			if(alarm.name === "GroupShouts") { executeCheck() }
-		})
-	} else {
-		if("alarms" in chrome) { chrome.alarms.clear("GroupShouts") }
-	}
-
 	let checkInterval
 	let previousCheck = 0
 	let wasEnabled = null
@@ -161,30 +146,15 @@
 				wasEnabled = isEnabled
 
 				if(isEnabled) {
-					if(useAlarms) {
-						chrome.alarms.get("GroupShouts", alarm => {
-							if(!alarm) {
-								chrome.alarms.create("GroupShouts", {
-									delayInMinutes: 1,
-									periodInMinutes: 1
-								})
-							}
-						})
-					} else {
-						clearInterval(checkInterval)
-						checkInterval = setInterval(executeCheck, 10e3)
-					}
+					clearInterval(checkInterval)
+					checkInterval = setInterval(executeCheck, 10e3)
 
-					if(Date.now() - previousCheck > 1000) { // Stop check flooding on change
+					if(Date.now() - previousCheck > 1000) { // Floodcheck
 						previousCheck = Date.now()
 						executeCheck()
 					}
 				} else {
-					if(useAlarms) {
-						chrome.alarms.clear("GroupShouts")
-					} else {
-						clearInterval(checkInterval)
-					}
+					clearInterval(checkInterval)
 				}
 			}
 		})
@@ -247,5 +217,5 @@
 	})
 
 	Settings.onChange(onUpdate)
-	chrome.runtime.onInstalled.addListener(onUpdate)
+	onUpdate()
 }
