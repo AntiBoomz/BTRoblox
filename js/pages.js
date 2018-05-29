@@ -2240,9 +2240,16 @@ pageInit.profile = function(userId) {
 		onDocumentReady(() => loadPage(9, 1))
 	}
 
-	initPlayerBadges()
 	initGroups()
 	initFavorites()
+
+	if(+userId !== 1) {
+		initPlayerBadges()
+	} else {
+		left.$find(".btr-profile-playerbadges").remove()
+		const friends = right.$find(".placeholder-friends")
+		if(friends) { friends.remove() }
+	}
 
 	onDocumentReady(() => {
 		const oldContainer = $(".profile-container > .rbx-tabs-horizontal")
@@ -2250,7 +2257,7 @@ pageInit.profile = function(userId) {
 			oldContainer.remove()
 		}
 
-		if(settings.profile.embedInventoryEnabled) {
+		if(settings.profile.embedInventoryEnabled && +userId !== 1) {
 			const cont = html`
 			<div>
 				<iframe id="btr-injected-inventory" src="/users/${userId}/inventory" scrolling="no" sandbox="allow-same-origin allow-scripts allow-top-navigation-by-user-activation">
