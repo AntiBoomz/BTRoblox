@@ -100,7 +100,7 @@
 						}
 
 						const thumbUrl = String(thumb.thumbnailUrl)
-						chrome.notifications.create(`groupshout-${notif.id}`, {
+						const params = {
 							type: "basic",
 							title: notif.title,
 							iconUrl: thumbUrl,
@@ -110,7 +110,13 @@
 							priority: 2,
 							requireInteraction: true,
 							isClickable: true
-						}, playSound)
+						}
+
+						if(IS_FIREFOX) {
+							delete params.requireInteraction
+						}
+
+						chrome.notifications.create(`groupshout-${notif.id}`, params, playSound)
 					})
 
 					if(retryList.length) {
