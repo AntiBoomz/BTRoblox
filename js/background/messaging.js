@@ -12,24 +12,33 @@ MESSAGING.listen({
 		Settings.set(data)
 		respond(true)
 	},
+
 	getRankName(data, respond) {
 		const url = `https://www.roblox.com/Game/LuaWebService/HandleSocialRequest.ashx?method=GetGroupRole&playerid=${data.userId}&groupid=${data.groupId}`
 		fetch(url).then(async resp => respond(await resp.text()))
 	},
+
 	downloadFile(url, respond) {
 		fetch(url, { credentials: "include" })
-			.then(async response => {
-				const blob = await response.blob()
-				respond(URL.createObjectURL(blob))
-			})
-			.catch(ex => {
-				console.error("[cshandler] downloadFile error", ex)
-				respond(null)
+			.then(async resp => {
+				if(!resp.ok) {
+					console.error("[Messaging] downloadFile not ok", resp.status, resp.statusText)
+					respond({ state: "NOT_OK", status: resp.status, statusText: resp.statusText })
+					return
+				}
+
+				const blob = await resp.blob()
+				respond({ state: "SUCCESS", url: URL.createObjectURL(blob) })
+			}, ex => {
+				console.error("[Messaging] downloadFile error", ex)
+				respond({ state: "ERROR", message: ex.message })
 			})
 	},
+
 	requestBlogFeed(_, respond) {
 		Blogfeed.get(respond)
 	},
+
 	_execScripts(list, respond, port) {
 		const promises = list.map(path => new Promise(resolve => {
 			chrome.tabs.executeScript(port.sender.tab.id, { file: path, runAt: "document_start", frameId: port.sender.frameId }, resolve)

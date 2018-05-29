@@ -50,19 +50,31 @@ async function getProductInfo(assetId) {
 }
 
 function downloadFile(url, type) {
-	return new Promise(resolve => MESSAGING.send("downloadFile", url, resolve))
-		.then(async bloburl => {
-			if(!bloburl) { throw new Error("Failed to download file") }
-
-			const response = await fetch(bloburl)
-			URL.revokeObjectURL(bloburl)
-			switch(type) {
-			case "blob": return response.blob()
-			case "text": return response.text()
-			case "json": return response.json()
-			default: return response.arrayBuffer()
+	return new Promise(resolve => MESSAGING.send("downloadFile", url, result => {
+		if(result.state !== "SUCCESS") {
+			if(result.state === "NOT_OK") {
+				console.error("[BTRoblox] downloadFile HTTP failure:", result.status, result.statusText)
+			} else if(result.state === "ERROR") {
+				console.error("[BTRoblox] downloadFile error:", result.message)
+			} else {
+				console.error("[BTRoblox] downloadfile failure", result)
 			}
-		})
+
+			resolve(null)
+			return
+		}
+
+		fetch(result.url).then(async resp => {
+			URL.revokeObjectURL(result.url)
+
+			switch(type) {
+			case "blob": return resp.blob()
+			case "text": return resp.text()
+			case "json": return resp.json()
+			default: return resp.arrayBuffer()
+			}
+		}).then(resolve)
+	}))
 }
 
 function downloadAsset(params, type) {
@@ -802,6 +814,17 @@ pageInit.itemdetails = function(assetId) {
 
 				if(settings.itemdetails.downloadButton && InvalidDownloadableAssetTypeIds.indexOf(assetTypeId) === -1) {
 					const btn = html`<a class="btr-download-button"><div class="btr-icon-download"></div></a>`
+					let isDownloading = false
+					let actualUrl
+
+					if(assetTypeId === 3) {
+						document.$watch("#AssetThumbnail").$then().$watch(".MediaPlayerIcon", icon => {
+							const mediaUrl = icon.dataset.mediathumbUrl
+							if(mediaUrl) {
+								btn.href = actualUrl = mediaUrl
+							}
+						})
+					}
 
 					document.$watch("#item-container").$then().$watch(">.section-content", cont => {
 						cont.append(btn)
@@ -811,7 +834,18 @@ pageInit.itemdetails = function(assetId) {
 					const doNamedDownload = event => {
 						event.preventDefault()
 
-						downloadAsset(assetId, "arraybuffer").then(ab => {
+						if(isDownloading) { return }
+						isDownloading = true
+
+						const download = actualUrl ? downloadFile(actualUrl, "arraybuffer") : downloadAsset(assetId, "arraybuffer")
+						download.then(ab => {
+							isDownloading = false
+
+							if(!(ab instanceof ArrayBuffer)) {
+								alert("Failed to download")
+								return
+							}
+
 							const blobUrl = URL.createObjectURL(new Blob([ab]))
 
 							const title = $("#item-container .item-name-container h2")
@@ -826,7 +860,7 @@ pageInit.itemdetails = function(assetId) {
 						})
 					}
 	
-					btn.href = `/asset/?id=${assetId}`
+					btn.href = actualUrl || `/asset/?id=${assetId}`
 					btn.$on("click", doNamedDownload)
 				}
 
