@@ -1,7 +1,8 @@
 "use strict"
 
-const $ = (() => {
-	const $ = function(selector) { return $.find(document, selector) }
+const $ = function(selector) { return $.find(document, selector) }
+
+{
 	$.all = function(selector) { return $.findAll(document, selector) }
 		
 
@@ -534,9 +535,7 @@ const $ = (() => {
 	Assign([window.Node, Node], {
 		$empty() { return $.empty(this) }
 	})
-
-	return $
-})()
+}
 
 
 const htmlstring = function(pieces, ...args) {
