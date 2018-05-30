@@ -4,7 +4,7 @@
 	"name": "BTRoblox",
 	"short_name": "BTR",
 	"description": "Better Roblox - Making Roblox better!",
-	"version": "2.4.8",
+	"version": "2.4.9",
 	"minimum_chrome_version": "55",
 
 	"icons": {
