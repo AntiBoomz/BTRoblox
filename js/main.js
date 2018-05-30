@@ -914,9 +914,9 @@ function Init() {
 	}
 
 	if(!settings.general.showAds) {
-		const iframeSelector = `.ads-container iframe,.abp iframe,.abp-spacer iframe,.abp-container iframe,
-		.top-abp-container iframe,#AdvertisingLeaderboard iframe,#AdvertisementRight iframe,
-		#MessagesAdSkyscraper iframe,.Ads_WideSkyscraper iframe,.profile-ads-container iframe,#a iframe`
+		const iframeSelector = `.ads-container iframe,.abp iframe,.abp-spacer iframe,.abp-container iframe,.top-abp-container iframe,
+		#AdvertisingLeaderboard iframe,#AdvertisementRight iframe,#MessagesAdSkyscraper iframe,.Ads_WideSkyscraper iframe,
+		.profile-ads-container iframe, #ad iframe, iframe[src*="roblox.com/user-sponshorship/"]`
 
 		const iframes = document.getElementsByTagName("iframe")
 		new MutationObserver(() => {
