@@ -152,7 +152,7 @@
 
 				if(isEnabled) {
 					clearInterval(checkInterval)
-					checkInterval = setInterval(executeCheck, 10e3)
+					checkInterval = setInterval(executeCheck, 15e3)
 
 					if(Date.now() - previousCheck > 1000) { // Floodcheck
 						previousCheck = Date.now()
