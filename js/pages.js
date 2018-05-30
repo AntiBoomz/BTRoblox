@@ -622,12 +622,9 @@ pageInit.itemdetails = function(assetId) {
 		if(assetTypeId === -1) { return }
 
 		const canAccessPromise = new Promise(resolve => {
-			if(assetTypeId !== 10) { return resolve(true) }
+			if(assetTypeId !== 10 && assetTypeId !== 3) { return resolve(true) }
 			document.$watch("#item-container", itemCont => {
-				if(itemCont.dataset.userassetId) { return resolve(true) }
-				document.$watch(".price-container .action-button > button", btn => {
-					resolve(btn.nodeName === "BUTTON" && !btn.disabled)
-				})
+				resolve(!!itemCont.dataset.userassetId || !!itemCont.dataset.productId)
 			})
 		})
 
@@ -813,55 +810,63 @@ pageInit.itemdetails = function(assetId) {
 				}
 
 				if(settings.itemdetails.downloadButton && InvalidDownloadableAssetTypeIds.indexOf(assetTypeId) === -1) {
-					const btn = html`<a class="btr-download-button"><div class="btr-icon-download"></div></a>`
 					let isDownloading = false
-					let actualUrl
+
+					const createDownloadButton = actualUrl => {
+						const btn = html`<a class="btr-download-button"><div class="btr-icon-download"></div></a>`
+						
+						document.$watch("#item-container").$then().$watch(">.section-content", cont => {
+							cont.append(btn)
+							cont.parentNode.classList.add("btr-download-btn-shown")
+						})
+
+						const doNamedDownload = event => {
+							event.preventDefault()
+
+							if(isDownloading) { return }
+							isDownloading = true
+
+							const download = actualUrl ? downloadFile(actualUrl, "arraybuffer") : downloadAsset(assetId, "arraybuffer")
+							download.then(ab => {
+								isDownloading = false
+
+								if(!(ab instanceof ArrayBuffer)) {
+									alert("Failed to download")
+									return
+								}
+
+								const blobUrl = URL.createObjectURL(new Blob([ab]))
+
+								const title = $("#item-container .item-name-container h2")
+								let fileName = title
+									? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-")
+									: new URL(btn.href).pathname
+
+								fileName += `.${GetAssetFileType(assetTypeId, ab)}`
+
+								startDownload(blobUrl, fileName)
+								URL.revokeObjectURL(blobUrl)
+							})
+						}
+		
+						btn.href = actualUrl || `/asset/?id=${assetId}`
+						btn.$on("click", doNamedDownload)
+					}
 
 					if(assetTypeId === 3) {
-						document.$watch("#AssetThumbnail").$then().$watch(".MediaPlayerIcon", icon => {
-							const mediaUrl = icon.dataset.mediathumbUrl
-							if(mediaUrl) {
-								btn.href = actualUrl = mediaUrl
-							}
+						document.$watch("#item-container", cont => {
+							if(+cont.dataset.expectedSellerId === 1) { return }
+							
+							document.$watch("#AssetThumbnail").$then().$watch(".MediaPlayerIcon", icon => {
+								const mediaUrl = icon.dataset.mediathumbUrl
+								if(mediaUrl) {
+									createDownloadButton(mediaUrl)
+								}
+							})
 						})
+					} else {
+						createDownloadButton()
 					}
-
-					document.$watch("#item-container").$then().$watch(">.section-content", cont => {
-						cont.append(btn)
-						cont.parentNode.classList.add("btr-download-btn-shown")
-					})
-
-					const doNamedDownload = event => {
-						event.preventDefault()
-
-						if(isDownloading) { return }
-						isDownloading = true
-
-						const download = actualUrl ? downloadFile(actualUrl, "arraybuffer") : downloadAsset(assetId, "arraybuffer")
-						download.then(ab => {
-							isDownloading = false
-
-							if(!(ab instanceof ArrayBuffer)) {
-								alert("Failed to download")
-								return
-							}
-
-							const blobUrl = URL.createObjectURL(new Blob([ab]))
-
-							const title = $("#item-container .item-name-container h2")
-							let fileName = title
-								? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-")
-								: new URL(btn.href).pathname
-
-							fileName += `.${GetAssetFileType(assetTypeId, ab)}`
-
-							startDownload(blobUrl, fileName)
-							URL.revokeObjectURL(blobUrl)
-						})
-					}
-	
-					btn.href = actualUrl || `/asset/?id=${assetId}`
-					btn.$on("click", doNamedDownload)
 				}
 
 				const assetTypeContainer = ContainerAssetTypeIds[assetTypeId]
