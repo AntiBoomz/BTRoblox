@@ -1146,7 +1146,7 @@ pageInit.gamedetails = function(placeId) {
 				<div class='btr-universe-box'>
 					This place is part of 
 					<a class='btr-universe-name text-link' href='//www.roblox.com/games/${rootPlaceId}/'>${rootPlaceName || "..."}</a>
-					<div class='VisitButton VisitButtonPlayGLI btr-universe-visit-button' placeid='${rootPlaceId}' data-action='play' data-is-membership-level-ok='true'>
+					<div class='VisitButton VisitButtonPlayGLI btr-universe-visit-button' placeid='${rootPlaceId}' data-action=play data-is-membership-level-ok=true>
 						<a class='btn-secondary-md'>Play</a>
 					</div>
 				</div>`
@@ -1916,7 +1916,7 @@ pageInit.profile = function(userId) {
 						</div>
 						<div class="btr-game-info">
 							<div class="btr-game-playbutton-container">
-								<div class="btr-game-playbutton btn-primary-lg VisitButtonPlay" placeid="${placeId}">
+								<div class="btr-game-playbutton btn-primary-lg VisitButtonPlay VisitButtonPlayGLI" placeid="${placeId}"  data-action=play data-is-membership-level-ok=true>
 									Play
 								</div>
 							</div>
