@@ -986,6 +986,23 @@ function Init() {
 			catch(ex) { console.error(ex) }
 		}
 	}
+	
+	const fixedAudioCache = {}
+	InjectJS.listen("audioPreviewFix", url => {
+		if(typeof url !== "string" || url.search(/^https?:\/\/c\d\.rbxcdn\.com\/[0-9a-f]{32}$/i) === -1) { return }
+		let cached = fixedAudioCache[url]
+		if(!cached) {
+			cached = fixedAudioCache[url] = fetch(url, { credentials: "omit", redirect: "manual" })
+				.then(async resp => {
+					if(!resp.ok || resp.redirected) { return false }
+					return URL.createObjectURL(await resp.blob())
+				})
+		}
+		
+		cached.then(blobUrl => {
+			InjectJS.send("audioPreviewFix", url, blobUrl)	
+		})
+	})
 
 	if(currentPage && pageInit[currentPage.name]) {
 		try { pageInit[currentPage.name].apply(currentPage, currentPage.matches) }

@@ -255,6 +255,27 @@
 				}
 			}
 
+			{
+				// Let's fix Roblox's audio player \o/
+				ContentJS.listen("audioPreviewFix", (url, blobUrl) => {
+					document.querySelectorAll(`.MediaPlayerIcon[data-mediathumb-url="${url}"]`).forEach(btn => {
+						btn.dataset.mediathumbUrl = blobUrl
+						btn.click()
+					})
+
+					console.warn("[BTRoblox] Fixed broken audio previewer")
+				})
+
+				$(document).on("jPlayer_error", "#MediaPlayerSingleton", ev => {
+					const errorInfo = ev.jPlayer.error
+					const url = errorInfo.context
+
+					if(errorInfo.type === "e_url" && url.includes("rbxcdn.com")) {
+						ContentJS.send("audioPreviewFix", url)
+					}
+				})
+			}
+
 			if(typeof Roblox !== "undefined") {
 				if(!settings.general.showAds && Roblox.PrerollPlayer) {
 					Roblox.PrerollPlayer.waitForPreroll = x => $.Deferred().resolve(x)
