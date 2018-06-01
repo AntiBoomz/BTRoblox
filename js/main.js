@@ -10,25 +10,17 @@ let loggedInUser = -1
 let loggedInUserPromise = null
 
 const InjectJS = {
-	_queue: [],
-	_started: false,
-	_start() {
-		if(this._started) { return }
-		this._started = true
-		this._queue.forEach(args => this.send(...args))
-		this._queue = []
+	queue: [],
+	started: false,
+	start() {
+		if(this.started) { return }
+		this.started = true
+		this.queue.forEach(args => this.send(...args))
+		delete this.queue
 	},
 
 	send(action, ...detail) {
-		if(!this._started) {
-			this._queue.push([action, ...detail])
-			return
-		}
-
-		if(IS_FIREFOX) {
-			detail = cloneInto(detail, window.wrappedJSObject)
-		}
-
+		if(IS_FIREFOX) { detail = cloneInto(detail, window.wrappedJSObject) }
 		document.dispatchEvent(new CustomEvent(`inject.${action}`, { detail }))
 	},
 
@@ -774,7 +766,6 @@ const initFastSearch = () => {
 }
 
 function Init() {
-	InjectJS.listen("INJECT_INIT", () => InjectJS._start())
 
 	document.$on("click", ".btr-settings-toggle", () => {
 		const visible = settingsDiv.parentNode !== document.body
@@ -788,13 +779,7 @@ function Init() {
 		}
 	})
 
-	const headWatcher = document.$watch(">head", head => {
-		const script = document.createElement("script")
-		script.type = "text/javascript"
-		script.src = chrome.runtime.getURL("js/inject.js")
-
-		head.append(script)
-	}).$then()
+	const headWatcher = document.$watch(">head").$then()
 
 	const bodyWatcher = document.$watch(">body", body => {
 		body.classList.toggle("btr-no-hamburger", settings.general.noHamburger)
@@ -929,25 +914,17 @@ function Init() {
 		}).observe(document.documentElement, { childList: true, subtree: true })
 
 		const removeScript = x => {
-			if(x.src) {
-				if(
-					x.src.includes("googletagservices.com")
-				) {
-					x.remove()
-				}
-			} else {
-				const cont = x.innerHTML
-				if(
-					cont.includes("google-analytics.com") ||
-					cont.includes("scorecardresearch.com") ||
-					cont.includes("cedexis.com") ||
-					cont.includes("pingdom.net") ||
-					cont.includes("Roblox.Hashcash")
-				) {
-					x.remove()
-				} else if(cont.includes("Roblox.EventStream.Init")) { // Stops e.png logging
-					x.innerHTML = x.innerHTML.replace(/"[^"]*"/g, `""`)
-				}
+			const cont = x.innerHTML
+			if(
+				cont.includes("google-analytics.com") ||
+				cont.includes("scorecardresearch.com") ||
+				cont.includes("cedexis.com") ||
+				cont.includes("pingdom.net") ||
+				cont.includes("Roblox.Hashcash")
+			) {
+				x.remove()
+			} else if(cont.includes("Roblox.EventStream.Init")) { // Stops e.png logging
+				x.innerHTML = x.innerHTML.replace(/"[^"]*"/g, `""`)
 			}
 		}
 
@@ -955,8 +932,7 @@ function Init() {
 		bodyWatcher.$watchAll("script", removeScript)
 
 		if(currentPage && currentPage.name === "home") { // Hashcash :Q_
-			bodyWatcher.$watch("#wrap").$then().$watch(">.container-main").$then()
-				.$watchAll("script", removeScript)
+			bodyWatcher.$watch(".content").$then().$watchAll("script", removeScript)
 		}
 	}
 
@@ -1025,6 +1001,16 @@ function PreInit() {
 
 	const exclude = EXCLUDED_PAGES.some(patt => new RegExp(patt, "i").test(pathname))
 	if(exclude) { return }
+
+	InjectJS.listen("INJECT_INIT", () => InjectJS.start())
+	fetch(chrome.runtime.getURL("js/inject.js")).then(async resp => {
+		const script = document.createElement("script")
+		script.setAttribute("name", "BTRoblox/inject.js")
+		script.textContent = await resp.text()
+		
+		const parent = document.head || document.documentElement
+		parent.prepend(script)
+	})
 
 	currentPage = GET_PAGE(pathname)
 	STORAGE.get(["settings", "cachedBlogFeedV2"], data => {

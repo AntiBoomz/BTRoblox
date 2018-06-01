@@ -3,9 +3,7 @@
 {
 	const ContentJS = {
 		send(action, ...args) {
-			document.dispatchEvent(
-				new CustomEvent("content." + action, { detail: args })
-			)
+			document.dispatchEvent(new CustomEvent("content." + action, { detail: args }))
 		},
 		listen(actionList, callback) {
 			const cb = ev => callback(...ev.detail)
