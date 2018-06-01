@@ -1,6 +1,7 @@
 "use strict"
 
 const IS_FIREFOX = typeof chrome !== "undefined" && typeof browser !== "undefined"
+const IS_DEV_MODE = chrome.runtime.id !== "hbkpclpemjeibhioopcebchdmohaieln"
 const DOLLARS_PER_ROBUX_RATIO = 350 / 100000
 
 const DEFAULT_SETTINGS = {

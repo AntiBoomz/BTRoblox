@@ -992,7 +992,7 @@ function Init() {
 		catch(ex) { console.error(ex) }
 	}
 
-	InjectJS.send("INIT", settings, currentPage && currentPage.name, currentPage && currentPage.matches, Object.keys(templateListeners))
+	InjectJS.send("INIT", settings, currentPage && currentPage.name, currentPage && currentPage.matches, Object.keys(templateListeners), IS_DEV_MODE)
 }
 
 function PreInit() {

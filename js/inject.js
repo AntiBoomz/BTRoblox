@@ -57,37 +57,47 @@
 		})
 	}
 
-	function OnInit(settings, currentPage, matches, templates) {
+	function OnInit(settings, currentPage, matches, templates, IS_DEV_MODE) {
 		if(!settings.general.showAds && !window.googletag) {
 			const googletag = {}
-			let done = false
+			let state = 0
 
 			window.googletag = new Proxy(googletag, {
 				set(target, name, value) {
 					target[name] = value
-					if(!done && name === "cmd") {
-						done = true
+					if(state === 0 && name === "cmd") {
+						state = 1
 						window.googletag = googletag
 
-						const insertBefore = Node.prototype.insertBefore
-						Node.prototype.insertBefore = function(...args) {
+						const proto = Node.prototype
+						const insertBefore = proto.insertBefore
+						proto.insertBefore = function(...args) {
 							const node = args[0]
-							if(node instanceof Node && node.nodeName === "SCRIPT") {
-								if(node.src.includes("googletagservices.com")) {
-									return
-								}
+							if(node instanceof Node && node.nodeName === "SCRIPT" && node.src.includes("googletagservices.com")) {
+								state = 2
+								return
 							}
 
 							return insertBefore.apply(this, args)
 						}
 
-						setTimeout(() => {
-							Node.prototype.insertBefore = insertBefore
-						}, 0)
+						setTimeout(() => proto.insertBefore = insertBefore, 0)
 					}
 					return true
 				}
 			})
+
+			if(IS_DEV_MODE) {
+				const onload = () => {
+					if(state !== 2) {
+						alert(`Failed to remove gpt.js (${state})`)
+					}
+				}
+
+				document.addEventListener("DOMContentLoaded", onload, { once: true })
+			}
+		} else if(window.googletag && IS_DEV_MODE) {
+			alert("Failed to load inject before googletag")
 		}
 
 		const postInit = () => {
