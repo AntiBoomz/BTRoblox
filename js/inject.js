@@ -101,7 +101,13 @@
 		}
 
 		const postInit = () => {
-			if(typeof jQuery === "undefined") { return }
+			if(typeof jQuery === "undefined") {
+				if(IS_DEV_MODE) {
+					alert("[BTR] window.jQuery not set")
+				}
+				return
+			}
+
 			if(typeof angular !== "undefined") {
 				DoTemplates(templates)
 
@@ -253,6 +259,10 @@
 						})
 					} catch(ex) { console.log(ex) }
 				}
+			} else {
+				if(IS_DEV_MODE) {
+					alert("[BTR] window.angular not set")
+				}
 			}
 
 			{
@@ -277,8 +287,14 @@
 			}
 
 			if(typeof Roblox !== "undefined") {
-				if(!settings.general.showAds && Roblox.PrerollPlayer) {
-					Roblox.PrerollPlayer.waitForPreroll = x => $.Deferred().resolve(x)
+				if(!settings.general.showAds) {
+					if(Roblox.PrerollPlayer) {
+						Roblox.PrerollPlayer.waitForPreroll = x => $.Deferred().resolve(x)
+					}
+
+					if(Roblox.VideoPreRollDFP) {
+						Roblox.VideoPreRollDFP = null
+					}
 				}
 
 				if(currentPage === "gamedetails" && settings.gamedetails.enabled) {
@@ -294,7 +310,7 @@
 					})
 
 					// Server pagers
-					const createPager = (gameInstance, isFriends) => {
+					const createPager = gameInstance => {
 						let curIndex = 0
 						let maxSize = 0
 
@@ -375,7 +391,13 @@
 							}, ".btr-server-input")
 					}
 
-					if(Roblox.RunningGameInstances) { createPager(Roblox.RunningGameInstances) }
+					if(Roblox.RunningGameInstances) {
+						createPager(Roblox.RunningGameInstances)
+					} else {
+						if(IS_DEV_MODE) {
+							alert("[BTR] Roblox.RunningGameInstances not set")
+						}
+					}
 				} else if(currentPage === "develop") {
 					if(Roblox.BuildPage) {
 						Roblox.BuildPage.GameShowcase = new Proxy(Roblox.BuildPage.GameShowcase || {}, {
@@ -387,6 +409,10 @@
 							}
 						})
 					}
+				}
+			} else {
+				if(IS_DEV_MODE) {
+					alert("[BTR] window.Roblox not set")
 				}
 			}
 
