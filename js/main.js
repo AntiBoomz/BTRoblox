@@ -766,7 +766,6 @@ const initFastSearch = () => {
 }
 
 function Init() {
-
 	document.$on("click", ".btr-settings-toggle", () => {
 		const visible = settingsDiv.parentNode !== document.body
 
@@ -901,7 +900,7 @@ function Init() {
 	if(!settings.general.showAds) {
 		const iframeSelector = `.ads-container iframe,.abp iframe,.abp-spacer iframe,.abp-container iframe,.top-abp-container iframe,
 		#AdvertisingLeaderboard iframe,#AdvertisementRight iframe,#MessagesAdSkyscraper iframe,.Ads_WideSkyscraper iframe,
-		.profile-ads-container iframe, #ad iframe, iframe[src*="roblox.com/user-sponshorship/"]`
+		.profile-ads-container iframe, #ad iframe, iframe[src*="roblox.com/user-sponsorship/"]`
 
 		const iframes = document.getElementsByTagName("iframe")
 		new MutationObserver(() => {
@@ -914,13 +913,21 @@ function Init() {
 		}).observe(document.documentElement, { childList: true, subtree: true })
 
 		const removeScript = x => {
+			if(x.src) {
+				if(x.src.includes("imasdk.googleapis.com")) {
+					x.remove()
+				}
+				return
+			}
+
 			const cont = x.innerHTML
 			if(
 				cont.includes("google-analytics.com") ||
 				cont.includes("scorecardresearch.com") ||
 				cont.includes("cedexis.com") ||
 				cont.includes("pingdom.net") ||
-				cont.includes("Roblox.Hashcash")
+				cont.includes("Roblox.Hashcash") ||
+				cont.includes("Roblox.VideoPreRollDFP")
 			) {
 				x.remove()
 			} else if(cont.includes("Roblox.EventStream.Init")) { // Stops e.png logging
