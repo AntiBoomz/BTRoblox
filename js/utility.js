@@ -79,7 +79,11 @@ const $ = function(selector) { return $.find(document, selector) }
 							}
 			
 							if(matches) {
-								if(item.callback) { item.callback(node, () => item.stopped = true) }
+								if(item.callback) {
+									try { item.callback(node, () => item.stopped = true) }
+									catch(ex) { console.error(ex) }
+								}
+								
 								if(item.once) {
 									item.stopped = true
 									i = 0 // To break mutations loop
@@ -226,7 +230,9 @@ const $ = function(selector) { return $.find(document, selector) }
 							}
 
 							if(matches) {
-								item.callback(node)
+								try { item.callback(node) }
+								catch(ex) { console.error(ex) }
+
 								if(item.once) { return true }
 							}
 
@@ -234,17 +240,17 @@ const $ = function(selector) { return $.find(document, selector) }
 						})
 
 						if(!spent) {
-							let observer = DirectObservers.get(target)
-							if(!observer) {
-								observer = new MutationObserver(handleDirectMutations)
-								DirectObservers.set(target, observer)
+							let dObserver = DirectObservers.get(target)
+							if(!dObserver) {
+								dObserver = new MutationObserver(handleDirectMutations)
+								DirectObservers.set(target, dObserver)
 
-								observer.listeners = [item]
-								observer.target = target
+								dObserver.listeners = [item]
+								dObserver.target = target
 
-								observer.observe(target, { childList: true, subtree: false })
+								dObserver.observe(target, { childList: true, subtree: false })
 							} else {
-								observer.listeners.push(item)
+								dObserver.listeners.push(item)
 							}
 						}
 						return
@@ -273,7 +279,11 @@ const $ = function(selector) { return $.find(document, selector) }
 			}))
 
 			const finishPromise = Promise.all(promises).then(elems => {
-				if(callback) { callback(...elems) }
+				if(callback) {
+					try { callback(...elems) }
+					catch(ex) { console.error(ex) }
+				}
+
 				return elems[0]
 			})
 
@@ -308,7 +318,11 @@ const $ = function(selector) { return $.find(document, selector) }
 				}
 
 				if(matches) {
-					if(item.callback) { item.callback(node, () => item.stopped = true) }
+					if(item.callback) {
+						try { item.callback(node, () => item.stopped = true) }
+						catch(ex) { console.error(ex) }
+					}
+
 					if(item.once) { return true }
 				}
 
