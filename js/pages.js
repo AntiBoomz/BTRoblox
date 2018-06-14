@@ -8,14 +8,14 @@ const AssetTypeIds = (() => {
 	const acc = ["Hair", "Face", "Neck", "Shoulder", "Front", "Back", "Waist"]
 	const anim = ["Climb", "Death", "Fall", "Idle", "Jump", "Run", "Swim", "Walk", "Pose"]
 
-	acc.forEach((value, index) => { acc[index] = `Accessory | ${value}` })
-	anim.forEach((value, index) => { anim[index] = `Animation | ${value}` })
+	acc.forEach((value, index) => { acc[index] = `${value}Accessory` })
+	anim.forEach((value, index) => { anim[index] = `${value}Animation` })
 
 	return [null,
-		"Image", "T-Shirt", "Audio", "Mesh", "Lua", "HTML", "Text", "Accessory | Hat", "Place", "Model", // 10
+		"Image", "TShirt", "Audio", "Mesh", "Lua", "HTML", "Text", "Hat", "Place", "Model", // 10
 		"Shirt", "Pants", "Decal", "null", "null", "Avatar", "Head", "Face", "Gear", "null", // 20
-		"Badge", "Group Emblem", "null", "Animation", "Arms", "Legs", "Torso", "Right Arm", "Left Arm", "Left Leg", // 30
-		"Right Leg", "Package", "YouTubeVideo", "Game Pass", "App", "null", "Code", "Plugin", "SolidModel", "MeshPart", // 40
+		"Badge", "Group Emblem", "null", "Animation", "Arms", "Legs", "Torso", "RightArm", "LeftArm", "LeftLeg", // 30
+		"RightLeg", "Package", "YouTubeVideo", "Game Pass", "App", "null", "Code", "Plugin", "SolidModel", "MeshPart", // 40
 		...acc, // 47
 		...anim // 56
 	]
@@ -616,15 +616,26 @@ pageInit.itemdetails = function(assetId) {
 			}
 		})
 	
-	document.$watch(".item-type-field-container .field-content", typeLabel => {
-		const assetTypeName = typeLabel.textContent.trim()
+	document.$watch("#item-container", itemCont => {
+		const assetTypeName = itemCont.dataset.assetType
 		const assetTypeId = AssetTypeIds.indexOf(assetTypeName)
-		if(assetTypeId === -1) { return }
+		if(assetTypeId === -1) {
+			if(IS_DEV_MODE) { alert(`Missing assetTypeId for ${assetTypeName}`) }
+			return
+		}
 
 		const canAccessPromise = new Promise(resolve => {
-			if(assetTypeId !== 10 && assetTypeId !== 3) { return resolve(true) }
-			document.$watch("#item-container", itemCont => {
-				resolve(!!itemCont.dataset.userassetId || !!itemCont.dataset.productId)
+			if(assetTypeId !== 10 && assetTypeId !== 3 && assetTypeId !== 24) { return resolve(true) }
+
+			const canAccess = !!itemCont.dataset.userassetId || !!itemCont.dataset.productId
+			if(canAccess) { return resolve(true) }
+
+			itemCont.$watch(".item-name-container a[href*=\"/users/\"]", creatorLink => {
+				const creatorId = +String(creatorLink.href).replace(/^.*roblox.com\/users\/(\d+).*$/, "$1")
+				if(!Number.isSafeInteger(creatorId)) { return resolve(false) }
+				if(creatorId === 1) { return resolve(true) }
+				
+				loggedInUserPromise.then(userId => resolve(creatorId === +userId))
 			})
 		})
 
