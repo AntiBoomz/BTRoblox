@@ -1090,7 +1090,7 @@ pageInit.gamedetails = function(placeId) {
 				row.$find("p.para-overflow").classList.remove("para-overflow")
 
 				if(settings.gamedetails.showBadgeOwned) {
-					const match = url.match(/catalog\/(\d+)\//)
+					const match = url.match(/(?:catalog|badges)\/(\d+)\//)
 					if(!match) { return }
 
 					const badgeId = +match[1]
