@@ -300,15 +300,6 @@
 				if(currentPage === "gamedetails" && settings.gamedetails.enabled) {
 					const placeId = matches[0]
 
-					// Properly select initial tab
-					$(() => {
-						const tabBtn = $(".rbx-tab.active")
-						if(tabBtn.length) {
-							tabBtn.removeClass("active")
-							tabBtn.find("a").click()
-						}
-					})
-
 					// Server pagers
 					const createPager = gameInstance => {
 						let curIndex = 0
@@ -394,9 +385,13 @@
 					if(Roblox.RunningGameInstances) {
 						createPager(Roblox.RunningGameInstances)
 					} else {
-						if(IS_DEV_MODE) {
-							alert("[BTR] Roblox.RunningGameInstances not set")
-						}
+						if(IS_DEV_MODE) { alert("[BTR] Roblox.RunningGameInstances not set") }
+					}
+
+					// Properly init tab
+					const tabBtn = document.querySelector(".rbx-tab.active a")
+					if(tabBtn) {
+						jQuery(tabBtn).trigger("shown.bs.tab")
 					}
 				} else if(currentPage === "develop") {
 					if(Roblox.BuildPage) {
