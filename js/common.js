@@ -102,7 +102,7 @@ const PAGE_INFO = {
 		css: ["inventory.css"]
 	},
 	itemdetails: {
-		matches: ["^/(?:catalog|library|game-pass)/(\\d+)/"],
+		matches: ["^/(?:catalog|library|game-pass|badges)/(\\d+)/"],
 		css: ["itemdetails.css"]
 	},
 	messages: {
