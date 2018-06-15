@@ -687,7 +687,7 @@ Object.assign(RBXScene, (() => {
 							target: "Head",
 							meshId: RBXParser.parseContentUrl(mesh.MeshId),
 							baseTexId: RBXParser.parseContentUrl(mesh.TextureId),
-							scale: mesh.Scale
+							scale: [...mesh.Scale]
 						})
 	
 						this.refreshBodyParts()
@@ -742,7 +742,7 @@ Object.assign(RBXScene, (() => {
 					tex.image.src = solidColorDataURL(163, 162, 165)
 					if(texId) { AssetCache.loadImage(texId, url => { tex.image.src = url }) }
 
-					const cframe = attInst.CFrame
+					const cframe = [...attInst.CFrame]
 
 					if(meshInst.Offset) { // cframe is C1, so negate offset
 						cframe[0] -= meshInst.Offset[0]
