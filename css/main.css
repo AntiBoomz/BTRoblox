@@ -58,6 +58,10 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	border: 2px solid #0074bd;
 }
 
+#navigation .rbx-scrollbar > .mCSB_inside > .mCSB_container {
+	margin-right: 0;
+}
+
 
 /* btr-no-hamburger TODO: Make sure this stuff is right */
 
