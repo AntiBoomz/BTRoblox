@@ -2363,17 +2363,21 @@ pageInit.inventory = function() {
 
 			const visibility = `staticData.isOwnPage && (${categories.join(" || ")})`
 
-			template.$find(".assets-explorer-title").after(html`
-			<div class="header-content" ng-show="${visibility}">
-				<a class="hidden btr-it-reload" ng-click="newPage(currentData.currentPage)"/>
-				<a class="btn btn-secondary-sm btr-it-btn btr-it-remove disabled" style="float:right;margin:4px 10px;">Remove</a>
-			</div>`)
+			template.$findAll(".assets-explorer-title").forEach(title => {
+				title.after(html`
+				<div class="header-content" ng-show="${visibility}">
+					<a class="hidden btr-it-reload" ng-click="newPage(currentData.currentPage)"/>
+					<a class="btn btn-secondary-sm btr-it-btn btr-it-remove disabled" style="float:right;margin:4px 10px;">Remove</a>
+				</div>`)
+			})
 
-			template.$find("#assetsItems .item-card-container").append(html`
-			<span class="checkbox btr-it-checkbox" ng-show="${visibility}">
-				<input type="checkbox" id="btr-it-box{{$index}}" class="btr-it-box" data-index="{{$index}}">
-				<label for="btr-it-box{{$index}}" style="position:absolute;left:6px;top:6px;width:auto;"></label>
-			</span>`)
+			template.$findAll("#assetsItems .item-card-container").forEach(cont => {
+				cont.append(html`
+				<span class="checkbox btr-it-checkbox" ng-show="${visibility}">
+					<input type="checkbox" id="btr-it-box{{$index}}" class="btr-it-box" data-index="{{$index}}">
+					<label for="btr-it-box{{$index}}" style="position:absolute;left:6px;top:6px;width:auto;"></label>
+				</span>`)
+			})
 		})
 
 		let isRemoving = false
@@ -2417,9 +2421,9 @@ pageInit.inventory = function() {
 				const items = []
 				for(let i = 0; i < checked.length; i++) {
 					const self = checked[i].closest(".item-card")
-					const matches = self.$find(".item-card-link").href.match(/(?:\/(?:catalog|library)\/|[?&]id=)(\d+)/)
+					const matches = self.$find(".item-card-link").href.match(/(?:\/(?:catalog|library|game-pass|badges)\/|[?&]id=)(\d+)/)
 
-					if(matches && !Number.isNaN(parseInt(matches[1], 10))) {
+					if(matches && Number.isSafeInteger(+matches[1])) {
 						items.push({
 							obj: self,
 							assetId: matches[1]
