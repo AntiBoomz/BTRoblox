@@ -1007,6 +1007,7 @@ function Init() {
 		}
 		
 		cached.then(blobUrl => {
+			if(!blobUrl) { return }
 			InjectJS.send("audioPreviewFix", url, blobUrl)
 		})
 	})
