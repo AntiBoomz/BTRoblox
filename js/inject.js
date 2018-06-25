@@ -389,10 +389,12 @@
 					}
 
 					// Properly init tab
-					const tabBtn = document.querySelector(".rbx-tab.active a")
-					if(tabBtn) {
-						jQuery(tabBtn).trigger("shown.bs.tab")
-					}
+					setTimeout(() => {
+						const tabBtn = document.querySelector(".rbx-tab.active a")
+						if(tabBtn) {
+							jQuery(tabBtn).trigger("shown.bs.tab")
+						}
+					}, 0)
 				} else if(currentPage === "develop") {
 					if(Roblox.BuildPage) {
 						Roblox.BuildPage.GameShowcase = new Proxy(Roblox.BuildPage.GameShowcase || {}, {
