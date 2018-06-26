@@ -466,7 +466,7 @@ pageInit.money = function() {
 		document.$watch("#MyTransactions_tab").$then().$watch("table > tbody").$then()
 			.$watchAll(".datarow", item => {
 				item.$watch(".Amount .robux", label => {
-					const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+					const usd = RobuxToUSD(label.textContent.replace(/,/g, "").replace(/^\((.+)\)$/, "$1").trim())
 					label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
 				})
 			})
@@ -477,7 +477,7 @@ pageInit.money = function() {
 					row.$watch(".Credit", label => {
 						const update = () => {
 							if(label.$find("span")) { return }
-							const text = label.textContent.replace(/,/g, "").trim()
+							const text = label.textContent.replace(/,/g, "").replace(/^\((.+)\)$/, "$1").trim()
 							if(!text) { return }
 							const usd = RobuxToUSD(text)
 							label.append(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
@@ -492,7 +492,7 @@ pageInit.money = function() {
 						label.after(usdLabel)
 	
 						const update = () => {
-							const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+							const usd = RobuxToUSD(label.textContent.replace(/,/g, "").replace(/^\((.+)\)$/, "$1").trim())
 							usdLabel.textContent = ` ($${usd})`
 						}
 	
