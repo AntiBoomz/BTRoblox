@@ -175,6 +175,13 @@
 
 						valuediv.append(more)
 					} else {
+						const id = RBXParser.parseContentUrl(value)
+						if(id) {
+							const more = html`<a class=more href="/library/${id}/Redirect" target=_blank>🔗</a>`
+							more.title = "Go to asset"
+							valuediv.append(more)
+						}
+
 						input.value = input.title = value
 					}
 
