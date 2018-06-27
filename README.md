@@ -19,10 +19,12 @@ API Docs
 * https://api.roblox.com/docs
 * https://auth.roblox.com/docs
 * https://avatar.roblox.com/docs
+* https://badges.roblox.com/docs (new)
 * https://billing.roblox.com/docs
 * https://catalog.roblox.com/docs
 * https://chat.roblox.com/docs
 * https://develop.roblox.com/docs
+* https://friends.roblox.com/docs (new)
 * https://gamepersistence.roblox.com/docs (empty)
 * https://games.roblox.com/docs
 * https://groups.roblox.com/docs
@@ -30,7 +32,9 @@ API Docs
 * https://locale.roblox.com/docs
 * https://notifications.roblox.com/docs
 * https://presence.roblox.com/docs
+* https://publish.roblox.com/docs (new)
 * https://textfilter.roblox.com/docs (empty)
+* https://thumbnails.roblox.com/docs (new)
 
 <!--
 #### Roblox Subdomains
