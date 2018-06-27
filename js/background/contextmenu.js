@@ -2,9 +2,20 @@
 
 {
 	const assetUrlPatterns = [
-		"*://www.roblox.com/*-item?id=*",
-		"*://www.roblox.com/catalog/*",
-		"*://www.roblox.com/library/*"
+		"*://*.roblox.com/*-item?*id=*",
+		"*://*.roblox.com/catalog/*",
+		"*://*.roblox.com/library/*",
+		"*://*.roblox.com/badges/*",
+		"*://*.roblox.com/game-pass/*"
+	]
+
+	const placeUrlPatterns = [
+		"*://*.roblox.com/games/*",
+		"*://*.roblox.com/refer?*PlaceId=*"
+	]
+
+	const userUrlPatterns = [
+		"*://*.roblox.com/users/*/profile*"
 	]
 
 	function copyToClipboard(text) {
@@ -19,11 +30,15 @@
 
 	function onContextMenuClick(info) {
 		const menuId = info.menuItemId
-		if(menuId === "assetPage" || menuId === "assetLink") {
-			const url = (menuId === "assetPage" ? info.pageUrl : info.linkUrl)
-			const assetId = url.replace(/^.*(?:[&?]id=|\/(?:catalog|library)\/)(\d+).*$/, "$1")
-
+		if(menuId === "assetLink") {
+			const assetId = info.linkUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library|badges|game-pass)\/)(\d+).*$/i, "$1")
 			copyToClipboard(assetId)
+		} else if(menuId === "placeLink") {
+			const placeId = info.linkUrl.replace(/^.*(?:[&?]placeid=)(\d+).*$/i, "$1")
+			copyToClipboard(placeId)
+		} else if(menuId === "userLink") {
+			const userId = info.linkUrl.replace(/^.*(?:\/users\/)(\d+).*$/i, "$1")
+			copyToClipboard(userId)
 		}
 	}
 
@@ -37,10 +52,17 @@
 		})
 
 		chrome.contextMenus.create({
-			id: "assetPage",
-			title: "Copy page asset id",
-			contexts: ["page"],
-			documentUrlPatterns: assetUrlPatterns
+			id: "placeLink",
+			title: "Copy place id",
+			contexts: ["link"],
+			targetUrlPatterns: placeUrlPatterns
+		})
+
+		chrome.contextMenus.create({
+			id: "userLink",
+			title: "Copy user id",
+			contexts: ["link"],
+			targetUrlPatterns: userUrlPatterns
 		})
 	})
 }
