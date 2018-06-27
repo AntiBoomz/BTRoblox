@@ -6,3 +6,9 @@
 	float: initial;
 	margin: 0 auto;
 }
+
+/* Fix potato border bug for empty friend images */
+
+.placeholder-avatar-headshot > .avatar-card-image:not([src]) {
+	visibility: hidden;
+}
