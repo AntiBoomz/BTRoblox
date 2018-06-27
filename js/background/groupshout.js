@@ -84,8 +84,7 @@
 			}
 
 			const tryGetThumbnails = (list, didRetry) => {
-				const params = `%5B${list.map(x => `%7BgroupId:${x.id}%7D`).join("%2C")}%5D`
-				const url = `https://www.roblox.com/group-thumbnails?params=${params}`
+				const url = `https://www.roblox.com/group-thumbnails?params=[${list.map(x => `{groupId:${x.id}}`).join(",")}]`
 
 				fetch(url).then(async resp => {
 					const thumbs = await resp.json()
