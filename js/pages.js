@@ -936,26 +936,31 @@ pageInit.itemdetails = function(assetId) {
 				})
 			}
 
-			if(settings.itemdetails.whiteDecalThumbnailFix && assetTypeId === 13) {
-				// const transparentTexture = "https://t6.rbxcdn.com/3707fe58b613498a0f1fc7d11faeccf3"
-
+			if(settings.itemdetails.whiteDecalThumbnailFix && (assetTypeId === 13 || assetTypeId === 1)) {
 				document.$watch("#AssetThumbnail").$then().$watch(".thumbnail-span img", img => {
-					// if(img.src !== transparentTexture) return;
-
-					AssetCache.loadModel(assetId, model => {
-						const decal = model.find(x => x.ClassName === "Decal")
-						if(!decal) { return }
-
-						const imgId = RBXParser.parseContentUrl(decal.Texture)
-						if(!imgId) { return }
-
+					const apply = imgId => {
 						const preload = new Image()
-						preload.src = `https://assetgame.roblox.com/asset/?id=${imgId}`
 						preload.onload = () => {
 							preload.onload = null
 							img.src = preload.src
+							$("#AssetThumbnail").classList.add("btr-fixBackground")
 						}
-					})
+						preload.src = `https://assetgame.roblox.com/asset/?id=${imgId}`
+					}
+
+					if(assetTypeId === 13) {
+						AssetCache.loadModel(assetId, model => {
+							const decal = model.find(x => x.ClassName === "Decal")
+							if(!decal) { return }
+	
+							const imgId = RBXParser.parseContentUrl(decal.Texture)
+							if(!imgId) { return }
+							
+							apply(imgId)
+						})
+					} else {
+						apply(assetId)
+					}
 				})
 			}
 
