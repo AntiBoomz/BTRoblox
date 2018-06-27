@@ -15,6 +15,7 @@ BTROBLOX
 API Docs
 ========
 
+* https://abuse.roblox.com/docs (temp offline)
 * https://accountsettings.roblox.com/docs
 * https://api.roblox.com/docs
 * https://auth.roblox.com/docs
@@ -31,6 +32,7 @@ API Docs
 * https://inventory.roblox.com/docs
 * https://locale.roblox.com/docs
 * https://notifications.roblox.com/docs
+* https://points.roblox.com/docs (new)
 * https://presence.roblox.com/docs
 * https://publish.roblox.com/docs (new)
 * https://textfilter.roblox.com/docs (empty)
