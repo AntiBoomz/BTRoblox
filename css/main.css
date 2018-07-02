@@ -566,7 +566,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 .btr-settings-modal {
 	position: fixed;
 	display: flex;
-	top: 0;
+	top: 40px;
 	left: 0;
 	right: 0;
 	bottom: 0;
@@ -613,6 +613,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 .btr-settings-content {
 	flex: 1 1 auto;
 	overflow: auto;
+	overscroll-behavior: contain;
 	
 	padding: 6px;
 }

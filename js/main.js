@@ -178,11 +178,6 @@ const initSettingsDiv = () => {
 
 	const content = settingsDiv.$find("#btr-settings-main")
 
-	content.$on("mousewheel", e => {
-		if(e.deltaY < 0 && content.scrollTop === 0) { return e.preventDefault() }
-		if(e.deltaY > 0 && content.scrollTop >= content.scrollHeight - content.clientHeight) { return e.preventDefault() }
-	})
-
 	{ // Shout Filters
 		const filterContent = settingsDiv.$find("#btr-settings-shout-filters")
 		const enabledList = filterContent.$find(".btr-filter-enabled")
