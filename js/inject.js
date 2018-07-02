@@ -101,14 +101,12 @@
 		}
 
 		const postInit = () => {
-			if(typeof jQuery === "undefined") {
-				if(IS_DEV_MODE) {
-					alert("[BTR] window.jQuery not set")
-				}
+			if(!window.jQuery) {
+				console.warn("[BTR] window.jQuery not set")
 				return
 			}
 
-			if(typeof angular !== "undefined") {
+			if(window.angular) {
 				DoTemplates(templates)
 
 				if(settings.general.smallChatButton) {
@@ -260,9 +258,7 @@
 					} catch(ex) { console.log(ex) }
 				}
 			} else {
-				if(IS_DEV_MODE) {
-					alert("[BTR] window.angular not set")
-				}
+				console.warn("[BTR] window.angular not set")
 			}
 
 			if(settings.general.fixAudioPreview) {
