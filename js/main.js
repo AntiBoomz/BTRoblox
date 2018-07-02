@@ -914,7 +914,10 @@ function Init() {
 
 		const removeScript = x => {
 			if(x.src) {
-				if(x.src.includes("imasdk.googleapis.com")) {
+				if(
+					x.src.includes("imasdk.googleapis.com") ||
+					x.src.includes("radar.cedexis.com")
+				) {
 					x.remove()
 				}
 				return
