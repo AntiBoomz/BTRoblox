@@ -2,10 +2,6 @@
 	max-width: 970px;
 }
 
-#item-details-description {
-	white-space: pre-wrap;
-}
-
 #item-details-description.content-height {
 	height: 193px;
 }
@@ -194,15 +190,4 @@ a:not(.disabled) > .btr-icon-content:hover {
 	background-image: linear-gradient(45deg, #e6e6e8 25%, transparent 25%, transparent 75%, #e6e6e8 75%), linear-gradient(45deg, #e6e6e8 25%, transparent 25%, transparent 75%, #e6e6e8 75%);
 	background-size: 20px 20px;
 	background-position: 0 0, 10px 10px;
-}
-
-#AssetThumbnail.btr-fixBackground {
-	border: none;
-	display: flex;
-	justify-content: center;
-}
-
-#AssetThumbnail.btr-fixBackground .thumbnail-span {
-	border: 1px #ddd solid;
-	width: auto;
 }
