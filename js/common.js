@@ -142,11 +142,7 @@ const GET_PAGE = path => {
 
 const STORAGE = chrome.storage.local
 const MESSAGING = (() => {
-	const IS_BACKGROUND_SCRIPT = chrome.extension
-		&& chrome.extension.getBackgroundPage
-		&& chrome.extension.getBackgroundPage() === window
-
-	if(IS_BACKGROUND_SCRIPT) {
+	if(chrome && chrome.extension && chrome.extension.getBackgroundPage) {
 		const listenersByName = {}
 		const ports = []
 
