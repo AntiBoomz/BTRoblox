@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS = {
 		smallChatButton: true,
 		fastSearch: true,
 		robuxToDollars: false,
+		fixAudioPreview: true,
 
 		navigationEnabled: true,
 		showBlogFeed: true

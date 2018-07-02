@@ -265,8 +265,7 @@
 				}
 			}
 
-			{
-				// Let's fix Roblox's audio player \o/
+			if(settings.general.fixAudioPreview) {
 				ContentJS.listen("audioPreviewFix", (url, blobUrl) => {
 					document.querySelectorAll(`.MediaPlayerIcon[data-mediathumb-url="${url}"]`).forEach(btn => {
 						btn.dataset.mediathumbUrl = blobUrl
