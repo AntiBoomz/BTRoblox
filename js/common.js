@@ -7,7 +7,7 @@ const DOLLARS_PER_ROBUX_RATIO = 350 / 100000
 const DEFAULT_SETTINGS = {
 	general: {
 		theme: "default",
-		showAds: true,
+		showAds: false,
 		noHamburger: true,
 		chatEnabled: true,
 		smallChatButton: true,
