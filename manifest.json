@@ -15,7 +15,6 @@
 		"persistent": false,
 		"scripts": [
 			"js/common.js",
-			"js/background/keepalive.js",
 			"js/background/settings.js",
 			"js/background/blogfeed.js",
 			"js/background/messaging.js",

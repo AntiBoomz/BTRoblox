@@ -1,7 +1,5 @@
 "use strict"
 
-localStorage.removeItem("cssCache") // Legacy cleanup
-
 MESSAGING.listen({
 	getSettings(data, respond) {
 		Settings.get(settings => {
