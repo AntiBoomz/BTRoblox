@@ -2,26 +2,11 @@
 
 {
 	const groupShoutCache = { version: 2 }
-	const shoutFilterPromise = new Promise(resolve => {
-		STORAGE.get("shoutFilters", data => {
-			if("shoutFilters" in data) {
-				resolve(data.shoutFilters)
-			} else {
-				resolve({
-					mode: "blacklist",
-					blacklist: [],
-					whitelist: []
-				})
-			}
-		})
-	})
-
-	try {
-		const saved = JSON.parse(localStorage.getItem("groupShoutCache"))
-		if(saved && saved.version === groupShoutCache.version) {
-			Object.assign(groupShoutCache, saved)
-		}
-	} catch(ex) {}
+	let shoutFilterPromise
+	let cacheLoaded = false
+	let previousCheck = 0
+	let checkInterval
+	let wasEnabled
 
 	const doHash = s => {
 		let hash = 0
@@ -32,7 +17,32 @@
 	}
 
 	const executeCheck = async () => {
-		if(KeepAlive.shouldRestart && MESSAGING.ports.length === 0) { return } // Allow background scripts to restart
+		if(!cacheLoaded) {
+			cacheLoaded = true
+			
+			try {
+				const saved = JSON.parse(localStorage.getItem("groupShoutCache"))
+				if(saved && saved.version === groupShoutCache.version) {
+					Object.assign(groupShoutCache, saved)
+				}
+			} catch(ex) {}
+		}
+
+		if(!shoutFilterPromise) {
+			shoutFilterPromise = new Promise(resolve => {
+				STORAGE.get("shoutFilters", data => {
+					if("shoutFilters" in data) {
+						resolve(data.shoutFilters)
+					} else {
+						resolve({
+							mode: "blacklist",
+							blacklist: [],
+							whitelist: []
+						})
+					}
+				})
+			})
+		}
 
 		const userId = await fetch("https://www.roblox.com/game/GetCurrentUser.ashx", { credentials: "include" })
 			.then(resp => resp.text())
@@ -139,9 +149,11 @@
 		}
 	})
 
-	let checkInterval
-	let previousCheck = 0
-	let wasEnabled = null
+	chrome.alarms.onAlarm.addListener(alarm => {
+		if(alarm.name === "ShoutCheck") {
+			executeCheck()
+		}
+	})
 
 	const onUpdate = () => {
 		Settings.get(settings => {
@@ -150,19 +162,24 @@
 				wasEnabled = isEnabled
 
 				if(isEnabled) {
-					clearInterval(checkInterval)
+					chrome.alarms.create("ShoutCheck", { periodInMinutes: 1 })
 					checkInterval = setInterval(executeCheck, 15e3)
 
-					if(Date.now() - previousCheck > 1000) { // Floodcheck
+					if(Date.now() - previousCheck > 2000) { // Floodcheck
 						previousCheck = Date.now()
 						executeCheck()
 					}
 				} else {
+					chrome.alarms.clear("ShoutCheck")
 					clearInterval(checkInterval)
+					clearInterval = null
 				}
 			}
 		})
 	}
+
+	chrome.runtime.onInstalled.addListener(onUpdate)
+	Settings.onChange(onUpdate)
 
 	MESSAGING.listen({
 		getShoutFilters(data, respond) {
@@ -219,7 +236,4 @@
 			respond(true)
 		}
 	})
-
-	Settings.onChange(onUpdate)
-	onUpdate()
 }
