@@ -21,6 +21,7 @@ const AssetTypeIds = (() => {
 	]
 })()
 
+const CheckAccessAssetTypeIds = [2, 3, 10, 11, 12, 24]
 const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34, 35, 37]
 const AnimationPreviewAssetTypeIds = [24, 32, 48, 49, 50, 51, 52, 53, 54, 55, 56]
 const WearableAssetTypeIds = [2, 8, 11, 12, 17, 18, 27, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47]
@@ -625,9 +626,10 @@ pageInit.itemdetails = function(assetId) {
 		}
 
 		const canAccessPromise = new Promise(resolve => {
-			if(assetTypeId !== 10 && assetTypeId !== 3 && assetTypeId !== 24) { return resolve(true) }
+			if(!CheckAccessAssetTypeIds.includes(assetTypeId)) { return resolve(true) }
 
-			const canAccess = !!itemCont.dataset.userassetId || !!itemCont.dataset.productId
+			const data = itemCont.dataset
+			const canAccess = data.userassetId || (data.productId && !data.expectedPrice)
 			if(canAccess) { return resolve(true) }
 
 			itemCont.$watch(".item-name-container a[href*=\"/users/\"]", creatorLink => {
