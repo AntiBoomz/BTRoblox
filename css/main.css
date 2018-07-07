@@ -332,6 +332,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	position: relative;
 	white-space: nowrap;
 	overflow: auto;
+	overscroll-behavior: contain;
 }
 
 .btr-properties {
@@ -387,41 +388,48 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 
 .btr-explorer-item {
 	display: inline-flex;
-	padding: 1px 0;
-	padding-right: 6px;
 	margin: 0;
+	padding: 0;
+	padding-right: 6px;
 
-	font-size: 16px;
-	line-height: 22px;
+	font-size: 14px;
+	height: 20px;
 	font-weight: 500;
 	color: #000;
+
+	align-items: center;
 
 	cursor: default;
 	user-select: none;
 	-moz-user-select: none;
+
+	border: 1px solid transparent;
 }
 
 .btr-explorer-item:hover {
 	background-color: #D8E4F7;
-	outline: 1px solid #BFCDE4;
+	border-color: #BFCDE4;
 }
 
 .btr-explorer-item.selected {
 	background-color: #618ED5;
-	outline: 1px solid #567DBC;
+	border-color: #567DBC;
 	color: white;
 }
 
 .btr-explorer-more {
 	position: relative;
 	display: inline-block;
-	width: 16px;
-	height: 16px;
+	width: 15px;
+	height: 15px;
 	margin: 0;
 }
 
 .btr-explorer-has-children>.btr-explorer-more::before {
-	content: "v";
+	background-image: url(/res/icon-explorer-2.png);
+	background-size: 30px 30px;
+	background-position: 0 0;
+	content: "";
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -436,16 +444,18 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 }
 
 .btr-explorer-has-children.closed>.btr-explorer-more::before {
-	content: ">";
-	color: #88F;
+	background-position-x: 15px;
+}
+
+.btr-explorer-more:hover::before {
+	background-position-y: 15px;
 }
 
 .btr-explorer-icon {
 	display: inline-block;
 	width: 16px;
 	height: 16px;
-	margin: 3px;
-	margin-right: 4px;
+	margin: 0 6px 0 3px;
 
 	background-image: url(/res/icon-explorer.png);
 	background-repeat: no-repeat;
@@ -482,19 +492,19 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	text-align: center;
 }
 
-.btr-property-item {
+.btr-property-name, .btr-property-value {
 	display: flex;
 	height: 22px;
 	line-height: 22px;
+	padding: 0 4px;
 }
 
 .btr-property-name {
-	flex: 0 0 60%;
 	min-width: 0;
 	border-right: 1px solid #EEEEEE;
 	font-size: 14px;
 	font-weight: 500;
-	padding: 2px 4px;
+	padding-left: 6px;
 
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -502,10 +512,8 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 
 .btr-property-value {
 	position: relative;
-	flex: 0 0 40%;
 	font-size: 14px;
 	font-weight: 500;
-	padding: 2px 4px;
 
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -546,17 +554,19 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 }
 
 .btr-properties-list {
+	display: grid;
+	grid-template-columns: auto auto;
 	max-height: calc(100% - 20px);
 	overflow-x: hidden;
 	overflow-y: auto;
 }
 
-.btr-properties-list li {
+.btr-properties-list > * {
 	background-color: #FFFFFF;
 	border-bottom: 1px solid #EEEEEE;
 }
 
-.btr-properties-list li:nth-child(2n) {
+.btr-properties-list > *:nth-child(4n), .btr-properties-list > *:nth-child(4n - 1)  {
 	background-color: #F9F9F9;
 }
 

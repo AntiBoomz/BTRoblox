@@ -23,7 +23,11 @@
 		GuiButton: 52, Script: 6
 	}
 
-	const hiddenProperties = ["PhysicsData", "MeshData", "ChildData", "InitialSize", "formFactorRaw", "ScriptGuid"]
+	const hiddenProperties = [
+		"PhysicsData", "MeshData", "ChildData", "InitialSize", "formFactorRaw", "ScriptGuid"
+	]
+	
+	const TransProperties = { size: "Size", scale: "Scale", shape: "Shape" }
 
 	const propertyGroups = {
 		Appearance: {
@@ -55,7 +59,6 @@
 		Surface: { Order: 5, List: ["BackSurface", "BottomSurface", "FrontSurface", "LeftSurface", "RightSurface", "TopSurface"] }
 	}
 
-	const TransProperties = { size: "Size", scale: "Scale", shape: "Shape" }
 
 	const propertyOrder = []
 	Object.values(propertyGroups).forEach(group => {
@@ -87,23 +90,20 @@
 				</div>
 				<div class="btr-properties">
 					<div class="btr-properties-header"></div>
-					<ul class="btr-properties-list">
-					</ul>
+					<div class="btr-properties-list">
+					</div>
 				</div>
 			</div>"`
 
 			element.$on("click", ".btr-explorer", () => this.select([]))
-				.$on("mousewheel", ".btr-explorer, .btr-properties-list", ev => {
-					if(!ev.shiftKey && ev.deltaY !== 0) {
-						const cont = ev.currentTarget
-						const up = ev.deltaY < 0
-						if(up && cont.scrollTop === 0 || !up && cont.scrollTop === cont.scrollHeight - cont.clientHeight) {
-							ev.preventDefault()
-						}
-					}
-				})
-			
 			this.select([])
+		}
+
+		openText(value) {
+			const doc = window.open("", "_blank").document
+			const pre = doc.createElement("pre")
+			pre.textContent = value
+			doc.body.append(pre)
 		}
 
 		select(items) {
@@ -138,94 +138,85 @@
 				const prop = target.Properties[name]
 				const displayName = TransProperties[name] || name
 
-				const item = html`
-				<li class="btr-property-item">
-					<div class="btr-property-name" title="${displayName}">${displayName}</div>
-					<div class="btr-property-value"></div>
-				</li>`
+				const nameItem = html`<div class="btr-property-name" title="${displayName}">${displayName}</div>`
+				const valueItem = html`<div class="btr-property-value"></div>`
 
-				const valuediv = item.$find(".btr-property-value")
 				const value = prop.value
 
 				switch(prop.type) {
 				case "int64": {
-					valuediv.textContent = value
+					valueItem.textContent = value
 					break
 				}
 				case "int":
 				case "float":
 				case "double": {
-					valuediv.textContent = fixNum(value)
+					valueItem.textContent = fixNum(value)
 					break
 				}
 				case "string": {
 					const input = html`<input type=text>`
 
-					if(value.length > 120) {
-						input.value = input.title = value.slice(0, 117) + "..."
+					const tooLong = value.length > 120
+					if(tooLong || value.includes("\n")) {
+						input.value = input.title = (tooLong ? value.slice(0, 117) + "..." : value)
 
 						const more = html`<a class=more>...</a>`
+						more.$on("click", () => this.openText(value))
 
-						more.$on("click", () => {
-							const doc = window.open("", "_blank").document
-							const pre = doc.createElement("pre")
-							pre.textContent = value
-							doc.body.append(pre)
-						})
-
-						valuediv.append(more)
+						valueItem.append(more)
 					} else {
 						const id = RBXParser.parseContentUrl(value)
 						if(id) {
 							const more = html`<a class=more href="/library/${id}/Redirect" target=_blank>🔗</a>`
 							more.title = "Go to asset"
-							valuediv.append(more)
+							valueItem.append(more)
 						}
 
 						input.value = input.title = value
 					}
 
 					input.$on("keydown", ev => ev.preventDefault())
-					valuediv.append(input)
+					valueItem.append(input)
 					break
 				}
 				case "bool": {
 					const input = html`<input type=checkbox>`
 					input.checked = value
 					input.$on("click", ev => ev.preventDefault())
-					valuediv.append(input)
+					valueItem.append(input)
 					break
 				}
 				case "Instance":
-					valuediv.textContent = value ? value.Name : ""
+					valueItem.textContent = value ? value.Name : ""
 					break
 				case "CFrame":
 				case "Color3":
 				case "Vector2":
 				case "Vector3":
-					valuediv.textContent = fixNums(value).join(", ")
+					valueItem.textContent = fixNums(value).join(", ")
 					break
 				case "Enum":
-					valuediv.textContent = "Enum " + value
+					valueItem.textContent = "Enum " + value
 					break
 				case "UDim2":
-					valuediv.textContent = `{${fixNums(value[0]).join(", ")}}, {${fixNums(value[1]).join(", ")}}`
+					valueItem.textContent = `{${fixNums(value[0]).join(", ")}}, {${fixNums(value[1]).join(", ")}}`
 					break
 				case "PhysicalProperties":
-					valuediv.textContent = value.CustomPhysics ?
+					valueItem.textContent = value.CustomPhysics ?
 						fixNums([value.Density, value.Friction, value.Elasticity, value.FrictionWeight, value.ElasticityWeight]).join(", ") :
 						"false"
 					break
 				default:
 					console.log("Unknown property type", name, prop)
-					valuediv.textContent = String(value)
+					valueItem.textContent = String(value)
 				}
 
-				if(!valuediv.title) {
-					valuediv.title = valuediv.textContent
+				if(!valueItem.title) {
+					valueItem.title = valueItem.textContent
 				}
 
-				propertyList.append(item)
+				propertyList.append(nameItem, valueItem)
 			}
 		}
 
@@ -263,13 +254,31 @@
 				</li>`
 
 				const itemBtn = inst.element = item.$find(".btr-explorer-item")
+				let lastClick
+
 				itemBtn.$on("click", ev => {
 					this.select([inst])
 					ev.stopPropagation()
+
+					if(lastClick && Date.now() - lastClick < 500) {
+						lastClick = null
+
+						switch(inst.ClassName) {
+						case "Script":
+						case "LocalScript":
+						case "ModuleScript":
+							this.openText(inst.Source || "")
+							break
+						default:
+							item.classList.toggle("closed")
+						}
+					} else {
+						lastClick = Date.now()
+					}
 				})
 
 				item.$find(".btr-explorer-more").$on("click", ev => {
-					ev.currentTarget.parentNode.classList.toggle("closed")
+					item.classList.toggle("closed")
 					ev.stopPropagation()
 				})
 
