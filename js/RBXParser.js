@@ -902,27 +902,32 @@ const RBXParser = (() => {
 
 		parseContentUrl(urlString) {
 			if(typeof urlString !== "string" || !urlString.length) { return null }
-			try {
-				const url = new URL(urlString)
-				switch(url.protocol) {
-				case "rbxassetid:": {
-					const id = parseInt(url.pathname.replace(/^\/*/, ""), 10)
-					assert(!Number.isNaN(id), "Invalid asset id")
-					return id
-				}
-				case "http:":
-				case "https:": {
-					assert(url.hostname.search(/^((assetgame|www|web)\.)?roblox\.com$/) !== -1, "Invalid hostname")
-					assert(url.pathname.replace(/\/{2,}/g, "/").search(/^\/asset\/?$/) !== -1, "Invalid pathname")
-					const id = parseInt(url.searchParams.get("id"), 10)
-					assert(!Number.isNaN(id), "Missing or invalid asset id")
-					return id
-				}
-				default:
-					throw new Error("Invalid protocol", url)
-				}
-			} catch(ex) {
-				console.error("Failed to parse url", urlString, ex)
+
+			let url
+			try { url = new URL(urlString) }
+			catch(ex) {}
+
+			if(!url) { return null }
+
+			switch(url.protocol) {
+			case "rbxassetid:": {
+				const id = parseInt(url.pathname.replace(/^\/*/, ""), 10)
+				if(!Number.isSafeInteger(id)) { return null }
+				return id
+			}
+			case "http:":
+			case "https:": {
+				const validHost = url.hostname.search(/^((assetgame|www|web)\.)?roblox\.com$/) !== -1
+				if(!validHost) { return null }
+				
+				const validPath = url.pathname.replace(/\/{2,}/g, "/").search(/^\/asset\/?$/) !== -1
+				if(!validPath) { return null }
+
+				const id = parseInt(url.searchParams.get("id"), 10)
+				if(!Number.isSafeInteger(id)) { return null }
+
+				return id
+			}
 			}
 
 			return null
