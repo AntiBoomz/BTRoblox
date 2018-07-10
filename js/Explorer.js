@@ -155,7 +155,7 @@
 					break
 				}
 				case "string": {
-					const input = html`<input type=text>`
+					const input = html`<input type=text readonly>`
 
 					const tooLong = value.length > 120
 					if(tooLong || value.includes("\n")) {
@@ -176,7 +176,6 @@
 						input.value = input.title = value
 					}
 
-					input.$on("keydown", ev => ev.preventDefault())
 					valueItem.append(input)
 					break
 				}
