@@ -629,7 +629,7 @@ pageInit.itemdetails = function(assetId) {
 			if(!CheckAccessAssetTypeIds.includes(assetTypeId)) { return resolve(true) }
 
 			const data = itemCont.dataset
-			const canAccess = data.userassetId || (data.productId && !data.expectedPrice)
+			const canAccess = data.userassetId || (data.productId && !+data.expectedPrice)
 			if(canAccess) { return resolve(true) }
 
 			itemCont.$watch(".item-name-container a[href*=\"/users/\"]", creatorLink => {
