@@ -1117,6 +1117,11 @@ pageInit.gamedetails = function(placeId) {
 			if(settings.gamedetails.showBadgeOwned) {
 				const url = `https://www.roblox.com/badges/list-badges-for-place?placeId=${placeId}`
 				fetch(url, { credentials: "include" }).then(async response => {
+					if(!response.ok) {
+						console.warn("[BTR] Failed to get badge data")
+						return
+					}
+
 					const json = await response.json()
 
 					json.GameBadges.forEach(data => {
