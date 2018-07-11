@@ -20,6 +20,11 @@ const InjectJS = {
 	},
 
 	send(action, ...detail) {
+		if(!this.started) {
+			this.queue.push([action, ...detail])
+			return
+		}
+
 		if(IS_FIREFOX) { detail = cloneInto(detail, window.wrappedJSObject) }
 		document.dispatchEvent(new CustomEvent(`inject.${action}`, { detail }))
 	},
