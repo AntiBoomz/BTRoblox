@@ -1023,6 +1023,7 @@ function Init() {
 
 function PreInit() {
 	if(document.contentType !== "text/html") { return }
+	if(IS_FIREFOX && document.readyState === "complete") { return } // Stop annoying stuff
 	const pathname = window.location.pathname
 
 	const exclude = EXCLUDED_PAGES.some(patt => new RegExp(patt, "i").test(pathname))
