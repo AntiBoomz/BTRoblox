@@ -21,9 +21,9 @@ const $ = function(selector) { return $.find(document, selector) }
 		return amt > 0 ? "0".repeat(amt) + str : str
 	}
 
-	const DTF = new Intl.DateTimeFormat("en-us", { timeZoneName: "short" })
 	const immediateChannel = new MessageChannel()
 	const immediateCallbacks = { counter: 0 }
+	let DTF
 
 	immediateChannel.port1.onmessage = ev => {
 		const fn = immediateCallbacks[ev.data]
@@ -465,7 +465,9 @@ const $ = function(selector) { return $.find(document, selector) }
 				case "a": return date.getHours() < 12 ? "am" : "pm"
 				case "A": return date.getHours() < 12 ? "AM" : "PM"
 				case "Z": return (("+" + -date.getTimezoneOffset() / 60).replace(/^\D?(\D)/, "$1").replace(/^(.)(.)$/, "$10$2") + "00")
-				case "T": return DTF.format(date).split(" ")[1]
+				case "T":
+					if(!DTF) { DTF = new Intl.DateTimeFormat("en-us", { timeZoneName: "short" }) }
+					return DTF.format(date).split(" ")[1]
 				case "Y": return ("" + date.getFullYear()).slice(-str.length)
 				case "M": return str.length > 2 ? Months[date.getMonth()].slice(0, str.length > 3 ? 9 : 3) : Fixed(date.getMonth() + 1, str.length)
 				case "D": return str.length > 2 ? Days[date.getDay()].slice(0, str.length > 3 ? 9 : 3)
