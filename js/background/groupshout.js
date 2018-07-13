@@ -187,6 +187,7 @@
 				respond(shoutFilters)
 			})
 		},
+
 		setShoutFilterMode(mode, respond) {
 			if(mode !== "blacklist" && mode !== "whitelist") { return respond(false) }
 
@@ -197,6 +198,7 @@
 
 			respond(true)
 		},
+
 		shoutFilterBlacklist(data, respond) {
 			const id = data.id
 			const state = !!data.state
@@ -216,6 +218,7 @@
 
 			respond(true)
 		},
+		
 		shoutFilterWhitelist(data, respond) {
 			const id = data.id
 			const state = !!data.state

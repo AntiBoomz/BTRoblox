@@ -8,7 +8,7 @@ MESSAGING.listen({
 	},
 	setSetting(data, respond) {
 		Settings.set(data)
-		respond(true)
+		respond()
 	},
 
 	getRankName(data, respond) {
@@ -33,21 +33,17 @@ MESSAGING.listen({
 			})
 	},
 
-	requestBlogFeed(_, respond) {
-		Blogfeed.get(respond)
-	},
-
 	_execScripts(list, respond, port) {
 		const promises = list.map(path => new Promise(resolve => {
 			chrome.tabs.executeScript(port.sender.tab.id, { file: path, runAt: "document_start", frameId: port.sender.frameId }, () => {
 				const err = chrome.runtime.lastError
 				if(err) {
-					console.warn("Execute Scripts failure:")
+					console.warn("Execute Scripts failure:", err)
 				}
 				resolve()
 			})
 		}))
 
-		Promise.all(promises).then(respond)
+		Promise.all(promises).then(() => respond())
 	}
 })

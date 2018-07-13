@@ -147,43 +147,46 @@ const MESSAGING = (() => {
 		const listenersByName = {}
 		const ports = []
 
-		const onConnect = port => {
-			if(!port.name) { return port.disconnect() }
-			const listener = listenersByName[port.name]
+		chrome.runtime.onConnect.addListener(port => {
+			let alive = true
 			ports.push(port)
 
-			const onMessage = msg => {
-				port.onMessage.removeListener(onMessage)
+			port.onMessage.addListener(msg => {
+				const listener = listenersByName[msg.name]
 
 				if(listener) {
-					const respond = (response, isFinal) => {
-						if(port) {
-							port.postMessage(response)
-							if(isFinal !== false) { port.disconnect() }
-						} else {
-							console.warn("Tried to respond to a closed port")
+					let final = false
+
+					const respond = (response, hasMore) => {
+						if(alive && !final && "id" in msg) {
+							final = !(hasMore === true)
+
+							port.postMessage({
+								id: msg.id,
+								data: response,
+								final
+							})
+						}
+					}
+
+					respond.cancel = () => {
+						if(alive && !final && "id" in msg) {
+							final = true
+							port.posMessage({ id: msg.id, final, cancel: true })
 						}
 					}
 
 					try { listener(msg, respond, port) }
 					catch(ex) { console.error(ex) }
 				}
-			}
+			})
 
-			const onDisconnect = () => {
+			port.onDisconnect.addListener(() => {
+				alive = false
 				const index = ports.indexOf(port)
 				if(index !== -1) { ports.splice(index, 1) }
-				
-				port.onMessage.removeListener(onMessage)
-				port.onDisconnect.removeListener(onDisconnect)
-				port = null
-			}
-
-			port.onMessage.addListener(onMessage)
-			port.onDisconnect.addListener(onDisconnect)
-		}
-
-		chrome.runtime.onConnect.addListener(onConnect)
+			})
+		})
 
 		return {
 			ports,
@@ -203,18 +206,50 @@ const MESSAGING = (() => {
 	}
 
 	return {
+		callbacks: {},
+		responseCounter: 0,
+
 		send(name, data, callback) {
 			if(typeof data === "function") {
 				callback = data
 				data = null
 			}
 
-			const port = chrome.runtime.connect({ name })
-			port.postMessage(data)
+			if(!this.port) {
+				const port = this.port = chrome.runtime.connect()
+
+				port.onMessage.addListener(msg => {
+					const fn = this.callbacks[msg.id]
+
+					if(msg.final) {
+						delete this.callbacks[msg.id]
+						if(Object.keys(this.callbacks).length === 0) {
+							this.portTimeout = setTimeout(() => this.port.disconnect(), 5 * 60e3)
+						}
+
+						if(msg.cancel) { return }
+					}
+
+					fn(msg.data)
+				})
+
+				port.onDisconnect.addListener(() => {
+					clearTimeout(this.portTimeout)
+					this.port = null
+				})
+
+				this.portTimeout = setTimeout(() => this.port.disconnect(), 5 * 60e3)
+			}
+
+			const info = { name, data }
 
 			if(typeof callback === "function") {
-				port.onMessage.addListener(callback)
+				const id = info.id = this.responseCounter++
+				this.callbacks[id] = callback
+				clearTimeout(this.portTimeout)
 			}
+
+			this.port.postMessage(info)
 		}
 	}
 })()
