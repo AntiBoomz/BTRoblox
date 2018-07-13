@@ -11,20 +11,8 @@ let loggedInUserPromise = null
 
 const InjectJS = {
 	queue: [],
-	started: false,
-	start() {
-		if(this.started) { return }
-		this.started = true
-		this.queue.forEach(args => this.send(...args))
-		delete this.queue
-	},
 
 	send(action, ...detail) {
-		if(!this.started) {
-			this.queue.push([action, ...detail])
-			return
-		}
-
 		if(IS_FIREFOX) { detail = cloneInto(detail, window.wrappedJSObject) }
 		document.dispatchEvent(new CustomEvent(`inject.${action}`, { detail }))
 	},
@@ -53,6 +41,8 @@ function modifyTemplate(id, callback) {
 		InjectJS.listen(name, data => {
 			modify(data, html => InjectJS.send(name, html))
 		})
+
+		InjectJS.send("TEMPLATE_INIT", id)
 	}
 
 	templateListeners[id].push(callback)
@@ -1022,39 +1012,45 @@ function Init() {
 		try { pageInit[currentPage.name].apply(currentPage, currentPage.matches) }
 		catch(ex) { console.error(ex) }
 	}
-
-	InjectJS.send("INIT", settings, currentPage && currentPage.name, currentPage && currentPage.matches, Object.keys(templateListeners), IS_DEV_MODE)
 }
 
 function PreInit() {
 	if(document.contentType !== "text/html") { return }
 	if(IS_FIREFOX && document.readyState === "complete") { return } // Stop annoying stuff
+	
 	const pathname = window.location.pathname
-
 	const exclude = EXCLUDED_PAGES.some(patt => new RegExp(patt, "i").test(pathname))
 	if(exclude) { return }
-
-	InjectJS.listen("INJECT_INIT", () => InjectJS.start())
-	fetch(chrome.runtime.getURL("js/inject.js")).then(async resp => {
-		const script = document.createElement("script")
-		script.setAttribute("name", "BTRoblox/inject.js")
-		script.textContent = await resp.text()
-		
-		const parent = document.head || document.documentElement
-		parent.prepend(script)
-	})
-
+	
 	currentPage = GET_PAGE(pathname)
 	STORAGE.get(["settings", "cachedBlogFeedV2"], data => {
 		settings = data.settings || JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
 		blogFeedData = data.cachedBlogFeedV2
 
-		const cssParent = document.head || document.documentElement
+		const parent = document.documentElement
+
+		{
+			const inject = {
+				INJECT_SETTINGS: JSON.stringify(settings),
+				INJECT_CURRENTPAGE: JSON.stringify(currentPage ? currentPage.name : null),
+				INJECT_MATCHES: JSON.stringify(currentPage ? currentPage.matches : null),
+				INJECT_IS_DEV_MODE: JSON.stringify(IS_DEV_MODE)
+			}
+
+			const script = document.createElement("script")
+			script.setAttribute("name", "BTRoblox/inject.js")
+			script.textContent = `"use strict";(${
+				String(INJECT_SCRIPT).replace(new RegExp(Object.keys(inject).join("|"), "g"), x => inject[x])
+			})();`
+			
+			parent.prepend(script)
+		}
+
 		const injectCSS = path => {
 			const link = document.createElement("link")
 			link.rel = "stylesheet"
 			link.href = chrome.runtime.getURL("css/" + path)
-			cssParent.append(link)
+			parent.prepend(link)
 		}
 
 		const cssFiles = ["main.css"]

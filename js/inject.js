@@ -1,13 +1,13 @@
 "use strict"
 
-{
-	const modifiedTemplates = {}
-	
-	let settings
-	let currentPage
-	let matches
-	let templates
-	let IS_DEV_MODE
+const INJECT_SCRIPT = () => {
+	const templates = []
+	const templateCaches = []
+
+	const settings = INJECT_SETTINGS
+	const currentPage = INJECT_CURRENTPAGE
+	const matches = INJECT_MATCHES
+	const IS_DEV_MODE = INJECT_IS_DEV_MODE
 
 	const ContentJS = {
 		send(action, ...args) {
@@ -78,6 +78,22 @@
 		}
 	}
 
+	function registerTemplate($templateCache, id) {
+		const data = $templateCache.get(id)
+
+		if(data) {
+			const index = templates.indexOf(id)
+			if(index !== -1) {
+				templates.splice(index, 1)
+			}
+			
+			ContentJS.listen("TEMPLATE_" + id, newdata => {
+				$templateCache.put(id, newdata)
+			})
+
+			ContentJS.send("TEMPLATE_" + id, data)
+		}
+	}
 
 	function PostInit() {
 		if(!window.jQuery) {
@@ -86,30 +102,18 @@
 		}
 
 		if(window.angular) {
-			const args = ["$templateCache", $templateCache => {
-				templates.forEach(id => {
-					if(id in modifiedTemplates) { return }
-					const data = $templateCache.get(id)
-	
-					if(data) {
-						ContentJS.listen("TEMPLATE_" + id, newdata => {
-							modifiedTemplates[id] = newdata
-						})
-						ContentJS.send("TEMPLATE_" + id, data)
-					}
+			{
+				const callArgs = ["$templateCache", $templateCache => {
+					templateCaches.push($templateCache)
+					templates.forEach(id => registerTemplate($templateCache, id))
+				}]
+		
+				const moduleNames = ["chatAppHtmlTemplateApp", "pageTemplateApp", "baseTemplateApp"]
+				moduleNames.forEach(name => {
+					try { angular.module(name).run(callArgs) }
+					catch(ex) { }
 				})
-	
-				Object.entries(modifiedTemplates).forEach(([name, template]) => {
-					if($templateCache.get(name)) {
-						$templateCache.put(name, template)
-					}
-				})
-			}]
-	
-			const templateApps = ["chatAppHtmlTemplateApp", "pageTemplateApp", "baseTemplateApp"]
-			templateApps.forEach(templateName => {
-				try { angular.module(templateName).run(args) } catch(ex) { }
-			})
+			}
 
 			if(settings.general.smallChatButton) {
 				try {
@@ -431,25 +435,11 @@
 		}
 	}
 
+	ContentJS.listen("TEMPLATE_INIT", id => {
+		templates.push(id)
+		templateCaches.forEach($templateCache => registerTemplate($templateCache, id))
+	})
 
-	function OnInit(_settings, _currentPage, _matches, _templates, _IS_DEV_MODE) {
-		settings = _settings
-		currentPage = _currentPage
-		matches = _matches
-		templates = _templates
-		IS_DEV_MODE = _IS_DEV_MODE
-
-		PreInit()
-
-		if(document.readyState === "loading") {
-			document.addEventListener("DOMContentLoaded", PostInit)
-		} else {
-			PostInit()
-		}
-	}
-
-
-	ContentJS.listen("INIT", OnInit)
 	ContentJS.listen("refreshInventory", () => $(".btr-it-reload").click())
 	ContentJS.listen("linkify", cl => {
 		const target = $(`.${cl}`)
@@ -458,5 +448,11 @@
 		else { target.addClass("linkify") }
 	})
 
-	ContentJS.send("INJECT_INIT")
+	PreInit()
+
+	if(document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", PostInit)
+	} else {
+		PostInit()
+	}
 }

@@ -49,7 +49,7 @@
 	"content_scripts": [
 		{
 			"matches": ["*://www.roblox.com/*", "*://web.roblox.com/*"],
-			"js": ["js/common.js", "js/utility.js", "js/main.js", "js/pages.js"],
+			"js": ["js/common.js", "js/utility.js", "js/inject.js", "js/main.js", "js/pages.js"],
 			"run_at": "document_start",
 			"all_frames": true
 		}
