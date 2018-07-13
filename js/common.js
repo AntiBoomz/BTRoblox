@@ -176,8 +176,7 @@ const MESSAGING = (() => {
 						}
 					}
 
-					try { listener(msg, respond, port) }
-					catch(ex) { console.error(ex) }
+					listener(msg.data, respond, port)
 				}
 			})
 
