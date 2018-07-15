@@ -1,7 +1,7 @@
 "use strict"
 
-const IS_EDGE = window.browser && (!window.chrome || !chrome.extension) || false
-const IS_FIREFOX = !IS_EDGE && window.chrome && window.browser || false
+const IS_EDGE = !!(window.browser && (!window.chrome || !chrome.extension))
+const IS_FIREFOX = !!(!IS_EDGE && window.chrome && window.browser)
 const IS_CHROME = !IS_EDGE && !IS_FIREFOX
 
 if(IS_EDGE) { window.chrome = Object.assign({}, browser) }
