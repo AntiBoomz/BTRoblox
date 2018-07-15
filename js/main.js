@@ -84,7 +84,7 @@ const settingsDiv = html`
 			<div class=btr-settings-header-title>BTRoblox</div>
 			<div class="btr-settings-header-close btr-settings-toggle">⨯</div>
 		</div>
-		<div class=btr-settings-content id=btr-settings-main>
+		<div class="btr-settings-content selected" id=btr-settings-main data-name=main>
 			<group label=General path=general>
 				<select path=theme>
 					<option value=default>Default</option>
@@ -108,17 +108,15 @@ const settingsDiv = html`
 				<checkbox label="Embed Inventory" path=embedInventoryEnabled></checkbox>
 			</group>
 			<group label=Groups path=groups toggleable>
-				<div>
-					<checkbox label="Group Shout Notifications" path=shoutAlerts></checkbox>
-					<button id=btr-open-shout-filter class=btn-control-xs>Modify Shout Filters</button>
-				</div>
+				<checkbox label="Group Shout Notifications" path=shoutAlerts></checkbox>
+				<button id=btr-open-shout-filter class=btn-control-xs>Modify Shout Filters</button>
 			</group>
 			<group label="Game Details" path=gamedetails toggleable>
 				<checkbox label="Highlight Owned Badges" path=showBadgeOwned></checkbox>
 			</group>
 			<group label="Item Details" path=itemdetails toggleable>
-				<checkbox label="Animation Previewer" path=animationPreview></checkbox>
-				<checkbox label="Auto-Load Animation Previewer" path=animationPreviewAutoLoad></checkbox>
+				<checkbox label="Item Previewer" path=itemPreviewer></checkbox>
+				<button id=btr-open-item-previewer-settings class=btn-control-xs>Modify Item Previewer</button>
 				<checkbox label="Show Explorer Button" path=explorerButton></checkbox>
 				<checkbox label="Show Download Button" path=downloadButton></checkbox>
 				<checkbox label="Show Content Button" path=contentButton></checkbox>
@@ -134,9 +132,9 @@ const settingsDiv = html`
 			<group label=WIP minimizable minimized id=btr-settings-wip>
 			</group>
 		</div>
-		<div class=btr-settings-content id=btr-settings-shout-filters style=display:none>
+		<div class=btr-settings-content id=btr-settings-shout-filters data-name=shoutFilters>
 			<div class=btr-filter-header>
-				<button id=btr-close-shout-filter class=btn-control-sm><span class=icon-left></span></button>
+				<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
 				<h4>Group Shout Filters</h4>
 				<div class=btr-filter-type-list>
 					<button class=btr-filter-blacklist title="Blacklist: Select groups to not get notifications from"></button>
@@ -158,18 +156,56 @@ const settingsDiv = html`
 				</div>
 			</div>
 		</div>
+		<div class=btr-settings-content id=btr-settings-item-previewer data-name=itemPreviewerSettings>
+			<div class=btr-filter-header>
+				<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
+				<h4>Item Previewer Preferences</h4>
+			</div>
+			<div>
+				<group path=itemdetails>
+					<select path=itemPreviewerMode>
+						<option value=default>Default (Animations)</option>
+						<option value=never>Never</option>
+						<option value=animations>Animations</option>
+						<option value=always>Always</option>
+					</select>
+				</group>
+			</div>
+		</div>
 		<div class=btr-settings-footer>
 			<div class=btr-settings-footer-version>v${chrome.runtime.getManifest().version}</div>
 			<div class=btr-settings-footer-text>Refresh the page to apply settings</div>
 		</div>
 	</div>
+</div>
 </div>`
 
 const initSettingsDiv = () => {
 	let resolve
 	const initSettingsPromise = new Promise(x => resolve = x)
 
-	const content = settingsDiv.$find("#btr-settings-main")
+	let currentContent
+	const switchContent = name => {
+		const next = settingsDiv.$find(`.btr-settings-content[data-name="${name}"]`)
+		if(currentContent) {
+			currentContent.classList.remove("selected")
+		}
+
+		currentContent = next
+		if(currentContent) {
+			currentContent.classList.add("selected")
+		}
+	}
+
+	switchContent("main")
+
+	settingsDiv.$find("#btr-open-item-previewer-settings").$on("click", () => {
+		switchContent("itemPreviewerSettings")
+	})
+
+	settingsDiv.$on("click", ".btr-close-subcontent", () => {
+		switchContent("main")
+	})
 
 	{ // Shout Filters
 		const filterContent = settingsDiv.$find("#btr-settings-shout-filters")
@@ -213,8 +249,7 @@ const initSettingsDiv = () => {
 		}
 
 		settingsDiv.$find("#btr-open-shout-filter").$on("click", () => {
-			content.style.display = "none"
-			filterContent.style.display = ""
+			switchContent("shoutFilters")
 
 			if(!areFiltersInitialized) {
 				areFiltersInitialized = true
@@ -266,11 +301,6 @@ const initSettingsDiv = () => {
 					updateLists()
 				})
 			}
-		})
-
-		filterContent.$find("#btr-close-shout-filter").$on("click", () => {
-			content.style.display = ""
-			filterContent.style.display = "none"
 		})
 
 		const validDrag = ev => {
@@ -363,8 +393,8 @@ const initSettingsDiv = () => {
 	const settingsDone = {}
 	let labelCounter = 0
 
-	Array.from(content.children).forEach(group => {
-		const title = html`<h4>${group.getAttribute("label")}</h4>`
+	settingsDiv.$findAll("group").forEach(group => {
+		const title = html`<h4>${group.getAttribute("label") || ""}</h4>`
 		group.prepend(title)
 
 		if(group.hasAttribute("minimizable")) {

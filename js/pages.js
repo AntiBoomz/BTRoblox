@@ -574,7 +574,7 @@ pageInit.itemdetails = function(assetId) {
 		const gCPCache = {}
 		const getCachedProductInfo = id => (gCPCache[id] = gCPCache[id] || getProductInfo(id))
 
-		const previewAnim = settings.itemdetails.animationPreview && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1
+		const previewAnim = settings.itemdetails.itemPreviewer && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1
 		const previewAsset = true && WearableAssetTypeIds.indexOf(assetTypeId) !== -1
 
 		if(previewAnim || previewAsset || assetTypeId === 32) {
@@ -656,7 +656,20 @@ pageInit.itemdetails = function(assetId) {
 					if(!preview) {
 						loadPreview()
 
-						if(previewAnim && settings.itemdetails.animationPreviewAutoLoad) {
+						let autoLoad = false
+						switch(settings.itemdetails.itemPreviewerMode) {
+						case "always":
+							autoLoad = true
+							break
+						default: case "default":
+						case "animations":
+							autoLoad = previewAnim
+							break
+						case "never":
+							break
+						}
+
+						if(autoLoad) {
 							onDocumentReady(() => toggleEnabled(true))
 						}
 					}

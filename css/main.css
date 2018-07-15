@@ -470,6 +470,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 .btr-explorer-list>li, .btr-explorer-childlist>li {
 	list-style: none;
 	margin: 0;
+	margin-top: -1px;
 	padding: 0;
 }
 
@@ -624,6 +625,26 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	overscroll-behavior: contain;
 	
 	padding: 6px;
+}
+
+.btr-settings-content:not(.selected) { display: none !important; }
+
+.btr-settings .btr-close-subcontent {
+	float: left;
+	padding: 3px;
+	margin-right: 8px;
+}
+
+.btr-settings .btr-close-subcontent .icon-left {
+	width: 20px;
+	height: 20px;
+	background-size: 40px auto;
+	background-position: 0 -300px !important;
+}
+
+.btr-settings-content h4 {
+	display: inline-block;
+	padding: 3px 0;
 }
 
 .btr-settings-footer {
@@ -789,7 +810,9 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	display: inline-block;
 	width: 50%;
 
-	margin: 4px 0 0;
+	margin: 0;
+	padding: 0;
+	padding-bottom: 4px;
 }
 
 .btr-settings-content checkbox label {
@@ -807,7 +830,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	display: inline-block;
 	background: none;
 	height: 16px;
-	padding-left: 20px;
+	padding-left: 22px;
 
 	vertical-align: middle;
 	line-height: 16px;
@@ -851,29 +874,15 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	display: block;
 }
 
-
+#btr-settings-item-previewer {
+	display: flex;
+	flex-direction: column;
+}
 
 #btr-settings-shout-filters {
 	display: flex;
 	flex-direction: column;
 	height: 600px;
-}
-
-#btr-close-shout-filter {
-	float: left;
-	padding: 3px;
-	margin-right: 6px;
-}
-
-#btr-close-shout-filter span {
-	width: 20px;
-	height: 20px;
-	background-size: 40px auto;
-	background-position: 0 -300px;
-}
-
-#btr-settings-shout-filters h4 {
-	display: inline-block;
 }
 
 .btr-filter-type-list {

@@ -31,8 +31,8 @@ const DEFAULT_SETTINGS = {
 	},
 	itemdetails: {
 		enabled: true,
-		animationPreview: true,
-		animationPreviewAutoLoad: true,
+		itemPreviewer: true,
+		itemPreviewerMode: "default",
 		explorerButton: true,
 		downloadButton: true,
 		contentButton: true,
