@@ -10,12 +10,7 @@ MESSAGING.listen({
 		Settings.set(data)
 		respond()
 	},
-
-	getRankName(data, respond) {
-		const url = `https://www.roblox.com/Game/LuaWebService/HandleSocialRequest.ashx?method=GetGroupRole&playerid=${data.userId}&groupid=${data.groupId}`
-		fetch(url).then(async resp => respond(await resp.text()))
-	},
-
+	
 	resolveAssetUrl(url, respond) {
 		fetch(url, { credentials: "include", method: "HEAD" }).then(resp => {
 			if(!resp.ok) {
