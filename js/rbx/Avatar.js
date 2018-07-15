@@ -537,6 +537,9 @@ const RBXAvatar = (() => {
 			this.joints = {}
 
 			this.ptDebounce = 0
+
+			const att = this.defaultHatAttachment = new THREE.Group()
+			att.position.set(0, 0.5, 0)
 		}
 
 		init() {
@@ -722,12 +725,8 @@ const RBXAvatar = (() => {
 					if(!hanInst) { return }
 
 					const meshInst = hanInst.Children.find(x => x.ClassName === "SpecialMesh")
-					const attInst = hanInst.Children.find(x => x.ClassName === "Attachment")
 					if(!meshInst) { return console.warn(`[RBXAvatar] Missing meshInst for ${assetId}`) }
 
-					if(!attInst) { return console.warn(`[RBXAvatar] Missing attInst for ${assetId}`) }
-
-					const attName = attInst.Name
 					const meshId = meshInst.MeshId
 					const texId = meshInst.TextureId
 
@@ -744,8 +743,9 @@ const RBXAvatar = (() => {
 					tex.image.src = solidColorDataURL(163, 162, 165)
 					if(texId) { AssetCache.loadImage(texId, url => { tex.image.src = url }) }
 
-					const cframe = [...attInst.CFrame]
-
+					const attInst = hanInst.Children.find(x => x.ClassName === "Attachment")
+					const cframe = [...(attInst ? attInst.CFrame : accInst.AttachmentPoint)]
+accInst
 					if(meshInst.Offset) { // cframe is C1, so negate offset
 						cframe[0] -= meshInst.Offset[0]
 						cframe[1] -= meshInst.Offset[1]
@@ -758,10 +758,10 @@ const RBXAvatar = (() => {
 					obj.position.setFromMatrixPosition(matrix)
 					obj.rotation.setFromRotationMatrix(matrix)
 
-					this.accessories.push({ attName, obj, asset })
-
-					const attachment = this.attachments[attName]
-					if(attachment) { attachment.obj.add(obj) }
+					const attName = attInst && attInst.Name
+					const acc = { obj, asset, attName }
+					this.accessories.push(acc)
+					this.updateAccessory(acc)
 				})
 				break
 			case 11:
@@ -796,6 +796,15 @@ const RBXAvatar = (() => {
 				// Animations
 				break
 			default: console.log("Unimplemented asset type", assetTypeId, assetId)
+			}
+		}
+
+		updateAccessory(acc) {
+			const attachment = acc.attName && this.attachments[acc.attName]
+			if(attachment) {
+				attachment.obj.add(acc.obj)
+			} else {
+				this.defaultHatAttachment.add(acc.obj)
 			}
 		}
 
@@ -849,7 +858,6 @@ const RBXAvatar = (() => {
 					Object.entries(tree.attachments).forEach(([name, cframe]) => {
 						const att = new THREE.Group()
 						obj.add(att)
-
 						attachments[name] = { cframe, obj: att }
 					})
 
@@ -886,14 +894,12 @@ const RBXAvatar = (() => {
 					this.root = CreateModel(R15Tree)
 				}
 
+				parts.Head.add(this.defaultHatAttachment)
+
 				this.model.add(this.root)
 				this.animator.setJoints(animJoints)
 
-				this.accessories.forEach(acc => {
-					const attachment = acc.attachment = this.attachments[acc.attName]
-					if(attachment) { attachment.obj.add(acc.obj) }
-				})
-
+				this.accessories.forEach(acc => this.updateAccessory(acc))
 				this.refreshBodyParts()
 			})
 		}
