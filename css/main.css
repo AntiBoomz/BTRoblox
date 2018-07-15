@@ -40,18 +40,19 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 #header .btr-nav-notif {
 	box-sizing: content-box;
 	position: absolute;
-	display: block;
+	display: flex;
 	top: 2px;
 	right: 2px;
 
 	background: white;
 	padding: 0px 4px;
 	height: 16px;
-	text-align: center;
+	min-width: 8px;
+	align-items: center;
+	justify-content: center;
 
 	color: #191919;
-	font-size: 13px;
-	line-height: 16px;
+	font-size: 12px;
 	font-weight: bold;
 
 	border-radius: 10px;
