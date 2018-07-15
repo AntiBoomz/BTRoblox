@@ -1299,56 +1299,58 @@ pageInit.placeconfig = function(placeId) {
 			const tryDownload = () => {
 				const url = `https://assetgame.roblox.com/asset/?id=${placeId}&version=${version}`
 				AssetCache.loadBuffer(url, file => {
-					const nameStr = `${fileName}-${version}.rbxl`
-					const name = new TextEncoder().encode(nameStr)
+					try {
+						const nameStr = `${fileName}-${version}.rbxl`
+						const name = new TextEncoder().encode(nameStr)
 
-					const date = new Date()
-					const modTime = (((date.getHours() << 6) | date.getMinutes()) << 5) | date.getSeconds() / 2
-					const modDate = ((((date.getFullYear() - 1980) << 4) | (date.getMonth() + 1)) << 5) | date.getDate()
+						const date = new Date()
+						const modTime = (((date.getHours() << 6) | date.getMinutes()) << 5) | date.getSeconds() / 2
+						const modDate = ((((date.getFullYear() - 1980) << 4) | (date.getMonth() + 1)) << 5) | date.getDate()
 
-					const cfile = file
-					const crc = crc32(new Uint8Array(file))
+						const cfile = file
+						const crc = crc32(new Uint8Array(file))
 
-					const header = new Uint8Array(30 + name.byteLength)
-					const hview = new DataView(header.buffer)
-					hview.setUint32(0, 0x04034b50, true)
-					hview.setUint32(4, 0x08080014, true)
-					hview.setUint16(10, modTime, true)
-					hview.setUint16(12, modDate, true)
-					hview.setUint32(14, crc, true)
-					hview.setUint32(18, cfile.byteLength, true)
-					hview.setUint32(22, file.byteLength, true)
-					hview.setUint16(26, name.byteLength, true)
-					header.set(name, 30)
+						const header = new Uint8Array(30 + name.byteLength)
+						const hview = new DataView(header.buffer)
+						hview.setUint32(0, 0x04034b50, true)
+						hview.setUint32(4, 0x08080014, true)
+						hview.setUint16(10, modTime, true)
+						hview.setUint16(12, modDate, true)
+						hview.setUint32(14, crc, true)
+						hview.setUint32(18, cfile.byteLength, true)
+						hview.setUint32(22, file.byteLength, true)
+						hview.setUint16(26, name.byteLength, true)
+						header.set(name, 30)
 
-					const footer = new Uint8Array(16)
-					const fview = new DataView(footer.buffer)
-					fview.setUint32(0, 0x08074b50, true)
-					fview.setUint32(4, crc, true)
-					fview.setUint32(8, cfile.byteLength, true)
-					fview.setUint32(12, file.byteLength, true)
+						const footer = new Uint8Array(16)
+						const fview = new DataView(footer.buffer)
+						fview.setUint32(0, 0x08074b50, true)
+						fview.setUint32(4, crc, true)
+						fview.setUint32(8, cfile.byteLength, true)
+						fview.setUint32(12, file.byteLength, true)
 
-					const central = new Uint8Array(46 + name.byteLength)
-					const cview = new DataView(central.buffer)
-					cview.setUint32(0, 0x02014b50, true)
-					cview.setUint16(4, 0x0014, true)
-					central.set(header.subarray(4, 30), 6)
-					cview.setUint32(42, fileOffset, true)
-					central.set(name, 46)
+						const central = new Uint8Array(46 + name.byteLength)
+						const cview = new DataView(central.buffer)
+						cview.setUint32(0, 0x02014b50, true)
+						cview.setUint16(4, 0x0014, true)
+						central.set(header.subarray(4, 30), 6)
+						cview.setUint32(42, fileOffset, true)
+						central.set(name, 46)
 
-					files.push(header.buffer, cfile, footer.buffer)
-					centralDirectory.push(central.buffer)
-					fileOffset += header.byteLength + cfile.byteLength + footer.byteLength
-					centralLength += central.byteLength
+						files.push(header.buffer, cfile, footer.buffer)
+						centralDirectory.push(central.buffer)
+						fileOffset += header.byteLength + cfile.byteLength + footer.byteLength
+						centralLength += central.byteLength
 
-					numFiles++
-					btn.textContent = `Downloading ${numFiles}/${totalVersions}`
+						numFiles++
+						btn.textContent = `Downloading ${numFiles}/${totalVersions}`
 
-					setTimeout(loadFile, 100)
-				}).catch(ex => {
-					console.error(ex)
-					setTimeout(tryDownload, retryTime)
-					retryTime *= 1.5
+						setTimeout(loadFile, 100)
+					} catch(ex) {
+						console.error(ex)
+						setTimeout(tryDownload, retryTime)
+						retryTime *= 1.5
+					}
 				})
 			}
 			tryDownload()
