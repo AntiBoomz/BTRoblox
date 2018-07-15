@@ -745,7 +745,7 @@ const RBXAvatar = (() => {
 
 					const attInst = hanInst.Children.find(x => x.ClassName === "Attachment")
 					const cframe = [...(attInst ? attInst.CFrame : accInst.AttachmentPoint)]
-accInst
+
 					if(meshInst.Offset) { // cframe is C1, so negate offset
 						cframe[0] -= meshInst.Offset[0]
 						cframe[1] -= meshInst.Offset[1]
