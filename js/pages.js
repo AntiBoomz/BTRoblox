@@ -50,61 +50,6 @@ async function getProductInfo(assetId) {
 	return response.json()
 }
 
-function downloadFile(url, type) {
-	return new Promise(resolve => MESSAGING.send("downloadFile", url, result => {
-		if(result.state !== "SUCCESS") {
-			if(result.state === "NOT_OK") {
-				console.error("[BTRoblox] downloadFile HTTP failure:", result.status, result.statusText)
-			} else if(result.state === "ERROR") {
-				console.error("[BTRoblox] downloadFile error:", result.message)
-			} else {
-				console.error("[BTRoblox] downloadfile failure", result)
-			}
-
-			resolve(null)
-			return
-		}
-
-		fetch(result.url).then(async resp => {
-			URL.revokeObjectURL(result.url)
-
-			switch(type) {
-			case "blob": return resp.blob()
-			case "text": return resp.text()
-			case "json": return resp.json()
-			default: return resp.arrayBuffer()
-			}
-		}).then(resolve)
-	}))
-}
-
-function downloadAsset(params, type) {
-	if(!(params instanceof Object)) { params = { id: params } }
-	params = new URLSearchParams(params).toString()
-	const url = `https://www.roblox.com/asset/?${params}`
-
-	return downloadFile(url, type)
-}
-
-const alreadyLoaded = {}
-function execScripts(list, cb) {
-	for(let i = 0; i < list.length; i++) {
-		const path = list[i]
-		if(alreadyLoaded[path]) {
-			list.splice(i--, 1)
-		} else {
-			alreadyLoaded[path] = true
-		}
-	}
-
-	if(list.length === 0) {
-		cb()
-	} else {
-		MESSAGING.send("_execScripts", list, cb)
-	}
-}
-
-
 let cachedXsrfToken
 function csrfFetch(url, init) {
 	if(!init) { init = {} }
@@ -189,7 +134,7 @@ function GetAssetFileType(assetTypeId, buffer) {
 	case 1: return "png"
 	case 3:
 		if(buffer) {
-			const header = new TextDecoder("ascii").decode(buffer.subarray(0, 4))
+			const header = $.bufferToStr(buffer.subarray(0, 4))
 			switch(header) {
 			case "RIFF": return "wav"
 			case "OggS": return "ogg"
@@ -417,7 +362,8 @@ function CreateNewVersionHistory(assetId, assetType) {
 			const fileExt = assetType === "place" ? "rbxl" : "rbxm"
 			const fileName = `${placeName}-${version}.${fileExt}`
 
-			downloadAsset({ id: assetId, version }, "blob").then(blob => {
+			const assetUrl = `https://assetgame.roblox.com/asset/?id=${assetId}&version=${version}`
+			AssetCache.loadBlob(assetUrl, blob => {
 				isBusy = false
 				startDownload(URL.createObjectURL(blob), fileName)
 			})
@@ -625,6 +571,132 @@ pageInit.itemdetails = function(assetId) {
 			return
 		}
 
+		const gCPCache = {}
+		const getCachedProductInfo = id => (gCPCache[id] = gCPCache[id] || getProductInfo(id))
+
+		const previewAnim = settings.itemdetails.animationPreview && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1
+		const previewAsset = true && WearableAssetTypeIds.indexOf(assetTypeId) !== -1
+
+		if(previewAnim || previewAsset || assetTypeId === 32) {
+			let preview
+			let container
+
+			const toggleEnabled = enabled => {
+				const oldCont = $("#AssetThumbnail").parentNode
+				if(enabled) {
+					oldCont.style.display = "none"
+					oldCont.after(container)
+				} else {
+					oldCont.style.display = ""
+					container.remove()
+				}
+
+				preview.setEnabled(enabled)
+			}
+
+			const loadPreview = () => {
+				if(preview) { return }
+
+				preview = new RBXPreview.AvatarPreviewer()
+				container = html`
+				<div class="item-thumbnail-container btr-preview-container">
+					<div class="btr-thumb-btn-container">
+						<div class="btr-thumb-btn rbx-btn-control-sm btr-hats-btn"><span class="btr-icon-hat"></span></div>
+						<div class="btr-thumb-btn rbx-btn-control-sm btr-body-btn"><span class="btr-icon-body"></span></div>
+						<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn checked"><span class="btr-icon-preview"></span></div>
+					</div>
+				</div>`
+
+				document.$on("click", ".btr-hats-btn", ev => {
+					const self = ev.currentTarget
+					const disabled = !self.classList.contains("checked")
+					self.classList.toggle("checked", disabled)
+
+					preview.setAccessoriesVisible(!disabled)
+				})
+				
+				document.$on("click", ".btr-body-btn", ev => {
+					const self = ev.currentTarget
+					const disabled = !self.classList.contains("checked")
+					self.classList.toggle("checked", disabled)
+
+					preview.setPackagesVisible(!disabled)
+				})
+
+				container.append(preview.container)
+
+				document.$watch("#AssetThumbnail", thumb => {
+					thumb.classList.add("btr-preview-enabled")
+					thumb.append(html`<div class="btr-thumb-btn-container">
+						<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn"><span class="btr-icon-preview"></span></div>
+					</div>`)
+				})
+
+				document.$on("click", ".btr-preview-btn", ev => {
+					const self = ev.currentTarget
+					const checked = !self.classList.contains("checked")
+
+					toggleEnabled(checked)
+				})
+			}
+
+			if(previewAnim || previewAsset) {
+				const doPreview = (id, typeId) => {
+					const isAnim = AnimationPreviewAssetTypeIds.indexOf(typeId) !== -1
+					const isAsset = WearableAssetTypeIds.indexOf(typeId) !== -1
+					if(!isAnim && !isAsset && typeId !== 32) { return }
+
+					if(typeId === 32) {
+						AssetCache.loadText(id, text => text.split(";").forEach(itemId => {
+							getCachedProductInfo(itemId).then(json => doPreview(itemId, json.AssetTypeId))
+						}))
+						return
+					}
+
+					if(!preview) {
+						loadPreview()
+
+						if(previewAnim && settings.itemdetails.animationPreviewAutoLoad) {
+							onDocumentReady(() => toggleEnabled(true))
+						}
+					}
+
+					if(isAnim) {
+						preview.disableDefaultAnimations = true
+
+						if(typeId === 24) {
+							preview.onInit(() => {
+								preview.addAnimation(String(id), id)
+							})
+						} else {
+							preview.onInit(() => {
+								AssetCache.loadModel(id, model => {
+									const folder = model.find(x => x.ClassName === "Folder" && x.Name === "R15Anim")
+									if(!folder) { return }
+
+									folder.Children.filter(x => x.ClassName === "StringValue").forEach(value => {
+										const animName = value.Name
+
+										value.Children.filter(x => x.ClassName === "Animation").forEach((anim, i) => {
+											const name = animName + (i === 0 ? "" : `_${i + 1}`)
+											const animId = RBXParser.resolveAssetId(anim.AnimationId)
+											if(!animId) { return }
+
+											preview.addAnimation(name, animId)
+										})
+									})
+								})
+							})
+						}
+					} else if(isAsset) {
+						preview.addAsset(id, typeId, { previewTarget: true })
+					}
+				}
+
+				doPreview(assetId, assetTypeId)
+			}
+		}
+
 		const canAccessPromise = new Promise(resolve => {
 			if(!CheckAccessAssetTypeIds.includes(assetTypeId)) { return resolve(true) }
 
@@ -641,387 +713,250 @@ pageInit.itemdetails = function(assetId) {
 			})
 		})
 
-		const gCPCache = {}
-		const getCachedProductInfo = id => (gCPCache[id] = gCPCache[id] || getProductInfo(id))
+		canAccessPromise.then(canAccess => {
+			if(!canAccess) { return }
 
-		execScripts(["js/RBXParser.js", "js/AssetCache.js"], () => {
-			const previewAnim = settings.itemdetails.animationPreview && AnimationPreviewAssetTypeIds.indexOf(assetTypeId) !== -1
-			const previewAsset = true && WearableAssetTypeIds.indexOf(assetTypeId) !== -1
+			if(settings.itemdetails.explorerButton && InvalidExplorableAssetTypeIds.indexOf(assetTypeId) === -1) {
+				const explorer = new Explorer()
+				let explorerInitialized = false
 
-			if(previewAnim || previewAsset || assetTypeId === 32) {
-				execScripts(["js/RBXPreview.js"], () => {
-					let preview
-					let container
+				const btn = html`
+				<div>
+					<a class="btr-explorer-button" data-toggle="popover" data-bind="btr-explorer-content">
+						<span class="btr-icon-explorer"</span>
+					</a>
+					<div class="rbx-popover-content" data-toggle="btr-explorer-content">
+						<div class="btr-explorer-parent"></div>
+					</div>
+				</div>`
 
-					const toggleEnabled = enabled => {
-						const oldCont = $("#AssetThumbnail").parentNode
-						if(enabled) {
-							oldCont.style.display = "none"
-							oldCont.after(container)
+				document.$watch("#item-container").$then().$watch(">.section-content", cont => {
+					cont.append(btn)
+					cont.parentNode.classList.add("btr-explorer-btn-shown")
+				})
+
+				document.body.$on("click", ".btr-explorer-parent", ev => {
+					ev.stopImmediatePropagation()
+				})
+
+				btn.$watchAll(".popover", popover => {
+					if(!explorerInitialized) {
+						explorerInitialized = true
+
+						if(assetTypeId === 32) { // Package, I disabled package exploring elsewhere
+							AssetCache.loadText(assetId, text => text.split(";").forEach(id => {
+								AssetCache.loadModel(id, model => explorer.addModel(id.toString(), model))
+							}))
 						} else {
-							oldCont.style.display = ""
-							container.remove()
+							AssetCache.loadModel(assetId, model => explorer.addModel("Main", model))
 						}
-
-						preview.setEnabled(enabled)
 					}
 
-					const loadPreview = () => {
-						if(preview) { return }
+					popover.$find(".btr-explorer-parent").replaceWith(explorer.element)
 
-						preview = new RBXPreview.AvatarPreviewer()
-						container = html`
-						<div class="item-thumbnail-container btr-preview-container">
-							<div class="btr-thumb-btn-container">
-								<div class="btr-thumb-btn rbx-btn-control-sm btr-hats-btn"><span class="btr-icon-hat"></span></div>
-								<div class="btr-thumb-btn rbx-btn-control-sm btr-body-btn"><span class="btr-icon-body"></span></div>
-								<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn checked"><span class="btr-icon-preview"></span></div>
-							</div>
-						</div>`
+					const popLeft = explorer.element.getBoundingClientRect().right + 276 >= document.documentElement.clientWidth
+					explorer.element.$find(".btr-properties").classList.toggle("left", popLeft)
+				})
+			}
 
-						document.$on("click", ".btr-hats-btn", ev => {
-							const self = ev.currentTarget
-							const disabled = !self.classList.contains("checked")
-							self.classList.toggle("checked", disabled)
+			if(settings.itemdetails.downloadButton && InvalidDownloadableAssetTypeIds.indexOf(assetTypeId) === -1) {
+				let isDownloading = false
 
-							preview.setAccessoriesVisible(!disabled)
-						})
-						
-						document.$on("click", ".btr-body-btn", ev => {
-							const self = ev.currentTarget
-							const disabled = !self.classList.contains("checked")
-							self.classList.toggle("checked", disabled)
+				const createDownloadButton = actualUrl => {
+					const btn = html`<a class="btr-download-button"><div class="btr-icon-download"></div></a>`
+					
+					document.$watch("#item-container").$then().$watch(">.section-content", cont => {
+						cont.append(btn)
+						cont.parentNode.classList.add("btr-download-btn-shown")
+					})
 
-							preview.setPackagesVisible(!disabled)
-						})
+					const doNamedDownload = event => {
+						event.preventDefault()
 
-						container.append(preview.container)
+						if(isDownloading) { return }
+						isDownloading = true
 
-						document.$watch("#AssetThumbnail", thumb => {
-							thumb.classList.add("btr-preview-enabled")
-							thumb.append(html`<div class="btr-thumb-btn-container">
-								<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn"><span class="btr-icon-preview"></span></div>
-							</div>`)
-						})
+						AssetCache.loadBuffer(actualUrl || assetId, ab => {
+							isDownloading = false
 
-						document.$on("click", ".btr-preview-btn", ev => {
-							const self = ev.currentTarget
-							const checked = !self.classList.contains("checked")
-
-							toggleEnabled(checked)
-						})
-					}
-
-
-					if(previewAnim || previewAsset) {
-						const doPreview = (id, typeId) => {
-							const isAnim = AnimationPreviewAssetTypeIds.indexOf(typeId) !== -1
-							const isAsset = WearableAssetTypeIds.indexOf(typeId) !== -1
-							if(!isAnim && !isAsset && typeId !== 32) { return }
-
-							if(typeId === 32) {
-								AssetCache.loadText(id, text => text.split(";").forEach(itemId => {
-									getCachedProductInfo(itemId).then(json => doPreview(itemId, json.AssetTypeId))
-								}))
+							if(!(ab instanceof ArrayBuffer)) {
+								alert("Failed to download")
 								return
 							}
 
-							if(!preview) {
-								loadPreview()
+							const blobUrl = URL.createObjectURL(new Blob([ab]))
 
-								if(previewAnim && settings.itemdetails.animationPreviewAutoLoad) {
-									onDocumentReady(() => toggleEnabled(true))
-								}
-							}
+							const title = $("#item-container .item-name-container h2")
+							let fileName = title
+								? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-")
+								: new URL(btn.href).pathname
 
-							if(isAnim) {
-								preview.disableDefaultAnimations = true
+							fileName += `.${GetAssetFileType(assetTypeId, ab)}`
 
-								if(typeId === 24) {
-									preview.onInit(() => {
-										preview.addAnimation(String(id), id)
-									})
-								} else {
-									preview.onInit(() => {
-										AssetCache.loadModel(id, model => {
-											const folder = model.find(x => x.ClassName === "Folder" && x.Name === "R15Anim")
-											if(!folder) { return }
-
-											folder.Children.filter(x => x.ClassName === "StringValue").forEach(value => {
-												const animName = value.Name
-
-												value.Children.filter(x => x.ClassName === "Animation").forEach((anim, i) => {
-													const name = animName + (i === 0 ? "" : `_${i + 1}`)
-													const animId = RBXParser.parseContentUrl(anim.AnimationId)
-													if(!animId) { return }
-
-													preview.addAnimation(name, animId)
-												})
-											})
-										})
-									})
-								}
-							} else if(isAsset) {
-								preview.addAsset(id, typeId, { previewTarget: true })
-							}
-						}
-
-						doPreview(assetId, assetTypeId)
-					}
-				})
-			}
-
-			canAccessPromise.then(canAccess => {
-				if(!canAccess) { return }
-
-				if(settings.itemdetails.explorerButton && InvalidExplorableAssetTypeIds.indexOf(assetTypeId) === -1) {
-					let explorerInitialized = false
-
-					const explorerPromise = new Promise(resolve => {
-						execScripts(["js/Explorer.js"], () => resolve(new Explorer()))
-					})
-
-					const btn = html`
-					<div>
-						<a class="btr-explorer-button" data-toggle="popover" data-bind="btr-explorer-content">
-							<span class="btr-icon-explorer"</span>
-						</a>
-						<div class="rbx-popover-content" data-toggle="btr-explorer-content">
-							<div class="btr-explorer-parent"></div>
-						</div>
-					</div>`
-
-					document.$watch("#item-container").$then().$watch(">.section-content", cont => {
-						cont.append(btn)
-						cont.parentNode.classList.add("btr-explorer-btn-shown")
-					})
-
-					document.body.$on("click", ".btr-explorer-parent", ev => {
-						ev.stopImmediatePropagation()
-					})
-
-					btn.$watchAll(".popover", popover => {
-						explorerPromise.then(explorer => {
-							if(!explorerInitialized) {
-								explorerInitialized = true
-
-								if(assetTypeId === 32) { // Package, I disabled package exploring elsewhere
-									AssetCache.loadText(assetId, text => text.split(";").forEach(id => {
-										AssetCache.loadModel(id, model => explorer.addModel(id.toString(), model))
-									}))
-								} else {
-									AssetCache.loadModel(assetId, model => explorer.addModel("Main", model))
-								}
-							}
-
-							popover.$find(".btr-explorer-parent").replaceWith(explorer.element)
-
-							const popLeft = explorer.element.getBoundingClientRect().right + 276 >= document.documentElement.clientWidth
-							explorer.element.$find(".btr-properties").classList.toggle("left", popLeft)
+							startDownload(blobUrl, fileName)
+							URL.revokeObjectURL(blobUrl)
 						})
-					})
+					}
+	
+					btn.href = actualUrl || `/asset/?id=${assetId}`
+					btn.$on("click", doNamedDownload)
 				}
 
-				if(settings.itemdetails.downloadButton && InvalidDownloadableAssetTypeIds.indexOf(assetTypeId) === -1) {
-					let isDownloading = false
-
-					const createDownloadButton = actualUrl => {
-						const btn = html`<a class="btr-download-button"><div class="btr-icon-download"></div></a>`
+				if(assetTypeId === 3) {
+					document.$watch("#item-container", cont => {
+						if(+cont.dataset.expectedSellerId === 1) { return }
 						
-						document.$watch("#item-container").$then().$watch(">.section-content", cont => {
-							cont.append(btn)
-							cont.parentNode.classList.add("btr-download-btn-shown")
-						})
-
-						const doNamedDownload = event => {
-							event.preventDefault()
-
-							if(isDownloading) { return }
-							isDownloading = true
-
-							const download = actualUrl ? downloadFile(actualUrl, "arraybuffer") : downloadAsset(assetId, "arraybuffer")
-							download.then(ab => {
-								isDownloading = false
-
-								if(!(ab instanceof ArrayBuffer)) {
-									alert("Failed to download")
-									return
-								}
-
-								const blobUrl = URL.createObjectURL(new Blob([ab]))
-
-								const title = $("#item-container .item-name-container h2")
-								let fileName = title
-									? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-")
-									: new URL(btn.href).pathname
-
-								fileName += `.${GetAssetFileType(assetTypeId, ab)}`
-
-								startDownload(blobUrl, fileName)
-								URL.revokeObjectURL(blobUrl)
-							})
-						}
-		
-						btn.href = actualUrl || `/asset/?id=${assetId}`
-						btn.$on("click", doNamedDownload)
-					}
-
-					if(assetTypeId === 3) {
-						document.$watch("#item-container", cont => {
-							if(+cont.dataset.expectedSellerId === 1) { return }
-							
-							document.$watch("#AssetThumbnail").$then().$watch(".MediaPlayerIcon", icon => {
-								const mediaUrl = icon.dataset.mediathumbUrl
-								if(mediaUrl) {
-									createDownloadButton(mediaUrl)
-								}
-							})
-						})
-					} else {
-						createDownloadButton()
-					}
-				}
-
-				const assetTypeContainer = ContainerAssetTypeIds[assetTypeId]
-				if(settings.itemdetails.contentButton && assetTypeContainer) {
-					const btn = html`<a class="btr-content-button disabled" href="#"><div class="btr-icon-content"></div></a>`
-	
-					document.$watch("#item-container").$then().$watch(">.section-content", cont => {
-						cont.append(btn)
-						cont.parentNode.classList.add("btr-content-btn-shown")
-					})
-	
-					AssetCache.loadModel(assetId, model => {
-						const inst = model.find(assetTypeContainer.filter)
-						if(!inst) { return }
-	
-						const actId = RBXParser.parseContentUrl(inst[assetTypeContainer.prop])
-						if(!actId) { return }
-	
-						btn.href = `/catalog/${actId}`
-						btn.classList.remove("disabled")
-					})
-				}
-			})
-
-			if(settings.itemdetails.imageBackgrounds && (assetTypeId === 1 || assetTypeId === 13)) {
-				document.$watch("#AssetThumbnail", thumb => {
-					const btns = html`
-					<div class="btr-bg-btn-cont">
-						<div class="btr-bg-btn" data-color="white"></div>
-						<div class="btr-bg-btn" data-color="black"></div>
-						<div class="btr-bg-btn" data-color="none"></div>
-					</div>`
-
-					thumb.append(btns)
-
-					btns.$on("click", ".btr-bg-btn", ev => {
-						const color = ev.currentTarget.dataset.color
-						const prev = btns.$find(".selected")
-
-						if(prev) { prev.classList.remove("selected") }
-						ev.currentTarget.classList.add("selected")
-
-						thumb.dataset.btrBg = color
-						localStorage["btr-item-thumb-bg"] = color
-					})
-						.$on("mouseenter", ".btr-bg-btn", ev => {
-							thumb.dataset.btrBg = ev.currentTarget.dataset.color
-						})
-						.$on("mouseleave", ".btr-bg-btn", () => {
-							thumb.dataset.btrBg = localStorage["btr-item-thumb-bg"]
-						})
-
-
-					const selectedBg = localStorage["btr-item-thumb-bg"] || "white"
-					btns.$find(`[data-color="${selectedBg}"]`).click()
-				})
-			}
-
-			if(settings.itemdetails.whiteDecalThumbnailFix && assetTypeId === 13) {
-				document.$watch("#AssetThumbnail").$then().$watch(".thumbnail-span img", img => {
-					if(img.src !== "https://t6.rbxcdn.com/3707fe58b613498a0f1fc7d11faeccf3") { return }
-					
-					AssetCache.loadModel(assetId, model => {
-						const decal = model.find(x => x.ClassName === "Decal")
-						if(!decal) { return }
-
-						const imgId = RBXParser.parseContentUrl(decal.Texture)
-						if(!imgId) { return }
-
-						const preload = new Image()
-						preload.onload = () => {
-							preload.onload = null
-							img.src = preload.src
-						}
-						preload.src = `https://assetgame.roblox.com/asset-thumbnail/image?assetId=${imgId}&width=420&height=420`
-					})
-				})
-			}
-
-			if(settings.itemdetails.thisPackageContains && assetTypeId === 32) {
-				const cont = html`
-				<div class="btr-package-contents">
-					<div class="container-header">
-						<h3>This Package Contains...</h3>
-					</div>
-					<ul class="hlist">
-					</ul>
-				</div>`
-
-				const assetThumb = "https://assetgame.roblox.com/asset-thumbnail/image?width=150&height=150&format=png&assetId="
-
-				AssetCache.loadText(assetId, text => {
-					text.split(";").forEach(childId => {
-						const card = html`
-						<li class="list-item item-card">
-							<div class="item-card-container">
-								<a class="item-card-link" href="https://www.roblox.com/catalog/${childId}/">
-									<div class="item-card-thumb-container">
-										<img class="item-card-thumb" src="${assetThumb}${childId}">
-									</div>
-									<div class="text-overflow item-card-name">Loading</div>
-								</a>
-								<div class="text-overflow item-card-creator">
-									<span class="xsmall text-label">By</span>
-									<a class="xsmall text-overflow text-link">ROBLOX</a>
-								</div>
-								<div class="text-overflow item-card-price">
-									<span class="text-label">Offsale</span>
-								</div>
-							</div>
-						</li>`
-
-						getCachedProductInfo(childId).then(data => {
-							if(data.IsForSale) {
-								if(data.PriceInRobux) {
-									card.$find(".item-card-price").innerHTML = htmlstring`
-									<span class="icon-robux-16x16"></span>
-									<span class="text-robux">${data.PriceInRobux}</span>`
-								} else {
-									const label = card.$find(".item-card-price .text-label")
-									label.classList.add("text-robux")
-									label.textContent = "Free"
-								}
-							} else {
-								card.$find(".item-card-price .text-label").textContent = "Offsale"
+						document.$watch("#AssetThumbnail").$then().$watch(".MediaPlayerIcon", icon => {
+							const mediaUrl = icon.dataset.mediathumbUrl
+							if(mediaUrl) {
+								createDownloadButton(mediaUrl)
 							}
-
-							const creator = card.$find(".item-card-creator .text-link")
-							creator.href = `https://www.roblox.com/users/${data.Creator.Id}/profile`
-							creator.textContent = data.Creator.Name
-
-							card.$find(".item-card-name").textContent = data.Name
-							card.$find(".item-card-link").href += data.Name.replace(/[^a-zA-Z0-9]+/g, "-")
 						})
-
-						cont.$find(".hlist").append(card)
 					})
+				} else {
+					createDownloadButton()
+				}
+			}
+
+			const assetTypeContainer = ContainerAssetTypeIds[assetTypeId]
+			if(settings.itemdetails.contentButton && assetTypeContainer) {
+				const btn = html`<a class="btr-content-button disabled" href="#"><div class="btr-icon-content"></div></a>`
+
+				document.$watch("#item-container").$then().$watch(">.section-content", cont => {
+					cont.append(btn)
+					cont.parentNode.classList.add("btr-content-btn-shown")
 				})
 
-				document.$watch("#item-container").$then().$watch(">.section-content", content => content.after(cont))
+				AssetCache.loadModel(assetId, model => {
+					const inst = model.find(assetTypeContainer.filter)
+					if(!inst) { return }
+
+					const actId = RBXParser.resolveAssetId(inst[assetTypeContainer.prop])
+					if(!actId) { return }
+
+					btn.href = `/catalog/${actId}`
+					btn.classList.remove("disabled")
+				})
 			}
 		})
+
+		if(settings.itemdetails.imageBackgrounds && (assetTypeId === 1 || assetTypeId === 13)) {
+			document.$watch("#AssetThumbnail", thumb => {
+				const btns = html`
+				<div class="btr-bg-btn-cont">
+					<div class="btr-bg-btn" data-color="white"></div>
+					<div class="btr-bg-btn" data-color="black"></div>
+					<div class="btr-bg-btn" data-color="none"></div>
+				</div>`
+
+				thumb.append(btns)
+
+				btns.$on("click", ".btr-bg-btn", ev => {
+					const color = ev.currentTarget.dataset.color
+					const prev = btns.$find(".selected")
+
+					if(prev) { prev.classList.remove("selected") }
+					ev.currentTarget.classList.add("selected")
+
+					thumb.dataset.btrBg = color
+					localStorage["btr-item-thumb-bg"] = color
+				})
+					.$on("mouseenter", ".btr-bg-btn", ev => {
+						thumb.dataset.btrBg = ev.currentTarget.dataset.color
+					})
+					.$on("mouseleave", ".btr-bg-btn", () => {
+						thumb.dataset.btrBg = localStorage["btr-item-thumb-bg"]
+					})
+
+
+				const selectedBg = localStorage["btr-item-thumb-bg"] || "white"
+				btns.$find(`[data-color="${selectedBg}"]`).click()
+			})
+		}
+
+		if(settings.itemdetails.whiteDecalThumbnailFix && assetTypeId === 13) {
+			document.$watch("#AssetThumbnail").$then().$watch(".thumbnail-span img", img => {
+				if(img.src !== "https://t6.rbxcdn.com/3707fe58b613498a0f1fc7d11faeccf3") { return }
+				
+				AssetCache.loadModel(assetId, model => {
+					const decal = model.find(x => x.ClassName === "Decal")
+					if(!decal) { return }
+
+					const imgId = RBXParser.resolveAssetId(decal.Texture)
+					if(!imgId) { return }
+
+					const preload = new Image()
+					preload.onload = () => {
+						preload.onload = null
+						img.src = preload.src
+					}
+					preload.src = `https://assetgame.roblox.com/asset-thumbnail/image?assetId=${imgId}&width=420&height=420`
+				})
+			})
+		}
+
+		if(settings.itemdetails.thisPackageContains && assetTypeId === 32) {
+			const cont = html`
+			<div class="btr-package-contents">
+				<div class="container-header">
+					<h3>This Package Contains...</h3>
+				</div>
+				<ul class="hlist">
+				</ul>
+			</div>`
+
+			const assetThumb = "https://assetgame.roblox.com/asset-thumbnail/image?width=150&height=150&format=png&assetId="
+
+			AssetCache.loadText(assetId, text => {
+				text.split(";").forEach(childId => {
+					const card = html`
+					<li class="list-item item-card">
+						<div class="item-card-container">
+							<a class="item-card-link" href="https://www.roblox.com/catalog/${childId}/">
+								<div class="item-card-thumb-container">
+									<img class="item-card-thumb" src="${assetThumb}${childId}">
+								</div>
+								<div class="text-overflow item-card-name">Loading</div>
+							</a>
+							<div class="text-overflow item-card-creator">
+								<span class="xsmall text-label">By</span>
+								<a class="xsmall text-overflow text-link">ROBLOX</a>
+							</div>
+							<div class="text-overflow item-card-price">
+								<span class="text-label">Offsale</span>
+							</div>
+						</div>
+					</li>`
+
+					getCachedProductInfo(childId).then(data => {
+						if(data.IsForSale) {
+							if(data.PriceInRobux) {
+								card.$find(".item-card-price").innerHTML = htmlstring`
+								<span class="icon-robux-16x16"></span>
+								<span class="text-robux">${data.PriceInRobux}</span>`
+							} else {
+								const label = card.$find(".item-card-price .text-label")
+								label.classList.add("text-robux")
+								label.textContent = "Free"
+							}
+						} else {
+							card.$find(".item-card-price .text-label").textContent = "Offsale"
+						}
+
+						const creator = card.$find(".item-card-creator .text-link")
+						creator.href = `https://www.roblox.com/users/${data.Creator.Id}/profile`
+						creator.textContent = data.Creator.Name
+
+						card.$find(".item-card-name").textContent = data.Name
+						card.$find(".item-card-link").href += data.Name.replace(/[^a-zA-Z0-9]+/g, "-")
+					})
+
+					cont.$find(".hlist").append(card)
+				})
+			})
+
+			document.$watch("#item-container").$then().$watch(">.section-content", content => content.after(cont))
+		}
 	})
 }
 
@@ -1209,7 +1144,7 @@ pageInit.gamedetails = function(placeId) {
 			)
 
 			document.$on("click", ".btr-download-place", () => {
-				downloadAsset(placeId, "arraybuffer").then(ab => {
+				AssetCache.loadBuffer(placeId, ab => {
 					const blobUrl = URL.createObjectURL(new Blob([ab]))
 
 					const splitPath = window.location.pathname.split("/")
@@ -1362,7 +1297,8 @@ pageInit.placeconfig = function(placeId) {
 			let retryTime = 1000
 
 			const tryDownload = () => {
-				downloadAsset({ id: placeId, version }).then(file => {
+				const url = `https://assetgame.roblox.com/asset/?id=${placeId}&version=${version}`
+				AssetCache.loadBuffer(url, file => {
 					const nameStr = `${fileName}-${version}.rbxl`
 					const name = new TextEncoder().encode(nameStr)
 
@@ -1544,7 +1480,10 @@ pageInit.groups = function() {
 					userLink.append(span)
 					
 					let promise = rankNameCache[userId]
-					if(!promise) { promise = rankNameCache[userId] = new Promise(resolve => MESSAGING.send("getRankName", { userId, groupId }, resolve)) }
+					if(!promise) {
+						const url = `https://www.roblox.com/Game/LuaWebService/HandleSocialRequest.ashx?method=GetGroupRole&playerid=${userId}&groupid=${groupId}`
+						promise = rankNameCache[userId] = fetch(url).then(resp => resp.text())
+					}
 					
 					promise.then(rankname => {
 						userLink.append(html`<span class="btr-grouprank">(${rankname})</span>`)

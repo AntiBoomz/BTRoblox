@@ -339,16 +339,15 @@ const INJECT_SCRIPT = () => {
 						const startIndex = +new URLSearchParams(options.data).get("startIndex")
 						if(!Number.isSafeInteger(startIndex)) { return }
 
-						options.success = new Proxy(options.success, {
-							apply(target, thisArg, args) {
-								curIndex = startIndex
-								maxSize = args[0].TotalCollectionSize
-
-								$("#rbx-game-server-item-container").find(">.rbx-game-server-item").remove()
-								updatePager()
-								return target.apply(thisArg, args)
-							}
-						})
+						const success = options.success
+						options.success = function(...args) {
+							curIndex = startIndex
+							maxSize = args[0].TotalCollectionSize
+							
+							$("#rbx-game-server-item-container").find(">.rbx-game-server-item").remove()
+							updatePager()
+							return success.apply(this, args)
+						}
 					})
 
 					pager

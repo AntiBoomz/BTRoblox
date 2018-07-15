@@ -5,6 +5,7 @@
 	"short_name": "BTR",
 	"description": "Better Roblox - Making Roblox better!",
 	"version": "2.4.12",
+	"author": "AntiBoomz",
 
 	"icons": {
 		"128":"res/icon_128.png"
@@ -32,6 +33,7 @@
 	"permissions": [
 		"*://www.roblox.com/",
 		"*://web.roblox.com/",
+		"*://assetgame.roblox.com/",
 		"*://m.roblox.com/",
 		"*://api.roblox.com/",
 		"*://avatar.roblox.com/",
@@ -56,7 +58,20 @@
 	"content_scripts": [
 		{
 			"matches": ["*://www.roblox.com/*", "*://web.roblox.com/*"],
-			"js": ["js/common.js", "js/utility.js", "js/inject.js", "js/main.js", "js/pages.js"],
+			"js": [
+				"js/common.js",
+				"js/utility.js",
+				"js/inject.js",
+				"js/main.js",
+				"js/pages.js",
+				"lib/three.min.js",
+				"js/rbx/Parser.js",
+				"js/rbx/AssetCache.js",
+				"js/rbx/Avatar.js",
+				"js/rbx/Scene.js",
+				"js/rbx/Preview.js",
+				"js/Explorer.js"
+			],
 			"run_at": "document_start",
 			"all_frames": true
 		}

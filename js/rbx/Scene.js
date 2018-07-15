@@ -1,16 +1,6 @@
 "use strict"
 
 const RBXScene = (() => {
-	let isReady = false
-	const componentsReady = new Promise(resolve => {
-		execScripts(["js/scene/Avatar.js"], () => {
-			RBXScene.Avatar.ready(() => {
-				isReady = true
-				resolve(RBXScene)
-			})
-		})
-	})
-
 	const PCSS = `
 	#define NUM_SAMPLES 17
 	#define NUM_RINGS 11
@@ -64,7 +54,6 @@ const RBXScene = (() => {
 
 	class Scene {
 		constructor() {
-			if(!isReady) { throw new Error("Scene is not ready yet") }
 			this._prevRes = { width: -1, height: -1 }
 
 			this.cameraMinZoom = 5
@@ -249,7 +238,7 @@ const RBXScene = (() => {
 	class AvatarScene extends Scene {
 		constructor() {
 			super()
-			const avatar = this.avatar = new RBXScene.Avatar()
+			const avatar = this.avatar = new RBXAvatar.Avatar()
 			this.scene.add(avatar.model)
 
 			const stand = new THREE.Mesh(
@@ -295,10 +284,6 @@ const RBXScene = (() => {
 
 	return {
 		Scene,
-		AvatarScene,
-
-		ready(cb) {
-			componentsReady.then(cb)
-		}
+		AvatarScene
 	}
 })()

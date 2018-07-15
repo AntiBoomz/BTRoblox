@@ -36,7 +36,7 @@ const Settings = (() => {
 		
 		// Legacy cleanup
 		localStorage.removeItem("cssCache")
-		chrome.alarms.clear("KeepAlive")
+		if(chrome.alarms) { chrome.alarms.clear("KeepAlive") }
 	})
 
 	return {

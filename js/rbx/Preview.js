@@ -43,15 +43,11 @@ const RBXPreview = (() => {
 			if(!this.initialized) {
 				this.initialized = true
 
-				execScripts(["lib/three.min.js", "js/RBXParser.js", "js/scene/Scene.js"], () => {
-					RBXScene.ready(() => {
-						this._onInit.forEach(cb => cb.call(this))
-						delete this._onInit
+				this._onInit.forEach(cb => cb.call(this))
+				delete this._onInit
 
-						this.container.append(this.scene.canvas)
-						if(this.enabled) { this.scene.start() }
-					})
-				})
+				this.container.append(this.scene.canvas)
+				if(this.enabled) { this.scene.start() }
 			} else if(this.scene) {
 				if(this.enabled) { this.scene.start() }
 				else { this.scene.stop() }

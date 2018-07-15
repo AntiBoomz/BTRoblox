@@ -149,11 +149,13 @@
 		}
 	})
 
-	chrome.alarms.onAlarm.addListener(alarm => {
-		if(alarm.name === "ShoutCheck") {
-			executeCheck()
-		}
-	})
+	if(chrome.alarms) {
+		chrome.alarms.onAlarm.addListener(alarm => {
+			if(alarm.name === "ShoutCheck") {
+				executeCheck()
+			}
+		})
+	}
 
 	const onUpdate = () => {
 		Settings.get(settings => {
@@ -162,7 +164,8 @@
 				wasEnabled = isEnabled
 
 				if(isEnabled) {
-					chrome.alarms.create("ShoutCheck", { periodInMinutes: 1 })
+					if(chrome.alarms) { chrome.alarms.create("ShoutCheck", { periodInMinutes: 1 }) }
+
 					checkInterval = setInterval(executeCheck, 15e3)
 
 					if(Date.now() - previousCheck > 2000) { // Floodcheck
@@ -170,7 +173,7 @@
 						executeCheck()
 					}
 				} else {
-					chrome.alarms.clear("ShoutCheck")
+					if(chrome.alarms) { chrome.alarms.clear("ShoutCheck") }
 					clearInterval(checkInterval)
 					clearInterval = null
 				}

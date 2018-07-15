@@ -1,7 +1,5 @@
 "use strict"
 
-const getURL = chrome.runtime.getURL
-
 let settings
 let currentPage
 let blogFeedData
@@ -1017,7 +1015,7 @@ function Init() {
 function PreInit() {
 	if(document.contentType !== "text/html") { return }
 	if(IS_FIREFOX && document.readyState === "complete") { return } // Stop annoying stuff
-	
+
 	const pathname = window.location.pathname
 	const exclude = EXCLUDED_PAGES.some(patt => new RegExp(patt, "i").test(pathname))
 	if(exclude) { return }
@@ -1049,7 +1047,7 @@ function PreInit() {
 		const injectCSS = path => {
 			const link = document.createElement("link")
 			link.rel = "stylesheet"
-			link.href = chrome.runtime.getURL("css/" + path)
+			link.href = getURL("css/" + path)
 			parent.prepend(link)
 		}
 

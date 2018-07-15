@@ -77,7 +77,7 @@ const RBXParser = (() => {
 		String(n) {
 			const i = this.index
 			this.index += n
-			return new TextDecoder("ascii").decode(new Uint8Array(this.buffer, i, n))
+			return $.bufferToStr(new Uint8Array(this.buffer, i, n))
 		}
 
 		// Custom stuff
@@ -179,17 +179,6 @@ const RBXParser = (() => {
 	class Instance {
 		static new(className) {
 			assert(typeof className === "string", "className is not a string")
-
-			/*
-			let constructor
-			if(!constructor) {
-				eval(`constructor = class ${className} extends Instance { constructor() { super("${className}") } }`)
-				Instance.cache[className] = constructor
-			}
-
-			return new constructor()
-			*/
-
 			return new Instance(className)
 		}
 
@@ -250,15 +239,10 @@ const RBXParser = (() => {
 			return name in this.Properties
 		}
 	}
-	Instance.cache = {}
 
-
-	const asciiDecoder = new TextDecoder("ascii")
 	const domParser = new DOMParser()
 	class RBXXmlParser {
 		parse(data) {
-			if(typeof data !== "string") { data = asciiDecoder.decode(data) }
-
 			const xml = domParser.parseFromString(data, "text/xml").documentElement
 			const result = []
 
@@ -683,47 +667,33 @@ const RBXParser = (() => {
 			}
 
 			return format === "xml"
-				? this.parseXml(buffer)
+				? this.parseXml($.bufferToStr(buffer))
 				: this.parseBin(buffer)
 		}
 
-		parseXml(buffer) { return new RBXXmlParser().parse(buffer) }
+		parseXml(str) { return new RBXXmlParser().parse(str) }
 		parseBin(buffer) { return new RBXBinParser().parse(buffer) }
 	}
 
 	class MeshParser {
 		parse(buffer) {
-			let format
+			const reader = new ByteReader(buffer)
+			assert(reader.String(8) === "version ", "Invalid mesh file")
 
-			if(typeof buffer === "string" && buffer.startsWith("version 1.0")) {
-				format = "text"
-			} else {
-				if(typeof buffer === "string") { buffer = new TextEncoder().encode(buffer) }
-				const reader = new ByteReader(buffer)
-				assert(reader.String(8) === "version ", "Invalid mesh file")
-
-				const version = reader.String(4)
-				switch(version) {
-				case "1.00":
-				case "1.01":
-					format = "text"
-					break
-				case "2.00":
-					format = "bin"
-					break
-				default:
-					throw new Error("Unsupported mesh version")
-				}
+			const version = reader.String(4)
+			switch(version) {
+			case "1.00":
+			case "1.01":
+				return this.parseText($.bufferToStr(buffer))
+			case "2.00":
+				return this.parseBin(buffer)
+			default:
+				throw new Error("Unsupported mesh version")
 			}
-
-			return format === "text"
-				? this.parseText(buffer)
-				: this.parseBin(buffer)
 		}
 
-		parseText(buffer) {
-			if(typeof buffer !== "string") { buffer = new TextDecoder().decode(buffer) }
-			const lines = buffer.split(/\r?\n/)
+		parseText(str) {
+			const lines = str.split(/\r?\n/)
 			assert(lines.length === 3, "Invalid mesh version 1 file (Wrong amount of lines)")
 
 			const version = lines[0]
@@ -900,35 +870,37 @@ const RBXParser = (() => {
 		MeshParser,
 		AnimationParser,
 
-		parseContentUrl(urlString) {
-			if(typeof urlString !== "string" || !urlString.length) { return null }
-
-			let url
-			try { url = new URL(urlString) }
-			catch(ex) {}
-
-			if(!url) { return null }
-
-			switch(url.protocol) {
-			case "rbxassetid:": {
-				const id = parseInt(url.pathname.replace(/^\/*/, ""), 10)
-				if(!Number.isSafeInteger(id)) { return null }
-				return id
+		resolveAssetUrl(url) {
+			if(url.startsWith("rbxassetid://")) {
+				url = `https://assetgame.roblox.com/asset/?id=${url.slice(13)}`
+			} else if(url.startsWith("rbxhttp://")) {
+				url = `https://www.roblox.com/${url.slice(10)}`
 			}
-			case "http:":
-			case "https:": {
-				const validHost = url.hostname.search(/^((assetgame|www|web)\.)?roblox\.com$/) !== -1
-				if(!validHost) { return null }
-				
-				const validPath = url.pathname.replace(/\/{2,}/g, "/").search(/^\/asset\/?$/) !== -1
-				if(!validPath) { return null }
 
-				const id = parseInt(url.searchParams.get("id"), 10)
-				if(!Number.isSafeInteger(id)) { return null }
+			const urlInfo = new URL(url)
+			if(urlInfo.protocol.search(/^https?:$/i) === -1) {
+				throw new TypeError(`Invalid asset url '${url}'`)
+			}
 
-				return id
+			if(urlInfo.hostname.search(/^((www|web|assetgame|data)\.)?roblox.com$/i) === -1) {
+				throw new TypeError(`Invalid hostname '${url}'`)
 			}
-			}
+
+			return url
+		},
+
+		resolveAssetId(url) {
+			try {
+				url = this.resolveAssetUrl(url)
+				const urlInfo = new URL(url)
+
+				if(urlInfo.href.search(/^https?:\/\/(\w+\.)?roblox\.com\/+asset\/+/i) !== -1) {
+					const id = +urlInfo.searchParams.get("id")
+					if(Number.isSafeInteger(id)) {
+						return id
+					}
+				}
+			} catch(ex) { }
 
 			return null
 		}

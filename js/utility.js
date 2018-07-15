@@ -165,44 +165,45 @@ const $ = function(selector) { return $.find(document, selector) }
 			let observer = Observers.get(target)
 
 			const promises = selectors.map(selector => new Promise(resolve => {
-				const fixedSelector = selector.replace(/(^|,)(?=\s*>)/g, "$1:scope")
 				let getter
 
-				if(selector.indexOf(",") === -1 && document.contains(target)) {
-					const idMatch = selector.match(/^\s*#([\w-]+)\s*$/)
-					if(idMatch) {
-						const id = idMatch[1]
-						getter = () => {
-							const elem = document.getElementById(id)
-
-							if(elem && !target.contains(elem)) {
-								getter = () => target.querySelector(fixedSelector)
-								return getter()
-							}
-							
-							return elem
-						}
-					}
-
-					const classMatch = selector.match(/^\s*\.([\w-]+)\s*$/)
-					if(classMatch) {
-						const className = classMatch[1]
-						const collection = document.getElementsByClassName(className)
-						if(collection.length < 10) {
+				if(selector.indexOf(",") === -1) {
+					if(document.contains(target)) {
+						const idMatch = selector.match(/^\s*#([\w-]+)\s*$/)
+						if(idMatch) {
+							const id = idMatch[1]
 							getter = () => {
-								if(collection.length >= 10) {
-									getter = () => target.querySelector(fixedSelector)
+								const elem = document.getElementById(id)
+
+								if(elem && !target.contains(elem)) {
+									getter = () => target.$find(selector)
 									return getter()
 								}
+								
+								return elem
+							}
+						}
 
-								for(let i = 0, len = collection.length; i < len; i++) {
-									const elem = collection[i]
-									if(target.contains(elem)) {
-										return elem
+						const classMatch = selector.match(/^\s*\.([\w-]+)\s*$/)
+						if(classMatch) {
+							const className = classMatch[1]
+							const collection = document.getElementsByClassName(className)
+							if(collection.length < 10) {
+								getter = () => {
+									if(collection.length >= 10) {
+										getter = () => target.$find(selector)
+										return getter()
 									}
-								}
 
-								return null
+									for(let i = 0, len = collection.length; i < len; i++) {
+										const elem = collection[i]
+										if(target.contains(elem)) {
+											return elem
+										}
+									}
+
+									return null
+								}
 							}
 						}
 					}
@@ -257,8 +258,7 @@ const $ = function(selector) { return $.find(document, selector) }
 					}
 				}
 
-				if(!getter) { getter = () => target.querySelector(fixedSelector) }
-
+				if(!getter) { getter = () => target.$find(selector) }
 				const elem = getter()
 
 				if(elem) {
@@ -352,9 +352,35 @@ const $ = function(selector) { return $.find(document, selector) }
 		},
 
 		find(self, selector) {
+			if(IS_EDGE) {
+				const oldId = self.id
+				self.id = "btr-find-thang"
+				try {
+					const result = self.querySelector(selector.replace(/(^|,)\s*(?=>)/g, "$&#btr-find-thang"))
+					self.id = oldId
+					return result
+				} catch(ex) {
+					self.id = oldId
+					throw ex
+				}
+			}
+
 			return self.querySelector(selector.replace(/(^|,)\s*(?=>)/g, "$&:scope"))
 		},
 		findAll(self, selector) {
+			if(IS_EDGE) {
+				const oldId = self.id
+				self.id = "btr-find-thang"
+				try {
+					const result = self.querySelectorAll(selector.replace(/(^|,)\s*(?=>)/g, "$&#btr-find-thang"))
+					self.id = oldId
+					return result
+				} catch(ex) {
+					self.id = oldId
+					throw ex
+				}
+			}
+
 			return self.querySelectorAll(selector.replace(/(^|,)\s*(?=>)/g, "$&:scope"))
 		},
 
@@ -518,6 +544,28 @@ const $ = function(selector) { return $.find(document, selector) }
 
 			const s = Math.floor(since)
 			return Math.floor(s) + " second" + (Math.floor(s) === 1 ? "" : "s")
+		},
+
+		strToBuffer(str) {
+			const buff = new ArrayBuffer(str.length)
+			const view = new Uint8Array(buff)
+
+			for(let i = str.length; i--;) {
+				view[i] = str.charCodeAt(i)
+			}
+
+			return buff
+		},
+
+		bufferToStr(buff) {
+			if(buff instanceof ArrayBuffer) { buff = new Uint8Array(buff) }
+			const result = []
+
+			for(let i = 0; i < buff.length; i += 0x8000) {
+				result.push(String.fromCharCode.apply(null, buff.subarray(i, i + 0x8000)))
+			}
+
+			return result.join("")
 		}
 	})
 

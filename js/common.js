@@ -1,8 +1,16 @@
 "use strict"
 
-const IS_FIREFOX = typeof chrome !== "undefined" && typeof browser !== "undefined"
-const IS_DEV_MODE = IS_FIREFOX ? chrome.runtime.id.endsWith("@temporary-addon") : chrome.runtime.id === "follfgiodgdohjfmfmnjhnbkecbiobmd"
+const IS_EDGE = window.browser && (!window.chrome || !chrome.extension) || false
+const IS_FIREFOX = !IS_EDGE && window.chrome && window.browser || false
+const IS_CHROME = !IS_EDGE && !IS_FIREFOX
+
+if(IS_EDGE) { window.chrome = Object.assign({}, browser) }
+
+const IS_DEV_MODE = IS_FIREFOX ? chrome.runtime.id.endsWith("@temporary-addon") :
+	IS_CHROME ? chrome.runtime.id === "follfgiodgdohjfmfmnjhnbkecbiobmd" : false
+
 const DOLLARS_PER_ROBUX_RATIO = 350 / 100000
+const getURL = chrome.runtime.getURL
 
 const DEFAULT_SETTINGS = {
 	general: {
