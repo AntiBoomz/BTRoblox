@@ -281,14 +281,14 @@
 					ev.stopPropagation()
 				})
 
+				parent.append(item)
+
 				if(inst.Children.length) {
 					item.classList.add("btr-explorer-has-children")
 					const childList = html`<ul class=btr-explorer-childlist></ul>`
 					inst.Children.forEach(child => create(child, childList))
-					item.append(childList)
+					item.after(childList)
 				}
-
-				parent.append(item)
 			}
 
 			model.forEach(inst => create(inst, element))
