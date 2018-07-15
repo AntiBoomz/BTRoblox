@@ -56,7 +56,7 @@ const RBXScene = (() => {
 		constructor() {
 			this._prevRes = { width: -1, height: -1 }
 
-			this.cameraMinZoom = 5
+			this.cameraMinZoom = 3
 			this.cameraMaxZoom = 25
 			this.cameraZoom = 10
 			this.cameraFocus = new THREE.Vector3(0, 4, 0)
