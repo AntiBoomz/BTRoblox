@@ -51,6 +51,7 @@ const RBXParser = (() => {
 			this.index += n
 			return result
 		}
+
 		Match(arr) {
 			const begin = this.index
 			this.index += arr.length
@@ -419,7 +420,6 @@ const RBXParser = (() => {
 			}
 
 			let values = []
-			let valueType = typeName
 			switch(typeName) {
 			case "string":
 				while(sub.GetRemaining() > 0) {
@@ -563,51 +563,39 @@ const RBXParser = (() => {
 				}
 				break
 			}
-			case "int64": {
+			case "int64": { // Two's complement
 				const count = sub.GetRemaining() / 8
 				const bytes = sub.Array(sub.GetRemaining())
 
-				const int64add = (byte, power, result) => {
-					if(power > 5) {
-						power -= 5
-						const str = String(byte * (256 ** 5))
-						for(let i = 0, final = str.length - 1; i <= final; i++) {
-							int64add(
-								+str[final - i] * (10 ** i),
-								power,
-								result
-							)
-						}
-					} else {
-						const str = String(byte * (256 ** power))
-						for(let i = 0, final = str.length - 1; i <= final; i++) {
-							const n = (result[i] || 0) + (+str[final - i])
-							result[i] = n % 10
-							if(n >= 10) {
-								result[i + 1] = (result[i + 1] || 0) + (n - n % 10) / 10
-							}
-						}
-					}
-				}
-
 				for(let i = 0; i < count; i++) {
-					const result = [0]
-					const neg = bytes[i + count * 7] % 2 === 1
+					const neg = bytes[i + count * 7] % 2
+					const add = (bytes[i + count * 6] * 256 + bytes[i + count * 7] + neg) / 2
 
-					if(neg) {
-						bytes[i + count * 7]++
+					let value = 0
+					for(let j = 0; j < 6; j++) {
+						value = value * 256 + bytes[i + count * j]
 					}
 
-					for(let j = 0; j < 8; j++) {
-						const byte = bytes[i + count * j]
-						int64add(
-							byte / 2,
-							7 - j,
-							result
-						)
+					if(value >= 274877906943) {
+						let part0 = +(String(value).slice(0, -10) || 0)
+						let part1 = +(String(value).slice(-10) || 0)
+
+						part0 *= 32768
+						part1 = part1 * 32768 + add
+
+						if(part1 >= 1e10) {
+							part0 += Math.floor(part1 / 1e10)
+							part1 %= 1e10
+						}
+
+						part1 = ("0".repeat(10) + String(part1)).slice(-10)
+						value = (neg ? "-" : "") + String(part0) + part1
+					} else {
+						value = value * 32768 + add
+						if(neg) { value = -value }
 					}
 
-					values[i] = (neg ? "-" : "") + result.reduce((a, b) => b + a, "")
+					values[i] = value
 				}
 
 				break
@@ -616,7 +604,7 @@ const RBXParser = (() => {
 			}
 
 			values.forEach((value, i) => {
-				group.Objects[i].setProperty(prop, value, valueType)
+				group.Objects[i].setProperty(prop, value, typeName)
 			})
 		}
 
