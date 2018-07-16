@@ -442,6 +442,15 @@ const RBXParser = (() => {
 					values.push(ByteReader.ParseDouble(sub.UInt32LE(), sub.UInt32LE()))
 				}
 				break
+			case "UDim": {
+				const count = sub.GetRemaining() / 8
+				const scale = sub.RBXInterleavedFloat(count)
+				const offset = sub.RBXInterleavedInt32(count)
+				for(let i = 0; i < count; i++) {
+					values[i] = [scale[i], offset[i]]
+				}
+				break
+			}
 			case "UDim2": {
 				const count = sub.GetRemaining() / 16
 				const scaleX = sub.RBXInterleavedFloat(count)
@@ -536,6 +545,17 @@ const RBXParser = (() => {
 				for(let i = 0; i < count; i++) {
 					refId += refIds[i]
 					values[i] = this.instances[refId]
+				}
+				break
+			}
+			case "Rect2D": {
+				const count = sub.GetRemaining() / 16
+				const x0 = sub.RBXInterleavedFloat(count)
+				const y0 = sub.RBXInterleavedFloat(count)
+				const x1 = sub.RBXInterleavedFloat(count)
+				const y1 = sub.RBXInterleavedFloat(count)
+				for(let i = 0; i < count; i++) {
+					values[i] = [x0[i], y0[i], x1[i], y1[i]]
 				}
 				break
 			}
@@ -636,8 +656,8 @@ const RBXParser = (() => {
 	RBXBinParser.FooterBytes = [0x00, 0x00, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3C, 0x2F, 0x72, 0x6F, 0x62, 0x6C, 0x6F, 0x78, 0x3E]
 	RBXBinParser.ShortCFrames = [null, null, [1, 0, 0, 0, 1, 0, 0, 0, 1], [1, 0, 0, 0, 0, -1, 0, 1, 0], null, [1, 0, 0, 0, -1, 0, 0, 0, -1], [1, 0, 0, 0, 0, 1, 0, -1, 0], [0, 1, 0, 1, 0, 0, 0, 0, -1], null, [0, 0, 1, 1, 0, 0, 0, 1, 0], [0, -1, 0, 1, 0, 0, 0, 0, 1], null, [0, 0, -1, 1, 0, 0, 0, -1, 0], [0, 1, 0, 0, 0, 1, 1, 0, 0], [0, 0, -1, 0, 1, 0, 1, 0, 0], null, [0, -1, 0, 0, 0, -1, 1, 0, 0], [0, 0, 1, 0, -1, 0, 1, 0, 0], null, null, [-1, 0, 0, 0, 1, 0, 0, 0, -1], [-1, 0, 0, 0, 0, 1, 0, 1, 0], null, [-1, 0, 0, 0, -1, 0, 0, 0, 1], [-1, 0, 0, 0, 0, -1, 0, -1, 0], [0, 1, 0, -1, 0, 0, 0, 0, 1], null, [0, 0, -1, -1, 0, 0, 0, 1, 0], [0, -1, 0, -1, 0, 0, 0, 0, -1], null, [0, 0, 1, -1, 0, 0, 0, -1, 0], [0, 1, 0, 0, 0, -1, -1, 0, 0], [0, 0, 1, 0, 1, 0, -1, 0, 0], null, [0, -1, 0, 0, 0, 1, -1, 0, 0], [0, 0, -1, 0, -1, 0, -1, 0, 0]]
 	RBXBinParser.DataTypes = [
-		null, "string", "bool", "int", "float", "double", null, "UDim2", "Ray", null, null, "BrickColor", "Color3", "Vector2", "Vector3", null,
-		"CFrame", null, "Enum", "Instance", null, null, null, null, null, "PhysicalProperties", "Color3uint8", "int64"
+		null, "string", "bool", "int", "float", "double", "UDim", "UDim2", "Ray", null, null, "BrickColor", "Color3", "Vector2", "Vector3", null, // 0x0F
+		"CFrame", null, "Enum", "Instance", null, "NumberSequence", "ColorSequence", "NumberRange", "Rect2D", "PhysicalProperties", "Color3uint8", "int64", null, null, null, null // 0x1F
 	]
 
 	class ModelParser {
