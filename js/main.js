@@ -941,7 +941,7 @@ function Init() {
 				return
 			}
 
-			const cont = x.innerHTML
+			const cont = x.textContent
 			if(
 				cont.includes("google-analytics.com") ||
 				cont.includes("scorecardresearch.com") ||
@@ -952,7 +952,7 @@ function Init() {
 			) {
 				x.remove()
 			} else if(cont.includes("Roblox.EventStream.Init")) { // Stops e.png logging
-				x.innerHTML = x.innerHTML.replace(/"[^"]*"/g, `""`)
+				x.textContent = cont.replace(/"[^"]*"/g, `""`)
 			}
 		}
 

@@ -1510,8 +1510,8 @@ pageInit.groups = function() {
 	if(settings.groups.expandGroupList) {
 		document.$watch("body").$then()
 			.$watchAll("script", (x, stop) => {
-				if(!x.innerHTML.includes(`'windowDisplay': 8,`)) { return }
-				x.innerHTML = x.innerHTML.replace(/'windowDisplay': 8/, "'windowDisplay': 16")
+				if(!x.textContent.includes(`'windowDisplay': 8,`)) { return }
+				x.textContent = x.textContent.replace(/'windowDisplay': 8/, "'windowDisplay': 16")
 
 				stop()
 
