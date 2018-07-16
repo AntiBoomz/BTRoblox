@@ -8,47 +8,73 @@ const AssetCache = (() => {
 
 	const prefixUrl = getURL("")
 
-	function resolveAssetUrl(url) {
-		if(url.startsWith(prefixUrl)) {
-			return Promise.resolve(url)
+	function resolveAssetUrlParams(url) {
+		if(url.startsWith("rbxassetid://")) {
+			url = `https://assetgame.roblox.com/asset/?id=${url.slice(13)}`
+		} else if(url.startsWith("rbxhttp://")) {
+			url = `https://www.roblox.com/${url.slice(10)}`
 		}
 
-		url = RBXParser.resolveAssetUrl(url)
-		return new Promise(resolve => MESSAGING.send("resolveAssetUrl", url, result => {
-			if(result.state !== "SUCCESS") {
-				console.error("resolveAssetUrl:", result)
-				return resolve(null)
+		try {
+			const urlInfo = new URL(url)
+			if(!urlInfo.pathname.match(/^\/*asset\/*$/i)) {
+				return null
 			}
 
-			const urlInfo = new URL(result.url)
+			return Array.from(urlInfo.searchParams.entries())
+		} catch(ex) {}
 
-			if(urlInfo.hostname.search(/^[ct]\d\.rbxcdn\.com$/) === -1) {
-				throw new Error(`Invalid asset url '${result.url}'`)
-			}
+		return null
+	}
 
-			if(urlInfo.protocol === "http:") { urlInfo.protocol = "https:" }
-			resolve(urlInfo.href)
-		}))
+	function resolveAssetUrl(url) {
+		if(resolveCache[url]) {
+			return resolveCache[url]
+		}
+
+		if(url.startsWith(prefixUrl)) {
+			return resolveCache[url] = Promise.resolve(url)
+		}
+
+		const params = resolveAssetUrlParams(url)
+		if(!params) {
+			throw new Error(`Invalid Asset Url: '${url}'`)
+		}
+
+		return resolveCache[url] = new Promise(resolve =>
+			MESSAGING.send("resolveAssetUrl", params, result => {
+				if(result.state !== "SUCCESS") {
+					console.error("resolveAssetUrl:", result, url)
+					return resolve(null)
+				}
+
+				resolve(result.url)
+			})
+		)
 	}
 
 	function createMethod(constructor) {
 		const cache = {}
 
-		return (url, cb) => {
-			if(Number.isSafeInteger(+url)) {
-				url = `https://assetgame.roblox.com/asset/?id=${+url}`
+		return (strict, url, cb) => {
+			if(typeof url === "function") {
+				cb = url
+				url = strict
+				strict = false
 			}
+
+			if(!strict && Number.isSafeInteger(+url)) {
+				url = AssetCache.toAssetUrl(url)
+			}
+
+			try { new URL(url) }
+			catch(ex) { throw new TypeError(`Invalid URL: '${String(url)}'`)}
 
 			let methodPromise = cache[url]
 			if(!methodPromise) {
 				let filePromise = fileCache[url]
 				if(!filePromise) {
-					let resolvePromise = resolveCache[url]
-					if(!resolvePromise) {
-						resolvePromise = resolveCache[url] = resolveAssetUrl(url)
-					}
-
-					filePromise = fileCache[url] = resolvePromise.then(async resolvedUrl => {
+					filePromise = fileCache[url] = resolveAssetUrl(url).then(async resolvedUrl => {
 						const resp = await fetch(resolvedUrl)
 
 						if(IS_EDGE) {
@@ -80,7 +106,25 @@ const AssetCache = (() => {
 		loadImage: createMethod(buffer => URL.createObjectURL(new Blob([new Uint8Array(buffer)]))),
 
 		loadBuffer: createMethod(buffer => buffer),
-		loadBlob: createMethod(buffer => new Blob([buffer])),
-		loadText: createMethod(buffer => $.bufferToStr(buffer))
+		loadBlob: createMethod(buffer => new Blob([buffer], { type: "image/jpeg" })),
+		loadText: createMethod(buffer => $.bufferToStr(buffer)),
+
+		toAssetUrl(id) {
+			return `https://assetgame.roblox.com/asset/?id=${+id}`
+		},
+		resolveAssetId(url) {
+			const params = resolveAssetUrlParams(url)
+
+			if(params) {
+				for(let i = 0; i < params.length; i++) {
+					const [name, value] = params[i]
+					if(name.toLowerCase() === "id") {
+						return value
+					}
+				}
+			}
+
+			return null
+		}
 	}
 })()

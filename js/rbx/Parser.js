@@ -876,41 +876,6 @@ const RBXParser = (() => {
 		Instance,
 		ModelParser,
 		MeshParser,
-		AnimationParser,
-
-		resolveAssetUrl(url) {
-			if(url.startsWith("rbxassetid://")) {
-				url = `https://assetgame.roblox.com/asset/?id=${url.slice(13)}`
-			} else if(url.startsWith("rbxhttp://")) {
-				url = `https://www.roblox.com/${url.slice(10)}`
-			}
-
-			const urlInfo = new URL(url)
-			if(urlInfo.protocol.search(/^https?:$/i) === -1) {
-				throw new TypeError(`Invalid asset url '${url}'`)
-			}
-
-			if(urlInfo.hostname.search(/^((www|web|assetgame|data)\.)?roblox.com$/i) === -1) {
-				throw new TypeError(`Invalid hostname '${url}'`)
-			}
-
-			return url
-		},
-
-		resolveAssetId(url) {
-			try {
-				url = this.resolveAssetUrl(url)
-				const urlInfo = new URL(url)
-
-				if(urlInfo.href.search(/^https?:\/\/(\w+\.)?roblox\.com\/+asset\/+/i) !== -1) {
-					const id = +urlInfo.searchParams.get("id")
-					if(Number.isSafeInteger(id)) {
-						return id
-					}
-				}
-			} catch(ex) { }
-
-			return null
-		}
+		AnimationParser
 	}
 })()

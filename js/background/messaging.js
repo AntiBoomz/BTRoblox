@@ -11,14 +11,21 @@ MESSAGING.listen({
 		respond()
 	},
 	
-	resolveAssetUrl(url, respond) {
-		fetch(url, { credentials: "include", method: "HEAD" }).then(resp => {
+	resolveAssetUrl(params, respond) {
+		const urlInfo = new URL("https://assetgame.roblox.com/asset/")
+		params.forEach(([name, value]) => urlInfo.searchParams.append(name, value))
+
+		fetch(urlInfo.href, { credentials: "include", method: "HEAD" }).then(resp => {
 			if(!resp.ok) {
 				respond({ state: "NOT_OK", status: resp.status, statusText: resp.statusText })
 				return
 			}
 
-			respond({ state: "SUCCESS", url: resp.url })
+			if(!resp.url || !resp.url.match(/^https?:\/\/[ct]\d\.rbxcdn\.com(?=\/|$)/i)) {
+				respond({ state: "INVALID_RESPONSE", url: resp.url })
+			}
+
+			respond({ state: "SUCCESS", url: resp.url.replace(/^http:/, "https:") })
 		}, ex => {
 			respond({ state: "ERROR", message: ex.message })
 		})

@@ -446,7 +446,7 @@
 
 							valueItem.append(more)
 						} else {
-							const id = RBXParser.resolveAssetId(value)
+							const id = AssetCache.resolveAssetId(value)
 							if(id) {
 								const more = html`<a class=more href="/library/${id}/Redirect" target=_blank>🔗</a>`
 								more.title = "Go to asset"

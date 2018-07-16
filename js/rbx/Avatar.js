@@ -206,7 +206,7 @@ const RBXAvatar = (() => {
 	
 			const R6Promise = new Promise(resolveTree => {
 				const path = getURL("res/previewer/character.rbxm")
-				AssetCache.loadModel(path, model => {
+				AssetCache.loadModel(true, path, model => {
 					const tree = RecurseTree(model[0])
 					resolveTree(tree)
 				})
@@ -214,7 +214,7 @@ const RBXAvatar = (() => {
 	
 			const R15Promise = new Promise(resolveTree => {
 				const path = getURL("res/previewer/characterR15.rbxm")
-				AssetCache.loadModel(path, model => {
+				AssetCache.loadModel(true, path, model => {
 					const tree = RecurseTree(model[0])
 					resolveTree(tree)
 				})
@@ -405,13 +405,13 @@ const RBXAvatar = (() => {
 		textures.tshirt.image.addEventListener("load", () => this.update())
 
 		let meshUrl = getURL("res/previewer/compositing/CompositShirtTemplate.mesh")
-		AssetCache.loadMesh(meshUrl, mesh => applyMesh(shirtmesh, mesh))
+		AssetCache.loadMesh(true, meshUrl, mesh => applyMesh(shirtmesh, mesh))
 
 		meshUrl = getURL("res/previewer/compositing/CompositPantsTemplate.mesh")
-		AssetCache.loadMesh(meshUrl, mesh => applyMesh(pantsmesh, mesh))
+		AssetCache.loadMesh(true, meshUrl, mesh => applyMesh(pantsmesh, mesh))
 
 		meshUrl = getURL("res/previewer/compositing/CompositTShirt.mesh")
-		AssetCache.loadMesh(meshUrl, mesh => applyMesh(tshirtmesh, mesh))
+		AssetCache.loadMesh(true, meshUrl, mesh => applyMesh(tshirtmesh, mesh))
 
 		this.shouldUpdateBodyColors = true
 		this.bodyColors = {
@@ -494,7 +494,7 @@ const RBXAvatar = (() => {
 		textures.pants.image.addEventListener("load", () => this.update())
 
 		const meshUrl = getURL("res/previewer/compositing/R15CompositTorsoBase.mesh")
-		AssetCache.loadMesh(meshUrl, mesh => {
+		AssetCache.loadMesh(true, meshUrl, mesh => {
 			applyMesh(shirtmesh, mesh)
 			applyMesh(pantsmesh, mesh)
 		})
@@ -521,7 +521,7 @@ const RBXAvatar = (() => {
 
 		texture.image.addEventListener("load", () => this.update())
 
-		AssetCache.loadMesh(meshUrl, mesh => applyMesh(obj, mesh))
+		AssetCache.loadMesh(true, meshUrl, mesh => applyMesh(obj, mesh))
 	}
 
 	class Avatar {
@@ -629,9 +629,9 @@ const RBXAvatar = (() => {
 								target,
 								asset,
 								type: "R6",
-								meshId: charmesh.MeshId,
-								baseTexId: charmesh.BaseTextureId,
-								overTexId: charmesh.OverlayTextureId
+								meshId: +charmesh.MeshId ? AssetCache.toAssetUrl(charmesh.MeshId) : null,
+								baseTexId: +charmesh.BaseTextureId ? AssetCache.toAssetUrl(charmesh.BaseTextureId) : null,
+								overTexId: +charmesh.OverlayTextureId ? AssetCache.toAssetUrl(charmesh.OverlayTextureId) : null
 							})
 						})
 					}
@@ -738,10 +738,10 @@ const RBXAvatar = (() => {
 					const obj = new THREE.Mesh(undefined, mat)
 					obj.castShadow = true
 
-					AssetCache.loadMesh(meshId, mesh => applyMesh(obj, mesh))
+					AssetCache.loadMesh(true, meshId, mesh => applyMesh(obj, mesh))
 
 					tex.image.src = solidColorDataURL(163, 162, 165)
-					if(texId) { AssetCache.loadImage(texId, url => { tex.image.src = url }) }
+					if(texId) { AssetCache.loadImage(true, texId, url => { tex.image.src = url }) }
 
 					const attInst = hanInst.Children.find(x => x.ClassName === "Attachment")
 					const cframe = [...(attInst ? attInst.CFrame : accInst.AttachmentPoint)]
@@ -770,7 +770,7 @@ const RBXAvatar = (() => {
 					if(!shirt) { return }
 
 					const texId = shirt.ShirtTemplate
-					if(texId) { AssetCache.loadImage(texId, url => { this.textures.shirt.image.src = url }) }
+					if(texId) { AssetCache.loadImage(true, texId, url => { this.textures.shirt.image.src = url }) }
 				})
 				break
 			case 2:
@@ -779,7 +779,7 @@ const RBXAvatar = (() => {
 					if(!tshirt) { return }
 
 					const texId = tshirt.Graphic
-					if(texId) { AssetCache.loadImage(texId, url => { this.textures.tshirt.image.src = url }) }
+					if(texId) { AssetCache.loadImage(true, texId, url => { this.textures.tshirt.image.src = url }) }
 				})
 				break
 			case 12:
@@ -788,7 +788,7 @@ const RBXAvatar = (() => {
 					if(!pants) { return }
 
 					const texId = pants.PantsTemplate
-					if(texId) { AssetCache.loadImage(texId, url => { this.textures.pants.image.src = url }) }
+					if(texId) { AssetCache.loadImage(true, texId, url => { this.textures.pants.image.src = url }) }
 				})
 				break
 			case 48: case 49: case 50: case 51:
@@ -941,7 +941,7 @@ const RBXAvatar = (() => {
 				if(part.rbxMeshId !== meshId) {
 					part.rbxMeshId = meshId
 					clearGeometry(part.rbxMesh)
-					AssetCache.loadMesh(meshId, mesh => part.rbxMeshId === meshId && applyMesh(part.rbxMesh, mesh))
+					AssetCache.loadMesh(true, meshId, mesh => part.rbxMeshId === meshId && applyMesh(part.rbxMesh, mesh))
 				}
 
 				if(part.rbxMeshScale !== scale) {
@@ -951,20 +951,20 @@ const RBXAvatar = (() => {
 
 				const baseImg = this.images.base[partName]
 				const overImg = this.images.over[partName]
-				const baseTexId = change && change.baseTexId || 0
-				const overTexId = change && change.overTexId || 0
+				const baseTexId = change && change.baseTexId || ""
+				const overTexId = change && change.overTexId || ""
 
 				if(baseImg && baseImg.rbxTexId !== baseTexId) {
 					baseImg.rbxTexId = baseTexId
 					baseImg.src = baseImg.defaultSrc || ""
-					if(baseTexId > 0) { AssetCache.loadImage(baseTexId, url => baseImg.rbxTexId === baseTexId && (baseImg.src = url)) }
+					if(baseTexId) { AssetCache.loadImage(true, baseTexId, url => baseImg.rbxTexId === baseTexId && (baseImg.src = url)) }
 					else { baseImg.$trigger("load") } // Need to trigger load to update textures
 				}
 
 				if(overImg && overImg.rbxTexId !== overTexId) {
 					overImg.rbxTexId = overTexId
 					overImg.src = overImg.defaultSrc || ""
-					if(overTexId > 0) { AssetCache.loadImage(overTexId, url => overImg.rbxTexId === overTexId && (overImg.src = url)) }
+					if(overTexId) { AssetCache.loadImage(true, overTexId, url => overImg.rbxTexId === overTexId && (overImg.src = url)) }
 					else { overImg.$trigger("load") } // Need to trigger load to update textures
 				}
 			})

@@ -694,7 +694,7 @@ pageInit.itemdetails = function(assetId) {
 
 										value.Children.filter(x => x.ClassName === "Animation").forEach((anim, i) => {
 											const name = animName + (i === 0 ? "" : `_${i + 1}`)
-											const animId = RBXParser.resolveAssetId(anim.AnimationId)
+											const animId = AssetCache.resolveAssetId(anim.AnimationId)
 											if(!animId) { return }
 
 											preview.addAnimation(name, animId)
@@ -846,7 +846,7 @@ pageInit.itemdetails = function(assetId) {
 					const inst = model.find(assetTypeContainer.filter)
 					if(!inst) { return }
 
-					const actId = RBXParser.resolveAssetId(inst[assetTypeContainer.prop])
+					const actId = AssetCache.resolveAssetId(inst[assetTypeContainer.prop])
 					if(!actId) { return }
 
 					btn.href = `/catalog/${actId}`
@@ -897,7 +897,7 @@ pageInit.itemdetails = function(assetId) {
 					const decal = model.find(x => x.ClassName === "Decal")
 					if(!decal) { return }
 
-					const imgId = RBXParser.resolveAssetId(decal.Texture)
+					const imgId = AssetCache.resolveAssetId(decal.Texture)
 					if(!imgId) { return }
 
 					const preload = new Image()
