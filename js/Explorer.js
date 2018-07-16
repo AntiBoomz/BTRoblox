@@ -38,7 +38,7 @@
 			LocalizationService: 92, Trail: 93, WeldConstraint: 94, CylindricalConstraint: 95, Beam: 96,
 			LocalizationTable: 97
 		},
-		EnumDefinitions:  {
+		EnumDefinitions: {
 			ActuatorRelativeTo: ["Attachment0", "Attachment1", "World"],
 			ActuatorType: ["None", "Motor", "Servo"],
 			AnimationPriority: { 0: "Idle", 1: "Movement", 2: "Action", 1000: "Core" },
@@ -223,23 +223,23 @@
 			},
 			{
 				Name: "Motion",
-				Properties: [ "Acceleration" ]
+				Properties: ["Acceleration"]
 			},
 			{
 				Name: "Particles",
-				Properties: [ "Drag", "LockedToPart", "VelocityInheritance" ]
+				Properties: ["Drag", "LockedToPart", "VelocityInheritance"]
 			},
 			{
 				Name: "Emission",
 				Properties: [
-					"EmissionDirection", "ParticleEmitter.Enabled", "ParticleEmitter.Lifetime", "ParticleEmitter.Rate", "ParticleEmitter.Rotation", 
+					"EmissionDirection", "ParticleEmitter.Enabled", "ParticleEmitter.Lifetime", "ParticleEmitter.Rate", "ParticleEmitter.Rotation",
 					"ParticleEmitter.RotSpeed", "ParticleEmitter.Speed", "ParticleEmitter.SpreadAngle"
 				]
 			},
 			{
 				Name: "Part",
 				Properties: [
-					"CustomPhysicalProperties", "Shape", "_PartSize"
+					"CustomPhysicalProperties", "Shape", "BasePart.Size"
 				]
 			},
 			{
@@ -330,28 +330,13 @@
 	const sortPropertyGroups = (a, b) => a.Order - b.Order
 	const sortProperties = (a, b) => (a[0] < b[0] ? -1 : 1)
 
-	const ClassPropRenames = {
-		Beam: ["Attachment0", "Attachment1", "Enabled"],
-		ParticleEmitter: ["Enabled", "Lifetime", "Rate", "Rotation", "RotSpeed", "Speed", "SpreadAngle"]
+	const getPropertyGroup = (name, prop, target) => {
+		if(name === "Size" && prop.type === "Vector3" && target.ClassName !== "BoxHandleAdornment") {
+			return PropertyToGroup["BasePart.Size"]
+		}
+
+		return PropertyToGroup[`${target.ClassName}.${name}`] || PropertyToGroup[name] || DefaultPropertyGroup
 	}
-
-	const PropertyHandlers = [
-		(name, prop, target) => {
-			if(name === "Size" && prop.type === "Vector3" && target.ClassName !== "BoxHandleAdornment") {
-				return "_PartSize"
-			}
-
-			return name
-		},
-		(name, prop, target) => {
-			const renames = ClassPropRenames[target.ClassName]
-			if(renames && renames.includes(name)) {
-				return `${target.ClassName}.${name}`
-			}
-
-			return name
-		},
-	]
 
 	class Explorer {
 		constructor() {
@@ -411,13 +396,9 @@
 				name = ExplorerData.RenamedProperties[name] || name
 				if(PropertyHidden[name]) { return }
 
-				let effectiveName = name
-
-				PropertyHandlers.forEach(fn => effectiveName = fn(effectiveName, prop, target))
-
-				const group = PropertyToGroup[effectiveName] || DefaultPropertyGroup
+				const group = getPropertyGroup(name, prop, target)
+				
 				let groupData = groupMap[group.Name]
-
 				if(!groupData) {
 					groupData = groupMap[group.Name] = Object.assign({}, group)
 					groupData.Properties = []
