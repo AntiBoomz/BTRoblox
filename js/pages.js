@@ -151,19 +151,21 @@ function GetAssetFileType(assetTypeId, buffer) {
 
 function createPager(noSelect) {
 	const pager = html`
-	<div class="btr-pager-holder">
-		<ul class="pager">
-			<li class="pager-prev"><a><span class="icon-left"></span></a></li>
-			<li class="pager-mid">
-				Page <span class="pager-cur" type="text" value=""></span>
+	<div class=btr-pager-holder>
+		<ul class=pager>
+			<li class=pager-prev><a><span class=icon-left></span></a></li>
+			<li class=pager-mid>
+				Page <span class=pager-cur type=text value=></span>
 			</li>
-			<li class="pager-next"><a><span class="icon-right"></span></a></li>
+			<li class=pager-next><a><span class=icon-right></span></a></li>
 		</ul>
 	</div>`
 
 	if(!noSelect) {
-		pager.$find(".pager-mid").innerHTML = htmlstring`
-		Page <input class="pager-cur" type="text" value=""> of <span class="pager-total"></span>`
+		const mid = pager.$find(".pager-mid")
+		mid.$empty()
+		mid.append(html`
+		Page <input class=pager-cur type=text value=> of <span class=pager-total></span>`)
 	}
 
 	const prev = pager.$find(".pager-prev")
@@ -944,9 +946,12 @@ pageInit.itemdetails = function(assetId) {
 					getCachedProductInfo(childId).then(data => {
 						if(data.IsForSale) {
 							if(data.PriceInRobux) {
-								card.$find(".item-card-price").innerHTML = htmlstring`
-								<span class="icon-robux-16x16"></span>
-								<span class="text-robux">${data.PriceInRobux}</span>`
+								const price = card.$find(".item-card-price")
+								price.$empty()
+								price.append(
+									html`<span class="icon-robux-16x16"></span>`,
+									html`<span class="text-robux">${data.PriceInRobux}</span>`
+								)
 							} else {
 								const label = card.$find(".item-card-price .text-label")
 								label.classList.add("text-robux")
@@ -1045,7 +1050,9 @@ pageInit.gamedetails = function(placeId) {
 			badges.$watch(">.stack-list").$then().$watchAll(".badge-row", row => {
 				const url = row.$find(".badge-image>a").href
 				const label = row.$find(".badge-name")
-				label.innerHTML = htmlstring`<a href="${url}">${label.textContent}</a>`
+				const labelTitle = label.textContent
+				label.$empty()
+				label.append(html`<a href="${url}">${labelTitle}</a>`)
 				row.$find("p.para-overflow").classList.remove("para-overflow")
 
 				if(settings.gamedetails.showBadgeOwned) {
