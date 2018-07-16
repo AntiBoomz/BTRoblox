@@ -612,7 +612,7 @@ const RBXParser = (() => {
 						value = (neg ? "-" : "") + String(part0) + part1
 					} else {
 						value = value * 32768 + add
-						if(neg) { value = -value }
+						value = String(neg ? -value : value)
 					}
 
 					values[i] = value
