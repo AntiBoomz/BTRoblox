@@ -164,8 +164,7 @@ function createPager(noSelect) {
 	if(!noSelect) {
 		const mid = pager.$find(".pager-mid")
 		mid.$empty()
-		mid.append(html`
-		Page <input class=pager-cur type=text value=> of <span class=pager-total></span>`)
+		mid.append(html`Page <input class=pager-cur type=text value=> of <span class=pager-total></span>`)
 	}
 
 	const prev = pager.$find(".pager-prev")

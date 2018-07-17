@@ -6,12 +6,6 @@
 	let cachedFeed
 	let lastRequest = 0
 
-	const htmlStripper = document.createElement("template")
-	const striphtml = html => {
-		htmlStripper.innerHTML = html
-		return htmlStripper.content.textContent
-	}
-
 	MESSAGING.listen({
 		requestBlogFeed(_, respond) {
 			if(cachedFeed) {
@@ -30,8 +24,8 @@
 					cachedFeed = json.map(post => ({
 						url: post.link,
 						date: post.date,
-						title: striphtml(post.title.rendered).trim(),
-						desc: striphtml(post.excerpt.rendered).trim()
+						title: html`<div>${post.title.rendered}</div>`.textContent.trim(),
+						desc: html`<div>${post.excerpt.rendered}</div>`.textContent.trim()
 					}))
 
 
