@@ -63,6 +63,7 @@
 				"js/rbx/Avatar.js",
 				"js/rbx/Scene.js",
 				"js/rbx/Preview.js",
+				"js/rbx/ApiDump.js",
 				"js/Explorer.js"
 			],
 			"run_at": "document_start",
