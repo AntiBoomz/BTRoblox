@@ -155,7 +155,7 @@ function createPager(noSelect) {
 		<ul class=pager>
 			<li class=pager-prev><a><span class=icon-left></span></a></li>
 			<li class=pager-mid>
-				Page <span class=pager-cur type=text value=></span>
+				Page <span class=pager-cur type=text value></span>
 			</li>
 			<li class=pager-next><a><span class=icon-right></span></a></li>
 		</ul>
@@ -163,8 +163,7 @@ function createPager(noSelect) {
 
 	if(!noSelect) {
 		const mid = pager.$find(".pager-mid")
-		mid.$empty()
-		mid.append(html`Page <input class=pager-cur type=text value=> of <span class=pager-total></span>`)
+		mid.innerHTML = htmlstring`Page <input class=pager-cur type=text value> of <span class=pager-total></span>`
 	}
 
 	const prev = pager.$find(".pager-prev")
@@ -946,11 +945,9 @@ pageInit.itemdetails = function(assetId) {
 						if(data.IsForSale) {
 							if(data.PriceInRobux) {
 								const price = card.$find(".item-card-price")
-								price.$empty()
-								price.append(
-									html`<span class="icon-robux-16x16"></span>`,
-									html`<span class="text-robux">${data.PriceInRobux}</span>`
-								)
+								price.innerHTML = htmlstring`
+								<span class=icon-robux-16x16></span>
+								<span class=text-robux>${data.PriceInRobux}</span>`
 							} else {
 								const label = card.$find(".item-card-price .text-label")
 								label.classList.add("text-robux")
@@ -1049,9 +1046,7 @@ pageInit.gamedetails = function(placeId) {
 			badges.$watch(">.stack-list").$then().$watchAll(".badge-row", row => {
 				const url = row.$find(".badge-image>a").href
 				const label = row.$find(".badge-name")
-				const labelTitle = label.textContent
-				label.$empty()
-				label.append(html`<a href="${url}">${labelTitle}</a>`)
+				label.innerHTML = htmlstring`<a href="${url}">${label.textContent}</a>`
 				row.$find("p.para-overflow").classList.remove("para-overflow")
 
 				if(settings.gamedetails.showBadgeOwned) {
