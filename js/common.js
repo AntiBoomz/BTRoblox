@@ -1,8 +1,9 @@
 "use strict"
 
-const IS_EDGE = !!(window.browser && (!window.chrome || !chrome.extension))
-const IS_FIREFOX = !!(!IS_EDGE && window.chrome && window.browser)
-const IS_CHROME = !IS_EDGE && !IS_FIREFOX
+const BROWSER_NAME = navigator.userAgent.includes("Edge/") ? "Edge" : navigator.userAgent.includes("Chrome/") ? "Chrome" : "Firefox"
+const IS_EDGE = BROWSER_NAME === "Edge"
+const IS_FIREFOX = BROWSER_NAME === "Firefox"
+const IS_CHROME = BROWSER_NAME === "Chrome"
 
 if(IS_EDGE) { window.chrome = Object.assign({}, browser) }
 
