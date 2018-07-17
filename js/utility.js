@@ -147,7 +147,18 @@ const $ = function(selector) { return $.find(document, selector) }
 		}
 	}
 
+	const defaultToDict = (x, v) => x[v] = true
 	Object.assign($, {
+		toDict(fn, ...args) {
+			if(typeof fn !== "function" && fn !== null) {
+				throw new TypeError("No function given to toDict")
+			}
+			if(!fn) { fn = defaultToDict }
+
+			const obj = {}
+			args.forEach((val, index) => fn(obj, val, index))
+			return obj
+		},
 		watch(target, selectors, filter, callback) {
 			if(!callback) {
 				callback = filter
