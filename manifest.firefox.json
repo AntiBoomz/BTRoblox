@@ -19,7 +19,6 @@
 	},
 
 	"background": {
-		"persistent": false,
 		"scripts": [
 			"js/common.js",
 			"js/background/settings.js",
@@ -31,15 +30,7 @@
 	},
 
 	"permissions": [
-		"*://www.roblox.com/",
-		"*://web.roblox.com/",
-		"*://assetgame.roblox.com/",
-		"*://m.roblox.com/",
-		"*://api.roblox.com/",
-		"*://avatar.roblox.com/",
-		"*://games.roblox.com/",
-		"*://groups.roblox.com/",
-		"*://blog.roblox.com/",
+		"*://*.roblox.com/",
 		"*://*.rbxcdn.com/",
 		"alarms",
 		"clipboardWrite",
