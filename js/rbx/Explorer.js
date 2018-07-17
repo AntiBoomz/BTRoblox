@@ -5,7 +5,7 @@
 	const RenamedProperties = { size: "Size", scale: "Scale", shape: "Shape", archivable: "Archivable", Color3uint8: "Color", formFactorRaw: "FormFactor" }
 	const HiddenProperties = $.toDict(null,
 		"PhysicsData", "MeshData", "ChildData", "ModelInPrimary", "FormFactor", "Elasticity", "Friction",
-		"LODX", "LODY", "Tags"
+		"LODX", "LODY", "Tags", "ScriptGuid"
 	)
 
 	function fixNum(v) { return Math.round(v * 1e3) / 1e3 }
