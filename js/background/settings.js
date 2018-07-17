@@ -33,10 +33,6 @@ const Settings = (() => {
 		Settings.get(() => {
 			STORAGE.set({ settings })
 		})
-		
-		// Legacy cleanup
-		localStorage.removeItem("cssCache")
-		if(chrome.alarms) { chrome.alarms.clear("KeepAlive") }
 	})
 
 	return {
