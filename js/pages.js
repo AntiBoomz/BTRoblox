@@ -888,23 +888,49 @@ pageInit.itemdetails = function(assetId) {
 		}
 
 		if(settings.itemdetails.whiteDecalThumbnailFix && assetTypeId === 13) {
+			const emptyImg = "https://t6.rbxcdn.com/3707fe58b613498a0f1fc7d11faeccf3"
+			const invalidImg = "https://t5.rbxcdn.com/7e9f63b26670543d8296072a2738a519"
+
 			document.$watch("#AssetThumbnail").$then().$watch(".thumbnail-span img", img => {
-				if(img.src !== "https://t6.rbxcdn.com/3707fe58b613498a0f1fc7d11faeccf3") { return }
-				
-				AssetCache.loadModel(assetId, model => {
-					const decal = model.find(x => x.ClassName === "Decal")
-					if(!decal) { return }
+				const fixThumbnail = () => {
+					AssetCache.loadModel(assetId, model => {
+						const decal = model.find(x => x.ClassName === "Decal")
+						if(!decal) { return }
 
-					const imgId = AssetCache.resolveAssetId(decal.Texture)
-					if(!imgId) { return }
+						const imgId = AssetCache.resolveAssetId(decal.Texture)
+						if(!imgId) { return }
 
-					const preload = new Image()
-					preload.onload = () => {
-						preload.onload = null
-						img.src = preload.src
-					}
-					preload.src = `https://assetgame.roblox.com/asset-thumbnail/image?assetId=${imgId}&width=420&height=420`
-				})
+						let waitTime = 100
+
+						const url = `https://assetgame.roblox.com/asset-thumbnail/json?assetId=${imgId}&width=420&height=420`
+						const load = () => {
+							fetch(url).then(async resp => {
+								const json = await resp.json()
+
+								if(json.Final) {
+									img.src = json.Url
+								} else {
+									setTimeout(load, waitTime += 100)
+								}
+							})
+						}
+
+						load()
+					})
+				}
+
+				if(img.src === invalidImg) {
+					const observer = new MutationObserver(() => {
+						observer.disconnect()
+						if(img.src === emptyImg) {
+							fixThumbnail()
+						}
+					})
+
+					observer.observe(img, { attributes: true, attributeFilter: ["src"] })
+				} else if(img.src === emptyImg) {
+					fixThumbnail()
+				}
 			})
 		}
 
