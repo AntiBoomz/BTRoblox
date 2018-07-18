@@ -1115,19 +1115,14 @@ pageInit.gamedetails = function(placeId) {
 			const stat = Array.prototype.find.call(stats.children, x => x.$find(".text-label").textContent === "Updated")
 			if(!stat) { return }
 
-			const xhr = new XMLHttpRequest()
-			xhr.open("GET", `https://api.roblox.com/marketplace/productinfo?assetId=${placeId}`)
-			xhr.responseType = "json"
+			const label = stat.$find(".text-lead")
+			const url = `https://api.roblox.com/marketplace/productinfo?assetId=${placeId}`
 
-			xhr.onload = function() {
-				const data = this.response
-				const serverDate = new Date(this.getResponseHeader("Date"))
-				const label = stat.$find(".text-lead")
-				label.title = new Date(data.Updated).$format("M/D/YYYY h:mm:ss A (T)")
-				label.textContent = `${$.dateSince(data.Updated, serverDate)} ago`
-			}
-
-			xhr.send()
+			fetch(url).then(async resp => {
+				const json = await resp.json()
+				label.title = new Date(json.Updated).$format("M/D/YYYY h:mm:ss A (T)")
+				label.textContent = `${$.dateSince(json.Updated, new Date())} ago`
+			})
 		})
 		.$watch(".game-play-button-container", cont => {
 			const makeBox = (rootPlaceId, rootPlaceName) => {
