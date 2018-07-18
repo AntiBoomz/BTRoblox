@@ -23,7 +23,7 @@ const AssetTypeIds = (() => {
 
 const CheckAccessAssetTypeIds = [2, 3, 10, 11, 12, 24]
 const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34, 35, 37]
-const AnimationPreviewAssetTypeIds = [24, 32, 48, 49, 50, 51, 52, 53, 54, 55, 56]
+const AnimationPreviewAssetTypeIds = [24, 48, 49, 50, 51, 52, 53, 54, 55, 56]
 const WearableAssetTypeIds = [2, 8, 11, 12, 17, 18, 27, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47]
 const UniqueWearableAssetTypeIds = [2, 11, 12, 17, 18, 27, 28, 29, 30, 31] // Used in RBXPreview.js
 const InvalidDownloadableAssetTypeIds = [5, 6, 7, 16, 21, 32, 33, 34, 35, 37]
@@ -578,6 +578,7 @@ pageInit.itemdetails = function(assetId) {
 		const previewAsset = true && WearableAssetTypeIds.indexOf(assetTypeId) !== -1
 
 		if(previewAnim || previewAsset || assetTypeId === 32) {
+			let lastAnimPromise
 			let preview
 			let container
 
@@ -640,53 +641,46 @@ pageInit.itemdetails = function(assetId) {
 				})
 			}
 
-			if(previewAnim || previewAsset) {
-				const doPreview = (id, typeId) => {
-					const isAnim = AnimationPreviewAssetTypeIds.indexOf(typeId) !== -1
-					const isAsset = WearableAssetTypeIds.indexOf(typeId) !== -1
-					if(!isAnim && !isAsset && typeId !== 32) { return }
+			const doPreview = (id, typeId) => {
+				const isAnim = AnimationPreviewAssetTypeIds.indexOf(typeId) !== -1
+				const isAsset = WearableAssetTypeIds.indexOf(typeId) !== -1
+				if(!isAnim && !isAsset && typeId !== 32) { return }
 
-					if(typeId === 32) {
-						AssetCache.loadText(id, text => text.split(";").forEach(itemId => {
-							getCachedProductInfo(itemId).then(json => doPreview(itemId, json.AssetTypeId))
-						}))
-						return
+				if(!preview) {
+					loadPreview()
+
+					let autoLoad = false
+					switch(settings.itemdetails.itemPreviewerMode) {
+					case "always":
+						autoLoad = true
+						break
+					default: case "default":
+					case "animations":
+						autoLoad = previewAnim || assetTypeId === 32
+						break
+					case "never":
+						break
 					}
 
-					if(!preview) {
-						loadPreview()
-
-						let autoLoad = false
-						switch(settings.itemdetails.itemPreviewerMode) {
-						case "always":
-							autoLoad = true
-							break
-						default: case "default":
-						case "animations":
-							autoLoad = previewAnim
-							break
-						case "never":
-							break
-						}
-
-						if(autoLoad) {
-							onDocumentReady(() => toggleEnabled(true))
-						}
+					if(autoLoad) {
+						onDocumentReady(() => toggleEnabled(true))
 					}
+				}
 
-					if(isAnim) {
-						preview.disableDefaultAnimations = true
+				if(isAnim) {
+					preview.getPlayerTypeFromAnim = true
 
-						if(typeId === 24) {
-							preview.onInit(() => {
-								preview.addAnimation(String(id), id)
-							})
-						} else {
+					if(typeId === 24) {
+						preview.addAnimation(String(id), id)
+					} else {
+						const waitPromise = lastAnimPromise
+						lastAnimPromise = new Promise(resolve => {
 							preview.onInit(() => {
 								AssetCache.loadModel(id, model => {
 									const folder = model.find(x => x.ClassName === "Folder" && x.Name === "R15Anim")
 									if(!folder) { return }
 
+									const anims = []
 									folder.Children.filter(x => x.ClassName === "StringValue").forEach(value => {
 										const animName = value.Name
 
@@ -695,19 +689,30 @@ pageInit.itemdetails = function(assetId) {
 											const animId = AssetCache.resolveAssetId(anim.AnimationId)
 											if(!animId) { return }
 
-											preview.addAnimation(name, animId)
+											anims.push([name, animId])
 										})
+									})
+									
+									const timeout = new Promise(res => setTimeout(res, 1e3))
+									Promise.race([waitPromise, timeout]).then(() => {
+										anims.forEach(([name, animId]) => preview.addAnimation(name, animId))
+										resolve()
 									})
 								})
 							})
-						}
-					} else if(isAsset) {
-						preview.addAsset(id, typeId, { previewTarget: true })
-					}
-				}
+						})
 
-				doPreview(assetId, assetTypeId)
+					}
+				} else if(isAsset) {
+					preview.addAsset(id, typeId, { previewTarget: true })
+				} else if(typeId === 32) {
+					AssetCache.loadText(id, text => text.split(";").forEach(itemId => {
+						getCachedProductInfo(itemId).then(json => doPreview(itemId, json.AssetTypeId))
+					}))
+				}
 			}
+
+			doPreview(assetId, assetTypeId)
 		}
 
 		const canAccessPromise = new Promise(resolve => {

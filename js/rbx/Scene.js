@@ -267,10 +267,7 @@ const RBXScene = (() => {
 
 		update() {
 			super.update()
-
-			if(this.avatar && this.avatar.animator) {
-				this.avatar.animator.update()
-			}
+			this.avatar.update()
 		}
 
 		start() {

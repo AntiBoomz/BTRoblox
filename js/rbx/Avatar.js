@@ -34,9 +34,16 @@ const RBXAvatar = (() => {
 
 	function InvertCFrame(cframe) { return new THREE.Matrix4().getInverse(cframe) }
 
+	const emptySrc = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+	function setImageSource(img, src) {
+		src = src || emptySrc
+		if(img.src !== src) { img.src = src }
+	}
+
 	function createImage() {
 		const img = new Image()
-		img.crossOrigin = "Anonymous"
+		img.src = emptySrc
+		img.crossOrigin = "anonymous"
 		return img
 	}
 
@@ -83,9 +90,9 @@ const RBXAvatar = (() => {
 			stack.push(img)
 
 			if(img instanceof Image) {
-				img.addEventListener("load", updateFinal)
+				img.$on("load", updateFinal)
 			} else if(img instanceof HTMLCanvasElement) {
-				img.addEventListener("compositeupdate", updateFinal)
+				img.$on("compositeupdate", updateFinal)
 			}
 		})
 
@@ -111,42 +118,42 @@ const RBXAvatar = (() => {
 		6340154: "headM", 6340198: "headN", 6340213: "headO", 6340227: "headP"
 	}
 
-	const bounce = x => (
-		x < 0.36363636 ? 7.5625 * x ** 2
-			: x < 0.72727272 ? 7.5625 * (x - 0.54545454) ** 2 + 0.75
-				: x < 0.90909090 ? 7.5625 * (x - 0.81818181) ** 2 + 0.9375
-					: 7.5625 * (x - 0.95454545) ** 2 + 0.984375
-	)
-
-	const EasingStyles = [
-		[ // Linear
-			x => x, // In
-			x => x, // Out
-			x => x // InOut
-		],
-		[ // Constant
-			() => 1,
-			() => 0,
-			x => (x >= .5 ? 1 : 0)
-		],
-		[ // Elastic
-			x => -(2 ** (-10 * (1 - x))) * Math.sin(20.944 * (0.925 - x)),
-			x => (2 ** (-10 * x)) * Math.sin(20.944 * (x - 0.075)) + 1,
-			x => (x < .5
-				? -0.5 * (2 ** (-10 * (1 - 2 * x))) * Math.sin(13.9626 * (0.8875 - 2 * x))
-				: 1 + 0.5 * (2 ** (-10 * (2 * x - 1))) * Math.sin(13.9626 * (2 * x - 1.1125)))
-		],
-		[ // Cubic
-			x => 1 - (1 - x) ** 3,
-			x => x ** 3,
-			x => (x < .5 ? 4 * x ** 3 : 1 - 4 * (1 - x) ** 3)
-		],
-		[ // Bounce
-			x => 1 - bounce(1 - x),
-			x => bounce(x),
-			x => (x < .5 ? 0.5 - 0.5 * bounce(1 - 2 * x) : 1 - 0.5 * bounce(2 - 2 * x))
-		]
-	]
+	const ScaleMods = {
+		BodyType: {
+			LeftHand: [0.339396, 0, 0.33],
+			LeftLowerArm: [0.339396, -0.21578, 0.33],
+			LeftUpperArm: [0.339396, -0.399025, 0.33],
+			RightHand: [0.33997, 0, 0.33],
+			RightLowerArm: [0.33997, -0.215954, 0.33],
+			RightUpperArm: [0.33997, -0.398816, 0.33],
+			UpperTorso: [0.330001, 0.176002, 0.33],
+			LeftFoot: [0.35, -0.638613, 0.33],
+			LeftLowerLeg: [0.35, -0.728202, 0.33],
+			LeftUpperLeg: [0.35, -0.740957, 0.33],
+			RightFoot: [0.35, -0.638613, 0.33],
+			RightLowerLeg: [0.35, -0.727915, 0.33],
+			RightUpperLeg: [0.35, -0.741287, 0.33],
+			LowerTorso: [0.35, -0.221089, 0.33],
+			Head: [0.25, 0.09084, 0.25]
+		},
+		Proportion: {
+			LeftHand: [0.0727698, 0, 0.083],
+			LeftLowerArm: [0.0727698, 0.121608, 0.083],
+			LeftUpperArm: [0.0727698, 0.139222, 0.083],
+			RightHand: [0.0727074, 0, 0.083],
+			RightLowerArm: [0.0727074, 0.121626, 0.083],
+			RightUpperArm: [0.0727074, 0.139202, 0.083],
+			UpperTorso: [0.082678, 0.0663968, 0.083],
+			LeftFoot: [0.03, 0.170835, 0.083],
+			LeftLowerLeg: [0.03, 0.234967, 0.083],
+			LeftUpperLeg: [0.03, 0.12086, 0.083],
+			RightFoot: [0.03, 0.170835, 0.083],
+			RightLowerLeg: [0.03, 0.234928, 0.083],
+			RightUpperLeg: [0.03, 0.120883, 0.083],
+			LowerTorso: [0.03, 0.283582, 0.083],
+			Head: [0.036667, 0, 0.036667]
+		}
+	}
 
 	let avatarTreePromise
 	const loadCharacterRigs = () => {
@@ -224,91 +231,6 @@ const RBXAvatar = (() => {
 		})
 	}
 
-	class Animator {
-		constructor(joints) {
-			this.playing = false
-			this.anim = null
-			this.speed = 1
-
-			this.setJoints(joints)
-		}
-
-		setJoints(joints) {
-			this.joints = joints
-		}
-
-		play(anim) {
-			if(anim) { this.anim = anim }
-
-			this.playing = true
-			this.timePosition = 0
-			this.previousUpdate = performance.now() / 1000
-		}
-
-		pause() {
-			this.playing = false
-		}
-
-		resume() {
-			this.playing = true
-			this.previousUpdate = performance.now() / 1000
-		}
-
-		update() {
-			if(!this.playing || !this.anim || !this.joints) { return }
-
-			const time = performance.now() / 1000
-			const delta = time - this.previousUpdate
-			this.previousUpdate = time
-			this.timePosition += delta * this.speed
-
-			if(this.timePosition > this.anim.length) {
-				if(this.anim.loop) {
-					this.timePosition = this.timePosition % this.anim.length
-				} else {
-					this.playing = false
-					this.timePosition = 0
-
-					if(this.onstop) { this.onstop() }
-					return
-				}
-			}
-
-			const currentTime = this.timePosition
-			const emptyFrame = {
-				time: 0,
-				pos: [0, 0, 0],
-				rot: [0, 0, 0]
-			}
-
-			const nextQuat = new THREE.Quaternion()
-			Object.entries(this.anim.keyframes).forEach(([name, keyframes]) => {
-				if(!this.joints[name]) { return }
-
-				const joint = this.joints[name].joint
-				const next = keyframes.find(x => x.time >= currentTime)
-
-				if(!next) {
-					const last = keyframes[keyframes.length - 1]
-					joint.position.set(...last.pos)
-					joint.quaternion.set(...last.rot)
-				} else {
-					const prev = keyframes[keyframes.indexOf(next) - 1] || emptyFrame
-					const length = next.time - prev.time
-					const easing = (EasingStyles[prev.easingstyle] || EasingStyles[0])[prev.easingdir || 0]
-					const alpha = length === 0 ? 1 : easing((currentTime - prev.time) / length)
-
-					joint.position.set(
-						prev.pos[0] + (next.pos[0] - prev.pos[0]) * alpha,
-						prev.pos[1] + (next.pos[1] - prev.pos[1]) * alpha,
-						prev.pos[2] + (next.pos[2] - prev.pos[2]) * alpha,
-					)
-
-					joint.quaternion.set(...prev.rot).slerp(nextQuat.set(...next.rot), alpha)
-				}
-			})
-		}
-	}
 
 	let compositeRenderer = null
 	class CompositeTexture {
@@ -400,9 +322,9 @@ const RBXAvatar = (() => {
 		tshirtmesh.renderOrder = 3
 		this.scene.add(tshirtmesh)
 
-		textures.shirt.image.addEventListener("load", () => this.update())
-		textures.pants.image.addEventListener("load", () => this.update())
-		textures.tshirt.image.addEventListener("load", () => this.update())
+		textures.shirt.image.$on("load", () => this.update())
+		textures.pants.image.$on("load", () => this.update())
+		textures.tshirt.image.$on("load", () => this.update())
 
 		let meshUrl = getURL("res/previewer/compositing/CompositShirtTemplate.mesh")
 		AssetCache.loadMesh(true, meshUrl, mesh => applyMesh(shirtmesh, mesh))
@@ -489,9 +411,9 @@ const RBXAvatar = (() => {
 		shirtmesh.renderOrder = 1
 		this.scene.add(shirtmesh)
 
-		textures.tshirt.image.addEventListener("load", () => this.update())
-		textures.shirt.image.addEventListener("load", () => this.update())
-		textures.pants.image.addEventListener("load", () => this.update())
+		textures.tshirt.image.$on("load", () => this.update())
+		textures.shirt.image.$on("load", () => this.update())
+		textures.pants.image.$on("load", () => this.update())
 
 		const meshUrl = getURL("res/previewer/compositing/R15CompositTorsoBase.mesh")
 		AssetCache.loadMesh(true, meshUrl, mesh => {
@@ -527,7 +449,7 @@ const RBXAvatar = (() => {
 	class Avatar {
 		constructor() {
 			this.model = new THREE.Group()
-			this.animator = new Animator()
+			this.animator = new RBXAnimator()
 
 			this.accessories = []
 			this.bodyparts = []
@@ -536,6 +458,15 @@ const RBXAvatar = (() => {
 			this.attachments = {}
 			this.joints = {}
 
+			this.scales = {
+				width: 1,
+				height: 1,
+				depth: 1,
+				head: 1,
+				proportion: 0,
+				bodyType: 0
+			}
+			
 			this.ptDebounce = 0
 
 			const att = this.defaultHatAttachment = new THREE.Group()
@@ -590,6 +521,25 @@ const RBXAvatar = (() => {
 
 				textures[name] = mergeTexture(composite.canvas.width, composite.canvas.height, composite.canvas, over)
 			})
+		}
+
+		update() {
+			this.animator.update()
+
+			if(this.shouldRefreshBodyParts) {
+				this.shouldRefreshBodyParts = false
+				this.refreshBodyParts()
+			}
+		}
+
+		setScales(scales) {
+			Object.keys(this.scales).forEach(name => {
+				if(name in scales) {
+					this.scales[name] = scales[name]
+				}
+			})
+
+			this.shouldRefreshBodyParts = true
 		}
 
 		setBodyColors(bodyColors) {
@@ -667,7 +617,7 @@ const RBXAvatar = (() => {
 						})
 					}
 
-					this.refreshBodyParts()
+					this.shouldRefreshBodyParts = true
 				})
 				break
 			case 17: // Head
@@ -681,7 +631,7 @@ const RBXAvatar = (() => {
 						meshId: meshUrl
 					})
 
-					this.refreshBodyParts()
+					this.shouldRefreshBodyParts = true
 				} else {
 					AssetCache.loadModel(assetId, model => {
 						const mesh = model.find(x => x.ClassName === "SpecialMesh")
@@ -695,7 +645,7 @@ const RBXAvatar = (() => {
 							scale: [...mesh.Scale]
 						})
 	
-						this.refreshBodyParts()
+						this.shouldRefreshBodyParts = true
 					})
 				}
 				break
@@ -711,7 +661,7 @@ const RBXAvatar = (() => {
 						overTexId: face.Texture
 					})
 
-					this.refreshBodyParts()
+					this.shouldRefreshBodyParts = true
 				})
 				break
 			// Accessories
@@ -740,55 +690,61 @@ const RBXAvatar = (() => {
 
 					AssetCache.loadMesh(true, meshId, mesh => applyMesh(obj, mesh))
 
-					tex.image.src = solidColorDataURL(163, 162, 165)
-					if(texId) { AssetCache.loadImage(true, texId, url => { tex.image.src = url }) }
+					setImageSource(tex.image, solidColorDataURL(163, 162, 165))
+					if(texId) { AssetCache.loadImage(true, texId, url => { setImageSource(tex.image, url) }) }
 
 					const attInst = hanInst.Children.find(x => x.ClassName === "Attachment")
-					const cframe = [...(attInst ? attInst.CFrame : accInst.AttachmentPoint)]
+					const cframe = InvertCFrame(CFrame(...(attInst ? attInst.CFrame : accInst.AttachmentPoint)))
+					const scale = meshInst.Scale ? [...meshInst.Scale] : [1, 1, 1]
+					const offset = new THREE.Vector3(...(meshInst.Offset || [0, 0, 0]))
 
-					if(meshInst.Offset) { // cframe is C1, so negate offset
-						cframe[0] -= meshInst.Offset[0]
-						cframe[1] -= meshInst.Offset[1]
-						cframe[2] -= meshInst.Offset[2]
-					}
+					const attName = attInst ? attInst.Name : null
 
-					if(meshInst.Scale) { obj.scale.set(...meshInst.Scale) }
+					const att = this.attachments[attName]
+					if(att) { att.obj.add(obj) }
+					else { this.defaultHatAttachment.add(obj) }
 
-					const matrix = InvertCFrame(CFrame(...cframe))
-					obj.position.setFromMatrixPosition(matrix)
-					obj.rotation.setFromRotationMatrix(matrix)
-
-					const attName = attInst && attInst.Name
-					const acc = { obj, asset, attName }
-					this.accessories.push(acc)
-					this.updateAccessory(acc)
+					this.accessories.push({ obj, asset, attName, att, scale, cframe, offset })
+					this.shouldRefreshBodyParts = true
 				})
 				break
 			case 11:
+				this.shirtId = assetId
 				AssetCache.loadModel(assetId, model => {
 					const shirt = model.find(x => x.ClassName === "Shirt")
 					if(!shirt) { return }
 
 					const texId = shirt.ShirtTemplate
-					if(texId) { AssetCache.loadImage(true, texId, url => { this.textures.shirt.image.src = url }) }
+					const img = this.textures.shirt.image
+
+					setImageSource(img, "")
+					if(texId) { AssetCache.loadImage(true, texId, url => { setImageSource(img, url) }) }
 				})
 				break
 			case 2:
+				this.tshirtId = assetId
 				AssetCache.loadModel(assetId, model => {
 					const tshirt = model.find(x => x.ClassName === "ShirtGraphic")
 					if(!tshirt) { return }
 
 					const texId = tshirt.Graphic
-					if(texId) { AssetCache.loadImage(true, texId, url => { this.textures.tshirt.image.src = url }) }
+					const img = this.textures.tshirt.image
+
+					setImageSource(img, "")
+					if(texId) { AssetCache.loadImage(true, texId, url => { setImageSource(img, url) }) }
 				})
 				break
 			case 12:
+				this.pantsId = assetId
 				AssetCache.loadModel(assetId, model => {
 					const pants = model.find(x => x.ClassName === "Pants")
 					if(!pants) { return }
 
 					const texId = pants.PantsTemplate
-					if(texId) { AssetCache.loadImage(true, texId, url => { this.textures.pants.image.src = url }) }
+					const img = this.textures.pants.image
+
+					setImageSource(img, "")
+					if(texId) { AssetCache.loadImage(true, texId, url => { setImageSource(img, url) }) }
 				})
 				break
 			case 48: case 49: case 50: case 51:
@@ -799,13 +755,23 @@ const RBXAvatar = (() => {
 			}
 		}
 
-		updateAccessory(acc) {
-			const attachment = acc.attName && this.attachments[acc.attName]
-			if(attachment) {
-				attachment.obj.add(acc.obj)
-			} else {
-				this.defaultHatAttachment.add(acc.obj)
+		removeAsset(asset) {
+			const bpIndex = this.bodyparts.findIndex(x => x.asset.assetId === asset.assetId)
+			if(bpIndex !== -1) {
+				this.bodyparts.splice(bpIndex, 1)
+				this.shouldRefreshBodyParts = true
 			}
+
+			const accIndex = this.accessories.findIndex(x => x.asset.assetId === asset.assetId)
+			if(accIndex !== -1) {
+				const acc = this.accessories[accIndex]
+				if(acc.obj.parent) { acc.obj.parent.remove(acc.obj) }
+				this.accessories.splice(accIndex, 1)
+			}
+
+			if(asset.assetId === this.pantsId) { setImageSource(this.textures.pants.image, "") }
+			if(asset.assetId === this.tshirtId) { setImageSource(this.textures.tshirt.image, "") }
+			if(asset.assetId === this.shirtId) { setImageSource(this.textures.shirt.image, "") }
 		}
 
 		setPlayerType(playerType) {
@@ -842,6 +808,7 @@ const RBXAvatar = (() => {
 				const CreateModel = tree => {
 					const obj = new THREE.Group()
 					obj.name = tree.name
+					obj.rbxScaleMod = new THREE.Vector3(1, 1, 1)
 
 					if(tree.name !== "HumanoidRootPart") {
 						parts[tree.name] = obj
@@ -858,7 +825,7 @@ const RBXAvatar = (() => {
 					Object.entries(tree.attachments).forEach(([name, cframe]) => {
 						const att = new THREE.Group()
 						obj.add(att)
-						attachments[name] = { cframe, obj: att }
+						attachments[name] = { cframe, obj: att, parent: obj }
 					})
 
 					tree.children.forEach(child => {
@@ -876,8 +843,8 @@ const RBXAvatar = (() => {
 							c0,
 							c1,
 							joint,
-							part0: tree.name,
-							part1: child.name,
+							part0: obj,
+							part1: childObj,
 							origC0: child.C0,
 							origC1: child.C1
 						}
@@ -899,8 +866,18 @@ const RBXAvatar = (() => {
 				this.model.add(this.root)
 				this.animator.setJoints(animJoints)
 
-				this.accessories.forEach(acc => this.updateAccessory(acc))
-				this.refreshBodyParts()
+				this.accessories.forEach(acc => {
+					const att = this.attachments[acc.attName]
+					if(att) {
+						acc.att = att
+						att.obj.add(acc.obj)
+					} else {
+						acc.att = null
+						this.defaultHatAttachment.add(acc.obj)
+					}
+				})
+
+				this.shouldRefreshBodyParts = true
 			})
 		}
 
@@ -933,10 +910,34 @@ const RBXAvatar = (() => {
 				}
 			})
 
+			if(this.playerType === "R15") {
+				const hipHeight = 1.35 * (1 + this.scales.bodyType) - this.scales.proportion * 0.3
+				const totalOffset = (1 + hipHeight) * this.scales.height
+
+				this.model.position.y = totalOffset
+			}
+
+			const headScale = this.playerType === "R15" ? this.scales.head : 1
+			this.accessories.forEach(acc => {
+				acc.obj.scale.set(...acc.scale).multiplyScalar(headScale)
+
+				acc.obj.position.setFromMatrixPosition(acc.cframe)
+				acc.obj.rotation.setFromRotationMatrix(acc.cframe)
+
+				// Staying faithful to source material
+				// And coding in some bugs :D
+
+				// Bug #1: Attachmentless accessories (defaultHatAttachment) do not get position-scaled
+				if(acc.att) { acc.obj.position.multiplyScalar(headScale) }
+
+				// Bug #2: Mesh.Offset doesn't get position-scaled
+				if(acc.offset) { acc.obj.position.add(acc.offset) }
+			})
+
 			Object.entries(this.parts).forEach(([partName, part]) => {
 				const change = changedParts[partName]
 				const meshId = change && change.meshId || part.rbxDefaultMesh
-				const scale = change && change.scale || part.rbxDefaultScale
+				const scale = [...(change && change.scale || part.rbxDefaultScale)]
 
 				if(part.rbxMeshId !== meshId) {
 					part.rbxMeshId = meshId
@@ -944,10 +945,28 @@ const RBXAvatar = (() => {
 					AssetCache.loadMesh(true, meshId, mesh => part.rbxMeshId === meshId && applyMesh(part.rbxMesh, mesh))
 				}
 
-				if(part.rbxMeshScale !== scale) {
-					part.rbxMeshScale = scale
-					part.rbxMesh.scale.set(...scale)
+				if(this.playerType === "R15") {
+					if(partName === "Head") {
+						part.rbxScaleMod.setScalar(this.scales.head)
+					} else {
+						part.rbxScaleMod.set(this.scales.width, this.scales.height, this.scales.depth)
+					}
+
+					const bodyScaleMod = ScaleMods.BodyType[partName]
+					const propScaleMod = ScaleMods.Proportion[partName]
+
+					part.rbxScaleMod.multiply(new THREE.Vector3(
+						1 - (bodyScaleMod[0] + propScaleMod[0] * this.scales.proportion) * this.scales.bodyType,
+						1 - (bodyScaleMod[1] + propScaleMod[1] * this.scales.proportion) * this.scales.bodyType,
+						1 - (bodyScaleMod[2] + propScaleMod[2] * this.scales.proportion) * this.scales.bodyType
+					))
+					
+					scale[0] *= part.rbxScaleMod.x
+					scale[1] *= part.rbxScaleMod.y
+					scale[2] *= part.rbxScaleMod.z
 				}
+
+				part.rbxMesh.scale.set(...scale)
 
 				const baseImg = this.images.base[partName]
 				const overImg = this.images.over[partName]
@@ -956,42 +975,39 @@ const RBXAvatar = (() => {
 
 				if(baseImg && baseImg.rbxTexId !== baseTexId) {
 					baseImg.rbxTexId = baseTexId
-					baseImg.src = baseImg.defaultSrc || ""
-					if(baseTexId) { AssetCache.loadImage(true, baseTexId, url => baseImg.rbxTexId === baseTexId && (baseImg.src = url)) }
-					else { baseImg.$trigger("load") } // Need to trigger load to update textures
+					setImageSource(baseImg, baseImg.defaultSrc || "")
+					if(baseTexId) { AssetCache.loadImage(true, baseTexId, url => baseImg.rbxTexId === baseTexId && setImageSource(baseImg, url)) }
 				}
 
 				if(overImg && overImg.rbxTexId !== overTexId) {
 					overImg.rbxTexId = overTexId
-					overImg.src = overImg.defaultSrc || ""
-					if(overTexId) { AssetCache.loadImage(true, overTexId, url => overImg.rbxTexId === overTexId && (overImg.src = url)) }
-					else { overImg.$trigger("load") } // Need to trigger load to update textures
+					setImageSource(overImg, overImg.defaultSrc || "")
+					if(overTexId) { AssetCache.loadImage(true, overTexId, url => overImg.rbxTexId === overTexId && setImageSource(overImg, url)) }
 				}
 			})
 
 			Object.entries(this.joints).forEach(([jointName, joint]) => {
 				const change = changedJoints[jointName]
-				const C0 = change && change[joint.part0] || joint.origC0
-				const C1 = change && change[joint.part1] && InvertCFrame(change[joint.part1]) || joint.origC1
+				const C0 = change && change[joint.part0.name] || joint.origC0
+				const C1 = change && change[joint.part1.name] && InvertCFrame(change[joint.part1.name]) || joint.origC1
 
-				joint.c0.position.setFromMatrixPosition(C0)
+				joint.c0.position.setFromMatrixPosition(C0).multiply(joint.part0.rbxScaleMod)
 				joint.c0.rotation.setFromRotationMatrix(C0)
 
-				joint.c1.position.setFromMatrixPosition(C1)
+				joint.c1.position.setFromMatrixPosition(C1).multiply(joint.part0.rbxScaleMod)
 				joint.c1.rotation.setFromRotationMatrix(C1)
 			})
 
 			Object.entries(this.attachments).forEach(([attName, att]) => {
 				const cframe = changedAttachments[attName] || att.cframe
 
-				att.obj.position.setFromMatrixPosition(cframe)
+				att.obj.position.setFromMatrixPosition(cframe).multiply(att.parent.rbxScaleMod)
 				att.obj.rotation.setFromRotationMatrix(cframe)
 			})
 		}
 	}
 
 	return {
-		Avatar,
-		Animator
+		Avatar
 	}
 })()

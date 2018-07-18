@@ -164,9 +164,9 @@ const settingsDiv = html`
 			<div>
 				<group path=itemdetails>
 					<select path=itemPreviewerMode>
-						<option value=default>Default (Animations)</option>
+						<option value=default>Default (Animations and Packages)</option>
 						<option value=never>Never</option>
-						<option value=animations>Animations</option>
+						<option value=animations>Animations and Packages</option>
 						<option value=always>Always</option>
 					</select>
 				</group>
