@@ -11,6 +11,10 @@
 
 /* Navigation */
 
+#btr-navbar-messages {
+	margin-left: 4px;
+}
+
 .icon-nav-friend-btr, .icon-nav-message-btr, .icon-nav-bc-btr {
 	background-image: url(/res/nav2.svg);
 	background-repeat: no-repeat;
