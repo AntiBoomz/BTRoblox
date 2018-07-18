@@ -181,7 +181,7 @@ const MESSAGING = (() => {
 					respond.cancel = () => {
 						if(alive && !final && "id" in msg) {
 							final = true
-							port.posMessage({ id: msg.id, final, cancel: true })
+							port.postMessage({ id: msg.id, final, cancel: true })
 						}
 					}
 
