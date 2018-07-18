@@ -1,60 +1,67 @@
 "use strict"
 
 {
-	const groupShoutCache = { version: 4 }
 	let shoutFilterPromise
-	let cacheLoaded = false
+	let shoutCachePromise
 	let previousCheck = 0
 	let checkInterval
 	let wasEnabled
 
-	const loadGroupShoutCache = () => {
-		if(!cacheLoaded) {
-			cacheLoaded = true
-			
-			try {
-				const saved = JSON.parse(localStorage.getItem("groupShoutCache"))
-				if(saved && saved.version === groupShoutCache.version) {
-					Object.assign(groupShoutCache, saved)
+	const loadShoutCache = () => {
+		if(shoutCachePromise) { return shoutCachePromise }
+		return shoutCachePromise = new Promise(resolve => {
+			const cache = { version: 5 }
+
+			STORAGE.get("shoutCache", data => {
+				const saved = data.shoutCache
+				if(saved && saved.version === cache.version) {
+					Object.assign(cache, saved)
 				}
-			} catch(ex) {}
-		}
+
+				resolve(cache)
+			})
+		})
+	}
+
+	const saveShoutCache = () => new Promise(async resolve => {
+		const cache = await loadShoutCache()
+		STORAGE.set({ shoutCache: cache }, resolve)
+	})
+
+	const loadShoutFilters = () => {
+		if(shoutFilterPromise) { return shoutFilterPromise }
+		return shoutFilterPromise = new Promise(resolve => {
+			STORAGE.get("shoutFilters", data => {
+				if("shoutFilters" in data) {
+					resolve(data.shoutFilters)
+				} else {
+					resolve({
+						mode: "blacklist",
+						blacklist: [],
+						whitelist: []
+					})
+				}
+			})
+		})
 	}
 
 	const executeCheck = async () => {
-		loadGroupShoutCache()
+		if(Date.now() - previousCheck < 5000) { return }
+		previousCheck = Date.now()
 
-		if(!shoutFilterPromise) {
-			shoutFilterPromise = new Promise(resolve => {
-				STORAGE.get("shoutFilters", data => {
-					if("shoutFilters" in data) {
-						resolve(data.shoutFilters)
-					} else {
-						resolve({
-							mode: "blacklist",
-							blacklist: [],
-							whitelist: []
-						})
-					}
-				})
-			})
-		}
-
-		const userId = await fetch("https://www.roblox.com/game/GetCurrentUser.ashx", { credentials: "include" })
-			.then(resp => resp.text())
-		
+		const userId = await fetch("https://www.roblox.com/game/GetCurrentUser.ashx", { credentials: "include" }).then(resp => resp.text())
 		if(!Number.isSafeInteger(+userId)) { return }
 
-		const json = await fetch(`https://groups.roblox.com/v1/users/${userId}/groups/roles`)
-			.then(resp => resp.json())
+		const json = await fetch(`https://groups.roblox.com/v1/users/${userId}/groups/roles`).then(resp => resp.json())
 
-		const shoutFilters = await shoutFilterPromise
+		const shoutCache = await loadShoutCache()
+		const shoutFilters = await loadShoutFilters()
 		const notifs = []
 		let didChange = false
 
 		json.data.forEach(({ group }) => {
 			const shout = group.shout
-			const cached = groupShoutCache[group.id]
+			const cached = shoutCache[group.id]
 
 			const timeStamp = (!shout || !shout.body) ? 0 : Date.parse(shout.updated)
 			const isDifferent = !cached || cached.timeStamp !== timeStamp
@@ -66,7 +73,7 @@
 						notif.finished = true
 					}
 
-					notif = groupShoutCache[group.id] = {
+					notif = shoutCache[group.id] = {
 						groupId: group.id,
 						id: `groupshout-${group.id}`,
 						title: group.name,
@@ -97,75 +104,74 @@
 			}
 		})
 
-		if(didChange) {
-			localStorage.setItem("groupShoutCache", JSON.stringify(groupShoutCache))
+		if(didChange) { saveShoutCache() }
+		if(!notifs.length) { return }
+	
+		let hasExecutedNotifs = false
+		let hasPlayedSound = false
+
+		const execNotifs = async () => {
+			if(hasExecutedNotifs) { return }
+			hasExecutedNotifs = true
+
+			const existing = await new Promise(res => chrome.notifications.getAll(res))
+
+			notifs.forEach(notif => {
+				if(existing[notif.id] && notif.wasCreated) { return }
+
+				const params = {
+					type: "basic",
+					title: notif.title,
+					iconUrl: notif.thumbUrl || getURL("res/icon_128.png"),
+					message: notif.body,
+					contextMessage: notif.poster,
+
+					priority: 0,
+					requireInteraction: true,
+					isClickable: true,
+					eventTime: notif.timeStamp
+				}
+
+				if(IS_FIREFOX) { delete params.requireInteraction }
+
+				chrome.notifications.create(notif.id, params, () => {
+					if(notif.wasCreated) { return }
+	
+					notif.wasCreated = true
+					saveShoutCache()
+
+					if(!hasPlayedSound) {
+						hasPlayedSound = true
+						new Audio("res/notification.mp3").play()
+					}
+				})
+			})
 		}
 
-		if(notifs.length) {
-			let hasExecutedNotifs = false
-			let hasPlayedSound = false
+		const urlInfo = new URL("https://thumbnails.roblox.com/v1/groups/icons?size=150x150&format=png")
+		notifs.forEach(x => urlInfo.searchParams.append("groupIds", x.groupId))
 
-			const execNotifs = async () => {
-				if(hasExecutedNotifs) { return }
-				hasExecutedNotifs = true
+		fetch(urlInfo).then(async resp => {
+			if(resp.ok) {
+				try {
+					const data = (await resp.json()).data
 
-				const existing = await new Promise(res => chrome.notifications.getAll(res))
-
-				notifs.forEach(notif => {
-					if(existing[notif.id] && notif.wasCreated) { return }
-
-					const params = {
-						type: "basic",
-						title: notif.title,
-						iconUrl: notif.thumbUrl || getURL("res/icon_128.png"),
-						message: notif.body,
-						contextMessage: notif.poster,
-	
-						priority: 0,
-						requireInteraction: true,
-						isClickable: true,
-						eventTime: notif.timeStamp
-					}
-
-					if(IS_FIREFOX) { delete params.requireInteraction }
-
-					chrome.notifications.create(notif.id, params, () => {
-						if(notif.wasCreated) { return }
-		
-						notif.wasCreated = true
-						localStorage.setItem("groupShoutCache", JSON.stringify(groupShoutCache))
-
-						if(!hasPlayedSound) {
-							hasPlayedSound = true
-							new Audio("res/notification.mp3").play()
+					data.forEach(item => {
+						if(item.state === "Completed") {
+							const notif = notifs.find(x => +x.groupId === +item.targetId)
+							if(notif) {
+								notif.thumbUrl = item.imageUrl || notif.thumbUrl
+							}
 						}
 					})
-				})
-			}
-
-			const urlInfo = new URL("https://thumbnails.roblox.com/v1/groups/icons?size=150x150&format=png")
-			notifs.forEach(x => urlInfo.searchParams.append("groupIds", x.groupId))
-
-			fetch(urlInfo).then(async resp => {
-				if(resp.ok) {
-					try {
-						const data = (await resp.json()).data
-
-						data.forEach(item => {
-							if(item.state === "Completed") {
-								const notif = notifs.find(x => +x.groupId === +item.targetId)
-								if(notif) {
-									notif.thumbUrl = item.imageUrl || notif.thumbUrl
-								}
-							}
-						})
-					} catch(ex) {
-						console.error(ex)
-					}
+				} catch(ex) {
+					console.error(ex)
 				}
-			}).then(execNotifs, execNotifs)
-		}
+			}
+		}).then(execNotifs, execNotifs)
+		setTimeout(execNotifs, 5e3)
 	}
+
 
 	chrome.notifications.onClicked.addListener(notifId => {
 		if(!notifId.startsWith("groupshout-")) { return }
@@ -177,43 +183,51 @@
 		if(!notifId.startsWith("groupshout-") || !byUser) { return }
 		const groupId = +notifId.slice(11)
 
-		loadGroupShoutCache()
-		const notif = groupShoutCache[groupId]
-		if(notif) {
-			notif.finished = true
-			localStorage.setItem("groupShoutCache", JSON.stringify(groupShoutCache))
-		}
+		loadShoutCache().then(shoutCache => {
+			const notif = shoutCache[groupId]
+			if(notif) {
+				notif.finished = true
+				saveShoutCache()
+			}
+		})
 	})
 
-	chrome.alarms.onAlarm.addListener(() => {})
-	
+	const checkResync = () => {
+		clearInterval(checkInterval)
+		checkInterval = setInterval(executeCheck, 10e3)
+		executeCheck()
+	}
+
+	chrome.alarms.onAlarm.addListener(checkResync)
+
 	const onUpdate = () => {
 		Settings.get(settings => {
 			const isEnabled = settings.groups.enabled && settings.groups.shoutAlerts
 			if(wasEnabled !== isEnabled) {
 				wasEnabled = isEnabled
-
 				if(isEnabled) {
-					chrome.alarms.get("ShoutCheck", alarm => {
-						if(alarm) { return }
-						chrome.alarms.create("ShoutCheck", { periodInMinutes: 1 })
-					})
-					checkInterval = setInterval(executeCheck, 15e3)
+					chrome.alarms.getAll(alarms => {
+						const alarm1 = alarms.find(x => x.name === "ShoutCheck")
+						const alarm2 = alarms.find(x => x.name === "ShoutCheck2")
 
-					if(Date.now() - previousCheck > 2000) { // Floodcheck
-						previousCheck = Date.now()
-						executeCheck()
-					}
+						if(alarms.length !== 2 || !alarm1 || !alarm2 || Math.abs(alarm2.scheduledTime - alarm1.scheduledTime) < 29e3) {
+							chrome.alarms.clearAll(() => {
+								chrome.alarms.create("ShoutCheck", { periodInMinutes: 1, when: Date.now() + 30e3 })
+								chrome.alarms.create("ShoutCheck2", { periodInMinutes: 1, when: Date.now() + 60e3 })
+							})
+						}
+					})
+					checkResync()
 				} else {
-					chrome.alarms.clear("ShoutCheck")
 					clearInterval(checkInterval)
+					chrome.alarms.clearAll()
 				}
 			}
 		})
 	}
 
-	Settings.onChange(onUpdate)
 	onUpdate()
+	Settings.onChange(onUpdate)
 
 	MESSAGING.listen({
 		getShoutFilters(data, respond) {
