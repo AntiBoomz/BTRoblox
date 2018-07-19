@@ -673,31 +673,21 @@ pageInit.itemdetails = function(assetId) {
 					if(typeId === 24) {
 						preview.addAnimation(String(id), id)
 					} else {
-						const waitPromise = lastAnimPromise
-						lastAnimPromise = new Promise(resolve => {
-							preview.onInit(() => {
-								AssetCache.loadModel(id, model => {
-									const folder = model.find(x => x.ClassName === "Folder" && x.Name === "R15Anim")
-									if(!folder) { return }
+						if(!lastAnimPromise) { lastAnimPromise = new Promise(resolve => preview.onInit(resolve)) }
+						lastAnimPromise = lastAnimPromise.then(async () => {
+							const model = await AssetCache.loadModel(id)
+							const folder = model.find(x => x.ClassName === "Folder" && x.Name === "R15Anim")
+							if(!folder) { return }
 
-									const anims = []
-									folder.Children.filter(x => x.ClassName === "StringValue").forEach(value => {
-										const animName = value.Name
+							folder.Children.filter(x => x.ClassName === "StringValue").forEach(value => {
+								const animName = value.Name
 
-										value.Children.filter(x => x.ClassName === "Animation").forEach((anim, i) => {
-											const name = animName + (i === 0 ? "" : `_${i + 1}`)
-											const animId = AssetCache.resolveAssetId(anim.AnimationId)
-											if(!animId) { return }
+								value.Children.filter(x => x.ClassName === "Animation").forEach((anim, i) => {
+									const name = animName + (i === 0 ? "" : `_${i + 1}`)
+									const animId = AssetCache.resolveAssetId(anim.AnimationId)
+									if(!animId) { return }
 
-											anims.push([name, animId])
-										})
-									})
-									
-									const timeout = new Promise(res => setTimeout(res, 1e3))
-									Promise.race([waitPromise, timeout]).then(() => {
-										anims.forEach(([name, animId]) => preview.addAnimation(name, animId))
-										resolve()
-									})
+									preview.addAnimation(name, animId)
 								})
 							})
 						})
