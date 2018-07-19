@@ -226,13 +226,20 @@ const MESSAGING = (() => {
 			if(!this.port) {
 				const port = this.port = chrome.runtime.connect()
 
+				const doDisconnect = () => {
+					clearTimeout(this.portTimeout)
+					port.disconnect()
+					this.port = null
+				}
+
 				port.onMessage.addListener(msg => {
 					const fn = this.callbacks[msg.id]
+					if(!fn) { return }
 
 					if(msg.final) {
 						delete this.callbacks[msg.id]
 						if(Object.keys(this.callbacks).length === 0) {
-							this.portTimeout = setTimeout(() => this.port.disconnect(), 5 * 60e3)
+							this.portTimeout = setTimeout(doDisconnect, 5 * 60e3)
 						}
 
 						if(msg.cancel) { return }
@@ -241,12 +248,8 @@ const MESSAGING = (() => {
 					fn(msg.data)
 				})
 
-				port.onDisconnect.addListener(() => {
-					clearTimeout(this.portTimeout)
-					this.port = null
-				})
-
-				this.portTimeout = setTimeout(() => this.port.disconnect(), 5 * 60e3)
+				port.onDisconnect.addListener(doDisconnect)
+				this.portTimeout = setTimeout(doDisconnect, 5 * 60e3)
 			}
 
 			const info = { name, data }
