@@ -57,7 +57,7 @@ const AssetCache = (() => {
 		const cache = {}
 
 		return (strict, url, cb) => {
-			if(typeof url === "function") {
+			if(typeof strict !== "boolean") {
 				cb = url
 				url = strict
 				strict = false
@@ -95,7 +95,9 @@ const AssetCache = (() => {
 				methodPromise.catch(ex => console.error("MethodPromise Error", ex))
 			}
 
-			methodPromise.then(cb, () => cb(null))
+			if(cb) { methodPromise.then(cb, () => cb(null)) }
+
+			return methodPromise
 		}
 	}
 
