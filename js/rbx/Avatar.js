@@ -769,6 +769,11 @@ const RBXAvatar = (() => {
 				const obj = new THREE.Mesh(undefined, mat)
 				obj.castShadow = true
 
+				if(meshInst.VertexColor) {
+					const VC = meshInst.VertexColor
+					mat.color.setRGB(VC[0], VC[1], VC[2])
+				}
+
 				const attInst = hanInst.Children.find(x => x.ClassName === "Attachment")
 				const cframe = InvertCFrame(CFrame(...(attInst ? attInst.CFrame : accInst.AttachmentPoint)))
 				const scale = meshInst.Scale ? [...meshInst.Scale] : [1, 1, 1]
