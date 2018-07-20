@@ -14,54 +14,55 @@ const DOLLARS_PER_ROBUX_RATIO = 350 / 100000
 const getURL = chrome.runtime.getURL
 
 const DEFAULT_SETTINGS = {
+	_version: 2,
 	general: {
-		theme: "default",
-		showAds: false,
-		noHamburger: true,
-		chatEnabled: true,
-		smallChatButton: true,
-		fastSearch: true,
-		robuxToDollars: false,
-		fixAudioPreview: true,
+		theme: { default: true, value: "default" },
+		showAds: { default: true, value: false },
+		noHamburger: { default: true, value: true },
+		chatEnabled: { default: true, value: true },
+		smallChatButton: { default: true, value: true },
+		fastSearch: { default: true, value: true },
+		fixAudioPreview: { default: true, value: true },
 
-		navigationEnabled: true,
-		showBlogFeed: true,
+		navigationEnabled: { default: true, value: true },
+		showBlogFeed: { default: true, value: true },
 
-		hoverPreview: false
+		robuxToDollars: { default: true, value: false },
+		hoverPreview: { default: true, value: true }
 	},
 	catalog: {
-		enabled: true
+		enabled: { default: true, value: true }
 	},
 	itemdetails: {
-		enabled: true,
-		itemPreviewer: true,
-		itemPreviewerMode: "default",
-		explorerButton: true,
-		downloadButton: true,
-		contentButton: true,
-		imageBackgrounds: true,
-		whiteDecalThumbnailFix: true,
-		thisPackageContains: true
+		enabled: { default: true, value: true },
+		itemPreviewer: { default: true, value: true },
+		itemPreviewerMode: { default: true, value: "always" },
+		explorerButton: { default: true, value: true },
+		downloadButton: { default: true, value: true },
+		contentButton: { default: true, value: true },
+		imageBackgrounds: { default: true, value: true },
+		whiteDecalThumbnailFix: { default: true, value: true },
+		thisPackageContains: { default: true, value: true }
 	},
 	gamedetails: {
-		enabled: true,
-		showBadgeOwned: true
+		enabled: { default: true, value: true },
+		showBadgeOwned: { default: true, value: true }
 	},
 	groups: {
-		enabled: true,
-		shoutAlerts: true,
-		expandGroupList: true
+		enabled: { default: true, value: true },
+		shoutAlerts: { default: true, value: true },
+		expandGroupList: { default: true, value: true }
 	},
 	inventory: {
-		enabled: true,
-		inventoryTools: true
+		enabled: { default: true, value: true },
+		inventoryTools: { default: true, value: true }
 	},
 	profile: {
-		enabled: true,
-		embedInventoryEnabled: true
+		enabled: { default: true, value: true },
+		embedInventoryEnabled: { default: true, value: true }
 	},
 	versionhistory: {
-		enabled: true
+		enabled: { default: true, value: true }
 	}
 }
 

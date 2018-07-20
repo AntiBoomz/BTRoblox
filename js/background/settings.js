@@ -6,22 +6,34 @@ const Settings = (() => {
 	function applySettings(data) {
 		let changedSomething = false
 
-		function recurse(par, obj) {
-			Object.keys(obj).forEach(index => {
-				if(!(index in par)) { return }
-				const oldVal = par[index]
-				const newVal = obj[index]
+		function recurse(par, obj, def) {
+			Object.entries(par).forEach(([name, value]) => {
+				const objValue = obj[name]
+				const defaultValue = def[name]
 
-				if(oldVal instanceof Object) {
-					recurse(oldVal, newVal)
-				} else if(typeof oldVal === typeof newVal && oldVal !== newVal) {
-					changedSomething = true
-					par[index] = newVal
+				if(value instanceof Object && objValue instanceof Object) {
+					if("default" in value && "value" in value) {
+						if(objValue.default === false && typeof objValue.value === typeof value.value && objValue.value !== value.value) {
+							value.value = objValue.value
+							value.default = value.value === defaultValue.value
+							changedSomething = true
+						}
+					} else {
+						recurse(value, objValue, defaultValue)
+					}
+				} else if(value instanceof Object) {
+					if("default" in value && "value" in value) {
+						if(typeof value.value === typeof objValue && value.value !== objValue) {
+							value.value = objValue
+							value.default = value.value === defaultValue.value
+							changedSomething = true
+						}
+					}
 				}
 			})
 		}
 
-		recurse(settings, data)
+		recurse(settings, data, DEFAULT_SETTINGS)
 		return changedSomething
 	}
 

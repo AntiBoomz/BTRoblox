@@ -99,6 +99,9 @@ const settingsDiv = html`
 					<checkbox label="Show Chat" path=chatEnabled></checkbox>
 					<checkbox label="Minimize Chat" path=smallChatButton require=chatEnabled></checkbox>
 				</div>
+
+				<checkbox label="Preview Items on Hover" path=hoverPreview></checkbox>
+				<checkbox label="Show Robux to USD" path=robuxToDollars></checkbox>
 			</group>
 			<group label=Navigation path=general toggleable=navigationEnabled>
 				<checkbox label="Keep Sidebar Open" path=noHamburger></checkbox>
@@ -129,7 +132,7 @@ const settingsDiv = html`
 			</group>
 			<group label="Version History" path=versionhistory toggleable>
 			</group>
-			<group label=WIP minimizable minimized id=btr-settings-wip>
+			<group label="WIP / Other" minimizable minimized id=btr-settings-wip>
 			</group>
 		</div>
 		<div class=btr-settings-content id=btr-settings-shout-filters data-name=shoutFilters>
@@ -1053,6 +1056,17 @@ function PreInit() {
 	currentPage = GET_PAGE(pathname)
 	STORAGE.get(["settings", "cachedBlogFeedV2"], data => {
 		settings = data.settings || JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
+
+		const rec = x => Object.entries(x).forEach(([i, y]) => {
+			if(y instanceof Object && "default" in y && "value" in y) {
+				x[i] = y.value
+			} else {
+				rec(y)
+			}
+		})
+
+		rec(settings)
+
 		blogFeedData = data.cachedBlogFeedV2
 
 		const parent = document.documentElement
