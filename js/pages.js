@@ -259,8 +259,8 @@ const HoverPreview = (() => {
 		
 		preview.onInit(() => {
 			preview.scene.cameraControlsEnabled = false
-			preview.scene.cameraRotation.set(0.15, 0.4, 0)
-			preview.scene.cameraZoom = 3.25
+			preview.scene.cameraRotation.set(0.15, 0.25, 0)
+			preview.scene.cameraZoom = 3.5
 		})
 	}
 
@@ -300,7 +300,7 @@ const HoverPreview = (() => {
 					} else if(data.AssetTypeId === 32) {
 						AssetCache.loadText(assetId, text => {
 							if(self !== currentTarget || debounceCounter !== debounce) { return }
-							
+
 							text.split(";").map(itemId => getProductInfo(itemId).then(json => {
 								if(self !== currentTarget || debounceCounter !== debounce) { return }
 
