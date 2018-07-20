@@ -299,7 +299,11 @@ const HoverPreview = (() => {
 						lastPreviewedAssets.push(assetId)
 					} else if(data.AssetTypeId === 32) {
 						AssetCache.loadText(assetId, text => {
+							if(self !== currentTarget || debounceCounter !== debounce) { return }
+							
 							text.split(";").map(itemId => getProductInfo(itemId).then(json => {
+								if(self !== currentTarget || debounceCounter !== debounce) { return }
+
 								if(WearableAssetTypeIds.includes(json.AssetTypeId)) {
 									if(!preview) {
 										initPreview()
