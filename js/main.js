@@ -261,7 +261,7 @@ const initSettingsDiv = () => {
 					const resp = await fetch(`https://api.roblox.com/users/${userId}/groups`)
 					const json = await resp.json()
 
-					json.forEach(group => {
+					json.sort((a, b) => (a.Name < b.Name ? -1 : 1)).forEach(group => {
 						const tile = group.tile = html`
 						<li class=btr-filter-group title="${group.Name}" draggable=true>
 							<div class=btr-filter-group-icon>
@@ -277,7 +277,7 @@ const initSettingsDiv = () => {
 							ev.dataTransfer.setData("btr-group", group.Id)
 						})
 
-						tile.$on("dblclick", () => {
+						tile.$on("click", () => {
 							if(!isDataLoaded) { return }
 							const index = currentList.indexOf(group.Id)
 
