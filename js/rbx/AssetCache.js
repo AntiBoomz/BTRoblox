@@ -21,8 +21,10 @@ const AssetCache = (() => {
 				return null
 			}
 
-			return Array.from(urlInfo.searchParams.entries())
-		} catch(ex) {}
+			let entries = urlInfo.searchParams.entries()
+			if(IS_FIREFOX) { entries = entries.wrappedJSObject }
+			return Array.from(entries)
+		} catch(ex) { }
 
 		return null
 	}
