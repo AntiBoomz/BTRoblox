@@ -25,7 +25,9 @@ const DEFAULT_SETTINGS = {
 		fixAudioPreview: true,
 
 		navigationEnabled: true,
-		showBlogFeed: true
+		showBlogFeed: true,
+
+		hoverPreview: false
 	},
 	catalog: {
 		enabled: true

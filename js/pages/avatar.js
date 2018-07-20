@@ -1,0 +1,3 @@
+"use strict"
+
+pageInit.avatar = () => {}

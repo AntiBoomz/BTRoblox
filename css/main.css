@@ -234,6 +234,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	color: #343434;
 
 	box-sizing: content-box;
+	user-select: none;
 }
 
 .btr-switch div {

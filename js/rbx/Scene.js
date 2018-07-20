@@ -56,6 +56,8 @@ const RBXScene = (() => {
 		constructor() {
 			this._prevRes = { width: -1, height: -1 }
 
+			this.cameraControlsEnabled = true
+
 			this.cameraMinZoom = 3
 			this.cameraMaxZoom = 25
 			this.cameraZoom = 10
@@ -63,6 +65,8 @@ const RBXScene = (() => {
 			this.cameraRotation = new THREE.Euler(.05, 0, 0, "YXZ")
 			this.prevDragEvent = null
 			this.isDragging = false
+
+			this._onUpdate = []
 
 			const renderer = this.renderer = new THREE.WebGLRenderer({
 				antialias: true
@@ -100,6 +104,8 @@ const RBXScene = (() => {
 					target: canvas,
 					events: {
 						mousedown(event) {
+							if(!this.cameraControlsEnabled) { return }
+
 							if(!this.isDragging && (event.button === 0 || event.button === 2)) {
 								this.prevDragEvent = event
 								this.isDragging = true
@@ -109,6 +115,8 @@ const RBXScene = (() => {
 							event.preventDefault()
 						},
 						mousewheel(event) {
+							if(!this.cameraControlsEnabled) { return }
+							
 							const deltaY = event.deltaY
 
 							if(deltaY > 0) {
@@ -120,6 +128,8 @@ const RBXScene = (() => {
 							event.preventDefault()
 						},
 						contextmenu(event) {
+							if(!this.cameraControlsEnabled) { return }
+							
 							event.preventDefault()
 						}
 					}
@@ -128,6 +138,8 @@ const RBXScene = (() => {
 					target: window,
 					events: {
 						mousemove(event) {
+							if(!this.cameraControlsEnabled) { return }
+							
 							if(!this.isDragging) { return }
 							const moveX = event.clientX - this.prevDragEvent.clientX
 							const moveY = event.clientY - this.prevDragEvent.clientY
@@ -138,25 +150,17 @@ const RBXScene = (() => {
 							this.cameraRotation.y -= 2 * Math.PI * moveX / this.canvas.clientWidth
 						},
 						mouseup(event) {
-							if(!this.isDragging) { return }
-							if(event.button === this.dragButton) {
+							if(this.isDragging && event.button === this.dragButton) {
 								this.isDragging = false
 							}
 						},
 						contextmenu(event) {
+							if(!this.cameraControlsEnabled) { return }
+							
 							if(event.button === 2 && event.button === this.dragButton) {
 								this.dragButton = null
 								event.preventDefault()
 							}
-						},
-						resize() {
-							const width = this.canvas.clientWidth
-							const height = this.canvas.clientHeight
-
-							this.renderer.setSize(width, height)
-
-							this.camera.aspect = width / height
-							this.camera.updateProjectionMatrix()
 						}
 					}
 				}
@@ -235,6 +239,27 @@ const RBXScene = (() => {
 		}
 	}
 
+	class PreviewScene extends Scene {
+		constructor() {
+			super()
+			const avatar = this.avatar = new RBXAvatar.Avatar()
+			this.scene.add(avatar.model)
+		}
+		
+		update() {
+			super.update()
+			this.avatar.update()
+		}
+
+		start() {
+			super.start()
+
+			if(!this.avatar.hasInit) {
+				this.avatar.init()
+			}
+		}
+	}
+
 	class AvatarScene extends Scene {
 		constructor() {
 			super()
@@ -281,6 +306,7 @@ const RBXScene = (() => {
 
 	return {
 		Scene,
+		PreviewScene,
 		AvatarScene
 	}
 })()

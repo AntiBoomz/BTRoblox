@@ -49,14 +49,31 @@ const RBXAnimator = (() => {
 
 		setJoints(joints) {
 			this.joints = joints
+
+			if(this.fadeIn) {
+				Object.values(this.joints).forEach(jointData => {
+					jointData.joint.pfadeIn = jointData.joint.position.clone()
+					jointData.joint.qfadeIn = jointData.joint.quaternion.clone()
+				})
+			}
 		}
 
-		play(anim) {
+		play(anim, fadeIn) {
 			if(anim) { this.anim = anim }
+
+			this.fadeIn = fadeIn
+			this.fadeInCounter = 0
 
 			this.playing = true
 			this.timePosition = 0
-			this.previousUpdate = performance.now() / 1000
+			this.previousUpdate = performance.now()
+
+			if(this.fadeIn) {
+				Object.values(this.joints).forEach(jointData => {
+					jointData.joint.pfadeIn = jointData.joint.position.clone()
+					jointData.joint.qfadeIn = jointData.joint.quaternion.clone()
+				})
+			}
 		}
 
 		pause() {
@@ -65,24 +82,24 @@ const RBXAnimator = (() => {
 
 		resume() {
 			this.playing = true
-			this.previousUpdate = performance.now() / 1000
+			this.previousUpdate = performance.now()
 		}
 
 		update() {
 			if(!this.playing || !this.anim || !this.joints) { return }
 
-			const time = performance.now() / 1000
-			const delta = time - this.previousUpdate
+			const time = performance.now()
+			const delta = (time - this.previousUpdate) / 1000
 			this.previousUpdate = time
 			this.timePosition += delta * this.speed
 
 			if(this.timePosition > this.anim.length) {
 				if(this.anim.loop) {
 					this.timePosition = this.timePosition % this.anim.length
+					if(this.onloop) { this.onloop() }
 				} else {
 					this.playing = false
 					this.timePosition = 0
-
 					if(this.onstop) { this.onstop() }
 					return
 				}
@@ -93,6 +110,16 @@ const RBXAnimator = (() => {
 				time: 0,
 				pos: [0, 0, 0],
 				rot: [0, 0, 0]
+			}
+
+			let fadeIn = 0
+			if(this.fadeIn) {
+				this.fadeInCounter += delta
+				fadeIn = 1 - this.fadeInCounter / this.fadeIn
+				if(fadeIn <= 0) {
+					fadeIn = 0
+					this.fadeIn = 0
+				}
 			}
 
 			const nextQuat = new THREE.Quaternion()
@@ -119,6 +146,11 @@ const RBXAnimator = (() => {
 					)
 
 					joint.quaternion.set(...prev.rot).slerp(nextQuat.set(...next.rot), alpha)
+				}
+
+				if(fadeIn) {
+					joint.position.lerp(joint.pfadeIn, fadeIn)
+					joint.quaternion.slerp(joint.qfadeIn, fadeIn)
 				}
 			})
 		}

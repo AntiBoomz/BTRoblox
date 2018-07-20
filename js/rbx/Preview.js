@@ -18,11 +18,18 @@ const RBXPreview = (() => {
 
 	function getDefaultAppearance(cb) {
 		Promise.all([getAvatarRules(), getAvatarData()]).then(([rules, data]) => {
+			const bodyColors = {}
+
+			Object.entries(data.bodyColors).forEach(([name, value]) => {
+				const index = name.toLowerCase().replace(/colorid$/, "")
+				const bodyColor = rules.bodyColorsPalette.find(x => x.brickColorId === value)
+				bodyColors[index] = bodyColor.hexColor
+			})
+
+			data.bodyColors = bodyColors
 			cb(data, rules)
 		})
 	}
-
-	const R6AnimParts = ["Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
 
 	class Previewer {
 		constructor() {
@@ -58,10 +65,12 @@ const RBXPreview = (() => {
 	}
 
 	class AvatarPreviewer extends Previewer {
-		constructor() {
+		constructor(simple) {
 			super()
-			this.container = html`
-			<div style="width:100%; height:100%">
+			this.container = html`<div style="width:100%; height:100%"></div>`
+
+			if(!simple) {
+				this.container.innerHTML = htmlstring`
 				<div class=btr-switch style="position:absolute;top:6px;right:6px">
 					<div class=btr-switch-off>R6</div>
 					<div class=btr-switch-on>R15</div>
@@ -77,24 +86,28 @@ const RBXPreview = (() => {
 						<span class=icon-down-16x16></span>
 					</button>
 					<ul data-toggle=dropdown-menu class=dropdown-menu role=menu></ul>
-				</div>
-			</div>`
+				</div>`
+	
+				const ptSwitch = this.ptSwitch = this.container.$find(".btr-switch > input")
+				const dropdown = this.dropdown = this.container.$find(".input-group-btn")
+				this.menu = dropdown.$find(".dropdown-menu")
+	
+				ptSwitch.$on("change", () => {
+					this.setPlayerType(ptSwitch.checked ? "R15" : "R6")
+				})
+			}
 
-			const ptSwitch = this.ptSwitch = this.container.$find(".btr-switch > input")
-			const dropdown = this.dropdown = this.container.$find(".input-group-btn")
-			this.menu = dropdown.$find(".dropdown-menu")
-
-			ptSwitch.$on("change", () => {
-				this.setPlayerType(ptSwitch.checked ? "R15" : "R6")
-			})
 
 			this.playerType = null
 			this.anims = []
 			this.assets = []
+			this.assetMap = {}
+			this.previewTargets = []
 
 			this.animLoadCounter = 0
 			this.currentAnim = null
 
+			this.autoLoadPlayerType = true
 			this.accessoriesVisible = true
 			this.packagesVisible = true
 			this.disableDefaultAnimations = false
@@ -104,39 +117,50 @@ const RBXPreview = (() => {
 				const avatar = scene.avatar
 
 				if(this.currentAnim) { this.loadAnimation(this.currentAnim.assetId) }
-				this.assets.forEach(asset => scene.avatar.addAsset(asset))
+				this.assets.forEach(asset => scene.avatar.addAsset(asset.assetId, asset.assetTypeId))
 
 				if(this.playerType) { this.setPlayerType(this.playerType) }
 				this.setPackagesVisible(this.packagesVisible)
 				this.setAccessoriesVisible(this.accessoriesVisible)
 
-				getDefaultAppearance((data, rules) => {
+				getDefaultAppearance(data => {
 					this.appearance = data
-					const bodyColors = {}
 
-					Object.entries(data.bodyColors).forEach(([name, value]) => {
-						const index = name.toLowerCase().replace(/colorid$/, "")
-						const bodyColor = rules.bodyColorsPalette.find(x => x.brickColorId === value)
-						bodyColors[index] = bodyColor.hexColor
-					})
-
-					avatar.setBodyColors(bodyColors)
+					avatar.setBodyColors(data.bodyColors)
 					if(this.packagesVisible) { avatar.setScales(data.scales) }
-
-					if(!this.playerType && !this.getPlayerTypeFromAnim) {
-						this.setPlayerType(data.playerAvatarType)
-					}
+					if(!this.playerType && this.autoLoadPlayerType) { this.setPlayerType(data.playerAvatarType) }
 
 					data.assets.forEach(asset => this.addAsset(asset.id, asset.assetType.id))
 				})
 
 				avatar.animator.onstop = () => setTimeout(() => avatar.animator.play(), 2000)
+
+				const R15Anims = [507766666, 507766951, 507766388]
+				const R6Anims = [180435792, 180435571]
+
+				avatar.animator.onloop = () => {
+					if(!this.currentAnim) {
+						if(R15Anims.includes(this.playingAnim)) {
+							const roll = Math.random()
+							const animId = roll < 1 / 11 ? R15Anims[0] : roll < 2 / 11 ? R15Anims[1] : R15Anims[2]
+							if(this.currentAnim !== animId) {
+								this.loadAnimation(animId, .5)
+							}
+						} else if(R6Anims.includes(this.playingAnim)) {
+							const roll = Math.random()
+							const animId = roll < 0.1 ? R6Anims[0] : R6Anims[1]
+							if(this.currentAnim !== animId) {
+								this.loadAnimation(animId, .5)
+							}
+						}
+					}
+				}
 			})
 		}
 
 		setPlayerType(type) {
 			this.playerType = type
-			this.ptSwitch.checked = type === "R15"
+			if(this.ptSwitch) { this.ptSwitch.checked = type === "R15" }
 
 			if(this.initialized) {
 				this.scene.avatar.setPlayerType(type)
@@ -152,7 +176,8 @@ const RBXPreview = (() => {
 			const visible = this.packagesVisible = !!bool
 			if(this.initialized) {
 				this.scene.avatar.bodyparts.forEach(bp => {
-					if(bp.asset.info && bp.asset.info.previewTarget) { return }
+					const asset = this.assetMap[bp.asset.assetId]
+					if(asset.info && asset.info.previewTarget) { return }
 					bp.hidden = !visible
 				})
 
@@ -179,58 +204,69 @@ const RBXPreview = (() => {
 			const visible = this.accessoriesVisible = !!bool
 			if(this.initialized) {
 				this.scene.avatar.accessories.forEach(acc => {
-					if(acc.asset.info && acc.asset.info.previewTarget) { return }
+					const asset = this.assetMap[acc.asset.assetId]
+					if(asset.info && asset.info.previewTarget) { return }
 					acc.obj.visible = visible
 				})
 			}
 		}
 
 		addAsset(assetId, assetTypeId, info) {
-			const asset = { assetId, assetTypeId, info }
-
-			if(UniqueWearableAssetTypeIds.indexOf(assetTypeId) !== -1) {
-				const old = this.assets.find(x => x.assetTypeId === assetTypeId)
-				if(old) {
-					if(old.info && old.info.previewTarget) { return }
-					this.removeAsset(old)
-				}
-			}
-
+			if(this.assetMap[assetId]) { return }
+			const asset = this.assetMap[assetId] = { assetId, assetTypeId, info }
 			this.assets.push(asset)
 
+			if(info && info.previewTarget) {
+				this.previewTargets.push(asset)
+			} else {
+				this.previewTargets.forEach(x => {
+					if(x.assetTypeId === assetTypeId) {
+						this.assets.splice(this.assets.indexOf(x), 1)
+						this.assets.push(x)
+
+						if(this.initialized) {
+							this.scene.avatar.removeAsset(x.assetId)
+							this.scene.avatar.addAsset(x.assetId, x.assetTypeId)
+						}
+					}
+				})
+			}
+
 			if(this.initialized) {
-				this.scene.avatar.addAsset(asset)
+				this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
 			}
 		}
 
-		removeAsset(asset) {
-			const index = this.assets.indexOf(asset)
-			if(index === -1) { return }
-			this.assets.splice(index, 1)
+		removeAsset(assetId) {
+			const asset = this.assetMap[assetId]
+			if(!asset) { return }
+			delete this.assetMap[assetId]
+			this.assets.splice(this.assets.indexOf(asset), 1)
+
+			const index = this.previewTargets.indexOf(asset)
+			if(index !== -1) { this.previewTargets.splice(index, 1) }
 
 			if(this.initialized) {
-				this.scene.avatar.removeAsset(asset)
+				this.scene.avatar.removeAsset(assetId)
 			}
 		}
 
-		loadAnimation(assetId) {
+		loadAnimation(assetId, fadeIn) {
 			const index = ++this.animLoadCounter
-
-			if(this.initialized) {
-				this.scene.avatar.animator.pause()
-			}
 
 			AssetCache.loadAnimation(assetId, data => {
 				if(this.animLoadCounter !== index) { return }
 
-				if(this.getPlayerTypeFromAnim) {
-					this.getPlayerTypeFromAnim = false
+				if(this.setPlayerTypeOnAnim && this.currentAnim) {
+					this.setPlayerTypeOnAnim = false
+					const R6AnimParts = ["Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
 					const isR6 = R6AnimParts.some(x => x in data.keyframes)
 					this.setPlayerType(isR6 ? "R6" : "R15")
 				}
 
 				if(this.initialized) {
-					this.scene.avatar.animator.play(data)
+					this.playingAnim = assetId
+					this.scene.avatar.animator.play(data, fadeIn || 0)
 				}
 			})
 		}
@@ -240,7 +276,11 @@ const RBXPreview = (() => {
 			if(!anim) { return }
 
 			this.currentAnim = anim
-			this.dropdown.$find("[data-bind='label']").textContent = name
+			if(this.dropdown) { this.dropdown.$find("[data-bind='label']").textContent = name }
+
+			if(this.initialized) {
+				this.scene.avatar.animator.pause()
+			}
 
 			this.loadAnimation(anim.assetId)
 		}
@@ -249,13 +289,15 @@ const RBXPreview = (() => {
 			const anim = { name, assetId }
 			this.anims.push(anim)
 
-			const elem = html`<li><a href=#>${name}</a></li>`
-			this.menu.append(elem)
+			if(this.menu) {
+				const elem = html`<li><a href=#>${name}</a></li>`
+				this.menu.append(elem)
 
-			elem.$on("click", () => this.playAnimation(name))
+				elem.$on("click", () => this.playAnimation(name))
+			}
 
 			if(this.anims.length === 1) { this.playAnimation(name) }
-			else if(this.anims.length === 2) { this.dropdown.style.display = "" }
+			else if(this.anims.length === 2 && this.dropdown) { this.dropdown.style.display = "" }
 		}
 	}
 

@@ -34,7 +34,7 @@ const RBXAvatar = (() => {
 
 	function InvertCFrame(cframe) { return new THREE.Matrix4().getInverse(cframe) }
 
-	const emptySrc = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+	const emptySrc = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII="
 	function setImageSource(img, src) {
 		src = src || emptySrc
 		if(img.src !== src) { img.src = src }
@@ -451,6 +451,9 @@ const RBXAvatar = (() => {
 			this.model = new THREE.Group()
 			this.animator = new RBXAnimator()
 
+			this.assets = []
+			this.assetMap = {}
+
 			this.accessories = []
 			this.bodyparts = []
 
@@ -527,7 +530,6 @@ const RBXAvatar = (() => {
 			this.animator.update()
 
 			if(this.shouldRefreshBodyParts) {
-				this.shouldRefreshBodyParts = false
 				this.refreshBodyParts()
 			}
 		}
@@ -558,220 +560,386 @@ const RBXAvatar = (() => {
 			this.headComposite.update()
 		}
 
-		addAsset(asset) {
-			const { assetId, assetTypeId } = asset
+		async addAsset(assetId, assetTypeId) {
+			if(this.assetMap[assetId]) { return }
+			const asset = this.assetMap[assetId] = {
+				assetId,
+				assetTypeId,
+				enabled: true
+			}
+
+			this.assets.push(asset)
+
+			asset.toggle = (enabled, force) => {
+				if(asset.enabled !== !!enabled || force) {
+					asset.enabled = !!enabled
+
+					if(asset.enabled) {
+						if(asset.enable) { asset.enable() }
+					} else {
+						if(asset.disable) { asset.disable() }
+					}
+				}
+			}
 
 			switch(assetTypeId) {
 			// Bodyparts
-			case 27: case 28: case 29: case 30: case 31:
-				AssetCache.loadModel(assetId, model => {
-					const R6Folder = model.find(x => x.Name === "R6")
-					const R15Folder = model.find(x => x.Name === "R15Fixed") || model.find(x => x.Name === "R15")
+			case 27: case 28: case 29: case 30: case 31: {
+				asset.unique = true
+				
+				const result = []
 
-					if(R6Folder) {
-						const BodyPartEnum = [null, "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
+				const model = await AssetCache.loadModel(assetId)
 
-						R6Folder.Children.filter(x => x.ClassName === "CharacterMesh").forEach(charmesh => {
-							const target = BodyPartEnum[charmesh.BodyPart]
-							if(!target) { return }
+				const R6Folder = model.find(x => x.Name === "R6")
+				const R15Folder = model.find(x => x.Name === "R15Fixed") || model.find(x => x.Name === "R15")
 
-							this.bodyparts.push({
-								target,
-								asset,
-								type: "R6",
-								meshId: +charmesh.MeshId ? AssetCache.toAssetUrl(charmesh.MeshId) : null,
-								baseTexId: +charmesh.BaseTextureId ? AssetCache.toAssetUrl(charmesh.BaseTextureId) : null,
-								overTexId: +charmesh.OverlayTextureId ? AssetCache.toAssetUrl(charmesh.OverlayTextureId) : null
-							})
+				if(R6Folder) {
+					const BodyPartEnum = [null, "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
+
+					R6Folder.Children.filter(x => x.ClassName === "CharacterMesh").forEach(charmesh => {
+						const target = BodyPartEnum[charmesh.BodyPart]
+						if(!target) { return }
+
+						result.push({
+							target,
+							asset,
+							type: "R6",
+							meshId: +charmesh.MeshId ? AssetCache.toAssetUrl(charmesh.MeshId) : null,
+							baseTexId: +charmesh.BaseTextureId ? AssetCache.toAssetUrl(charmesh.BaseTextureId) : null,
+							overTexId: +charmesh.OverlayTextureId ? AssetCache.toAssetUrl(charmesh.OverlayTextureId) : null
 						})
-					}
+					})
+				}
 
-					if(R15Folder) {
-						R15Folder.Children.filter(x => x.ClassName === "MeshPart").forEach(part => {
-							const target = part.Name
-							if(R15BodyPartNames.indexOf(target) === -1) { return }
+				if(R15Folder) {
+					R15Folder.Children.filter(x => x.ClassName === "MeshPart").forEach(part => {
+						const target = part.Name
+						if(R15BodyPartNames.indexOf(target) === -1) { return }
 
-							const bodypart = {
-								target,
-								asset,
-								type: "R15",
-								joints: [],
-								attachments: [],
-								meshId: part.MeshID,
-								overTexId: part.TextureID
+						const bodypart = {
+							target,
+							asset,
+							type: "R15",
+							joints: [],
+							attachments: [],
+							meshId: part.MeshID,
+							overTexId: part.TextureID,
+							transparency: part.Transparency || 0
+						}
+
+						result.push(bodypart)
+
+						part.Children.filter(x => x.ClassName === "Attachment").forEach(inst => {
+							if(inst.Name.endsWith("RigAttachment")) {
+								const jointName = inst.Name.substring(0, inst.Name.length - 13)
+								const cframe = CFrame(...inst.CFrame)
+								bodypart.joints.push({ jointName, cframe })
+							} else {
+								const attName = inst.Name
+								const cframe = CFrame(...inst.CFrame)
+								bodypart.attachments.push({ attName, cframe })
 							}
-
-							this.bodyparts.push(bodypart)
-
-							part.Children.filter(x => x.ClassName === "Attachment").forEach(inst => {
-								if(inst.Name.endsWith("RigAttachment")) {
-									const jointName = inst.Name.substring(0, inst.Name.length - 13)
-									const cframe = CFrame(...inst.CFrame)
-									bodypart.joints.push({ jointName, cframe })
-								} else {
-									const attName = inst.Name
-									const cframe = CFrame(...inst.CFrame)
-									bodypart.attachments.push({ attName, cframe })
-								}
-							})
 						})
-					}
+					})
+				}
+
+				asset.enable = () => {
+					this.bodyparts.push(...result)
+					this.shouldRefreshBodyParts = true
+				}
+
+				asset.disable = () => {
+					result.forEach(bp => {
+						const index = this.bodyparts.indexOf(bp)
+						if(index !== -1) {
+							this.bodyparts.splice(index, 1)
+						}
+					})
 
 					this.shouldRefreshBodyParts = true
-				})
+				}
 				break
+			}
 			case 17: // Head
+				asset.unique = true
+
 				if(assetId in HeadMeshes) {
 					const name = HeadMeshes[assetId]
 					const meshUrl = getURL(`res/previewer/heads/${name}.mesh`)
+					const result = { asset, target: "Head", meshId: meshUrl }
 
-					this.bodyparts.push({
+					asset.enable = () => {
+						this.bodyparts.push(result)
+						this.shouldRefreshBodyParts = true
+					}
+
+					asset.disable = () => {
+						const index = this.bodyparts.indexOf(result)
+						if(index !== -1) {
+							this.bodyparts.splice(index, 1)
+							this.shouldRefreshBodyParts = true
+						}
+					}
+				} else {
+					const model = await AssetCache.loadModel(assetId)
+
+					const mesh = model.find(x => x.ClassName === "SpecialMesh")
+					if(!mesh) {
+						asset.failed = true
+						break
+					}
+
+					const result = {
 						asset,
 						target: "Head",
-						meshId: meshUrl
-					})
+						meshId: mesh.MeshId,
+						baseTexId: mesh.TextureId,
+						scale: [...mesh.Scale]
+					}
 
-					this.shouldRefreshBodyParts = true
-				} else {
-					AssetCache.loadModel(assetId, model => {
-						const mesh = model.find(x => x.ClassName === "SpecialMesh")
-						if(!mesh) { return }
-
-						this.bodyparts.push({
-							asset,
-							target: "Head",
-							meshId: mesh.MeshId,
-							baseTexId: mesh.TextureId,
-							scale: [...mesh.Scale]
-						})
-	
+					asset.enable = () => {
+						this.bodyparts.push(result)
 						this.shouldRefreshBodyParts = true
-					})
+					}
+
+					asset.disable = () => {
+						const index = this.bodyparts.indexOf(result)
+						if(index !== -1) {
+							this.bodyparts.splice(index, 1)
+							this.shouldRefreshBodyParts = true
+						}
+					}
 				}
 				break
-			case 18: // Face
-				AssetCache.loadModel(assetId, model => {
-					const face = model.find(x => x.ClassName === "Decal" && x.Name === "face")
-					if(!face) { return }
+			case 18: { // Face
+				asset.unique = true
+				
+				const model = await AssetCache.loadModel(assetId)
 
-					this.bodyparts.push({
-						asset,
-						isFace: true,
-						target: "Head",
-						overTexId: face.Texture
-					})
+				const face = model.find(x => x.ClassName === "Decal" && x.Name === "face")
+				if(!face) {
+					asset.failed = true
+					break
+				}
 
+				const result = {
+					asset,
+					isFace: true,
+					target: "Head",
+					overTexId: face.Texture
+				}
+
+				asset.enable = () => {
+					this.bodyparts.push(result)
 					this.shouldRefreshBodyParts = true
-				})
+				}
+
+				asset.disable = () => {
+					const index = this.bodyparts.indexOf(result)
+					if(index !== -1) {
+						this.bodyparts.splice(index, 1)
+						this.shouldRefreshBodyParts = true
+					}
+				}
 				break
+			}
 			// Accessories
 			case 8: case 41: case 42: case 43:
-			case 44: case 45: case 46: case 47:
-				AssetCache.loadModel(assetId, model => {
-					const accInst = model.find(x => x.ClassName === "Accessory")
-					if(!accInst) { return }
+			case 44: case 45: case 46: case 47: {
+				const model = await AssetCache.loadModel(assetId)
 
-					const hanInst = accInst.Children.find(x => x.Name === "Handle")
-					if(!hanInst) { return }
+				const accInst = model.find(x => x.ClassName === "Accessory")
+				if(!accInst) { asset.failed = true; break }
 
-					const meshInst = hanInst.Children.find(x => x.ClassName === "SpecialMesh")
-					if(!meshInst) { return console.warn(`[RBXAvatar] Missing meshInst for ${assetId}`) }
+				const hanInst = accInst.Children.find(x => x.Name === "Handle")
+				if(!hanInst) { asset.failed = true; break }
 
-					const meshId = meshInst.MeshId
-					const texId = meshInst.TextureId
+				const meshInst = hanInst.Children.find(x => x.ClassName === "SpecialMesh")
+				if(!meshInst) { asset.failed = true; break }
 
-					if(!meshId) { return console.warn(`[RBXAvatar] Invalid meshId for ${assetId} '${meshInst.MeshId}'`) }
-					if(!texId) { console.warn(`[RBXAvatar] Invalid texId for ${assetId} '${meshInst.MeshId}'`) }
+				const meshId = meshInst.MeshId
+				const texId = meshInst.TextureId
 
-					const tex = createTexture()
-					const mat = new THREE.MeshLambertMaterial({ map: tex })
-					const obj = new THREE.Mesh(undefined, mat)
-					obj.castShadow = true
+				if(!meshId) { asset.failed = true; break }
 
-					AssetCache.loadMesh(true, meshId, mesh => applyMesh(obj, mesh))
+				const tex = createTexture()
+				const mat = new THREE.MeshLambertMaterial({ map: tex, transparent: true })
+				mat.opacity = 1 - (meshInst.Transparency || 0)
+				const obj = new THREE.Mesh(undefined, mat)
+				obj.castShadow = true
 
-					setImageSource(tex.image, solidColorDataURL(163, 162, 165))
-					if(texId) { AssetCache.loadImage(true, texId, url => { setImageSource(tex.image, url) }) }
+				const attInst = hanInst.Children.find(x => x.ClassName === "Attachment")
+				const cframe = InvertCFrame(CFrame(...(attInst ? attInst.CFrame : accInst.AttachmentPoint)))
+				const scale = meshInst.Scale ? [...meshInst.Scale] : [1, 1, 1]
+				const offset = new THREE.Vector3(...(meshInst.Offset || [0, 0, 0]))
 
-					const attInst = hanInst.Children.find(x => x.ClassName === "Attachment")
-					const cframe = InvertCFrame(CFrame(...(attInst ? attInst.CFrame : accInst.AttachmentPoint)))
-					const scale = meshInst.Scale ? [...meshInst.Scale] : [1, 1, 1]
-					const offset = new THREE.Vector3(...(meshInst.Offset || [0, 0, 0]))
+				const attName = attInst ? attInst.Name : null
 
-					const attName = attInst ? attInst.Name : null
+				const att = this.attachments[attName]
+				if(att) { att.obj.add(obj) }
+				else { this.defaultHatAttachment.add(obj) }
 
-					const att = this.attachments[attName]
-					if(att) { att.obj.add(obj) }
-					else { this.defaultHatAttachment.add(obj) }
+				const result = { obj, asset, attName, att, scale, cframe, offset }
+				let initialized = false
 
-					this.accessories.push({ obj, asset, attName, att, scale, cframe, offset })
+				asset.enable = () => {
+					this.accessories.push(result)
 					this.shouldRefreshBodyParts = true
-				})
+
+					if(!initialized) {
+						initialized = true
+
+						AssetCache.loadMesh(true, meshId, mesh => applyMesh(obj, mesh))
+
+						setImageSource(tex.image, solidColorDataURL(163, 162, 165))
+						if(texId) { AssetCache.loadImage(true, texId, url => { setImageSource(tex.image, url) }) }
+					}
+				}
+
+				asset.disable = () => {
+					if(result.obj.parent) {
+						result.obj.parent.remove(result.obj)
+					}
+
+					const index = this.accessories.indexOf(result)
+					if(index !== -1) {
+						this.accessories.splice(index, 1)
+					}
+				}
+
 				break
-			case 11:
-				this.shirtId = assetId
-				AssetCache.loadModel(assetId, model => {
-					const shirt = model.find(x => x.ClassName === "Shirt")
-					if(!shirt) { return }
+			}
+			case 11: {
+				asset.unique = true
+				
+				const model = await AssetCache.loadModel(assetId)
 
-					const texId = shirt.ShirtTemplate
-					const img = this.textures.shirt.image
+				const clothing = model.find(x => x.ClassName === "Shirt")
+				if(!clothing) { asset.failed = true; break }
 
-					setImageSource(img, "")
-					if(texId) { AssetCache.loadImage(true, texId, url => { setImageSource(img, url) }) }
-				})
+				const img = this.textures.shirt.image
+				const texId = clothing.ShirtTemplate
+				let result
+
+				asset.enable = async () => {
+					setImageSource(img, result || "")
+					
+					if(!result && texId) {
+						result = await AssetCache.loadImage(true, texId)
+						if(!asset.enabled) { return }
+						setImageSource(img, result)
+					}
+				}
+
+				asset.disable = () => {
+					setImageSource(img, result || "")
+				}
 				break
-			case 2:
-				this.tshirtId = assetId
-				AssetCache.loadModel(assetId, model => {
-					const tshirt = model.find(x => x.ClassName === "ShirtGraphic")
-					if(!tshirt) { return }
+			}
+			case 2: {
+				asset.unique = true
+				
+				const model = await AssetCache.loadModel(assetId)
 
-					const texId = tshirt.Graphic
-					const img = this.textures.tshirt.image
+				const clothing = model.find(x => x.ClassName === "ShirtGraphic")
+				if(!clothing) { asset.failed = true; break }
 
-					setImageSource(img, "")
-					if(texId) { AssetCache.loadImage(true, texId, url => { setImageSource(img, url) }) }
-				})
+				const img = this.textures.tshirt.image
+				const texId = clothing.Graphic
+				let result
+
+				asset.enable = async () => {
+					setImageSource(img, result || "")
+					
+					if(!result && texId) {
+						result = await AssetCache.loadImage(true, texId)
+						if(!asset.enabled) { return }
+						setImageSource(img, result)
+					}
+				}
+
+				asset.disable = () => {
+					setImageSource(img, result || "")
+				}
+
 				break
-			case 12:
-				this.pantsId = assetId
-				AssetCache.loadModel(assetId, model => {
-					const pants = model.find(x => x.ClassName === "Pants")
-					if(!pants) { return }
+			}
+			case 12: {
+				asset.unique = true
 
-					const texId = pants.PantsTemplate
-					const img = this.textures.pants.image
+				const model = await AssetCache.loadModel(assetId)
 
-					setImageSource(img, "")
-					if(texId) { AssetCache.loadImage(true, texId, url => { setImageSource(img, url) }) }
-				})
+				const clothing = model.find(x => x.ClassName === "Pants")
+				if(!clothing) { asset.failed = true; break }
+
+				const img = this.textures.pants.image
+				const texId = clothing.PantsTemplate
+				let result
+
+				asset.enable = async () => {
+					setImageSource(img, result || "")
+					
+					if(!result && texId) {
+						result = await AssetCache.loadImage(true, texId)
+						if(!asset.enabled) { return }
+						setImageSource(img, result)
+					}
+				}
+
+				asset.disable = () => {
+					setImageSource(img, result || "")
+				}
+
 				break
+			}
 			case 48: case 49: case 50: case 51:
 			case 52: case 53: case 54: case 55: case 56:
 				// Animations
-				break
+				this.removeAsset(assetId)
+				return
 			default: console.log("Unimplemented asset type", assetTypeId, assetId)
+			}
+
+			if(asset.failed) {
+				console.error(`Failed to load asset ${assetId} of type ${assetTypeId}`)
+				this.removeAsset(assetId)
+				return
+			}
+
+			if(asset.enabled) {
+				if(asset.unique) {
+					for(let i = this.assets.length; i--;) {
+						const x = this.assets[i]
+						if(x.assetTypeId === assetTypeId && x !== asset) {
+							x.toggle(false)
+						}
+					}
+				}
+				
+				asset.enable()
 			}
 		}
 
-		removeAsset(asset) {
-			const bpIndex = this.bodyparts.findIndex(x => x.asset.assetId === asset.assetId)
-			if(bpIndex !== -1) {
-				this.bodyparts.splice(bpIndex, 1)
-				this.shouldRefreshBodyParts = true
-			}
+		removeAsset(assetId) {
+			const asset = this.assetMap[assetId]
+			if(asset) {
+				delete this.assetMap[assetId]
+				this.assets.splice(this.assets.indexOf(asset), 1)
 
-			const accIndex = this.accessories.findIndex(x => x.asset.assetId === asset.assetId)
-			if(accIndex !== -1) {
-				const acc = this.accessories[accIndex]
-				if(acc.obj.parent) { acc.obj.parent.remove(acc.obj) }
-				this.accessories.splice(accIndex, 1)
-			}
+				const wasEnabled = asset.enabled
+				asset.toggle(false)
 
-			if(asset.assetId === this.pantsId) { setImageSource(this.textures.pants.image, "") }
-			if(asset.assetId === this.tshirtId) { setImageSource(this.textures.tshirt.image, "") }
-			if(asset.assetId === this.shirtId) { setImageSource(this.textures.shirt.image, "") }
+				if(wasEnabled && asset.unique) {
+					for(let i = this.assets.length; i--;) {
+						const x = this.assets[i]
+						if(x.assetTypeId === asset.assetTypeId) {
+							x.toggle(true)
+							break
+						}
+					}
+				}
+			}
 		}
 
 		setPlayerType(playerType) {
@@ -812,7 +980,7 @@ const RBXAvatar = (() => {
 
 					if(tree.name !== "HumanoidRootPart") {
 						parts[tree.name] = obj
-						const mat = new THREE.MeshLambertMaterial({ map: this.textures[tree.name] })
+						const mat = new THREE.MeshLambertMaterial({ map: this.textures[tree.name], transparent: true })
 						const mesh = new THREE.Mesh(undefined, mat)
 						mesh.castShadow = true
 
@@ -882,18 +1050,16 @@ const RBXAvatar = (() => {
 		}
 
 		refreshBodyParts() {
+			this.shouldRefreshBodyParts = false
+
 			const changedParts = {}
 			const changedJoints = {}
 			const changedAttachments = {}
 
 			this.bodyparts.forEach(bp => {
 				if(bp.hidden || (bp.type && bp.type !== this.playerType)) { return }
-				if(bp.meshId || bp.baseTexId || bp.overTexId) {
-					const change = changedParts[bp.target] = changedParts[bp.target] || {}
-					if(bp.meshId) { change.meshId = bp.meshId }
-					if(bp.baseTexId) { change.baseTexId = bp.baseTexId }
-					if(bp.overTexId) { change.overTexId = bp.overTexId }
-					if(bp.scale) { change.scale = bp.scale }
+				if(bp.meshId || bp.baseTexId || bp.overTexId || bp.transparency) {
+					changedParts[bp.target] = Object.assign(changedParts[bp.target] || {}, bp)
 				}
 
 				if(bp.joints) {
@@ -964,6 +1130,12 @@ const RBXAvatar = (() => {
 					scale[0] *= part.rbxScaleMod.x
 					scale[1] *= part.rbxScaleMod.y
 					scale[2] *= part.rbxScaleMod.z
+				}
+
+				const opacity = 1 - (change && change.transparency || 0)
+				if(part.rbxMesh.material.opacity !== opacity) {
+					part.rbxMesh.material.opacity = opacity
+					part.rbxMesh.material.needsUpdate = true
 				}
 
 				part.rbxMesh.scale.set(...scale)

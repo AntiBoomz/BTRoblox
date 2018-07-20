@@ -68,7 +68,7 @@ const AssetCache = (() => {
 			}
 
 			try { new URL(url) }
-			catch(ex) { throw new TypeError(`Invalid URL: '${String(url)}'`)}
+			catch(ex) { throw new TypeError(`Invalid URL: '${String(url)}'`) }
 
 			let methodPromise = cache[url]
 			if(!methodPromise) {

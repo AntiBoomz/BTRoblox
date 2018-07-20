@@ -306,7 +306,7 @@ const RBXParser = (() => {
 				case "bool": return inst.setProperty(name, value.toLowerCase() === "true", "bool")
 				case "token": return inst.setProperty(name, +value, "Enum")
 				case "color3":
-				case "color3uint8": return inst.setProperty(name, [+value >> 16 & 255, +value >> 8 & 255, +value & 255], "Color3")
+				case "color3uint8": return inst.setProperty(name, [(+value >> 16 & 255) / 255, (+value >> 8 & 255) / 255, (+value & 255) / 255], "Color3")
 				case "coordinateframe": {
 					const cframe = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
 					Object.values(propNode.children).forEach(x => {
@@ -579,7 +579,7 @@ const RBXParser = (() => {
 				const rgb = sub.Array(sub.GetRemaining())
 
 				for(let i = 0; i < count; i++) {
-					values[i] = [rgb[i], rgb[i + count], rgb[i + count * 2]]
+					values[i] = [rgb[i] / 255, rgb[i + count] / 255, rgb[i + count * 2] / 255]
 				}
 				break
 			}
