@@ -176,7 +176,7 @@ const RBXAvatar = (() => {
 					parts[part.Name] = partData
 	
 					part.Children.forEach(item => {
-						if(item.ClassName === "Attachment" && !item.Name.endsWith("RigAttachment")) {
+						if(item.ClassName === "Attachment") {
 							partData.attachments[item.Name] = CFrame(...item.CFrame)
 						} else if(item.ClassName === "Motor6D") {
 							const part0Data = recursePart(item.Part0)
@@ -635,11 +635,11 @@ const RBXAvatar = (() => {
 								const jointName = inst.Name.substring(0, inst.Name.length - 13)
 								const cframe = CFrame(...inst.CFrame)
 								bodypart.joints.push({ jointName, cframe })
-							} else {
-								const attName = inst.Name
-								const cframe = CFrame(...inst.CFrame)
-								bodypart.attachments.push({ attName, cframe })
 							}
+							
+							const attName = inst.Name
+							const cframe = CFrame(...inst.CFrame)
+							bodypart.attachments.push({ attName, cframe })
 						})
 					})
 				}
@@ -774,18 +774,19 @@ const RBXAvatar = (() => {
 					mat.color.setRGB(VC[0], VC[1], VC[2])
 				}
 
-				const attInst = hanInst.Children.find(x => x.ClassName === "Attachment")
-				const cframe = InvertCFrame(CFrame(...(attInst ? attInst.CFrame : accInst.AttachmentPoint)))
+				const cframe = accInst.AttachmentPoint ? InvertCFrame(CFrame(...accInst.AttachmentPoint)) : new THREE.Matrix4()
 				const scale = meshInst.Scale ? [...meshInst.Scale] : [1, 1, 1]
 				const offset = new THREE.Vector3(...(meshInst.Offset || [0, 0, 0]))
 
+				const attInst = hanInst.Children.find(x => x.ClassName === "Attachment")
 				const attName = attInst ? attInst.Name : null
+				const attCFrame = attInst ? (attInst.CFrame ? InvertCFrame(CFrame(...attInst.CFrame)) : new THREE.Matrix4()) : null
 
 				const att = this.attachments[attName]
 				if(att) { att.obj.add(obj) }
 				else { this.defaultHatAttachment.add(obj) }
 
-				const result = { obj, asset, attName, att, scale, cframe, offset }
+				const result = { obj, asset, attName, attCFrame, att, scale, cframe, offset }
 				let initialized = false
 
 				asset.enable = () => {
@@ -1092,14 +1093,17 @@ const RBXAvatar = (() => {
 			this.accessories.forEach(acc => {
 				acc.obj.scale.set(...acc.scale).multiplyScalar(headScale)
 
-				acc.obj.position.setFromMatrixPosition(acc.cframe)
-				acc.obj.rotation.setFromRotationMatrix(acc.cframe)
-
 				// Staying faithful to source material
 				// And coding in some bugs :D
 
 				// Bug #1: Attachmentless accessories (defaultHatAttachment) do not get position-scaled
-				if(acc.att) { acc.obj.position.multiplyScalar(headScale) }
+				if(acc.att) {
+					acc.obj.position.setFromMatrixPosition(acc.attCFrame).multiplyScalar(headScale)
+					acc.obj.rotation.setFromRotationMatrix(acc.attCFrame)
+				} else {
+					acc.obj.position.setFromMatrixPosition(acc.cframe)
+					acc.obj.rotation.setFromRotationMatrix(acc.cframe)
+				}
 
 				// Bug #2: Mesh.Offset doesn't get position-scaled
 				if(acc.offset) { acc.obj.position.add(acc.offset) }
