@@ -103,6 +103,7 @@ const RBXPreview = (() => {
 			this.assets = []
 			this.assetMap = {}
 			this.previewTargets = []
+			this.previewMap = {}
 
 			this.animLoadCounter = 0
 			this.currentAnim = null
@@ -118,6 +119,7 @@ const RBXPreview = (() => {
 
 				if(this.currentAnim) { this.loadAnimation(this.currentAnim.assetId) }
 				this.assets.forEach(asset => scene.avatar.addAsset(asset.assetId, asset.assetTypeId))
+				this.previewTargets.forEach(asset => scene.avatar.addAsset(asset.assetId, asset.assetTypeId))
 
 				if(this.playerType) { this.setPlayerType(this.playerType) }
 				this.setPackagesVisible(this.packagesVisible)
@@ -176,8 +178,7 @@ const RBXPreview = (() => {
 			const visible = this.packagesVisible = !!bool
 			if(this.initialized) {
 				this.scene.avatar.bodyparts.forEach(bp => {
-					const asset = this.assetMap[bp.asset.assetId]
-					if(asset.info && asset.info.previewTarget) { return }
+					if(this.previewMap[bp.asset.assetId]) { return }
 					bp.hidden = !visible
 				})
 
@@ -204,35 +205,47 @@ const RBXPreview = (() => {
 			const visible = this.accessoriesVisible = !!bool
 			if(this.initialized) {
 				this.scene.avatar.accessories.forEach(acc => {
-					const asset = this.assetMap[acc.asset.assetId]
-					if(asset.info && asset.info.previewTarget) { return }
+					if(this.previewMap[acc.asset.assetId]) { return }
 					acc.obj.visible = visible
 				})
 			}
 		}
 
-		addAsset(assetId, assetTypeId, info) {
-			if(this.assetMap[assetId]) { return }
-			const asset = this.assetMap[assetId] = { assetId, assetTypeId, info }
-			this.assets.push(asset)
-
-			if(info && info.previewTarget) {
-				this.previewTargets.push(asset)
-			} else {
-				this.previewTargets.forEach(x => {
-					if(x.assetTypeId === assetTypeId) {
-						this.assets.splice(this.assets.indexOf(x), 1)
-						this.assets.push(x)
-
-						if(this.initialized) {
-							this.scene.avatar.removeAsset(x.assetId)
-							this.scene.avatar.addAsset(x.assetId, x.assetTypeId)
-						}
-					}
-				})
-			}
+		addAssetPreview(assetId, assetTypeId) {
+			if(this.previewMap[assetId]) { return }
+			const asset = this.previewMap[assetId] = { assetId, assetTypeId }
+			this.previewTargets.push(asset)
 
 			if(this.initialized) {
+				this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
+			}
+		}
+
+		removeAssetPreview(assetId) {
+			const asset = this.previewMap[assetId]
+			if(!asset) { return }
+
+			const index = this.previewTargets.indexOf(asset)
+			if(index !== -1) { this.previewTargets.splice(index, 1) }
+
+			if(this.initialized && !this.assetMap[assetId]) {
+				this.scene.avatar.removeAsset(assetId)
+			}
+		}
+
+		addAsset(assetId, assetTypeId, info) {
+			if(this.assetMap[assetId]) { return }
+			const asset = this.assetMap[assetId] = { assetId, assetTypeId, info: info || {} }
+			this.assets.push(asset)
+
+			if(this.initialized) {
+				this.previewTargets.forEach(x => {
+					if(x.assetTypeId === assetTypeId) {
+						this.scene.avatar.removeAsset(x.assetId)
+						this.scene.avatar.addAsset(x.assetId, x.assetTypeId)
+					}
+				})
+
 				this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
 			}
 		}
@@ -242,9 +255,6 @@ const RBXPreview = (() => {
 			if(!asset) { return }
 			delete this.assetMap[assetId]
 			this.assets.splice(this.assets.indexOf(asset), 1)
-
-			const index = this.previewTargets.indexOf(asset)
-			if(index !== -1) { this.previewTargets.splice(index, 1) }
 
 			if(this.initialized) {
 				this.scene.avatar.removeAsset(assetId)

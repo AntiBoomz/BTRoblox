@@ -281,7 +281,7 @@ const HoverPreview = (() => {
 					preview.container.remove()
 
 					while(lastPreviewedAssets.length) {
-						preview.removeAsset(lastPreviewedAssets.pop())
+						preview.removeAssetPreview(lastPreviewedAssets.pop())
 					}
 				}
 		
@@ -295,7 +295,7 @@ const HoverPreview = (() => {
 						}
 						self.$find(thumbContSelector).append(preview.container)
 
-						preview.addAsset(assetId, data.AssetTypeId, { previewTarget: true })
+						preview.addAssetPreview(assetId, data.AssetTypeId)
 						lastPreviewedAssets.push(assetId)
 					} else if(data.AssetTypeId === 32) {
 						AssetCache.loadText(assetId, text => {
@@ -310,7 +310,7 @@ const HoverPreview = (() => {
 									}
 									self.$find(thumbContSelector).append(preview.container)
 
-									preview.addAsset(itemId, json.AssetTypeId, { previewTarget: true })
+									preview.addAssetPreview(itemId, json.AssetTypeId)
 									lastPreviewedAssets.push(itemId)
 								}
 							}))
@@ -326,7 +326,7 @@ const HoverPreview = (() => {
 						preview.container.remove()
 
 						while(lastPreviewedAssets.length) {
-							preview.removeAsset(lastPreviewedAssets.pop())
+							preview.removeAssetPreview(lastPreviewedAssets.pop())
 						}
 					}
 				}, { once: true })

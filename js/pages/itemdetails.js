@@ -166,7 +166,7 @@ pageInit.itemdetails = function(assetId) {
 						lastAnimPromise = (lastAnimPromise || new Promise(x => preview.onInit(x))).then(loadAnim)
 					}
 				} else if(isAsset) {
-					preview.addAsset(id, typeId, { previewTarget: true })
+					preview.addAssetPreview(id, typeId)
 				}
 			}
 
