@@ -198,7 +198,11 @@
 		executeCheck()
 	}
 
-	chrome.alarms.onAlarm.addListener(checkResync)
+	if(IS_CHROME) {
+		chrome.alarms.onAlarm.addListener(checkResync)
+	} else if(window.chrome && window.chrome.alarms) {
+		chrome.alarms.clearAll()
+	}
 
 	const onUpdate = () => {
 		Settings.get(settings => {
@@ -206,21 +210,24 @@
 			if(wasEnabled !== isEnabled) {
 				wasEnabled = isEnabled
 				if(isEnabled) {
-					chrome.alarms.getAll(alarms => {
-						const alarm1 = alarms.find(x => x.name === "ShoutCheck")
-						const alarm2 = alarms.find(x => x.name === "ShoutCheck2")
+					if(IS_CHROME) {
+						chrome.alarms.getAll(alarms => {
+							const alarm1 = alarms.find(x => x.name === "ShoutCheck")
+							const alarm2 = alarms.find(x => x.name === "ShoutCheck2")
 
-						if(alarms.length !== 2 || !alarm1 || !alarm2 || Math.abs(alarm2.scheduledTime - alarm1.scheduledTime) < 29e3) {
-							chrome.alarms.clearAll(() => {
-								chrome.alarms.create("ShoutCheck", { periodInMinutes: 1, when: Date.now() + 30e3 })
-								chrome.alarms.create("ShoutCheck2", { periodInMinutes: 1, when: Date.now() + 60e3 })
-							})
-						}
-					})
+							if(alarms.length !== 2 || !alarm1 || !alarm2 || Math.abs(alarm2.scheduledTime - alarm1.scheduledTime) < 29e3) {
+								chrome.alarms.clearAll(() => {
+									chrome.alarms.create("ShoutCheck", { periodInMinutes: 1, when: Date.now() + 30e3 })
+									chrome.alarms.create("ShoutCheck2", { periodInMinutes: 1, when: Date.now() + 60e3 })
+								})
+							}
+						})
+					}
+
 					checkResync()
 				} else {
 					clearInterval(checkInterval)
-					chrome.alarms.clearAll()
+					if(IS_CHROME) { chrome.alarms.clearAll() }
 				}
 			}
 		})
