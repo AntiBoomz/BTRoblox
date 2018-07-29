@@ -18,25 +18,26 @@ API Docs
 * https://abuse.roblox.com/docs (temp offline)
 * https://accountsettings.roblox.com/docs
 * https://api.roblox.com/docs
+* https://assetdelivery.roblox.com/docs (new)
 * https://auth.roblox.com/docs
 * https://avatar.roblox.com/docs
-* https://badges.roblox.com/docs (new)
+* https://badges.roblox.com/docs
 * https://billing.roblox.com/docs
 * https://catalog.roblox.com/docs
 * https://chat.roblox.com/docs
 * https://develop.roblox.com/docs
-* https://friends.roblox.com/docs (new)
+* https://friends.roblox.com/docs
 * https://gamepersistence.roblox.com/docs (empty)
 * https://games.roblox.com/docs
 * https://groups.roblox.com/docs
 * https://inventory.roblox.com/docs
 * https://locale.roblox.com/docs
 * https://notifications.roblox.com/docs
-* https://points.roblox.com/docs (new)
+* https://points.roblox.com/docs
 * https://presence.roblox.com/docs
-* https://publish.roblox.com/docs (new)
+* https://publish.roblox.com/docs
 * https://textfilter.roblox.com/docs (empty)
-* https://thumbnails.roblox.com/docs (new)
+* https://thumbnails.roblox.com/docs
 
 <!--
 #### Roblox Subdomains
