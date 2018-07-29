@@ -5,6 +5,9 @@
 const AssetCache = (() => {
 	const resolveCache = {}
 	const fileCache = {}
+	const resolveQueue = []
+	let resolvePromise
+	let xsrfToken
 
 	const prefixUrl = getURL("")
 
@@ -21,9 +24,7 @@ const AssetCache = (() => {
 				return null
 			}
 
-			let entries = urlInfo.searchParams.entries()
-			if(IS_FIREFOX) { entries = entries.wrappedJSObject }
-			return Array.from(entries)
+			return urlInfo.searchParams
 		} catch(ex) { }
 
 		return null
@@ -43,16 +44,71 @@ const AssetCache = (() => {
 			throw new Error(`Invalid Asset Url: '${url}'`)
 		}
 
-		return resolveCache[url] = new Promise(resolve =>
-			MESSAGING.send("resolveAssetUrl", params, result => {
-				if(result.state !== "SUCCESS") {
-					console.error("resolveAssetUrl:", result, url)
-					return resolve(null)
-				}
+		const requestId = `${resolveQueue.length}`
 
-				resolve(result.url)
+		resolveQueue.push({
+			requestId,
+			assetId: params.has("id") ? params.get("id") : undefined,
+			version: params.has("version") ? params.get("version") : undefined,
+			assetVersionId: params.has("assetVersionId") ? params.get("assetVersionId") : undefined,
+			hash: params.has("hash") ? params.get("hash") : undefined,
+			userAssetId: params.has("userAssetId") ? params.get("userAssetId") : undefined
+		})
+
+		if(!resolvePromise) {
+			resolvePromise = new Promise((resolve, reject) => {
+				$.setImmediate(() => {
+					if(!xsrfToken) {
+						xsrfToken = getXsrfToken()
+					}
+
+					const resolveApiUrl = `https://assetdelivery.roblox.com/v1/assets/batch`
+					const info = {
+						method: "POST",
+						credentials: "include",
+						headers: {
+							"Content-Type": "application/json",
+							"Roblox-Place-Id": 0,
+							"X-CSRF-TOKEN": xsrfToken
+						},
+						body: JSON.stringify(resolveQueue)
+					}
+
+					resolveQueue.splice(0, resolveQueue.length)
+					resolvePromise = null
+
+					let didRetry = false
+					const tryFetch = () => fetch(resolveApiUrl, info).then(async resp => {
+						if(resp.ok) {
+							try { resolve(await resp.json()) }
+							catch(ex) { console.error(ex) }
+						} else {
+							if(!didRetry && resp.statusText.includes("Token Validation Failed")) {
+								xsrfToken = info.headers["X-CSRF-TOKEN"] = resp.headers.get("X-CSRF-TOKEN")
+								didRetry = true
+								return tryFetch()
+							}
+
+							console.error("resolveAssetUrl", resp.status, resp.statusText)
+						}
+						
+						reject()
+					})
+
+					tryFetch()
+				})
 			})
-		)
+		}
+
+		return resolveCache[url] = resolvePromise.then(json => {
+			const data = json.find(x => x.requestId === requestId)
+
+			if(data && data.location) {
+				return data.location.replace(/^http:/, "https:")
+			}
+
+			return Promise.reject()
+		})
 	}
 
 	function createMethod(constructor) {
@@ -120,12 +176,7 @@ const AssetCache = (() => {
 			const params = resolveAssetUrlParams(url)
 
 			if(params) {
-				for(let i = 0; i < params.length; i++) {
-					const [name, value] = params[i]
-					if(name.toLowerCase() === "id") {
-						return value
-					}
-				}
+				return params.get("id")
 			}
 
 			return null
