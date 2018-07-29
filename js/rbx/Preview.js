@@ -224,9 +224,8 @@ const RBXPreview = (() => {
 		removeAssetPreview(assetId) {
 			const asset = this.previewMap[assetId]
 			if(!asset) { return }
-
-			const index = this.previewTargets.indexOf(asset)
-			if(index !== -1) { this.previewTargets.splice(index, 1) }
+			delete this.previewMap[assetId]
+			this.previewTargets.splice(this.previewTargets.indexOf(asset), 1)
 
 			if(this.initialized && !this.assetMap[assetId]) {
 				this.scene.avatar.removeAsset(assetId)
