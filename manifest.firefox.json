@@ -32,7 +32,6 @@
 	"permissions": [
 		"*://*.roblox.com/",
 		"*://*.rbxcdn.com/",
-		"alarms",
 		"clipboardWrite",
 		"contextMenus",
 		"notifications",
