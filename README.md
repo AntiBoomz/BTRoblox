@@ -26,6 +26,7 @@ API Docs
 * https://catalog.roblox.com/docs
 * https://chat.roblox.com/docs
 * https://develop.roblox.com/docs
+* https://followings.roblox.com/docs (temp offline)
 * https://friends.roblox.com/docs
 * https://gamepersistence.roblox.com/docs (empty)
 * https://games.roblox.com/docs
