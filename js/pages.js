@@ -53,20 +53,26 @@ function getProductInfo(assetId) {
 	return productCache[assetId] = productCache[assetId] || getUncachedProductInfo(assetId)
 }
 
+function getXsrfToken() {
+	const x = Array.prototype.find.call(
+		$.all("body > script:not([src])"),
+		y => y.textContent.includes("XsrfToken.setToken")
+	)
+
+	if(x) {
+		return x.textContent.replace(/^[^]*XsrfToken\.setToken\('([^']+)'\)[^]*$/, "$1")
+	}
+
+	return null
+}
+
 let cachedXsrfToken
 function csrfFetch(url, init) {
 	if(!init) { init = {} }
 	if(!init.headers) { init.headers = {} }
 
-	if(cachedXsrfToken === undefined) {
-		cachedXsrfToken = null
-		document.$watch("body").$then().$watchAll("script", (script, stop) => {
-			const match = script.innerHTML.match(/XsrfToken.setToken\('([^']+)'\)/)
-			if(match) {
-				cachedXsrfToken = match[1]
-				stop()
-			}
-		})
+	if(!cachedXsrfToken) {
+		cachedXsrfToken = getXsrfToken()
 	}
 
 	init.headers["X-CSRF-TOKEN"] = cachedXsrfToken
