@@ -1089,26 +1089,6 @@ const RBXAvatar = (() => {
 				this.model.position.y = totalOffset
 			}
 
-			const headScale = this.playerType === "R15" ? this.scales.head : 1
-			this.accessories.forEach(acc => {
-				acc.obj.scale.set(...acc.scale).multiplyScalar(headScale)
-
-				// Staying faithful to source material
-				// And coding in some bugs :D
-
-				// Bug #1: Attachmentless accessories (defaultHatAttachment) do not get position-scaled
-				if(acc.att) {
-					acc.obj.position.setFromMatrixPosition(acc.attCFrame).multiplyScalar(headScale)
-					acc.obj.rotation.setFromRotationMatrix(acc.attCFrame)
-				} else {
-					acc.obj.position.setFromMatrixPosition(acc.cframe)
-					acc.obj.rotation.setFromRotationMatrix(acc.cframe)
-				}
-
-				// Bug #2: Mesh.Offset doesn't get position-scaled
-				if(acc.offset) { acc.obj.position.add(acc.offset) }
-			})
-
 			Object.entries(this.parts).forEach(([partName, part]) => {
 				const change = changedParts[partName]
 				const meshId = change && change.meshId || part.rbxDefaultMesh
@@ -1165,6 +1145,27 @@ const RBXAvatar = (() => {
 					setImageSource(overImg, overImg.defaultSrc || "")
 					if(overTexId) { AssetCache.loadImage(true, overTexId, url => overImg.rbxTexId === overTexId && setImageSource(overImg, url)) }
 				}
+			})
+			
+			this.accessories.forEach(acc => {
+				const parent = acc.att ? acc.att.parent : this.parts.Head
+				const scale = parent ? parent.rbxScaleMod : new THREE.Vector3(1, 1, 1)
+				acc.obj.scale.set(...acc.scale).multiply(scale)
+
+				// Staying faithful to source material
+				// And coding in some bugs :D
+
+				// Bug #1: Attachmentless accessories (defaultHatAttachment) do not get position-scaled
+				if(acc.att) {
+					acc.obj.position.setFromMatrixPosition(acc.attCFrame).multiply(scale)
+					acc.obj.rotation.setFromRotationMatrix(acc.attCFrame)
+				} else {
+					acc.obj.position.setFromMatrixPosition(acc.cframe)
+					acc.obj.rotation.setFromRotationMatrix(acc.cframe)
+				}
+
+				// Bug #2: Mesh.Offset doesn't get position-scaled
+				if(acc.offset) { acc.obj.position.add(acc.offset) }
 			})
 
 			Object.entries(this.joints).forEach(([jointName, joint]) => {
