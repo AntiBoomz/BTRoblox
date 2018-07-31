@@ -194,7 +194,7 @@
 
 	const checkResync = () => {
 		clearInterval(checkInterval)
-		checkInterval = setInterval(executeCheck, 10e3)
+		checkInterval = setInterval(executeCheck, 10.1e3)
 		executeCheck()
 	}
 
