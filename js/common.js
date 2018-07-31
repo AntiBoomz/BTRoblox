@@ -242,7 +242,7 @@ const MESSAGING = (() => {
 					if(msg.final) {
 						delete this.callbacks[msg.id]
 						if(Object.keys(this.callbacks).length === 0) {
-							this.portTimeout = setTimeout(doDisconnect, 5 * 60e3)
+							this.portTimeout = setTimeout(doDisconnect, 1 * 60e3)
 						}
 
 						if(msg.cancel) { return }
@@ -252,7 +252,7 @@ const MESSAGING = (() => {
 				})
 
 				port.onDisconnect.addListener(doDisconnect)
-				this.portTimeout = setTimeout(doDisconnect, 5 * 60e3)
+				this.portTimeout = setTimeout(doDisconnect, 1 * 60e3)
 			}
 
 			const info = { name, data }
