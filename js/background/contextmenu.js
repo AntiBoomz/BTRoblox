@@ -34,7 +34,7 @@
 			const assetId = info.linkUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library|badges|game-pass)\/)(\d+).*$/i, "$1")
 			copyToClipboard(assetId)
 		} else if(menuId === "placeLink") {
-			const placeId = info.linkUrl.replace(/^.*(?:[&?]placeid=)(\d+).*$/i, "$1")
+			const placeId = info.linkUrl.replace(/^.*(?:[&?]placeid=|\/games\/)(\d+).*$/i, "$1")
 			copyToClipboard(placeId)
 		} else if(menuId === "userLink") {
 			const userId = info.linkUrl.replace(/^.*(?:\/users\/)(\d+).*$/i, "$1")
