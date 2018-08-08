@@ -158,7 +158,7 @@ function GetAssetFileType(assetTypeId, buffer) {
 	}
 }
 
-function createPager(noSelect) {
+function createPager(noSelect, hideWhenEmpty) {
 	const pager = html`
 	<div class=btr-pager-holder>
 		<ul class=pager>
@@ -214,6 +214,10 @@ function createPager(noSelect) {
 			setMaxPage(maxPage) {
 				this.maxPage = maxPage
 				tot.textContent = maxPage
+
+				if(hideWhenEmpty) {
+					pager.style.display = maxPage < 2 ? "none" : ""
+				}
 
 				this.toggleNext(this.curPage < maxPage)
 			}

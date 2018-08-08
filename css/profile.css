@@ -162,8 +162,15 @@
 /* Stats */
 
 .btr-profile .profile-stats-container {
-	border-top: 1px solid #B8B8B8;
-	margin-top: 6px;
+	border-top: 1px solid #E3E3E3;
+	border-bottom: 1px solid #E3E3E3;
+	margin-top: 10px;
+}
+
+/* About Footer */
+
+.btr-profile .profile-about-footer {
+	border: none;
 }
 
 /* Roblox Badges */
@@ -388,71 +395,71 @@
 
 .btr-profile .btr-profile-favorites .game-card {
 	float: left;
-	width: 33.33%;
+	width: 33.333%;
 	height: auto;
-	padding: 0 5px;
+	padding: 0 4px;
+	margin-top: 2px;
+	margin-bottom: 8px;
 }
 
-.btr-profile .btr-profile-favorites .game-card-thumb-container,
-.btr-profile .btr-profile-favorites .game-card-thumb {
+.btr-profile-favorites .game-card-container {
+	border: 1px solid #E3E3E3;
+}
+
+.btr-profile-favorites .game-card-thumb-container {
+	border-bottom: 1px solid #E3E3E3;
+}
+
+.btr-profile-favorites .game-card-thumb-container,
+.btr-profile-favorites .game-card-thumb-container .game-card-thumb {
 	width: 100%;
 	height: auto;
 }
 
-.btr-profile .btr-profile-favorites .game-card-thumb.unloaded {
+.btr-profile-favorites .game-card-thumb-container .game-card-thumb.unloaded {
 	height: 0;
 	margin-bottom: 100%;
 }
 
-.btr-profile .btr-profile-favorites .game-card-name-secondary {
-	margin-top: 6px;
-	margin-bottom: 4px;
-	height: 16px;
+.btr-profile-favorites .card-item .btr-creator-link {
+	display: inline-block;
+	vertical-align: sub;
+	max-width: calc(100% - 16px)
 }
 
-.btr-profile .btr-profile-favorites .game-card-name-secondary .text-label,
-.btr-profile .btr-profile-favorites .game-card-name-secondary .text-link {
-	float: left;
-}
-
-.btr-profile .btr-profile-favorites .game-card-name-secondary .text-link {
-	width: calc(100% - 24px);
-	margin-left: 3px;
-}
-
-.btr-profile .btr-profile-favorites .input-group-btn {
+.btr-profile-favorites .input-group-btn {
 	float: right;
 	width: 160px;
 	margin-right: 6px;
 	margin-top: -2px;
 }
 
-.btr-profile .btr-profile-favorites .input-dropdown-btn {
+.btr-profile-favorites .input-dropdown-btn {
 	padding: 4px 10px;
 }
 
-.btr-profile .btr-profile-favorites .input-dropdown-btn .rbx-selection-label {
+.btr-profile-favorites .input-dropdown-btn .rbx-selection-label {
 	line-height: 20px;
 }
 
-.btr-profile .btr-profile-favorites .input-dropdown-btn span[class^="icon"] {
+.btr-profile-favorites .input-dropdown-btn span[class^="icon"] {
 	margin-top: 2px;
 }
 
-.btr-profile .btr-profile-favorites .dropdown-menu {
+.btr-profile-favorites .dropdown-menu {
 	max-height: none;
 }
 
-.btr-profile .btr-profile-favorites .dropdown-menu li a {
+.btr-profile-favorites .dropdown-menu li a {
 	padding: 6px 10px;
 }
 
 /* Groups */
 
-.btr-profile .btr-profile-groups .game-card {
+.btr-profile-groups .game-card {
 	float: left;
 	width: 25%;
-	padding: 0 5px;
+	padding: 0 4px;
 	margin-top: 2px;
 	margin-bottom: 8px;
 	height: auto;
@@ -460,17 +467,25 @@
 	display: none;
 }
 
-.btr-profile .btr-profile-groups .game-card.visible {
+.btr-profile-groups .game-card.visible {
 	display: block;
 }
 
-.btr-profile .btr-profile-groups .game-card-thumb-container,
-.btr-profile .btr-profile-groups .game-card-thumb {
+.btr-profile-groups .game-card-container {
+	border: 1px solid #E3E3E3;
+}
+
+.btr-profile-groups .game-card-thumb-container {
+	border-bottom: 1px solid #E3E3E3;
+}
+
+.btr-profile-groups .game-card-thumb-container,
+.btr-profile-groups .game-card-thumb-container .game-card-thumb {
 	width: 100%;
 	height: auto;
 }
 
-.btr-profile .btr-profile-groups .game-card-thumb.unloaded {
+.btr-profile-groups .game-card-thumb-container .game-card-thumb.unloaded {
 	height: 0;
 	margin-bottom: 100%;
 }

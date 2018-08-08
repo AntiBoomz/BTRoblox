@@ -4,35 +4,35 @@ pageInit.profile = function(userId) {
 	if(!settings.profile.enabled) { return }
 
 	const left = html`
-	<div class="btr-profile-left">
+	<div class=btr-profile-left>
 		<div class="btr-profile-about profile-about">
-			<div class="container-header"><h3>About</h3></div>
-			<div class="section-content">
-				<div class="placeholder-status" style="display:none"></div>
-				<div class="placeholder-avatar" style="display:none"></div>
-				<div class="placeholder-desc" style="display:none"></div>
-				<div class="placeholder-stats" style="display:none"></div>
-				<div class="placeholder-footer" style="display:none"></div>
+			<div class=container-header><h3>About</h3></div>
+			<div class=section-content>
+				<div class=placeholder-status style=display:none></div>
+				<div class=placeholder-avatar style=display:none></div>
+				<div class=placeholder-desc style=display:none></div>
+				<div class=placeholder-stats style=display:none></div>
+				<div class=placeholder-footer style=display:none></div>
 			</div>
 		</div>
-		<div class="placeholder-robloxbadges">
-			<div class="container-header"><h3>Roblox Badges</h3></div>
-			<div class="section-content">
+		<div class=placeholder-robloxbadges>
+			<div class=container-header><h3>Roblox Badges</h3></div>
+			<div class=section-content>
 				<div class="section-content-off btr-section-content-off">This user has no Roblox Badges</div>
 			</div>
 		</div>
-		<div class="btr-profile-playerbadges">
-			<div class="container-header"><h3>Player Badges</h3></div>
-			<div class="section-content">
-				<ul class="hlist">
+		<div class=btr-profile-playerbadges>
+			<div class=container-header><h3>Player Badges</h3></div>
+			<div class=section-content>
+				<ul class=hlist>
 					<div class="section-content-off btr-section-content-off">This user has no Player Badges</div>
 				</ul>
 			</div>
 		</div>
-		<div class="btr-profile-groups">
-			<div class="container-header"><h3>Groups</h3></div>
-			<div class="section-content">
-				<ul class="hlist">
+		<div class=btr-profile-groups>
+			<div class=container-header><h3>Groups</h3></div>
+			<div class=section-content>
+				<ul class=hlist>
 					<div class="section-content-off btr-section-content-off">This user is not in any Groups</div>
 				</ul>
 			</div>
@@ -40,25 +40,25 @@ pageInit.profile = function(userId) {
 	</div>`
 
 	const right = html`
-	<div class="btr-profile-right">
-		<div class="placeholder-games">
-			<div class="container-header"><h3>Games</h3></div>
-			<div class="section-content">
+	<div class=btr-profile-right>
+		<div class=placeholder-games>
+			<div class=container-header><h3>Games</h3></div>
+			<div class=section-content>
 				<div class="section-content-off btr-section-content-off">This user has no active Games</div>
 			</div>
 		</div>
-		<div class="placeholder-friends">
-			<div class="container-header"><h3>Friends</h3></div>
-			<div class="section-content">
+		<div class=placeholder-friends>
+			<div class=container-header><h3>Friends</h3></div>
+			<div class=section-content>
 				<div class="section-content-off btr-section-content-off">This user has no Friends</div>
 			</div>
 		</div>
-		<div class="btr-profile-favorites">
-			<div class="container-header">
+		<div class=btr-profile-favorites>
+			<div class=container-header>
 				<h3>Favorite Places</h3>
-				<a href="./favorites" class="btn-secondary-xs btn-fixed-width btn-more">Favorites</a>
+				<a href=./favorites class="btn-secondary-xs btn-fixed-width btn-more">Favorites</a>
 			</div>
-			<div class="section-content">
+			<div class=section-content>
 				<ul class="hlist game-cards">
 					<div class="section-content-off btr-section-content-off">This user has no favorite Places</div>
 				</ul>
@@ -67,9 +67,9 @@ pageInit.profile = function(userId) {
 	</div>`
 
 	const bottom = html`
-	<div class="btr-profile-bottom">
-		<div class="placeholder-collections" style="display:none"></div>
-		<div class="placeholder-inventory" style="display:none"></div>
+	<div class=btr-profile-bottom>
+		<div class=placeholder-collections style=display:none></div>
+		<div class=placeholder-inventory style=display:none></div>
 	</div>`
 	
 	document.$watch("body", body => body.classList.add("btr-profile")).$watch(".profile-container").$then()
@@ -172,7 +172,6 @@ pageInit.profile = function(userId) {
 			games.classList.add("section")
 
 			const grid = games.$find(".game-grid")
-			grid.classList.add("section-content")
 			grid.setAttribute("ng-cloak", "")
 
 			const cont = html`<div id="games-switcher" class="section-content" ng-hide="isGridOn"></div>`
@@ -185,7 +184,7 @@ pageInit.profile = function(userId) {
 			cont.append(hlist)
 
 			const pageSize = 10
-			const pager = createPager()
+			const pager = createPager(false, true)
 			hlist.after(pager)
 
 			let selected
@@ -515,7 +514,7 @@ pageInit.profile = function(userId) {
 		hlist.setAttribute("ng-non-bindable", "")
 		const pageSize = 8
 
-		const pager = createPager()
+		const pager = createPager(false, true)
 		hlist.after(pager)
 
 		function loadPage(page) {
@@ -540,16 +539,18 @@ pageInit.profile = function(userId) {
 				json.Groups.forEach((item, index) => {
 					const parent = html`
 					<li class="list-item game-card ${index < pageSize ? "visible" : ""}">
-						<a class="card-item game-card-container" href="${item.GroupUrl}">
-							<div class="game-card-thumb-container">
-								<img class="game-card-thumb card-thumb unloaded" src="${item.Emblem.Url}">
-							</div>
-							<div class="text-overflow game-card-name" title="${item.Name}">${item.Name}</div>
+						<div class="card-item game-card-container">
+							<a href="${item.GroupUrl}" title="${item.Name}">
+								<div class=game-card-thumb-container>
+									<img class="game-card-thumb card-thumb unloaded" src="${item.Emblem.Url}">
+								</div>
+								<div class="text-overflow game-card-name">${item.Name}</div>
+							</a>
 							<div class="text-overflow game-card-name-secondary">
 								${item.Members} ${item.Members === 1 ? "Member" : "Members"}
 							</div>
 							<div class="text-overflow game-card-name-secondary">${item.Rank}</div>
-						</a>
+						</div>
 					</li>`
 
 					const thumb = parent.$find(".card-thumb")
@@ -572,7 +573,7 @@ pageInit.profile = function(userId) {
 		header.textContent = "Favorite Places"
 
 		const pageSize = 6
-		const pager = createPager()
+		const pager = createPager(false, true)
 		hlist.after(pager)
 
 		let isLoading = false
@@ -648,9 +649,9 @@ pageInit.profile = function(userId) {
 										</div>
 										<div class="text-overflow game-card-name" title="${data.Item.Name}" ng-non-bindable>${data.Item.Name}</div>
 									</a>
-									<div class="game-card-name-secondary">
+									<div class="game-card-name-secondary btr-creator-link-container">
 										<span class="text-label xsmall">By </span>
-										<a class="text-link xsmall text-overflow" title="${data.Creator.Name}" href="${data.Creator.CreatorProfileLink}">
+										<a class="text-link xsmall text-overflow btr-creator-link" title="${data.Creator.Name}" href="${data.Creator.CreatorProfileLink}">
 											${data.Creator.Name}
 										</a>
 									</div>
