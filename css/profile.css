@@ -421,6 +421,10 @@
 	margin-bottom: 100%;
 }
 
+.btr-profile-favorites .game-card-name-secondary {
+	padding-bottom: 2px;
+}
+
 .btr-profile-favorites .card-item .btr-creator-link {
 	display: inline-block;
 	vertical-align: sub;
