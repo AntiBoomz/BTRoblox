@@ -331,7 +331,7 @@ pageInit.profile = function(userId) {
 				})
 
 				loggedInUserPromise.then(loggedInUser => {
-					if(userId !== loggedInUser) { return }
+					if(+userId !== +loggedInUser) { return }
 
 					const dropdown = html`
 					<div class="btr-game-dropdown">
@@ -476,7 +476,7 @@ pageInit.profile = function(userId) {
 					hlist.$empty()
 
 					if(json.Data.Items.length === 0) {
-						const text = `${userId === loggedInUser ? "You have" : "This user has"} no badges`
+						const text = `${+userId === +loggedInUser ? "You have" : "This user has"} no badges`
 						hlist.append(html`<div class="section-content-off btr-section-content-off">${text}</div>`)
 					} else {
 						json.Data.Items.forEach(data => {
