@@ -381,6 +381,11 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	padding-left: 20px;
 }
 
+.btr-explorer-item-container {
+	display: flex;
+	align-items: center;
+}
+
 .btr-explorer-item {
 	flex: 1 0 auto;
 	display: inline-flex;
