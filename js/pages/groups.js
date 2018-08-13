@@ -144,7 +144,7 @@ pageInit.groupadmin = function() {
 			.$watch(".summary .summary-container").$then(x =>
 				x.$watchAll(".columns-container", cont => {
 					cont.$findAll(".robux").forEach(label => {
-						const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+						const usd = RobuxToUSD(label.textContent.replace(/,/g, "").replace(/^\s*\((.*)\)\s*$/, "$1"))
 						label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
 					})
 
