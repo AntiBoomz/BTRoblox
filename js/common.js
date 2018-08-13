@@ -28,7 +28,8 @@ const DEFAULT_SETTINGS = {
 		showBlogFeed: { default: true, value: true },
 
 		robuxToDollars: { default: true, value: false },
-		hoverPreview: { default: true, value: true }
+		hoverPreview: { default: true, value: true },
+		hoverPreviewMode: { default: true, value: "always" }
 	},
 	catalog: {
 		enabled: { default: true, value: true }

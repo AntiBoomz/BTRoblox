@@ -298,6 +298,21 @@ const HoverPreview = (() => {
 				const debounce = ++debounceCounter
 				getProductInfo(assetId).then(data => {
 					if(self !== currentTarget || debounceCounter !== debounce) { return }
+					let loadPreview = false
+
+					switch(settings.itemdetails.itemPreviewerMode) {
+					default: case "default":
+					case "always":
+						loadPreview = true
+						break
+					case "animations":
+						loadPreview = AnimationPreviewAssetTypeIds.includes(data.AssetTypeId) || PackageAssetTypeIds.includes(data.AssetTypeId) || assetTypeId === 32
+						break
+					case "never":
+						break
+					}
+
+					if(!loadPreview) { return }
 	
 					if(WearableAssetTypeIds.includes(data.AssetTypeId)) {
 						if(!preview) {
