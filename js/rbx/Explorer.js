@@ -1,22 +1,34 @@
 "use strict"
 
 {
-	const CategoryOrder = $.toDict((x, v, i) => x[v] = i,
-		"Appearance", "Data", "Derived Data", "Shape", "Goals", "Thrust", "Turn", "Camera", "Behavior", "Image", "Compliance", "AlignOrientation",
-		"AlignPosition", "BallSocket", "Limits", "TwistLimits", "Hinge", "Servo", "Motor", "Derived", "LineForce", "Rod", "Rope", "Cylinder",
-		"AngularLimits", "AngularServo", "AngularMotor", "Slider", "Spring", "Torque", "VectorForce", "Attachments", "Axes", "Input", "Text",
-		"Scrolling", "Localization", "State", "Control", "Game", "Teams", "Forcefield", "Part ", "Surface Inputs", "Surface", "Motion", "Particles",
+	const GroupOrders = [
+		"Appearance", "Data", "Shape", "Goals", "Thrust", "Turn", "Camera", "Behavior", "Image", "Compliance",
+		"AlignOrientation", "AlignPosition", "BallSocket", "Limits", "TwistLimits", "Hinge", "Servo",
+		"Motor", "LineForce", "Rod", "Rope", "Cylinder", "AngularLimits", "AngularServo", "AngularMotor", "Slider",
+		"Spring", "Torque", "VectorForce", "Attachments", "Input", "Text", "Scrolling", "Localization", "State",
+		"Control", "Game", "Teams", "Forcefield", "Part ", "Surface Inputs", "Surface", "Motion", "Particles",
 		"Emission", "Parts"
-	)
-
+	]
+	
 	const RenamedProperties = {
-		size: "Size", scale: "Scale", shape: "Shape", archivable: "Archivable", Color3uint8: "Color", formFactorRaw: "FormFactor", Health_XML: "Health",
-		xmlRead_MaxDistance_3: "MaxDistance"
+		Color3uint8: "Color", formFactorRaw: "FormFactor", Health_XML: "Health", xmlRead_MaxDistance_3: "MaxDistance",
+		shape: "Shape", size: "Size", formFactor: "FormFactor", archivable: "Archivable", style: "Style"
 	}
 
 	const HiddenProperties = $.toDict(null,
-		"PhysicsData", "MeshData", "ChildData", "ModelInPrimary", "FormFactor", "Elasticity", "Friction",
-		"LODX", "LODY", "Tags", "ScriptGuid"
+		"Tags", // Instance
+		"FormFactor", "Elasticity", "Friction", // Parts
+		"PhysicsData", "MeshData", "ChildData", // Meshparts / Unions
+		"ModelInPrimary", // Model
+		"LODX", "LODY", // Mesh
+		"ScriptGuid", // Script
+		"InternalHeadScale", "InternalBodyScale", // Humanoid
+		"PlayCount", // Sound
+		"UnionOperation.AssetId", "UnionOperation.InitialSize", // Unions
+
+		// Super legacy stuff
+		"Model.Controller", "Part.Controller",
+		"ControllerFlagShown", "DraggingV1",
 	)
 
 	function fixNum(v) { return Math.round(v * 1e3) / 1e3 }
@@ -90,14 +102,14 @@
 			const groupMap = {}
 			Object.entries(target.Properties).forEach(([name, prop]) => {
 				name = RenamedProperties[name] || name
-				if(HiddenProperties[name]) { return }
+				if(HiddenProperties[name] || HiddenProperties[`${target.ClassName}.${name}`]) { return }
 
 				const group = ApiDump.getPropertyGroup(target.ClassName, name)
-				if(group === "Hidden") { return }
+				if(group === "HIDDEN") { return }
 				
 				let groupData = groupMap[group]
 				if(!groupData) {
-					const order = CategoryOrder[group]
+					const order = GroupOrders.indexOf(group)
 					groupData = groupMap[group] = {
 						Name: (typeof order !== "number" && IS_DEV_MODE) ? `${group} (Missing Order)` : group,
 						Order: typeof order === "number" ? order : 1e3 + groups.length,
@@ -124,7 +136,11 @@
 					const valueItem = html`<div class=btr-property-value></div>`
 
 					const value = prop.value
-					switch(prop.type) {
+					let type = prop.type
+
+					if(name === "BrickColor" && type === "int") { type = "BrickColor" }
+
+					switch(type) {
 					case "int64": {
 						valueItem.textContent = value
 						break
@@ -182,7 +198,7 @@
 						break
 					}
 					case "BrickColor":
-						valueItem.textContent = ApiDump.getBrickColorName(value) || String(value)
+						valueItem.textContent = ApiDump.getBrickColorName(value) || String(value) + " (Unknown BrickColor)"
 						break
 					case "Enum":
 						valueItem.textContent = ApiDump.getPropertyEnumName(target.ClassName, name, value) || `Enum ${value}`

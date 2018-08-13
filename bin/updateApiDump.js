@@ -12,21 +12,17 @@ const invalidClasses = toDict(
 	"ButtonBindingWidget", "InputObject", "Mouse", "Pages", "Plugin", "PluginAction",
 	"PluginManager", "GenericSettings", "StatsItem", "Toolbar", "ScriptDebugger",
 	"GlobalDataStore", "NetworkMarker", "Path", "RenderingTest", "AnimationTrack",
-	"PlayerGui",
-
-	// Deprecated stuff I don't really care about
-	"CustomEvent", "CustomEventReceiver", "ReflectionMetadata", "ReflectionMetadataClasses",
+	"PlayerGui", "NetworkPeer", "DebuggerManager", "PluginGui", "DockWidgetPluginGui",
+	"GuiRoot", "NetworkReplicator", "ReflectionMetadata", "ReflectionMetadataClasses",
 	"ReflectionMetadataEnums", "ReflectionMetadataEvents", "ReflectionMetadataFunctions",
 	"ReflectionMetadataItem", "ReflectionMetadataClass", "ReflectionMetadataEnum", "ReflectionMetadataEnumItem",
 	"ReflectionMetadataMember", "ReflectionMetadataProperties", "ReflectionMetadataYieldFunctions",
-	"StarterGear", "Feature",
+	"ReflectionMetadataCallbacks", "TextFilterResult", "Translator", "TweenBase", "Theme", "PartOperationAsset",
+	"Controller",
 
-	// Service level stuff
-	"ServiceProvider", "NetworkPeer"
-)
-const invalidProps = toDict(
-	"formFactor", "className", "archivable", "angularvelocity", "maxTorque", "force", "cframe", "maxForce",
-	"position", "location", "velocity", "maxHealth", "brickColor", "size"
+	// Settings
+	"GameSettings", "LuaSettings", "DebugSettings", "PhysicsSettings", "Studio", "NetworkSettings", "RenderSettings",
+	"TaskScheduler", "Selection"
 )
 
 function doStuff(data, rmd) {
@@ -35,7 +31,8 @@ function doStuff(data, rmd) {
 	const validClasses = []
 	const validEnums = []
 	const validEnumIndexDict = {}
-	const validCats = ["Data"]
+	const validCats = [{ name: "Appearance", count: 0, id: 0 }]
+	const catMap = { [validCats[0].name]: validCats[0] }
 
 	const regex = /class="ReflectionMetadataClass">\s+<Properties>((?:(?!<\/Properties>)[^])+)/g
 	const rmdData = {}
@@ -55,7 +52,6 @@ function doStuff(data, rmd) {
 		}
 	}
 
-	const catUses = {}
 	data.Enums.forEach(x => enumDict[x.Name] = x)
 
 	data.Classes.forEach(x => {
@@ -69,44 +65,37 @@ function doStuff(data, rmd) {
 
 		const validMembers = x.ValidMembers = []
 
-		if(!x.Invalid) {
-			x.Members.forEach(y => {
-				if(y.MemberType !== "Property") { return }
-				if(invalidProps[y.Name]) { return }
+		x.Members.forEach(y => {
+			if(y.MemberType !== "Property" || !y.Serialization.CanLoad || y.Tags && y.Tags.includes("Hidden")) { return }
 
-				catUses[y.Category] = catUses[y.Category] || []
-				if(!catUses[y.Category].includes(x.Name)) {
-					catUses[y.Category].push(x.Name)
+			if(!catMap[y.Category]) {
+				const cat = { name: y.Category, count: 0 }
+				validCats.push(cat)
+				catMap[cat.name] = cat
+			}
+
+			const cat = catMap[y.Category]
+			cat.count++
+
+			const enumInfo = enumDict[y.ValueType.Name]
+			if(enumInfo) {
+				let enumId = validEnumIndexDict[y.ValueType.Name]
+				if(typeof enumId !== "number") {
+					enumId = validEnumIndexDict[y.ValueType.Name] = validEnums.push(enumInfo) - 1
 				}
 
-				let catId = validCats.indexOf(y.Category)
-				if(catId === -1) { catId = validCats.push(y.Category) - 1 }
-
-				const enumInfo = enumDict[y.ValueType.Name]
-				if(enumInfo) {
-					let enumId = validEnumIndexDict[y.ValueType.Name]
-					if(typeof enumId !== "number") {
-						enumId = validEnumIndexDict[y.ValueType.Name] = validEnums.push(enumInfo) - 1
-					}
-
-					enumInfo.uses = enumInfo.uses || []
-					enumInfo.uses.push(`${x.Name}.${y.Name}`)
-
-					validMembers.push({
-						Name: y.Name,
-						Cat: catId,
-						Enum: enumId
-					})
-				} else {
-					if(catId > 0) {
-						validMembers.push({
-							Name: y.Name,
-							Cat: catId
-						})
-					}
-				}
-			})
-		}
+				validMembers.push({
+					Name: y.Name,
+					Cat: cat,
+					Enum: enumId
+				})
+			} else {
+				validMembers.push({
+					Name: y.Name,
+					Cat: cat
+				})
+			}
+		})
 
 		x.rmd = rmdData[x.Name]
 
@@ -120,25 +109,19 @@ function doStuff(data, rmd) {
 		}
 	})
 
-	/*
-	Object.entries(catUses).forEach(([cat, uses]) => {
-		console.log(`${cat}: ${uses.join(", ")}\n`)
-	})
-	*/
+	classes.Instance.ValidMembers.push(
+		{ Name: "ClassName", Cat: catMap.Data },
+		{ Name: "Archivable", Cat: catMap.Behavior }
+	)
 
-	/*
-	Object.values(enumDict).forEach(x => {
-		if(x.uses) {
-			console.log(`${x.Name}: ${x.uses.join(", ")}`)
-		}
-	})
-	*/
+	const usedCats = validCats.filter(x => x.count > 0)
+	usedCats.forEach((x, i) => x.id = i)
 
-	const finalClasses = validClasses.map(x => `["${x.Name}"${x.SubIndex ? `,${x.SubIndex}` : ""}${x.Empty ? "" : `,{${x.ValidMembers.map(y => `${y.Name}:${"Enum" in y ? `[${y.Enum ? `${y.Cat || ""},${y.Enum}` : ""}]` : `${y.Cat}`}`).join(",")}}${!x.rmd ? "" : `,${"icon" in x.rmd ? `[${"order" in x.rmd ? x.rmd.order : ""},${x.rmd.icon}]` : x.rmd.order}`}`}]`).join(",")
+	const finalClasses = validClasses.map(x => `["${x.Name}"${x.SubIndex ? `,${x.SubIndex}` : ""}${x.Empty ? "" : `,${x.ValidMembers.length === 0 ? "" : `{${x.ValidMembers.map(y => `${y.Name}:${"Enum" in y ? `[${y.Enum ? `${y.Cat.id || ""},${y.Enum}` : ""}]` : `${y.Cat.id}`}`).join(",")}}`}${!x.rmd ? "" : `,${"icon" in x.rmd ? `[${"order" in x.rmd ? x.rmd.order : ""},${x.rmd.icon}]` : x.rmd.order}`}`}]`).join(",")
 	const finalEnums = validEnums.map(x => `["${x.Name}",${x.Items.sort((a, b) => a.Value - b.Value)[x.Items.length - 1].Value < x.Items.length * 4 ? `[${x.Items.map((y, yi) => `"${y.Name}"${",".repeat((x.Items[yi + 1] || y).Value - y.Value)}`).join("")}]` : `{${x.Items.map(y => `${y.Value}:"${y.Name}"`).join(",")}}`}]`).join(",")
-	const finalCats = `["${validCats.join(`","`)}"]`
+	const finalCats = `"${usedCats.map(x => x.name).join(`","`)}"`
 
-	fs.writeFileSync("output.js", `const Data = {\n\tCategories: ${finalCats},\n\tEnums: [\n\t\t${finalEnums}\n\t],\n\tClasses: [\n\t\t${finalClasses}\n\t]\n}`)
+	fs.writeFileSync("output.js", `/* eslint-disable */\n"use strict";\n\nconst Data = {\n\tCategories: [\n\t\t${finalCats}\n\t],\n\tEnums: [\n\t\t${finalEnums}\n\t],\n\tClasses: [\n\t\t${finalClasses}\n\t]\n}`)
 	console.log("Done")
 }
 
