@@ -141,8 +141,8 @@ pageInit.groupadmin = function() {
 		})
 		
 		document.$watch("#revenue").$then()
-			.$watch(".summary .summary-container").$then()
-				.$watchAll(".columns-container", cont => {
+			.$watch(".summary .summary-container").$then(x =>
+				x.$watchAll(".columns-container", cont => {
 					cont.$findAll(".robux").forEach(label => {
 						const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
 						label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
@@ -154,14 +154,15 @@ pageInit.groupadmin = function() {
 						label.append(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
 					})
 				})
-			.$back()
-			.$watch(".line-item tbody").$then()
-				.$watchAll("tr", row => {
+			)
+			.$watch(".line-item tbody").$then(x =>
+				x.$watchAll("tr", row => {
 					const label = row.$find(".robux")
 					if(!label) { return }
 					const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
 					label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
 				})
+			)
 	}
 
 	document.$watch("#JoinRequests").$then()

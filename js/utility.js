@@ -110,11 +110,8 @@ const $ = function(selector) { return $.find(document, selector) }
 	const watchAllSelectorRegex = /^((?:#|\.)?[\w-]+)$/
 	const watcherProto = {
 		$watch(...args) {
-			let finishResolve
-			const finishPromise = new Promise(resolve => finishResolve = resolve)
-
-			this.targetPromise.then(target => {
-				target.$watch(...args).finishPromise.then(finishResolve)
+			const finishPromise = this.targetPromise.then(target => {
+				return target.$watch(...args).finishPromise
 			})
 
 			return {
@@ -130,20 +127,21 @@ const $ = function(selector) { return $.find(document, selector) }
 
 			return this
 		},
-		$then() {
+		$then(cb) {
 			if(!this.finishPromise) { throw new Error("Tried to call $then before $watch") }
 			
-			return {
-				parent: this,
+			const nxt = {
 				targetPromise: this.finishPromise,
 				finishPromise: null,
 				__proto__: watcherProto
 			}
-		},
-		$back() {
-			if(!this.parent) { throw new Error("Tried to call $back before $then") }
 
-			return this.parent
+			if(cb) {
+				cb(nxt)
+				return this
+			}
+
+			return nxt
 		}
 	}
 
