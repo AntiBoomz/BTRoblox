@@ -3,11 +3,13 @@
 const INJECT_SCRIPT = () => {
 	const templates = []
 	const templateCaches = []
+	let settingsAreLoaded = false
+	let gtsNode
 
-	const settings = INJECT_SETTINGS
-	const currentPage = INJECT_CURRENTPAGE
-	const matches = INJECT_MATCHES
-	const IS_DEV_MODE = INJECT_IS_DEV_MODE
+	let settings
+	let currentPage
+	let matches
+	let IS_DEV_MODE
 
 	const ContentJS = {
 		send(action, ...args) {
@@ -37,44 +39,48 @@ const INJECT_SCRIPT = () => {
 	}
 
 	function PreInit() {
-		if(!settings.general.showAds) {
-			if(window.googletag) {
-				if(IS_DEV_MODE) {
-					alert("Failed to load inject before googletag")
-				}
-			} else {
-				const googletag = window.googletag = {}
+		if(window.googletag) {
+			if(IS_DEV_MODE) {
+				alert("Failed to load inject before googletag")
+			}
+		} else {
+			const googletag = window.googletag = {}
 
-				Object.defineProperty(googletag, "cmd", {
-					enumerable: false,
-					configurable: true,
-					set: value => {
-						delete googletag.cmd
-						googletag.cmd = value
+			Object.defineProperty(googletag, "cmd", {
+				enumerable: false,
+				configurable: true,
+				set: value => {
+					delete googletag.cmd
+					googletag.cmd = value
 
-						let didIt = false
+					let didIt = false
 
-						const proto = Node.prototype
-						const insertBefore = proto.insertBefore
-						proto.insertBefore = function(...args) {
-							const node = args[0]
-							if(node instanceof Node && node.nodeName === "SCRIPT" && node.src.includes("googletagservices.com")) {
-								didIt = true
+					const proto = Node.prototype
+					const insertBefore = proto.insertBefore
+					proto.insertBefore = function(...args) {
+						const node = args[0]
+						if(node instanceof Node && node.nodeName === "SCRIPT" && node.src.includes("googletagservices.com")) {
+							didIt = true
+
+							if(!settingsAreLoaded) {
+								gtsNode = { this: this, node }
+								return
+							} else if(!settings.general.showAds) {
 								return
 							}
-
-							return insertBefore.apply(this, args)
 						}
 
-						setTimeout(() => {
-							proto.insertBefore = insertBefore
-							if(!didIt && IS_DEV_MODE) {
-								alert("Failed to rek googletag")
-							}
-						}, 0)
+						return insertBefore.apply(this, args)
 					}
-				})
-			}
+
+					setTimeout(() => {
+						proto.insertBefore = insertBefore
+						if(!didIt && IS_DEV_MODE) {
+							alert("Failed to rek googletag")
+						}
+					}, 0)
+				}
+			})
 		}
 	}
 
@@ -447,11 +453,24 @@ const INJECT_SCRIPT = () => {
 		else { target.addClass("linkify") }
 	})
 
-	PreInit()
+	ContentJS.listen("INIT", (...initData) => {
+		[ settings, currentPage, matches, IS_DEV_MODE ] = initData
+		settingsAreLoaded = true
 
-	if(document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", PostInit)
-	} else {
-		PostInit()
-	}
+		if(gtsNode) {
+			if(settings.general.showAds) {
+				gtsNode.this.insertBefore(gtsNode.node)
+			}
+
+			gtsNode = null
+		}
+
+		if(document.readyState === "loading") {
+			document.addEventListener("DOMContentLoaded", PostInit)
+		} else {
+			PostInit()
+		}
+	})
+
+	PreInit()
 }

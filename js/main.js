@@ -1052,61 +1052,58 @@ function PreInit() {
 	const pathname = window.location.pathname
 	const exclude = EXCLUDED_PAGES.some(patt => new RegExp(patt, "i").test(pathname))
 	if(exclude) { return }
+
+	{
+		const script = document.createElement("script")
+		script.setAttribute("name", "BTRoblox/inject.js")
+		script.textContent = `"use strict";\n(${String(INJECT_SCRIPT)})();`
+		
+		const parent = document.head || document.documentElement
+		parent.prepend(script)
+	}
 	
 	currentPage = GET_PAGE(pathname)
 	STORAGE.get(["settings", "cachedBlogFeedV2"], data => {
 		settings = data.settings || JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
-
-		const rec = x => Object.entries(x).forEach(([i, y]) => {
-			if(y instanceof Object && "default" in y && "value" in y) {
-				x[i] = y.value
-			} else {
-				rec(y)
-			}
-		})
-
-		rec(settings)
-
 		blogFeedData = data.cachedBlogFeedV2
 
-		const parent = document.documentElement
+		{ // Change settings to be name: value
+			const rec = x => Object.entries(x).forEach(([i, y]) => {
+				if(y instanceof Object && "default" in y && "value" in y) {
+					x[i] = y.value
+				} else {
+					rec(y)
+				}
+			})
 
-		{
-			const inject = {
-				INJECT_SETTINGS: JSON.stringify(settings),
-				INJECT_CURRENTPAGE: JSON.stringify(currentPage ? currentPage.name : null),
-				INJECT_MATCHES: JSON.stringify(currentPage ? currentPage.matches : null),
-				INJECT_IS_DEV_MODE: JSON.stringify(IS_DEV_MODE)
-			}
-
-			const script = document.createElement("script")
-			script.setAttribute("name", "BTRoblox/inject.js")
-			script.textContent = `"use strict";(${
-				String(INJECT_SCRIPT).replace(new RegExp(Object.keys(inject).join("|"), "g"), x => inject[x])
-			})();`
-			
-			parent.prepend(script)
+			rec(settings)
 		}
 
-		const injectCSS = path => {
-			const link = document.createElement("link")
-			link.rel = "stylesheet"
-			link.href = getURL("css/" + path)
-			parent.prepend(link)
+		InjectJS.send("INIT", settings, currentPage ? currentPage.name : null, currentPage ? currentPage.matches : null, IS_DEV_MODE)
+
+		{ // Inject CSS
+			const parent = document.head || document.documentElement
+
+			const injectCSS = path => {
+				const link = document.createElement("link")
+				link.rel = "stylesheet"
+				link.href = getURL("css/" + path)
+				parent.prepend(link)
+			}
+	
+			const cssFiles = ["main.css"]
+			if(currentPage) { cssFiles.push(...currentPage.css) }
+	
+			const theme = settings.general.theme
+			cssFiles.forEach(file => {
+				injectCSS(file)
+				if(theme !== "default") {
+					injectCSS(`${theme}/${file}`)
+				}
+			})
 		}
 
-		const cssFiles = ["main.css"]
-		if(currentPage) { cssFiles.push(...currentPage.css) }
-
-		const theme = settings.general.theme
-		cssFiles.forEach(file => {
-			injectCSS(file)
-			if(theme !== "default") {
-				injectCSS(`${theme}/${file}`)
-			}
-		})
-
-		return Init()
+		Init()
 	})
 }
 
