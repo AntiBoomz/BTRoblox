@@ -92,6 +92,7 @@ const settingsDiv = html`
 					<option value=sky>Sky</option>
 					<option value=red>Red</option>
 				</select>
+				<br>
 
 				<checkbox label="Show Ads" path=showAds></checkbox>
 				<checkbox label="Fast Search" path=fastSearch></checkbox>
@@ -100,7 +101,6 @@ const settingsDiv = html`
 					<checkbox label="Minimize Chat" path=smallChatButton require=chatEnabled></checkbox>
 				</div>
 
-				<checkbox label="Preview Items on Hover" path=hoverPreview></checkbox>
 				<checkbox label="Show Robux to USD" path=robuxToDollars></checkbox>
 			</group>
 			<group label=Navigation path=general toggleable=navigationEnabled>
@@ -119,7 +119,7 @@ const settingsDiv = html`
 			</group>
 			<group label="Item Details" path=itemdetails toggleable>
 				<checkbox label="Item Previewer" path=itemPreviewer></checkbox>
-				<button id=btr-open-item-previewer-settings class=btn-control-xs>Modify Item Previewer</button>
+				<button id=btr-open-item-previewer-settings class=btn-control-xs>Previewer Preferences</button>
 				<checkbox label="Show Explorer Button" path=explorerButton></checkbox>
 				<checkbox label="Show Download Button" path=downloadButton></checkbox>
 				<checkbox label="Show Content Button" path=contentButton></checkbox>
@@ -165,12 +165,22 @@ const settingsDiv = html`
 				<h4>Item Previewer Preferences</h4>
 			</div>
 			<div>
-				<group path=itemdetails>
-					<select path=itemPreviewerMode>
-						<option value=default>Default (Animations and Packages)</option>
-						<option value=never>Never</option>
+				<group>
+					<checkbox label="Item Previewer" path=itemdetails.itemPreviewer></checkbox>
+					<checkbox label="Hover Previewer" path=general.hoverPreview></checkbox>
+					<br>
+					<br>
+					<select label="Automatically open previewer for:" path=itemdetails.itemPreviewerMode>
+						<option value=default>Default (Everything)</option>
+						<option value=never>Nothing</option>
 						<option value=animations>Animations and Packages</option>
-						<option value=always>Always</option>
+						<option value=always>Everything</option>
+					</select>
+					<select label="Preview on hover for:" path=general.hoverPreviewMode>
+						<option value=default>Default (Everything)</option>
+						<option value=never>Nothing</option>
+						<option value=animations>Animations and Packages</option>
+						<option value=always>Everything</option>
 					</select>
 				</group>
 			</div>
@@ -394,7 +404,23 @@ const initSettingsDiv = () => {
 
 	// Settings
 	const settingsDone = {}
+	const requires = {}
 	let labelCounter = 0
+
+	const getSetting = path => path.split(".").reduce((a, b) => a[b], settings)
+	const isInvalidSetting = path => path.split(".").reduce((a, b) => (a ? a[b] : null), settings) === null
+
+	const setSetting = (path, value) => {
+		const parts = path.split(".")
+		const name = parts.pop()
+		parts.reduce((a, b) => a[b], settings)[name] = value
+
+		const obj = {}
+		parts.reduce((a, b) => a[b] = {}, obj)[name] = value
+		MESSAGING.send("setSetting", obj)
+	}
+
+	const joinPaths = (group, path) => (!group || path.includes(".") ? path : `${group}.${path}`)
 
 	settingsDiv.$findAll("group").forEach(group => {
 		const title = html`<h4>${group.getAttribute("label") || ""}</h4>`
@@ -420,92 +446,116 @@ const initSettingsDiv = () => {
 			initSettingsPromise.then(updateGroup)
 		}
 
+		let groupPath = ""
 		if(group.hasAttribute("path")) {
-			const groupPath = group.getAttribute("path")
-			const settingsGroup = settings[groupPath]
-			settingsDone[groupPath] = settingsDone[groupPath] || {}
+			groupPath = `${group.getAttribute("path")}`
 
 			if(group.hasAttribute("toggleable")) {
 				const toggleSetting = group.getAttribute("toggleable") || "enabled"
-				const inputList = group.getElementsByTagName("input")
+				const settingPath = joinPaths(groupPath, toggleSetting)
+				settingsDone[settingPath] = true
+
 				const toggle = html`<div class=btr-settings-enabled-toggle>`
 				title.after(toggle)
 
 				const update = state => {
 					toggle.classList.toggle("checked", state)
-					Array.from(inputList).forEach(x => {
-						if(!state) { x.setAttribute("disabled", "") }
-						else { x.removeAttribute("disabled") }
-					})
 
-					group.$findAll(`[require="${toggleSetting}"] > input`).forEach(x => {
+					group.$findAll("input, select").forEach(x => {
 						if(!state) { x.setAttribute("disabled", "") }
 						else { x.removeAttribute("disabled") }
 					})
 				}
 
 				toggle.$on("click", () => {
-					const checked = !settingsGroup[toggleSetting]
-					settingsGroup[toggleSetting] = checked
-					MESSAGING.send("setSetting", { [groupPath]: { [toggleSetting]: checked } })
-					update(checked)
+					const state = !getSetting(settingPath)
+					setSetting(settingPath, state)
+					update(state)
 				})
-				initSettingsPromise.then(() => update(settingsGroup[toggleSetting]))
 
-				settingsDone[groupPath][toggleSetting] = true
+				initSettingsPromise.then(() => update(getSetting(settingPath)))
+			}
+		}
+
+		const requireHandler = item => {
+			if(!item.hasAttribute("require")) { return }
+			const requirePath = joinPaths(groupPath, item.getAttribute("require"))
+
+			const target = item.$find("input") || item
+	
+			if(!requires[requirePath]) { requires[requirePath] = [] }
+			requires[requirePath].push(target)
+	
+			if(!getSetting(requirePath)) {
+				target.setAttribute("disabled", "")
+			}
+		}
+
+		group.$findAll("select").forEach(select => {
+			const settingPath = joinPaths(groupPath, select.getAttribute("path"))
+			settingsDone[settingPath] = true
+
+			const wrapper = html`<div class=btr-select><label>${select.getAttribute("label") || ""}</label></div>`
+			select.before(wrapper)
+			wrapper.append(select)
+
+			requireHandler(select)
+
+			select.value = getSetting(settingPath)
+			select.$on("change", () => {
+				setSetting(settingPath, select.value)
+			})
+		})
+
+		group.$findAll("checkbox").forEach(checkbox => {
+			const settingPath = joinPaths(groupPath, checkbox.getAttribute("path"))
+			settingsDone[settingPath] = true
+
+			const input = html`<input id=btr-settings-input-${labelCounter} type=checkbox>`
+			const label = html`<label for=btr-settings-input-${labelCounter++}>${checkbox.getAttribute("label")}`
+
+			checkbox.classList.add("btr-settings-checkbox")
+
+			checkbox.append(input)
+			checkbox.append(label)
+
+			requireHandler(checkbox)
+
+			if(isInvalidSetting(settingPath)) {
+				label.textContent += " (Bad setting)"
+				return
 			}
 
-			Array.from(group.getElementsByTagName("select")).forEach(select => {
-				const settingName = select.getAttribute("path")
+			const update = state => {
+				const req = requires[settingPath]
+				if(!req) { return }
 
-				select.value = settingsGroup[settingName]
-				select.$on("change", () => {
-					settingsGroup[settingName] = select.value
-					MESSAGING.send("setSetting", { [groupPath]: { [settingName]: select.value } })
+				req.forEach(x => {
+					if(!state) { x.setAttribute("disabled", "") }
+					else { x.removeAttribute("disabled") }
 				})
+			}
 
-				settingsDone[groupPath][settingName] = true
+			input.checked = !!getSetting(settingPath)
+			input.$on("change", () => {
+				setSetting(settingPath, input.checked)
+				update(input.checked)
 			})
 
-			Array.from(group.getElementsByTagName("checkbox")).forEach(checkbox => {
-				const settingName = checkbox.getAttribute("path")
-				const input = html`<input id=btr-settings-input-${labelCounter} type=checkbox>`
-				const label = html`<label for=btr-settings-input-${labelCounter++}>${checkbox.getAttribute("label")}`
-
-				checkbox.classList.add("btr-settings-checkbox")
-
-				checkbox.append(input)
-				checkbox.append(label)
-
-				if(!(settingName in settingsGroup)) { label.textContent += " (Bad setting)" }
-				if(checkbox.hasAttribute("require") && !settingsGroup[checkbox.getAttribute("require")]) { input.setAttribute("disabled", "") }
-
-				input.checked = !!settingsGroup[settingName]
-				input.$on("change", () => {
-					settingsGroup[settingName] = input.checked
-					MESSAGING.send("setSetting", { [groupPath]: { [settingName]: input.checked } })
-
-					group.$findAll(`[require="${settingName}"] > input`).forEach(x => {
-						if(!input.checked) { x.setAttribute("disabled", "") }
-						else { x.removeAttribute("disabled") }
-					})
-				})
-
-				settingsDone[groupPath][settingName] = true
-			})
-		}
+			update(input.checked)
+		})
 	})
 
 	const wipGroup = settingsDiv.$find("#btr-settings-wip")
-
 	Object.entries(settings).forEach(([groupPath, settingsGroup]) => {
 		Object.entries(settingsGroup).forEach(([settingName, settingValue]) => {
-			if(groupPath in settingsDone && settingName in settingsDone[groupPath]) { return }
+			const settingPath = `${groupPath}.${settingName}`
+			if(settingsDone[settingPath]) { return }
 
 			if(typeof settingValue === "boolean") {
 				const checkbox = html`<checkbox></checkbox>`
 				const input = html`<input id=btr-settings-input-${labelCounter} type=checkbox>`
-				const label = html`<label for=btr-settings-input-${labelCounter++}>${groupPath}.${settingName}`
+				const label = html`<label for=btr-settings-input-${labelCounter++}>${settingPath}`
 
 				checkbox.append(input)
 				checkbox.append(label)
@@ -517,7 +567,7 @@ const initSettingsDiv = () => {
 					MESSAGING.send("setSetting", { [groupPath]: { [settingName]: input.checked } })
 				})
 			} else {
-				wipGroup.append(html`<div>${groupPath}.${settingName} (${typeof settingValue})`)
+				wipGroup.append(html`<div>${settingPath} (${typeof settingValue})`)
 			}
 		})
 	})
