@@ -1,8 +1,19 @@
 "use strict"
 
 {
-	const CategoryOrder = $.toDict((x, v, i) => x[v] = i, "Appearance", "Data", "Camera", "Shape", "Behavior", "Motion", "Particles", "Emission", "Part ", "Image", "Text", "Localization", "Surface Inputs", "Surface", "Other")
-	const RenamedProperties = { size: "Size", scale: "Scale", shape: "Shape", archivable: "Archivable", Color3uint8: "Color", formFactorRaw: "FormFactor" }
+	const CategoryOrder = $.toDict((x, v, i) => x[v] = i,
+		"Appearance", "Data", "Derived Data", "Shape", "Goals", "Thrust", "Turn", "Camera", "Behavior", "Image", "Compliance", "AlignOrientation",
+		"AlignPosition", "BallSocket", "Limits", "TwistLimits", "Hinge", "Servo", "Motor", "Derived", "LineForce", "Rod", "Rope", "Cylinder",
+		"AngularLimits", "AngularServo", "AngularMotor", "Slider", "Spring", "Torque", "VectorForce", "Attachments", "Axes", "Input", "Text",
+		"Scrolling", "Localization", "State", "Control", "Game", "Teams", "Forcefield", "Part ", "Surface Inputs", "Surface", "Motion", "Particles",
+		"Emission", "Parts"
+	)
+
+	const RenamedProperties = {
+		size: "Size", scale: "Scale", shape: "Shape", archivable: "Archivable", Color3uint8: "Color", formFactorRaw: "FormFactor", Health_XML: "Health",
+		xmlRead_MaxDistance_3: "MaxDistance"
+	}
+
 	const HiddenProperties = $.toDict(null,
 		"PhysicsData", "MeshData", "ChildData", "ModelInPrimary", "FormFactor", "Elasticity", "Friction",
 		"LODX", "LODY", "Tags", "ScriptGuid"

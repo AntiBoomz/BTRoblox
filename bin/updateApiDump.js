@@ -55,6 +55,7 @@ function doStuff(data, rmd) {
 		}
 	}
 
+	const catUses = {}
 	data.Enums.forEach(x => enumDict[x.Name] = x)
 
 	data.Classes.forEach(x => {
@@ -72,6 +73,11 @@ function doStuff(data, rmd) {
 			x.Members.forEach(y => {
 				if(y.MemberType !== "Property") { return }
 				if(invalidProps[y.Name]) { return }
+
+				catUses[y.Category] = catUses[y.Category] || []
+				if(!catUses[y.Category].includes(x.Name)) {
+					catUses[y.Category].push(x.Name)
+				}
 
 				let catId = validCats.indexOf(y.Category)
 				if(catId === -1) { catId = validCats.push(y.Category) - 1 }
@@ -113,6 +119,12 @@ function doStuff(data, rmd) {
 			x.Index = validClasses.push(x) - 1
 		}
 	})
+
+	/*
+	Object.entries(catUses).forEach(([cat, uses]) => {
+		console.log(`${cat}: ${uses.join(", ")}\n`)
+	})
+	*/
 
 	/*
 	Object.values(enumDict).forEach(x => {
