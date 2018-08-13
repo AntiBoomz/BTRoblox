@@ -905,12 +905,12 @@ function Init() {
 	}
 
 	loggedInUserPromise = new Promise(resolve => {
-		navWatcher.$watch("#nav-profile", nav => {
-			const matches = nav.getAttribute("href").match(/\/users\/(\d+)/)
-			loggedInUser = matches ? matches[1] : -1
+		headWatcher.$watch(`meta[name="user-data"]`, meta => {
+			const userId = +meta.dataset.userid
+			loggedInUser = Number.isSafeInteger(userId) ? userId : -1
 			resolve(loggedInUser)
 		})
-
+		
 		onDocumentReady(() => resolve(-1))
 	})
 
