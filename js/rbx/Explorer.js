@@ -17,6 +17,11 @@
 
 	const sortPropertyGroups = (a, b) => a.Order - b.Order
 	const sortProperties = (a, b) => (a[0] < b[0] ? -1 : 1)
+	const sortChildren = (a, b) => {
+		const ao = ApiDump.getExplorerOrder(a.ClassName)
+		const bo = ApiDump.getExplorerOrder(b.ClassName)
+		return ao !== bo ? ao - bo : (a.Name < b.Name ? -1 : 1)
+	}
 
 	class Explorer {
 		constructor() {
@@ -272,7 +277,9 @@
 				if(inst.Children.length) {
 					item.classList.add("btr-explorer-has-children")
 					const childList = html`<ul class=btr-explorer-childlist></ul>`
-					inst.Children.forEach(child => create(child, childList))
+					
+					const children = [...inst.Children]
+					children.sort(sortChildren).forEach(child => create(child, childList))
 					item.after(childList)
 				}
 			}
