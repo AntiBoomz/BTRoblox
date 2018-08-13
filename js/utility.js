@@ -110,9 +110,7 @@ const $ = function(selector) { return $.find(document, selector) }
 	const watchAllSelectorRegex = /^((?:#|\.)?[\w-]+)$/
 	const watcherProto = {
 		$watch(...args) {
-			const finishPromise = this.targetPromise.then(target => {
-				return target.$watch(...args).finishPromise
-			})
+			const finishPromise = this.targetPromise.then(target => target.$watch(...args).finishPromise)
 
 			return {
 				targetPromise: this.targetPromise,
