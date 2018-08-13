@@ -116,10 +116,10 @@ pageInit.itemdetails = function(assetId) {
 			let autoLoadPreview = false
 
 			switch(settings.itemdetails.itemPreviewerMode) {
+			default: case "default":
 			case "always":
 				autoLoadPreview = true
 				break
-			default: case "default":
 			case "animations":
 				autoLoadPreview = previewAnim || previewPackage || assetTypeId === 32
 				break
