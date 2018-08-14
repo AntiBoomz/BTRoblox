@@ -1148,10 +1148,8 @@ function PreInit() {
 	
 			const theme = settings.general.theme
 			cssFiles.forEach(file => {
+				if(theme !== "default") { injectCSS(`${theme}/${file}`) }
 				injectCSS(file)
-				if(theme !== "default") {
-					injectCSS(`${theme}/${file}`)
-				}
 			})
 		}
 
