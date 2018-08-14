@@ -495,7 +495,9 @@ const initSettingsDiv = () => {
 			const settingPath = joinPaths(groupPath, select.getAttribute("path"))
 			settingsDone[settingPath] = true
 
-			const wrapper = html`<div class=btr-select><label>${select.getAttribute("label") || ""}</label></div>`
+			const wrapper = html`<div class=btr-select></div>`
+			if(select.hasAttribute("label")) { wrapper.append(html`<label>${select.getAttribute("label") || ""}</label>`) }
+
 			select.before(wrapper)
 			wrapper.append(select)
 
