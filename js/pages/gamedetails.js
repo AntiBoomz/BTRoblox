@@ -8,6 +8,9 @@ pageInit.gamedetails = function(placeId) {
 		<div class=placeholder-main></div>
 	</div>`
 
+	const midContainer = html`
+	<div class="col-xs-12 btr-mid-container"></div>`
+
 	if(settings.general.robuxToDollars) {
 		document.$watch("#rbx-passes-container").$then()
 			.$watchAll(".list-item", item => {
@@ -41,9 +44,12 @@ pageInit.gamedetails = function(placeId) {
 			about.classList.remove("active")
 			games.classList.add("active")
 		})
+		.$watch("#social-links", x => midContainer.append(x))
+		.$watch(".badge-container", x => midContainer.append(x.parentNode.parentNode))
 		.$watch(".game-main-content", mainCont => {
 			mainCont.classList.remove("section-content")
 			mainCont.before(newContainer)
+			newContainer.after(midContainer)
 			newContainer.$find(".placeholder-main").replaceWith(mainCont)
 		})
 		.$watch(".game-about-container", aboutCont => {
@@ -64,8 +70,7 @@ pageInit.gamedetails = function(placeId) {
 			})
 		})
 		.$watch(".badge-container", badges => {
-			badges.classList.add("col-xs-12", "btr-badges-container")
-			newContainer.after(badges)
+			badges.classList.add("btr-badges-container")
 
 			const isOwned = {}
 
