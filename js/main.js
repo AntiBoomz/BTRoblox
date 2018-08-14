@@ -910,8 +910,8 @@ function Init() {
 
 			blog.parentNode.before(html`
 			<li>
-				<a href="/premium/membership" id="nav-bc">
-					<span class='icon-nav-bc-btr'></span>
+				<a href=/premium/membership id=nav-bc class=font-gray-1>
+					<span class=icon-nav-bc-btr></span>
 					<span>Builders Club</span>
 				</a>
 			</li>`)
