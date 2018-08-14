@@ -2,38 +2,35 @@ html body {
 	background: #212121 url(/res/bgTexture.png) left top repeat fixed;
 }
 
-html .rbx-header {
+
+/* Header */
+
+#header {
 	background: #0a0a0a;
 }
 
-html .btr-nav-notif {
+#header .btr-nav-notif {
 	border-color: #0a0a0a;
 }
 
-html .rbx-left-col {
-	background: #121212;
+#header .rbx-navbar li .nav-menu-title:hover {
+	background-color: rgba(230, 230, 230, 0.1);
 }
 
-html .rbx-left-col .rbx-scrollbar li a:not(:hover) span[class^="icon"] {
+
+/* Sidebar */
+
+#navigation {
+	background: #121212;
+	color: #FFF;
+}
+
+#navigation .rbx-scrollbar li a:not(:hover) span[class^="icon"] {
 	filter: invert(100%);
 }
 
-html .rbx-left-col li a,
-html .container-footer .footer-links li a:not(.privacy):hover {
-	color: rgba(255, 255, 255, 1);
-}
 
-html .btr-feedtitle,
-html .btr-feeddesc,
-html .container-footer .footer-links li a {
-	color: rgba(255, 255, 255, .7);
-}
-
-html .btr-feeddate, 
-html .btr-feedcreator {
-	color: rgba(255, 255, 255, .5);
-}
-
+/* Body */
 
 html .container-main>.content,
 html #BodyWrapper {
@@ -61,7 +58,29 @@ html #BodyWrapper::before {
 }
 
 
+/* Footer */
+
 html .container-footer {
 	background: #0a0a0a;
 }
 
+.container-footer .footer-links li a:not(.privacy):hover {
+	color: rgba(255, 255, 255, 1);
+}
+
+.container-footer .footer-links li a {
+	color: rgba(255, 255, 255, .7);
+}
+
+
+/* Feed */
+
+#navigation .btr-feedtitle,
+#navigation .btr-feeddesc {
+	color: rgba(255, 255, 255, .7);
+}
+
+#navigation .btr-feeddate, 
+#navigation .btr-feedcreator {
+	color: rgba(255, 255, 255, .5);
+}
