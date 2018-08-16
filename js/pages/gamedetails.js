@@ -43,9 +43,9 @@ pageInit.gamedetails = function(placeId) {
 		.$watch(["#about", "#game-instances"], (about, games) => {
 			about.classList.remove("active")
 			games.classList.add("active")
+
+			midContainer.append(...Array.from(about.children).filter(x => !x.matches("#rbx-vip-servers, #my-recommended-games")))
 		})
-		.$watch("#social-links", x => midContainer.append(x))
-		.$watch(".badge-container", x => midContainer.append(x.parentNode.parentNode))
 		.$watch(".game-main-content", mainCont => {
 			mainCont.classList.remove("section-content")
 			mainCont.before(newContainer)
