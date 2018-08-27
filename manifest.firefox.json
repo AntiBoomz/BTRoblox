@@ -23,7 +23,6 @@
 			"js/common.js",
 			"js/background/settings.js",
 			"js/background/blogfeed.js",
-			"js/background/messaging.js",
 			"js/background/groupshout.js",
 			"js/background/contextmenu.js"
 		]

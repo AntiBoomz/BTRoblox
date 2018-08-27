@@ -411,13 +411,7 @@ const initSettingsDiv = () => {
 	const isInvalidSetting = path => path.split(".").reduce((a, b) => (a ? a[b] : null), settings) === null
 
 	const setSetting = (path, value) => {
-		const parts = path.split(".")
-		const name = parts.pop()
-		parts.reduce((a, b) => a[b], settings)[name] = value
-
-		const obj = {}
-		parts.reduce((a, b) => a[b] = {}, obj)[name] = value
-		MESSAGING.send("setSetting", obj)
+		MESSAGING.send("setSetting", { path, value })
 	}
 
 	const joinPaths = (group, path) => (!group || path.includes(".") ? path : `${group}.${path}`)
@@ -566,7 +560,7 @@ const initSettingsDiv = () => {
 				input.checked = !!settingValue
 				input.$on("change", () => {
 					settingsGroup[settingName] = input.checked
-					MESSAGING.send("setSetting", { [groupPath]: { [settingName]: input.checked } })
+					setSetting(settingPath, input.checked)
 				})
 			} else {
 				wipGroup.append(html`<div>${settingPath} (${typeof settingValue})`)
@@ -1116,7 +1110,9 @@ function PreInit() {
 	
 	currentPage = GET_PAGE(pathname)
 	STORAGE.get(["settings", "cachedBlogFeedV2"], data => {
-		settings = data.settings || JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
+		settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
+		if(data.settings) { APPLY_SETTINGS(data.settings, settings) }
+		
 		blogFeedData = data.cachedBlogFeedV2
 
 		{ // Change settings to be name: value

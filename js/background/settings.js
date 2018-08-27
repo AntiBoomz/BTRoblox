@@ -2,75 +2,60 @@
 
 const Settings = (() => {
 	const settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
+	const onChangeListeners = []
+	let isLoaded = false
+	let loadPromise
 
-	function applySettings(data) {
-		let changedSomething = false
+	const getSetting = (path, root = settings) => {
+		const parts = path.split(".")
+		const sett = parts.reduce((t, i) => (t ? t[i] : null), root)
 
-		function recurse(par, obj, def) {
-			Object.entries(par).forEach(([name, value]) => {
-				const objValue = obj[name]
-				const defaultValue = def[name]
+		if(!sett || !("value" in sett)) { throw new TypeError(`'${path}' is not a valid setting`) }
 
-				if(value instanceof Object && objValue instanceof Object) {
-					if("default" in value && "value" in value) {
-						if(objValue.default === false && typeof objValue.value === typeof value.value && objValue.value !== value.value) {
-							value.value = objValue.value
-							value.default = value.value === defaultValue.value
-							changedSomething = true
-						}
-					} else {
-						recurse(value, objValue, defaultValue)
-					}
-				} else if(value instanceof Object) {
-					if("default" in value && "value" in value) {
-						if(typeof value.value === typeof objValue && value.value !== objValue) {
-							value.value = objValue
-							value.default = value.value === defaultValue.value
-							changedSomething = true
-						}
-					}
-				}
-			})
-		}
-
-		recurse(settings, data, DEFAULT_SETTINGS)
-		return changedSomething
+		return sett
 	}
 
-	const onChangeListeners = []
-	let getPromise
-
-	chrome.runtime.onInstalled.addListener(() => {
-		// Update cached settings on install
-		Settings.get(() => {
-			STORAGE.set({ settings })
-		})
-	})
+	const getDefaultValue = path => {
+		return getSetting(path, DEFAULT_SETTINGS).value
+	}
 
 	return {
-		get(cb) {
-			if(!getPromise) {
-				getPromise = new Promise(resolve => {
+		load(cb) {
+			if(!loadPromise) {
+				loadPromise = new Promise(resolve => {
 					STORAGE.get(["settings"], data => {
 						if(data.settings instanceof Object) {
-							applySettings(data.settings)
+							APPLY_SETTINGS(data.settings, settings)
 						}
 
-						resolve(settings)
+						isLoaded = true
+						resolve(this)
 					})
 				})
 			}
 			
-			getPromise.then(cb)
+			loadPromise.then(cb)
 		},
-		set(data) {
-			if(!(data instanceof Object)) { throw new TypeError("data should be an object") }
-			Settings.get(() => {
-				if(applySettings(data)) {
-					STORAGE.set({ settings })
-					onChangeListeners.forEach(fn => fn(settings))
-				}
-			})
+		get(path) {
+			if(!isLoaded) { throw new Error("Settings are not loaded") }
+			return getSetting(path).value
+		},
+		set(path, value) {
+			if(!isLoaded) { throw new Error("Settings are not loaded") }
+
+			const sett = getSetting(path)
+
+			if(typeof sett.value !== typeof value) {
+				throw new TypeError(`Invalid value to Settings.set("${path}") (${typeof sett.value} expected, got ${typeof value}`)
+			}
+
+			if(sett.value !== value) {
+				sett.value = value
+				sett.default = sett.value === getDefaultValue(path)
+
+				STORAGE.set({ settings })
+				onChangeListeners.forEach(fn => fn(this))
+			}
 		},
 		onChange(cb) {
 			onChangeListeners.push(cb)
@@ -78,3 +63,12 @@ const Settings = (() => {
 	}
 })()
 
+MESSAGING.listen({
+	setSetting(data, respond) {
+		Settings.load(() => {
+			Settings.set(data.path, data.value)
+		})
+
+		respond()
+	}
+})
