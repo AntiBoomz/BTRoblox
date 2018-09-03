@@ -1082,20 +1082,6 @@ function Init() {
 		})
 	}
 
-	try {
-		if(IS_FIREFOX) {
-			const manifest = chrome.runtime.getManifest()
-			if(manifest.applications.gecko.id === "btroblox@antiboomz.com") { // Is self-signed
-				bodyWatcher.$watch("#header", header => {
-					header.after(html`
-					<div style="position:fixed;left:0;width:100%;height:24px;line-height:24px;background:red;font-weight:bold;color:white;z-index:20;text-align:center;font-size:14px;">
-					<a href="https://addons.mozilla.org/en-US/firefox/addon/btroblox/" target="_blank" style="text-decoration:underline">BTRoblox has moved to AMO. Click here to get new version.</a>
-					</div>`)
-				})
-			}
-		}
-	} catch(ex) {}
-
 	if(currentPage && pageInit[currentPage.name]) {
 		try { pageInit[currentPage.name].apply(currentPage, currentPage.matches) }
 		catch(ex) { console.error(ex) }
