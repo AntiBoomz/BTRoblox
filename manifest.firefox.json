@@ -1,10 +1,10 @@
 {
 	"manifest_version": 2,
 
-	"name": "BTRoblox",
+	"name": "BTRoblox for Firefox",
 	"short_name": "BTR",
 	"description": "Better Roblox - Making Roblox better!",
-	"version": "2.5.5",
+	"version": "2.5.6",
 	"author": "AntiBoomz",
 
 	"icons": {
