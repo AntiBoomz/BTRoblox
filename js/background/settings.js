@@ -15,9 +15,7 @@ const Settings = (() => {
 		return sett
 	}
 
-	const getDefaultValue = path => {
-		return getSetting(path, DEFAULT_SETTINGS).value
-	}
+	const getDefaultValue = path => getSetting(path, DEFAULT_SETTINGS).value
 
 	return {
 		load(cb) {
