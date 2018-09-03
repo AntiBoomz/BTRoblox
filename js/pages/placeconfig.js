@@ -4,7 +4,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 	const versionHistory = html`<div class="btr-versionHistory"></div>`
 	const versionList = html`<ul class="btr-versionList"></ul>`
 	const pager = createPager()
-	const pageSize = 15
+	const pageSize = 40
 
 	let isBusy = false
 	let actualPageSize
@@ -34,7 +34,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 
 			const card = html`
 			<li class="list-item">
-				<div class="version-card">
+				<div class="version-card" style="padding:2px 0">
 					<div class="version-dropdown">
 						<a class="rbx-menu-item" data-toggle="popover" data-container="body" data-bind="btr-versiondrop-${i}">
 							<span class="icon-more"></span>
@@ -46,7 +46,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 							</ul>
 						</div>
 					</div>
-					<div class="version-thumb-container"><img class="version-thumb" style="display:none"></div>
+					<div class="version-thumb-container" style="display:none"><img class="version-thumb" style="display:none"></div>
 					<div class="version-number">Version ${item.VersionNumber}</div>
 					<div class="version-date">${new Date(item.Created).$format("M/D/YY hh:mm A (T)")}</div>
 				</div>
