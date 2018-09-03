@@ -8,12 +8,55 @@
 	display: none;
 }
 
+@media (min-width: 992px) and (max-width: 1199px){
+	#header .rbx-navbar {
+		width: 30%;
+	}
+}
+
+@media (min-width: 768px) and (max-width: 870px) {
+	#header .navbar-left {
+		width: 45%;
+	}
+}
+
+@media (min-width: 620px) and (max-width: 700px) {
+	#header .navbar-left {
+		width: 35%;
+	}
+}
+
+@media (min-width: 544px) and (max-width: 619px) {
+	#header .navbar-left {
+		width: 25%;
+	}
+}
+
+@media (max-width: 543px) {
+	#header .rbx-navbar-right {
+		width: calc(100% - 160px);
+	}
+
+	#header .rbx-navbar-icon-group > li {
+		width: 16.66%;
+	}
+}
+
+
+/* Fix weird stream button styling */
+#header .navbar-stream {
+	padding: 0;
+}
+
+#header .navbar-stream .notification-stream-icon {
+	display: block;
+}
+
+#header .navbar-stream .notification-stream-icon .icon-nav-notification-stream {
+	margin: 0;
+}
 
 /* Navigation */
-
-#btr-navbar-messages {
-	margin-left: 4px;
-}
 
 .icon-nav-friend-btr, .icon-nav-message-btr, .icon-nav-bc-btr {
 	background-image: url(/res/nav2.svg);
