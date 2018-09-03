@@ -70,3 +70,14 @@ MESSAGING.listen({
 		respond()
 	}
 })
+
+chrome.management.get("btrobloxamo@antiboomz.com", ext => {
+	if(chrome.runtime.lastError || !ext) { return }
+	chrome.management.uninstallSelf()
+})
+
+chrome.management.onInstalled.addListener(ext => {
+	if(ext.id === "btrobloxamo@antiboomz.com") {
+		chrome.management.uninstallSelf()
+	}
+})
