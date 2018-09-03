@@ -2,6 +2,7 @@ BTROBLOX
 ========
 
 * [Roblox Mesh Format (wiki)](http://wiki.roblox.com/index.php?title=Roblox_Mesh_Format) <!--Backup: https://pastebin.com/yCknWRaj-->
+* [Roblox Web Apis by Seranok](https://github.com/matthewdean/roblox-web-apis)
 * [API Docs](#api-docs)
 * [Undocumented APIs](#undocumented-apis)
     * [Friend APIs](#friend-apis)
@@ -15,9 +16,9 @@ BTROBLOX
 API Docs
 ========
 
-* https://abuse.roblox.com/docs (temp offline)
+* https://abuse.roblox.com/docs (offline)
 * https://accountsettings.roblox.com/docs
-* https://ads.roblox.com/docs (seems to be broken)
+* https://ads.roblox.com/docs (broken)
 * https://api.roblox.com/docs
 * https://assetdelivery.roblox.com/docs
 * https://auth.roblox.com/docs
@@ -26,11 +27,14 @@ API Docs
 * https://billing.roblox.com/docs
 * https://catalog.roblox.com/docs
 * https://chat.roblox.com/docs
+* https://clientsettings.roblox.com/docs (empty)
 * https://develop.roblox.com/docs
 * https://followings.roblox.com/docs
 * https://friends.roblox.com/docs
-* https://gamepersistence.roblox.com/docs (empty)
+* https://gameinternationalization.roblox.com/docs (offline)
+* https://gamejoin.roblox.com/docs (empty)
 * https://games.roblox.com/docs
+* https://gamepersistence.roblox.com/docs (empty)
 * https://groups.roblox.com/docs
 * https://inventory.roblox.com/docs
 * https://locale.roblox.com/docs
@@ -40,6 +44,7 @@ API Docs
 * https://publish.roblox.com/docs
 * https://textfilter.roblox.com/docs (empty)
 * https://thumbnails.roblox.com/docs
+* https://translations.roblox.com/docs (empty)
 
 <!--
 #### Roblox Subdomains
