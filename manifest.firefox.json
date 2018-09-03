@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 
-	"name": "BTRoblox for Firefox",
+	"name": "BTRoblox",
 	"short_name": "BTR",
 	"description": "Better Roblox - Making Roblox better!",
 	"version": "2.5.6",
