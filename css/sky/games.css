@@ -1,10 +1,7 @@
-html .content {
-	width: 1313px;
-	margin-left: auto !important;
-	margin-right: auto !important;
+.btr-no-hamburger .container-main {
+	margin-left: 175px;
 }
 
-html .games .game-card {
-	padding-left: 5px;
-	padding-right: 6px;
+html .container-main > .content {
+	margin: 40px !important;
 }
