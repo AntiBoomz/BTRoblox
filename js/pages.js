@@ -20,7 +20,7 @@ const AssetTypeIds = (() => {
 	]
 })()
 
-const CheckAccessAssetTypeIds = [2, 3, 10, 11, 12, 24]
+const CheckAccessAssetTypeIds = [2, 3, 4, 10, 11, 12, 24, 39, 40]
 const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34, 35, 37]
 const AnimationPreviewAssetTypeIds = [24, 48, 49, 50, 51, 52, 53, 54, 55, 56]
 const PackageAssetTypeIds = [27, 28, 29, 30, 31]
