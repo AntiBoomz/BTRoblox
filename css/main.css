@@ -56,6 +56,11 @@
 	margin: 0;
 }
 
+#header .navbar-stream .notification-stream-icon .notification-red {
+	top: 3px;
+	right: 1px;
+}
+
 /* Navigation */
 
 .icon-nav-friend-btr, .icon-nav-message-btr, .icon-nav-bc-btr {
