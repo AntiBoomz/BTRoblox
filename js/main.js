@@ -35,9 +35,8 @@ function modifyTemplate(id, callback) {
 			end(doc.body.innerHTML)
 		}
 
-		const name = `TEMPLATE_${id}`
-		InjectJS.listen(name, data => {
-			modify(data, html => InjectJS.send(name, html))
+		InjectJS.listen(`TEMPLATE_${id}`, (responseId, data) => {
+			modify(data, changedData => InjectJS.send(`TEMPLATE_${responseId}`, changedData))
 		})
 
 		InjectJS.send("TEMPLATE_INIT", id)

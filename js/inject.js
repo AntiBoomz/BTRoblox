@@ -1,8 +1,8 @@
 "use strict"
 
 const INJECT_SCRIPT = () => {
-	const templates = []
-	const templateCaches = []
+	const templates = {}
+	let templateRequestCounter = 0
 	let settingsAreLoaded = false
 	let gtsNode
 
@@ -23,19 +23,26 @@ const INJECT_SCRIPT = () => {
 		}
 	}
 
-	function HijackAngular(module, objects) {
-		module._invokeQueue.forEach(x => {
-			const newhandler = objects[x[2][0]]
+	function HijackAngular(moduleName, objects) {
+		try {
+			const module = angular.module(moduleName)
+			module._invokeQueue.forEach(x => {
+				const newhandler = objects[x[2][0]]
 
-			if(typeof newhandler === "function") {
-				const data = x[2][1]
-				const oldhandler = data[data.length - 1]
+				if(typeof newhandler === "function") {
+					const data = x[2][1]
+					const oldhandler = data[data.length - 1]
 
-				data[data.length - 1] = function(...args) {
-					return newhandler.call(this, oldhandler, args)
+					data[data.length - 1] = function(...args) {
+						return newhandler.call(this, oldhandler, args)
+					}
 				}
+			})
+		} catch(ex) {
+			if(IS_DEV_MODE) {
+				console.warn(ex)
 			}
-		})
+		}
 	}
 
 	function PreInit() {
@@ -84,22 +91,6 @@ const INJECT_SCRIPT = () => {
 		}
 	}
 
-	function registerTemplate($templateCache, id) {
-		const data = $templateCache.get(id)
-
-		if(data) {
-			const index = templates.indexOf(id)
-			if(index !== -1) {
-				templates.splice(index, 1)
-			}
-			
-			ContentJS.listen("TEMPLATE_" + id, newdata => {
-				$templateCache.put(id, newdata)
-			})
-
-			ContentJS.send("TEMPLATE_" + id, data)
-		}
-	}
 
 	function PostInit() {
 		if(!window.jQuery) {
@@ -108,166 +99,166 @@ const INJECT_SCRIPT = () => {
 		}
 
 		if(window.angular) {
-			{
-				const callArgs = ["$templateCache", $templateCache => {
-					templateCaches.push($templateCache)
-					templates.forEach(id => registerTemplate($templateCache, id))
-				}]
-		
-				const moduleNames = ["chatAppHtmlTemplateApp", "pageTemplateApp", "baseTemplateApp"]
-				moduleNames.forEach(name => {
-					try { angular.module(name).run(callArgs) }
-					catch(ex) { }
+			angular.module("ng").run(["$templateCache", t => {
+				const put = t.put
+				t.put = (key, value) => {
+					if(templates[key]) {
+						const id = ++templateRequestCounter
+
+						ContentJS.listen(`TEMPLATE_${id}`, changedValue => {
+							put.call(t, key, changedValue)
+						})
+
+						put.call(t, key, value)
+						ContentJS.send(`TEMPLATE_${key}`, id, value)
+						return
+					}
+
+					return put.call(t, key, value)
+				}
+			}])
+
+			if(settings.general.smallChatButton) {
+				HijackAngular("chat", {
+					chatController(func, args) {
+						const scope = args[0]
+						func.apply(this, args)
+
+						const library = scope.chatLibrary
+						const width = library.chatLayout.widthOfChat
+
+						scope.$watch(() => library.chatLayout.collapsed, value => {
+							library.chatLayout.widthOfChat = value ? 54 + 6 : width
+							library.dialogDict.collapsed = value
+						})
+					}
 				})
 			}
 
-			if(settings.general.smallChatButton) {
-				try {
-					HijackAngular(angular.module("chat"), {
-						chatController(func, args) {
-							const scope = args[0]
-							func.apply(this, args)
-
-							const library = scope.chatLibrary
-							const width = library.chatLayout.widthOfChat
-
-							scope.$watch(() => library.chatLayout.collapsed, value => {
-								library.chatLayout.widthOfChat = value ? 54 + 6 : width
-								library.dialogDict.collapsed = value
-							})
-						}
-					})
-				} catch(ex) {}
-			}
-
 			if(currentPage === "inventory" && settings.inventory.enabled && settings.inventory.inventoryTools) {
-				try {
-					HijackAngular(angular.module("assetsExplorer"), {
-						assetsService(handler, args) {
-							const result = handler.apply(this, args)
-							const tbuat = result.beginUpdateAssetsItems
+				HijackAngular("assetsExplorer", {
+					assetsService(handler, args) {
+						const result = handler.apply(this, args)
+						const tbuat = result.beginUpdateAssetsItems
 
-							result.beginUpdateAssetsItems = function(...iargs) {
-								const promise = tbuat.apply(result, iargs)
-								ContentJS.send("inventoryUpdateBegin")
-								promise.then(() => {
-									setTimeout(() => {
-										ContentJS.send("inventoryUpdateEnd")
-									}, 0)
-								})
-								return promise
-							}
-
-							return result
+						result.beginUpdateAssetsItems = function(...iargs) {
+							const promise = tbuat.apply(result, iargs)
+							ContentJS.send("inventoryUpdateBegin")
+							promise.then(() => {
+								setTimeout(() => {
+									ContentJS.send("inventoryUpdateEnd")
+								}, 0)
+							})
+							return promise
 						}
-					})
-				} catch(ex) {}
+
+						return result
+					}
+				})
 			}
 
 			if(currentPage === "messages") {
-				try {
-					HijackAngular(angular.module("messages"), {
-						rbxMessagesNav(handler, args) {
-							const result = handler.apply(this, args)
-							let isWorking = false
-		
-							function getMessages(page, callback) {
-								$.get(`/messages/api/get-messages?messageTab=0&pageNumber=${page}&pageSize=20`, callback)
-							}
-		
-							function getMessageCount(callback) {
-								$.get("/messages/api/get-my-unread-messages-count", callback)
-							}
-		
-							function markMessagesAsRead(list, callback) {
-								$.post("/messages/api/mark-messages-read", { messageIds: list }, callback)
-							}
-		
-							function markAllAsRead() {
-								if(isWorking) { return }
-								isWorking = true
-									
-								const messages = []
-								const pages = []
-								let running = 0
-								let maxPage = 0
-								let count = 0
-
-								const progress = $("<progress value='0' max='0' style='width:100%'>")
-									.insertAfter(".roblox-messages-btns")
-
-								function checkForUnread(data) {
-									Object.values(data.Collection).forEach(msg => {
-										if(!msg.IsRead) {
-											messages.push(msg.Id)
-										}
-									})
+				HijackAngular("messages", {
+					rbxMessagesNav(handler, args) {
+						const result = handler.apply(this, args)
+						let isWorking = false
 	
-									progress.val(messages.length)
-								}
-
-								function readPage(page) {
-									if(page < maxPage && messages.length < count) {
-										if(pages[page] === true) {
-											readPage(page + 1)
-											return
-										}
+						function getMessages(page, callback) {
+							$.get(`/messages/api/get-messages?messageTab=0&pageNumber=${page}&pageSize=20`, callback)
+						}
 	
-										getMessages(page, data => {
-											checkForUnread(data)
-											readPage(page + 1)
-										})
-									} else if(--running === 0) {
-										markMessagesAsRead(messages, () => {
-											window.location.reload()
-										})
+						function getMessageCount(callback) {
+							$.get("/messages/api/get-my-unread-messages-count", callback)
+						}
+	
+						function markMessagesAsRead(list, callback) {
+							$.post("/messages/api/mark-messages-read", { messageIds: list }, callback)
+						}
+	
+						function markAllAsRead() {
+							if(isWorking) { return }
+							isWorking = true
+								
+							const messages = []
+							const pages = []
+							let running = 0
+							let maxPage = 0
+							let count = 0
+
+							const progress = $("<progress value='0' max='0' style='width:100%'>")
+								.insertAfter(".roblox-messages-btns")
+
+							function checkForUnread(data) {
+								Object.values(data.Collection).forEach(msg => {
+									if(!msg.IsRead) {
+										messages.push(msg.Id)
 									}
-								}
-		
-								getMessageCount(countData => {
-									if(countData.count === 0) {
-										window.location.reload()
+								})
+
+								progress.val(messages.length)
+							}
+
+							function readPage(page) {
+								if(page < maxPage && messages.length < count) {
+									if(pages[page] === true) {
+										readPage(page + 1)
 										return
 									}
-		
-									count = countData.count
-									progress.attr("max", count)
-		
-									getMessages(0, data => {
-										maxPage = data.TotalPages
+
+									getMessages(page, data => {
 										checkForUnread(data)
-										for(let i = 0; i < 4; i++) {
-											running++
-											readPage(1 + Math.floor(i / 4 * maxPage))
-										}
+										readPage(page + 1)
 									})
-								})
-							}
-
-							const link = result.link
-							result.link = function(u) {
-								u.keyDown = function($event) {
-									if($event.which === 13) {
-										const value = $event.target.textContent * 1
-										if(!Number.isNaN(value)) {
-											args[1].search({ page: value })
-										} else {
-											$event.target.textContent = u.currentStatus.currentPage
-										}
-
-										$event.preventDefault()
-									}
+								} else if(--running === 0) {
+									markMessagesAsRead(messages, () => {
+										window.location.reload()
+									})
 								}
+							}
+	
+							getMessageCount(countData => {
+								if(countData.count === 0) {
+									window.location.reload()
+									return
+								}
+	
+								count = countData.count
+								progress.attr("max", count)
+	
+								getMessages(0, data => {
+									maxPage = data.TotalPages
+									checkForUnread(data)
+									for(let i = 0; i < 4; i++) {
+										running++
+										readPage(1 + Math.floor(i / 4 * maxPage))
+									}
+								})
+							})
+						}
 
-								u.markAllAsRead = markAllAsRead
-								
-								return link.call(this, u)
+						const link = result.link
+						result.link = function(u) {
+							u.keyDown = function($event) {
+								if($event.which === 13) {
+									const value = $event.target.textContent * 1
+									if(!Number.isNaN(value)) {
+										args[1].search({ page: value })
+									} else {
+										$event.target.textContent = u.currentStatus.currentPage
+									}
+
+									$event.preventDefault()
+								}
 							}
 
-							return result
+							u.markAllAsRead = markAllAsRead
+							
+							return link.call(this, u)
 						}
-					})
-				} catch(ex) { console.log(ex) }
+
+						return result
+					}
+				})
 			}
 		} else {
 			console.warn("[BTR] window.angular not set")
@@ -440,11 +431,7 @@ const INJECT_SCRIPT = () => {
 		}
 	}
 
-	ContentJS.listen("TEMPLATE_INIT", id => {
-		templates.push(id)
-		templateCaches.forEach($templateCache => registerTemplate($templateCache, id))
-	})
-
+	ContentJS.listen("TEMPLATE_INIT", key => templates[key] = true)
 	ContentJS.listen("refreshInventory", () => $(".btr-it-reload").click())
 	ContentJS.listen("linkify", cl => {
 		const target = $(`.${cl}`)
@@ -454,7 +441,7 @@ const INJECT_SCRIPT = () => {
 	})
 
 	ContentJS.listen("INIT", (...initData) => {
-		[ settings, currentPage, matches, IS_DEV_MODE ] = initData
+		[settings, currentPage, matches, IS_DEV_MODE] = initData
 		settingsAreLoaded = true
 
 		if(gtsNode) {
