@@ -70,11 +70,11 @@ const DEFAULT_SETTINGS = {
 const APPLY_SETTINGS = (data, settings) => {
 	Object.entries(settings).forEach(([groupName, group]) => {
 		const dataGroup = data[groupName]
-		if(!(group instanceof Object || dataGroup instanceof Object)) { return }
+		if(!(group instanceof Object && dataGroup instanceof Object)) { return }
 
 		Object.entries(group).forEach(([settingName, sett]) => {
 			const dataSett = dataGroup[settingName]
-			if(!(sett instanceof Object || dataSett instanceof Object)) { return }
+			if(!(sett instanceof Object && dataSett instanceof Object)) { return }
 
 			if(dataSett.default === false && typeof dataSett.value === typeof sett.value && dataSett.value !== sett.value) {
 				sett.value = dataSett.value
