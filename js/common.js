@@ -62,6 +62,9 @@ const DEFAULT_SETTINGS = {
 		enabled: { default: true, value: true },
 		embedInventoryEnabled: { default: true, value: true }
 	},
+	friends: {
+		alwaysShowUnfriend: { default: true, value: true }
+	},
 	versionhistory: {
 		enabled: { default: true, value: true }
 	}
@@ -103,6 +106,10 @@ const PAGE_INFO = {
 	develop: {
 		matches: ["^/develop"],
 		css: ["develop.css"]
+	},
+	friends: {
+		matches: ["^/users/(\\d+)/friends"],
+		css: []
 	},
 	gamedetails: {
 		matches: ["^/games/(\\d+)/"],
