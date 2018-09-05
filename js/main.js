@@ -361,17 +361,13 @@ function PreInit() {
 		
 		blogFeedData = data.cachedBlogFeedV2
 
-		{ // Change settings to be name: value
-			const rec = x => Object.entries(x).forEach(([i, y]) => {
-				if(y instanceof Object && "default" in y && "value" in y) {
-					x[i] = y.value
-				} else {
-					rec(y)
-				}
+		// Change settings to be name: value
+		Object.values(settings).forEach(group => {
+			Object.entries(group).forEach(([name, setting]) => {
+				group[name] = setting.value
 			})
-
-			rec(settings)
-		}
+		})
+		
 
 		InjectJS.send("INIT", settings, currentPage ? currentPage.name : null, currentPage ? currentPage.matches : null, IS_DEV_MODE)
 
