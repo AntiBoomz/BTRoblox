@@ -3,14 +3,14 @@
 {
 	const assetUrlPatterns = [
 		"*://*.roblox.com/*-item?*id=*",
-		"*://*.roblox.com/catalog/*",
-		"*://*.roblox.com/library/*",
-		"*://*.roblox.com/badges/*",
-		"*://*.roblox.com/game-pass/*"
+		"*://*.roblox.com/catalog/*/*",
+		"*://*.roblox.com/library/*/*",
+		"*://*.roblox.com/badges/*/*",
+		"*://*.roblox.com/game-pass/*/*"
 	]
 
 	const placeUrlPatterns = [
-		"*://*.roblox.com/games/*",
+		"*://*.roblox.com/games/*/*",
 		"*://*.roblox.com/refer?*PlaceId=*"
 	]
 
