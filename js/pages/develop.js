@@ -3,7 +3,7 @@
 pageInit.develop = function() {
 	document.$watch("#build-page").$then().$watch(".items-container").$then()
 		.$watchAll(".item-table", table => {
-			if(table.dataset.type !== "universes") { return }
+			if(table.dataset.type !== "universes" || !table.dataset.rootplaceId) { return }
 			
 			const parent = table.$find(".details-table>tbody")
 			if(!parent) { return }
