@@ -126,7 +126,7 @@ const toggleSettingsDiv = () => {
 		settingsDiv.setAttribute("loaded", "")
 		initSettingsDiv()
 	}
-})
+}
 
 const initSettingsDiv = () => {
 	let resolve
