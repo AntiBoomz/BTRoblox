@@ -51,8 +51,11 @@
 				"js/utility.js",
 				"js/inject.js",
 				"js/main.js",
-				"js/pages.js",
+				
+				"js/feat/settings.js",
+				"js/feat/fastSearch.js",
 
+				"js/pages.js",
 				"js/pages/avatar.js",
 				"js/pages/catalog.js",
 				"js/pages/develop.js",
