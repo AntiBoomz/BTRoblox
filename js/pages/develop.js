@@ -4,8 +4,12 @@ pageInit.develop = function() {
 	document.$watch("#build-page").$then().$watch(".items-container").$then()
 		.$watchAll(".item-table", table => {
 			if(table.dataset.type !== "universes") { return }
+			
+			const parent = table.$find(".details-table>tbody")
+			if(!parent) { return }
+
 			const btn = html`<tr><td><a class='btr-listed-status'/></td></tr>`
-			table.$find(".details-table>tbody").append(btn)
+			parent.append(btn)
 
 			btn.$on("click", () => {
 				const placeId = parseInt(table.dataset.rootplaceId, 10)
