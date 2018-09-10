@@ -2,7 +2,7 @@
 	max-width: 1000px;
 }
 
-.btr-inventory .catalog-container {
+.btr-inventory #catalog-content {
 	background-color: #fff;
 	box-shadow: 0 1px 4px 0 rgba(25,25,25,0.3);
 	padding: 15px;

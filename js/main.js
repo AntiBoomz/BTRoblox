@@ -97,7 +97,7 @@ function Init() {
 
 	// Roblox+ compatibility
 	headerWatcher.$watch("#navbar-rplus", () => {
-		$.findAll(".rbx-navbar").forEach(bar => {
+		$.all(".rbx-navbar").forEach(bar => {
 			if(bar.children.length < 3) { return }
 			const btn = bar.children[2]
 
