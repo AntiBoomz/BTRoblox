@@ -1,6 +1,6 @@
 "use strict"
 
-pageInit.friends = () => { // userId
+const myFriends = () => {
 	if(settings.friends.alwaysShowUnfriend) {
 		modifyTemplate("friends-page-base", template => {
 			const menu = template.$find(".avatar-card-menu")
@@ -15,6 +15,18 @@ pageInit.friends = () => { // userId
 			if(!unfriend) { return }
 
 			unfriend.parentNode.removeAttribute("ng-show")
+		})
+	}
+}
+
+pageInit.friends = userId => { // userId
+	if(!userId) {
+		myFriends()
+	} else {
+		loggedInUserPromise.then(loggedIn => {
+			if(+loggedIn === +userId) {
+				myFriends()
+			}
 		})
 	}
 }

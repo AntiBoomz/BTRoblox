@@ -108,7 +108,7 @@ const PAGE_INFO = {
 		css: ["develop.css"]
 	},
 	friends: {
-		matches: ["^/users/(\\d+)/friends"],
+		matches: ["^/users/(\\d+)/friends", "^/users/friends"],
 		css: []
 	},
 	gamedetails: {
