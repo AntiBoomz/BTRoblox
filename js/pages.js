@@ -279,7 +279,7 @@ const HoverPreview = (() => {
 			document.$on("mouseover", selector, ev => {
 				const self = ev.currentTarget
 				const anchor = self.$find((`a[href*="/catalog/"]`))
-				if(!anchor) { return console.log("no anchor") }
+				if(!anchor) { return }
 
 				const assetId = anchor.href.replace(/^.+\/catalog\/(\d+)\/.+$/, "$1")
 				if(!Number.isSafeInteger(+assetId)) { return }

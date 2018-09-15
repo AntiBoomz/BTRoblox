@@ -32,8 +32,8 @@ pageInit.catalog = function() {
 
 		const hover = html`<div class="btr-item-card-more">
 			<div class=text-secondary>
-				<div class="text-overflow item-card-label">Updated: <span class=btr-updated-label>Loading...</span></div>
-				<div class="text-overflow item-card-label">Sales: <span class=btr-sales-label>Loading...</span></div>
+				<div class="text-overflow item-card-label" ng-if="item.ItemType===1">Updated: <span class=btr-updated-label>Loading...</span></div>
+				<div class="text-overflow item-card-label" ng-if="item.ItemType===1">Sales: <span class=btr-sales-label>Loading...</span></div>
 				<div class="text-overflow item-card-label" ng-if="!item.Creator">By <span class="text-link creator-name" ng-click="creatorClick($event, 'https://www.roblox.com/users/1/profile')">ROBLOX</span></div>
 			</div>
 		</div>`

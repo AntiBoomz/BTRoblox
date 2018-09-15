@@ -43,6 +43,8 @@ pageInit.itemdetails = function(assetId) {
 		})
 	
 	document.$watch("#item-container", itemCont => {
+		if(itemCont.dataset.itemType !== "Asset") { return }
+		
 		const assetTypeName = itemCont.dataset.assetType
 		const assetTypeId = AssetTypeIds.indexOf(assetTypeName)
 		if(assetTypeId === -1) {
