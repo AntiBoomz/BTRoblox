@@ -266,14 +266,20 @@ pageInit.profile = function(userId) {
 			const placeIdList = []
 			let lastGamePromise
 
-			switcher.$watch(">.hlist").$then().$watchAll(".slide-item-container", slide => {
+			switcher.$watch(">.hlist").$then().$watchAll(".slide-item-container", async slide => {
+				const slideImage = await slide.$watch(".slide-item-image").$promise()
+				const slideName = await slide.$watch(".slide-item-name").$promise()
+				const slideDesc = await slide.$watch(".slide-item-description").$promise()
+				const slideEmblemLink = await slide.$watch(".slide-item-emblem-container > a").$promise()
+				const slideStats = await slide.$watch(".slide-item-stats > .hlist").$promise()
+				
 				const index = +slide.dataset.index
-				const placeId = slide.$find(".slide-item-image").dataset.emblemId
+				const placeId = slideImage.dataset.emblemId
 
-				const title = slide.$find(".slide-item-name").textContent
-				const desc = slide.$find(".slide-item-description").textContent
-				const url = slide.$find(".slide-item-emblem-container>a").href
-				const iconThumb = slide.$find(".slide-item-image").getAttribute("data-src")
+				const title = slideName.textContent
+				const desc = slideDesc.textContent
+				const url = slideEmblemLink.href
+				const iconThumb = slideImage.dataset.src
 
 				placeIdList.push(placeId)
 				if(!lastGamePromise) {
@@ -324,7 +330,7 @@ pageInit.profile = function(userId) {
 				</li>`
 
 				item.classList.toggle("visible", (index / pageSize) < 1)
-				item.$find(".btr-game-stats").append(slide.$find(".slide-item-stats>.hlist"))
+				item.$find(".btr-game-stats").append(slideStats)
 
 				item.$find(".btr-game-button").$on("click", () => {
 					select(item)
@@ -362,7 +368,7 @@ pageInit.profile = function(userId) {
 				hlist.append(item)
 				pager.setMaxPage(Math.floor((hlist.children.length - 1) / pageSize) + 1)
 
-				const iconRetryUrl = slide.$find(".slide-item-image").getAttribute("data-retry")
+				const iconRetryUrl = slideImage.dataset.retry
 
 				function getThumbnail() {
 					function retryUntilFinal(thumbUrl, cb) {

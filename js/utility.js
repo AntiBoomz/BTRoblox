@@ -140,6 +140,9 @@ const $ = function(selector) { return $.find(document, selector) }
 			}
 
 			return nxt
+		},
+		$promise() {
+			return this.finishPromise || this.targetPromise
 		}
 	}
 
