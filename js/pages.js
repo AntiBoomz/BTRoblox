@@ -278,7 +278,7 @@ const HoverPreview = (() => {
 		register(selector, thumbContSelector) {
 			document.$on("mouseover", selector, ev => {
 				const self = ev.currentTarget
-				const anchor = self.$find((`a[href*="/catalog/"]`))
+				const anchor = self.$find(`a[href*="/catalog/"]`)
 				if(!anchor) { return }
 
 				const assetId = anchor.href.replace(/^.+\/catalog\/(\d+)\/.+$/, "$1")
