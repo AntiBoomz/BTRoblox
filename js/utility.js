@@ -621,6 +621,8 @@ const $ = function(selector) { return $.find(document, selector) }
 
 
 const htmlstring = function(pieces, ...args) {
+	if(!Array.isArray(pieces)) { pieces = [pieces] }
+
 	const escapeMap = {
 		"&": "&amp;",
 		"<": "&lt;",
