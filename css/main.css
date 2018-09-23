@@ -8,7 +8,7 @@
 	display: none;
 }
 
-@media (min-width: 992px) and (max-width: 1199px){
+@media (min-width: 992px) and (max-width: 1500px){
 	#header .rbx-navbar {
 		width: 30%;
 	}
