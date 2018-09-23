@@ -276,8 +276,10 @@ const HoverPreview = (() => {
 
 	return {
 		register(selector, thumbContSelector) {
-			document.$on("mouseover", selector, ev => {
-				const self = ev.currentTarget
+			document.$on("mouseover", `${selector} ${thumbContSelector}`, ev => {
+				const thumbCont = ev.currentTarget
+				const self = thumbCont.closest(selector)
+				if(!self) { return }
 				const anchor = self.$find(`a[href*="/catalog/"]`)
 				if(!anchor) { return }
 
@@ -343,7 +345,7 @@ const HoverPreview = (() => {
 					}
 				})
 		
-				self.addEventListener("mouseleave", () => {
+				thumbCont.addEventListener("mouseleave", () => {
 					if(currentTarget !== self) { return }
 					currentTarget = null
 
