@@ -217,49 +217,7 @@ const $ = function(selector) { return $.find(document, selector) }
 					const directMatch = selector.match(/^\s*>\s*((?:\.|#)?[\w-]+)\s*$/)
 					if(directMatch) {
 						const match = directMatch[1]
-
-						let item
-						if(match[0] === ".") {
-							item = { type: "class", selector: match.slice(1), callback: resolve, once: true }
-						} else if(match[0] === "#") {
-							item = { type: "id", selector: match.slice(1), callback: resolve, once: true }
-						} else {
-							item = { type: "name", selector: match, callback: resolve, once: true }
-						}
-
-						const spent = Array.prototype.some.call(target.children, node => {
-							let matches = false
-
-							switch(item.type) {
-							case "name": matches = node.nodeName.toLowerCase() === item.selector; break
-							case "class": matches = node.classList.contains(item.selector); break
-							case "id": matches = node.id === item.selector; break
-							}
-
-							if(matches) {
-								try { item.callback(node) }
-								catch(ex) { console.error(ex) }
-
-								if(item.once) { return true }
-							}
-
-							return false
-						})
-
-						if(!spent) {
-							let dObserver = DirectObservers.get(target)
-							if(!dObserver) {
-								dObserver = new MutationObserver(handleDirectMutations)
-								DirectObservers.set(target, dObserver)
-
-								dObserver.listeners = [item]
-								dObserver.target = target
-
-								dObserver.observe(target, { childList: true, subtree: false })
-							} else {
-								dObserver.listeners.push(item)
-							}
-						}
+						target.$watchAll(match, resolve, { once: true })
 						return
 					}
 				}
@@ -300,25 +258,29 @@ const $ = function(selector) { return $.find(document, selector) }
 			}
 		},
 
-		watchAll(target, selector, callback) {
+		watchAll(target, selector, callback, argProps) {
+			selector = selector.trim()
 			if(!watchAllSelectorRegex.test(selector)) {
 				throw new Error(`Invalid selector '${selector}', only simple selectors allowed`)
 			}
 
+			const props = {}
+			if(argProps instanceof Object) { Object.assign(props, argProps) }
+
 			let item
 			if(selector[0] === ".") {
-				item = { type: "class", selector: selector.slice(1), callback }
+				item = { type: "class", selector: selector.slice(1), callback, once: props.once }
 			} else if(selector[0] === "#") {
-				item = { type: "id", selector: selector.slice(1), callback }
+				item = { type: "id", selector: selector.slice(1), callback, once: props.once }
 			} else {
-				item = { type: "name", selector, callback }
+				item = { type: "name", selector, callback, once: props.once }
 			}
 
-			const spent = Array.prototype.some.call(target.children, node => {
+			const spent = Array.from(target.children).some(node => {
 				let matches = false
 
 				switch(item.type) {
-				case "name": matches = node.nodeName.toLowerCase() === item.selector; break
+				case "name": matches = node.nodeName.toLowerCase() === item.selector.toLowerCase(); break
 				case "class": matches = node.classList.contains(item.selector); break
 				case "id": matches = node.id === item.selector; break
 				}
