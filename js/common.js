@@ -17,19 +17,20 @@ const DEFAULT_SETTINGS = {
 	_version: 2,
 	general: {
 		theme: { default: true, value: "default" },
-		showAds: { default: true, value: false },
+		hideAds: { default: true, value: true },
 		noHamburger: { default: true, value: true },
 		chatEnabled: { default: true, value: true },
 		smallChatButton: { default: true, value: true },
 		fastSearch: { default: true, value: true },
 		fixAudioPreview: { default: true, value: true },
 
-		navigationEnabled: { default: true, value: true },
-		showBlogFeed: { default: true, value: true },
-
 		robuxToDollars: { default: true, value: false },
 		hoverPreview: { default: true, value: true },
 		hoverPreviewMode: { default: true, value: "always" }
+	},
+	navigation: {
+		enabled: { default: true, value: true },
+		items: { default: true, value: "" }
 	},
 	catalog: {
 		enabled: { default: true, value: true }

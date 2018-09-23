@@ -84,7 +84,7 @@ const INJECT_SCRIPT = () => {
 							if(!settingsAreLoaded) {
 								gtsNode = { this: this, node }
 								return
-							} else if(!settings.general.showAds) {
+							} else if(settings.general.hideAds) {
 								return
 							}
 						}
@@ -298,7 +298,7 @@ const INJECT_SCRIPT = () => {
 		}
 
 		if(typeof Roblox !== "undefined") {
-			if(!settings.general.showAds) {
+			if(settings.general.hideAds) {
 				if(Roblox.PrerollPlayer) {
 					Roblox.PrerollPlayer.waitForPreroll = x => $.Deferred().resolve(x)
 				}
@@ -458,7 +458,7 @@ const INJECT_SCRIPT = () => {
 		settingsAreLoaded = true
 
 		if(gtsNode) {
-			if(settings.general.showAds) {
+			if(!settings.general.hideAds) {
 				gtsNode.this.insertBefore(gtsNode.node)
 			}
 

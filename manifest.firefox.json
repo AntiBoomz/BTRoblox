@@ -54,6 +54,7 @@
 				
 				"js/feat/settings.js",
 				"js/feat/fastSearch.js",
+				"js/feat/navigation.js",
 
 				"js/pages.js",
 				"js/pages/avatar.js",
