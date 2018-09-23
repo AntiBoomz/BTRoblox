@@ -15,9 +15,21 @@ const InjectJS = {
 		document.dispatchEvent(new CustomEvent(`inject.${action}`, { detail }))
 	},
 
-	listen(actionList, callback) {
-		const cb = ev => callback(...ev.detail)
-		actionList.split(" ").forEach(action => {
+	listen(actions, callback, props) {
+		const actionList = actions.split(" ")
+		const once = props && props.once
+
+		const cb = ev => {
+			if(once) {
+				actionList.forEach(action => {
+					document.removeEventListener(`content.${action}`, cb)
+				})
+			}
+
+			return callback(...ev.detail)
+		}
+
+		actionList.forEach(action => {
 			document.addEventListener(`content.${action}`, cb)
 		})
 	}
@@ -29,15 +41,13 @@ function modifyTemplate(id, callback) {
 	if(!templateListeners[id]) {
 		const listeners = templateListeners[id] = []
 
-		const modify = function(html, end) {
+		InjectJS.listen(`TEMPLATE_${id}`, (responseId, html) => {
 			const doc = domParser.parseFromString(`<body>${html}</body>`, "text/html")
-			listeners.forEach(fn => fn(doc.body))
-			end(doc.body.innerHTML)
-		}
 
-		InjectJS.listen(`TEMPLATE_${id}`, (responseId, data) => {
-			modify(data, changedData => InjectJS.send(`TEMPLATE_${responseId}`, changedData))
-		})
+			listeners.forEach(fn => fn(doc.body))
+
+			InjectJS.send(`TEMPLATE_${responseId}`, doc.body.innerHTML)
+		}, { once: true })
 
 		InjectJS.send("TEMPLATE_INIT", id)
 	}

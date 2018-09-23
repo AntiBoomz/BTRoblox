@@ -15,10 +15,22 @@ const INJECT_SCRIPT = () => {
 		send(action, ...args) {
 			document.dispatchEvent(new CustomEvent("content." + action, { detail: args }))
 		},
-		listen(actionList, callback) {
-			const cb = ev => callback(...ev.detail)
-			actionList.split(" ").forEach(action => {
-				document.addEventListener("inject." + action, cb)
+		listen(actions, callback, props) {
+			const actionList = actions.split(" ")
+			const once = props && props.once
+
+			const cb = ev => {
+				if(once) {
+					actionList.forEach(action => {
+						document.removeEventListener(`inject.${action}`, cb)
+					})
+				}
+
+				return callback(...ev.detail)
+			}
+
+			actionList.forEach(action => {
+				document.addEventListener(`inject.${action}`, cb)
 			})
 		}
 	}
@@ -103,11 +115,12 @@ const INJECT_SCRIPT = () => {
 				const put = t.put
 				t.put = (key, value) => {
 					if(templates[key]) {
+						delete templates[key]
 						const id = ++templateRequestCounter
 
 						ContentJS.listen(`TEMPLATE_${id}`, changedValue => {
 							put.call(t, key, changedValue)
-						})
+						}, { once: true })
 
 						put.call(t, key, value)
 						ContentJS.send(`TEMPLATE_${key}`, id, value)
