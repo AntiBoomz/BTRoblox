@@ -21,15 +21,7 @@ const $ = function(selector) { return $.find(document, selector) }
 		return amt > 0 ? "0".repeat(amt) + str : str
 	}
 
-	const immediateChannel = new MessageChannel()
-	const immediateCallbacks = { counter: 0 }
 	let DTF
-
-	immediateChannel.port1.onmessage = ev => {
-		const fn = immediateCallbacks[ev.data]
-		delete immediateCallbacks[ev.data]
-		fn()
-	}
 
 	const Observers = new WeakMap()
 	const DirectObservers = new WeakMap()
@@ -147,6 +139,10 @@ const $ = function(selector) { return $.find(document, selector) }
 	}
 
 	const defaultToDict = (x, v) => x[v] = true
+	
+	const immediateStatus = { counter: 0 }
+	const immediatePromise = Promise.resolve()
+
 	Object.assign($, {
 		toDict(fn, ...args) {
 			if(typeof fn !== "function" && fn !== null) {
@@ -356,9 +352,21 @@ const $ = function(selector) { return $.find(document, selector) }
 		},
 
 		setImmediate(cb, ...args) {
-			const key = String(immediateCallbacks.counter++)
-			immediateCallbacks[key] = () => cb(...args)
-			immediateChannel.port2.postMessage(key)
+			const key = immediateStatus.counter++
+			immediateStatus[key] = true
+
+			immediatePromise.then(() => {
+				if(immediateStatus[key]) {
+					delete immediateStatus[key]
+					cb(...args)
+				}
+			})
+
+			return key
+		},
+
+		clearImmediate(key) {
+			delete immediateStatus[key]
 		},
 
 		find(self, selector) {
