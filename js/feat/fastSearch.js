@@ -240,9 +240,9 @@ const initFastSearch = () => {
 		}, 250)
 	}
 
-	document.$watch("#navbar-universal-search", search => {
-		const input = search.$find("#navbar-search-input")
-		const list = search.$find(">ul")
+	document.$watch("#navbar-universal-search", async search => {
+		const input = await search.$watch("#navbar-search-input").$promise()
+		const list = await search.$watch(">ul").$promise()
 
 		list.$on("mouseover", ".rbx-navbar-search-option", ev => {
 			const last = list.$find(">.selected")
