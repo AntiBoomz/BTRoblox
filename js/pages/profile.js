@@ -233,7 +233,7 @@ pageInit.profile = function(userId) {
 					obj.classList.toggle("visible", Math.floor(index / pageSize) + 1 === page)
 				})
 
-				select(hlist.children[(page - 1) * pageSize])
+				select(hlist.children[(page - 1) * pageSize], true)
 			}
 
 			hlist
