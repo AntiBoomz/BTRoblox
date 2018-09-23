@@ -30,7 +30,7 @@ const DEFAULT_SETTINGS = {
 	},
 	navigation: {
 		enabled: { default: true, value: true },
-		items: { default: true, value: "" }
+		items: { default: true, value: "", hidden: true }
 	},
 	catalog: {
 		enabled: { default: true, value: true }

@@ -944,8 +944,9 @@ const SettingsDiv = (() => {
 		const wipGroup = settingsDiv.$find("#btr-settings-wip")
 		Object.entries(settings).forEach(([groupPath, settingsGroup]) => {
 			Object.entries(settingsGroup).forEach(([settingName, settingValue]) => {
+				const defaultValueInfo = DEFAULT_SETTINGS[groupPath][settingName]
 				const settingPath = `${groupPath}.${settingName}`
-				if(settingsDone[settingPath]) { return }
+				if(settingsDone[settingPath] || defaultValueInfo.hidden) { return }
 
 				if(typeof settingValue === "boolean") {
 					const checkbox = html`<checkbox></checkbox>`
