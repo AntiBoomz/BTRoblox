@@ -150,7 +150,7 @@ pageInit.groupadmin = function() {
 
 					cont.$findAll("td.credit").forEach(label => {
 						if(!label.textContent) { return }
-						const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+						const usd = RobuxToUSD(label.textContent.replace(/,/g, "").replace(/^\s*\((.*)\)\s*$/, "$1"))
 						label.append(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
 					})
 				})
@@ -159,7 +159,7 @@ pageInit.groupadmin = function() {
 				x.$watchAll("tr", row => {
 					const label = row.$find(".robux")
 					if(!label) { return }
-					const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+					const usd = RobuxToUSD(label.textContent.replace(/,/g, "").replace(/^\s*\((.*)\)\s*$/, "$1"))
 					label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
 				})
 			)
