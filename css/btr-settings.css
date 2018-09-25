@@ -634,9 +634,9 @@
 	background-position: 0 -28px;
 }
 
-.btr-naveditor-tr-Robux:after {
-	content: "2M+";
+.btr-naveditor-tr-Robux .amount {
 	min-width: 42px;
+	min-height: 1px;
 	display: block;
 	color:#fff;
 	line-height: 40px;

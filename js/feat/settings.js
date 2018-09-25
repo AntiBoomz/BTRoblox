@@ -369,6 +369,14 @@ const SettingsDiv = (() => {
 		const trTab = navEditor.$find("#btr-naveditor-topright-container")
 		const sbTab = navEditor.$find("#btr-naveditor-sidebar-container")
 
+		tlBtn.classList.add("btn-control-xs")
+		trBtn.classList.add("btn-control-xs")
+		sbBtn.classList.add("btn-control-xs")
+
+		tlTab.style.display = "none"
+		trTab.style.display = "none"
+		sbTab.style.display = "none"
+
 		let lastBtn
 		let lastTab
 
@@ -403,13 +411,6 @@ const SettingsDiv = (() => {
 
 				return { elem, listElem, name }
 			})
-
-			{ // Fix order
-				const msg = allItems.find(x => x.name === "bi_Messages")
-				const frn = allItems.find(x => x.name === "bi_Friends")
-				const robux = allItems.find(x => x.name === "Robux")
-				robux.listElem.after(frn.listElem, msg.listElem)
-			}
 			
 			const list = Navigation.topright.getCurrent().map(name => {
 				const item = allItems.find(x => x.name === name)
@@ -419,6 +420,8 @@ const SettingsDiv = (() => {
 			})
 
 			const updatePos = slow => {
+				allItems.forEach(x => { x.width = x.listElem.clientWidth || x.width || 0 })
+
 				let offset = 0
 				list.forEach(x => {
 					if(x !== dragging) {
@@ -427,6 +430,7 @@ const SettingsDiv = (() => {
 					}
 
 					x.offset = offset
+					x.width = x.listElem.clientWidth
 					offset += x.width
 				})
 			}
@@ -437,8 +441,41 @@ const SettingsDiv = (() => {
 				)
 			}
 
-			allItems.forEach(x => { x.width = x.listElem.clientWidth })
+			{ // Fix order and update robux label
+				const msg = allItems.find(x => x.name === "bi_Messages")
+				const frn = allItems.find(x => x.name === "bi_Friends")
+				const robux = allItems.find(x => x.name === "Robux")
+				robux.listElem.after(frn.listElem, msg.listElem)
+
+				const robuxAmt1 = html`<span class=amount></span>`
+				const robuxAmt2 = robuxAmt1.cloneNode(true)
+				robux.listElem.append(robuxAmt1)
+				robux.elem.append(robuxAmt2)
+
+				document.$watch("#nav-robux-amount", amt => {
+					let lastTextNode
+
+					const update = () => {
+						const textNode = amt.childNodes[0]
+						if(lastTextNode !== textNode) {
+							lastTextNode = textNode
+							if(textNode) {
+								observer.observe(textNode, { characterData: true })
+							}
+						}
+
+						robuxAmt1.textContent = robuxAmt2.textContent = amt.textContent
+						updatePos(false)
+					}
+
+					const observer = new MutationObserver(update)
+					observer.observe(amt, { childList: true })
+					update()
+				})
+			}
+
 			updatePos()
+			trBtn.$on("click", () => updatePos())
 
 			const mouseup = ev => {
 				if(ev.button !== 0) { return }
@@ -743,14 +780,6 @@ const SettingsDiv = (() => {
 				}
 			})
 		}
-
-		tlBtn.classList.add("btn-control-xs")
-		trBtn.classList.add("btn-control-xs")
-		sbBtn.classList.add("btn-control-xs")
-
-		tlTab.style.display = "none"
-		trTab.style.display = "none"
-		sbTab.style.display = "none"
 
 		tlBtn.click()
 	}
