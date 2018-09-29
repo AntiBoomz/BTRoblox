@@ -389,7 +389,7 @@ const RBXParser = (() => {
 
 			const groupId = sub.UInt32LE()
 			const className = sub.String(sub.UInt32LE())
-			sub.Byte() // Bonus byte, idk the use
+			sub.Byte() // bool IsService
 			const instCount = sub.UInt32LE()
 			const instIds = sub.RBXInterleavedInt32(instCount)
 
