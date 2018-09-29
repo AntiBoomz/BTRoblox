@@ -30,14 +30,14 @@ pageInit.groups = function() {
 			const script = Array.from($.all("script")).find(x => x.innerHTML.indexOf("Roblox.ExileModal.InitializeGlobalVars") !== -1)
 			const groupId = script ? parseInt(script.innerHTML.replace(/^.*InitializeGlobalVars\(\d+, (\d+).*$/m, "$1"), 10) : NaN
 
-			wall.$watchAll("div", post => {
+			wall.$watchAll("div", async post => {
 				if(!post.matches(".AlternatingItemTemplateOdd, .AlternatingItemTemplateEven")) { return }
 				post.classList.add("btr-comment")
 
-				const content = post.$find(".RepeaterText")
-				const postDate = post.$find(".GroupWall_PostDate")
-				const postBtns = post.$find(".GroupWall_PostBtns")
-				const userLink = post.$find(".UserLink")
+				const content = await post.$watch(".RepeaterText").$promise()
+				const postDate = await post.$watch(".GroupWall_PostDate").$promise()
+				const postBtns = await post.$watch(".GroupWall_PostBtns").$promise()
+				const userLink = await post.$watch(".UserLink").$promise()
 				const dateSpan = postDate.firstElementChild
 
 				const defBtns = Array.from(postBtns.children)
