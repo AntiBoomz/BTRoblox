@@ -52,6 +52,7 @@
 .btr-settings-content {
 	flex: 1 1 auto;
 	overflow: auto;
+	overflow-x: hidden;
 	overscroll-behavior: contain;
 	
 	padding: 6px;
@@ -194,7 +195,7 @@
 	padding-bottom: 12px;
 }
 
-.btr-settings-content group:not(:first-child) {
+#btr-settings-main .btr-settings-content group:not(:first-child) {
 	border-top: 1px solid #E8E8E8;
 }
 
@@ -517,12 +518,10 @@
 .btr-naveditor-container {
 	position: relative;
 	overflow: hidden;
-	margin: 10px 2px;
+	margin: 10px 2px 0;
 	background: #f8f8f8;
 	border: 1px solid #B8B8B8;
 	border-radius: 6px;
-
-	min-height: 100px;
 }
 
 
@@ -550,7 +549,7 @@
 
 .btr-naveditor-items {
 	position: relative;
-	margin-top: 6px;
+	padding: 8px;
 }
 
 .btr-naveditor-items .btr-naveditor-item {
@@ -607,8 +606,17 @@
 	border-color: #fff;
 }
 
+#btr-topright-items {
+	text-align: right;
+}
+
 #btr-topright-items li {
-	margin: 0 4px;
+	margin: 0 2px;
+	position: relative;
+	float: unset;
+}
+
+#btr-naveditor-topright-container {
 	position: relative;
 }
 

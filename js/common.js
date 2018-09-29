@@ -30,7 +30,9 @@ const DEFAULT_SETTINGS = {
 	},
 	navigation: {
 		enabled: { default: true, value: true },
-		items: { default: true, value: "", hidden: true }
+		items: { default: true, value: "", hidden: true },
+		hideAgeBracket: { default: true, value: true },
+		showBlogFeed: { default: true, value: true }
 	},
 	catalog: {
 		enabled: { default: true, value: true }

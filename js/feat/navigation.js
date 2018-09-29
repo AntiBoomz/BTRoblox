@@ -219,7 +219,6 @@ const Navigation = (() => {
 			})
 		})
 
-
 		headerWatcher.$watch("#navbar-setting").$then().$watch(".rbx-popover-content > ul", list => {
 			list.prepend(html`<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>`)
 		})
@@ -255,51 +254,81 @@ const Navigation = (() => {
 			requestTopLeftUpdate()
 		})
 
+
+		let ageBracketLabel
+		const updateAgeBracket = disabled => {
+			if(ageBracketLabel) {
+				ageBracketLabel.style.display = disabled ? "none" : ""
+			}
+		}
+
+		headerWatcher.$watch(".age-bracket-label", elem => {
+			ageBracketLabel = elem
+			updateAgeBracket(settings.navigation.hideAgeBracket)
+		})
+
+		SettingsDiv.onSettingChange("navigation.hideAgeBracket", value => {
+			updateAgeBracket(value)
+		})
+
+
+		const blogfeed = html`<li id=btr-blogfeed style=display:none>Blog feed enabled</li>`
+		let blogfeedInitialized = false
+
+		const updateBlogFeed = data => {
+			blogfeed.$empty()
+
+			data.forEach(item => {
+				blogfeed.append(html`
+				<a class="btr-feed" href="${item.url}">
+					<div class="btr-feedtitle">
+						${item.title.trim() + " "}
+						<span class="btr-feeddate">(${$.dateSince(item.date)} ago)</span>
+					</div>
+					<div class="btr-feeddesc">${item.desc}</div>
+				</a>`)
+			})
+
+			blogfeed.style.display = ""
+		}
+
+		const toggleBlogFeed = enabled => {
+			if(enabled && !blogfeedInitialized) {
+				blogfeedInitialized = true
+
+				MESSAGING.send("requestBlogFeed", updateBlogFeed)
+
+				if(blogFeedData) {
+					try { updateBlogFeed(blogFeedData) }
+					catch(ex) { console.error(ex) }
+				}
+			}
+
+			blogfeed.style.display = enabled ? "" : "none"
+		}
+
+
+		toggleBlogFeed(settings.navigation.showBlogFeed)
+		SettingsDiv.onSettingChange("navigation.showBlogFeed", value => {
+			toggleBlogFeed(value)
+		})
+
 		
 		const navWatcher = document.$watch("#navigation").$then()
 
-		
-		const showBlogFeed = true
-		const blogfeed = html`<div id=btr-blogfeed>Blog feed enabled</div>`
-		if(showBlogFeed) {
-			const updateBlogFeed = data => {
-				blogfeed.$empty()
-
-				data.forEach(item => {
-					blogfeed.append(html`
-					<a class="btr-feed" href="${item.url}">
-						<div class="btr-feedtitle">
-							${item.title.trim() + " "}
-							<span class="btr-feeddate">(${$.dateSince(item.date)} ago)</span>
-						</div>
-						<div class="btr-feeddesc">${item.desc}</div>
-					</a>`)
-				})
-
-				blogfeed.style.display = ""
-			}
-
-			MESSAGING.send("requestBlogFeed", updateBlogFeed)
-
-			if(blogFeedData) {
-				try { updateBlogFeed(blogFeedData) }
-				catch(ex) { console.error(ex) }
-			}
-		}
-		
 		navWatcher
 			.$watch("#nav-home", home => home.parentNode.remove())
 			.$watch(".rbx-upgrade-now", upgradeNow => upgradeNow.remove())
 			.$watch("#nav-blog", blog => {
 				blog.parentNode.before(html`
 				<li>
-					<a href=/premium/membership id=nav-bc class=font-gray-1>
+					<a href=/premium/membership id=nav-bc class="font-gray-1 text-nav">
 						<span class=icon-nav-bc-btr></span>
 						<span>Builders Club</span>
 					</a>
 				</li>`)
 	
-				if(showBlogFeed) { blog.after(blogfeed) }
+				blog.parentNode.after(blogfeed)
 			})
 			.$watch("#nav-trade", trade => {
 				trade.href = "/my/money.aspx"
@@ -394,7 +423,7 @@ const Navigation = (() => {
 				const self = topRightBar
 
 				Object.keys(self.defaults).forEach(name => {
-					if(!list.includes(name)) {
+					if(!list.includes(name) && name !== "Settings") {
 						list.push(`-${name}`)
 					}
 				})

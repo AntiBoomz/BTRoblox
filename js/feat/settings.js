@@ -130,20 +130,31 @@ const SettingsDiv = (() => {
 						<ul id=btr-topleft-items class=btr-naveditor-items>
 						</ul>
 					</div>
-					<div class=btr-naveditor-container id=btr-naveditor-topright-container>
-						<div class=btr-fake-header>
-							<ul id=btr-naveditor-topright class=btr-fake-header-list>
+					<div id=btr-naveditor-topright-container>
+						<div class=btr-naveditor-container>
+							<div class=btr-fake-header>
+								<ul id=btr-naveditor-topright class=btr-fake-header-list>
+								</ul>
+							</div>
+							<ul id=btr-topright-items class=btr-naveditor-items>
 							</ul>
 						</div>
-						<ul id=btr-topright-items class=btr-naveditor-items>
-						</ul>
+						
+						<group path=navigation>
+							<checkbox label="Hide Age Bracket" path=hideAgeBracket></checkbox>
+						</group>
 					</div>
-					<div class=btr-naveditor-container id=btr-naveditor-sidebar-container>
-						<div class=btr-fake-header>
+					<div id=btr-naveditor-sidebar-container>
+						<div class=btr-naveditor-container>
+							<div class=btr-fake-header>
+							</div>
+							<ul id=btr-sidebar-items class=btr-naveditor-items>
+								Not Implemented
+							</ul>
 						</div>
-						<ul id=btr-sidebar-items class=btr-naveditor-items>
-							Not Implemented
-						</ul>
+						<group path=navigation>
+							<checkbox label="Show Blog Feed" path=showBlogFeed></checkbox>
+						</group>
 					</div>
 				</div>
 			</div>
@@ -153,6 +164,8 @@ const SettingsDiv = (() => {
 			</div>
 		</div>
 	</div>`
+
+	const onSettingCallbacks = {}
 	
 	let currentContent
 	const switchContent = name => {
@@ -399,7 +412,7 @@ const SettingsDiv = (() => {
 		sbBtn.$on("click", () => switchTab(sbBtn, sbTab))
 
 		{ // Top Right
-			const container = navEditor.$find("#btr-naveditor-topright-container")
+			const container = navEditor.$find("#btr-naveditor-topright-container .btr-naveditor-container")
 			const topright = container.$find("#btr-naveditor-topright")
 			const toprightItems = container.$find("#btr-topright-items")
 			let dragging
@@ -407,9 +420,15 @@ const SettingsDiv = (() => {
 			const allItems = Navigation.topright.getAll().map(name => {
 				const elem = html`<li class="btr-naveditor-item btr-naveditor-tr-${name}"></li>`
 				const listElem = html`<li class="btr-naveditor-item btr-naveditor-tr-${name}"></li>`
-				toprightItems.append(listElem)
+				toprightItems.prepend(listElem)
 
-				return { elem, listElem, name }
+				const item = { elem, listElem, name }
+
+				if(name === "Settings") {
+					item.locked = true
+				}
+
+				return item
 			})
 			
 			const list = Navigation.topright.getCurrent().map(name => {
@@ -445,7 +464,7 @@ const SettingsDiv = (() => {
 				const msg = allItems.find(x => x.name === "bi_Messages")
 				const frn = allItems.find(x => x.name === "bi_Friends")
 				const robux = allItems.find(x => x.name === "Robux")
-				robux.listElem.after(frn.listElem, msg.listElem)
+				robux.listElem.before(msg.listElem, frn.listElem)
 
 				const robuxAmt1 = html`<span class=amount></span>`
 				const robuxAmt2 = robuxAmt1.cloneNode(true)
@@ -490,6 +509,7 @@ const SettingsDiv = (() => {
 				didDrag.elem.style.width = ""
 				didDrag.elem.style.top = ""
 				didDrag.elem.style.left = ""
+				didDrag.elem.style.right = ""
 
 				const index = list.indexOf(didDrag)
 				if(index !== -1) {
@@ -511,7 +531,7 @@ const SettingsDiv = (() => {
 				const pixelX = dragging.offX + (ev.clientX - dragging.x)
 				const pixelY = dragging.offY + (ev.clientY - dragging.y)
 
-				const isDown = pixelY + elemRect.height / 2 >= tlRect.bottom - contRect.y
+				const isDown = pixelY + elemRect.height / 4 >= tlRect.bottom - contRect.y
 				const xOffset = (tlRect.right - contRect.x) - pixelX - elemRect.width / 2
 
 				const clampX = Math.max(list[0].width / 2,
@@ -525,7 +545,7 @@ const SettingsDiv = (() => {
 					dragging.elem.style.left = `${clampX}px`
 					dragging.elem.style.top = `${tlRect.y - contRect.y}px`
 
-					if(isDown) {
+					if(isDown && !dragging.locked) {
 						list.splice(index, 1)
 						updatePos(true)
 						updateNav()
@@ -589,6 +609,7 @@ const SettingsDiv = (() => {
 
 				dragging.elem.style.width = `${rect.width}px`
 				dragging.elem.style.transition = ""
+				dragging.elem.style.right = ""
 				dragging.elem.classList.add("dragging")
 				dragging.listElem.classList.add("disabled")
 				container.append(dragging.elem)
@@ -598,12 +619,14 @@ const SettingsDiv = (() => {
 
 				mousemove(ev)
 
-				const index = list.indexOf(dragging)
-				if(index !== -1 && lastClick && Date.now() - lastClick < 200) {
-					list.splice(index, 1)
-					list.forEach((a, b) => updatePos(a, b, true))
-					updateNav()
-					mouseup(ev)
+				if(!dragging.locked) {
+					const index = list.indexOf(dragging)
+					if(index !== -1 && lastClick && Date.now() - lastClick < 200) {
+						list.splice(index, 1)
+						list.forEach((a, b) => updatePos(a, b, true))
+						updateNav()
+						mouseup(ev)
+					}
 				}
 
 				ev.preventDefault()
@@ -826,12 +849,20 @@ const SettingsDiv = (() => {
 
 		const getSetting = path => path.split(".").reduce((a, b) => a[b], settings)
 		const isInvalidSetting = path => path.split(".").reduce((a, b) => (a ? a[b] : null), settings) === null
+		const joinPaths = (group, path) => (!group || path.includes(".") ? path : `${group}.${path}`)
 
 		const setSetting = (path, value) => {
 			MESSAGING.send("setSetting", { path, value })
+
+			const callbacks = onSettingCallbacks[path]
+			if(callbacks) {
+				callbacks.forEach(fn => {
+					try { fn(value, path) }
+					catch(ex) { console.error(ex) }
+				})
+			}
 		}
 
-		const joinPaths = (group, path) => (!group || path.includes(".") ? path : `${group}.${path}`)
 
 		settingsDiv.$findAll("group").forEach(group => {
 			const groupPath = group.getAttribute("path") || ""
@@ -999,6 +1030,13 @@ const SettingsDiv = (() => {
 	}
 
 	return {
-		toggle: toggleSettingsDiv
+		toggle: toggleSettingsDiv,
+		onSettingChange(settingPath, fn) {
+			if(!onSettingCallbacks[settingPath]) {
+				onSettingCallbacks[settingPath] = []
+			}
+
+			onSettingCallbacks[settingPath].push(fn)
+		}
 	}
 })()

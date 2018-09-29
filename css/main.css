@@ -4,10 +4,6 @@
 	display: none;
 }
 
-#header .age-bracket-label {
-	display: none;
-}
-
 #header .rbx-navbar.btr-navbar-1 > li { width: 100% }
 #header .rbx-navbar.btr-navbar-2 > li { width: 50% }
 #header .rbx-navbar.btr-navbar-3 > li { width: 33.33% }
@@ -195,6 +191,10 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 
 
 /* Sidebar Blog Feed */
+
+#btr-blogfeed {
+	margin-top: -3px;
+}
 
 .btr-feed {
 	display: block;
