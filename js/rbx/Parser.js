@@ -413,51 +413,52 @@ const RBXParser = (() => {
 			const prop = sub.String(sub.UInt32LE())
 			const dataType = sub.Byte()
 			const typeName = RBXBinParser.DataTypes[dataType]
+			const instCount = group.Objects.length
 
 			if(!typeName) {
 				console.warn(`[ParseRBXBin] Unknown dataType 0x${dataType.toString(16).toUpperCase()} for ${group.ClassName}.${prop}`)
 				return
 			}
 
-			let values = []
+			let values = new Array(instCount)
+
 			switch(typeName) {
 			case "string":
-				while(sub.GetRemaining() > 0) {
-					values.push(sub.String(sub.UInt32LE()))
+				for(let i = 0; i < instCount; i++) {
+					const len = sub.UInt32LE()
+					values[i] = sub.String(len)
 				}
 				break
 			case "bool":
-				while(sub.GetRemaining() > 0) {
-					values.push(sub.Byte() === 0x1)
+				for(let i = 0; i < instCount; i++) {
+					values[i] = sub.Byte() !== 0
 				}
 				break
 			case "int":
-				values = sub.RBXInterleavedInt32(sub.GetRemaining() / 4)
+				values = sub.RBXInterleavedInt32(instCount)
 				break
 			case "float":
-				values = sub.RBXInterleavedFloat(sub.GetRemaining() / 4)
+				values = sub.RBXInterleavedFloat(instCount)
 				break
 			case "double":
-				while(sub.GetRemaining() > 0) {
-					values.push(ByteReader.ParseDouble(sub.UInt32LE(), sub.UInt32LE()))
+				for(let i = 0; i < instCount; i++) {
+					values[i] = ByteReader.ParseDouble(sub.UInt32LE(), sub.UInt32LE())
 				}
 				break
 			case "UDim": {
-				const count = sub.GetRemaining() / 8
-				const scale = sub.RBXInterleavedFloat(count)
-				const offset = sub.RBXInterleavedInt32(count)
-				for(let i = 0; i < count; i++) {
+				const scale = sub.RBXInterleavedFloat(instCount)
+				const offset = sub.RBXInterleavedInt32(instCount)
+				for(let i = 0; i < instCount; i++) {
 					values[i] = [scale[i], offset[i]]
 				}
 				break
 			}
 			case "UDim2": {
-				const count = sub.GetRemaining() / 16
-				const scaleX = sub.RBXInterleavedFloat(count)
-				const scaleY = sub.RBXInterleavedFloat(count)
-				const offsetX = sub.RBXInterleavedInt32(count)
-				const offsetY = sub.RBXInterleavedInt32(count)
-				for(let i = 0; i < count; i++) {
+				const scaleX = sub.RBXInterleavedFloat(instCount)
+				const scaleY = sub.RBXInterleavedFloat(instCount)
+				const offsetX = sub.RBXInterleavedInt32(instCount)
+				const offsetY = sub.RBXInterleavedInt32(instCount)
+				for(let i = 0; i < instCount; i++) {
 					values[i] = [
 						[scaleX[i], offsetX[i]],
 						[scaleY[i], offsetY[i]]
@@ -466,8 +467,7 @@ const RBXParser = (() => {
 				break
 			}
 			case "Ray": {
-				const count = sub.GetRemaining() / 24
-				for(let i = 0; i < count; i++) {
+				for(let i = 0; i < instCount; i++) {
 					values[i] = [
 						[sub.FloatLE(), sub.FloatLE(), sub.FloatLE()],
 						[sub.FloatLE(), sub.FloatLE(), sub.FloatLE()]
@@ -476,94 +476,98 @@ const RBXParser = (() => {
 				break
 			}
 			case "BrickColor":
-				values = sub.RBXInterleavedUint32(sub.GetRemaining() / 4)
+				values = sub.RBXInterleavedUint32(instCount)
 				break
 			case "Color3": {
-				const count = sub.GetRemaining() / 12
-				const red = sub.RBXInterleavedFloat(count)
-				const green = sub.RBXInterleavedFloat(count)
-				const blue = sub.RBXInterleavedFloat(count)
-				for(let i = 0; i < count; i++) {
+				const red = sub.RBXInterleavedFloat(instCount)
+				const green = sub.RBXInterleavedFloat(instCount)
+				const blue = sub.RBXInterleavedFloat(instCount)
+				for(let i = 0; i < instCount; i++) {
 					values[i] = [red[i], green[i], blue[i]]
 				}
 				break
 			}
 			case "Vector2": {
-				const count = sub.GetRemaining() / 8
-				const vecX = sub.RBXInterleavedFloat(count)
-				const vecY = sub.RBXInterleavedFloat(count)
-				for(let i = 0; i < count; i++) {
+				const vecX = sub.RBXInterleavedFloat(instCount)
+				const vecY = sub.RBXInterleavedFloat(instCount)
+				for(let i = 0; i < instCount; i++) {
 					values[i] = [vecX[i], vecY[i]]
 				}
 				break
 			}
 			case "Vector3": {
-				const count = sub.GetRemaining() / 12
-				const vecX = sub.RBXInterleavedFloat(count)
-				const vecY = sub.RBXInterleavedFloat(count)
-				const vecZ = sub.RBXInterleavedFloat(count)
-				for(let i = 0; i < count; i++) {
+				const vecX = sub.RBXInterleavedFloat(instCount)
+				const vecY = sub.RBXInterleavedFloat(instCount)
+				const vecZ = sub.RBXInterleavedFloat(instCount)
+				for(let i = 0; i < instCount; i++) {
 					values[i] = [vecX[i], vecY[i], vecZ[i]]
 				}
 				break
 			}
 			case "CFrame": {
-				let count = 0
-				while(sub.GetRemaining() > count * 12) {
-					const value = values[count++] = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
+				for(let vi = 0; vi < instCount; vi++) {
+					const value = values[vi] = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
 					const type = sub.Byte()
 
 					if(type !== 0) {
-						const cframe = RBXBinParser.ShortCFrames[type]
-						assert(cframe, "[ParseRBXBin] Invalid shorthand CFrame")
-						for(let i = 0; i < 9; i++) { value[i + 3] = cframe[i] }
+						const right = RBXBinParser.Faces[Math.floor((type - 1) / 6)]
+						const up = RBXBinParser.Faces[Math.floor(type - 1) % 6]
+						const back = [
+							right[1] * up[2] - up[1] * right[2],
+							right[2] * up[0] - up[2] * right[0],
+							right[0] * up[1] - up[0] * right[1]
+						]
+
+						for(let i = 0; i < 3; i++) {
+							value[3 + i * 3] = right[i]
+							value[4 + i * 3] = up[i]
+							value[5 + i * 3] = back[i]
+						}
 					} else {
-						for(let i = 0; i < 9; i++) { value[i + 3] = sub.FloatLE() }
+						for(let i = 0; i < 9; i++) {
+							value[i + 3] = sub.FloatLE()
+						}
 					}
 				}
 
-				const vecX = sub.RBXInterleavedFloat(count)
-				const vecY = sub.RBXInterleavedFloat(count)
-				const vecZ = sub.RBXInterleavedFloat(count)
-				for(let i = 0; i < count; i++) {
+				const vecX = sub.RBXInterleavedFloat(instCount)
+				const vecY = sub.RBXInterleavedFloat(instCount)
+				const vecZ = sub.RBXInterleavedFloat(instCount)
+				for(let i = 0; i < instCount; i++) {
 					values[i][0] = vecX[i]
 					values[i][1] = vecY[i]
 					values[i][2] = vecZ[i]
 				}
 				break
 			}
-			case "Enum": {
-				const count = sub.GetRemaining() / 4
-				values = sub.RBXInterleavedUint32(count)
+			case "Enum":
+				values = sub.RBXInterleavedUint32(instCount)
 				break
-			}
 			case "Instance": {
-				const count = sub.GetRemaining() / 4
-				const refIds = sub.RBXInterleavedInt32(count)
+				const refIds = sub.RBXInterleavedInt32(instCount)
 
 				let refId = 0
-				for(let i = 0; i < count; i++) {
+				for(let i = 0; i < instCount; i++) {
 					refId += refIds[i]
 					values[i] = this.instances[refId]
 				}
 				break
 			}
 			case "Rect2D": {
-				const count = sub.GetRemaining() / 16
-				const x0 = sub.RBXInterleavedFloat(count)
-				const y0 = sub.RBXInterleavedFloat(count)
-				const x1 = sub.RBXInterleavedFloat(count)
-				const y1 = sub.RBXInterleavedFloat(count)
-				for(let i = 0; i < count; i++) {
+				const x0 = sub.RBXInterleavedFloat(instCount)
+				const y0 = sub.RBXInterleavedFloat(instCount)
+				const x1 = sub.RBXInterleavedFloat(instCount)
+				const y1 = sub.RBXInterleavedFloat(instCount)
+
+				for(let i = 0; i < instCount; i++) {
 					values[i] = [x0[i], y0[i], x1[i], y1[i]]
 				}
 				break
 			}
-			case "PhysicalProperties": {
-				let i = 0
-				while(sub.GetRemaining()) {
-					const enabled = sub.Byte() === 1
-					values[i++] = {
+			case "PhysicalProperties":
+				for(let i = 0; i < instCount; i++) {
+					const enabled = sub.Byte() !== 0
+					values[i] = {
 						CustomPhysics: enabled,
 						Density: enabled ? sub.FloatLE() : null,
 						Friction: enabled ? sub.FloatLE() : null,
@@ -573,51 +577,49 @@ const RBXParser = (() => {
 					}
 				}
 				break
-			}
 			case "Color3uint8": {
-				const count = sub.GetRemaining() / 3
-				const rgb = sub.Array(sub.GetRemaining())
+				const rgb = sub.Array(instCount * 3)
 
-				for(let i = 0; i < count; i++) {
-					values[i] = [rgb[i] / 255, rgb[i + count] / 255, rgb[i + count * 2] / 255]
+				for(let i = 0; i < instCount; i++) {
+					values[i] = [rgb[i] / 255, rgb[i + instCount] / 255, rgb[i + instCount * 2] / 255]
 				}
 				break
 			}
 			case "int64": { // Two's complement
-				const count = sub.GetRemaining() / 8
-				const bytes = sub.Array(sub.GetRemaining())
+				const bytes = sub.Array(instCount * 8)
 
-				for(let i = 0; i < count; i++) {
-					const neg = bytes[i + count * 7] % 2
-					const add = (bytes[i + count * 6] * 256 + bytes[i + count * 7] + neg) / 2
+				for(let i = 0; i < instCount; i++) {
+					let byte0 = bytes[i + instCount * 0] * (256 ** 3) + bytes[i + instCount * 1] * (256 ** 2) +
+								bytes[i + instCount * 2] * 256 + bytes[i + instCount * 3]
+					
+					let byte1 = bytes[i + instCount * 4] * (256 ** 3) + bytes[i + instCount * 5] * (256 ** 2) +
+								bytes[i + instCount * 6] * 256 + bytes[i + instCount * 7]
+					
+					const neg = byte1 % 2
+					byte1 = (byte0 % 2) * (2 ** 31) + (byte1 + neg) / 2
+					byte0 = Math.floor(byte0 / 2)
 
-					let value = 0
-					for(let j = 0; j < 6; j++) {
-						value = value * 256 + bytes[i + count * j]
-					}
+					if(byte0 < 2097152) {
+						const value = byte0 * (256 ** 4) + byte1
+						values[i] = String(neg ? -value : value)
+					} else { // Slow path
+						let result = ""
 
-					if(value >= 274877906943) {
-						let part0 = +(String(value).slice(0, -10) || 0)
-						let part1 = +(String(value).slice(-10) || 0)
+						while(byte1 || byte0) {
+							const cur0 = byte0
+							const res0 = cur0 % 10
+							byte0 = (cur0 - res0) / 10
 
-						part0 *= 32768
-						part1 = part1 * 32768 + add
+							const cur1 = byte1 + res0 * (256 ** 4)
+							const res1 = cur1 % 10
+							byte1 = (cur1 - res1) / 10
 
-						if(part1 >= 1e10) {
-							part0 += Math.floor(part1 / 1e10)
-							part1 %= 1e10
+							result = res1 + result
 						}
 
-						part1 = ("0".repeat(10) + String(part1)).slice(-10)
-						value = (neg ? "-" : "") + String(part0) + part1
-					} else {
-						value = value * 32768 + add
-						value = String(neg ? -value : value)
+						values[i] = (neg ? "-" : "") + (result || "0")
 					}
-
-					values[i] = value
 				}
-
 				break
 			}
 			default: console.warn(`[ParseRBXBin] Unimplemented dataType '${typeName}' for ${group.ClassName}.${prop}`)
@@ -654,7 +656,7 @@ const RBXParser = (() => {
 	}
 	RBXBinParser.HeaderBytes = [0x3C, 0x72, 0x6F, 0x62, 0x6C, 0x6F, 0x78, 0x21, 0x89, 0xFF, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00]
 	RBXBinParser.FooterBytes = [0x00, 0x00, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3C, 0x2F, 0x72, 0x6F, 0x62, 0x6C, 0x6F, 0x78, 0x3E]
-	RBXBinParser.ShortCFrames = [null, null, [1, 0, 0, 0, 1, 0, 0, 0, 1], [1, 0, 0, 0, 0, -1, 0, 1, 0], null, [1, 0, 0, 0, -1, 0, 0, 0, -1], [1, 0, 0, 0, 0, 1, 0, -1, 0], [0, 1, 0, 1, 0, 0, 0, 0, -1], null, [0, 0, 1, 1, 0, 0, 0, 1, 0], [0, -1, 0, 1, 0, 0, 0, 0, 1], null, [0, 0, -1, 1, 0, 0, 0, -1, 0], [0, 1, 0, 0, 0, 1, 1, 0, 0], [0, 0, -1, 0, 1, 0, 1, 0, 0], null, [0, -1, 0, 0, 0, -1, 1, 0, 0], [0, 0, 1, 0, -1, 0, 1, 0, 0], null, null, [-1, 0, 0, 0, 1, 0, 0, 0, -1], [-1, 0, 0, 0, 0, 1, 0, 1, 0], null, [-1, 0, 0, 0, -1, 0, 0, 0, 1], [-1, 0, 0, 0, 0, -1, 0, -1, 0], [0, 1, 0, -1, 0, 0, 0, 0, 1], null, [0, 0, -1, -1, 0, 0, 0, 1, 0], [0, -1, 0, -1, 0, 0, 0, 0, -1], null, [0, 0, 1, -1, 0, 0, 0, -1, 0], [0, 1, 0, 0, 0, -1, -1, 0, 0], [0, 0, 1, 0, 1, 0, -1, 0, 0], null, [0, -1, 0, 0, 0, 1, -1, 0, 0], [0, 0, -1, 0, -1, 0, -1, 0, 0]]
+	RBXBinParser.Faces = [[1, 0, 0], [0, 1, 0], [0, 0, 1], [-1, 0, 0], [0, -1, 0], [0, 0, -1]]
 	RBXBinParser.DataTypes = [
 		null, "string", "bool", "int", "float", "double", "UDim", "UDim2",
 		"Ray", "Faces", "Axes", "BrickColor", "Color3", "Vector2", "Vector3", "Vector2int16",
