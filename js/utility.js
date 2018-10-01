@@ -594,7 +594,7 @@ const htmlstring = function(pieces, ...args) {
 		"/": "&#x2F;"
 	}
 
-	const escapePiece = s => s.replace(/[^\S ]+/g, "").replace(/ {2,}/g, " ")
+	const escapePiece = s => s.replace(/\b\n\s*\b/g, " ").replace(/\n[^\S ]*/g, "")
 	const escapeArg = s => String(s).replace(/[&<>"'/]/g, x => escapeMap[x])
 
 	let result = escapePiece(pieces[0])
