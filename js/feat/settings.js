@@ -114,23 +114,34 @@ const SettingsDiv = (() => {
 					<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
 					<h4>Navigation Editor</h4>
 					<div class=btr-settings-header-list>
-						<button id=btr-naveditor-select-topleft class=btr-settings-header-list-item title="Modify the top left navigation"></button>
-						<button id=btr-naveditor-select-topright class=btr-settings-header-list-item title="Modify the top right navigation"></button>
-						<button id=btr-naveditor-select-sidebar class=btr-settings-header-list-item title="Modify the sidebar"></button>
+						<button id=btr-naveditor-select-topleft
+							data-tab=topleft
+							class=btr-settings-header-list-item
+							title="Modify the top left navigation"></button>
+						<button id=btr-naveditor-select-topright
+							data-tab=topright
+							class=btr-settings-header-list-item
+							title="Modify the top right navigation"></button>
+						<button id=btr-naveditor-select-sidebar
+							data-tab=sidebar
+							class=btr-settings-header-list-item
+							title="Modify the sidebar"></button>
 					</div>
 				</div>
 				<div>
-					<div class=btr-naveditor-container id=btr-naveditor-topleft-container>
-						<div class=btr-fake-header>
-							<div class=btr-fake-header-logo></div>
-							<ul id=btr-naveditor-topleft class=btr-fake-header-list>
+					<div id=btr-naveditor-topleft-container class=btr-naveditor-tab-container data-tab=topleft>
+						<div class=btr-naveditor-container>
+							<div class=btr-fake-header>
+								<div class=btr-fake-header-logo></div>
+								<ul id=btr-naveditor-topleft class=btr-fake-header-list>
+								</ul>
+								<div class=btr-fake-search></div>
+							</div>
+							<ul id=btr-topleft-items class=btr-naveditor-items>
 							</ul>
-							<div class=btr-fake-search></div>
 						</div>
-						<ul id=btr-topleft-items class=btr-naveditor-items>
-						</ul>
 					</div>
-					<div id=btr-naveditor-topright-container>
+					<div id=btr-naveditor-topright-container class=btr-naveditor-tab-container data-tab=topright>
 						<div class=btr-naveditor-container>
 							<div class=btr-fake-header>
 								<ul id=btr-naveditor-topright class=btr-fake-header-list>
@@ -144,7 +155,7 @@ const SettingsDiv = (() => {
 							<checkbox label="Hide Age Bracket" path=hideAgeBracket></checkbox>
 						</group>
 					</div>
-					<div id=btr-naveditor-sidebar-container>
+					<div id=btr-naveditor-sidebar-container class=btr-naveditor-tab-container data-tab=sidebar>
 						<div class=btr-naveditor-container>
 							<div class=btr-fake-header>
 							</div>
@@ -371,49 +382,56 @@ const SettingsDiv = (() => {
 		})
 	}
 
-	const initNavigationEditor = () => {
-		const navEditor = settingsDiv.$find("#btr-settings-nav-editor")
+	const NavEditor = {
+		isInit: false,
+		onTab: {},
+		switchTab(name) {
+			const btn = this.elem.$find(`.btr-settings-header-list-item[data-tab="${name}"]`)
+			const tab = this.elem.$find(`.btr-naveditor-tab-container[data-tab="${name}"]`)
 
-		const tlBtn = navEditor.$find("#btr-naveditor-select-topleft")
-		const trBtn = navEditor.$find("#btr-naveditor-select-topright")
-		const sbBtn = navEditor.$find("#btr-naveditor-select-sidebar")
-
-		const tlTab = navEditor.$find("#btr-naveditor-topleft-container")
-		const trTab = navEditor.$find("#btr-naveditor-topright-container")
-		const sbTab = navEditor.$find("#btr-naveditor-sidebar-container")
-
-		tlBtn.classList.add("btn-control-xs")
-		trBtn.classList.add("btn-control-xs")
-		sbBtn.classList.add("btn-control-xs")
-
-		tlTab.style.display = "none"
-		trTab.style.display = "none"
-		sbTab.style.display = "none"
-
-		let lastBtn
-		let lastTab
-
-		const switchTab = (newBtn, newTab) => {
-			if(lastBtn) {
-				lastBtn.classList.remove("btn-secondary-xs")
-				lastBtn.classList.add("btn-control-xs")
-				lastTab.style.display = "none"
+			if(this.tab) {
+				this.tab.btn.classList.remove("btn-secondary-xs")
+				this.tab.btn.classList.add("btn-control-xs")
+				this.tab.tab.style.display = "none"
 			}
 
-			lastBtn = newBtn
-			lastTab = newTab
-			lastBtn.classList.add("btn-secondary-xs")
-			lastBtn.classList.remove("btn-control-xs")
-			lastTab.style.display = ""
-		}
+			btn.classList.remove("btn-control-xs")
+			btn.classList.add("btn-secondary-xs")
+			tab.style.display = ""
+			
+			this.tab = { name, btn, tab }
 
-		tlBtn.$on("click", () => switchTab(tlBtn, tlTab))
-		trBtn.$on("click", () => switchTab(trBtn, trTab))
-		sbBtn.$on("click", () => switchTab(sbBtn, sbTab))
+			if(this.onTab[name]) { this.onTab[name]() }
+		},
+		open() {
+			switchContent("navigationEditor")
+			if(!this.isInit) {
+				this.init()
+			} else {
+				this.switchTab(this.tab.name)
+			}
+		},
+		init() {
+			this.isInit = true
+			const navEditor = this.elem = settingsDiv.$find("#btr-settings-nav-editor")
 
-		{ // Top Right
-			const container = navEditor.$find("#btr-naveditor-topright-container .btr-naveditor-container")
-			const topright = container.$find("#btr-naveditor-topright")
+			navEditor.$findAll(".btr-settings-header-list-item").forEach(x => {
+				x.classList.add("btn-control-xs")
+				x.$on("click", () => this.switchTab(x.dataset.tab))
+			})
+
+			navEditor.$findAll(".btr-naveditor-tab-container").forEach(x => {
+				x.style.display = "none"
+			})
+
+			this.initTopRight()
+			this.initTopLeft()
+
+			this.switchTab("topleft")
+		},
+		initTopRight() {
+			const topright = this.elem.$find("#btr-naveditor-topright")
+			const container = topright.closest(".btr-naveditor-container")
 			const toprightItems = container.$find("#btr-topright-items")
 			let dragging
 
@@ -426,6 +444,7 @@ const SettingsDiv = (() => {
 
 				if(name === "Settings") {
 					item.locked = true
+					listElem.remove()
 				}
 
 				return item
@@ -439,8 +458,6 @@ const SettingsDiv = (() => {
 			})
 
 			const updatePos = slow => {
-				allItems.forEach(x => { x.width = x.listElem.clientWidth || x.width || 0 })
-
 				let offset = 0
 				list.forEach(x => {
 					if(x !== dragging) {
@@ -449,7 +466,7 @@ const SettingsDiv = (() => {
 					}
 
 					x.offset = offset
-					x.width = x.listElem.clientWidth
+					x.width = x.listElem.clientWidth || x.elem.clientWidth
 					offset += x.width
 				})
 			}
@@ -473,28 +490,29 @@ const SettingsDiv = (() => {
 
 				document.$watch("#nav-robux-amount", amt => {
 					let lastTextNode
+					let lastTextContent
 
 					const update = () => {
 						const textNode = amt.childNodes[0]
 						if(lastTextNode !== textNode) {
 							lastTextNode = textNode
+							textObserver.disconnect()
 							if(textNode) {
-								observer.observe(textNode, { characterData: true })
+								textObserver.observe(textNode, { characterData: true })
 							}
 						}
 
-						robuxAmt1.textContent = robuxAmt2.textContent = amt.textContent
-						updatePos(false)
+						if(amt.textContent !== lastTextContent) {
+							lastTextContent = robuxAmt1.textContent = robuxAmt2.textContent = amt.textContent
+							updatePos(false)
+						}
 					}
 
-					const observer = new MutationObserver(update)
-					observer.observe(amt, { childList: true })
+					const textObserver = new MutationObserver(update)
+					new MutationObserver(update).observe(amt, { childList: true })
 					update()
 				})
 			}
-
-			updatePos()
-			trBtn.$on("click", () => updatePos())
 
 			const mouseup = ev => {
 				if(ev.button !== 0) { return }
@@ -559,12 +577,12 @@ const SettingsDiv = (() => {
 						if(prev && (xOffset < prev.offset + prev.width / 2 || xOffset - elemRect.width / 2 < prev.offset + 10)) {
 							list[index] = prev
 							list[index - 1] = dragging
-							updatePos(prev, index, true)
+							updatePos(true)
 							updateNav()
 						} else if(next && (xOffset > next.offset + next.width / 2 || xOffset + elemRect.width / 2 > next.offset + next.width - 10)) {
 							list[index] = next
 							list[index + 1] = dragging
-							updatePos(next, index, true)
+							updatePos(true)
 							updateNav()
 						}
 					}
@@ -623,7 +641,7 @@ const SettingsDiv = (() => {
 					const index = list.indexOf(dragging)
 					if(index !== -1 && lastClick && Date.now() - lastClick < 200) {
 						list.splice(index, 1)
-						list.forEach((a, b) => updatePos(a, b, true))
+						updatePos(true)
 						updateNav()
 						mouseup(ev)
 					}
@@ -631,11 +649,12 @@ const SettingsDiv = (() => {
 
 				ev.preventDefault()
 			})
-		}
 
-		{ // Top left
-			const container = navEditor.$find("#btr-naveditor-topleft-container")
-			const topleft = container.$find("#btr-naveditor-topleft")
+			this.onTab.topright = () => updatePos(false)
+		},
+		initTopLeft() {
+			const topleft = this.elem.$find("#btr-naveditor-topleft")
+			const container = topleft.closest(".btr-naveditor-container")
 			const topleftItems = container.$find("#btr-topleft-items")
 			let dragging
 
@@ -655,10 +674,14 @@ const SettingsDiv = (() => {
 				return item
 			})
 
-			const updatePos = (x, i, slow) => {
-				x.elem.style.transition = slow ? "all .25s" : ""
-				x.elem.style.left = `${i / list.length * 100}%`
-				x.elem.style.width = `${1 / list.length * 100}%`
+			const updatePos = slow => {
+				list.forEach((x, i) => {
+					if(x !== dragging) {
+						x.elem.style.transition = slow ? "all .25s" : ""
+						x.elem.style.left = `${i / list.length * 100}%`
+						x.elem.style.width = `${1 / list.length * 100}%`
+					}
+				})
 			}
 
 			const updateNav = () => {
@@ -667,31 +690,28 @@ const SettingsDiv = (() => {
 				)
 			}
 
-			list.forEach((x, i) => {
-				updatePos(x, i)
-			})
-
 			const mouseup = ev => {
 				if(ev.button !== 0) { return }
 				window.removeEventListener("mouseup", mouseup)
 				window.removeEventListener("mousemove", mousemove)
 
-				dragging.elem.classList.remove("dragging")
-				dragging.elem.style.transform = ""
-				dragging.elem.style.width = ""
-				dragging.elem.style.top = ""
-				dragging.elem.style.left = ""
-
-				const index = list.indexOf(dragging)
-				if(index !== -1) {
-					topleft.append(dragging.elem)
-					updatePos(dragging, index, true)
-				} else {
-					dragging.elem.remove()
-					dragging.listElem.classList.remove("disabled")
-				}
-
+				const wasDragging = dragging
 				dragging = null
+
+				wasDragging.elem.classList.remove("dragging")
+				wasDragging.elem.style.transform = ""
+				wasDragging.elem.style.width = ""
+				wasDragging.elem.style.top = ""
+				wasDragging.elem.style.left = ""
+
+				const index = list.indexOf(wasDragging)
+				if(index !== -1) {
+					topleft.append(wasDragging.elem)
+					updatePos(false)
+				} else {
+					wasDragging.elem.remove()
+					wasDragging.listElem.classList.remove("disabled")
+				}
 			}
 
 			const mousemove = ev => {
@@ -723,7 +743,7 @@ const SettingsDiv = (() => {
 
 					if(y > 1) {
 						list.splice(index, 1)
-						list.forEach((a, b) => updatePos(a, b, true))
+						updatePos(true)
 						updateNav()
 
 						dragging.elem.style.left = `${pixelX}px`
@@ -736,12 +756,12 @@ const SettingsDiv = (() => {
 						if(prev && rectMid < index / list.length) {
 							list[index] = prev
 							list[index - 1] = dragging
-							updatePos(prev, index, true)
+							updatePos(true)
 							updateNav()
 						} else if(next && rectMid > (index + 1) / list.length) {
 							list[index] = next
 							list[index + 1] = dragging
-							updatePos(next, index, true)
+							updatePos(true)
 							updateNav()
 						}
 					}
@@ -757,7 +777,7 @@ const SettingsDiv = (() => {
 						)
 
 						list.splice(newIndex, 0, dragging)
-						list.forEach((a, b) => a !== dragging && updatePos(a, b, true))
+						updatePos(true)
 						updateNav()
 
 						dragging.elem.style.left = `${clampX}px`
@@ -797,22 +817,21 @@ const SettingsDiv = (() => {
 				const index = list.indexOf(dragging)
 				if(index !== -1 && lastClick && Date.now() - lastClick < 200) {
 					list.splice(index, 1)
-					list.forEach((a, b) => updatePos(a, b, true))
+					updatePos(true)
 					updateNav()
 					mouseup(ev)
 				}
 			})
+			
+			this.onTab.topleft = () => updatePos(false)
 		}
-
-		tlBtn.click()
 	}
 
 	const initSettingsDiv = async () => {
 		let areFiltersInit = false
-		let isNavEditorInit = false
 
 		await new Promise(resolve =>
-			injectCSS("btr-settings.css").addEventListener("load", resolve, { once: true })
+			injectCSS("btr-settings.css").$on("load", resolve, { once: true })
 		)
 		
 		settingsDiv.$find("#btr-open-shout-filter").$on("click", () => {
@@ -824,14 +843,7 @@ const SettingsDiv = (() => {
 			}
 		})
 
-		settingsDiv.$on("click", "#btr-open-navigation-editor", () => {
-			switchContent("navigationEditor")
-
-			if(!isNavEditorInit) {
-				isNavEditorInit = true
-				initNavigationEditor()
-			}
-		})
+		settingsDiv.$on("click", "#btr-open-navigation-editor", () => NavEditor.open())
 
 		settingsDiv.$on("click", "#btr-open-item-previewer-settings", () => {
 			switchContent("itemPreviewerSettings")

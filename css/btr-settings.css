@@ -476,6 +476,10 @@
 	position: relative;
 }
 
+.btr-naveditor-tab-container {
+	position: relative;
+}
+
 .btr-naveditor-item {
 	display: inline-block;
 	width: 25%;
