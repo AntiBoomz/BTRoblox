@@ -3,7 +3,7 @@
 const Navigation = (() => {
 	const defaultItems = {
 		topleft: ["bi_Home", "Games", "Catalog", "Create", "-Robux"],
-		topright: ["Settings", "Robux", "bi_Friends", "bi_Messages", "Stream"]
+		topright: ["RPlus", "Settings", "Robux", "bi_Friends", "bi_Messages", "Stream"]
 	}
 
 	const buttonElements = {
@@ -43,10 +43,11 @@ const Navigation = (() => {
 
 	const updateTopLeft = () => {
 		topLeftBars.forEach(self => {
+			const saved = savedItems.topleft
 			let count = 0
 			let prev
 
-			savedItems.topleft.forEach(x => {
+			saved.forEach(x => {
 				const rem = x[0] === "-"
 				const item = self.items[rem ? x.slice(1) : x]
 	
@@ -60,10 +61,16 @@ const Navigation = (() => {
 						} else {
 							self.elem.prepend(item)
 						}
-	
 						prev = item
 						count++
 					}
+				}
+			})
+
+			Object.entries(self.items).forEach(([name, item]) => {
+				if(!saved.includes(name) && !saved.includes(`-${name}`)) {
+					item.style.display = ""
+					count++
 				}
 			})
 			
@@ -73,22 +80,6 @@ const Navigation = (() => {
 				if(btn) {
 					for(let i = 0; i < 5; i++) {
 						btn.before(html`<li class=btr-fake-btn style=display:none><a class=nav-menu-title href=/asd>asd</a></li>`)
-					}
-				}
-			}
-
-			let after = prev ? prev.nextElementSibling : self.elem.children[0]
-			while(after) {
-				const elem = after
-				const name = self.registered.get(elem)
-
-				after = elem.nextElementSibling
-
-				if(name && elem.style.display !== "none") {
-					if(!self.defaults[name]) {
-						elem.remove()
-					} else {
-						count++
 					}
 				}
 			}
@@ -113,9 +104,11 @@ const Navigation = (() => {
 	}
 
 	const updateTopRight = () => {
+		const saved = savedItems.topright
 		const self = topRightBar
+		let prev
 
-		savedItems.topright.forEach(x => {
+		saved.forEach(x => {
 			const rem = x[0] === "-"
 			const item = self.items[rem ? x.slice(1) : x]
 
@@ -124,14 +117,19 @@ const Navigation = (() => {
 					item.style.display = "none"
 				} else {
 					item.style.display = ""
-					self.elem.append(item)
+					if(prev) {
+						prev.after(item)
+					} else {
+						self.elem.prepend(item)
+					}
+					prev = item
 				}
 			}
 		})
 
 		Object.entries(self.items).forEach(([name, item]) => {
-			if(item.parentNode === self.elem && !self.defaults[name] && !savedItems.topright.includes(name)) {
-				item.remove()
+			if(!saved.includes(name) && !saved.includes(`-${name}`)) {
+				item.style.display = ""
 			}
 		})
 	}
@@ -388,7 +386,7 @@ const Navigation = (() => {
 				list = list.slice()
 				const self = topLeftBars[0]
 
-				Object.keys(self.defaults).forEach(name => {
+				Object.keys(self.items).forEach(name => {
 					if(!list.includes(name)) {
 						list.push(`-${name}`)
 					}
@@ -420,8 +418,8 @@ const Navigation = (() => {
 				list = list.slice()
 				const self = topRightBar
 
-				Object.keys(self.defaults).forEach(name => {
-					if(!list.includes(name) && name !== "Settings") {
+				Object.keys(self.items).forEach(name => {
+					if(!list.includes(name)) {
 						list.push(`-${name}`)
 					}
 				})

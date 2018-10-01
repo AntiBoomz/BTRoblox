@@ -481,37 +481,42 @@ const SettingsDiv = (() => {
 				const msg = allItems.find(x => x.name === "bi_Messages")
 				const frn = allItems.find(x => x.name === "bi_Friends")
 				const robux = allItems.find(x => x.name === "Robux")
-				robux.listElem.before(msg.listElem, frn.listElem)
 
-				const robuxAmt1 = html`<span class=amount></span>`
-				const robuxAmt2 = robuxAmt1.cloneNode(true)
-				robux.listElem.append(robuxAmt1)
-				robux.elem.append(robuxAmt2)
-
-				document.$watch("#nav-robux-amount", amt => {
-					let lastTextNode
-					let lastTextContent
-
-					const update = () => {
-						const textNode = amt.childNodes[0]
-						if(lastTextNode !== textNode) {
-							lastTextNode = textNode
-							textObserver.disconnect()
-							if(textNode) {
-								textObserver.observe(textNode, { characterData: true })
-							}
-						}
-
-						if(amt.textContent !== lastTextContent) {
-							lastTextContent = robuxAmt1.textContent = robuxAmt2.textContent = amt.textContent
-							updatePos(false)
-						}
+				if(robux) {
+					if(msg && frn) {
+						robux.listElem.before(msg.listElem, frn.listElem)
 					}
 
-					const textObserver = new MutationObserver(update)
-					new MutationObserver(update).observe(amt, { childList: true })
-					update()
-				})
+					const robuxAmt1 = html`<span class=amount></span>`
+					const robuxAmt2 = robuxAmt1.cloneNode(true)
+					robux.listElem.append(robuxAmt1)
+					robux.elem.append(robuxAmt2)
+	
+					document.$watch("#nav-robux-amount", amt => {
+						let lastTextNode
+						let lastTextContent
+	
+						const update = () => {
+							const textNode = amt.childNodes[0]
+							if(lastTextNode !== textNode) {
+								lastTextNode = textNode
+								textObserver.disconnect()
+								if(textNode) {
+									textObserver.observe(textNode, { characterData: true })
+								}
+							}
+	
+							if(amt.textContent !== lastTextContent) {
+								lastTextContent = robuxAmt1.textContent = robuxAmt2.textContent = amt.textContent
+								updatePos(false)
+							}
+						}
+	
+						const textObserver = new MutationObserver(update)
+						new MutationObserver(update).observe(amt, { childList: true })
+						update()
+					})
+				}
 			}
 
 			const mouseup = ev => {
