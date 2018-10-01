@@ -26,7 +26,8 @@ const DEFAULT_SETTINGS = {
 
 		robuxToDollars: { default: true, value: false },
 		hoverPreview: { default: true, value: true },
-		hoverPreviewMode: { default: true, value: "always" }
+		hoverPreviewMode: { default: true, value: "always" },
+		shoutAlerts: { default: true, value: true }
 	},
 	navigation: {
 		enabled: { default: true, value: true },
@@ -54,7 +55,6 @@ const DEFAULT_SETTINGS = {
 	},
 	groups: {
 		enabled: { default: true, value: true },
-		shoutAlerts: { default: true, value: true },
 		expandGroupList: { default: true, value: true }
 	},
 	inventory: {

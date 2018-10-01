@@ -35,7 +35,7 @@ const SettingsDiv = (() => {
 					<checkbox label="Embed Inventory" path=embedInventoryEnabled></checkbox>
 				</group>
 				<group label=Groups path=groups toggleable>
-					<checkbox label="Group Shout Notifications" path=shoutAlerts></checkbox>
+					<checkbox label="Group Shout Notifications" path=general.shoutAlerts></checkbox>
 					<button id=btr-open-shout-filter class=btn-control-xs>Modify Shout Filters</button>
 				</group>
 				<group label="Game Details" path=gamedetails toggleable>
