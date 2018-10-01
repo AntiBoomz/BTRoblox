@@ -52,10 +52,9 @@ const Navigation = (() => {
 	
 				if(item) {
 					if(rem) {
-						if(item.parentNode === self.elem) {
-							item.remove()
-						}
+						item.style.display = "none"
 					} else {
+						item.style.display = ""
 						if(prev) {
 							prev.after(item)
 						} else {
@@ -85,7 +84,7 @@ const Navigation = (() => {
 
 				after = elem.nextElementSibling
 
-				if(name && !elem.classList.contains(".btr-fake-btn")) {
+				if(name && elem.style.display !== "none") {
 					if(!self.defaults[name]) {
 						elem.remove()
 					} else {
@@ -122,10 +121,9 @@ const Navigation = (() => {
 
 			if(item) {
 				if(rem) {
-					if(item.parentNode === self.elem) {
-						item.remove()
-					}
+					item.style.display = "none"
 				} else {
+					item.style.display = ""
 					self.elem.append(item)
 				}
 			}
@@ -379,7 +377,7 @@ const Navigation = (() => {
 
 				Array.from(self.elem.children).forEach(x => {
 					const name = self.registered.get(x)
-					if(name) {
+					if(x.style.display !== "none" && name) {
 						curr.push(name)
 					}
 				})
@@ -411,7 +409,7 @@ const Navigation = (() => {
 
 				Array.from(self.elem.children).forEach(x => {
 					const name = self.registered.get(x)
-					if(name) {
+					if(x.style.display !== "none" && name) {
 						curr.push(name)
 					}
 				})
