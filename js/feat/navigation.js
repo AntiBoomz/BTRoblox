@@ -191,6 +191,7 @@ const Navigation = (() => {
 			const items = self.items = {}
 			const defaults = self.defaults = {}
 			const registered = self.registered = new WeakMap()
+			let idkCounter = 0
 
 			Object.entries(buttonElements.topright).forEach(([name, data]) => {
 				items[name] = data
@@ -205,7 +206,8 @@ const Navigation = (() => {
 				else if(li.id === "navbar-robux") { name = "Robux" }
 				else if(li.id === "navbar-rplus") { name = "RPlus" }
 				else if(li.classList.contains("navbar-stream")) { name = "Stream" }
-				else { return }
+				else if(li.classList.contains("rbx-navbar-right-search")) { return }
+				else { name = `Unknown-${idkCounter++}` }
 
 				items[name] = li
 				defaults[name] = li

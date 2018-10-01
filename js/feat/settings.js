@@ -445,6 +445,9 @@ const SettingsDiv = (() => {
 				if(name === "Settings") {
 					item.locked = true
 					listElem.remove()
+				} else if(name.startsWith("Unknown-")) {
+					elem.classList.add("btr-naveditor-tr-idk")
+					listElem.classList.add("btr-naveditor-tr-idk")
 				}
 
 				return item
