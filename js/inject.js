@@ -174,80 +174,6 @@ const INJECT_SCRIPT = () => {
 				HijackAngular("messages", {
 					rbxMessagesNav(handler, args) {
 						const result = handler.apply(this, args)
-						let isWorking = false
-	
-						function getMessages(page, callback) {
-							$.get(`/messages/api/get-messages?messageTab=0&pageNumber=${page}&pageSize=20`, callback)
-						}
-	
-						function getMessageCount(callback) {
-							$.get("/messages/api/get-my-unread-messages-count", callback)
-						}
-	
-						function markMessagesAsRead(list, callback) {
-							$.post("/messages/api/mark-messages-read", { messageIds: list }, callback)
-						}
-	
-						function markAllAsRead() {
-							if(isWorking) { return }
-							isWorking = true
-								
-							const messages = []
-							const pages = []
-							let running = 0
-							let maxPage = 0
-							let count = 0
-
-							const progress = $("<progress value='0' max='0' style='width:100%'>")
-								.insertAfter(".roblox-messages-btns")
-
-							function checkForUnread(data) {
-								Object.values(data.Collection).forEach(msg => {
-									if(!msg.IsRead) {
-										messages.push(msg.Id)
-									}
-								})
-
-								progress.val(messages.length)
-							}
-
-							function readPage(page) {
-								if(page < maxPage && messages.length < count) {
-									if(pages[page] === true) {
-										readPage(page + 1)
-										return
-									}
-
-									getMessages(page, data => {
-										checkForUnread(data)
-										readPage(page + 1)
-									})
-								} else if(--running === 0) {
-									markMessagesAsRead(messages, () => {
-										window.location.reload()
-									})
-								}
-							}
-	
-							getMessageCount(countData => {
-								if(countData.count === 0) {
-									window.location.reload()
-									return
-								}
-	
-								count = countData.count
-								progress.attr("max", count)
-	
-								getMessages(0, data => {
-									maxPage = data.TotalPages
-									checkForUnread(data)
-									for(let i = 0; i < 4; i++) {
-										running++
-										readPage(1 + Math.floor(i / 4 * maxPage))
-									}
-								})
-							})
-						}
 
 						const link = result.link
 						result.link = function(u) {
@@ -263,8 +189,6 @@ const INJECT_SCRIPT = () => {
 									$event.preventDefault()
 								}
 							}
-
-							u.markAllAsRead = markAllAsRead
 							
 							return link.call(this, u)
 						}
