@@ -141,10 +141,12 @@ function Init() {
 		body.classList.toggle("btr-small-chat-button", settings.general.chatEnabled && settings.general.smallChatButton)
 	}).$then()
 
-	// bodyWatcher.$watch("#roblox-linkify", linkify => {
-	// 	const newRegex = /((?:(?:https?:\/\/)(?:[\w-]+\.)+\w{2,}|(?:[\w-]+\.)+(?:com|net|uk|org|info|tv|gg|io))(?:\/(?:[\w!$&'"()*+,\-.:;=@_~]|%[0-9A-Fa-f]{2})*)*(?:\?(?:[\w!$&'"()*+,\-.:;=@_~?/]|%[0-9A-Fa-f]{2})*)?(?:#(?:[\w!$&'"()*+,\-.:;=@_~?/]|%[0-9A-Fa-f]{2})*)?)(\b)/
-	// 	linkify.setAttribute("data-regex", newRegex.source)
-	// })
+	bodyWatcher.$watch("#roblox-linkify", linkify => {
+		linkify.dataset.regex = /(https?:\/\/)?([a-z0-9-]+\.)*(twitter\.com|twitch\.tv|roblox\.com|robloxlabs\.com|shoproblox\.com)(?!\/[A-Za-z0-9-+&@#/=~_|!:,.;]*%)((\/[A-Za-z0-9-+&@#/%?=~_|!:,.;]*)|(?=\s|\b))/.source
+
+		// Empty asHttpRegex matches everything, so every link will be unsecured, so fix that
+		if(!linkify.dataset.asHttpRegex) { linkify.dataset.asHttpRegex = "^$" }
+	})
 
 	loggedInUserPromise = new Promise(resolve => {
 		headWatcher.$watch(`meta[name="user-data"]`, meta => {
