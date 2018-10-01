@@ -1,5 +1,5 @@
 .vscode
-bin/roblox.chrome.zip
-bin/roblox.firefox.zip
+bin/btroblox.chrome.zip
+bin/btroblox.firefox.zip
 bin/output.js
 res_dev
