@@ -64,13 +64,13 @@ pageInit.messages = function() {
 		document.$find(".roblox-messages-btns").after(progress)
 
 		const unreadUrl = "/messages/api/get-my-unread-messages-count"
-		const unread = await fetch(unreadUrl, { credentials: "include" }).then(resp => resp.json())
+		const unread = await fetch(unreadUrl, { credentials: "include", cache: "no-store" }).then(resp => resp.json())
 
 		const messages = []
 		let messagesLeft = unread.count
 		let markingAsRead = false
-		let maxPage = 1e9
-		let page = 1
+		let maxPage = 1
+		let page = 0
 
 		progress.max = messagesLeft
 
@@ -103,10 +103,11 @@ pageInit.messages = function() {
 		}
 
 		const nextPage = async () => {
-			if(page > maxPage || messagesLeft <= 0) { return }
+			const curPage = page++
+			if(curPage >= maxPage || messagesLeft <= 0) { return }
 
-			const pageUrl = `/messages/api/get-messages?messageTab=0&pageSize=20&pageNumber=${page++}`
-			return fetch(pageUrl, { credentials: "include" }).then(async resp => {
+			const pageUrl = `/messages/api/get-messages?messageTab=0&pageSize=20&pageNumber=${curPage}`
+			return fetch(pageUrl, { credentials: "include", cache: "no-store" }).then(async resp => {
 				const json = await resp.json()
 				maxPage = json.TotalPages
 
