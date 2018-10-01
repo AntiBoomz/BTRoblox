@@ -642,6 +642,11 @@
 	background-position: 0 -28px;
 }
 
+#btr-naveditor-topright-container .btr-naveditor-tr-RPlus:before {
+	background-image: url(chrome-extension://jfbnmfgkohlfclfnplnlenbalpppohkm/images/icons/icon_32x32.png);
+	background-size: 100%;
+}
+
 .btr-naveditor-tr-Robux .amount {
 	min-width: 42px;
 	min-height: 1px;
