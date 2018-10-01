@@ -141,6 +141,7 @@
 	text-align: right;
 
 	user-select: none;
+	-moz-user-select: none;
 
 	outline: none;
 	cursor: pointer;
@@ -500,6 +501,7 @@
 	background: #0074BD;
 	display: inline-block;
 	user-select: none;
+	-moz-user-select: none;
 	padding: 6px 9px;
 	color: #fff;
 	font-weight: 400;

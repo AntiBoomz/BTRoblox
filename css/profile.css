@@ -254,8 +254,8 @@
 
 	z-index: 2;
 
-	-webkit-user-select: none;
 	user-select: none;
+	-moz-user-select: none;
 }
 
 .btr-profile .btr-games-list .btr-game-button:hover {
@@ -263,8 +263,8 @@
 }
 
 .btr-profile .btr-games-list .btr-game-button .btr-game-title {
-	-webkit-user-select: initial;
 	user-select: initial;
+	-moz-user-select: none;
 }
 
 .btr-profile .btr-games-list .btr-game-content {
