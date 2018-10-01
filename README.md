@@ -167,6 +167,16 @@ Friend APIs
     ```
 
 
+Home APIs
+---------
+* https://www.roblox.com/home/recently-visited-places
+* https://www.roblox.com/user/favorites/places
+
+#### Friend Activity
+* https://www.roblox.com/games?SortFilter=17&TimeFilter=0
+
+
+
 User APIs
 ---------
 #### Get currently logged in user
