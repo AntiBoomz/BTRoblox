@@ -70,7 +70,7 @@ const Navigation = (() => {
 			
 			if(rplusCompatMode) {
 				self.elem.querySelectorAll(".btr-fake-btn").forEach(x => x.remove())
-				const btn = self.elem.children[3]
+				const btn = self.elem.children[2]
 				if(btn) {
 					for(let i = 0; i < 5; i++) {
 						btn.before(html`<li class=btr-fake-btn style=display:none><a class=nav-menu-title href=/asd>asd</a></li>`)
