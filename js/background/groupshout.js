@@ -206,7 +206,7 @@
 
 	const onUpdate = () => {
 		Settings.load(() => {
-			const isEnabled = ettings.get("groups.shoutAlerts")
+			const isEnabled = Settings.get("groups.shoutAlerts")
 			
 			if(wasEnabled !== isEnabled) {
 				wasEnabled = isEnabled
