@@ -158,8 +158,12 @@ function Init() {
 		onDocumentReady(() => resolve(-1))
 	})
 
-	Navigation.init()
-	document.$on("click", ".btr-settings-toggle", SettingsDiv.toggle)
+	loggedInUserPromise.then(userId => {
+		if(userId !== -1) {
+			Navigation.init()
+			document.$on("click", ".btr-settings-toggle", SettingsDiv.toggle)
+		}
+	})
 
 	if(settings.general.fastSearch) { initFastSearch() }
 	if(settings.general.hideAds) { initAdBlock() }
