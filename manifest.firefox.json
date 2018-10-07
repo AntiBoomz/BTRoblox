@@ -1,10 +1,10 @@
 {
 	"manifest_version": 2,
 
-	"version": "2.6.0",
 	"name": "BTRoblox - Making Roblox Better",
 	"short_name": "BTRoblox",
 	"description": "Enhancing your Roblox experience!",
+	"version": "2.6.1",
 	"author": "AntiBoomz",
 
 	"icons": {
