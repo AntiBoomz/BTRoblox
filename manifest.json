@@ -1,10 +1,10 @@
 {
 	"manifest_version": 2,
 
-	"name": "BTRoblox",
-	"short_name": "BTR",
-	"description": "Better Roblox - Making Roblox better!",
 	"version": "2.6.0",
+	"name": "BTRoblox - Making Roblox Better",
+	"short_name": "BTRoblox",
+	"description": "Enhancing your Roblox experience!",
 	"author": "AntiBoomz",
 	"minimum_chrome_version": "55",
 
