@@ -25,6 +25,17 @@ body .btr-comment .RepeaterText .GroupWall_PostContainer {
 	min-height:40px;
 }
 
+body .btr-groupListName {
+	display: block;
+	height: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+}
+
 
 .btr-comment .GroupWall_PostBtns>a {
 	float:right;

@@ -366,6 +366,28 @@ const INJECT_SCRIPT = () => {
 				prm.add_pageLoaded(() => $(".GroupWallPane .linkify").linkify())
 			}
 		}
+
+		if(currentPage === "groups" && settings.groups.enabled) {
+			window.fitStringToWidthSafeText = text => text
+			const items = document.querySelectorAll(".GroupListName")
+			
+			items.forEach(item => {
+				item.classList.remove("GroupListName")
+				const text = item.textContent
+				item.textContent = ""
+
+				const span = document.createElement("span")
+				span.textContent = text
+				span.classList.add("btr-groupListName")
+				item.append(span)
+			})
+
+			$(() => {
+				items.forEach(item => {
+					item.classList.add("GroupListName")
+				})
+			})
+		}
 	}
 
 	ContentJS.listen("TEMPLATE_INIT", key => templates[key] = true)
