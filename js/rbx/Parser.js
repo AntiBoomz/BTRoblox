@@ -7,14 +7,21 @@ const RBXParser = (() => {
 
 	class ByteReader extends Uint8Array {
 		static ParseFloat(long) {
-			const exp = (long >> 23) & 255
+			const exp = (long >>> 23) & 255
 			if(exp === 0) { return 0 }
 			const float = 2 ** (exp - 127) * (1 + (long & 0x7FFFFF) / 0x7FFFFF)
 			return long > 0x7FFFFFFF ? -float : float
 		}
 
+		static ParseRBXFloat(long) {
+			const exp = long >>> 24
+			if(exp === 0) { return 0 }
+			const float = 2 ** (exp - 127) * (1 + ((long >>> 1) & 0x7FFFFF) / 0x7FFFFF)
+			return long & 1 ? -float : float
+		}
+
 		static ParseDouble(long0, long1) {
-			const exp = (long0 >> 20) & 2047
+			const exp = (long0 >>> 20) & 0x7FF
 			const frac = (((long0 & 1048575) * 4294967296) + long1) / 4503599627370496
 			const neg = long0 & 2147483648
 
@@ -94,7 +101,7 @@ const RBXParser = (() => {
 
 			while(index < decomLength) {
 				const token = this.Byte()
-				let litLen = token >> 4
+				let litLen = token >>> 4
 
 				if(litLen === 0xF) {
 					while(true) {
@@ -132,7 +139,10 @@ const RBXParser = (() => {
 			return data
 		}
 
-		// RBXInterleaved
+		// RBX
+
+		RBXFloatLE() { return ByteReader.ParseRBXFloat(this.UInt32LE()) }
+		RBXFloatBE() { return ByteReader.ParseRBXFloat(this.UInt32BE()) }
 
 		RBXInterleavedUint32(count, fn) {
 			const result = new Array(count)
@@ -159,7 +169,7 @@ const RBXParser = (() => {
 
 		RBXInterleavedFloat(count) {
 			return this.RBXInterleavedUint32(count, value =>
-				ByteReader.ParseFloat((value >> 1) + ((value & 1) * 2147483648))
+				ByteReader.ParseRBXFloat(value)
 			)
 		}
 	}
@@ -306,7 +316,7 @@ const RBXParser = (() => {
 				case "bool": return inst.setProperty(name, value.toLowerCase() === "true", "bool")
 				case "token": return inst.setProperty(name, +value, "Enum")
 				case "color3":
-				case "color3uint8": return inst.setProperty(name, [(+value >> 16 & 255) / 255, (+value >> 8 & 255) / 255, (+value & 255) / 255], "Color3")
+				case "color3uint8": return inst.setProperty(name, [(+value >>> 16 & 255) / 255, (+value >>> 8 & 255) / 255, (+value & 255) / 255], "Color3")
 				case "coordinateframe": {
 					const cframe = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
 					Object.values(propNode.children).forEach(x => {
@@ -476,8 +486,8 @@ const RBXParser = (() => {
 			case "Ray": {
 				for(let i = 0; i < instCount; i++) {
 					values[i] = [
-						[sub.FloatLE(), sub.FloatLE(), sub.FloatLE()],
-						[sub.FloatLE(), sub.FloatLE(), sub.FloatLE()]
+						[sub.RBXFloatLE(), sub.RBXFloatLE(), sub.RBXFloatLE()],
+						[sub.RBXFloatLE(), sub.RBXFloatLE(), sub.RBXFloatLE()]
 					]
 				}
 				break
@@ -576,11 +586,11 @@ const RBXParser = (() => {
 					const enabled = sub.Byte() !== 0
 					values[i] = {
 						CustomPhysics: enabled,
-						Density: enabled ? sub.FloatLE() : null,
-						Friction: enabled ? sub.FloatLE() : null,
-						Elasticity: enabled ? sub.FloatLE() : null,
-						FrictionWeight: enabled ? sub.FloatLE() : null,
-						ElasticityWeight: enabled ? sub.FloatLE() : null
+						Density: enabled ? sub.RBXFloatLE() : null,
+						Friction: enabled ? sub.RBXFloatLE() : null,
+						Elasticity: enabled ? sub.RBXFloatLE() : null,
+						FrictionWeight: enabled ? sub.RBXFloatLE() : null,
+						ElasticityWeight: enabled ? sub.RBXFloatLE() : null
 					}
 				}
 				break
