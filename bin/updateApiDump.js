@@ -3,8 +3,8 @@
 const https = require("https")
 const fs = require("fs")
 
-// https://raw.githubusercontent.com/CloneTrooper1019/Roblox-Client-Watch/master/API_Dump.json
-// https://raw.githubusercontent.com/CloneTrooper1019/Roblox-Client-Watch/master/ReflectionMetadata.xml
+// https://raw.githubusercontent.com/CloneTrooper1019/Roblox-Client-Watch/roblox/API-Dump.json
+// https://raw.githubusercontent.com/CloneTrooper1019/Roblox-Client-Watch/roblox/ReflectionMetadata.xml
 
 const toDict = (...args) => { const obj = {}; args.forEach(key => obj[key] = true); return obj }
 const invalidClasses = toDict(
@@ -121,13 +121,13 @@ function doStuff(data, rmd) {
 	const finalEnums = validEnums.map(x => `["${x.Name}",${x.Items.sort((a, b) => a.Value - b.Value)[x.Items.length - 1].Value < x.Items.length * 4 ? `[${x.Items.map((y, yi) => `"${y.Name}"${",".repeat((x.Items[yi + 1] || y).Value - y.Value)}`).join("")}]` : `{${x.Items.map(y => `${y.Value}:"${y.Name}"`).join(",")}}`}]`).join(",")
 	const finalCats = `"${usedCats.map(x => x.name).join(`","`)}"`
 
-	fs.writeFileSync("output.js", `/* eslint-disable */\n"use strict";\n\nconst Data = {\n\tCategories: [\n\t\t${finalCats}\n\t],\n\tEnums: [\n\t\t${finalEnums}\n\t],\n\tClasses: [\n\t\t${finalClasses}\n\t]\n}`)
+	fs.writeFileSync("output.js", `/* eslint-disable */\n\nconst Data = {\n\tCategories: [\n\t\t${finalCats}\n\t],\n\tEnums: [\n\t\t${finalEnums}\n\t],\n\tClasses: [\n\t\t${finalClasses}\n\t]\n}`)
 	console.log("Done")
 }
 
 Promise.all([
 	new Promise(resolve => {
-		https.get("https://raw.githubusercontent.com/CloneTrooper1019/Roblox-Client-Watch/master/API_Dump.json", res => {
+		https.get("https://raw.githubusercontent.com/CloneTrooper1019/Roblox-Client-Watch/roblox/API-Dump.json", res => {
 			const chunks = []
 			res.on("data", chunk => chunks.push(chunk))
 			res.on("end", () => {
@@ -137,7 +137,7 @@ Promise.all([
 		})
 	}),
 	new Promise(resolve => {
-		https.get("https://raw.githubusercontent.com/CloneTrooper1019/Roblox-Client-Watch/master/ReflectionMetadata.xml", res => {
+		https.get("https://raw.githubusercontent.com/CloneTrooper1019/Roblox-Client-Watch/roblox/ReflectionMetadata.xml", res => {
 			const chunks = []
 			res.on("data", chunk => chunks.push(chunk))
 			res.on("end", () => {
