@@ -372,6 +372,8 @@ const RBXParser = (() => {
 			this.groups = new Array(groupsCount)
 			this.instances = new Array(instancesCount)
 
+			if(reader.PeekString(4) === "META") { this.parseMETA() }
+
 			for(let n = 0; n < groupsCount; n++) { this.parseINST() }
 			while(reader.PeekString(4) === "PROP") { this.parsePROP() }
 			this.parsePRNT()
@@ -381,6 +383,11 @@ const RBXParser = (() => {
 			if(reader.GetRemaining() > 0) { console.warn("[ParseRBXBin] Unexpected data after END") }
 
 			return this.result
+		}
+
+		parseMETA() {
+			assert(this.reader.String(4) === "META", "[ParseRBXBin] Invalid or missing META")
+			this.reader.LZ4()
 		}
 
 		parseINST() {
