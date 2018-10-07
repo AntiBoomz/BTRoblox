@@ -57,7 +57,7 @@ const AssetCache = (() => {
 
 		if(!resolvePromise) {
 			resolvePromise = new Promise((resolve, reject) => {
-				$.setImmediate(() => {
+				setTimeout(() => {
 					if(!xsrfToken) {
 						xsrfToken = getXsrfToken()
 					}
@@ -96,7 +96,7 @@ const AssetCache = (() => {
 					})
 
 					tryFetch()
-				})
+				}, 0)
 			})
 		}
 
