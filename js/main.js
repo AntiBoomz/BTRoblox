@@ -142,7 +142,7 @@ function Init() {
 	}).$then()
 
 	bodyWatcher.$watch("#roblox-linkify", linkify => {
-		linkify.dataset.regex = /(https?:\/\/)?([a-z0-9-]+\.)*(twitter\.com|twitch\.tv|roblox\.com|robloxlabs\.com|shoproblox\.com)(?!\/[A-Za-z0-9-+&@#/=~_|!:,.;]*%)((\/[A-Za-z0-9-+&@#/%?=~_|!:,.;]*)|(?=\s|\b))/.source
+		linkify.dataset.regex = /(https?:\/\/)?([a-z0-9-]+\.)*(twitter\.com|youtube\.com|youtu\.be|twitch\.tv|roblox\.com|robloxlabs\.com|shoproblox\.com)(?!\/[A-Za-z0-9-+&@#/=~_|!:,.;]*%)((\/[A-Za-z0-9-+&@#/%?=~_|!:,.;]*)|(?=\s|\b))/.source
 
 		// Empty asHttpRegex matches everything, so every link will be unsecured, so fix that
 		if(!linkify.dataset.asHttpRegex) { linkify.dataset.asHttpRegex = "^$" }
