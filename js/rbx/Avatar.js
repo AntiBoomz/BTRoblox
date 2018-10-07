@@ -10,6 +10,7 @@ const RBXAvatar = (() => {
 		geom.setIndex(new THREE.BufferAttribute(mesh.faces, 1))
 
 		geom.computeBoundingSphere()
+		obj.visible = true
 	}
 
 	function clearGeometry(obj) {
@@ -21,6 +22,7 @@ const RBXAvatar = (() => {
 		geom.setIndex(null)
 
 		geom.computeBoundingSphere()
+		obj.visible = false
 	}
 
 	function CFrame(x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22) {
@@ -305,6 +307,7 @@ const RBXAvatar = (() => {
 			transparent: true,
 			map: textures.pants
 		}))
+		pantsmesh.visible = false
 		pantsmesh.renderOrder = 1
 		this.scene.add(pantsmesh)
 
@@ -312,6 +315,7 @@ const RBXAvatar = (() => {
 			transparent: true,
 			map: textures.shirt
 		}))
+		shirtmesh.visible = false
 		shirtmesh.renderOrder = 2
 		this.scene.add(shirtmesh)
 
@@ -319,6 +323,7 @@ const RBXAvatar = (() => {
 			transparent: true,
 			map: textures.tshirt
 		}))
+		tshirtmesh.visible = false
 		tshirtmesh.renderOrder = 3
 		this.scene.add(tshirtmesh)
 
@@ -401,6 +406,7 @@ const RBXAvatar = (() => {
 			transparent: true,
 			map: textures.pants
 		}))
+		pantsmesh.visible = false
 		pantsmesh.renderOrder = 0
 		this.scene.add(pantsmesh)
 
@@ -408,6 +414,7 @@ const RBXAvatar = (() => {
 			transparent: true,
 			map: textures.shirt
 		}))
+		shirtmesh.visible = false
 		shirtmesh.renderOrder = 1
 		this.scene.add(shirtmesh)
 
@@ -439,6 +446,7 @@ const RBXAvatar = (() => {
 			transparent: true,
 			map: texture
 		}))
+		obj.visible = false
 		this.scene.add(obj)
 
 		texture.image.addEventListener("load", () => this.update())
@@ -767,6 +775,7 @@ const RBXAvatar = (() => {
 				const mat = new THREE.MeshLambertMaterial({ map: tex, transparent: true })
 				mat.opacity = 1 - (meshInst.Transparency || 0)
 				const obj = new THREE.Mesh(undefined, mat)
+				obj.visible = false
 				obj.castShadow = true
 
 				if(meshInst.VertexColor) {
@@ -796,7 +805,10 @@ const RBXAvatar = (() => {
 					if(!initialized) {
 						initialized = true
 
-						AssetCache.loadMesh(true, meshId, mesh => applyMesh(obj, mesh))
+						AssetCache.loadMesh(true, meshId, mesh => {
+							applyMesh(obj, mesh)
+							// obj.visible = true
+						})
 
 						setImageSource(tex.image, solidColorDataURL(163, 162, 165))
 						if(texId) { AssetCache.loadImage(true, texId, url => { setImageSource(tex.image, url) }) }
@@ -989,6 +1001,7 @@ const RBXAvatar = (() => {
 						const mat = new THREE.MeshLambertMaterial({ map: this.textures[tree.name], transparent: true })
 						const mesh = new THREE.Mesh(undefined, mat)
 						mesh.castShadow = true
+						mesh.visible = false
 
 						obj.rbxMesh = mesh
 						obj.rbxDefaultMesh = tree.meshid
