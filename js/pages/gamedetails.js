@@ -72,7 +72,32 @@ pageInit.gamedetails = function(placeId) {
 		.$watch(".badge-container", badges => {
 			badges.classList.add("btr-badges-container")
 
-			const isOwned = {}
+			const badgeQueue = []
+			let ownedTimeout
+
+			const updateOwned = async () => {
+				const userId = await loggedInUserPromise
+				const badgeList = badgeQueue.splice(0, badgeQueue.length)
+				const url = `https://badges.roblox.com/v1/users/${userId}/badges/awarded-dates?badgeIds=${badgeList.map(x => x.badgeId).join(",")}`
+
+				fetch(url, { credentials: "include" }).then(async response => {
+					if(!response.ok) {
+						console.warn("[BTR] Failed to get badge data")
+						return
+					}
+
+					const json = await response.json()
+
+					json.data.forEach(data => {
+						const index = badgeList.findIndex(x => +x.badgeId === +data.badgeId)
+						badgeList.splice(index, 1)
+					})
+
+					badgeList.forEach(data => {
+						data.row.classList.toggle("btr-notowned", true)
+					})
+				})
+			}
 
 			badges.$watch(">.stack-list").$then().$watchAll(".badge-row", row => {
 				const url = row.$find(".badge-image>a").href
@@ -85,35 +110,12 @@ pageInit.gamedetails = function(placeId) {
 					if(!match) { return }
 
 					const badgeId = +match[1]
+					badgeQueue.push({ row, badgeId })
 
-					if(badgeId in isOwned) {
-						row.classList.toggle("btr-notowned", !isOwned[badgeId])
-					} else {
-						isOwned[badgeId] = row
-					}
+					clearTimeout(ownedTimeout)
+					ownedTimeout = setTimeout(updateOwned, 10)
 				}
 			})
-
-			if(settings.gamedetails.showBadgeOwned) {
-				const url = `https://www.roblox.com/badges/list-badges-for-place?placeId=${placeId}`
-				fetch(url, { credentials: "include" }).then(async response => {
-					if(!response.ok) {
-						console.warn("[BTR] Failed to get badge data")
-						return
-					}
-
-					const json = await response.json()
-
-					json.GameBadges.forEach(data => {
-						const elem = isOwned[data.BadgeAssetId]
-						if(elem) {
-							elem.classList.toggle("btr-notowned", !data.IsOwned)
-						} else {
-							isOwned[data.BadgeAssetId] = data.IsOwned
-						}
-					})
-				})
-			}
 		})
 		.$watch("#carousel-game-details", details => details.setAttribute("data-is-video-autoplayed-on-ready", "false"))
 		.$watch(".game-stats-container", x => x.$find(".text-label").textContent === "Updated", stats => {
