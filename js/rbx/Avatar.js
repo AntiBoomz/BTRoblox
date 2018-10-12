@@ -122,38 +122,38 @@ const RBXAvatar = (() => {
 
 	const ScaleMods = {
 		BodyType: {
-			LeftHand: [0.339396, 0, 0.33],
-			LeftLowerArm: [0.339396, -0.21578, 0.33],
-			LeftUpperArm: [0.339396, -0.399025, 0.33],
-			RightHand: [0.33997, 0, 0.33],
-			RightLowerArm: [0.33997, -0.215954, 0.33],
-			RightUpperArm: [0.33997, -0.398816, 0.33],
-			UpperTorso: [0.330001, 0.176002, 0.33],
-			LeftFoot: [0.35, -0.638613, 0.33],
-			LeftLowerLeg: [0.35, -0.728202, 0.33],
-			LeftUpperLeg: [0.35, -0.740957, 0.33],
-			RightFoot: [0.35, -0.638613, 0.33],
-			RightLowerLeg: [0.35, -0.727915, 0.33],
-			RightUpperLeg: [0.35, -0.741287, 0.33],
-			LowerTorso: [0.35, -0.221089, 0.33],
-			Head: [0.25, 0.09084, 0.25]
+			LeftHand: [0.066, 0.174, 0.231],
+			LeftLowerArm: [0.129, 0.342, 0.132],
+			LeftUpperArm: [0.129, 0.342, 0.132],
+			RightHand: [0.066, 0.174, 0.231],
+			RightLowerArm: [0.129, 0.342, 0.132],
+			RightUpperArm: [0.129, 0.342, 0.132],
+			UpperTorso: [0.033, 0.309, 0.14],
+			LeftFoot: [0.079, 0.267, 0.129],
+			LeftLowerLeg: [0.023, 0.506, 0.023],
+			LeftUpperLeg: [0.023, 0.506, 0.023],
+			RightFoot: [0.079, 0.267, 0.129],
+			RightLowerLeg: [0.023, 0.506, 0.023],
+			RightUpperLeg: [0.023, 0.506, 0.023],
+			LowerTorso: [0.033, 0.309, 0.14],
+			Head: [-0.058, -0.058, -0.058]
 		},
 		Proportion: {
-			LeftHand: [0.0727698, 0, 0.083],
-			LeftLowerArm: [0.0727698, 0.121608, 0.083],
-			LeftUpperArm: [0.0727698, 0.139222, 0.083],
-			RightHand: [0.0727074, 0, 0.083],
-			RightLowerArm: [0.0727074, 0.121626, 0.083],
-			RightUpperArm: [0.0727074, 0.139202, 0.083],
-			UpperTorso: [0.082678, 0.0663968, 0.083],
-			LeftFoot: [0.03, 0.170835, 0.083],
-			LeftLowerLeg: [0.03, 0.234967, 0.083],
-			LeftUpperLeg: [0.03, 0.12086, 0.083],
-			RightFoot: [0.03, 0.170835, 0.083],
-			RightLowerLeg: [0.03, 0.234928, 0.083],
-			RightUpperLeg: [0.03, 0.120883, 0.083],
-			LowerTorso: [0.03, 0.283582, 0.083],
-			Head: [0.036667, 0, 0.036667]
+			LeftHand: [-0.118444, 0, -0.136778],
+			LeftLowerArm: [-0.125444, -0.134079, -0.125778],
+			LeftUpperArm: [-0.125444, -0.134079, -0.125778],
+			RightHand: [-0.118444, 0, -0.136778],
+			RightLowerArm: [-0.125444, -0.134079, -0.125778],
+			RightUpperArm: [-0.125444, -0.134079, -0.125778],
+			UpperTorso: [-0.127654, -0.104768, -0.126667],
+			LeftFoot: [-0.0494199, -0.133726, -0.125444],
+			LeftLowerLeg: [-0.0468549, -0.205482, -0.113667],
+			LeftUpperLeg: [-0.0468549, -0.10507, -0.113667],
+			RightFoot: [-0.0494199, -0.133726, -0.125444],
+			RightLowerLeg: [-0.0468549, -0.205482, -0.113667],
+			RightUpperLeg: [-0.0468549, -0.10507, -0.113667],
+			LowerTorso: [-0.047313, -0.304395, -0.126667],
+			Head: [-0.0457108, -5.96046e-08, -0.0457108]
 		}
 	}
 
@@ -1120,13 +1120,13 @@ const RBXAvatar = (() => {
 						part.rbxScaleMod.set(this.scales.width, this.scales.height, this.scales.depth)
 					}
 
-					const bodyScaleMod = ScaleMods.BodyType[partName]
-					const propScaleMod = ScaleMods.Proportion[partName]
+					const bodyScaleMod = ScaleMods.BodyType[partName] || [1, 1, 1]
+					const propScaleMod = ScaleMods.Proportion[partName] || [1, 1, 1]
 
 					part.rbxScaleMod.multiply(new THREE.Vector3(
-						1 - (bodyScaleMod[0] + propScaleMod[0] * this.scales.proportion) * this.scales.bodyType,
-						1 - (bodyScaleMod[1] + propScaleMod[1] * this.scales.proportion) * this.scales.bodyType,
-						1 - (bodyScaleMod[2] + propScaleMod[2] * this.scales.proportion) * this.scales.bodyType
+						1 + (bodyScaleMod[0] + propScaleMod[0] * this.scales.proportion) * this.scales.bodyType,
+						1 + (bodyScaleMod[1] + propScaleMod[1] * this.scales.proportion) * this.scales.bodyType,
+						1 + (bodyScaleMod[2] + propScaleMod[2] * this.scales.proportion) * this.scales.bodyType
 					))
 					
 					scale[0] *= part.rbxScaleMod.x
