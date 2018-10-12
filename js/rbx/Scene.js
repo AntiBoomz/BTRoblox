@@ -175,6 +175,18 @@ const RBXScene = (() => {
 		}
 
 		update() {
+			const cameraDir = new THREE.Vector3(0, 0, 1).applyEuler(this.cameraRotation)
+			this.camera.position.copy(this.cameraFocus).addScaledVector(cameraDir, -this.cameraZoom)
+
+			const groundDiff = .05 - this.camera.position.y
+			if(cameraDir.y > 0 && groundDiff > 0) {
+				this.camera.position.addScaledVector(cameraDir, groundDiff / cameraDir.y)
+			}
+
+			this.camera.lookAt(this.cameraFocus)
+		}
+
+		render() {
 			const parent = this.canvas.parentNode
 			if(parent) {
 				const width = parent.clientWidth
@@ -191,18 +203,6 @@ const RBXScene = (() => {
 				}
 			}
 
-			const cameraDir = new THREE.Vector3(0, 0, 1).applyEuler(this.cameraRotation)
-			this.camera.position.copy(this.cameraFocus).addScaledVector(cameraDir, -this.cameraZoom)
-
-			const groundDiff = .05 - this.camera.position.y
-			if(cameraDir.y > 0 && groundDiff > 0) {
-				this.camera.position.addScaledVector(cameraDir, groundDiff / cameraDir.y)
-			}
-
-			this.camera.lookAt(this.cameraFocus)
-		}
-
-		render() {
 			this.renderer.render(this.scene, this.camera)
 		}
 
@@ -221,9 +221,10 @@ const RBXScene = (() => {
 			if(this.started) { throw new Error("Scene is already started") }
 			this.started = true
 
+			const setImmediate = Promise.resolve()
 			const innerUpdate = () => {
 				this.update()
-				this.render()
+				setImmediate.then(() => this.render())
 				this._afId = requestAnimationFrame(innerUpdate)
 			}
 
