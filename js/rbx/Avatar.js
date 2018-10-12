@@ -157,14 +157,19 @@ const RBXAvatar = (() => {
 		}
 	}
 
-	let avatarTreePromise
-	const loadCharacterRigs = () => {
-		if(avatarTreePromise) {
-			return avatarTreePromise
-		}
+	const AvatarRigs = {
+		loaded: false,
+		R6Tree: null,
+		R15Tree: null,
 
-		return avatarTreePromise = new Promise(resolve => {
-			function RecurseTree(model) {
+		load(fn) {
+			if(this.hasInit) {
+				if(typeof fn === "function") { fn() }
+				return
+			}
+			this.hasInit = true
+
+			const RecurseTree = model => {
 				const parts = {}
 	
 				const recursePart = part => {
@@ -228,9 +233,16 @@ const RBXAvatar = (() => {
 					resolveTree(tree)
 				})
 			})
-	
-			Promise.all([R6Promise, R15Promise]).then(resolve)
-		})
+
+			
+			Promise.all([R6Promise, R15Promise]).then(([R6Tree, R15Tree]) => {
+				this.R6Tree = R6Tree
+				this.R15Tree = R15Tree
+				this.loaded = true
+
+				if(typeof fn === "function") { fn() }
+			})
+		}
 	}
 
 
@@ -532,14 +544,22 @@ const RBXAvatar = (() => {
 
 				textures[name] = mergeTexture(composite.canvas.width, composite.canvas.height, composite.canvas, over)
 			})
+
+			AvatarRigs.load(() => {
+				this.shouldRefreshRig = true
+			})
 		}
 
 		update() {
-			this.animator.update()
+			if(this.shouldRefreshRig) {
+				this._refreshRig()
+			}
 
 			if(this.shouldRefreshBodyParts) {
-				this.refreshBodyParts()
+				this._refreshBodyParts()
 			}
+			
+			this.animator.update()
 		}
 
 		setScales(scales) {
@@ -963,112 +983,111 @@ const RBXAvatar = (() => {
 		setPlayerType(playerType) {
 			if(this.playerType === playerType) { return }
 			this.playerType = playerType
-			this.refresh()
+			this.shouldRefreshRig = true
 		}
 
-		refresh() {
-			const ptKey = ++this.ptDebounce
 
-			loadCharacterRigs().then(([R6Tree, R15Tree]) => {
-				if(this.ptDebounce !== ptKey) { return }
+		_refreshRig() {
+			if(!AvatarRigs.loaded) { return }
+			this.shouldRefreshRig = false
+		
+			if(this.root) {
+				this.model.remove(this.root)
 
-				if(this.root) {
-					this.model.remove(this.root)
-
-					const recDispose = tar => {
-						if(tar.isMesh) {
-							if(tar.geometry) { tar.geometry.dispose() }
-							if(tar.material) { tar.material.dispose() }
-						}
-
-						tar.children.forEach(recDispose)
-					}
-					recDispose(this.root)
-				}
-
-				const parts = this.parts = {}
-				const attachments = this.attachments = {}
-				const joints = this.joints = {}
-				const animJoints = {}
-
-				const CreateModel = tree => {
-					const obj = new THREE.Group()
-					obj.name = tree.name
-					obj.rbxScaleMod = new THREE.Vector3(1, 1, 1)
-
-					if(tree.name !== "HumanoidRootPart") {
-						parts[tree.name] = obj
-						const mat = new THREE.MeshLambertMaterial({ map: this.textures[tree.name], transparent: true })
-						const mesh = new THREE.Mesh(undefined, mat)
-						mesh.castShadow = true
-						mesh.visible = false
-
-						obj.rbxMesh = mesh
-						obj.rbxDefaultMesh = tree.meshid
-						obj.rbxDefaultScale = [1, 1, 1]
-						obj.add(mesh)
+				const recDispose = tar => {
+					if(tar.isMesh) {
+						if(tar.geometry) { tar.geometry.dispose() }
+						if(tar.material) { tar.material.dispose() }
 					}
 
-					Object.entries(tree.attachments).forEach(([name, cframe]) => {
-						const att = new THREE.Group()
-						obj.add(att)
-						attachments[name] = { cframe, obj: att, parent: obj }
-					})
+					tar.children.forEach(recDispose)
+				}
+				recDispose(this.root)
+			}
 
-					tree.children.forEach(child => {
-						const childObj = CreateModel(child)
-						const c0 = new THREE.Group()
-						const c1 = new THREE.Group()
-						const joint = new THREE.Group()
+			const parts = this.parts = {}
+			const attachments = this.attachments = {}
+			const joints = this.joints = {}
+			const animJoints = {}
 
-						obj.add(c0)
-						c0.add(joint)
-						joint.add(c1)
-						c1.add(childObj)
+			const CreateModel = tree => {
+				const obj = new THREE.Group()
+				obj.name = tree.name
+				obj.rbxScaleMod = new THREE.Vector3(1, 1, 1)
 
-						joints[child.JointName] = animJoints[child.name] = {
-							c0,
-							c1,
-							joint,
-							part0: obj,
-							part1: childObj,
-							origC0: child.C0,
-							origC1: child.C1
-						}
-					})
+				if(tree.name !== "HumanoidRootPart") {
+					parts[tree.name] = obj
+					const mat = new THREE.MeshLambertMaterial({ map: this.textures[tree.name], transparent: true })
+					const mesh = new THREE.Mesh(undefined, mat)
+					mesh.castShadow = true
+					mesh.visible = false
 
-					return obj
+					obj.rbxMesh = mesh
+					obj.rbxDefaultMesh = tree.meshid
+					obj.rbxDefaultScale = [1, 1, 1]
+					obj.add(mesh)
 				}
 
-				if(this.playerType === "R6") {
-					this.model.position.set(0, 3, 0)
-					this.root = CreateModel(R6Tree)
-				} else {
-					this.model.position.set(0, 2.35, 0)
-					this.root = CreateModel(R15Tree)
-				}
+				Object.entries(tree.attachments).forEach(([name, cframe]) => {
+					const att = new THREE.Group()
+					obj.add(att)
+					attachments[name] = { cframe, obj: att, parent: obj }
+				})
 
-				parts.Head.add(this.defaultHatAttachment)
+				tree.children.forEach(child => {
+					const childObj = CreateModel(child)
+					const c0 = new THREE.Group()
+					const c1 = new THREE.Group()
+					const joint = new THREE.Group()
 
-				this.model.add(this.root)
-				this.animator.setJoints(animJoints)
+					obj.add(c0)
+					c0.add(joint)
+					joint.add(c1)
+					c1.add(childObj)
 
-				this.accessories.forEach(acc => {
-					const att = this.attachments[acc.attName]
-					if(att) {
-						acc.att = att
-						att.obj.add(acc.obj)
-					} else {
-						acc.att = null
-						this.defaultHatAttachment.add(acc.obj)
+					joints[child.JointName] = animJoints[child.name] = {
+						c0,
+						c1,
+						joint,
+						part0: obj,
+						part1: childObj,
+						origC0: child.C0,
+						origC1: child.C1
 					}
 				})
 
-				this.shouldRefreshBodyParts = true
+				return obj
+			}
+
+			if(this.playerType === "R6") {
+				this.model.position.set(0, 3, 0)
+				this.root = CreateModel(AvatarRigs.R6Tree)
+			} else {
+				this.model.position.set(0, 2.35, 0)
+				this.root = CreateModel(AvatarRigs.R15Tree)
+			}
+
+			parts.Head.add(this.defaultHatAttachment)
+
+			this.model.add(this.root)
+			this.animator.setJoints(animJoints)
+
+			this.accessories.forEach(acc => {
+				const att = this.attachments[acc.attName]
+				if(att) {
+					acc.att = att
+					att.obj.add(acc.obj)
+				} else {
+					acc.att = null
+					this.defaultHatAttachment.add(acc.obj)
+				}
 			})
+
+			this._refreshBodyParts()
 		}
 
-		refreshBodyParts() {
+		_refreshBodyParts() {
+			if(!AvatarRigs.loaded) { return }
 			this.shouldRefreshBodyParts = false
 
 			const changedParts = {}
