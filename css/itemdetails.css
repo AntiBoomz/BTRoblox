@@ -13,6 +13,13 @@
 	position: absolute;
 	top: 12px;
 	right: 12px;
+	cursor: pointer;
+}
+
+.btr-explorer-button.disabled,
+.btr-download-button.disabled,
+.btr-content-button.disabled {
+	cursor: default;
 }
 
 .menu-shown .btr-explorer-button,
@@ -73,7 +80,6 @@ a.disabled > .btr-icon-explorer,
 a.disabled > .btr-icon-download,
 a.disabled > .btr-icon-content {
 	filter: invert(75%);
-	cursor: default;
 }
 
 .btr-icon-download { background-position-y: -28px; }
