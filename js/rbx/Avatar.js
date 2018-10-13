@@ -39,7 +39,9 @@ const RBXAvatar = (() => {
 	const emptySrc = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII="
 	function setImageSource(img, src) {
 		src = src || emptySrc
-		if(img.src !== src) { img.src = src }
+		if(img.src !== src) {
+			img.src = src
+		}
 	}
 
 	function createImage() {
@@ -56,7 +58,7 @@ const RBXAvatar = (() => {
 		texture.minFilter = THREE.LinearFilter
 
 		if(img instanceof Image) {
-			img.addEventListener("load", () => {
+			img.$on("load", () => {
 				texture.needsUpdate = true
 				return true
 			})
@@ -461,7 +463,7 @@ const RBXAvatar = (() => {
 		obj.visible = false
 		this.scene.add(obj)
 
-		texture.image.addEventListener("load", () => this.update())
+		texture.image.$on("load", () => this.update())
 
 		AssetCache.loadMesh(true, meshUrl, mesh => applyMesh(obj, mesh))
 	}
@@ -558,7 +560,7 @@ const RBXAvatar = (() => {
 			if(this.shouldRefreshBodyParts) {
 				this._refreshBodyParts()
 			}
-			
+
 			this.animator.update()
 		}
 
@@ -611,8 +613,7 @@ const RBXAvatar = (() => {
 			}
 
 			switch(assetTypeId) {
-			// Bodyparts
-			case 27: case 28: case 29: case 30: case 31: {
+			case 27: case 28: case 29: case 30: case 31: { // Bodyparts
 				asset.unique = true
 				
 				const result = []
@@ -689,7 +690,7 @@ const RBXAvatar = (() => {
 				}
 				break
 			}
-			case 17: // Head
+			case 17: { // Head
 				asset.unique = true
 
 				if(assetId in HeadMeshes) {
@@ -740,6 +741,7 @@ const RBXAvatar = (() => {
 					}
 				}
 				break
+			}
 			case 18: { // Face
 				asset.unique = true
 				
@@ -772,9 +774,8 @@ const RBXAvatar = (() => {
 				}
 				break
 			}
-			// Accessories
 			case 8: case 41: case 42: case 43:
-			case 44: case 45: case 46: case 47: {
+			case 44: case 45: case 46: case 47: { // Accessories
 				const model = await AssetCache.loadModel(assetId)
 
 				const accInst = model.find(x => x.ClassName === "Accessory")
@@ -848,7 +849,7 @@ const RBXAvatar = (() => {
 
 				break
 			}
-			case 11: {
+			case 11: { // Shirt
 				asset.unique = true
 				
 				const model = await AssetCache.loadModel(assetId)
@@ -875,7 +876,7 @@ const RBXAvatar = (() => {
 				}
 				break
 			}
-			case 2: {
+			case 2: { // T-Shirt
 				asset.unique = true
 				
 				const model = await AssetCache.loadModel(assetId)
@@ -903,7 +904,7 @@ const RBXAvatar = (() => {
 
 				break
 			}
-			case 12: {
+			case 12: { // Pants
 				asset.unique = true
 
 				const model = await AssetCache.loadModel(assetId)
@@ -932,10 +933,10 @@ const RBXAvatar = (() => {
 				break
 			}
 			case 48: case 49: case 50: case 51:
-			case 52: case 53: case 54: case 55: case 56:
-				// Animations
+			case 52: case 53: case 54: case 55: case 56: { // Animations
 				this.removeAsset(assetId)
 				return
+			}
 			default: console.log("Unimplemented asset type", assetTypeId, assetId)
 			}
 
