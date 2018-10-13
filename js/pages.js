@@ -256,11 +256,14 @@ const HoverPreview = (() => {
 	let preview
 	let debounceCounter = 0
 	let currentTarget
+	let cameraOffset = 4
 
 	const initPreview = () => {
-		preview = this.preview = new RBXPreview.AvatarPreviewer(true)
+		preview = this.preview = new RBXPreview.AvatarPreviewer({
+			simple: true,
+			disableDefaultAnimations: false
+		})
 
-		preview.disableDefaultAnimations = true
 		preview.setEnabled(true)
 	
 		preview.container.style.position = "absolute"
@@ -268,6 +271,7 @@ const HoverPreview = (() => {
 		preview.container.style.pointerEvents = "none"
 		
 		preview.onInit(() => {
+			preview.scene.cameraFocus.set(0, cameraOffset, 0)
 			preview.scene.cameraControlsEnabled = false
 			preview.scene.cameraRotation.set(0.15, 0.25, 0)
 			preview.scene.cameraZoom = 3.5
@@ -299,7 +303,7 @@ const HoverPreview = (() => {
 		
 				const debounce = ++debounceCounter
 				getProductInfo(assetId).then(data => {
-					if(self !== currentTarget || debounceCounter !== debounce) { return }
+					if(debounceCounter !== debounce) { return }
 					let loadPreview = false
 
 					switch(settings.itemdetails.itemPreviewerMode) {
@@ -315,39 +319,53 @@ const HoverPreview = (() => {
 					}
 
 					if(!loadPreview) { return }
+
+					const isWearable = WearableAssetTypeIds.includes(data.AssetTypeId)
+					const isPackage = data.AssetTypeId === 32
+
+					if(!isWearable && !isPackage) { return }
+
+					if(!preview) { initPreview() }
+
+					cameraOffset = data.AssetTypeId === 12 ? 1.5 : 4
+					if(preview && preview.scene) {
+						preview.scene.cameraFocus.set(0, cameraOffset, 0)
+					}
 	
-					if(WearableAssetTypeIds.includes(data.AssetTypeId)) {
-						if(!preview) {
-							initPreview()
-						}
-						self.$find(thumbContSelector).append(preview.container)
+					const promises = [ preview.appearanceLoadedPromise ]
 
-						preview.addAssetPreview(assetId, data.AssetTypeId)
+					if(isWearable) {
+						promises.push(preview.addAssetPreview(assetId, data.AssetTypeId))
 						lastPreviewedAssets.push(assetId)
-					} else if(data.AssetTypeId === 32) {
+					} else if(isPackage) {
 						AssetCache.loadText(assetId, text => {
-							if(self !== currentTarget || debounceCounter !== debounce) { return }
+							if(debounceCounter !== debounce) { return }
 
-							text.split(";").map(itemId => getProductInfo(itemId).then(json => {
-								if(self !== currentTarget || debounceCounter !== debounce) { return }
+							text.split(";").forEach(itemId => getProductInfo(itemId).then(json => {
+								if(debounceCounter !== debounce) { return }
 
 								if(WearableAssetTypeIds.includes(json.AssetTypeId)) {
-									if(!preview) {
-										initPreview()
-									}
-									self.$find(thumbContSelector).append(preview.container)
-
-									preview.addAssetPreview(itemId, json.AssetTypeId)
+									promises.push(preview.addAssetPreview(itemId, json.AssetTypeId))
 									lastPreviewedAssets.push(itemId)
 								}
 							}))
 						})
 					}
+
+					Promise.all(promises).then(([assetPromises]) => {
+						Promise.all(assetPromises).then(() => {
+							requestAnimationFrame(() => {
+								if(debounceCounter !== debounce) { return }
+								self.$find(thumbContSelector).append(preview.container)
+							})
+						})
+					})
 				})
 		
 				thumbCont.addEventListener("mouseleave", () => {
 					if(currentTarget !== self) { return }
 					currentTarget = null
+					debounceCounter++
 
 					if(preview) {
 						preview.container.remove()

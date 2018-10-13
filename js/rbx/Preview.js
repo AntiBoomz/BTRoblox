@@ -89,7 +89,6 @@ const RBXPreview = (() => {
 				})
 			}
 
-
 			this.playerType = null
 			this.anims = []
 			this.assets = []
@@ -103,31 +102,43 @@ const RBXPreview = (() => {
 			this.autoLoadPlayerType = true
 			this.accessoriesVisible = true
 			this.packagesVisible = true
-			this.disableDefaultAnimations = false
+			this.disableDefaultAnimations = "disableDefaultAnimations" in opts ? opts.disableDefaultAnimations : false
+
+			this.appearance = null
+			this.waitForAppearance = "waitForAppearance" in opts ? opts.waitForAppearance : true
+			
+			{
+				let resolve
+				this.appearanceLoadedPromise = new Promise(res => resolve = res)
+				this.appearanceLoadedPromise.resolve = resolve
+			}
+
+			const scene = this.scene = window.scene = new RBXScene.AvatarScene()
+			const avatar = scene.avatar
 
 			this.onInit(() => {
-				const scene = this.scene = window.scene = new RBXScene.AvatarScene()
-				const avatar = scene.avatar
-
-				if(this.currentAnim) { this.loadAnimation(this.currentAnim.assetId) }
-				this.assets.forEach(asset => scene.avatar.addAsset(asset.assetId, asset.assetTypeId))
-				this.previewTargets.forEach(asset => scene.avatar.addAsset(asset.assetId, asset.assetTypeId))
-
-				if(this.playerType) { this.setPlayerType(this.playerType) }
-				this.setPackagesVisible(this.packagesVisible)
-				this.setAccessoriesVisible(this.accessoriesVisible)
-
 				getDefaultAppearance(data => {
 					this.appearance = data
 
 					avatar.setBodyColors(data.bodyColors)
 					if(this.packagesVisible) { avatar.setScales(data.scales) }
 					if(!this.playerType && this.autoLoadPlayerType) { this.setPlayerType(data.playerAvatarType) }
+					else if(this.playerType && this.waitForAppearance) { this.setPlayerType(this.playerType) }
 
-					data.assets.forEach(asset => this.addAsset(asset.id, asset.assetType.id))
+					const assetPromises = data.assets.map(asset => this.addAsset(asset.id, asset.assetType.id))
+					this.appearanceLoadedPromise.resolve(assetPromises)
 				})
-
-				avatar.animator.onstop = () => setTimeout(() => avatar.animator.play(), 2000)
+				
+				if(this.waitForAppearance) {
+					setTimeout(() => {
+						this.waitForAppearance = false
+						if(!this.playerType) {
+							this.setPlayerType("R15")
+							this.playerType = null
+						}
+						this.appearanceLoadedPromise.resolve([])
+					}, 2e3)
+				}
 
 				const R15Anims = [507766666, 507766951, 507766388]
 				const R6Anims = [180435792, 180435571]
@@ -149,6 +160,11 @@ const RBXPreview = (() => {
 						}
 					}
 				}
+
+				avatar.animator.onstop = () => setTimeout(() => avatar.animator.play(), 2000)
+
+				this.container.append(scene.canvas)
+				if(this.enabled) { scene.start() }
 			})
 		}
 
@@ -166,51 +182,47 @@ const RBXPreview = (() => {
 			this.playerType = type
 			if(this.ptSwitch) { this.ptSwitch.checked = type === "R15" }
 
-			if(this.initialized) {
-				this.scene.avatar.setPlayerType(type)
+			this.scene.avatar.setPlayerType(type)
 
-				if(!this.currentAnim && !this.disableDefaultAnimations) {
-					const animId = type === "R15" ? 507766388 : 180435571
-					this.loadAnimation(animId)
-				}
+			if(!this.currentAnim && !this.disableDefaultAnimations) {
+				const animId = type === "R15" ? 507766388 : 180435571
+				this.loadAnimation(animId)
 			}
 		}
 
 		setPackagesVisible(bool) {
 			const visible = this.packagesVisible = !!bool
-			if(this.initialized) {
-				this.scene.avatar.bodyparts.forEach(bp => {
-					if(this.previewMap[bp.asset.assetId]) { return }
-					bp.hidden = !visible
-				})
 
-				if(visible) {
-					if(this.appearance) {
-						this.scene.avatar.setScales(this.appearance.scales)
-					}
-				} else {
-					this.scene.avatar.setScales({
-						width: 1,
-						height: 1,
-						depth: 1,
-						head: 1,
-						proportion: 0,
-						bodyType: 0
-					})
+			this.scene.avatar.bodyparts.forEach(bp => {
+				if(this.previewMap[bp.asset.assetId]) { return }
+				bp.hidden = !visible
+			})
+
+			if(visible) {
+				if(this.appearance) {
+					this.scene.avatar.setScales(this.appearance.scales)
 				}
-
-				this.scene.avatar.shouldRefreshBodyParts = true
+			} else {
+				this.scene.avatar.setScales({
+					width: 1,
+					height: 1,
+					depth: 1,
+					head: 1,
+					proportion: 0,
+					bodyType: 0
+				})
 			}
+
+			this.scene.avatar.shouldRefreshBodyParts = true
 		}
 
 		setAccessoriesVisible(bool) {
 			const visible = this.accessoriesVisible = !!bool
-			if(this.initialized) {
-				this.scene.avatar.accessories.forEach(acc => {
-					if(this.previewMap[acc.asset.assetId]) { return }
-					acc.obj.visible = visible
-				})
-			}
+
+			this.scene.avatar.accessories.forEach(acc => {
+				if(this.previewMap[acc.asset.assetId]) { return }
+				acc.obj.visible = visible
+			})
 		}
 
 		addAssetPreview(assetId, assetTypeId) {
@@ -218,9 +230,7 @@ const RBXPreview = (() => {
 			const asset = this.previewMap[assetId] = { assetId, assetTypeId }
 			this.previewTargets.push(asset)
 
-			if(this.initialized) {
-				this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
-			}
+			return this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
 		}
 
 		removeAssetPreview(assetId) {
@@ -229,7 +239,7 @@ const RBXPreview = (() => {
 			delete this.previewMap[assetId]
 			this.previewTargets.splice(this.previewTargets.indexOf(asset), 1)
 
-			if(this.initialized && !this.assetMap[assetId]) {
+			if(!this.assetMap[assetId]) {
 				this.scene.avatar.removeAsset(assetId)
 			}
 		}
@@ -239,16 +249,14 @@ const RBXPreview = (() => {
 			const asset = this.assetMap[assetId] = { assetId, assetTypeId, info: info || {} }
 			this.assets.push(asset)
 
-			if(this.initialized) {
-				this.previewTargets.forEach(x => {
-					if(x.assetTypeId === assetTypeId) {
-						this.scene.avatar.removeAsset(x.assetId)
-						this.scene.avatar.addAsset(x.assetId, x.assetTypeId)
-					}
-				})
+			this.previewTargets.forEach(x => {
+				if(x.assetTypeId === assetTypeId) {
+					this.scene.avatar.removeAsset(x.assetId)
+					this.scene.avatar.addAsset(x.assetId, x.assetTypeId)
+				}
+			})
 
-				this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
-			}
+			return this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
 		}
 
 		removeAsset(assetId) {
@@ -257,9 +265,7 @@ const RBXPreview = (() => {
 			delete this.assetMap[assetId]
 			this.assets.splice(this.assets.indexOf(asset), 1)
 
-			if(this.initialized) {
-				this.scene.avatar.removeAsset(assetId)
-			}
+			this.scene.avatar.removeAsset(assetId)
 		}
 
 		loadAnimation(assetId, fadeIn) {
@@ -275,10 +281,8 @@ const RBXPreview = (() => {
 					this.setPlayerType(isR6 ? "R6" : "R15")
 				}
 
-				if(this.initialized) {
-					this.playingAnim = assetId
-					this.scene.avatar.animator.play(data, fadeIn || 0)
-				}
+				this.playingAnim = assetId
+				this.scene.avatar.animator.play(data, fadeIn || 0)
 			})
 		}
 
@@ -289,10 +293,7 @@ const RBXPreview = (() => {
 			this.currentAnim = anim
 			if(this.dropdown) { this.dropdown.$find("[data-bind='label']").textContent = name }
 
-			if(this.initialized) {
-				this.scene.avatar.animator.pause()
-			}
-
+			this.scene.avatar.animator.pause()
 			this.loadAnimation(anim.assetId)
 		}
 

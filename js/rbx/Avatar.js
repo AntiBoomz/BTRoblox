@@ -819,20 +819,25 @@ const RBXAvatar = (() => {
 				const result = { obj, asset, attName, attCFrame, att, scale, cframe, offset }
 				let initialized = false
 
-				asset.enable = () => {
+				asset.enable = async () => {
 					this.accessories.push(result)
 					this.shouldRefreshBodyParts = true
 
 					if(!initialized) {
 						initialized = true
 
-						AssetCache.loadMesh(true, meshId, mesh => {
-							applyMesh(obj, mesh)
-							// obj.visible = true
-						})
+						const meshPromise = AssetCache.loadMesh(true, meshId, mesh => applyMesh(obj, mesh))
+						let texPromise
 
 						setImageSource(tex.image, solidColorDataURL(163, 162, 165))
-						if(texId) { AssetCache.loadImage(true, texId, url => { setImageSource(tex.image, url) }) }
+						if(texId) {
+							texPromise = AssetCache.loadImage(true, texId, url => { setImageSource(tex.image, url) })
+						}
+
+						await meshPromise
+						if(texPromise) {
+							await texPromise
+						}
 					}
 				}
 
@@ -956,7 +961,10 @@ const RBXAvatar = (() => {
 					}
 				}
 				
-				asset.enable()
+				const result = asset.enable()
+				if(result instanceof Promise) {
+					await result
+				}
 			}
 		}
 
