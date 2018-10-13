@@ -221,10 +221,11 @@ const RBXScene = (() => {
 			if(this.started) { throw new Error("Scene is already started") }
 			this.started = true
 
-			const setImmediate = Promise.resolve()
+			const resolved = Promise.resolve()
 			const innerUpdate = () => {
 				this.update()
-				setImmediate.then(() => this.render())
+				resolved.then(() => this.render())
+
 				this._afId = requestAnimationFrame(innerUpdate)
 			}
 
@@ -237,27 +238,6 @@ const RBXScene = (() => {
 
 			cancelAnimationFrame(this._afId)
 			delete this._afId
-		}
-	}
-
-	class PreviewScene extends Scene {
-		constructor() {
-			super()
-			const avatar = this.avatar = new RBXAvatar.Avatar()
-			this.scene.add(avatar.model)
-		}
-		
-		update() {
-			super.update()
-			this.avatar.update()
-		}
-
-		start() {
-			super.start()
-
-			if(!this.avatar.hasInit) {
-				this.avatar.init()
-			}
 		}
 	}
 
@@ -299,7 +279,8 @@ const RBXScene = (() => {
 		start() {
 			super.start()
 
-			if(!this.avatar.hasInit) {
+			if(!this.hasInit) {
+				this.hasInit = true
 				this.avatar.init()
 			}
 		}
@@ -307,7 +288,6 @@ const RBXScene = (() => {
 
 	return {
 		Scene,
-		PreviewScene,
 		AvatarScene
 	}
 })()

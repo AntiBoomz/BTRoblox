@@ -45,31 +45,23 @@ const RBXPreview = (() => {
 		}
 
 		setEnabled(bool) {
-			bool = !!bool
-			if(this.enabled === bool) { return }
-			this.enabled = bool
+			this.enabled = !!bool
 
-			if(!this.initialized) {
+			if(!this.initialized && this.enabled) {
 				this.initialized = true
 
 				this._onInit.forEach(cb => cb.call(this))
 				delete this._onInit
-
-				this.container.append(this.scene.canvas)
-				if(this.enabled) { this.scene.start() }
-			} else if(this.scene) {
-				if(this.enabled) { this.scene.start() }
-				else { this.scene.stop() }
 			}
 		}
 	}
 
 	class AvatarPreviewer extends Previewer {
-		constructor(simple) {
+		constructor(opts = {}) {
 			super()
 			this.container = html`<div style="width:100%; height:100%"></div>`
 
-			if(!simple) {
+			if(!opts.simple) {
 				this.container.innerHTML = htmlstring`
 				<div class=btr-switch style="position:absolute;top:6px;right:6px">
 					<div class=btr-switch-off>R6</div>
@@ -158,6 +150,16 @@ const RBXPreview = (() => {
 					}
 				}
 			})
+		}
+
+		setEnabled(bool) {
+			super.setEnabled(bool)
+			
+			if(this.enabled) {
+				this.scene.start()
+			} else {
+				this.scene.stop()
+			}
 		}
 
 		setPlayerType(type) {
