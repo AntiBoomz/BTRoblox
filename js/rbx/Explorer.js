@@ -18,7 +18,7 @@
 	const HiddenProperties = $.toDict(null,
 		"Tags", // Instance
 		"FormFactor", "Elasticity", "Friction", // Parts
-		"PhysicsData", "MeshData", "ChildData", // Meshparts / Unions
+		"PhysicsData", "MeshData", "ChildData", "InitialSize", // Meshparts / Unions
 		"ModelInPrimary", // Model
 		"LODX", "LODY", // Mesh
 		"ScriptGuid", // Script
