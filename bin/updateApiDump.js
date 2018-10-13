@@ -66,7 +66,7 @@ function doStuff(data, rmd) {
 		const validMembers = x.ValidMembers = []
 
 		x.Members.forEach(y => {
-			if(y.MemberType !== "Property" || !y.Serialization.CanLoad || y.Tags && y.Tags.includes("Hidden")) { return }
+			if(y.MemberType !== "Property" || y.Tags && y.Tags.includes("Hidden")) { return }
 
 			if(!catMap[y.Category]) {
 				const cat = { name: y.Category, count: 0 }
