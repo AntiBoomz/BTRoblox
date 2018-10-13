@@ -163,7 +163,7 @@ const AssetCache = (() => {
 		loadAnimation: createMethod(buffer => new RBXParser.AnimationParser().parse(new RBXParser.ModelParser().parse(buffer))),
 		loadModel: createMethod(buffer => new RBXParser.ModelParser().parse(buffer)),
 		loadMesh: createMethod(buffer => new RBXParser.MeshParser().parse(buffer)),
-		loadImage: createMethod(buffer => URL.createObjectURL(new Blob([new Uint8Array(buffer)]))),
+		loadImage: createMethod(buffer => URL.createObjectURL(new Blob([new Uint8Array(buffer)], { type: "image/png" }))),
 
 		loadBuffer: createMethod(buffer => buffer),
 		loadBlob: createMethod(buffer => new Blob([buffer], { type: "image/jpeg" })),
