@@ -223,12 +223,6 @@ const RBXScene = (() => {
 
 			const resolved = Promise.resolve()
 			const innerUpdate = () => {
-				const debug = this.debugPrint && this.debugPrint > 0
-				if(debug) { this.debugPrint-- }
-
-				if(debug) {
-					console.log("scene update")
-				}
 				this.update()
 				resolved.then(() => this.render())
 

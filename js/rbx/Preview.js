@@ -252,9 +252,6 @@ const RBXPreview = (() => {
 				return console.warn("[RBXPreview.AvatarPreview] Tried to add asset when disabled, not async")
 			}
 
-			console.log("addAssetPreview")
-			this.scene.debugPrint = 5
-
 			return this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
 		}
 
