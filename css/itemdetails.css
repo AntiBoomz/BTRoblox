@@ -119,11 +119,11 @@ a:not(.disabled) > .btr-icon-content:hover {
 }
 
 
-#item-container[data-item-type="Bundle"] .btr-thumb-btn-container {
+#item-container[data-item-type="Bundle"] .three-dee-animated-icon ~ .btr-thumb-btn-container {
 	flex-direction: column;
 }
 
-#item-container[data-item-type="Bundle"] .btr-preview-enabled:not(.btr-preview-active) .btr-thumb-btn-container {
+#item-container[data-item-type="Bundle"] .btr-preview-enabled:not(.btr-preview-active) .three-dee-animated-icon ~ .btr-thumb-btn-container {
 	bottom: 60px;
 }
 
@@ -132,7 +132,7 @@ a:not(.disabled) > .btr-icon-content:hover {
 }
 
 
-#item-container:not([data-item-type="Bundle"]) .btr-preview-enabled .enable-three-dee:not(.three-dee-animated-icon) {
+#item-container .btr-preview-enabled .enable-three-dee:not(.three-dee-animated-icon) {
 	right: 46px;
 	z-index: 2; /* otherwise margin goes over */
 }
@@ -143,6 +143,8 @@ a:not(.disabled) > .btr-icon-content:hover {
 
 
 #AssetThumbnail.btr-preview-active .enable-three-dee,
+#AssetThumbnail.btr-preview-active .asset-status-icon,
+#AssetThumbnail.btr-preview-active .asset-restriction-icon,
 .btr-preview-container ~ .bundle-animation-btn-container {
 	display: none;
 }
