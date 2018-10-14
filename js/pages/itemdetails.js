@@ -450,7 +450,7 @@ pageInit.itemdetails = function(assetId) {
 			const canAccess = data.userassetId || (data.productId && !+data.expectedPrice)
 			if(canAccess) { return resolve(true) }
 
-			itemCont.$watch(".item-name-container a[href*=\"/users/\"]", creatorLink => {
+			itemCont.$watch(".item-name-container a", creatorLink => {
 				const creatorId = +String(creatorLink.href).replace(/^.*roblox.com\/users\/(\d+).*$/, "$1")
 				if(!Number.isSafeInteger(creatorId)) { return resolve(false) }
 				if(creatorId === 1) { return resolve(true) }
@@ -460,9 +460,10 @@ pageInit.itemdetails = function(assetId) {
 		})
 
 		canAccessPromise.then(canAccess => {
-			if(!canAccess) { return }
+			const softAccess = canAccess || !canAccess && (assetTypeId !== 3 && assetTypeId !== 10) && !ContainerAssetTypeIds[assetTypeId]
+			if(!softAccess) { return }
 
-			if(settings.itemdetails.explorerButton && InvalidExplorableAssetTypeIds.indexOf(assetTypeId) === -1) {
+			if(settings.itemdetails.explorerButton && !InvalidExplorableAssetTypeIds.includes(assetTypeId)) {
 				const explorer = new Explorer()
 				let explorerInitialized = false
 
@@ -505,7 +506,7 @@ pageInit.itemdetails = function(assetId) {
 				})
 			}
 
-			if(settings.itemdetails.downloadButton && InvalidDownloadableAssetTypeIds.indexOf(assetTypeId) === -1) {
+			if(settings.itemdetails.downloadButton && !InvalidDownloadableAssetTypeIds.includes(assetTypeId)) {
 				let isDownloading = false
 
 				const createDownloadButton = actualUrl => {
