@@ -325,12 +325,10 @@ const HoverPreview = (() => {
 
 				if(debounceCounter !== debounce) { return } // assetTypeId yields
 
-				if(!isWearable && (!isPackage && !isBundle || settings.general.hoverPreviewMode !== "animations")) {
+				if(!isWearable && (!isPackage && !isBundle || settings.general.hoverPreviewMode === "animations")) {
 					invalidAssets[assetId] = true
 					return
 				}
-
-				thumbCont.classList.add("btr-preview-loading")
 
 				const finalizeLoad = () => {
 					if(debounceCounter !== debounce) { return }
@@ -344,8 +342,11 @@ const HoverPreview = (() => {
 					Promise.all([preview.appearanceLoadedPromise, ...assetPromises]).then(() => {
 						$.setImmediate(() => {
 							if(debounceCounter !== debounce) { return }
+							
+							const lowItems = [12, 30, 31]
+							const midItems = [2, 11, 27, 28, 29, 45, 47]
 
-							const cameraOffset = assetTypeId === 12 ? 1.5 : 4
+							const cameraOffset = lowItems.includes(assetTypeId) ? 1.5 : midItems.includes(assetTypeId) ? 2.75 : 4
 							preview.scene.cameraFocus.set(0, cameraOffset, 0)
 
 							self.$find(thumbContSelector).append(preview.container)
@@ -358,6 +359,8 @@ const HoverPreview = (() => {
 
 					if(WearableAssetTypeIds.includes(itemTypeId)) {
 						if(!preview) { initPreview() }
+						thumbCont.classList.add("btr-preview-loading")
+
 						lastPreviewedAssets.push(itemId)
 						assetPromises.push(preview.addAssetPreview(itemId, itemTypeId))
 					}
@@ -373,7 +376,7 @@ const HoverPreview = (() => {
 					fetch(url).then(async resp => {
 						if(debounceCounter !== debounce) { return }
 						const json = await resp.json()
-						const list = json.data.filter(x => x.type === "Asset").map(x => x.id)
+						const list = json.items.filter(x => x.type === "Asset").map(x => x.id)
 						if(list.length) { doMultiple(list) }
 					})
 				} else if(isPackage) {
