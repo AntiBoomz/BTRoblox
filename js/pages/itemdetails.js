@@ -1,5 +1,385 @@
 "use strict"
 
+
+class ItemPreviewer extends RBXPreview.AvatarPreviewer {
+	constructor(isBundle) {
+		super()
+
+		this.isShown = false
+
+		const container = html`<div class=btr-preview-container></div>`
+		container.append(this.container)
+		this.container = container
+
+		const typeSwitch = this.typeSwitch = html`
+		<div class="btr-switch btr-playertype-switch" style="position:absolute;top:6px;right:6px">
+			<div class=btr-switch-off>R6</div>
+			<div class=btr-switch-on>R15</div>
+			<input type=checkbox> 
+			<div class=btr-switch-flip>
+				<div class=btr-switch-off>R6</div>
+				<div class=btr-switch-on>R15</div>
+			</div>
+		</div>`
+
+		this.dropdown = html`
+		<div class="input-group-btn btr-dropdown-container" style="position:absolute;top:6px;left:6px;width:140px;display:none">
+			<button type=button class=input-dropdown-btn data-toggle=dropdown>
+				<span class=rbx-selection-label data-bind=label></span>
+				<span class=icon-down-16x16></span>
+			</button>
+			<ul data-toggle=dropdown-menu class=dropdown-menu role=menu></ul>
+		</div>`
+
+		const buttons = this.buttons = html`
+		<div class=btr-thumb-btn-container>
+			<div class="btr-thumb-btn rbx-btn-control-sm btr-hats-btn"><span class=btr-icon-hat></span></div>
+			<div class="btr-thumb-btn rbx-btn-control-sm btr-body-btn"><span class=btr-icon-body></span></div>
+			<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn"><span class=btr-icon-preview></span></div>
+		</div>`
+
+		const typeInput = typeSwitch.$find("input")
+
+		this.on("playertypechanged", type => {
+			typeInput.checked = type === "R15"
+		})
+
+		typeInput.$on("change", () => {
+			this.setPlayerType(typeInput.checked ? "R15" : "R6")
+		})
+
+
+		buttons.$on("click", ".btr-hats-btn", ev => {
+			const self = ev.currentTarget
+			const disabled = !self.classList.contains("checked")
+			self.classList.toggle("checked", disabled)
+
+			this.setAccessoriesVisible(!disabled)
+		})
+		
+		buttons.$on("click", ".btr-body-btn", ev => {
+			const self = ev.currentTarget
+			const disabled = !self.classList.contains("checked")
+			self.classList.toggle("checked", disabled)
+
+			this.setPackagesVisible(!disabled)
+		})
+
+		document.$watch("#AssetThumbnail .enable-three-dee", btn => {
+			if(btn.classList.contains("three-dee-animated-icon")) {
+				const newBtn = html`<div class="btr-thumb-btn rbx-btn-control-sm btr-play-btn"></div>`
+				const icon = html`<span></span>`
+				newBtn.append(icon)
+				buttons.append(newBtn)
+
+				let playing = true
+
+				const update = () => {
+					icon.classList.toggle("icon-bigplay", !playing)
+					icon.classList.toggle(isBundle ? "icon-pause-fill" : "icon-bigstop", playing)
+
+					icon.style.backgroundPositionX = isBundle && !playing ? "-28px" : ""
+
+					this.scene.avatar.animator.speed = playing ? 1 : 0
+				}
+
+				update()
+				newBtn.$on("click", () => {
+					playing = !playing
+					update()
+				})
+			}
+		})
+
+		const disableOrigThumbs = () => {
+			setTimeout(() => {
+				if(this.enabled) {
+					const btn = $("#AssetThumbnail .three-dee-animated-icon")
+					if(btn && !btn.$find(".icon-bigplay")) {
+						btn.click()
+					}
+				}
+			}, 0)
+		}
+
+		onDocumentReady(disableOrigThumbs)
+
+		const previewBtn = buttons.$find(".btr-preview-btn")
+		
+		this.on("enabled", () => {
+			previewBtn.classList.add("checked")
+			document.$watch("#AssetThumbnail", thumb => {
+				thumb.classList.add("btr-preview-active")
+				thumb.parentNode.before(this.container)
+			})
+			
+			disableOrigThumbs()
+		})
+
+		this.on("disabled", () => {
+			previewBtn.classList.remove("checked")
+			document.$watch("#AssetThumbnail", thumb => {
+				thumb.classList.remove("btr-preview-active")
+				this.container.remove()
+			})
+		})
+
+		previewBtn.$on("click", () => this.setEnabled(!this.enabled))
+
+		this.on("animationloaded", (data, assetId) => {
+			const anim = this.anims.find(x => x.assetId === assetId)
+			if(anim && anim.name === "swim") {
+				this.scene.avatar.offsetPos.set(0, 1.5, .5)
+				this.scene.avatar.offsetRot.set(-Math.PI / 2, 0, 0)
+			} else {
+				this.scene.avatar.offsetPos.set(0, 0, 0)
+				this.scene.avatar.offsetRot.set(0, 0, 0)
+			}
+		})
+		
+		this.scene.cameraFocus.y -= 0.5
+	}
+
+	setVisible(bool) {
+		if(this.isShown === !!bool) { return }
+		this.isShown = !!bool
+
+		document.$watch("#AssetThumbnail", thumb => {
+			if(this.isShown) {
+				thumb.classList.add("btr-preview-enabled")
+				thumb.append(this.dropdown, this.typeSwitch, this.buttons)
+				if(this.bundleAnims) { thumb.append(this.bundleAnims) }
+			} else {
+				thumb.classList.remove("btr-preview-enabled")
+				this.dropdown.remove()
+				this.typeSwitch.remove()
+				this.buttons.remove()
+				if(this.bundleAnims) { this.bundleAnims.remove() }
+			}
+		})
+	}
+
+	playAnimation(name) {
+		super.playAnimation(name)
+		
+		if(this.dropdown) {
+			this.dropdown.$find("[data-bind='label']").textContent = name
+		}
+	}
+
+	addAnimation(name, assetId) {
+		super.addAnimation(name, assetId)
+
+		if(this.anims.length === 1) {
+			this.playAnimation(name)
+		}
+
+		if(this.dropdown) {
+			const elem = html`<li><a>${name}</a></li>`
+			elem.$on("click", () => this.playAnimation(name))
+
+			const menu = this.dropdown.$find(".dropdown-menu")
+			menu.append(elem)
+
+			this.dropdown.style.display = this.anims.length < 2 ? "none" : ""
+		}
+	}
+
+	initBundleAnimations() {
+		if(!this.bundleAnims) {
+			this.bundleAnims = html`
+			<div class=btr-bundle-animations>
+				<button class="btr-bundle-btn btn-control-xs" data-anim=run disabled><div class=btr-anim-icon-run></div></button>
+				<button class="btr-bundle-btn btn-control-xs" data-anim=walk disabled><div class=btr-anim-icon-walk></div></button>
+				<button class="btr-bundle-btn btn-control-xs" data-anim=fall disabled><div class=btr-anim-icon-fall></div></button>
+				<button class="btr-bundle-btn btn-control-xs" data-anim=jump disabled><div class=btr-anim-icon-jump></div></button>
+				<button class="btr-bundle-btn btn-control-xs" data-anim=idle disabled><div class=btr-anim-icon-idle></div></button>
+				<button class="btr-bundle-btn btn-control-xs" data-anim=swim disabled><div class=btr-anim-icon-swim></div></button>
+				<button class="btr-bundle-btn btn-control-xs" data-anim=climb disabled><div class=btr-anim-icon-climb></div></button>
+			</div>`
+
+			this.bundleAlts = {}
+			this.buttons.after(this.bundleAnims)
+
+			// Move camera down
+			this.scene.cameraFocus.y -= .5
+		}
+	}
+
+	addBundleAnimation(name, assetId, assetTypeId, assetName) {
+		super.addAnimation(name, assetId)
+		this.initBundleAnimations()
+
+		const animName = AssetTypeIds[assetTypeId].slice(0, -9).toLowerCase()
+		const root = this.bundleAnims.$find(`.btr-bundle-btn[data-anim="${animName}"]`)
+	
+		if(root) {
+			let btn
+
+			if(name === animName) {
+				btn = root
+				root.removeAttribute("disabled")
+			} else {
+				let altCont = this.bundleAlts[animName]
+				if(!altCont) {
+					altCont = this.bundleAlts[animName] = html`<div class=btr-bundle-alt-container></div>`
+					root.prepend(altCont)
+				}
+
+				const alt = btn = html`<button class="btr-bundle-btn-alt btn-control-xs">ALT</button>`
+
+				if(name === "swimidle") { alt.textContent = "IDLE" }
+				else if(name === "pose") { alt.textContent = "POSE" }
+
+				altCont.prepend(alt)
+			}
+			
+			btn.$on("click", ev => {
+				delete this.bundleWaitingAnim
+
+				this.bundleAnims.$findAll(".selected").forEach(x => x.classList.remove("selected"))
+				btn.classList.add("selected")
+				this.playAnimation(name)
+
+				const curName = $("#current-animation-name")
+				if(curName) { curName.textContent = assetName }
+
+				ev.stopImmediatePropagation()
+				ev.preventDefault()
+			})
+
+			if(name === "run" && (this.bundleWaitingAnim || !this.currentAnim)) {
+				btn.click()
+			} else if(!this.currentAnim && !this.bundleWaitingAnim) {
+				this.bundleWaitingAnim = true
+
+				setTimeout(() => {
+					if(!this.currentAnim) {
+						btn.click()
+						this.bundleWaitingAnim = true
+					}
+				}, 250)
+			}
+			
+			if(!this.currentAnim) {
+				if(name === "run") {
+					btn.click()
+				} else if(!this.bundleWaitingAnim) {
+					this.bundleWaitingAnim = true
+					setTimeout(() => {
+						if(!this.currentAnim) {
+							btn.click()
+						}
+					}, 1e3)
+				}
+			}
+		}
+	}
+}
+
+
+const initPreview = (assetId, assetTypeId, isBundle) => {
+	const previewAnim = AnimationPreviewAssetTypeIds.includes(assetTypeId)
+	const previewAsset = WearableAssetTypeIds.includes(assetTypeId)
+	const previewPackage = assetTypeId === 32
+
+	if(settings.itemdetails.itemPreviewer && (previewAnim || previewAsset || previewPackage || isBundle)) {
+		let preview
+		let autoLoadPreview = false
+
+		switch(settings.itemdetails.itemPreviewerMode) {
+		case "always": default:
+			autoLoadPreview = true
+			break
+		case "animations":
+			autoLoadPreview = previewAnim || previewPackage
+			break
+		case "never":
+			break
+		}
+
+		let lastAnimPromise
+		const doPreview = (id, typeId, productInfo) => {
+			const isAnim = AnimationPreviewAssetTypeIds.indexOf(typeId) !== -1
+			const isAsset = WearableAssetTypeIds.indexOf(typeId) !== -1
+
+			if(!preview) {
+				preview = new ItemPreviewer(isBundle, isAnim)
+
+				preview.setVisible(true)
+				if(autoLoadPreview) { onDocumentReady(() => preview.setEnabled(true)) }
+			}
+
+			if(isAnim) {
+				preview.autoLoadPlayerType = false
+				preview.setPlayerTypeOnAnim = true
+
+				if(typeId === 24) {
+					preview.addAnimation(String(id), id)
+				} else {
+					if(isBundle) {
+						preview.initBundleAnimations()
+					}
+
+					const loadAnim = async () => {
+						const model = await AssetCache.loadModel(id)
+						const folder = model.find(x => x.ClassName === "Folder" && x.Name === "R15Anim")
+						if(!folder) { return }
+
+						folder.Children.filter(x => x.ClassName === "StringValue").forEach(value => {
+							const animName = value.Name
+
+							value.Children.filter(x => x.ClassName === "Animation").forEach((anim, i) => {
+								const animId = AssetCache.resolveAssetId(anim.AnimationId)
+								if(!animId) { return }
+
+								const name = animName + (i === 0 ? "" : `_${i + 1}`)
+
+								if(isBundle) {
+									preview.addBundleAnimation(name, animId, typeId, productInfo.Name)
+								} else {
+									preview.addAnimation(name, animId)
+								}
+							})
+						})
+					}
+
+					if(autoLoadPreview) {
+						lastAnimPromise = loadAnim()
+					} else {
+						const initPromise = new Promise(x => preview.on("init", x))
+						lastAnimPromise = (lastAnimPromise || initPromise).then(loadAnim)
+					}
+				}
+			} else if(isAsset) {
+				preview.addAssetPreview(id, typeId)
+			}
+		}
+
+		if(isBundle) {
+			const url = `https://catalog.roblox.com/v1/bundles/${assetId}/details`
+			fetch(url).then(async resp => {
+				const data = await resp.json()
+
+				data.items.forEach(item => {
+					if(item.type === "Asset") {
+						getProductInfo(item.id).then(json => doPreview(json.AssetId, json.AssetTypeId, json))
+					}
+				})
+			})
+		} else if(previewPackage) {
+			AssetCache.loadText(assetId, text => {
+				text.split(";").forEach(itemId => {
+					getProductInfo(itemId).then(json => doPreview(json.AssetId, json.AssetTypeId, json))
+				})
+			})
+		} else {
+			doPreview(assetId, assetTypeId)
+		}
+	}
+}
+
+
 pageInit.itemdetails = function(assetId) {
 	if(!settings.itemdetails.enabled) { return }
 
@@ -32,6 +412,10 @@ pageInit.itemdetails = function(assetId) {
 				})
 	}
 
+	if(settings.general.hoverPreview) {
+		HoverPreview.register(".item-card", ".item-card-thumb-container")
+	}
+
 	document.$watch("#AjaxCommentsContainer").$then().$watch(".comments").$then()
 		.$watchAll(".comment-item", comment => {
 			const span = comment.$find(".text-date-hint")
@@ -43,7 +427,12 @@ pageInit.itemdetails = function(assetId) {
 		})
 	
 	document.$watch("#item-container", itemCont => {
-		if(itemCont.dataset.itemType !== "Asset") { return }
+		if(itemCont.dataset.itemType !== "Asset") {
+			if(itemCont.dataset.itemType === "Bundle") {
+				initPreview(assetId, null, true)
+			}
+			return
+		}
 		
 		const assetTypeName = itemCont.dataset.assetType
 		const assetTypeId = AssetTypeIds.indexOf(assetTypeName)
@@ -52,139 +441,7 @@ pageInit.itemdetails = function(assetId) {
 			return
 		}
 
-		const previewAnim = AnimationPreviewAssetTypeIds.includes(assetTypeId)
-		const previewAsset = WearableAssetTypeIds.includes(assetTypeId)
-		const previewPackage = PackageAssetTypeIds.includes(assetTypeId)
-
-		if(settings.itemdetails.itemPreviewer && (previewAnim || previewAsset || previewPackage || assetTypeId === 32)) {
-			const preview = new RBXPreview.AvatarPreviewer()
-			const container = html`
-			<div class="item-thumbnail-container btr-preview-container">
-				<div class="btr-thumb-btn-container">
-					<div class="btr-thumb-btn rbx-btn-control-sm btr-hats-btn"><span class="btr-icon-hat"></span></div>
-					<div class="btr-thumb-btn rbx-btn-control-sm btr-body-btn"><span class="btr-icon-body"></span></div>
-					<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn checked"><span class="btr-icon-preview"></span></div>
-				</div>
-			</div>`
-			
-			container.append(preview.container)
-
-			const toggleEnabled = enabled => {
-				const oldCont = $("#AssetThumbnail").parentNode
-				if(enabled) {
-					oldCont.style.display = "none"
-					oldCont.after(container)
-				} else {
-					oldCont.style.display = ""
-					container.remove()
-				}
-
-				preview.setEnabled(enabled)
-			}
-
-
-			document.$on("click", ".btr-hats-btn", ev => {
-				const self = ev.currentTarget
-				const disabled = !self.classList.contains("checked")
-				self.classList.toggle("checked", disabled)
-
-				preview.setAccessoriesVisible(!disabled)
-			})
-			
-			document.$on("click", ".btr-body-btn", ev => {
-				const self = ev.currentTarget
-				const disabled = !self.classList.contains("checked")
-				self.classList.toggle("checked", disabled)
-
-				preview.setPackagesVisible(!disabled)
-			})
-
-			document.$watch("#AssetThumbnail", thumb => {
-				thumb.classList.add("btr-preview-enabled")
-				thumb.append(html`<div class="btr-thumb-btn-container">
-					<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn"><span class="btr-icon-preview"></span></div>
-				</div>`)
-			})
-
-			document.$on("click", ".btr-preview-btn", ev => {
-				const self = ev.currentTarget
-				const checked = !self.classList.contains("checked")
-
-				toggleEnabled(checked)
-			})
-
-
-			let lastAnimPromise
-			let autoLoadPreview = false
-
-			switch(settings.itemdetails.itemPreviewerMode) {
-			default: case "default":
-			case "always":
-				autoLoadPreview = true
-				break
-			case "animations":
-				autoLoadPreview = previewAnim || previewPackage || assetTypeId === 32
-				break
-			case "never":
-				break
-			}
-			
-			if(autoLoadPreview) {
-				onDocumentReady(() => toggleEnabled(true))
-			}
-
-
-			const doPreview = (id, typeId) => {
-				const isAnim = AnimationPreviewAssetTypeIds.indexOf(typeId) !== -1
-				const isAsset = WearableAssetTypeIds.indexOf(typeId) !== -1
-
-				if(isAnim) {
-					preview.autoLoadPlayerType = false
-					preview.setPlayerTypeOnAnim = true
-
-					if(typeId === 24) {
-						preview.onInit(() => {
-							preview.addAnimation(String(id), id)
-						})
-					} else {
-						const loadAnim = async () => {
-							const model = await AssetCache.loadModel(id)
-							const folder = model.find(x => x.ClassName === "Folder" && x.Name === "R15Anim")
-							if(!folder) { return }
-
-							folder.Children.filter(x => x.ClassName === "StringValue").forEach(value => {
-								const animName = value.Name
-
-								value.Children.filter(x => x.ClassName === "Animation").forEach((anim, i) => {
-									const name = animName + (i === 0 ? "" : `_${i + 1}`)
-									const animId = AssetCache.resolveAssetId(anim.AnimationId)
-									if(!animId) { return }
-
-									preview.addAnimation(name, animId)
-								})
-							})
-						}
-
-						lastAnimPromise = (lastAnimPromise || new Promise(x => preview.onInit(x))).then(loadAnim)
-					}
-				} else if(isAsset) {
-					preview.addAssetPreview(id, typeId)
-				}
-			}
-
-			if(assetTypeId === 32) {
-				AssetCache.loadText(assetId, text => {
-					const promises = text.split(";").map(itemId => getProductInfo(itemId))
-					promises[0].then(json => doPreview(json.AssetId, json.AssetTypeId))
-
-					Promise.all(promises.slice(1)).then(list => {
-						list.forEach(json => doPreview(json.AssetId, json.AssetTypeId))
-					})
-				})
-			} else {
-				doPreview(assetId, assetTypeId)
-			}
-		}
+		initPreview(assetId, assetTypeId)
 
 		const canAccessPromise = new Promise(resolve => {
 			if(!CheckAccessAssetTypeIds.includes(assetTypeId)) { return resolve(true) }

@@ -593,7 +593,8 @@
 	background: #0074BD;
 	border: 1px dashed rgba(255,255,255,.4);
 
-	padding: 6px 9px;
+	margin: 0 -1px;
+	padding: 5px 9px; /* vertical -1px for border */
 	float: right;
 	position: absolute;
 	cursor: pointer;
@@ -610,6 +611,7 @@
 
 #btr-naveditor-topright-container li:hover {
 	border-color: #fff;
+	z-index: 2;
 }
 
 #btr-topright-items {
@@ -631,7 +633,7 @@
 	width: 28px;
 	height: 28px;
 	display: inline-block;
-	background-image: url(https://www.roblox.com/images/Shared/navigation_06282017.svg);
+	background-image: url(https://www.roblox.com/images/Shared/navigation_10022018.svg);
 	background-repeat: no-repeat;
 	background-size: auto auto;
 }
@@ -641,7 +643,7 @@
 }
 
 .btr-naveditor-tr-Stream:before {
-	background-position: 0 -476px;
+	background-position: 0 -448px;
 }
 
 .btr-naveditor-tr-Robux:before {

@@ -4,8 +4,8 @@
 
 const AssetCache = (() => {
 	const resolveCache = {}
-	const fileCache = {}
 	const resolveQueue = []
+	const fileCache = {}
 	let resolvePromise
 	let xsrfToken
 
@@ -163,7 +163,11 @@ const AssetCache = (() => {
 		loadAnimation: createMethod(buffer => new RBXParser.AnimationParser().parse(new RBXParser.ModelParser().parse(buffer))),
 		loadModel: createMethod(buffer => new RBXParser.ModelParser().parse(buffer)),
 		loadMesh: createMethod(buffer => new RBXParser.MeshParser().parse(buffer)),
-		loadImage: createMethod(buffer => URL.createObjectURL(new Blob([new Uint8Array(buffer)], { type: "image/png" }))),
+		loadImage: createMethod(buffer => {
+			const reader = new FileReader()
+			reader.readAsDataURL(new Blob([new Uint8Array(buffer)], { type: "image/png" }))
+			return new Promise(resolve => reader.onload = () => resolve(reader.result))
+		}),
 
 		loadBuffer: createMethod(buffer => buffer),
 		loadBlob: createMethod(buffer => new Blob([buffer], { type: "image/jpeg" })),

@@ -253,10 +253,10 @@ function Linkify(elem) {
 
 const HoverPreview = (() => {
 	const lastPreviewedAssets = []
+	const invalidAssets = {}
 	let preview
 	let debounceCounter = 0
 	let currentTarget
-	let cameraOffset = 4
 
 	const initPreview = () => {
 		preview = this.preview = new RBXPreview.AvatarPreviewer({
@@ -270,111 +270,122 @@ const HoverPreview = (() => {
 		preview.container.style.top = "0"
 		preview.container.style.pointerEvents = "none"
 		
-		preview.onInit(() => {
-			preview.scene.cameraFocus.set(0, cameraOffset, 0)
-			preview.scene.cameraControlsEnabled = false
-			preview.scene.cameraRotation.set(0.15, 0.25, 0)
-			preview.scene.cameraZoom = 3.5
-		})
+		preview.scene.cameraControlsEnabled = false
+		preview.scene.cameraRotation.set(0.15, 0.25, 0)
+		preview.scene.cameraZoom = 3.5
+	}
+
+	const clearTarget = () => {
+		if(currentTarget) {
+			currentTarget = null
+			debounceCounter++
+		}
+
+		if(preview) {
+			preview.container.remove()
+			while(lastPreviewedAssets.length) {
+				preview.removeAssetPreview(lastPreviewedAssets.pop())
+			}
+		}
 	}
 
 	return {
 		register(selector, thumbContSelector) {
-			document.$on("mouseover", `${selector} ${thumbContSelector}`, ev => {
+			if(settings.general.hoverPreviewMode === "never") { return }
+
+			document.$on("mouseover", `${selector} ${thumbContSelector}`, async ev => {
 				const thumbCont = ev.currentTarget
+
 				const self = thumbCont.closest(selector)
-				if(!self) { return }
-				const anchor = self.$find(`a[href*="/catalog/"]`)
+				if(!self || currentTarget === self) { return }
+
+				const anchor = self.$find(`a[href*="/catalog/"],a[href*="/bundles/"]`)
 				if(!anchor) { return }
 
-				const assetId = anchor.href.replace(/^.+\/catalog\/(\d+)\/.+$/, "$1")
+				const assetId = anchor.href.replace(/^.+\/(?:bundles|catalog)\/(\d+)\/.+$/, "$1")
 				if(!Number.isSafeInteger(+assetId)) { return }
-	
-				if(currentTarget === self) { return }
+
+				clearTarget()
 				currentTarget = self
-				
-				if(preview) {
-					preview.container.remove()
 
-					while(lastPreviewedAssets.length) {
-						preview.removeAssetPreview(lastPreviewedAssets.pop())
-					}
-				}
-		
 				const debounce = ++debounceCounter
-				getProductInfo(assetId).then(data => {
+				const assetPromises = []
+
+				const mouseLeave = () => {
+					if(currentTarget !== self) { return }
+					thumbCont.classList.remove("btr-preview-loading")
+					clearTarget()
+				}
+
+				thumbCont.addEventListener("mouseleave", mouseLeave, { once: true })
+
+				const isBundle = anchor.href.includes("/bundles/")
+				const assetTypeId = !isBundle && await getProductInfo(assetId).then(json => json.AssetTypeId)
+				const isWearable = WearableAssetTypeIds.includes(assetTypeId)
+				const isPackage = assetTypeId === 32
+
+				if(debounceCounter !== debounce) { return } // assetTypeId yields
+
+				if(!isWearable && (!isPackage && !isBundle || settings.general.hoverPreviewMode !== "animations")) {
+					invalidAssets[assetId] = true
+					return
+				}
+
+				thumbCont.classList.add("btr-preview-loading")
+
+				const finalizeLoad = () => {
 					if(debounceCounter !== debounce) { return }
-					let loadPreview = false
 
-					switch(settings.itemdetails.itemPreviewerMode) {
-					default: case "default":
-					case "always":
-						loadPreview = true
-						break
-					case "animations":
-						loadPreview = AnimationPreviewAssetTypeIds.includes(data.AssetTypeId) || PackageAssetTypeIds.includes(data.AssetTypeId) || assetTypeId === 32
-						break
-					case "never":
-						break
+					if(!assetPromises.length) {
+						invalidAssets[assetId] = true
+						clearTarget()
+						return
 					}
 
-					if(!loadPreview) { return }
-
-					const isWearable = WearableAssetTypeIds.includes(data.AssetTypeId)
-					const isPackage = data.AssetTypeId === 32
-
-					if(!isWearable && !isPackage) { return }
-
-					if(!preview) { initPreview() }
-
-					cameraOffset = data.AssetTypeId === 12 ? 1.5 : 4
-					if(preview && preview.scene) {
-						preview.scene.cameraFocus.set(0, cameraOffset, 0)
-					}
-	
-					const promises = [ preview.appearanceLoadedPromise ]
-
-					if(isWearable) {
-						promises.push(preview.addAssetPreview(assetId, data.AssetTypeId))
-						lastPreviewedAssets.push(assetId)
-					} else if(isPackage) {
-						AssetCache.loadText(assetId, text => {
+					Promise.all([preview.appearanceLoadedPromise, ...assetPromises]).then(() => {
+						$.setImmediate(() => {
 							if(debounceCounter !== debounce) { return }
 
-							text.split(";").forEach(itemId => getProductInfo(itemId).then(json => {
-								if(debounceCounter !== debounce) { return }
+							const cameraOffset = assetTypeId === 12 ? 1.5 : 4
+							preview.scene.cameraFocus.set(0, cameraOffset, 0)
 
-								if(WearableAssetTypeIds.includes(json.AssetTypeId)) {
-									promises.push(preview.addAssetPreview(itemId, json.AssetTypeId))
-									lastPreviewedAssets.push(itemId)
-								}
-							}))
-						})
-					}
-
-					Promise.all(promises).then(([assetPromises]) => {
-						Promise.all(assetPromises).then(() => {
-							requestAnimationFrame(() => {
-								if(debounceCounter !== debounce) { return }
-								self.$find(thumbContSelector).append(preview.container)
-							})
+							self.$find(thumbContSelector).append(preview.container)
 						})
 					})
-				})
-		
-				thumbCont.addEventListener("mouseleave", () => {
-					if(currentTarget !== self) { return }
-					currentTarget = null
-					debounceCounter++
+				}
 
-					if(preview) {
-						preview.container.remove()
+				const doStuff = (itemId, itemTypeId) => {
+					if(debounceCounter !== debounce) { return }
 
-						while(lastPreviewedAssets.length) {
-							preview.removeAssetPreview(lastPreviewedAssets.pop())
-						}
+					if(WearableAssetTypeIds.includes(itemTypeId)) {
+						if(!preview) { initPreview() }
+						lastPreviewedAssets.push(itemId)
+						assetPromises.push(preview.addAssetPreview(itemId, itemTypeId))
 					}
-				}, { once: true })
+				}
+
+				const doMultiple = list => {
+					const promises = list.map(id => getProductInfo(id).then(json => doStuff(json.AssetId, json.AssetTypeId)))
+					Promise.all(promises).then(finalizeLoad)
+				}
+				
+				if(isBundle) {
+					const url = `https://catalog.roblox.com/v1/bundles/${assetId}/details`
+					fetch(url).then(async resp => {
+						if(debounceCounter !== debounce) { return }
+						const json = await resp.json()
+						const list = json.data.filter(x => x.type === "Asset").map(x => x.id)
+						if(list.length) { doMultiple(list) }
+					})
+				} else if(isPackage) {
+					AssetCache.loadText(assetId, text => {
+						if(debounceCounter !== debounce) { return }
+						doMultiple(text.split(";"))
+					})
+				} else if(isWearable) {
+					doStuff(assetId, assetTypeId)
+					finalizeLoad()
+				}
 			})
 		}
 	}

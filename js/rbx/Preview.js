@@ -5,7 +5,23 @@ const RBXPreview = (() => {
 	function getAvatarRules() {
 		if(!avatarRulePromise) {
 			const url = "https://avatar.roblox.com/v1/avatar-rules"
-			avatarRulePromise = csrfFetch(url, { credentials: "include" }).then(resp => resp.json())
+			let retries = 0
+
+			const callback = async resp => {
+				if(!resp.ok) {
+					if(++retries > 5) {
+						console.warn(`[RBXPreview] Failed to load '${url}'`)
+						return
+					}
+
+					await new Promise(res => setTimeout(res, 1e3))
+					return csrfFetch(url, { credentials: "include" }).then(callback)
+				}
+
+				return resp.json()
+			}
+
+			avatarRulePromise = csrfFetch(url, { credentials: "include" }).then(callback)
 		}
 
 		return avatarRulePromise
@@ -13,7 +29,23 @@ const RBXPreview = (() => {
 
 	function getAvatarData() {
 		const url = "https://avatar.roblox.com/v1/avatar"
-		return csrfFetch(url, { credentials: "include" }).then(resp => resp.json())
+		let retries = 0
+
+		const callback = async resp => {
+			if(!resp.ok) {
+				if(++retries > 5) {
+					console.warn(`[RBXPreview] Failed to load '${url}'`)
+					return
+				}
+
+				await new Promise(res => setTimeout(res, 1e3))
+				return csrfFetch(url, { credentials: "include" }).then(callback)
+			}
+
+			return resp.json()
+		}
+
+		return csrfFetch(url, { credentials: "include" }).then(callback)
 	}
 
 	function getDefaultAppearance(cb) {
@@ -31,27 +63,25 @@ const RBXPreview = (() => {
 		})
 	}
 
-	class Previewer {
+	class Previewer extends EventEmitter {
 		constructor() {
+			super()
+
 			this.enabled = false
 			this.initialized = false
-
-			this._onInit = []
-		}
-
-		onInit(cb) {
-			if(this.initialized) { cb() }
-			else { this._onInit.push(cb) }
 		}
 
 		setEnabled(bool) {
 			this.enabled = !!bool
 
-			if(!this.initialized && this.enabled) {
-				this.initialized = true
-
-				this._onInit.forEach(cb => cb.call(this))
-				delete this._onInit
+			if(this.enabled) {
+				if(!this.initialized) {
+					this.initialized = true
+					this.trigger("init")
+				}
+				this.trigger("enabled")
+			} else {
+				this.trigger("disabled")
 			}
 		}
 	}
@@ -59,35 +89,7 @@ const RBXPreview = (() => {
 	class AvatarPreviewer extends Previewer {
 		constructor(opts = {}) {
 			super()
-			this.container = html`<div style="width:100%; height:100%"></div>`
-
-			if(!opts.simple) {
-				this.container.innerHTML = htmlstring`
-				<div class=btr-switch style="position:absolute;top:6px;right:6px">
-					<div class=btr-switch-off>R6</div>
-					<div class=btr-switch-on>R15</div>
-					<input type=checkbox> 
-					<div class=btr-switch-flip>
-						<div class=btr-switch-off>R6</div>
-						<div class=btr-switch-on>R15</div>
-					</div>
-				</div>
-				<div class=input-group-btn style="position:absolute;top:6px;left:6px;width:140px;display:none">
-					<button type=button class=input-dropdown-btn data-toggle=dropdown>
-						<span class=rbx-selection-label data-bind=label></span>
-						<span class=icon-down-16x16></span>
-					</button>
-					<ul data-toggle=dropdown-menu class=dropdown-menu role=menu></ul>
-				</div>`
-	
-				const ptSwitch = this.ptSwitch = this.container.$find(".btr-switch > input")
-				const dropdown = this.dropdown = this.container.$find(".input-group-btn")
-				this.menu = dropdown.$find(".dropdown-menu")
-	
-				ptSwitch.$on("change", () => {
-					this.setPlayerType(ptSwitch.checked ? "R15" : "R6")
-				})
-			}
+			this.container = html`<div style="width:100%; height:100%;"></div>`
 
 			this.playerType = null
 			this.anims = []
@@ -109,85 +111,98 @@ const RBXPreview = (() => {
 			
 			{
 				let resolve
-				this.appearanceLoadedPromise = new Promise(res => resolve = res)
+				const promise = new Promise(res => resolve = res)
+				this.appearanceLoadedPromise = Promise.resolve().then(() => promise)
 				this.appearanceLoadedPromise.resolve = resolve
 			}
 
-			const scene = this.scene = window.scene = new RBXScene.AvatarScene()
-			const avatar = scene.avatar
+			this.scene = window.scene = new RBXScene.AvatarScene()
+			this.container.append(scene.canvas)
 
-			this.onInit(() => {
+			const avatar = this.scene.avatar
+
+			const R15Anims = [507766666, 507766951, 507766388]
+			const R6Anims = [180435792, 180435571]
+
+			avatar.animator.onloop = () => {
+				if(!this.currentAnim) {
+					if(R15Anims.includes(this.playingAnim)) {
+						const roll = Math.random()
+						const animId = roll < 1 / 11 ? R15Anims[0] : roll < 2 / 11 ? R15Anims[1] : R15Anims[2]
+						if(this.currentAnim !== animId) {
+							this.loadAnimation(animId, .5)
+						}
+					} else if(R6Anims.includes(this.playingAnim)) {
+						const roll = Math.random()
+						const animId = roll < 0.1 ? R6Anims[0] : R6Anims[1]
+						if(this.currentAnim !== animId) {
+							this.loadAnimation(animId, .5)
+						}
+					}
+				}
+			}
+
+			avatar.animator.onstop = () => setTimeout(() => avatar.animator.play(), 2000)
+
+			this.on("enabled", () => {
+				this.scene.start()
+
+				if(!this.playingAnim) {
+					if(this.currentAnim) {
+						this.loadAnimation(this.currentAnim.assetId)
+					} else if(!this.disableDefaultAnimations) {
+						this.loadDefaultAnimation()
+					}
+				}
+			})
+
+			this.on("disabled", () => {
+				this.scene.stop()
+			})
+
+			this.on("init", () => {
 				getDefaultAppearance(data => {
 					this.appearance = data
-
-					avatar.setBodyColors(data.bodyColors)
-					if(this.packagesVisible) { avatar.setScales(data.scales) }
-					if(!this.playerType && this.autoLoadPlayerType) { this.setPlayerType(data.playerAvatarType) }
-					else if(this.playerType && this.waitForAppearance) { this.setPlayerType(this.playerType) }
-
+					this.scene.avatar.setBodyColors(data.bodyColors)
+	
+					if(this.packagesVisible) {
+						this.scene.avatar.setScales(data.scales)
+					}
+	
+					if(!this.playerType && this.autoLoadPlayerType) {
+						this.setPlayerType(data.playerAvatarType)
+					}
+	
 					const assetPromises = data.assets.map(asset => this.addAsset(asset.id, asset.assetType.id))
-					this.appearanceLoadedPromise.resolve(assetPromises)
+					this.appearanceLoadedPromise.resolve(Promise.all(assetPromises))
 				})
 				
 				if(this.waitForAppearance) {
 					setTimeout(() => {
 						this.waitForAppearance = false
+	
 						if(!this.playerType) {
 							this.setPlayerType("R15")
 							this.playerType = null
 						}
-						this.appearanceLoadedPromise.resolve([])
+	
+						this.appearanceLoadedPromise.resolve()
 					}, 2e3)
 				}
-
-				const R15Anims = [507766666, 507766951, 507766388]
-				const R6Anims = [180435792, 180435571]
-
-				avatar.animator.onloop = () => {
-					if(!this.currentAnim) {
-						if(R15Anims.includes(this.playingAnim)) {
-							const roll = Math.random()
-							const animId = roll < 1 / 11 ? R15Anims[0] : roll < 2 / 11 ? R15Anims[1] : R15Anims[2]
-							if(this.currentAnim !== animId) {
-								this.loadAnimation(animId, .5)
-							}
-						} else if(R6Anims.includes(this.playingAnim)) {
-							const roll = Math.random()
-							const animId = roll < 0.1 ? R6Anims[0] : R6Anims[1]
-							if(this.currentAnim !== animId) {
-								this.loadAnimation(animId, .5)
-							}
-						}
-					}
-				}
-
-				avatar.animator.onstop = () => setTimeout(() => avatar.animator.play(), 2000)
-
-				this.container.append(scene.canvas)
-				if(this.enabled) { scene.start() }
 			})
 		}
 
-		setEnabled(bool) {
-			super.setEnabled(bool)
-			
-			if(this.enabled) {
-				this.scene.start()
-			} else {
-				this.scene.stop()
-			}
-		}
-
 		setPlayerType(type) {
-			this.playerType = type
-			if(this.ptSwitch) { this.ptSwitch.checked = type === "R15" }
+			if(this.playerType === type) { return }
 
+			this.playerType = type
 			this.scene.avatar.setPlayerType(type)
 
 			if(!this.currentAnim && !this.disableDefaultAnimations) {
-				const animId = type === "R15" ? 507766388 : 180435571
-				this.loadAnimation(animId)
+				this.loadDefaultAnimation()
 			}
+
+			this.trigger("playertypechanged", type)
 		}
 
 		setPackagesVisible(bool) {
@@ -225,10 +240,20 @@ const RBXPreview = (() => {
 			})
 		}
 
-		addAssetPreview(assetId, assetTypeId) {
+		async addAssetPreview(assetId, assetTypeId) {
 			if(this.previewMap[assetId]) { return }
 			const asset = this.previewMap[assetId] = { assetId, assetTypeId }
 			this.previewTargets.push(asset)
+
+			if(!this.enabled) {
+				this.on("enabled", () => {
+					this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
+				})
+				return console.warn("[RBXPreview.AvatarPreview] Tried to add asset when disabled, not async")
+			}
+
+			console.log("addAssetPreview")
+			this.scene.debugPrint = 5
 
 			return this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
 		}
@@ -244,7 +269,7 @@ const RBXPreview = (() => {
 			}
 		}
 
-		addAsset(assetId, assetTypeId, info) {
+		async addAsset(assetId, assetTypeId, info) {
 			if(this.assetMap[assetId]) { return }
 			const asset = this.assetMap[assetId] = { assetId, assetTypeId, info: info || {} }
 			this.assets.push(asset)
@@ -256,6 +281,13 @@ const RBXPreview = (() => {
 				}
 			})
 
+			if(!this.enabled) {
+				this.on("enabled", () => {
+					this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
+				})
+				return console.warn("[RBXPreview.AvatarPreview] Tried to add asset when disabled, not async")
+			}
+
 			return this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
 		}
 
@@ -266,6 +298,18 @@ const RBXPreview = (() => {
 			this.assets.splice(this.assets.indexOf(asset), 1)
 
 			this.scene.avatar.removeAsset(assetId)
+		}
+
+		loadDefaultAnimation() {
+			this.scene.avatar.animator.pause()
+			this.playingAnim = null
+
+			if(this.enabled) {
+				const animId = this.playerType === "R15" ? 507766388 : 180435571
+				this.loadAnimation(animId)
+			} else {
+				this.animLoadCounter++
+			}
 		}
 
 		loadAnimation(assetId, fadeIn) {
@@ -283,6 +327,7 @@ const RBXPreview = (() => {
 
 				this.playingAnim = assetId
 				this.scene.avatar.animator.play(data, fadeIn || 0)
+				this.trigger("animationloaded", data, assetId)
 			})
 		}
 
@@ -291,25 +336,18 @@ const RBXPreview = (() => {
 			if(!anim) { return }
 
 			this.currentAnim = anim
-			if(this.dropdown) { this.dropdown.$find("[data-bind='label']").textContent = name }
-
 			this.scene.avatar.animator.pause()
-			this.loadAnimation(anim.assetId)
+			this.playingAnim = null
+
+			if(this.enabled) {
+				this.loadAnimation(anim.assetId)
+			} else {
+				this.animLoadCounter++
+			}
 		}
 
 		addAnimation(name, assetId) {
-			const anim = { name, assetId }
-			this.anims.push(anim)
-
-			if(this.menu) {
-				const elem = html`<li><a href=#>${name}</a></li>`
-				this.menu.append(elem)
-
-				elem.$on("click", () => this.playAnimation(name))
-			}
-
-			if(this.anims.length === 1) { this.playAnimation(name) }
-			else if(this.anims.length === 2 && this.dropdown) { this.dropdown.style.display = "" }
+			this.anims.push({ name, assetId })
 		}
 	}
 

@@ -6,6 +6,7 @@
 		"*://*.roblox.com/catalog/*/*",
 		"*://*.roblox.com/library/*/*",
 		"*://*.roblox.com/badges/*/*",
+		"*://*.roblox.com/bundles/*/*",
 		"*://*.roblox.com/game-pass/*/*"
 	]
 
@@ -31,7 +32,7 @@
 	function onContextMenuClick(info) {
 		const menuId = info.menuItemId
 		if(menuId === "assetLink") {
-			const assetId = info.linkUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library|badges|game-pass)\/)(\d+).*$/i, "$1")
+			const assetId = info.linkUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library|bundles|badges|game-pass)\/)(\d+).*$/i, "$1")
 			copyToClipboard(assetId)
 		} else if(menuId === "placeLink") {
 			const placeId = info.linkUrl.replace(/^.*(?:[&?]placeid=|\/games\/)(\d+).*$/i, "$1")

@@ -51,6 +51,16 @@
 				"js/feat/settings.js",
 				"js/feat/fastSearch.js",
 				"js/feat/navigation.js",
+				
+				"lib/three.min.js",
+				"js/rbx/Parser.js",
+				"js/rbx/AssetCache.js",
+				"js/rbx/Animator.js",
+				"js/rbx/Avatar.js",
+				"js/rbx/Scene.js",
+				"js/rbx/Preview.js",
+				"js/rbx/ApiDump.js",
+				"js/rbx/Explorer.js",
 
 				"js/pages.js",
 				"js/pages/avatar.js",
@@ -65,17 +75,7 @@
 				"js/pages/messages.js",
 				"js/pages/money.js",
 				"js/pages/placeconfig.js",
-				"js/pages/profile.js",
-
-				"lib/three.min.js",
-				"js/rbx/Parser.js",
-				"js/rbx/AssetCache.js",
-				"js/rbx/Animator.js",
-				"js/rbx/Avatar.js",
-				"js/rbx/Scene.js",
-				"js/rbx/Preview.js",
-				"js/rbx/ApiDump.js",
-				"js/rbx/Explorer.js"
+				"js/pages/profile.js"
 			],
 			"run_at": "document_start",
 			"all_frames": true

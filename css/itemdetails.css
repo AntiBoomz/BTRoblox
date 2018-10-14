@@ -92,37 +92,166 @@ a:not(.disabled) > .btr-icon-content:hover {
 }
 
 .btr-preview-container {
-	position: relative;
+	position: absolute;
 	height: 420px;
 	width: 420px;
-	border: 1px #ddd solid;
 }
 
+#AssetThumbnail.btr-preview-active .thumbnail-span {
+	display: none !important;
+}
+
+#AssetThumbnail.btr-preview-active {
+	pointer-events: none;
+}
+
+#AssetThumbnail.btr-preview-active > * {
+	pointer-events: auto;
+}
 
 .btr-thumb-btn-container {
+	display: flex;
 	position: absolute;
-	bottom: 9px;
-	right: 9px;
+	bottom: 8px;
+	right: 8px;
+
+	align-items: flex-end;
 }
 
 
-#AssetThumbnail[data-3d-thumbs-enabled].btr-preview-enabled .enable-three-dee {
+#item-container[data-item-type="Bundle"] .btr-thumb-btn-container {
+	flex-direction: column;
+}
+
+#item-container[data-item-type="Bundle"] .btr-preview-enabled:not(.btr-preview-active) .btr-thumb-btn-container {
+	bottom: 60px;
+}
+
+#item-container:not([data-item-type="Bundle"]) .btr-preview-enabled:not(.btr-preview-active) .enable-three-dee.three-dee-animated-icon ~ .btr-thumb-btn-container {
+	right: 60px;
+}
+
+
+#item-container:not([data-item-type="Bundle"]) .btr-preview-enabled .enable-three-dee:not(.three-dee-animated-icon) {
 	right: 46px;
 	z-index: 2; /* otherwise margin goes over */
 }
 
-#AssetThumbnail[data-3d-thumbs-enabled] .btr-preview-btn {
+#item-container:not([data-item-type="Bundle"]) .btr-preview-enabled:not(.btr-preview-active) .enable-three-dee:not(.three-dee-animated-icon) ~ .btr-thumb-btn-container .btr-preview-btn {
 	margin-left: 50px;
 }
+
+
+#AssetThumbnail.btr-preview-active .enable-three-dee,
+.btr-preview-container ~ .bundle-animation-btn-container {
+	display: none;
+}
+
+
+
+.btr-bundle-animations {
+	position: absolute;
+	bottom: 12px;
+	left: -1px;
+	z-index: 3;
+}
+
+.btr-bundle-alt-container {
+	position: absolute;
+	display: inline-flex;
+	width: 38px;
+	bottom: 36px;
+	height: auto;
+	padding-top: 10px;
+	flex-direction: column;
+	z-index: -1;
+	transition: z-index 0s;
+}
+
+.btr-bundle-alt-container:hover {
+	z-index: 0;
+	transition: .6s z-index 0s;
+}
+
+.btr-bundle-animations .btr-bundle-btn,
+.btr-bundle-animations .btr-bundle-btn-alt {
+	display: inline-flex;
+	width: 38px;
+    height: 38px;
+    margin: 0 0 0 12px;
+	transition: .05s linear .05s;
+	border: 1px solid #B8B8B8;
+
+	align-items: center;
+	justify-content: center;
+}
+
+.btr-bundle-animations .btr-bundle-btn:not([disabled]):hover,
+.btr-bundle-animations .btr-bundle-btn-alt:hover {
+	box-shadow: 0 1px 4px 0 rgba(25,25,25,0.3);
+	background-color: #fff;
+}
+
+.btr-bundle-animations .btr-bundle-btn[disabled] {
+	background-color: #eee;
+	cursor: default;
+}
+
+.btr-bundle-animations .btr-bundle-btn > div[class^="btr-anim-icon-"] {
+	background-image: url(https://www.roblox.com/images/Shared/icon_animation.svg);
+    background-repeat: no-repeat;
+    background-size: 200% auto;
+    display: inline-block;
+    height: 28px;
+    width: 28px;
+    vertical-align: middle;
+}
+
+.btr-bundle-animations .btr-bundle-btn.selected > div[class^="btr-anim-icon-"] {
+	background-position-x: -28px;
+}
+
+.btr-bundle-animations .btr-anim-icon-run { background-position: 0 0 }
+.btr-bundle-animations .btr-anim-icon-walk { background-position: 0 -28px }
+.btr-bundle-animations .btr-anim-icon-fall { background-position: 0 -56px }
+.btr-bundle-animations .btr-anim-icon-jump { background-position: 0 -84px }
+.btr-bundle-animations .btr-anim-icon-swim { background-position: 0 -112px }
+.btr-bundle-animations .btr-anim-icon-climb { background-position: 0 -140px }
+.btr-bundle-animations .btr-anim-icon-idle { background-position: 0 -168px }
+
+.btr-bundle-animations .btr-bundle-btn-alt {
+	position: relative;
+	height: 17px;
+	padding: 2px;
+	font-size: 11px;
+	margin: 0;
+	margin-top: -1px;
+	margin-bottom: -10px;
+}
+
+.btr-bundle-animations .btr-bundle-btn:hover .btr-bundle-btn-alt,
+.btr-bundle-animations .btr-bundle-btn-alt.selected {
+	margin-bottom: 0;
+}
+
+.btr-bundle-animations .btr-bundle-btn-alt:hover,
+.btr-bundle-animations .btr-bundle-btn-alt.selected {
+	z-index: 2;
+}
+
+.btr-bundle-animations .btr-bundle-btn-alt.selected {
+	font-weight: bold;
+}
+
 
 
 .btr-thumb-btn {
 	position: relative;
 	display: inline-flex;
-	width: 40px;
+	width: 38px;
 	height: 38px;
 
-	margin: 3px;
+	margin: 4px;
 
 	justify-content: center;
 	align-items: center;
@@ -131,6 +260,21 @@ a:not(.disabled) > .btr-icon-content:hover {
 	border: 1px solid #B8B8B8;
 	border-radius: 3px;
 	transition: box-shadow .2 ease-in-out;
+
+	user-select: none;
+	-moz-user-select: none;
+}
+
+.btr-play-btn {
+	width: 44px;
+	height: 44px;
+}
+
+#AssetThumbnail:not(.btr-preview-active) .btr-thumb-btn:not(.btr-preview-btn),
+#AssetThumbnail:not(.btr-preview-active) .btr-playertype-switch,
+#AssetThumbnail:not(.btr-preview-active) .btr-dropdown-container,
+#AssetThumbnail:not(.btr-preview-active) .btr-bundle-animations {
+	display: none;
 }
 
 .btr-thumb-btn [class^="btr-icon"] {
@@ -151,16 +295,20 @@ a:not(.disabled) > .btr-icon-content:hover {
 
 .btr-thumb-btn.checked:after {
 	content: "✕";
+	display: flex;
 	position: absolute;
 	top: 0;
 	left: 0;
 	width: 100%;
 	height: 100%;
-	text-align: center;
-	line-height: 38px;
-	pointer-events: none;
+
+	align-items: center;
+	justify-content: center;
+
 	font-size: 28px;
 	font-weight: 800;
+
+	pointer-events: none;
 }
 
 .btr-thumb-btn:hover {

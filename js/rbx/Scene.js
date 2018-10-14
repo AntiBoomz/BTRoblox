@@ -175,18 +175,6 @@ const RBXScene = (() => {
 		}
 
 		update() {
-			const cameraDir = new THREE.Vector3(0, 0, 1).applyEuler(this.cameraRotation)
-			this.camera.position.copy(this.cameraFocus).addScaledVector(cameraDir, -this.cameraZoom)
-
-			const groundDiff = .05 - this.camera.position.y
-			if(cameraDir.y > 0 && groundDiff > 0) {
-				this.camera.position.addScaledVector(cameraDir, groundDiff / cameraDir.y)
-			}
-
-			this.camera.lookAt(this.cameraFocus)
-		}
-
-		render() {
 			const parent = this.canvas.parentNode
 			if(parent) {
 				const width = parent.clientWidth
@@ -203,6 +191,18 @@ const RBXScene = (() => {
 				}
 			}
 
+			const cameraDir = new THREE.Vector3(0, 0, 1).applyEuler(this.cameraRotation)
+			this.camera.position.copy(this.cameraFocus).addScaledVector(cameraDir, -this.cameraZoom)
+
+			const groundDiff = .05 - this.camera.position.y
+			if(cameraDir.y > 0 && groundDiff > 0) {
+				this.camera.position.addScaledVector(cameraDir, groundDiff / cameraDir.y)
+			}
+
+			this.camera.lookAt(this.cameraFocus)
+		}
+
+		render() {
 			this.renderer.render(this.scene, this.camera)
 		}
 
@@ -218,11 +218,17 @@ const RBXScene = (() => {
 		}
 
 		start() {
-			if(this.started) { throw new Error("Scene is already started") }
+			if(this.started) { return }
 			this.started = true
 
 			const resolved = Promise.resolve()
 			const innerUpdate = () => {
+				const debug = this.debugPrint && this.debugPrint > 0
+				if(debug) { this.debugPrint-- }
+
+				if(debug) {
+					console.log("scene update")
+				}
 				this.update()
 				resolved.then(() => this.render())
 
@@ -233,7 +239,7 @@ const RBXScene = (() => {
 		}
 
 		stop() {
-			if(!this.started) { throw new Error("Scene is already stopped") }
+			if(!this.started) { return }
 			this.started = false
 
 			cancelAnimationFrame(this._afId)

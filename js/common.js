@@ -26,7 +26,7 @@ const DEFAULT_SETTINGS = {
 
 		robuxToDollars: { default: true, value: false },
 		hoverPreview: { default: true, value: true },
-		hoverPreviewMode: { default: true, value: "always" },
+		hoverPreviewMode: { default: true, value: "default" },
 		shoutAlerts: { default: true, value: true }
 	},
 	navigation: {
@@ -41,7 +41,7 @@ const DEFAULT_SETTINGS = {
 	itemdetails: {
 		enabled: { default: true, value: true },
 		itemPreviewer: { default: true, value: true },
-		itemPreviewerMode: { default: true, value: "always" },
+		itemPreviewerMode: { default: true, value: "default" },
 		explorerButton: { default: true, value: true },
 		downloadButton: { default: true, value: true },
 		contentButton: { default: true, value: true },

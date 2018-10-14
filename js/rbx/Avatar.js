@@ -9,7 +9,14 @@ const RBXAvatar = (() => {
 		geom.addAttribute("uv", new THREE.BufferAttribute(mesh.uvs, 2))
 		geom.setIndex(new THREE.BufferAttribute(mesh.faces, 1))
 
-		geom.computeBoundingSphere()
+		// geom.computeBoundingSphere()
+
+		geom.verticesNeedUpdate = true
+		geom.elementsNeedUpdate = true
+		geom.uvsNeedUpdate = true
+		geom.normalsNeedUpdate = true
+		geom.groupsNeedUpdate = true
+
 		obj.visible = true
 	}
 
@@ -21,7 +28,14 @@ const RBXAvatar = (() => {
 		geom.removeAttribute("uv")
 		geom.setIndex(null)
 
-		geom.computeBoundingSphere()
+		// geom.computeBoundingSphere()
+
+		geom.verticesNeedUpdate = true
+		geom.elementsNeedUpdate = true
+		geom.uvsNeedUpdate = true
+		geom.normalsNeedUpdate = true
+		geom.groupsNeedUpdate = true
+
 		obj.visible = false
 	}
 
@@ -35,6 +49,12 @@ const RBXAvatar = (() => {
 	}
 
 	function InvertCFrame(cframe) { return new THREE.Matrix4().getInverse(cframe) }
+	
+	function solidColorDataURL(r, g, b) {
+		return "data:image/gif;base64,R0lGODlhAQABAPAA"
+			+ btoa(String.fromCharCode(0, r, g, b, 255, 255))
+			+ "/yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=="
+	}
 
 	const emptySrc = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII="
 	function setImageSource(img, src) {
@@ -58,10 +78,7 @@ const RBXAvatar = (() => {
 		texture.minFilter = THREE.LinearFilter
 
 		if(img instanceof Image) {
-			img.$on("load", () => {
-				texture.needsUpdate = true
-				return true
-			})
+			img.addEventListener("load", () => texture.needsUpdate = true, false)
 		}
 
 		return texture
@@ -94,20 +111,14 @@ const RBXAvatar = (() => {
 			stack.push(img)
 
 			if(img instanceof Image) {
-				img.$on("load", updateFinal)
+				img.addEventListener("load", updateFinal, false)
 			} else if(img instanceof HTMLCanvasElement) {
-				img.$on("compositeupdate", updateFinal)
+				img.addEventListener("compositeupdate", updateFinal, false)
 			}
 		})
 
 		updateFinal()
 		return texture
-	}
-
-	function solidColorDataURL(r, g, b) {
-		return "data:image/gif;base64,R0lGODlhAQABAPAA"
-			+ btoa(String.fromCharCode(0, r, g, b, 255, 255))
-			+ "/yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=="
 	}
 
 	const R6BodyPartNames = ["Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
@@ -492,7 +503,10 @@ const RBXAvatar = (() => {
 				bodyType: 0
 			}
 			
-			this.ptDebounce = 0
+			this.playerType = null
+
+			this.offsetPos = this.model.position
+			this.offsetRot = new THREE.Euler()
 
 			const att = this.defaultHatAttachment = new THREE.Group()
 			att.position.set(0, 0.5, 0)
@@ -793,6 +807,9 @@ const RBXAvatar = (() => {
 				if(!meshId) { asset.failed = true; break }
 
 				const tex = createTexture()
+				tex.image.src = solidColorDataURL(163, 162, 165)
+				tex.needsUpdate = true
+
 				const mat = new THREE.MeshLambertMaterial({ map: tex, transparent: true })
 				mat.opacity = 1 - (meshInst.Transparency || 0)
 				const obj = new THREE.Mesh(undefined, mat)
@@ -819,6 +836,7 @@ const RBXAvatar = (() => {
 				const result = { obj, asset, attName, attCFrame, att, scale, cframe, offset }
 				let initialized = false
 
+
 				asset.enable = async () => {
 					this.accessories.push(result)
 					this.shouldRefreshBodyParts = true
@@ -829,10 +847,22 @@ const RBXAvatar = (() => {
 						const meshPromise = AssetCache.loadMesh(true, meshId, mesh => applyMesh(obj, mesh))
 						let texPromise
 
-						setImageSource(tex.image, solidColorDataURL(163, 162, 165))
 						if(texId) {
-							texPromise = AssetCache.loadImage(true, texId, url => { setImageSource(tex.image, url) })
+							texPromise = AssetCache.loadImage(true, texId).then(url => {
+								tex.image.src = url
+								tex.needsUpdate = true
+							})
 						}
+						// new Promise(resolve => {
+						// 	const loadImg = new Image()
+						// 	loadImg.src = url
+
+						// 	loadImg.addEventListener("load", () => {
+						// 		tex.image = loadImg
+						// 		tex.needsUpdate = true
+						// 		resolve()
+						// 	}, { once: true })
+						// })
 
 						await meshPromise
 						if(texPromise) {
@@ -1069,12 +1099,17 @@ const RBXAvatar = (() => {
 			}
 
 			if(this.playerType === "R6") {
-				this.model.position.set(0, 3, 0)
 				this.root = CreateModel(AvatarRigs.R6Tree)
-			} else {
-				this.model.position.set(0, 2.35, 0)
+				this.root.position.set(0, 3, 0)
+			} else if(this.playerType === "R15") {
 				this.root = CreateModel(AvatarRigs.R15Tree)
+				this.root.position.set(0, 2.35, 0)
+			} else {
+				return
 			}
+
+			this.root.rotation.copy(this.offsetRot)
+			this.offsetRot = this.root.rotation
 
 			parts.Head.add(this.defaultHatAttachment)
 
@@ -1127,7 +1162,7 @@ const RBXAvatar = (() => {
 				const hipHeight = 1.35 * (1 + this.scales.bodyType) - this.scales.proportion * 0.3
 				const totalOffset = (1 + hipHeight) * this.scales.height
 
-				this.model.position.y = totalOffset
+				this.root.position.y = totalOffset
 			}
 
 			Object.entries(this.parts).forEach(([partName, part]) => {
@@ -1207,6 +1242,8 @@ const RBXAvatar = (() => {
 
 				// Bug #2: Mesh.Offset doesn't get position-scaled
 				if(acc.offset) { acc.obj.position.add(acc.offset) }
+
+				acc.obj.matrixWorldNeedsUpdate = true
 			})
 
 			Object.entries(this.joints).forEach(([jointName, joint]) => {

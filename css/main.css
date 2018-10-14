@@ -770,6 +770,21 @@ body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
 }
 
 
+/* Hover Preview? */
+
+.btr-preview-loading:before {
+	content: "";
+	background-image: url(/res/loading1.gif);
+	background-size: 100%;
+	display: block;
+	position: absolute;
+	width: 16px;
+	height: 16px;
+	left: 4px;
+	top: 4px;
+}
+
+
 /* Ew */
 
 #downloadInstallerIFrame {
