@@ -469,7 +469,7 @@ const SettingsDiv = (() => {
 					}
 
 					x.offset = offset
-					x.width = x.listElem.clientWidth || x.elem.clientWidth
+					x.width = x.listElem.offsetWidth || x.elem.offsetWidth
 					offset += x.width
 				})
 			}
