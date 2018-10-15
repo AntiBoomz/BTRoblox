@@ -156,7 +156,7 @@ const SettingsDiv = (() => {
 						</group>
 					</div>
 					<div id=btr-naveditor-sidebar-container class=btr-naveditor-tab-container data-tab=sidebar>
-						<div class=btr-naveditor-container>
+						<div class=btr-naveditor-container style=display:none>
 							<div class=btr-fake-header>
 							</div>
 							<ul id=btr-sidebar-items class=btr-naveditor-items>
