@@ -305,10 +305,11 @@ const HoverPreview = (() => {
 				if(!Number.isSafeInteger(+assetId)) { return }
 
 				clearTarget()
-				currentTarget = self
+				if(invalidAssets[assetId]) { return }
 
 				const debounce = ++debounceCounter
 				const assetPromises = []
+				currentTarget = self
 
 				const mouseLeave = () => {
 					if(currentTarget !== self) { return }
@@ -327,6 +328,7 @@ const HoverPreview = (() => {
 
 				if(!isWearable && (!isPackage && !isBundle || settings.general.hoverPreviewMode === "animations")) {
 					invalidAssets[assetId] = true
+					clearTarget()
 					return
 				}
 
@@ -335,6 +337,7 @@ const HoverPreview = (() => {
 
 					if(!assetPromises.length) {
 						invalidAssets[assetId] = true
+						thumbCont.classList.remove("btr-preview-loading")
 						clearTarget()
 						return
 					}
@@ -349,6 +352,7 @@ const HoverPreview = (() => {
 							const cameraOffset = lowItems.includes(assetTypeId) ? 1.5 : midItems.includes(assetTypeId) ? 2.75 : 4
 							preview.scene.cameraFocus.set(0, cameraOffset, 0)
 
+							thumbCont.classList.remove("btr-preview-loading")
 							self.$find(thumbContSelector).append(preview.container)
 						})
 					})
