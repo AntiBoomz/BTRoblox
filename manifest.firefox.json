@@ -52,7 +52,7 @@
 				"js/inject.js",
 				"js/main.js",
 				
-				"js/feat/settings.js",
+				"js/feat/btr-settings.js",
 				"js/feat/fastSearch.js",
 				"js/feat/navigation.js",
 				
