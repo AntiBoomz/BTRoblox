@@ -189,13 +189,13 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		if(!this.bundleAnims) {
 			this.bundleAnims = html`
 			<div class=btr-bundle-animations>
-				<button class="btr-bundle-btn btn-control-xs" data-anim=run disabled><div class=btr-anim-icon-run></div></button>
-				<button class="btr-bundle-btn btn-control-xs" data-anim=walk disabled><div class=btr-anim-icon-walk></div></button>
-				<button class="btr-bundle-btn btn-control-xs" data-anim=fall disabled><div class=btr-anim-icon-fall></div></button>
-				<button class="btr-bundle-btn btn-control-xs" data-anim=jump disabled><div class=btr-anim-icon-jump></div></button>
-				<button class="btr-bundle-btn btn-control-xs" data-anim=idle disabled><div class=btr-anim-icon-idle></div></button>
-				<button class="btr-bundle-btn btn-control-xs" data-anim=swim disabled><div class=btr-anim-icon-swim></div></button>
-				<button class="btr-bundle-btn btn-control-xs" data-anim=climb disabled><div class=btr-anim-icon-climb></div></button>
+				<div class="btr-bundle-btn btn-control-xs" data-anim=run disabled><div class=btr-anim-icon-run></div></div>
+				<div class="btr-bundle-btn btn-control-xs" data-anim=walk disabled><div class=btr-anim-icon-walk></div></div>
+				<div class="btr-bundle-btn btn-control-xs" data-anim=fall disabled><div class=btr-anim-icon-fall></div></div>
+				<div class="btr-bundle-btn btn-control-xs" data-anim=jump disabled><div class=btr-anim-icon-jump></div></div>
+				<div class="btr-bundle-btn btn-control-xs" data-anim=idle disabled><div class=btr-anim-icon-idle></div></div>
+				<div class="btr-bundle-btn btn-control-xs" data-anim=swim disabled><div class=btr-anim-icon-swim></div></div>
+				<div class="btr-bundle-btn btn-control-xs" data-anim=climb disabled><div class=btr-anim-icon-climb></div></div>
 			</div>`
 
 			this.bundleAlts = {}
@@ -226,7 +226,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 					root.prepend(altCont)
 				}
 
-				const alt = btn = html`<button class="btr-bundle-btn-alt btn-control-xs">ALT</button>`
+				const alt = btn = html`<div class="btr-bundle-btn-alt btn-control-xs">ALT</div>`
 
 				if(name === "swimidle") { alt.textContent = "IDLE" }
 				else if(name === "pose") { alt.textContent = "POSE" }
