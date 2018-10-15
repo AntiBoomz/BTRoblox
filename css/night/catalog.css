@@ -1,0 +1,20 @@
+html .btr-catalog #catalog-content,
+html .item-card-container {
+	background-color: var(--btr-theme-item);
+}
+
+html .btr-catalog .item-card-thumb-container {
+	border-color: var(--btr-theme-border-lighter);
+}
+
+html .c-version .search-options .search-options-form {
+	border-right-color: var(--btr-theme-divider);
+}
+
+html .c-version .search-options .category-section, html .c-version .search-options .filters-section {
+	border-bottom-color: var(--btr-theme-divider);
+}
+
+html .breadcrumbs .num-results-showing {
+	color: var(--btr-text-disabled);
+}

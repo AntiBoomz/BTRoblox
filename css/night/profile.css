@@ -1,0 +1,35 @@
+html .avatar.card-plain,
+html .profile-container .asset-item span[title],
+html .profile-container .asset-item img {
+	border-color: var(--btr-theme-border);
+}
+html .btr-profile-groups .game-card-container,
+html .btr-profile-groups .game-card-thumb-container,
+html .btr-profile-favorites .game-card-container,
+html .btr-profile-favorites .game-card-thumb-container,
+html .btr-profile .btr-games-list .btr-game-button,
+html .btr-profile .btr-games-list .btr-game-icon {
+	border-color: var(--btr-theme-border-lighter);
+}
+
+html .btr-profile .btr-games-list .btr-game-button {
+	color: var(--btr-theme-text-secondary);
+}
+
+html .btr-profile .profile-stats-container {
+	border-color: var(--btr-theme-divider);
+}
+
+html .profile-avatar-left {
+	background: none;
+}
+
+html .game-card-container,
+html .btr-profile .btr-games-list .btr-game-button,
+html .btr-profile .btr-games-list .btr-game-icon {
+	background-color: var(--btr-theme-item);
+}
+
+html .profile-game .container-buttons .btn-control-xs > span {
+	filter: invert(70%);
+}

@@ -1,0 +1,5 @@
+html .item-card-container,
+html .content-overflow-toggle:after,
+html .content-overflow-toggle .toggle-content {
+	background-color: var(--btr-theme-item);
+}

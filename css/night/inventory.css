@@ -1,0 +1,10 @@
+html .item-card-container,
+html .rbx-tabs-vertical .category-tabs .menu-vertical,
+html .menu-vertical .menu-option .menu-secondary {
+	background-color: var(--btr-theme-item);
+}
+
+html .menu-vertical .menu-option:hover,
+html .menu-vertical .menu-option .menu-secondary-option:hover {
+	background-color: var(--btr-theme-item-hover);
+}

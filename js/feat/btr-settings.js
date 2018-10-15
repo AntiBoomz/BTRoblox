@@ -17,6 +17,7 @@ const SettingsDiv = (() => {
 							<option value=simblk>Simply Black</option>
 							<option value=sky>Sky</option>
 							<option value=red>Red</option>
+							<option value=night>Dark As Night (WIP)</option>
 						</select>
 					</div>
 
