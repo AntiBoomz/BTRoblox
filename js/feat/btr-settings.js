@@ -10,13 +10,15 @@ const SettingsDiv = (() => {
 			</div>
 			<div class="btr-settings-content selected" id=btr-settings-main data-name=main>
 				<group label=General path=general>
-					<select path=theme>
-						<option value=default>Default</option>
-						<option value=simblk>Simply Black</option>
-						<option value=sky>Sky</option>
-						<option value=red>Red</option>
-					</select>
-					<br>
+					<div>
+						<select path=theme>
+							<option selected disabled>Select Theme: (%opt%)</option>
+							<option value=default>Default</option>
+							<option value=simblk>Simply Black</option>
+							<option value=sky>Sky</option>
+							<option value=red>Red</option>
+						</select>
+					</div>
 
 					<checkbox label="Hide Ads" path=hideAds></checkbox>
 					<checkbox label="Fast User Search" path=general.fastSearch></checkbox>
@@ -968,10 +970,31 @@ const SettingsDiv = (() => {
 
 				requireHandler(select)
 
+				const titleOption = select.options[0] && select.options[0].hasAttribute("disabled") ? select.options[0] : null
+				const titleOptionFormat = titleOption ? titleOption.textContent : null
+
+				if(titleOption) {
+					titleOption.style.display = "none"
+				}
+
+				const update = () => {
+					if(titleOption) {
+						const optionText = select.selectedOptions[0] ? select.selectedOptions[0].textContent : ""
+						titleOption.textContent = titleOptionFormat.replace(/%opt%/g, () => optionText)
+						select.value = titleOption.value
+					}
+				}
+
 				select.value = getSetting(settingPath)
+				update()
+
 				select.$on("change", () => {
+					const selected = select.selectedOptions[0]
+					if(!selected || selected.hasAttribute("disabled")) { return }
 					setSetting(settingPath, select.value)
+					update()
 				})
+
 
 				if(settingPath.startsWith(groupPath)) {
 					relativeOptions.push(select)
@@ -986,9 +1009,7 @@ const SettingsDiv = (() => {
 				const label = html`<label for=btr-settings-input-${labelCounter++}>${checkbox.getAttribute("label")}`
 
 				checkbox.classList.add("btr-settings-checkbox")
-
-				checkbox.append(input)
-				checkbox.append(label)
+				checkbox.prepend(input, label)
 
 				requireHandler(checkbox)
 
