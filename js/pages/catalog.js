@@ -24,7 +24,7 @@ pageInit.catalog = function() {
 	}
 
 	if(!settings.catalog.enabled) { return }
-	document.$watch("body", body => body.classList.add("btr-inventory"))
+	document.$watch("body", body => body.classList.add("btr-catalog"))
 
 	modifyTemplate("catalog-item-card", template => {
 		template.$find(".item-card-container").classList.add("btr-item-card-container")

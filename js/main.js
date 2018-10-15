@@ -142,6 +142,10 @@ function Init() {
 		body.classList.toggle("btr-no-hamburger", settings.general.noHamburger)
 		body.classList.toggle("btr-hide-ads", settings.general.hideAds)
 		body.classList.toggle("btr-small-chat-button", settings.general.chatEnabled && settings.general.smallChatButton)
+
+		if(currentPage) {
+			body.dataset.btrPage = currentPage.name
+		}
 	}).$then()
 
 	bodyWatcher.$watch("#roblox-linkify", linkify => {
@@ -234,6 +238,37 @@ function PreInit() {
 			})
 		})
 
+		{ // Inject CSS
+			const themeStyles = []
+
+			const cssFiles = ["main.css"]
+			if(currentPage) { cssFiles.push(...currentPage.css) }
+
+			{ // Initial load
+				const theme = settings.general.theme
+				cssFiles.forEach(file => {
+					if(theme !== "default") { themeStyles.push(injectCSS(`${theme}/${file}`)) }
+					injectCSS(file)
+				})
+			}
+
+			const updateTheme = theme => {
+				const oldStyles = themeStyles.splice(0, themeStyles.length)
+
+				if(theme === "default") {
+					oldStyles.forEach(x => x.remove())
+				} else {
+					cssFiles.forEach(file => themeStyles.push(injectCSS(`${theme}/${file}`)))
+
+					themeStyles[0].addEventListener("load", () => {
+						oldStyles.forEach(x => x.remove())
+					}, { once: true })
+				}
+			}
+
+			SettingsDiv.onSettingChange("general.theme", updateTheme)
+		}
+		
 		InjectJS.send(
 			"INIT",
 			settings,
@@ -241,17 +276,6 @@ function PreInit() {
 			currentPage ? currentPage.matches : null,
 			IS_DEV_MODE
 		)
-
-		{ // Inject CSS
-			const cssFiles = ["main.css"]
-			if(currentPage) { cssFiles.push(...currentPage.css) }
-
-			const theme = settings.general.theme
-			cssFiles.forEach(file => {
-				if(theme !== "default") { injectCSS(`${theme}/${file}`) }
-				injectCSS(file)
-			})
-		}
 
 		Init()
 	})

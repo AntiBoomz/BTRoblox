@@ -257,18 +257,40 @@ const RBXScene = (() => {
 			this.scene.add(stand)
 
 			const ground = new THREE.Mesh(
-				new THREE.PlaneGeometry(40, 40),
-				new THREE.MeshLambertMaterial({ color: 0xffffff })
+				new THREE.PlaneGeometry(200, 200),
+				new THREE.MeshLambertMaterial({ color: 0xFFFFFF })
 			)
 			ground.rotation.x = -Math.PI / 2
 			ground.position.y = -.1
 			ground.receiveShadow = true
 			this.scene.add(ground)
 
+			ground.material.defines = { FLAT_SHADOWS: "" }
+
+			const lambert = THREE.ShaderLib.lambert
+			lambert.fragmentShader = lambert.fragmentShader.replace(
+				`vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;`,
+
+				`#ifndef FLAT_SHADOWS
+					vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;
+				#else
+					vec3 outgoingLight = diffuseColor.rgb * getShadowMask();
+				#endif`
+			)
+
 			const shader = THREE.ShaderChunk.shadowmap_pars_fragment
 			THREE.ShaderChunk.shadowmap_pars_fragment = shader
 				.replace("#ifdef USE_SHADOWMAP", `#ifdef USE_SHADOWMAP ${PCSS}`)
 				.replace("#if defined( SHADOWMAP_TYPE_PCF )", `#if defined( SHADOWMAP_TYPE_PCF ) ${PCSS_GET}`)
+			
+			const updateColor = theme => {
+				const color = theme === "night" ? 0x424242 : 0xFFFFFF
+				ground.material.color = new THREE.Color(color)
+				this.renderer.setClearColor(color)
+			}
+
+			SettingsDiv.onSettingChange("general.theme", updateColor)
+			updateColor(settings.general.theme)
 		}
 
 		update() {
