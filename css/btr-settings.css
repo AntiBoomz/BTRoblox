@@ -44,8 +44,9 @@
 
 .btr-settings-header {
 	flex: 0 0 auto;
-	height: 24px;
-	line-height: 24px;
+	display: flex;
+	height: 30px;
+	align-items: center;
 
 	background: #0074BD;
 	color: #fff;
@@ -108,17 +109,18 @@
 
 .btr-settings-header-title {
 	display: inline-block;
-	margin-left: 4px;
+	margin-left: 6px;
 	font-weight: bold;
 }
 
 .btr-settings-header-close {
 	float: right;
-	margin-right: 2px;
-	padding: 0 6px;
+	margin-right: 4px;
+	padding: 6px;
 	font-weight: bold;
 	text-align: center;
 	cursor: pointer;
+	font-size: 12px;
 }
 
 .btr-settings-enabled-toggle {
