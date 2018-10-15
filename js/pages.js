@@ -262,8 +262,6 @@ const HoverPreview = (() => {
 			simple: true,
 			disableDefaultAnimations: false
 		})
-
-		preview.setEnabled(true)
 	
 		preview.container.style.position = "absolute"
 		preview.container.style.top = "0"
@@ -281,7 +279,9 @@ const HoverPreview = (() => {
 		}
 
 		if(preview) {
+			preview.setEnabled(false)
 			preview.container.remove()
+
 			while(lastPreviewedAssets.length) {
 				preview.removeAssetPreview(lastPreviewedAssets.pop())
 			}
@@ -359,6 +359,7 @@ const HoverPreview = (() => {
 
 					if(WearableAssetTypeIds.includes(itemTypeId)) {
 						if(!preview) { initPreview() }
+						preview.setEnabled(true)
 						thumbCont.classList.add("btr-preview-loading")
 
 						lastPreviewedAssets.push(itemId)
