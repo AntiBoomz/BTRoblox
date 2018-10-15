@@ -1,0 +1,8 @@
+html body .container-main > .content {
+	background: #FFF;
+}
+
+html .btr-catalog #catalog-content {
+	background: none;
+	box-shadow: none;
+}

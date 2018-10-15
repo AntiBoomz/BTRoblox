@@ -1,11 +1,17 @@
-html body {
-	background: #212121 url(/res/bgTexture.png) left top repeat fixed;
+html {
+	--btr-theme-color: #212121;
+	background: var(--btr-theme-color) url(/res/bgTexture.png) left top repeat fixed !important;
+	min-height: 100%;
 }
 
+html body {
+	background: none;
+}
 
 /* Header */
 
-#header {
+#header,
+.btr-settings-header {
 	background: #0a0a0a;
 }
 
@@ -25,6 +31,10 @@ html body {
 	color: #FFF;
 }
 
+#navigation li a {
+	color: #FFF;
+}
+
 #navigation .rbx-scrollbar li a:not(:hover) span[class^="icon"] {
 	filter: invert(100%);
 }
@@ -32,7 +42,7 @@ html body {
 
 /* Body */
 
-html .container-main>.content,
+html .container-main > .content,
 html #BodyWrapper {
 	position: relative;
 	margin-top: 40px;
@@ -41,7 +51,7 @@ html #BodyWrapper {
 	padding-bottom: 0;
 }
 
-html .container-main>.content::before,
+html .container-main > .content::before,
 html #BodyWrapper::before {
 	content: " ";
 	display: block;
