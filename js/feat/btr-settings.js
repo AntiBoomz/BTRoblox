@@ -26,8 +26,32 @@ const SettingsDiv = (() => {
 						<checkbox label="Show Chat" path=chatEnabled></checkbox>
 						<checkbox label="Minimize Chat" path=smallChatButton require=chatEnabled></checkbox>
 					</div>
-
-					<checkbox label="Show Robux to USD" path=robuxToDollars></checkbox>
+					<div style=margin-top:10px>
+						<checkbox label="Show Robux to USD" path=robuxToDollars></checkbox>
+						<select path=robuxToDollarsRate>
+							<option selected disabled>Robux Rate: (%opt%)</option>
+							<optgroup label="DevEx">
+								<option value=devex350>DevEx $350</option>
+								<option value=devex250>DevEx $250</option>
+							</optgroup>
+							<optgroup label="NBC">
+								<option value=nbc5>NBC $5</option>
+								<option value=nbc10>NBC $10</option>
+								<option value=nbc25>NBC $25</option>
+								<option value=nbc50>NBC $50</option>
+								<option value=nbc100>NBC $100</option>
+								<option value=nbc200>NBC $200</option>
+							</optgroup>
+							<optgroup label="BC">
+								<option value=bc5>BC $5</option>
+								<option value=bc10>BC $10</option>
+								<option value=bc25>BC $25</option>
+								<option value=bc50>BC $50</option>
+								<option value=bc100>BC $100</option>
+								<option value=bc200>BC $200</option>
+							</optgroup>
+						</select>
+					</div>
 				</group>
 				<group label=Navigation path=navigation toggleable>
 					<checkbox label="Keep Sidebar Open" path=general.noHamburger></checkbox>

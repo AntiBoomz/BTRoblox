@@ -11,8 +11,7 @@ pageInit.catalog = function() {
 			while(label.firstChild) { div.append(label.firstChild) }
 
 			label.append(div)
-
-			const text = `($\{{::((item.BestPrice||item.Price)*${DOLLARS_PER_ROBUX_RATIO})|number:2}})`
+			const text = `($\{{::(((item.BestPrice||item.Price)*${DOLLARS_TO_ROBUX_RATIO[0]})/${DOLLARS_TO_ROBUX_RATIO[1]})|number:2}})`
 			label.title = `{{::item.IsFree && "Free " || "R$ "}}{{::(item.BestPrice||item.Price)|number:0}} ${text}`
 			label.append(html`
 			<div style="flex:0 1 auto;padding-left:4px;overflow:hidden;text-overflow:ellipsis;" ng-if=item.BestPrice||item.Price class=text-robux ng-cloak> ${text}</div>

@@ -10,7 +10,27 @@ if(IS_EDGE) { window.chrome = Object.assign({}, browser) }
 const IS_DEV_MODE = IS_FIREFOX ? chrome.runtime.id.endsWith("@temporary-addon") :
 	IS_CHROME ? chrome.runtime.id === "follfgiodgdohjfmfmnjhnbkecbiobmd" : false
 
-const DOLLARS_PER_ROBUX_RATIO = 350 / 100000
+const DOLLARS_TO_ROBUX_RATIOS = {
+	devex350: [350, 100e3],
+	devex250: [250, 100e3],
+
+	nbc5: [4.99, 400],
+	nbc10: [9.99, 800],
+	nbc25: [24.99, 2000],
+	nbc50: [49.99, 4500],
+	nbc100: [99.99, 10e3],
+	nbc200: [199.99, 22500],
+
+	bc5: [4.99, 450],
+	bc10: [9.99, 1e3],
+	bc25: [24.99, 2750],
+	bc50: [49.99, 6e3],
+	bc100: [99.99, 15e3],
+	bv200: [199.99, 35e3]
+}
+
+let DOLLARS_TO_ROBUX_RATIO = DOLLARS_TO_ROBUX_RATIOS.devex350
+
 const getURL = chrome.runtime.getURL
 
 const DEFAULT_SETTINGS = {
@@ -25,6 +45,7 @@ const DEFAULT_SETTINGS = {
 		fixAudioPreview: { default: true, value: true },
 
 		robuxToDollars: { default: true, value: false },
+		robuxToDollarsRate: { default: true, value: "devex350" },
 		hoverPreview: { default: true, value: true },
 		hoverPreviewMode: { default: true, value: "default" },
 		shoutAlerts: { default: true, value: true }
