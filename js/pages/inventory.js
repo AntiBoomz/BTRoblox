@@ -33,6 +33,24 @@ pageInit.inventory = function() {
 			})
 	}
 
+	if(settings.general.robuxToDollars) {
+		modifyTemplate("assets-list", template => {
+			const label = template.$find(".item-card-price")
+			if(!label) { return }
+			label.style.display = "flex"
+
+			const div = html`<div style="flex:1 1 auto"></div>`
+			while(label.firstChild) { div.append(label.firstChild) }
+
+			label.append(div)
+			const text = `($\{{::(((item.Product.PriceInRobux)*${DOLLARS_TO_ROBUX_RATIO[0]})/${DOLLARS_TO_ROBUX_RATIO[1]})|number:2}})`
+			label.title = `{{::item.Product.IsFree && "Free " || "R$ "}}{{::(item.Product.PriceInRobux)|number:0}} ${text}`
+			label.append(html`
+			<div style="flex:0 1 auto;padding-left:4px;overflow:hidden;text-overflow:ellipsis;" ng-if=item.HasPrice class=text-robux ng-cloak> ${text}</div>
+			`)
+		})
+	}
+
 	if(settings.general.hoverPreview) {
 		HoverPreview.register(".item-card", ".item-card-thumb-container")
 	}
