@@ -114,7 +114,7 @@ const RBXScene = (() => {
 
 							event.preventDefault()
 						},
-						mousewheel(event) {
+						wheel(event) {
 							if(!this.cameraControlsEnabled) { return }
 							
 							const deltaY = event.deltaY
