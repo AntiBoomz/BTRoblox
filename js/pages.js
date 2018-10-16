@@ -269,7 +269,6 @@ const HoverPreview = (() => {
 		
 		preview.scene.cameraControlsEnabled = false
 		preview.scene.cameraRotation.set(0.15, 0.25, 0)
-		preview.scene.cameraZoom = 3.5
 	}
 
 	const clearTarget = () => {
@@ -347,10 +346,15 @@ const HoverPreview = (() => {
 							if(debounceCounter !== debounce) { return }
 							
 							const lowItems = [12, 30, 31]
-							const midItems = [2, 11, 27, 28, 29, 45, 47]
+							const midItems = [2, 11, 27, 28, 29, 32, 45, 47]
+							const scales = preview.scene.avatar.scales
+							const bodyHeightScale = scales.height * (1 + (0.3 - 0.1 * scales.proportion) * scales.bodyType)
 
-							const cameraOffset = lowItems.includes(assetTypeId) ? 1.5 : midItems.includes(assetTypeId) ? 2.75 : 4
-							preview.scene.cameraFocus.set(0, cameraOffset, 0)
+							const cameraOffset = lowItems.includes(assetTypeId) ? 2.3 : isBundle || midItems.includes(assetTypeId) ? 3 : 4.5
+							const cameraZoom = isBundle ? 4 : 3
+
+							preview.scene.cameraFocus.set(0, cameraOffset * bodyHeightScale, 0)
+							preview.scene.cameraZoom = cameraZoom * bodyHeightScale
 
 							thumbCont.classList.remove("btr-preview-loading")
 							self.$find(thumbContSelector).append(preview.container)

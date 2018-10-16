@@ -202,7 +202,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 			this.buttons.after(this.bundleAnims)
 
 			// Move camera down
-			this.scene.cameraFocus.y -= .5
+			this.scene.cameraFocus.y -= 1
 		}
 	}
 

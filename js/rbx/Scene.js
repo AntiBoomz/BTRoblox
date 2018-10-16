@@ -61,7 +61,7 @@ const RBXScene = (() => {
 			this.cameraMinZoom = 3
 			this.cameraMaxZoom = 25
 			this.cameraZoom = 10
-			this.cameraFocus = new THREE.Vector3(0, 4, 0)
+			this.cameraFocus = new THREE.Vector3(0, 4.5, 0)
 			this.cameraRotation = new THREE.Euler(.05, 0, 0, "YXZ")
 			this.prevDragEvent = null
 			this.isDragging = false
