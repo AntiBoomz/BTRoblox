@@ -52,6 +52,24 @@ const RBXScene = (() => {
 			return PCSS( shadowMap, shadowCoord );
 			`
 
+	{
+		const lambert = THREE.ShaderLib.lambert
+		lambert.fragmentShader = lambert.fragmentShader.replace(
+			`vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;`,
+
+			`#ifndef FLAT_SHADOWS
+				$&
+			#else
+				vec3 outgoingLight = diffuseColor.rgb * (0.5 + getShadowMask() * 0.5);
+			#endif`
+		)
+
+		const shader = THREE.ShaderChunk.shadowmap_pars_fragment
+		THREE.ShaderChunk.shadowmap_pars_fragment = shader
+			.replace("#ifdef USE_SHADOWMAP", `$& ${PCSS}`)
+			.replace("#if defined( SHADOWMAP_TYPE_PCF )", `$& ${PCSS_GET}`)
+	}
+
 	class Scene {
 		constructor() {
 			this._prevRes = { width: -1, height: -1 }
@@ -249,7 +267,7 @@ const RBXScene = (() => {
 
 			const stand = new THREE.Mesh(
 				new THREE.CylinderGeometry(2.5, 2.5, .1, 48),
-				new THREE.MeshLambertMaterial({ color: 0xb7a760 })
+				new THREE.MeshLambertMaterial({ color: 0xB7A760 })
 			)
 			stand.position.y = -.05
 			stand.receiveShadow = true
@@ -266,22 +284,6 @@ const RBXScene = (() => {
 			this.scene.add(ground)
 
 			ground.material.defines = { FLAT_SHADOWS: "" }
-
-			const lambert = THREE.ShaderLib.lambert
-			lambert.fragmentShader = lambert.fragmentShader.replace(
-				`vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;`,
-
-				`#ifndef FLAT_SHADOWS
-					vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;
-				#else
-					vec3 outgoingLight = diffuseColor.rgb * getShadowMask();
-				#endif`
-			)
-
-			const shader = THREE.ShaderChunk.shadowmap_pars_fragment
-			THREE.ShaderChunk.shadowmap_pars_fragment = shader
-				.replace("#ifdef USE_SHADOWMAP", `#ifdef USE_SHADOWMAP ${PCSS}`)
-				.replace("#if defined( SHADOWMAP_TYPE_PCF )", `#if defined( SHADOWMAP_TYPE_PCF ) ${PCSS_GET}`)
 			
 			const updateColor = theme => {
 				const color = theme === "night" ? 0x424242 : 0xFFFFFF
