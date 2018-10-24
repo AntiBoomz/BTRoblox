@@ -1,6 +1,8 @@
 "use strict"
 
 const RBXAvatar = (() => {
+	const Vector3 = THREE.Vector3
+
 	function applyMesh(obj, mesh) {
 		const geom = obj.geometry
 
@@ -134,39 +136,56 @@ const RBXAvatar = (() => {
 	}
 
 	const ScaleMods = {
-		BodyType: {
-			LeftHand: [0.066, 0.174, 0.231],
-			LeftLowerArm: [0.129, 0.342, 0.132],
-			LeftUpperArm: [0.129, 0.342, 0.132],
-			RightHand: [0.066, 0.174, 0.231],
-			RightLowerArm: [0.129, 0.342, 0.132],
-			RightUpperArm: [0.129, 0.342, 0.132],
-			UpperTorso: [0.033, 0.309, 0.14],
-			LeftFoot: [0.079, 0.267, 0.129],
-			LeftLowerLeg: [0.023, 0.506, 0.023],
-			LeftUpperLeg: [0.023, 0.506, 0.023],
-			RightFoot: [0.079, 0.267, 0.129],
-			RightLowerLeg: [0.023, 0.506, 0.023],
-			RightUpperLeg: [0.023, 0.506, 0.023],
-			LowerTorso: [0.033, 0.309, 0.14],
-			Head: [-0.058, -0.058, -0.058]
+		Default: { // scale.x = scale.x * lerp(1, default.x, bodyTypeScale)
+			LeftHand: new Vector3(1.066, 1.174, 1.231),
+			LeftLowerArm: new Vector3(1.129, 1.342, 1.132),
+			LeftUpperArm: new Vector3(1.129, 1.342, 1.132),
+			RightHand: new Vector3(1.066, 1.174, 1.231),
+			RightLowerArm: new Vector3(1.129, 1.342, 1.132),
+			RightUpperArm: new Vector3(1.129, 1.342, 1.132),
+			UpperTorso: new Vector3(1.033, 1.309, 1.14),
+			LeftFoot: new Vector3(1.079, 1.267, 1.129),
+			LeftLowerLeg: new Vector3(1.023, 1.506, 1.023),
+			LeftUpperLeg: new Vector3(1.023, 1.506, 1.023),
+			RightFoot: new Vector3(1.079, 1.267, 1.129),
+			RightLowerLeg: new Vector3(1.023, 1.506, 1.023),
+			RightUpperLeg: new Vector3(1.023, 1.506, 1.023),
+			LowerTorso: new Vector3(1.033, 1.309, 1.14),
+			Head: new Vector3(0.942, 0.942, 0.942)
 		},
-		Proportion: {
-			LeftHand: [-0.118444, 0, -0.136778],
-			LeftLowerArm: [-0.125444, -0.134079, -0.125778],
-			LeftUpperArm: [-0.125444, -0.134079, -0.125778],
-			RightHand: [-0.118444, 0, -0.136778],
-			RightLowerArm: [-0.125444, -0.134079, -0.125778],
-			RightUpperArm: [-0.125444, -0.134079, -0.125778],
-			UpperTorso: [-0.127654, -0.104768, -0.126667],
-			LeftFoot: [-0.0494199, -0.133726, -0.125444],
-			LeftLowerLeg: [-0.0468549, -0.205482, -0.113667],
-			LeftUpperLeg: [-0.0468549, -0.10507, -0.113667],
-			RightFoot: [-0.0494199, -0.133726, -0.125444],
-			RightLowerLeg: [-0.0468549, -0.205482, -0.113667],
-			RightUpperLeg: [-0.0468549, -0.10507, -0.113667],
-			LowerTorso: [-0.047313, -0.304395, -0.126667],
-			Head: [-0.0457108, -5.96046e-08, -0.0457108]
+		Rthro: { // scale.x = scale.x * lerp(1, rthro.x, 1 - bodyTypeScale)
+			LeftHand: new Vector3(1.39, 0.967, 1.201),
+			LeftLowerArm: new Vector3(1.121, 0.681, 0.968),
+			LeftUpperArm: new Vector3(1.121, 0.681, 0.968),
+			RightHand: new Vector3(1.39, 0.967, 1.201),
+			RightLowerArm: new Vector3(1.121, 0.681, 0.968),
+			RightUpperArm: new Vector3(1.121, 0.681, 0.968),
+			UpperTorso: new Vector3(1.014, 0.814, 0.924),
+			LeftFoot: new Vector3(1.404, 0.953, 0.931),
+			LeftLowerLeg: new Vector3(0.978, 0.814, 1.056),
+			LeftUpperLeg: new Vector3(0.978, 0.814, 1.056),
+			RightFoot: new Vector3(1.404, 0.953, 0.931),
+			RightLowerLeg: new Vector3(0.978, 0.814, 1.056),
+			RightUpperLeg: new Vector3(0.978, 0.814, 1.056),
+			LowerTorso: new Vector3(1.014, 0.814, 0.924),
+			Head: new Vector3(1.6, 1.6, 1.6)
+		},
+		Proportion: { // scale.x = scale.x / lerp(1, prop.x, bodyTypeScale * propScale)
+			LeftHand: new Vector3(1.125, 1, 1.125),
+			LeftLowerArm: new Vector3(1.125, 1.111, 1.125),
+			LeftUpperArm: new Vector3(1.125, 1.111, 1.125),
+			RightHand: new Vector3(1.125, 1, 1.125),
+			RightLowerArm: new Vector3(1.125, 1.111, 1.125),
+			RightUpperArm: new Vector3(1.125, 1.111, 1.125),
+			UpperTorso: new Vector3(1.141, 1.087, 1.125),
+			LeftFoot: new Vector3(1.048, 1.118, 1.125),
+			LeftLowerLeg: new Vector3(1.048, 1.158, 1.125),
+			LeftUpperLeg: new Vector3(1.048, 1.075, 1.125),
+			RightFoot: new Vector3(1.048, 1.118, 1.125),
+			RightLowerLeg: new Vector3(1.048, 1.158, 1.125),
+			RightUpperLeg: new Vector3(1.048, 1.075, 1.125),
+			LowerTorso: new Vector3(1.048, 1.303, 1.125),
+			Head: new Vector3(1.051, 1, 1.051)
 		}
 	}
 
@@ -212,6 +231,7 @@ const RBXAvatar = (() => {
 	
 					if(part.ClassName === "MeshPart") {
 						partData.meshid = part.MeshID
+						partData.origSize = [...(part.size || part.Size)]
 					} else if(part.Name === "Head") {
 						partData.meshid = getURL(`res/previewer/heads/head.mesh`)
 					} else if(R6BodyPartNames.indexOf(part.Name) !== -1) {
@@ -635,7 +655,7 @@ const RBXAvatar = (() => {
 				const model = await AssetCache.loadModel(assetId)
 
 				const R6Folder = model.find(x => x.Name === "R6")
-				const R15Folder = model.find(x => x.Name === "R15Fixed") || model.find(x => x.Name === "R15")
+				const R15Folder = model.find(x => x.Name === "R15ArtistIntent") || model.find(x => x.Name === "R15")
 
 				if(R6Folder) {
 					const BodyPartEnum = [null, "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
@@ -668,7 +688,8 @@ const RBXAvatar = (() => {
 							attachments: [],
 							meshId: part.MeshID,
 							overTexId: part.TextureID,
-							transparency: part.Transparency || 0
+							transparency: part.Transparency || 0,
+							size: [...(part.size || part.Size)]
 						}
 
 						result.push(bodypart)
@@ -684,6 +705,11 @@ const RBXAvatar = (() => {
 							const cframe = CFrame(...inst.CFrame)
 							bodypart.attachments.push({ attName, cframe })
 						})
+
+						const scaleType = part.Children.find(x => x.Name === "AvatarPartScaleType")
+						if(scaleType && scaleType.Value === "ProportionsNormal") {
+							bodypart.propsNormal = true
+						}
 					})
 				}
 
@@ -738,7 +764,26 @@ const RBXAvatar = (() => {
 						target: "Head",
 						meshId: mesh.MeshId,
 						baseTexId: mesh.TextureId,
-						scale: [...mesh.Scale]
+						scale: [...mesh.Scale],
+						attachments: [],
+						joints: []
+					}
+
+					mesh.Children.filter(x => x.ClassName === "Vector3Value" && x.Name.endsWith("Attachment")).forEach(inst => {
+						if(inst.Name.endsWith("RigAttachment")) {
+							const jointName = inst.Name.substring(0, inst.Name.length - 13)
+							const cframe = CFrame(...inst.Value, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+							result.joints.push({ jointName, cframe })
+						}
+
+						const attName = inst.Name
+						const cframe = CFrame(...inst.Value, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+						result.attachments.push({ attName, cframe })
+					})
+					
+					const scaleType = mesh.Children.find(x => x.Name === "AvatarPartScaleType")
+					if(scaleType && scaleType.Value === "ProportionsNormal") {
+						result.propsNormal = true
 					}
 
 					asset.enable = () => {
@@ -823,7 +868,7 @@ const RBXAvatar = (() => {
 
 				const cframe = accInst.AttachmentPoint ? InvertCFrame(CFrame(...accInst.AttachmentPoint)) : new THREE.Matrix4()
 				const scale = meshInst.Scale ? [...meshInst.Scale] : [1, 1, 1]
-				const offset = new THREE.Vector3(...(meshInst.Offset || [0, 0, 0]))
+				const offset = new Vector3(...(meshInst.Offset || [0, 0, 0]))
 
 				const attInst = hanInst.Children.find(x => x.ClassName === "Attachment")
 				const attName = attInst ? attInst.Name : null
@@ -835,6 +880,12 @@ const RBXAvatar = (() => {
 
 				const result = { obj, asset, attName, attCFrame, att, scale, cframe, offset }
 				let initialized = false
+
+				
+				const scaleType = hanInst.Children.find(x => x.Name === "AvatarPartScaleType")
+				if(scaleType && scaleType.Value === "ProportionsNormal") {
+					result.propsNormal = true
+				}
 
 
 				asset.enable = async () => {
@@ -1052,10 +1103,12 @@ const RBXAvatar = (() => {
 			const CreateModel = tree => {
 				const obj = new THREE.Group()
 				obj.name = tree.name
-				obj.rbxScaleMod = new THREE.Vector3(1, 1, 1)
+				obj.rbxScaleModDefault = new Vector3(1, 1, 1)
+				obj.rbxScaleModRthro = new Vector3(1, 1, 1)
+				obj.rbxOrigSize = tree.origSize
+				parts[tree.name] = obj
 
 				if(tree.name !== "HumanoidRootPart") {
-					parts[tree.name] = obj
 					const mat = new THREE.MeshLambertMaterial({ map: this.textures[tree.name], transparent: true })
 					const mesh = new THREE.Mesh(undefined, mat)
 					mesh.castShadow = true
@@ -1063,7 +1116,6 @@ const RBXAvatar = (() => {
 
 					obj.rbxMesh = mesh
 					obj.rbxDefaultMesh = tree.meshid
-					obj.rbxDefaultScale = [1, 1, 1]
 					obj.add(mesh)
 				}
 
@@ -1158,74 +1210,83 @@ const RBXAvatar = (() => {
 				}
 			})
 
-			if(this.playerType === "R15") {
-				const hipHeight = 1.35 * (1 + this.scales.bodyType) - this.scales.proportion * 0.3
-				const totalOffset = (1 + hipHeight) * this.scales.height
-
-				this.root.position.y = totalOffset
-			}
-
 			Object.entries(this.parts).forEach(([partName, part]) => {
 				const change = changedParts[partName]
 				const meshId = change && change.meshId || part.rbxDefaultMesh
-				const scale = [...(change && change.scale || part.rbxDefaultScale)]
-
-				if(part.rbxMeshId !== meshId) {
-					part.rbxMeshId = meshId
-					clearGeometry(part.rbxMesh)
-					AssetCache.loadMesh(true, meshId, mesh => part.rbxMeshId === meshId && applyMesh(part.rbxMesh, mesh))
-				}
+				const scale = [...(change && change.scale || [1, 1, 1])]
 
 				if(this.playerType === "R15") {
 					if(partName === "Head") {
-						part.rbxScaleMod.setScalar(this.scales.head)
+						part.rbxScaleModDefault.setScalar(this.scales.head)
 					} else {
-						part.rbxScaleMod.set(this.scales.width, this.scales.height, this.scales.depth)
+						part.rbxScaleModDefault.set(this.scales.width, this.scales.height, this.scales.depth)
 					}
 
-					const bodyScaleMod = ScaleMods.BodyType[partName] || [1, 1, 1]
-					const propScaleMod = ScaleMods.Proportion[partName] || [1, 1, 1]
+					const bodyScaleMod = ScaleMods.Default[partName] || new Vector3(1, 1, 1)
+					const rthroBodyScaleMod = ScaleMods.Rthro[partName] || new Vector3(1, 1, 1)
+					const propScaleMod = ScaleMods.Proportion[partName] || new Vector3(1, 1, 1)
 
-					part.rbxScaleMod.multiply(new THREE.Vector3(
-						1 + (bodyScaleMod[0] + propScaleMod[0] * this.scales.proportion) * this.scales.bodyType,
-						1 + (bodyScaleMod[1] + propScaleMod[1] * this.scales.proportion) * this.scales.bodyType,
-						1 + (bodyScaleMod[2] + propScaleMod[2] * this.scales.proportion) * this.scales.bodyType
-					))
+					const bodyScale = this.scales.bodyType
+					const propScale = this.scales.proportion * this.scales.bodyType
+
+					part.rbxScaleModRthro.copy(part.rbxScaleModDefault)
+						.multiply(new Vector3(1, 1, 1).lerp(rthroBodyScaleMod, 1 - bodyScale))
+						.divide(new Vector3(1, 1, 1).lerp(propScaleMod, propScale))
+
+
+					part.rbxScaleModDefault
+						.multiply(new Vector3(1, 1, 1).lerp(bodyScaleMod, bodyScale))
+						.divide(new Vector3(1, 1, 1).lerp(propScaleMod, propScale))
 					
+
+					part.rbxScaleMod = change && change.propsNormal ? part.rbxScaleModRthro : part.rbxScaleModDefault
 					scale[0] *= part.rbxScaleMod.x
 					scale[1] *= part.rbxScaleMod.y
 					scale[2] *= part.rbxScaleMod.z
 				}
 
-				const opacity = 1 - (change && change.transparency || 0)
-				if(part.rbxMesh.material.opacity !== opacity) {
-					part.rbxMesh.material.opacity = opacity
-					part.rbxMesh.material.needsUpdate = true
-				}
+				if(part.rbxMesh) {
+					if(part.rbxMeshId !== meshId) {
+						part.rbxMeshId = meshId
+						clearGeometry(part.rbxMesh)
+						AssetCache.loadMesh(true, meshId, mesh => part.rbxMeshId === meshId && applyMesh(part.rbxMesh, mesh))
+					}
 
-				part.rbxMesh.scale.set(...scale)
+					const opacity = 1 - (change && change.transparency || 0)
+					if(part.rbxMesh.material.opacity !== opacity) {
+						part.rbxMesh.material.opacity = opacity
+						part.rbxMesh.material.needsUpdate = true
+					}
 
-				const baseImg = this.images.base[partName]
-				const overImg = this.images.over[partName]
-				const baseTexId = change && change.baseTexId || ""
-				const overTexId = change && change.overTexId || ""
+					part.rbxMesh.scale.set(...scale)
 
-				if(baseImg && baseImg.rbxTexId !== baseTexId) {
-					baseImg.rbxTexId = baseTexId
-					setImageSource(baseImg, baseImg.defaultSrc || "")
-					if(baseTexId) { AssetCache.loadImage(true, baseTexId, url => baseImg.rbxTexId === baseTexId && setImageSource(baseImg, url)) }
-				}
+					const size = change && change.size || part.rbxOrigSize
+					if(size) {
+						part.rbxSize = size.map((x, i) => x * scale[i])
+					}
 
-				if(overImg && overImg.rbxTexId !== overTexId) {
-					overImg.rbxTexId = overTexId
-					setImageSource(overImg, overImg.defaultSrc || "")
-					if(overTexId) { AssetCache.loadImage(true, overTexId, url => overImg.rbxTexId === overTexId && setImageSource(overImg, url)) }
+					const baseImg = this.images.base[partName]
+					const overImg = this.images.over[partName]
+					const baseTexId = change && change.baseTexId || ""
+					const overTexId = change && change.overTexId || ""
+
+					if(baseImg && baseImg.rbxTexId !== baseTexId) {
+						baseImg.rbxTexId = baseTexId
+						setImageSource(baseImg, baseImg.defaultSrc || "")
+						if(baseTexId) { AssetCache.loadImage(true, baseTexId, url => baseImg.rbxTexId === baseTexId && setImageSource(baseImg, url)) }
+					}
+
+					if(overImg && overImg.rbxTexId !== overTexId) {
+						overImg.rbxTexId = overTexId
+						setImageSource(overImg, overImg.defaultSrc || "")
+						if(overTexId) { AssetCache.loadImage(true, overTexId, url => overImg.rbxTexId === overTexId && setImageSource(overImg, url)) }
+					}
 				}
 			})
 			
 			this.accessories.forEach(acc => {
 				const parent = acc.att ? acc.att.parent : this.parts.Head
-				const scale = parent ? parent.rbxScaleMod : new THREE.Vector3(1, 1, 1)
+				const scale = parent ? (acc.propsNormal ? parent.rbxScaleModRthro : parent.rbxScaleModDefault) : new Vector3(1, 1, 1)
 				acc.obj.scale.set(...acc.scale).multiply(scale)
 
 				// Staying faithful to source material
@@ -1254,7 +1315,7 @@ const RBXAvatar = (() => {
 				joint.c0.position.setFromMatrixPosition(C0).multiply(joint.part0.rbxScaleMod)
 				joint.c0.rotation.setFromRotationMatrix(C0)
 
-				joint.c1.position.setFromMatrixPosition(C1).multiply(joint.part0.rbxScaleMod)
+				joint.c1.position.setFromMatrixPosition(C1).multiply(joint.part1.rbxScaleMod)
 				joint.c1.rotation.setFromRotationMatrix(C1)
 			})
 
@@ -1264,6 +1325,22 @@ const RBXAvatar = (() => {
 				att.obj.position.setFromMatrixPosition(cframe).multiply(att.parent.rbxScaleMod)
 				att.obj.rotation.setFromRotationMatrix(cframe)
 			})
+
+			
+			if(this.playerType === "R15") {
+				const calcRootY = (off, name) => {
+					const joint = this.joints[name]
+					return off - joint.c1.position.y - joint.c0.position.y
+				}
+
+				const leftJoints = ["Root", "LeftHip", "LeftKnee", "LeftAnkle"]
+				const rightJoints = ["Root", "RightHip", "RightKnee", "RightAnkle"]
+
+				const left = leftJoints.reduce(calcRootY, 0) + this.parts.LeftFoot.rbxSize[1] / 2
+				const right = rightJoints.reduce(calcRootY, 0) + this.parts.RightFoot.rbxSize[1] / 2
+
+				this.root.position.y = Math.max(left, right)
+			}
 		}
 	}
 
