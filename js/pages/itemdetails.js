@@ -36,7 +36,71 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 			<div class="btr-thumb-btn rbx-btn-control-sm btr-hats-btn"><span class=btr-icon-hat></span></div>
 			<div class="btr-thumb-btn rbx-btn-control-sm btr-body-btn"><span class=btr-icon-body></span></div>
 			<div class="btr-thumb-btn rbx-btn-control-sm btr-preview-btn"><span class=btr-icon-preview></span></div>
+			<div class="btr-thumb-popup btr-body-popup">
+				<label>Height</label>
+				<label class=value>90%</label>
+				<input type=range min=0 max=1 value=0 step=.01 data-target=height>
+
+				<label>Width</label>
+				<label class=value>90%</label>
+				<input type=range min=0 max=1 value=0 step=.01 data-target=width>
+
+				<label>Head</label>
+				<label class=value>90%</label>
+				<input type=range min=0 max=1 value=0 step=.01 data-target=head>
+
+				<label>Body Type</label>
+				<label class=value>90%</label>
+				<input type=range min=0 max=1 value=0 step=.01 data-target=bodyType>
+
+				<label>Proportions</label>
+				<label class=value>90%</label>
+				<input type=range min=0 max=1 value=0 step=.01 data-target=proportion>
+			</div>
 		</div>`
+
+		const bodyPopup = buttons.$find(".btr-body-popup")
+
+		const loadSliders = () => {
+			bodyPopup.$findAll(">input").forEach(input => {
+				const scaleName = input.dataset.target
+				const rule = this.avatarRules.scales[scaleName]
+				const label = input.previousElementSibling
+
+				const update = () => {
+					label.textContent = Math.floor(input.value * 100 + 0.5) + "%"
+				}
+
+				input.$on("input", () => {
+					update()
+
+					if(this.packagesVisible) {
+						this.appearance.scales[scaleName] = input.value
+						this.scene.avatar.setScales(this.appearance.scales)
+					}
+				})
+
+				input.min = rule.min
+				input.max = rule.max
+				input.step = rule.increment
+
+				input.value = this.appearance.scales[scaleName]
+				update()
+
+				this.on("packagesToggled", () => {
+					input.disabled = !this.packagesVisible
+
+					input.value = this.scene.avatar.scales[scaleName]
+					update()
+				})
+			})
+		}
+
+		if(this.avatarRules) {
+			loadSliders()
+		} else {
+			this.once("avatarRulesLoaded", loadSliders)
+		}
 
 		const typeInput = typeSwitch.$find("input")
 
@@ -63,32 +127,6 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 			self.classList.toggle("checked", disabled)
 
 			this.setPackagesVisible(!disabled)
-		})
-
-		document.$watch("#AssetThumbnail .enable-three-dee", btn => {
-			if(btn.classList.contains("three-dee-animated-icon")) {
-				const newBtn = html`<div class="btr-thumb-btn rbx-btn-control-sm btr-play-btn"></div>`
-				const icon = html`<span></span>`
-				newBtn.append(icon)
-				buttons.append(newBtn)
-
-				let playing = true
-
-				const update = () => {
-					icon.classList.toggle("icon-bigplay", !playing)
-					icon.classList.toggle(isBundle ? "icon-pause-fill" : "icon-bigstop", playing)
-
-					icon.style.backgroundPositionX = isBundle && !playing ? "-28px" : ""
-
-					this.scene.avatar.animator.speed = playing ? 1 : 0
-				}
-
-				update()
-				newBtn.$on("click", () => {
-					playing = !playing
-					update()
-				})
-			}
 		})
 
 		const disableOrigThumbs = () => {

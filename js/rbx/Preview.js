@@ -161,8 +161,12 @@ const RBXPreview = (() => {
 			})
 
 			this.on("init", () => {
-				getDefaultAppearance(data => {
+				getDefaultAppearance((data, rules) => {
+					this.avatarRules = rules
 					this.appearance = data
+
+					this.trigger("avatarRulesLoaded")
+					
 					this.scene.avatar.setBodyColors(data.bodyColors)
 	
 					if(this.packagesVisible) {
@@ -229,6 +233,7 @@ const RBXPreview = (() => {
 			}
 
 			this.scene.avatar.shouldRefreshBodyParts = true
+			this.trigger("packagesToggled")
 		}
 
 		setAccessoriesVisible(bool) {
@@ -279,10 +284,11 @@ const RBXPreview = (() => {
 			})
 
 			if(!this.enabled) {
-				this.on("enabled", () => {
-					this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
+				return new Promise(resolve => {
+					this.on("enabled", () => {
+						resolve(this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId))
+					})
 				})
-				return console.warn("[RBXPreview.AvatarPreview] Tried to add asset when disabled, not async")
 			}
 
 			return this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)

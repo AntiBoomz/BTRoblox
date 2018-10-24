@@ -116,19 +116,11 @@ a:not(.disabled) > .btr-icon-content:hover {
 	right: 8px;
 
 	align-items: flex-end;
-}
-
-
-#item-container[data-item-type="Bundle"] .three-dee-animated-icon ~ .btr-thumb-btn-container {
 	flex-direction: column;
 }
 
-#item-container[data-item-type="Bundle"] .btr-preview-enabled:not(.btr-preview-active) .three-dee-animated-icon ~ .btr-thumb-btn-container {
+#item-container .btr-preview-enabled:not(.btr-preview-active) .three-dee-animated-icon ~ .btr-thumb-btn-container {
 	bottom: 60px;
-}
-
-#item-container:not([data-item-type="Bundle"]) .btr-preview-enabled:not(.btr-preview-active) .enable-three-dee.three-dee-animated-icon ~ .btr-thumb-btn-container {
-	right: 60px;
 }
 
 
@@ -265,6 +257,7 @@ a:not(.disabled) > .btr-icon-content:hover {
 
 	user-select: none;
 	-moz-user-select: none;
+	z-index: 5;
 }
 
 .btr-play-btn {
@@ -292,10 +285,14 @@ a:not(.disabled) > .btr-icon-content:hover {
 }
 
 .btr-icon-hat { background-position: 0 0; }
-.btr-icon-body { background-position: -28px 0; }
-.btr-icon-preview { background-position: 0 -28px; }
+.btr-icon-body { background-position: 0 -28px; }
+.btr-icon-preview { background-position: 0 -56px; }
 
-.btr-thumb-btn.checked:after {
+.btr-thumb-btn:not(.btr-preview-btn):not(.checked) span {
+	background-position-x: -28px;
+}
+
+.btr-preview-btn.checked:after {
 	content: "✕";
 	display: flex;
 	position: absolute;
@@ -318,6 +315,90 @@ a:not(.disabled) > .btr-icon-content:hover {
 	cursor: pointer;
 	box-shadow: 0 1px 3px rgba(150,150,150,0.74);
 }
+
+.btr-thumb-popup {
+	position: absolute;
+	left: 100%;
+	margin-left: 10px;
+	height: 186px;
+	width: 300px;
+	bottom: 0;
+
+	padding: 8px 16px;
+
+	background: #0074BD;
+	border-radius: 4px;
+	box-shadow: 0 -5px 20px rgba(25,25,25,0.15);
+	opacity: 0;
+
+	z-index: -1;
+
+	user-select: none;
+	-moz-user-select: none;
+
+	transition: .2s opacity .1s, 0s z-index .25s;
+}
+
+.btr-body-btn:hover ~ .btr-body-popup,
+.btr-body-btn:focus ~ .btr-body-popup,
+.btr-body-btn:focus-within ~ .btr-body-popup,
+.btr-body-popup:hover,
+.btr-body-popup:focus-within {
+	opacity: 1;
+
+	z-index: 4;
+	transition: .2s opacity .2s, 0s z-index .2s;
+}
+
+.btr-body-popup:before {
+	position: absolute;
+	content: "";
+	width: 18px;
+	height: 18px;
+	left: -18px;
+	bottom: 59px;
+
+	border: 10px solid transparent;
+	border-right-color: #0074BD;
+}
+
+.btr-body-popup > label {
+	color: white;
+	font-weight: bold;
+	font-size: 14px;
+	margin: 0 0 -7px;
+	float: left;
+}
+
+.btr-body-popup > label.value {
+	float: right;
+}
+
+.btr-body-popup > input {
+	-webkit-appearance: none;
+	height: 6px;
+	border-radius: 3px;
+	width: 100%;
+
+	background: rgba(255, 255, 255, .3);
+
+	outline: none;
+	cursor: pointer;
+}
+
+.btr-body-popup > input::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: white;
+}
+
+.btr-body-popup > input[disabled]::-webkit-slider-thumb {
+	background: lightgray;
+}
+
 
 
 .btr-bg-btn-cont {
