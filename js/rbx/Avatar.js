@@ -1348,10 +1348,16 @@ const RBXAvatar = (() => {
 				const leftJoints = ["Root", "LeftHip", "LeftKnee", "LeftAnkle"]
 				const rightJoints = ["Root", "RightHip", "RightKnee", "RightAnkle"]
 
-				const left = leftJoints.reduce(calcRootY, 0) + this.parts.LeftFoot.rbxSize[1] / 2
-				const right = rightJoints.reduce(calcRootY, 0) + this.parts.RightFoot.rbxSize[1] / 2
+				const rootHeight = this.parts.HumanoidRootPart.rbxScaleMod.y * 1
 
-				this.root.position.y = Math.max(left, right)
+				const left = leftJoints.reduce(calcRootY, 0) + this.parts.LeftFoot.rbxSize[1] / 2 - rootHeight
+				const right = rightJoints.reduce(calcRootY, 0) + this.parts.RightFoot.rbxSize[1] / 2 - rootHeight
+
+				const min = Math.min(left, right)
+				const max = Math.max(left, right)
+
+				const hipHeight = min / max >= 0.95 ? min : max
+				this.root.position.y = hipHeight + rootHeight
 			}
 		}
 	}
