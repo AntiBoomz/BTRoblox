@@ -18,7 +18,7 @@ const invalidClasses = toDict(
 	"ReflectionMetadataItem", "ReflectionMetadataClass", "ReflectionMetadataEnum", "ReflectionMetadataEnumItem",
 	"ReflectionMetadataMember", "ReflectionMetadataProperties", "ReflectionMetadataYieldFunctions",
 	"ReflectionMetadataCallbacks", "TextFilterResult", "Translator", "TweenBase", "Theme", "PartOperationAsset",
-	"Controller",
+	"Controller", "PluginDragEvent",
 
 	// Settings
 	"GameSettings", "LuaSettings", "DebugSettings", "PhysicsSettings", "Studio", "NetworkSettings", "RenderSettings",
