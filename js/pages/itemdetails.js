@@ -2,7 +2,7 @@
 
 
 class ItemPreviewer extends RBXPreview.AvatarPreviewer {
-	constructor(isBundle) {
+	constructor() {
 		super()
 
 		this.isShown = false
@@ -176,6 +176,23 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		})
 		
 		this.scene.cameraFocus.y -= 0.5
+
+
+		this.on("enabled", () => {
+			const animName = $("#current-animation-name")
+			if(animName) {
+				this.prevAnimName = animName.textContent
+				animName.textContent = this.currentAnimName || ""
+			}
+		})
+
+		this.on("disabled", () => {
+			const animName = $("#current-animation-name")
+			if(animName && typeof this.prevAnimName === "string") {
+				animName.textContent = this.prevAnimName
+				this.prevAnimName = null
+			}
+		})
 	}
 
 	setVisible(bool) {
@@ -188,6 +205,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 				thumb.append(this.dropdown, this.typeSwitch, this.buttons)
 				if(this.bundleAnims) { thumb.append(this.bundleAnims) }
 			} else {
+
 				thumb.classList.remove("btr-preview-enabled")
 				this.dropdown.remove()
 				this.typeSwitch.remove()
@@ -280,7 +298,10 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 				this.playAnimation(name)
 
 				const curName = $("#current-animation-name")
-				if(curName) { curName.textContent = assetName }
+				if(curName) {
+					this.currentAnimName = assetName
+					curName.textContent = assetName
+				}
 
 				ev.stopImmediatePropagation()
 				ev.preventDefault()
