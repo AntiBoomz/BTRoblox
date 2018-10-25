@@ -136,7 +136,7 @@ const RBXAvatar = (() => {
 	}
 
 	const ScaleMods = {
-		Default: { // scale.x = scale.x * lerp(1, default.x, bodyTypeScale)
+		Default: {
 			LeftHand: new Vector3(1.066, 1.174, 1.231),
 			LeftLowerArm: new Vector3(1.129, 1.342, 1.132),
 			LeftUpperArm: new Vector3(1.129, 1.342, 1.132),
@@ -153,7 +153,7 @@ const RBXAvatar = (() => {
 			LowerTorso: new Vector3(1.033, 1.309, 1.14),
 			Head: new Vector3(0.942, 0.942, 0.942)
 		},
-		Rthro: { // scale.x = scale.x * lerp(1, rthro.x, 1 - bodyTypeScale)
+		Rthro: {
 			LeftHand: new Vector3(1.39, 0.967, 1.201),
 			LeftLowerArm: new Vector3(1.121, 0.681, 0.968),
 			LeftUpperArm: new Vector3(1.121, 0.681, 0.968),
@@ -170,7 +170,7 @@ const RBXAvatar = (() => {
 			LowerTorso: new Vector3(1.014, 0.814, 0.924),
 			Head: new Vector3(1.6, 1.6, 1.6)
 		},
-		Proportion: { // scale.x = scale.x / lerp(1, prop.x, bodyTypeScale * propScale)
+		Proportion: {
 			LeftHand: new Vector3(1.125, 1, 1.125),
 			LeftLowerArm: new Vector3(1.125, 1.111, 1.125),
 			LeftUpperArm: new Vector3(1.125, 1.111, 1.125),
@@ -707,8 +707,8 @@ const RBXAvatar = (() => {
 						})
 
 						const scaleType = part.Children.find(x => x.Name === "AvatarPartScaleType")
-						if(scaleType && scaleType.Value === "ProportionsNormal") {
-							bodypart.propsNormal = true
+						if(scaleType) {
+							bodypart.scaleType = scaleType.Value
 						}
 					})
 				}
@@ -782,8 +782,8 @@ const RBXAvatar = (() => {
 					})
 					
 					const scaleType = mesh.Children.find(x => x.Name === "AvatarPartScaleType")
-					if(scaleType && scaleType.Value === "ProportionsNormal") {
-						result.propsNormal = true
+					if(scaleType) {
+						result.scaleType = scaleType.Value
 					}
 
 					asset.enable = () => {
@@ -883,8 +883,8 @@ const RBXAvatar = (() => {
 
 				
 				const scaleType = hanInst.Children.find(x => x.Name === "AvatarPartScaleType")
-				if(scaleType && scaleType.Value === "ProportionsNormal") {
-					result.propsNormal = true
+				if(scaleType) {
+					result.scaleType = scaleType.Value
 				}
 
 
@@ -1076,6 +1076,42 @@ const RBXAvatar = (() => {
 			this.shouldRefreshRig = true
 		}
 
+		getScaleMod(part, scaleType) {
+			const partName = part.name
+			const scale = new Vector3(1, 1, 1)
+			
+			if(partName === "Head") {
+				scale.setScalar(this.scales.head)
+			} else {
+				scale.set(this.scales.width, this.scales.height, this.scales.depth)
+			}
+
+			let bodyMod = ScaleMods.Default[partName]
+			let propMod = ScaleMods.Proportion[partName]
+			let bodyScale = this.scales.bodyType
+			let propScale = this.scales.proportion * this.scales.bodyType
+
+			switch(scaleType) {
+			case "ProportionsNormal":
+				bodyMod = ScaleMods.Rthro[partName]
+				bodyScale = 1 - bodyScale
+				break
+			case "ProportionsSlender":
+				bodyMod = ScaleMods.Rthro[partName]
+				propMod = new Vector3(1, 1, 1).divide(propMod)
+				bodyScale = 1 - bodyScale
+				propScale = 1 - propScale
+				break
+			}
+
+			if(!bodyMod) { bodyMod = new Vector3(1, 1, 1) }
+			if(!propMod) { propMod = new Vector3(1, 1, 1) }
+
+			return scale
+				.multiply(new Vector3(1, 1, 1).lerp(bodyMod, bodyScale))
+				.divide(new Vector3(1, 1, 1).lerp(propMod, propScale))
+		}
+
 
 		_refreshRig() {
 			if(!AvatarRigs.loaded) { return }
@@ -1103,8 +1139,6 @@ const RBXAvatar = (() => {
 			const CreateModel = tree => {
 				const obj = new THREE.Group()
 				obj.name = tree.name
-				obj.rbxScaleModDefault = new Vector3(1, 1, 1)
-				obj.rbxScaleModRthro = new Vector3(1, 1, 1)
 				obj.rbxOrigSize = tree.origSize
 				parts[tree.name] = obj
 
@@ -1216,30 +1250,8 @@ const RBXAvatar = (() => {
 				const scale = [...(change && change.scale || [1, 1, 1])]
 
 				if(this.playerType === "R15") {
-					if(partName === "Head") {
-						part.rbxScaleModDefault.setScalar(this.scales.head)
-					} else {
-						part.rbxScaleModDefault.set(this.scales.width, this.scales.height, this.scales.depth)
-					}
+					part.rbxScaleMod = this.getScaleMod(part, change && change.scaleType)
 
-					const bodyScaleMod = ScaleMods.Default[partName] || new Vector3(1, 1, 1)
-					const rthroBodyScaleMod = ScaleMods.Rthro[partName] || new Vector3(1, 1, 1)
-					const propScaleMod = ScaleMods.Proportion[partName] || new Vector3(1, 1, 1)
-
-					const bodyScale = this.scales.bodyType
-					const propScale = this.scales.proportion * this.scales.bodyType
-
-					part.rbxScaleModRthro.copy(part.rbxScaleModDefault)
-						.multiply(new Vector3(1, 1, 1).lerp(rthroBodyScaleMod, 1 - bodyScale))
-						.divide(new Vector3(1, 1, 1).lerp(propScaleMod, propScale))
-
-
-					part.rbxScaleModDefault
-						.multiply(new Vector3(1, 1, 1).lerp(bodyScaleMod, bodyScale))
-						.divide(new Vector3(1, 1, 1).lerp(propScaleMod, propScale))
-					
-
-					part.rbxScaleMod = change && change.propsNormal ? part.rbxScaleModRthro : part.rbxScaleModDefault
 					scale[0] *= part.rbxScaleMod.x
 					scale[1] *= part.rbxScaleMod.y
 					scale[2] *= part.rbxScaleMod.z
@@ -1286,7 +1298,7 @@ const RBXAvatar = (() => {
 			
 			this.accessories.forEach(acc => {
 				const parent = acc.att ? acc.att.parent : this.parts.Head
-				const scale = parent ? (acc.propsNormal ? parent.rbxScaleModRthro : parent.rbxScaleModDefault) : new Vector3(1, 1, 1)
+				const scale = parent ? this.getScaleMod(parent, acc.scaleType) : new Vector3(1, 1, 1)
 				acc.obj.scale.set(...acc.scale).multiply(scale)
 
 				// Staying faithful to source material
