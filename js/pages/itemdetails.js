@@ -205,7 +205,6 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 				thumb.append(this.dropdown, this.typeSwitch, this.buttons)
 				if(this.bundleAnims) { thumb.append(this.bundleAnims) }
 			} else {
-
 				thumb.classList.remove("btr-preview-enabled")
 				this.dropdown.remove()
 				this.typeSwitch.remove()
