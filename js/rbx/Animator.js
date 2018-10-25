@@ -43,6 +43,7 @@ const RBXAnimator = (() => {
 			this.playing = false
 			this.anim = null
 			this.speed = 1
+			this.rootScale = 1
 
 			this.setJoints(joints)
 		}
@@ -56,6 +57,10 @@ const RBXAnimator = (() => {
 					jointData.joint.qfadeIn = jointData.joint.quaternion.clone()
 				})
 			}
+		}
+
+		setRootScale(rootScale) {
+			this.rootScale = rootScale
 		}
 
 		play(anim, fadeIn) {
@@ -146,6 +151,10 @@ const RBXAnimator = (() => {
 					)
 
 					joint.quaternion.set(...prev.rot).slerp(nextQuat.set(...next.rot), alpha)
+				}
+
+				if(name === "LowerTorso" && this.rootScale !== 1) {
+					joint.position.multiplyScalar(this.rootScale)
 				}
 
 				if(fadeIn) {

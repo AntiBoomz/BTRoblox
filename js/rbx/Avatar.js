@@ -1358,6 +1358,8 @@ const RBXAvatar = (() => {
 
 				const hipHeight = min / max >= 0.95 ? min : max
 				this.root.position.y = hipHeight + rootHeight
+
+				this.animator.setRootScale(hipHeight / 1.35)
 			}
 		}
 	}
