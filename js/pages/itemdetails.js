@@ -5,6 +5,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 	constructor() {
 		super()
 
+		window.scene = this.scene
 		this.isShown = false
 
 		const container = html`<div class=btr-preview-container></div>`

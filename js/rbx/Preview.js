@@ -116,8 +116,8 @@ const RBXPreview = (() => {
 				this.appearanceLoadedPromise.resolve = resolve
 			}
 
-			this.scene = window.scene = new RBXScene.AvatarScene()
-			this.container.append(scene.canvas)
+			this.scene = new RBXScene.AvatarScene()
+			this.container.append(this.scene.canvas)
 
 			const avatar = this.scene.avatar
 
