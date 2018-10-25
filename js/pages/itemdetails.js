@@ -484,6 +484,85 @@ pageInit.itemdetails = function(assetId) {
 				span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
 			}
 		})
+
+	document.$watch("#resellers", resellers => {
+		const owners = html`
+		<div class=btr-owners-container>
+			<div class=container-header>
+				<h3>Owners</h3>
+			</div>
+			<div class=section-content>
+			</div>
+			<button class="btn-control-sm btr-see-more-owners">See More</button>
+		</div>`
+		resellers.append(owners)
+
+		resellers.$watch(".container-header", header => {
+			const rBtn = html`<button class=btn-secondary-xs style=float:right;margin:2px;>Resellers</button>`
+			const oBtn = html`<button class=btn-control-xs style=float:right;margin:2px;>Owners</button>`
+			header.append(rBtn, oBtn)
+			
+			oBtn.$on("click", () => {
+				resellers.classList.add("btr-owners-active")
+
+				rBtn.classList.replace("btn-secondary-xs", "btn-control-xs")
+				oBtn.classList.replace("btn-control-xs", "btn-secondary-xs")
+
+				owners.$find(".container-header").append(rBtn, oBtn)
+			})
+
+			rBtn.$on("click", () => {
+				resellers.classList.remove("btr-owners-active")
+
+				oBtn.classList.replace("btn-secondary-xs", "btn-control-xs")
+				rBtn.classList.replace("btn-control-xs", "btn-secondary-xs")
+
+				header.append(rBtn, oBtn)
+			})
+		})
+
+		let isLoading = false
+		let cursor = ""
+
+		const loadOwners = () => {
+			if(isLoading) { return }
+			isLoading = true
+
+			const url = `https://inventory.roblox.com/v1/assets/${assetId}/owners?limit=50&cursor=${cursor}`
+			fetch(url).then(async resp => {
+				const data = await resp.json()
+
+				if(data.nextPageCursor) {
+					cursor = data.nextPageCursor
+					isLoading = false
+				} else {
+					owners.$find(".btr-see-more-owners").remove()
+				}
+
+				data.data.forEach(item => {
+					if(!item.owner || item.owner.userId === 1) { return }
+					const elem = html`
+					<div class=btr-owner-item>
+						<a href=/users/${item.owner.userId}/profile class="avatar avatar-headshot-md list-header">
+							<img class=avatar-card-image 
+								src=https://www.roblox.com/headshot-thumbnail/image?userId=${item.owner.userId}&width=60&height=60&format=png
+								alt="${item.owner.username}"
+							>
+						</a>
+						<a class="text-name username" href=/users/${item.owner.userId}/profile>${item.owner.username}</a>
+						<div style="flex: 1 1 auto"></div>
+						<div class=btr-serial>${item.serialNumber ? `#${item.serialNumber}` : `N/A`}</div>
+					</div>`
+
+					owners.$find(".section-content").append(elem)
+				})
+			})
+		}
+
+		loadOwners()
+
+		owners.$find(".btr-see-more-owners").$on("click", loadOwners)
+	})
 	
 	document.$watch("#item-container", itemCont => {
 		if(itemCont.dataset.itemType !== "Asset") {

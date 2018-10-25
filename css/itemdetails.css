@@ -429,3 +429,69 @@ a:not(.disabled) > .btr-icon-content:hover {
 	background-size: 20px 20px;
 	background-position: 0 0, 10px 10px;
 }
+
+#resellers:not(.btr-owners-active) .btr-owners-container {
+	display: none !important;
+}
+
+#resellers.btr-owners-active > *:not(.btr-owners-container) {
+	display: none !important;
+}
+
+#resellers .btr-owners-container .section-content {
+	text-align: center;
+	padding: 4px 0;
+}
+
+.btr-owner-item {
+	position: relative;
+	display: inline-flex;
+	width: 33.333%;
+	align-items: center;
+	padding: 8px;
+}
+
+.btr-owner-item:nth-child(3n + 1):not(:nth-last-child(-n + 3))::before,
+.btr-owner-item:nth-child(3n + 2):not(:nth-last-child(-n + 2))::before,
+.btr-owner-item:nth-child(3n + 3):not(:nth-last-child(-n + 1))::before {
+	content: "";
+	position: absolute;
+	bottom: 0;
+	left: 8px;
+	right: 8px;
+	border-bottom: 1px solid #E3E3E3;
+}
+
+.btr-owner-item:nth-child(3n + 1):not(:last-child)::after,
+.btr-owner-item:nth-child(3n + 2):not(:last-child)::after  {
+	content: "";
+	position: absolute;
+	right: 0;
+	top: 8px;
+	bottom: 8px;
+	border-right: 1px solid #E3E3E3;
+}
+
+.btr-owner-item .list-header {
+	margin-left: 7px;
+	margin-right: 12px;
+	height: 60px;
+	width: 60px;
+	flex: 0 0 auto;
+}
+
+.btr-owner-item .username {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.btr-owner-item .btr-serial {
+	margin-right: 10px;
+	font-size: 16px;
+	font-weight: bold;
+}
+
+.btr-owners-container .btr-see-more-owners {
+	width: 100%;
+	margin-bottom: 12px;
+}
