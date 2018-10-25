@@ -251,12 +251,10 @@ const RBXPreview = (() => {
 			this.previewTargets.push(asset)
 
 			if(!this.enabled) {
-				this.on("enabled", () => {
-					this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
-				})
-				return console.warn("[RBXPreview.AvatarPreview] Tried to add asset when disabled, not async")
+				await new Promise(resolve => this.on("enabled", resolve))
 			}
 
+			asset.loaded = true
 			return this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
 		}
 
@@ -276,22 +274,18 @@ const RBXPreview = (() => {
 			const asset = this.assetMap[assetId] = { assetId, assetTypeId, info: info || {} }
 			this.assets.push(asset)
 
-			this.previewTargets.forEach(x => {
-				if(x.assetTypeId === assetTypeId) {
-					this.scene.avatar.removeAsset(x.assetId)
-					this.scene.avatar.addAsset(x.assetId, x.assetTypeId)
-				}
-			})
-
 			if(!this.enabled) {
-				return new Promise(resolve => {
-					this.on("enabled", () => {
-						resolve(this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId))
-					})
-				})
+				await new Promise(resolve => this.on("enabled", resolve))
 			}
 
-			return this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
+			asset.loaded = true
+			const previews = this.previewTargets.filter(x => x.loaded && x.assetTypeId === assetTypeId)
+			
+			previews.forEach(x => this.scene.avatar.removeAsset(x.assetId))
+			const promise = this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
+			previews.forEach(x => this.scene.avatar.addAsset(x.assetId, x.assetTypeId))
+
+			return promise
 		}
 
 		removeAsset(assetId) {
@@ -300,7 +294,9 @@ const RBXPreview = (() => {
 			delete this.assetMap[assetId]
 			this.assets.splice(this.assets.indexOf(asset), 1)
 
-			this.scene.avatar.removeAsset(assetId)
+			if(!this.previewMap[assetId]) {
+				this.scene.avatar.removeAsset(assetId)
+			}
 		}
 
 		loadDefaultAnimation() {
