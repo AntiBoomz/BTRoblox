@@ -126,11 +126,21 @@ const RBXScene = (() => {
 						mousedown(event) {
 							if(!this.cameraControlsEnabled) { return }
 
-							if(!this.isDragging && event.button === 0) {
+							if(!this.isDragging && (event.button === 0 || event.button === 2)) {
 								this.prevDragEvent = event
 								this.isDragging = true
 								this.dragButton = event.button
 							}
+
+							if(document.activeElement) {
+								document.activeElement.blur()
+							}
+
+							event.preventDefault()
+						},
+						contextmenu(event) {
+							if(!this.cameraControlsEnabled) { return }
+							event.preventDefault()
 						},
 						wheel(event) {
 							if(!this.cameraControlsEnabled) { return }
