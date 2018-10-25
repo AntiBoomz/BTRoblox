@@ -45,6 +45,24 @@
 		})
 	}
 
+	const createNotif = (notif, fn) => {
+		const params = {
+			type: "basic",
+			title: notif.title,
+			iconUrl: notif.thumbUrl || getURL("res/icon_128.png"),
+			message: notif.body,
+			contextMessage: notif.poster,
+
+			priority: 2,
+			requireInteraction: true,
+			eventTime: notif.timeStamp
+		}
+
+		if(IS_FIREFOX) { delete params.requireInteraction }
+
+		chrome.notifications.create(notif.id, params, fn)
+	}
+
 	const executeCheck = async () => {
 		if(Date.now() - previousCheck < 5000) { return }
 		previousCheck = Date.now()
@@ -56,6 +74,7 @@
 
 		const shoutCache = await loadShoutCache()
 		const shoutFilters = await loadShoutFilters()
+		let existing = await new Promise(res => chrome.notifications.getAll(res))
 		const notifs = []
 		let didChange = false
 
@@ -100,7 +119,9 @@
 					return
 				}
 
-				notifs.push(notif)
+				if(!(existing[notif.id] && notif.wasCreated)) {
+					notifs.push(notif)
+				}
 			}
 		})
 
@@ -113,33 +134,18 @@
 		const execNotifs = async () => {
 			if(hasExecutedNotifs) { return }
 			hasExecutedNotifs = true
-
-			const existing = await new Promise(res => chrome.notifications.getAll(res))
+			
+			existing = await new Promise(res => chrome.notifications.getAll(res))
 
 			notifs.forEach(notif => {
 				if(existing[notif.id] && notif.wasCreated) { return }
 
-				const params = {
-					type: "basic",
-					title: notif.title,
-					iconUrl: notif.thumbUrl || getURL("res/icon_128.png"),
-					message: notif.body,
-					contextMessage: notif.poster,
-
-					priority: 0,
-					requireInteraction: true,
-					isClickable: true,
-					eventTime: notif.timeStamp
-				}
-
-				if(IS_FIREFOX) { delete params.requireInteraction }
-
-				chrome.notifications.create(notif.id, params, () => {
+				createNotif(notif, () => {
 					if(notif.wasCreated) { return }
-	
+		
 					notif.wasCreated = true
 					saveShoutCache()
-
+		
 					if(!hasPlayedSound) {
 						hasPlayedSound = true
 						new Audio("res/notification.mp3").play()
@@ -169,6 +175,7 @@
 				}
 			}
 		}).then(execNotifs, execNotifs)
+
 		setTimeout(execNotifs, 5e3)
 	}
 
@@ -176,16 +183,26 @@
 	chrome.notifications.onClicked.addListener(notifId => {
 		if(!notifId.startsWith("groupshout-")) { return }
 		const groupId = +notifId.slice(11)
+
 		chrome.tabs.create({ url: `https://www.roblox.com/My/Groups.aspx?gid=${groupId}` })
+		chrome.notifications.clear(notifId)
+		
+		loadShoutCache().then(shoutCache => {
+			const notif = shoutCache[groupId]
+			if(notif && !notif.finished) {
+				notif.finished = true
+				saveShoutCache()
+			}
+		})
 	})
 
-	chrome.notifications.onClosed.addListener((notifId, byUser) => {
-		if(!notifId.startsWith("groupshout-") || !byUser) { return }
+	chrome.notifications.onClosed.addListener(notifId => {
+		if(!notifId.startsWith("groupshout-")) { return }
 		const groupId = +notifId.slice(11)
 
 		loadShoutCache().then(shoutCache => {
 			const notif = shoutCache[groupId]
-			if(notif) {
+			if(notif && !notif.finished) {
 				notif.finished = true
 				saveShoutCache()
 			}
