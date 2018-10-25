@@ -465,7 +465,8 @@ pageInit.itemdetails = function(assetId) {
 			.$watch(".resellers .vlist").$then()
 				.$watchAll(".list-item", item => {
 					const label = item.$find(".reseller-price-container .text-robux")
-					const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+					const btn = item.$find(".PurchaseButton")
+					const usd = RobuxToUSD(btn ? btn.dataset.expectedPrice : "")
 					label.textContent += ` ($${usd})`
 				})
 	}
