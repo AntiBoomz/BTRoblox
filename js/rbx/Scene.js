@@ -93,6 +93,8 @@ const RBXScene = (() => {
 			renderer.shadowMap.enabled = true
 
 			const canvas = this.canvas = renderer.domElement
+			canvas.classList.add("btr-preview-canvas")
+
 			const scene = this.scene = new THREE.Scene()
 			this.camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 1000)
 
@@ -124,13 +126,11 @@ const RBXScene = (() => {
 						mousedown(event) {
 							if(!this.cameraControlsEnabled) { return }
 
-							if(!this.isDragging && (event.button === 0 || event.button === 2)) {
+							if(!this.isDragging && event.button === 0) {
 								this.prevDragEvent = event
 								this.isDragging = true
 								this.dragButton = event.button
 							}
-
-							event.preventDefault()
 						},
 						wheel(event) {
 							if(!this.cameraControlsEnabled) { return }
@@ -143,11 +143,6 @@ const RBXScene = (() => {
 								this.cameraZoom = Math.max(this.cameraMinZoom, this.cameraZoom - 1)
 							}
 
-							event.preventDefault()
-						},
-						contextmenu(event) {
-							if(!this.cameraControlsEnabled) { return }
-							
 							event.preventDefault()
 						}
 					}
