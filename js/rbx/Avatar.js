@@ -772,13 +772,11 @@ const RBXAvatar = (() => {
 					mesh.Children.filter(x => x.ClassName === "Vector3Value" && x.Name.endsWith("Attachment")).forEach(inst => {
 						if(inst.Name.endsWith("RigAttachment")) {
 							const jointName = inst.Name.substring(0, inst.Name.length - 13)
-							const cframe = CFrame(...inst.Value, 1, 0, 0, 0, 1, 0, 0, 0, 1)
-							result.joints.push({ jointName, cframe })
+							result.joints.push({ jointName, pos: new Vector3(...inst.Value) })
 						}
 
 						const attName = inst.Name
-						const cframe = CFrame(...inst.Value, 1, 0, 0, 0, 1, 0, 0, 0, 1)
-						result.attachments.push({ attName, cframe })
+						result.attachments.push({ attName, pos: new Vector3(...inst.Value) })
 					})
 					
 					const scaleType = mesh.Children.find(x => x.Name === "AvatarPartScaleType")
@@ -904,16 +902,6 @@ const RBXAvatar = (() => {
 								tex.needsUpdate = true
 							})
 						}
-						// new Promise(resolve => {
-						// 	const loadImg = new Image()
-						// 	loadImg.src = url
-
-						// 	loadImg.addEventListener("load", () => {
-						// 		tex.image = loadImg
-						// 		tex.needsUpdate = true
-						// 		resolve()
-						// 	}, { once: true })
-						// })
 
 						await meshPromise
 						if(texPromise) {
@@ -1140,6 +1128,7 @@ const RBXAvatar = (() => {
 				const obj = new THREE.Group()
 				obj.name = tree.name
 				obj.rbxOrigSize = tree.origSize
+				obj.rbxScaleMod = new Vector3(1, 1, 1)
 				parts[tree.name] = obj
 
 				if(tree.name !== "HumanoidRootPart") {
@@ -1230,16 +1219,31 @@ const RBXAvatar = (() => {
 					changedParts[bp.target] = Object.assign(changedParts[bp.target] || {}, bp)
 				}
 
-				if(bp.joints) {
+				if(bp.joints && this.playerType === "R15") {
 					bp.joints.forEach(data => {
+						if(!this.joints[data.jointName]) { return }
 						if(!changedJoints[data.jointName]) { changedJoints[data.jointName] = {} }
-						changedJoints[data.jointName][bp.target] = data.cframe
+
+						if(data.cframe) {
+							changedJoints[data.jointName][bp.target] = data.cframe
+						} else if(data.pos) {
+							const joint = this.joints[data.jointName]
+							const orig = data.target === joint.part0.name ? joint.origC0.clone() : InvertCFrame(joint.origC1)
+							changedJoints[data.jointName][bp.target] = orig.setPosition(data.pos)
+						}
 					})
 				}
 
 				if(bp.attachments) {
 					bp.attachments.forEach(data => {
-						changedAttachments[data.attName] = data.cframe
+						if(!this.attachments[data.attName]) { return }
+
+						if(data.cframe) {
+							changedAttachments[data.attName] = data.cframe
+						} else if(data.pos) {
+							const att = this.attachments[data.attName]
+							changedAttachments[data.attName] = att.cframe.clone().setPosition(data.pos)
+						}
 					})
 				}
 			})
