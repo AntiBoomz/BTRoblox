@@ -24,8 +24,20 @@ html .tab:hover {
 	background-color: var(--btr-theme-item-hover-hover);
 }
 
-html #mid-column .StandardBox {
+html .GroupWallPostText {
 	background-color: var(--btr-theme-item-hover-hover);
+	border-color: var(--btr-theme-border-lighter);
+	color: var(--btr-theme-text-secondary);
+}
+
+html input {
+	background-color: var(--btr-theme-item-hover-hover);
+	border-color: var(--btr-theme-item-hover);
+	color: var(--btr-theme-text-secondary);
+}
+
+html #mid-column .StandardBox {
+	background-color: var(--btr-theme-item-hover);
 }
 
 html .StatusView .top {

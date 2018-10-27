@@ -20,6 +20,10 @@ html .rbx-tab .rbx-tab-heading {
 	color: var(--btr-theme-text-secondary);
 }
 
+html .section-left {
+	border-right-color: var(--btr-theme-border-lighter);
+}
+
 html .rbx-tabs-horizontal .rbx-tab .rbx-tab-heading:hover,
 html .nav-tabs>li.active>a, html .nav-tabs>li.active>a:hover, html .nav-tabs>li.active>a:focus {
 	background-color: var(--btr-theme-item-hover);

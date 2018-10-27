@@ -62,3 +62,56 @@ html #build-page .gear-button-wrapper:not([style*="z-index: 999"]) {
 	background-color: transparent !important;
 	border-color: transparent !important;
 }
+
+html div#catalog div#dropdown ul#dropdownUl {
+	background-color: var(--btr-theme-item-hover);
+}
+
+html .widget-name {
+	background-color: var(--btr-theme-item-hover);
+}
+
+html #build-page .separator {
+	background-color: var(--btr-theme-border-lighter);
+}
+
+html #StudioWidget {
+	border-color: var(--btr-theme-item-hover);
+}
+
+html div#catalog div#dropdown ul li a, html div#catalog div#dropdown ul li span,
+html h3 {
+	color: var(--btr-theme-text-secondary);
+}
+
+html .selectedAssetTypeFilter,
+html div#catalog div#dropdown ul li:hover {
+	background-color: var(--btr-theme-item-hover-hover);
+}
+
+html .text-box.text-box-small{
+	background-color: var(--btr-theme-item-hover);
+	color: var(--btr-theme-text);
+}
+
+html img.original-image,
+html .SmallCatalogItemView:hover .CatalogItemInner,
+html .redesign .tab_white_31h_container .ajax__tab_active .ajax__tab_inner, html .tab.active, html .tab-container>.tab-active, html .tab-container>.tab-active:hover {
+	border-color: var(--btr-theme-border-lighter);
+}
+
+html #catalog .loading {
+	background-color: rgba(0, 0, 0, .2);
+}
+
+html .divider-right {
+	border-right-color: var(--btr-theme-border-lighter);
+}
+
+html .left-nav-menu ul {
+	border-bottom-color: var(--btr-theme-border-lighter);
+}
+
+html .tab-content, html .tab-container+div>div {
+	border-top-color: var(--btr-theme-border-lighter);
+}

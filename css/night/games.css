@@ -11,3 +11,7 @@ html .icon-games-carousel-left {
 html .sponsored-game .game-card-native-ad {
 	background-color: var(--btr-theme-border);
 }
+
+html .open .dropdown-menu {
+	background-color: var(--btr-theme-item);
+}

@@ -167,6 +167,10 @@ const PAGE_INFO = {
 		matches: ["^/(?:catalog|library|game-pass|badges|bundles)/(\\d+)/"],
 		css: ["itemdetails.css"]
 	},
+	membership: {
+		matches: ["^/premium/membership"],
+		css: []
+	},
 	messages: {
 		matches: ["^/my/messages"],
 		css: ["messages.css"]

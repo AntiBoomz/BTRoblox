@@ -4,7 +4,7 @@ html {
 	--btr-theme-background: #303030;
 
 	--btr-theme-item: #424242;
-	--btr-theme-item-hover: #505050;
+	--btr-theme-item-hover: #4A4A4A;
 	--btr-theme-item-hover-hover: #606060;
 
 	--btr-theme-border: #212121; /* #B8B8B8 */
@@ -43,8 +43,14 @@ html .container-footer {
 	background: var(--btr-theme-header);
 }
 
+#header .rbx-navbar li .nav-menu-title:hover,
+#header .rbx-navbar li .nav-menu-title:focus {
+	background-color: rgba(230, 230, 230, 0.2);
+}
+
 #navigation {
 	background: var(--btr-theme-navigation);
+	color: var(--btr-theme-text);
 }
 
 html body,
@@ -56,7 +62,9 @@ html #BodyWrapper,
 html #BodyWrapper #Body,
 html .section-content,
 html .dropdown-menu,
-html .popover {
+html .popover,
+html .modal-dialog .modal-content,
+html .notification-stream-body {
 	background-color: var(--btr-theme-item);
 }
 
@@ -70,8 +78,21 @@ html .input-group-btn .input-dropdown-btn .icon-down-16x16 {
 	filter: invert(100%);
 }
 
-html .input-group .input-group-btn .dropdown-menu {
+html .input-group .input-group-btn .dropdown-menu,
+html .notification-stream-header,
+html .notification-stream-list .notification-stream-item,
+html .notification-stream-list .notification-stream-item .notification-display-text:after{
 	background-color: var(--btr-theme-item-hover);
+}
+
+html .roblox-popover-content.bottom .arrow:after {
+	border-bottom-color: var(--btr-theme-item-hover);
+}
+
+html .notification-stream-list .notification-stream-item.unInteracted,
+html .notification-stream-list .notification-stream-item.unInteracted .notification-display-text:after {
+	background-color: var(--btr-theme-item-hover-hover);
+
 }
 
 html .input-group-btn .dropdown-menu li a:hover, html .input-group-btn .dropdown-menu li a:focus,
@@ -101,27 +122,27 @@ html .popover.bottom>.arrow:after {
 }
 
 
-html .btn-control-sm, html .btn-control-xs, html .btn-control-md {
+html .btn-control-sm, html .btn-control-xs, html .btn-control-md,
+html .btn-control-sm:visited, html .btn-control-xs:visited, html .btn-control-md:visited,
+html .btn-control-sm:link, html .btn-control-xs:link, html .btn-control-md:link {
 	background-color: var(--btr-theme-item);
 	border-color: var(--btr-theme-border-lighter);
 	color: var(--btr-theme-text-secondary);
 }
 
+html .btn-control-xs.disabled, html .btn-control-xs.disabled:hover, html .btn-control-xs.disabled:focus, html .btn-control-xs.disabled:active, html .btn-control-xs.disabled.active, html .btn-control-xs[disabled], html .btn-control-xs[disabled]:hover, html .btn-control-xs[disabled]:focus, html .btn-control-xs[disabled]:active, html .btn-control-xs[disabled].active,
+html .btn-control-sm.disabled, html .btn-control-sm.disabled:hover, html .btn-control-sm.disabled:focus, html .btn-control-sm.disabled:active, html .btn-control-sm.disabled.active, html .btn-control-sm[disabled], html .btn-control-sm[disabled]:hover, html .btn-control-sm[disabled]:focus, html .btn-control-sm[disabled]:active, html .btn-control-sm[disabled].active,
 html .btn-control-md.disabled, html .btn-control-md.disabled:hover, html .btn-control-md.disabled:focus, html .btn-control-md.disabled:active, html .btn-control-md.disabled.active, html .btn-control-md[disabled], html .btn-control-md[disabled]:hover, html .btn-control-md[disabled]:focus, html .btn-control-md[disabled]:active, html .btn-control-md[disabled].active {
 	background-color: var(--btr-theme-item);
 	border-color: var(--btr-theme-border-lighter);
 	color: var(--btr-theme-text-disabled);
 }
 
-html .btn-control-sm:hover, html.btn-control-sm.active,
-html .btn-control-xs:hover, html .btn-control-xs.active,
-html .btn-control-md:hover, html .btn-control-md.active {
+html .btn-control-xs:hover, html .btn-control-xs:focus, html .btn-control-xs.active,
+html .btn-control-sm:hover, html .btn-control-sm:focus, html .btn-control-sm.active,
+html .btn-control-md:hover, html .btn-control-md:focus, html .btn-control-md.active {
 	background-color: var(--btr-theme-item-hover);
 	border-color: var(--btr-theme-border-lighter);
-	color: var(--btr-theme-text-secondary);
-}
-
-html .btn-control-xs:link, html .btn-control-xs:visited {
 	color: var(--btr-theme-text-secondary);
 }
 
@@ -159,7 +180,9 @@ html .radio label::before {
 	border-color: var(--btr-theme-divider);
 }
 
-html .form-control {
+html .form-control,
+html .btr-server-pager .btr-server-input,
+html body .content .btr-CurrentPage {
 	background-color: var(--btr-theme-item-hover);
 	border-color: var(--btr-theme-divider);
 }
@@ -168,7 +191,8 @@ html .input-group .input-field:focus {
 	border-color: var(--btr-theme-divider);
 }
 
-html .input-field {
+html .input-field,
+html body .content .btr-CurrentPage {
 	color: var(--btr-theme-text-secondary);
 }
 
@@ -240,4 +264,56 @@ html .btn-buy-md {
 	background-color: var(--btr-theme-item);
 	border-color: var(--btr-theme-border-lighter);
 	color: var(--btr-theme-text-secondary);
+}
+
+
+
+/* BC page */
+
+body[data-btr-page="membership"] h1,
+body[data-btr-page="membership"] h2,
+body[data-btr-page="membership"] h3,
+body[data-btr-page="membership"] h4,
+body[data-btr-page="membership"] .product-summary .product-description {
+	color: var(--btr-theme-text-secondary);
+}
+
+body[data-btr-page="membership"] .product-summary {
+	color: #529152;
+}
+
+body[data-btr-page="membership"] a:link, body[data-btr-page="membership"] a:visited, body[data-btr-page="membership"] a:active {
+	color: #00A2FF;
+}
+
+/* Private srver config */
+
+#configure-form h1,
+#configure-form h2,
+#configure-form h2 a:any-link,
+#configure-form h3,
+#configure-form h4,
+#configure-form .form-label {
+	color: var(--btr-theme-text-secondary);
+}
+
+/* Settings */
+
+#settings-container .menu-vertical {
+	background-color: var(--btr-theme-item);
+}
+
+#settings-container .menu-vertical .menu-option:hover {
+	background-color: var(--btr-theme-item-hover);
+}
+
+#settings-container .select-group .select-option option {
+	background-color: var(--btr-theme-item-hover);
+	color: var(--btr-theme-text-secondary);
+}
+
+#settings-container .rbx-select-group .rbx-select,
+#settings-container .select-group:hover, #settings-container .select-group:focus, #settings-container .select-group.active {
+	background-color: var(--btr-theme-item-hover);
+	border-color: var(--btr-theme-border-lighter);
 }

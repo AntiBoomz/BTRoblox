@@ -16,3 +16,7 @@ html .rbx-tabs-horizontal .rbx-tab.active .rbx-tab-heading,
 html .rbx-tab-horizontal-submenu li {
 	color: var(--btr-theme-text-secondary);
 }
+
+html .item-card-thumb-container {
+	border-bottom-color: var(--btr-theme-border-lighter);
+}
