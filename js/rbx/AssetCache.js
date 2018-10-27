@@ -30,18 +30,28 @@ const AssetCache = (() => {
 		return null
 	}
 
-	function resolveAssetUrl(url) {
-		if(resolveCache[url]) {
-			return resolveCache[url]
-		}
-
+	function resolveAssetUrl(url, finished) {
 		if(url.startsWith(prefixUrl)) {
-			return resolveCache[url] = Promise.resolve(url)
+			finished(url)
+			return
 		}
 
 		const params = resolveAssetUrlParams(url)
 		if(!params) {
 			throw new Error(`Invalid Asset Url: '${url}'`)
+		}
+
+		const paramString = params.toString()
+
+		const cached = resolveCache[paramString]
+		if(cached) {
+			if(cached instanceof Promise) {
+				cached.then(finished)
+				return
+			}
+
+			finished(cached)
+			return
 		}
 
 		const requestId = `${resolveQueue.length}`
@@ -100,14 +110,17 @@ const AssetCache = (() => {
 			})
 		}
 
-		return resolveCache[url] = resolvePromise.then(json => {
+		resolveCache[paramString] = resolvePromise.then(json => {
 			const data = json.find(x => x.requestId === requestId)
 
 			if(data && data.location) {
-				return data.location.replace(/^http:/, "https:")
+				const result = data.location.replace(/^http:/, "https:")
+				finished(resolveCache[paramString] = result)
+				return result
 			}
 
-			return Promise.reject()
+			finished(resolveCache[paramString] = null)
+			return null
 		})
 	}
 
@@ -128,34 +141,97 @@ const AssetCache = (() => {
 			try { new URL(url) }
 			catch(ex) { throw new TypeError(`Invalid URL: '${String(url)}'`) }
 
-			let methodPromise = cache[url]
-			if(!methodPromise) {
-				let filePromise = fileCache[url]
-				if(!filePromise) {
-					filePromise = fileCache[url] = resolveAssetUrl(url).then(async resolvedUrl => {
-						const resp = await fetch(resolvedUrl)
+			let cacheResult = cache[url]
+			if(!cacheResult) {
+				cacheResult = cache[url] = { finished: false }
 
-						if(IS_EDGE) {
-							const blob = await resp.blob()
-							const reader = new FileReader()
-							reader.readAsBinaryString(blob)
-							
-							return new Promise(res => reader.addEventListener("load", () => {
-								res($.strToBuffer(reader.result))
-							}, { once: true }))
+				cacheResult.promise = new Promise(cacheResolve => {
+					resolveAssetUrl(url, resolvedUrl => {
+						if(!resolvedUrl) {
+							console.log("Failed to resolve", url)
+							return
 						}
+	
+						const resolvedCache = cache[resolvedUrl]
+						if(resolvedCache && resolvedCache !== cacheResult) {
+							if(resolvedCache.finished) {
+								cacheResult.finished = true
+								cacheResult.result = resolvedCache.result
+								cacheResolve(cacheResult.result)
+							} else {
+								resolvedCache.then(cacheResolve)
+							}
 
-						return resp.arrayBuffer()
+							cacheResult = cache[url] = resolvedCache
+							return
+						}
+	
+						let fileResult = fileCache[resolvedUrl]
+						if(!fileResult) {
+							fileResult = fileCache[resolvedUrl] = { finished: false }
+							
+							fileResult.promise = fetch(resolvedUrl).then(async resp => {
+								if(IS_EDGE) {
+									const blob = await resp.blob()
+									const reader = new FileReader()
+									reader.readAsBinaryString(blob)
+									
+									return new Promise(resolve => reader.addEventListener("load", () => {
+										fileResult.result = $.strToBuffer(reader.result)
+										fileResult.finished = true
+										resolve()
+									}, { once: true }))
+								}
+								
+								fileResult.result = await resp.arrayBuffer()
+								fileResult.finished = true
+							})
+						}
+		
+						const onFileDone = () => {
+							const methodResult = constructor(fileResult.result)
+		
+							if(methodResult instanceof Promise) {
+								methodResult.then(result => {
+									cacheResult.finished = true
+									cacheResult.result = result
+									cacheResolve(result)
+								}, ex => {
+									console.error("MethodResult Error", ex)
+									cacheResult.finished = true
+									cacheResult.result = null
+									cacheResolve(null)
+								})
+							} else {
+								cacheResult.finished = true
+								cacheResult.result = methodResult
+								cacheResolve(methodResult)
+							}
+						}
+		
+						if(fileResult.finished) {
+							onFileDone()
+						} else {
+							fileResult.promise.then(onFileDone, ex => {
+								console.error("FileResult Error", ex)
+								cacheResult.finished = true
+								cacheResult.result = null
+								cacheResolve(null)
+							})
+						}
 					})
-				}
-
-				methodPromise = cache[url] = filePromise.then(constructor)
-				methodPromise.catch(ex => console.error("MethodPromise Error", ex))
+				})
 			}
 
-			if(cb) { methodPromise.then(cb, () => cb(null)) }
+			if(cb) {
+				if(cacheResult.finished) {
+					cb(cacheResult.result)
+				} else {
+					cacheResult.promise.then(cb)
+				}
+			}
 
-			return methodPromise
+			return cacheResult.promise
 		}
 	}
 

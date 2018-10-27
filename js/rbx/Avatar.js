@@ -59,10 +59,15 @@ const RBXAvatar = (() => {
 	}
 
 	const emptySrc = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII="
+	const graySrc = solidColorDataURL(163, 162, 165)
+
 	function setImageSource(img, src) {
 		src = src || emptySrc
 		if(img.src !== src) {
 			img.src = src
+			if(img.updateListeners) {
+				img.updateListeners.forEach(fn => fn())
+			}
 		}
 	}
 
@@ -81,6 +86,9 @@ const RBXAvatar = (() => {
 
 		if(img instanceof Image) {
 			img.addEventListener("load", () => texture.needsUpdate = true, false)
+
+			img.updateListeners = img.updateListeners || []
+			img.updateListeners.push(() => texture.needsUpdate = true)
 		}
 
 		return texture
@@ -101,7 +109,7 @@ const RBXAvatar = (() => {
 			ctx.clearRect(0, 0, canvas.width, canvas.height)
 
 			stack.forEach(img => {
-				if(img instanceof HTMLCanvasElement || img.src !== "") {
+				if(img instanceof HTMLCanvasElement || img.src !== "" && img.src !== emptySrc) {
 					ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
 				}
 			})
@@ -114,6 +122,8 @@ const RBXAvatar = (() => {
 
 			if(img instanceof Image) {
 				img.addEventListener("load", updateFinal, false)
+				img.updateListeners = img.updateListeners || []
+				img.updateListeners.push(updateFinal)
 			} else if(img instanceof HTMLCanvasElement) {
 				img.addEventListener("compositeupdate", updateFinal, false)
 			}
@@ -849,8 +859,10 @@ const RBXAvatar = (() => {
 
 				if(!meshId) { asset.failed = true; break }
 
-				const tex = createTexture()
-				tex.image.src = solidColorDataURL(163, 162, 165)
+				const img = createImage()
+				const tex = mergeTexture(256, 256, img)
+
+				setImageSource(img, graySrc)
 				tex.needsUpdate = true
 
 				const mat = new THREE.MeshLambertMaterial({ map: tex, transparent: true })
@@ -894,19 +906,15 @@ const RBXAvatar = (() => {
 						initialized = true
 
 						const meshPromise = AssetCache.loadMesh(true, meshId, mesh => applyMesh(obj, mesh))
-						let texPromise
 
 						if(texId) {
-							texPromise = AssetCache.loadImage(true, texId).then(url => {
-								tex.image.src = url
+							await AssetCache.loadImage(true, texId, url => {
+								setImageSource(img, url)
 								tex.needsUpdate = true
 							})
 						}
 
 						await meshPromise
-						if(texPromise) {
-							await texPromise
-						}
 					}
 				}
 
@@ -1288,14 +1296,22 @@ const RBXAvatar = (() => {
 
 					if(baseImg && baseImg.rbxTexId !== baseTexId) {
 						baseImg.rbxTexId = baseTexId
-						setImageSource(baseImg, baseImg.defaultSrc || "")
-						if(baseTexId) { AssetCache.loadImage(true, baseTexId, url => baseImg.rbxTexId === baseTexId && setImageSource(baseImg, url)) }
+						if(baseTexId) {
+							setImageSource(baseImg, baseImg.defaultSrc || graySrc)
+							AssetCache.loadImage(true, baseTexId, url => baseImg.rbxTexId === baseTexId && setImageSource(baseImg, url))
+						} else {
+							setImageSource(baseImg, baseImg.defaultSrc || "")
+						}
 					}
 
 					if(overImg && overImg.rbxTexId !== overTexId) {
 						overImg.rbxTexId = overTexId
-						setImageSource(overImg, overImg.defaultSrc || "")
-						if(overTexId) { AssetCache.loadImage(true, overTexId, url => overImg.rbxTexId === overTexId && setImageSource(overImg, url)) }
+						if(overTexId) {
+							setImageSource(overImg, overImg.defaultSrc || graySrc)
+							AssetCache.loadImage(true, overTexId, url => overImg.rbxTexId === overTexId && setImageSource(overImg, url))
+						} else {
+							setImageSource(overImg, overImg.defaultSrc || "")
+						}
 					}
 				}
 			})
