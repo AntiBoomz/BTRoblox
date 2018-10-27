@@ -95,6 +95,9 @@ const RBXAvatar = (() => {
 	}
 
 	function mergeTexture(width, height, ...images) {
+		width = 2 ** Math.ceil(Math.log2(width))
+		height = 2 ** Math.ceil(Math.log2(height))
+
 		const canvas = document.createElement("canvas")
 		const ctx = canvas.getContext("2d")
 		canvas.width = width
@@ -102,6 +105,8 @@ const RBXAvatar = (() => {
 
 		const texture = new THREE.Texture(canvas)
 		texture.minFilter = THREE.LinearFilter
+		texture.wrapS = THREE.RepeatWrapping
+		texture.wrapT = THREE.RepeatWrapping
 
 		const stack = []
 
