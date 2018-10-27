@@ -219,13 +219,14 @@ const RBXAvatar = (() => {
 					const partData = {
 						name: part.Name,
 						children: [],
-						attachments: {}
+						attachments: {},
+						origSize: [...(part.size || part.Size)]
 					}
 	
 					parts[part.Name] = partData
 	
 					part.Children.forEach(item => {
-						if(item.ClassName === "Attachment") {
+						if(item.ClassName === "Attachment" && !item.Name.endsWith("RigAttachment")) {
 							partData.attachments[item.Name] = CFrame(...item.CFrame)
 						} else if(item.ClassName === "Motor6D") {
 							const part0Data = recursePart(item.Part0)
@@ -236,12 +237,17 @@ const RBXAvatar = (() => {
 							part1Data.C1 = InvertCFrame(CFrame(...item.C1))
 	
 							part0Data.children.push(part1Data)
+
+							if(item.Name === "Root" || item.Name === "Neck") {
+								part0Data.attachments[`${item.Name}RigAttachment`] = CFrame(...item.C0)
+							} else {
+								part1Data.attachments[`${item.Name}RigAttachment`] = CFrame(...item.C1)
+							}
 						}
 					})
 	
 					if(part.ClassName === "MeshPart") {
 						partData.meshid = part.MeshID
-						partData.origSize = [...(part.size || part.Size)]
 					} else if(part.Name === "Head") {
 						partData.meshid = getURL(`res/previewer/heads/head.mesh`)
 					} else if(R6BodyPartNames.indexOf(part.Name) !== -1) {
@@ -505,7 +511,6 @@ const RBXAvatar = (() => {
 		this.scene.add(obj)
 
 		texture.image.$on("load", () => this.update())
-
 		AssetCache.loadMesh(true, meshUrl, mesh => applyMesh(obj, mesh))
 	}
 
@@ -1073,39 +1078,40 @@ const RBXAvatar = (() => {
 		}
 
 		getScaleMod(part, scaleType) {
+			if(this.playerType !== "R15") { return new Vector3(1, 1, 1) }
 			const partName = part.name
-			const scale = new Vector3(1, 1, 1)
-			
+
+			let baseScale
+			let startScale
+			let endScale
+
 			if(partName === "Head") {
-				scale.setScalar(this.scales.head)
+				baseScale = new Vector3().setScalar(this.scales.head)
 			} else {
-				scale.set(this.scales.width, this.scales.height, this.scales.depth)
+				baseScale = new Vector3(this.scales.width, this.scales.height, this.scales.depth)
 			}
 
-			let bodyMod = ScaleMods.Default[partName]
-			let propMod = ScaleMods.Proportion[partName]
-			let bodyScale = this.scales.bodyType
-			let propScale = this.scales.proportion * this.scales.bodyType
+			if(scaleType === "ProportionsNormal") {
+				const bodyMod = ScaleMods.Rthro[partName] || new Vector3(1, 1, 1)
+				const propMod = ScaleMods.Proportion[partName] || new Vector3(1, 1, 1)
 
-			switch(scaleType) {
-			case "ProportionsNormal":
-				bodyMod = ScaleMods.Rthro[partName]
-				bodyScale = 1 - bodyScale
-				break
-			case "ProportionsSlender":
-				bodyMod = ScaleMods.Rthro[partName]
-				propMod = new Vector3(1, 1, 1).divide(propMod)
-				bodyScale = 1 - bodyScale
-				propScale = 1 - propScale
-				break
+				startScale = bodyMod.clone()
+				endScale = new Vector3(1, 1, 1).lerp(new Vector3(1, 1, 1).divide(propMod), this.scales.proportion)
+			} else if(scaleType === "ProportionsSlender") {
+				const bodyMod = ScaleMods.Rthro[partName] || new Vector3(1, 1, 1)
+				const propMod = ScaleMods.Proportion[partName] || new Vector3(1, 1, 1)
+
+				startScale = bodyMod.clone().multiply(propMod)
+				endScale = propMod.lerp(new Vector3(1, 1, 1), this.scales.proportion)
+			} else {
+				const bodyMod = ScaleMods.Default[partName] || new Vector3(1, 1, 1)
+				const propMod = ScaleMods.Proportion[partName] || new Vector3(1, 1, 1)
+
+				startScale = new Vector3(1, 1, 1)
+				endScale = bodyMod.clone().multiply(new Vector3(1, 1, 1).lerp(new Vector3(1, 1, 1).divide(propMod), this.scales.proportion))
 			}
 
-			if(!bodyMod) { bodyMod = new Vector3(1, 1, 1) }
-			if(!propMod) { propMod = new Vector3(1, 1, 1) }
-
-			return scale
-				.multiply(new Vector3(1, 1, 1).lerp(bodyMod, bodyScale))
-				.divide(new Vector3(1, 1, 1).lerp(propMod, propScale))
+			return baseScale.multiply(startScale.lerp(endScale, this.scales.bodyType))
 		}
 
 
@@ -1137,6 +1143,7 @@ const RBXAvatar = (() => {
 				obj.name = tree.name
 				obj.rbxOrigSize = tree.origSize
 				obj.rbxScaleMod = new Vector3(1, 1, 1)
+				obj.rbxScaleModPure = new Vector3(1, 1, 1)
 				parts[tree.name] = obj
 
 				if(tree.name !== "HumanoidRootPart") {
@@ -1263,18 +1270,18 @@ const RBXAvatar = (() => {
 
 				if(this.playerType === "R15") {
 					part.rbxScaleMod = this.getScaleMod(part, change && change.scaleType)
+					part.rbxScaleModPure = part.rbxScaleMod.clone()
 
 					scale[0] *= part.rbxScaleMod.x
 					scale[1] *= part.rbxScaleMod.y
 					scale[2] *= part.rbxScaleMod.z
 				}
 
+				const size = change && change.size || part.rbxOrigSize
+				part.rbxSize = size.map((x, i) => x * scale[i])
+
 				if(part.rbxMesh) {
-					if(part.rbxMeshId !== meshId) {
-						part.rbxMeshId = meshId
-						clearGeometry(part.rbxMesh)
-						AssetCache.loadMesh(true, meshId, mesh => part.rbxMeshId === meshId && applyMesh(part.rbxMesh, mesh))
-					}
+					part.rbxMesh.scale.set(...scale)
 
 					const opacity = 1 - (change && change.transparency || 0)
 					if(part.rbxMesh.material.opacity !== opacity) {
@@ -1282,11 +1289,10 @@ const RBXAvatar = (() => {
 						part.rbxMesh.material.needsUpdate = true
 					}
 
-					part.rbxMesh.scale.set(...scale)
-
-					const size = change && change.size || part.rbxOrigSize
-					if(size) {
-						part.rbxSize = size.map((x, i) => x * scale[i])
+					if(part.rbxMeshId !== meshId) {
+						part.rbxMeshId = meshId
+						clearGeometry(part.rbxMesh)
+						AssetCache.loadMesh(true, meshId, mesh => part.rbxMeshId === meshId && applyMesh(part.rbxMesh, mesh))
 					}
 
 					const baseImg = this.images.base[partName]
@@ -1316,6 +1322,71 @@ const RBXAvatar = (() => {
 				}
 			})
 			
+			const updateJoints = () => {
+				Object.entries(this.joints).forEach(([jointName, joint]) => {
+					const change = changedJoints[jointName]
+					const C0 = change && change[joint.part0.name] || joint.origC0
+					const C1 = change && change[joint.part1.name] && InvertCFrame(change[joint.part1.name]) || joint.origC1
+	
+					joint.c0.position.setFromMatrixPosition(C0).multiply(joint.part0.rbxScaleMod)
+					joint.c0.rotation.setFromRotationMatrix(C0)
+	
+					joint.c1.position.setFromMatrixPosition(C1).multiply(joint.part1.rbxScaleMod)
+					joint.c1.rotation.setFromRotationMatrix(C1)
+				})
+			}
+
+			updateJoints()
+			
+			if(this.playerType === "R15") {
+				const calcRootY = (off, name) => {
+					const joint = this.joints[name]
+					return off - joint.c1.position.y - joint.c0.position.y
+				}
+
+				let leftHeight = ["Root", "LeftHip", "LeftKnee", "LeftAnkle"].reduce(calcRootY, 0) + this.parts.LeftFoot.rbxSize[1] / 2
+				let rightHeight = ["Root", "RightHip", "RightKnee", "RightAnkle"].reduce(calcRootY, 0) + this.parts.LeftFoot.rbxSize[1] / 2
+
+				// Stretch legs to same level
+
+				const leftLegHeight = leftHeight - calcRootY(0, "Root") + this.joints.LeftHip.c0.position.y
+				const rightLegHeight = rightHeight - calcRootY(0, "Root") + this.joints.RightHip.c0.position.y
+
+				if(leftLegHeight >= 0.1 && rightLegHeight >= 0.1) {
+					const scale = rightLegHeight / leftLegHeight
+					if(scale > 1) {
+						this.parts.LeftUpperLeg.rbxScaleMod.multiplyScalar(scale)
+						this.parts.LeftLowerLeg.rbxScaleMod.multiplyScalar(scale)
+						this.parts.LeftFoot.rbxScaleMod.multiplyScalar(scale)
+						leftHeight = rightHeight
+						updateJoints()
+					} else {
+						this.parts.RightUpperLeg.rbxScaleMod.divideScalar(scale)
+						this.parts.RightLowerLeg.rbxScaleMod.divideScalar(scale)
+						this.parts.RightFoot.rbxScaleMod.divideScalar(scale)
+						rightHeight = leftHeight
+						updateJoints()
+					}
+				}
+
+				// Calculate hip height
+
+				const rootHeight = this.parts.HumanoidRootPart.rbxSize[1] / 2
+				const [min, max] = [leftHeight - rootHeight, rightHeight - rootHeight].sort((a, b) => a - b)
+
+				const hipHeight = min / max >= 0.95 ? min : max
+
+				this.root.position.y = hipHeight + rootHeight
+				this.animator.setRootScale(hipHeight / 1.35)
+			}
+
+			Object.entries(this.attachments).forEach(([attName, att]) => {
+				const cframe = changedAttachments[attName] || att.cframe
+
+				att.obj.position.setFromMatrixPosition(cframe).multiply(att.parent.rbxScaleModPure)
+				att.obj.rotation.setFromRotationMatrix(cframe)
+			})
+			
 			this.accessories.forEach(acc => {
 				const parent = acc.att ? acc.att.parent : this.parts.Head
 				const scale = parent ? this.getScaleMod(parent, acc.scaleType) : new Vector3(1, 1, 1)
@@ -1338,49 +1409,6 @@ const RBXAvatar = (() => {
 
 				acc.obj.matrixWorldNeedsUpdate = true
 			})
-
-			Object.entries(this.joints).forEach(([jointName, joint]) => {
-				const change = changedJoints[jointName]
-				const C0 = change && change[joint.part0.name] || joint.origC0
-				const C1 = change && change[joint.part1.name] && InvertCFrame(change[joint.part1.name]) || joint.origC1
-
-				joint.c0.position.setFromMatrixPosition(C0).multiply(joint.part0.rbxScaleMod)
-				joint.c0.rotation.setFromRotationMatrix(C0)
-
-				joint.c1.position.setFromMatrixPosition(C1).multiply(joint.part1.rbxScaleMod)
-				joint.c1.rotation.setFromRotationMatrix(C1)
-			})
-
-			Object.entries(this.attachments).forEach(([attName, att]) => {
-				const cframe = changedAttachments[attName] || att.cframe
-
-				att.obj.position.setFromMatrixPosition(cframe).multiply(att.parent.rbxScaleMod)
-				att.obj.rotation.setFromRotationMatrix(cframe)
-			})
-
-			
-			if(this.playerType === "R15") {
-				const calcRootY = (off, name) => {
-					const joint = this.joints[name]
-					return off - joint.c1.position.y - joint.c0.position.y
-				}
-
-				const leftJoints = ["Root", "LeftHip", "LeftKnee", "LeftAnkle"]
-				const rightJoints = ["Root", "RightHip", "RightKnee", "RightAnkle"]
-
-				const rootHeight = this.parts.HumanoidRootPart.rbxScaleMod.y * 1
-
-				const left = leftJoints.reduce(calcRootY, 0) + this.parts.LeftFoot.rbxSize[1] / 2 - rootHeight
-				const right = rightJoints.reduce(calcRootY, 0) + this.parts.RightFoot.rbxSize[1] / 2 - rootHeight
-
-				const min = Math.min(left, right)
-				const max = Math.max(left, right)
-
-				const hipHeight = min / max >= 0.95 ? min : max
-				this.root.position.y = hipHeight + rootHeight
-
-				this.animator.setRootScale(hipHeight / 1.35)
-			}
 		}
 	}
 
