@@ -350,8 +350,8 @@ const HoverPreview = (() => {
 							const scales = preview.scene.avatar.scales
 							const bodyHeightScale = scales.height * (1 + (0.3 - 0.1 * scales.proportion) * scales.bodyType)
 
-							const cameraOffset = lowItems.includes(assetTypeId) ? 2.3 : isBundle || midItems.includes(assetTypeId) ? 3 : 4.5
-							const cameraZoom = isBundle ? 4 : 3
+							const cameraOffset = lowItems.includes(assetTypeId) ? 2.3 : midItems.includes(assetTypeId) ? 3 : 4.5
+							const cameraZoom = isBundle || assetTypeId === 32 ? 4 : 3
 
 							preview.scene.cameraFocus.set(0, cameraOffset * bodyHeightScale, 0)
 							preview.scene.cameraZoom = cameraZoom * bodyHeightScale
