@@ -181,7 +181,7 @@ const SettingsDiv = (() => {
 						</div>
 						
 						<group path=navigation>
-							<checkbox label="Hide Age Bracket" path=hideAgeBracket></checkbox>
+							<checkbox label="Hide Age Bracket" path=hideAgeBracket require=enabled></checkbox>
 						</group>
 					</div>
 					<div id=btr-naveditor-sidebar-container class=btr-naveditor-tab-container data-tab=sidebar>
@@ -193,7 +193,7 @@ const SettingsDiv = (() => {
 							</ul>
 						</div>
 						<group path=navigation>
-							<checkbox label="Show Blog Feed" path=showBlogFeed></checkbox>
+							<checkbox label="Show Blog Feed" path=showBlogFeed require=enabled></checkbox>
 						</group>
 					</div>
 				</div>
@@ -453,8 +453,12 @@ const SettingsDiv = (() => {
 				x.style.display = "none"
 			})
 
-			this.initTopRight()
-			this.initTopLeft()
+			if(settings.navigation.enabled) {
+				this.initTopRight()
+				this.initTopLeft()
+			} else {
+				this.elem.classList.add("btr-nav-disabled")
+			}
 
 			this.switchTab("topleft")
 		},
