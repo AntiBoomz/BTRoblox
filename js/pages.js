@@ -346,7 +346,7 @@ const HoverPreview = (() => {
 							if(debounceCounter !== debounce) { return }
 							
 							const lowItems = [12, 30, 31]
-							const midItems = [2, 11, 27, 28, 29, 32, 45, 47]
+							const midItems = [2, 11, 27, 28, 29, 45, 47]
 							const scales = preview.scene.avatar.scales
 							const bodyHeightScale = scales.height * (1 + (0.3 - 0.1 * scales.proportion) * scales.bodyType)
 
