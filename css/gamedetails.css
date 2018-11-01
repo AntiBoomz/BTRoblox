@@ -126,22 +126,19 @@ body .btr-game-main-container {
 
 /* Pager */
 
-.btr-server-pager {
-	padding: 4px;
-
-	text-align: center;
-	line-height: 32px;
-	vertical-align: middle;
+.rbx-running-games-footer .pager.btr-server-pager {
+	display: flex;
+	justify-content: center;
+	align-items: center
 }
 
-.btr-server-pager>button {
-	margin: 0 2px;
-}
-
-.btr-server-pager .btr-server-input {
+.btr-server-pager .pager-cur input {
 	width: 40px;
 	height: 26px;
 	padding: 2px 5px;
+
+	margin-top: 4px;
+	margin-right: 6px;
 
 	text-align: center;
 }

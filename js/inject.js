@@ -237,74 +237,76 @@ const INJECT_SCRIPT = () => {
 
 				// Server pagers
 				const createPager = gameInstance => {
-					let curIndex = 0
-					let maxSize = 0
+					let curPage = 1
+					let maxPage = 1
 
-					$(`.rbx-running-games-load-more`).hide() // Hide Load More
+					$(".rbx-running-games-load-more").hide() // Hide Load More
 
 					const pager = $(`
-					<div class='btr-server-pager'>
-						<button type='button' class='btn-control-sm btr-server-first'>First</button>
-						<button type='button' class='btn-control-sm btr-server-prev'>Prev</button>
-						<span style='margin:0 10px;vertical-align:middle;line-height:100%'>
-							<input type='text' class='rbx-input-field btr-server-input'> of <span class='btr-server-max'>0</span>
-						</span>
-						<button type='button' class='btn-control-sm btr-server-next'>Next</button>
-						<button type='button' class='btn-control-sm btr-server-last'>Last</button>
-					</div>`).appendTo(`.rbx-running-games-footer`)
+					<ul class="pager btr-server-pager">
+						<li class=first><a><span class=icon-first-page></a></li>
+						<li class=pager-prev><a><span class=icon-left></a></li>
+						<li class=pager-cur>
+							<input type=text class=input-field>
+						</li>
+						<li class=pager-total>
+							<span class=fixed-spacing>of</span>
+							<span class=btr-server-max>0</span>
+						</li>
+						<li class=pager-next><a><span class=icon-right></a></li>
+						<li class=last><a><span class=icon-last-page></a></li>
+					</ul>`).appendTo($(".rbx-running-games-footer"))
 
 					const updatePager = function() {
-						const curPage = Math.floor(curIndex / 10) + 1
-						const maxPage = Math.floor(maxSize / 10) + 1
-						pager.find(".btr-server-input").val(curPage)
+						pager.find(".pager-cur input").val(curPage)
 						pager.find(".btr-server-max").text(maxPage)
 
-						pager.find(".btr-server-first").toggleClass("disabled", curPage <= 1)
-						pager.find(".btr-server-prev").toggleClass("disabled", curPage <= 1)
-						pager.find(".btr-server-last").toggleClass("disabled", curPage === maxPage)
-						pager.find(".btr-server-next").toggleClass("disabled", curPage === maxPage)
+						pager.find(".first").toggleClass("disabled", curPage <= 1)
+						pager.find(".pager-prev").toggleClass("disabled", curPage <= 1)
+						pager.find(".last").toggleClass("disabled", curPage >= maxPage)
+						pager.find(".pager-next").toggleClass("disabled", curPage >= maxPage)
 
-						$(`.rbx-game-server-join`).removeAttr("href")
+						$(".rbx-game-server-join").removeAttr("href")
 					}
 
 					$.ajaxPrefilter(options => {
-						if(options.url !== "/games/getgameinstancesjson") { return }
+						if(!options.url.includes("/games/getgameinstancesjson")) { return }
 
 						const startIndex = +new URLSearchParams(options.data).get("startIndex")
 						if(!Number.isSafeInteger(startIndex)) { return }
 
 						const success = options.success
 						options.success = function(...args) {
-							curIndex = startIndex
-							maxSize = args[0].TotalCollectionSize
+							curPage = Math.floor(startIndex / 10) + 1
+							maxPage = Math.max(1, Math.ceil(args[0].TotalCollectionSize / 10))
 							
 							$("#rbx-game-server-item-container").find(">.rbx-game-server-item").remove()
 							updatePager()
+
 							return success.apply(this, args)
 						}
 					})
 
 					pager
-						.on("click", ".btr-server-last:not(.disabled)", () => {
-							gameInstance.fetchServers(placeId, maxSize - maxSize % 10)
+						.on("click", ".pager-prev:not(.disabled)", () => {
+							gameInstance.fetchServers(placeId, Math.max((curPage - 2) * 10, 0))
 						})
-						.on("click", ".btr-server-next:not(.disabled)", () => {
-							gameInstance.fetchServers(placeId, Math.min(maxSize - (maxSize % 10), curIndex + 10))
+						.on("click", ".pager-next:not(.disabled)", () => {
+							gameInstance.fetchServers(placeId, Math.min(curPage * 10, (maxPage - 1) * 10))
 						})
-						.on("click", ".btr-server-prev:not(.disabled)", () => {
-							gameInstance.fetchServers(placeId, Math.max(0, curIndex - 10))
-						})
-						.on("click", ".btr-server-first:not(.disabled)", () => {
+						.on("click", ".first:not(.disabled)", () => {
 							gameInstance.fetchServers(placeId, 0)
+						})
+						.on("click", ".last:not(.disabled)", () => {
+							gameInstance.fetchServers(placeId, (maxPage - 1) * 10)
 						})
 						.on({
 							blur() {
-								const maxPage = Math.floor(maxSize / 10) + 1
 								const text = $(this).val()
 								let num = parseInt(text, 10)
 
 								if(!Number.isNaN(num)) {
-									num = Math.min(maxPage, Math.max(1, num))
+									num = Math.max(1, Math.min(maxPage, num))
 									gameInstance.fetchServers(placeId, (num - 1) * 10)
 								}
 							},
@@ -313,11 +315,13 @@ const INJECT_SCRIPT = () => {
 									$(this).blur()
 								}
 							}
-						}, ".btr-server-input")
+						}, ".pager-cur input")
 				}
 
 				const init = () => {
-					createPager(Roblox.RunningGameInstances)
+					if(settings.gamedetails.addServerPager) {
+						createPager(Roblox.RunningGameInstances)
+					}
 
 					// Init tab
 					const tabBtn = document.querySelector(".rbx-tab.active a")
@@ -327,17 +331,7 @@ const INJECT_SCRIPT = () => {
 				}
 
 				if(Roblox.RunningGameInstances) {
-					init()
-				} else {
-					Object.defineProperty(Roblox, "RunningGameInstances", {
-						enumerable: false,
-						configurable: true,
-						set: value => {
-							delete Roblox.RunningGameInstances
-							Roblox.RunningGameInstances = value
-							setTimeout(init, 0)
-						}
-					})
+					setTimeout(init, 0)
 				}
 			} else if(currentPage === "develop") {
 				if(Roblox.BuildPage) {

@@ -68,6 +68,7 @@ const SettingsDiv = (() => {
 				</group>
 				<group label="Game Details" path=gamedetails toggleable>
 					<checkbox label="Highlight Owned Badges" path=showBadgeOwned></checkbox>
+					<checkbox label="Add Server List Pager" path=addServerPager></checkbox>
 				</group>
 				<group label="Item Details" path=itemdetails toggleable>
 					<checkbox label="Item Previewer" path=itemPreviewer></checkbox>

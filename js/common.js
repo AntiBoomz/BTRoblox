@@ -63,16 +63,19 @@ const DEFAULT_SETTINGS = {
 		enabled: { default: true, value: true },
 		itemPreviewer: { default: true, value: true },
 		itemPreviewerMode: { default: true, value: "default" },
+
 		explorerButton: { default: true, value: true },
 		downloadButton: { default: true, value: true },
 		contentButton: { default: true, value: true },
+
 		imageBackgrounds: { default: true, value: true },
 		whiteDecalThumbnailFix: { default: true, value: true },
 		thisPackageContains: { default: true, value: true }
 	},
 	gamedetails: {
 		enabled: { default: true, value: true },
-		showBadgeOwned: { default: true, value: true }
+		showBadgeOwned: { default: true, value: true },
+		addServerPager: { default: true, value: true }
 	},
 	groups: {
 		enabled: { default: true, value: true },
