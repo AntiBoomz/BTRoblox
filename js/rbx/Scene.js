@@ -217,14 +217,13 @@ const RBXScene = (() => {
 
 			const cameraDir = new THREE.Vector3(0, 0, 1).applyEuler(this.cameraRotation)
 			this.camera.position.copy(this.cameraFocus).addScaledVector(cameraDir, -this.cameraZoom)
+			this.camera.lookAt(this.cameraFocus)
+			this.camera.position.add(this.cameraOffset)
 
 			const groundDiff = .05 - this.camera.position.y
 			if(cameraDir.y > 0 && groundDiff > 0) {
 				this.camera.position.addScaledVector(cameraDir, groundDiff / cameraDir.y)
 			}
-
-			this.camera.lookAt(this.cameraFocus)
-			this.camera.position.add(this.cameraOffset)
 		}
 
 		render() {
