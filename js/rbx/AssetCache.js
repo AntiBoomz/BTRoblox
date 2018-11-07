@@ -67,9 +67,9 @@ const AssetCache = (() => {
 
 		if(!resolvePromise) {
 			resolvePromise = new Promise((resolve, reject) => {
-				setTimeout(() => {
+				setTimeout(async () => {
 					if(!xsrfToken) {
-						xsrfToken = getXsrfToken()
+						xsrfToken = await getXsrfToken()
 					}
 
 					const resolveApiUrl = `https://assetdelivery.roblox.com/v1/assets/batch`
@@ -106,7 +106,7 @@ const AssetCache = (() => {
 					})
 
 					tryFetch()
-				}, 0)
+				}, 16)
 			})
 		}
 

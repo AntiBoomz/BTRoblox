@@ -53,27 +53,25 @@ function getProductInfo(assetId) {
 }
 
 function getXsrfToken() {
-	const x = Array.prototype.find.call(
-		$.all("body > script:not([src])"),
-		y => y.textContent.includes("XsrfToken.setToken")
-	)
+	return new Promise(resolve => {
+		if(document.readyState !== "loading") {
+			resolve()
+			return
+		}
 
-	if(x) {
-		return x.textContent.replace(/^[^]*XsrfToken\.setToken\('([^']+)'\)[^]*$/, "$1")
-	}
-
-	return null
+		onDocumentReady(resolve)
+		document.$watch(">body").$then().$watch(">script", x => x.textContent.includes("XsrfToken.setToken"), x => {
+			resolve(x.textContent.replace(/^[^]*XsrfToken\.setToken\('([^']+)'\)[^]*$/, "$1"))
+		})
+	})
 }
 
 let cachedXsrfToken
-function csrfFetch(url, init) {
+async function csrfFetch(url, init) {
 	if(!init) { init = {} }
 	if(!init.headers) { init.headers = {} }
 
-	if(!cachedXsrfToken) {
-		cachedXsrfToken = getXsrfToken()
-	}
-
+	cachedXsrfToken = await getXsrfToken()
 	init.headers["X-CSRF-TOKEN"] = cachedXsrfToken
 
 	let retryCount = 0
