@@ -25,6 +25,7 @@ API Docs
 * https://avatar.roblox.com/docs
 * https://badges.roblox.com/docs
 * https://billing.roblox.com/docs
+* https://captcha.roblox.com/docs
 * https://catalog.roblox.com/docs
 * https://chat.roblox.com/docs
 * https://clientsettings.roblox.com/docs (empty)
