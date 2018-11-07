@@ -76,7 +76,7 @@ const $ = function(selector) { return $.find(document, selector) }
 									catch(ex) { console.error(ex) }
 								}
 								
-								if(item.once) {
+								if(item.once || item.stopped) {
 									item.stopped = true
 									i = 0 // To break mutations loop
 									break
@@ -217,7 +217,11 @@ const $ = function(selector) { return $.find(document, selector) }
 					const directMatch = selector.match(/^\s*>\s*((?:\.|#)?[\w-]+)\s*$/)
 					if(directMatch) {
 						const match = directMatch[1]
-						target.$watchAll(match, resolve, { once: true })
+						target.$watchAll(match, (node, disable) => {
+							if(filter && !filter(node)) { return }
+							disable()
+							resolve(node)
+						})
 						return
 					}
 				}
@@ -291,7 +295,7 @@ const $ = function(selector) { return $.find(document, selector) }
 						catch(ex) { console.error(ex) }
 					}
 
-					if(item.once) { return true }
+					if(item.once || item.stopped) { return true }
 				}
 
 				return false
