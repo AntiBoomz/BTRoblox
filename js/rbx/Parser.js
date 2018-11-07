@@ -320,7 +320,7 @@ const RBXParser = (() => {
 				case "coordinateframe": {
 					const cframe = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
 					Object.values(propNode.children).forEach(x => {
-						const index = RBXXmlParser.CFrameTransform.indexOf(x.nodeName.toUpperCase())
+						const index = RBXXmlParser.Transforms.CFrame.indexOf(x.nodeName.toUpperCase())
 						if(index !== -1) {
 							cframe[index] = +x.textContent
 						}
@@ -328,10 +328,21 @@ const RBXParser = (() => {
 
 					return inst.setProperty(name, cframe, "CFrame")
 				}
+				case "vector2": {
+					const vector2 = [0, 0]
+					Object.values(propNode.children).forEach(x => {
+						const index = RBXXmlParser.Transforms.Vector2.indexOf(x.nodeName.toUpperCase())
+						if(index !== -1) {
+							vector2[index] = +x.textContent
+						}
+					})
+
+					return inst.setProperty(name, vector2, "Vector2")
+				}
 				case "vector3": {
 					const vector3 = [0, 0, 0]
 					Object.values(propNode.children).forEach(x => {
-						const index = RBXXmlParser.Vector3Transform.indexOf(x.nodeName.toUpperCase())
+						const index = RBXXmlParser.Transforms.Vector3.indexOf(x.nodeName.toUpperCase())
 						if(index !== -1) {
 							vector3[index] = +x.textContent
 						}
@@ -360,13 +371,20 @@ const RBXParser = (() => {
 
 					return inst.setProperty(name, target, "Instance")
 				}
+				case "colorsequence":
+				case "numberrange":
+				case "numbersequence":
+					return
 				default: console.warn(`[ParseRBXXml] Unknown dataType ${propNode.nodeName} for ${inst.ClassName}.${name}`, propNode.innerHTML)
 				}
 			})
 		}
 	}
-	RBXXmlParser.CFrameTransform = ["X", "Y", "Z", "R00", "R01", "R02", "R10", "R11", "R12", "R20", "R21", "R22"]
-	RBXXmlParser.Vector3Transform = ["X", "Y", "Z"]
+	RBXXmlParser.Transforms = {
+		CFrame: ["X", "Y", "Z", "R00", "R01", "R02", "R10", "R11", "R12", "R20", "R21", "R22"],
+		Vector3: ["X", "Y", "Z"],
+		Vector2: ["X", "Y"]
+	}
 
 	class RBXBinParser {
 		// http://www.classy-studios.com/Downloads/RobloxFileSpec.pdf
