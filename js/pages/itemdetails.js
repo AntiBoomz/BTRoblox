@@ -585,24 +585,18 @@ pageInit.itemdetails = function(assetId) {
 		initPreview(assetId, assetTypeId)
 
 		const canAccessPromise = new Promise(resolve => {
-			if(!CheckAccessAssetTypeIds.includes(assetTypeId)) { return resolve(true) }
-
 			const data = itemCont.dataset
 			const canAccess = data.userassetId || (data.productId && !+data.expectedPrice)
 			if(canAccess) { return resolve(true) }
 
 			itemCont.$watch(".item-name-container a", creatorLink => {
-				const creatorId = +String(creatorLink.href).replace(/^.*roblox.com\/users\/(\d+).*$/, "$1")
-				if(!Number.isSafeInteger(creatorId)) { return resolve(false) }
-				if(creatorId === 1) { return resolve(true) }
-				
-				loggedInUserPromise.then(userId => resolve(creatorId === +userId))
+				const creatorId = +creatorLink.href.replace(/^.*roblox.com\/users\/(\d+)\/.*$/, "$1")
+				resolve(creatorId === 1 || creatorId === loggedInUser)
 			})
 		})
 
 		canAccessPromise.then(canAccess => {
-			const softAccess = canAccess || !canAccess && (assetTypeId !== 3 && assetTypeId !== 10) && !ContainerAssetTypeIds[assetTypeId]
-			if(!softAccess) { return }
+			if(!canAccess && StrictCheckAssetTypeIds.includes(assetTypeId)) { return }
 
 			if(settings.itemdetails.explorerButton && !InvalidExplorableAssetTypeIds.includes(assetTypeId)) {
 				const explorer = new Explorer()
