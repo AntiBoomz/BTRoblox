@@ -426,7 +426,7 @@ pageInit.profile = function(userId) {
 					}
 
 					Linkify(descContent)
-					if(document.readyState !== "loading") { updateDesc() }
+					updateDesc()
 				})
 			})
 		})
