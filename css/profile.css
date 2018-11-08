@@ -434,13 +434,13 @@
 
 .btr-profile-favorites .input-group-btn {
 	float: right;
-	width: 160px;
+	width: 140px;
 	margin-right: 6px;
-	margin-top: -2px;
+	margin-top: -4px;
 }
 
-.btr-profile-favorites .input-dropdown-btn {
-	padding: 4px 10px;
+.btr-profile-favorites .input-group-btn .input-dropdown-btn {
+	padding: 2px 10px;
 }
 
 .btr-profile-favorites .input-dropdown-btn .rbx-selection-label {

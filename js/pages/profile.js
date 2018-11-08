@@ -586,27 +586,27 @@ pageInit.profile = function(userId) {
 		let lastCategory = null
 
 		const dropdown = html`
-		<div class="input-group-btn">
-			<button type="button" class="input-dropdown-btn" data-toggle="dropdown" aria-expanded="false">
-				<span class="rbx-selection-label" data-bind="label">Places</span>
-				<span class="icon-down-16x16"></span>
+		<div class=input-group-btn>
+			<button type=button class=input-dropdown-btn data-toggle=dropdown aria-expanded=false>
+				<span class=rbx-selection-label data-bind=label>Places</span>
+				<span class=icon-down-16x16></span>
 			</button>
-			<ul data-toggle="dropdown-menu" class="dropdown-menu" role="menu">
-				<li data-value="24"><a href="#">Animations</a></li>
-				<li data-value="3"><a href="#">Audio</a></li>
-				<li data-value="21"><a href="#">Badges</a></li>
-				<li data-value="13"><a href="#">Decals</a></li>
-				<li data-value="18"><a href="#">Faces</a></li>
-				<li data-value="19"><a href="#">Gear</a></li>
-				<li data-value="8"><a href="#">Hats</a></li>
-				<li data-value="17"><a href="#">Heads</a></li>
-				<li data-value="10"><a href="#">Models</a></li>
-				<li data-value="32"><a href="#">Packages</a></li>
-				<li data-value="12"><a href="#">Pants</a></li>
-				<li data-value="9"><a href="#">Places</a></li>
-				<li data-value="38"><a href="#">Plugins</a></li>
-				<li data-value="11"><a href="#">Shirts</a></li>
-				<li data-value="2"><a href="#">T-Shirts</a></li>
+			<ul data-toggle=dropdown-menu class=dropdown-menu role=menu>
+				<li data-value=8><a href=#>Accessories</a></li>
+				<li data-value=24><a href=#>Animations</a></li>
+				<li data-value=3><a href=#>Audio</a></li>
+				<li data-value=21><a href=#>Badges</a></li>
+				<li data-value=13><a href=#>Decals</a></li>
+				<li data-value=18><a href=#>Faces</a></li>
+				<li data-value=19><a href=#>Gear</a></li>
+				<li data-value=17><a href=#>Heads</a></li>
+				<li data-value=40><a href=#>Meshes</a></li>
+				<li data-value=10><a href=#>Models</a></li>
+				<li data-value=12><a href=#>Pants</a></li>
+				<li data-value=9><a href=#>Places</a></li>
+				<li data-value=38><a href=#>Plugins</a></li>
+				<li data-value=11><a href=#>Shirts</a></li>
+				<li data-value=2><a href=#>T-Shirts</a></li>
 			</ul>
 		</div>`
 
