@@ -123,17 +123,14 @@ const SettingsDiv = (() => {
 						<checkbox label="Hover Previewer" path=general.hoverPreview></checkbox>
 						<br>
 						<br>
-						<select label="Automatically open previewer for:" path=itemdetails.itemPreviewerMode>
-							<option value=default>Default (Everything)</option>
-							<option value=never>Nothing</option>
-							<option value=animations>Animations</option>
-							<option value=always>Everything</option>
+						<select label="Automatically open previewer:" path=itemdetails.itemPreviewerMode>
+							<option value=never>Never</option>
+							<option value=animations>For Animations</option>
+							<option value=always>Always</option>
 						</select>
-						<select label="Preview on hover for:" path=general.hoverPreviewMode>
-							<option value=default>Default (Everything)</option>
-							<option value=never>Nothing</option>
-							<option value=animations>Animations</option>
-							<option value=always>Everything</option>
+						<select label="Preview on hover:" path=general.hoverPreviewMode>
+							<option value=never>Never</option>
+							<option value=always>Always</option>
 						</select>
 					</group>
 				</div>

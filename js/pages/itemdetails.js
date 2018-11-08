@@ -338,40 +338,39 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 
 
 const initPreview = (assetId, assetTypeId, isBundle) => {
-	const previewAnim = AnimationPreviewAssetTypeIds.includes(assetTypeId)
-	const previewAsset = WearableAssetTypeIds.includes(assetTypeId)
-	const previewPackage = assetTypeId === 32
+	const isPreviewable = AnimationPreviewAssetTypeIds.includes(assetTypeId) || WearableAssetTypeIds.includes(assetTypeId)
+	const isPackage = assetTypeId === 32
 
-	if(settings.itemdetails.itemPreviewer && (previewAnim || previewAsset || previewPackage || isBundle)) {
-		let preview
-		let autoLoadPreview = false
-
-		switch(settings.itemdetails.itemPreviewerMode) {
-		case "always": default:
-			autoLoadPreview = true
-			break
-		case "animations":
-			autoLoadPreview = previewAnim || previewPackage
-			break
-		case "never":
-			break
-		}
-
+	if(settings.itemdetails.itemPreviewer && (isPackage || isBundle || isPreviewable)) {
+		const previewerMode = settings.itemdetails.itemPreviewerMode
+		let autoLoading = false
 		let lastAnimPromise
+		let preview
+
 		const doPreview = (id, typeId, productInfo) => {
 			const isAnim = AnimationPreviewAssetTypeIds.indexOf(typeId) !== -1
 			const isAsset = WearableAssetTypeIds.indexOf(typeId) !== -1
 
+			if(!isAnim && !isAsset) { return }
+
 			if(!preview) {
 				preview = new ItemPreviewer(isBundle, isAnim)
-
 				preview.setVisible(true)
-				if(autoLoadPreview) { onDocumentReady(() => preview.setEnabled(true)) }
+
+				if(previewerMode === "always") {
+					autoLoading = true
+					onDocumentReady(() => preview.setEnabled(true))
+				}
 			}
 
 			if(isAnim) {
 				preview.autoLoadPlayerType = false
 				preview.setPlayerTypeOnAnim = true
+
+				if(!autoLoading && previewerMode === "animations") {
+					autoLoading = true
+					onDocumentReady(() => preview.setEnabled(true))
+				}
 
 				if(typeId === 24) {
 					preview.addAnimation(String(id), id)
@@ -403,7 +402,7 @@ const initPreview = (assetId, assetTypeId, isBundle) => {
 						})
 					}
 
-					if(autoLoadPreview) {
+					if(autoLoading) {
 						lastAnimPromise = loadAnim()
 					} else {
 						const initPromise = new Promise(x => preview.on("init", x))
@@ -426,7 +425,7 @@ const initPreview = (assetId, assetTypeId, isBundle) => {
 					}
 				})
 			})
-		} else if(previewPackage) {
+		} else if(isPackage) {
 			AssetCache.loadText(assetId, text => {
 				text.split(";").forEach(itemId => {
 					getProductInfo(itemId).then(json => doPreview(json.AssetId, json.AssetTypeId, json))

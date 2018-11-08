@@ -323,7 +323,7 @@ const HoverPreview = (() => {
 
 				if(debounceCounter !== debounce) { return } // assetTypeId yields
 
-				if(!isWearable && (!isPackage && !isBundle || settings.general.hoverPreviewMode === "animations")) {
+				if(!isWearable && (!isPackage && !isBundle)) {
 					invalidAssets[assetId] = true
 					clearTarget()
 					return
