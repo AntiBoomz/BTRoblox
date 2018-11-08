@@ -222,37 +222,35 @@
 	}
 
 	const onUpdate = () => {
-		Settings.load(() => {
-			const isEnabled = Settings.get("general.shoutAlerts")
-			
-			if(wasEnabled !== isEnabled) {
-				wasEnabled = isEnabled
-				if(isEnabled) {
-					if(IS_CHROME) {
-						chrome.alarms.getAll(alarms => {
-							const alarm1 = alarms.find(x => x.name === "ShoutCheck")
-							const alarm2 = alarms.find(x => x.name === "ShoutCheck2")
+		const isEnabled = SETTINGS.get("groups.shoutAlerts")
+		
+		if(wasEnabled !== isEnabled) {
+			wasEnabled = isEnabled
+			if(isEnabled) {
+				if(IS_CHROME) {
+					chrome.alarms.getAll(alarms => {
+						const alarm1 = alarms.find(x => x.name === "ShoutCheck")
+						const alarm2 = alarms.find(x => x.name === "ShoutCheck2")
 
-							if(alarms.length !== 2 || !alarm1 || !alarm2 || Math.abs(alarm2.scheduledTime - alarm1.scheduledTime) < 29e3) {
-								chrome.alarms.clearAll(() => {
-									chrome.alarms.create("ShoutCheck", { periodInMinutes: 1, when: Date.now() + 30e3 })
-									chrome.alarms.create("ShoutCheck2", { periodInMinutes: 1, when: Date.now() + 60e3 })
-								})
-							}
-						})
-					}
-
-					checkResync()
-				} else {
-					clearInterval(checkInterval)
-					if(IS_CHROME) { chrome.alarms.clearAll() }
+						if(alarms.length !== 2 || !alarm1 || !alarm2 || Math.abs(alarm2.scheduledTime - alarm1.scheduledTime) < 29e3) {
+							chrome.alarms.clearAll(() => {
+								chrome.alarms.create("ShoutCheck", { periodInMinutes: 1, when: Date.now() + 30e3 })
+								chrome.alarms.create("ShoutCheck2", { periodInMinutes: 1, when: Date.now() + 60e3 })
+							})
+						}
+					})
 				}
+
+				checkResync()
+			} else {
+				clearInterval(checkInterval)
+				if(IS_CHROME) { chrome.alarms.clearAll() }
 			}
-		})
+		}
 	}
 
-	onUpdate()
-	Settings.onChange(onUpdate)
+	SETTINGS.load(() => onUpdate())
+	SETTINGS.onChange("groups.shoutAlerts", onUpdate)
 
 	MESSAGING.listen({
 		getShoutFilters(data, respond) {

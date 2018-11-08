@@ -297,7 +297,7 @@ const RBXScene = (() => {
 				this.renderer.setClearColor(color)
 			}
 
-			SettingsDiv.onSettingChange("general.theme", updateColor)
+			SETTINGS.onChange("general.theme", updateColor)
 			updateColor(settings.general.theme)
 		}
 

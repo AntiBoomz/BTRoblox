@@ -56,14 +56,14 @@ const SettingsDiv = (() => {
 					</div>
 				</group>
 				<group label=Navigation path=navigation toggleable>
-					<checkbox label="Keep Sidebar Open" path=general.noHamburger></checkbox>
+					<checkbox label="Keep Sidebar Open" path=noHamburger require=false></checkbox>
 					<button id=btr-open-navigation-editor class=btn-control-xs>Modify Navigation Buttons</button>
 				</group>
 				<group label=Profile path=profile toggleable>
 					<checkbox label="Embed Inventory" path=embedInventoryEnabled></checkbox>
 				</group>
 				<group label=Groups path=groups toggleable>
-					<checkbox label="Group Shout Notifications" path=general.shoutAlerts></checkbox>
+					<checkbox label="Group Shout Notifications" path=shoutAlerts require=false></checkbox>
 					<button id=btr-open-shout-filter class=btn-control-xs>Modify Shout Filters</button>
 				</group>
 				<group label="Game Details" path=gamedetails toggleable>
@@ -178,7 +178,7 @@ const SettingsDiv = (() => {
 						</div>
 						
 						<group path=navigation>
-							<checkbox label="Hide Age Bracket" path=hideAgeBracket require=enabled></checkbox>
+							<checkbox label="Hide Age Bracket" path=hideAgeBracket></checkbox>
 						</group>
 					</div>
 					<div id=btr-naveditor-sidebar-container class=btr-naveditor-tab-container data-tab=sidebar>
@@ -190,7 +190,7 @@ const SettingsDiv = (() => {
 							</ul>
 						</div>
 						<group path=navigation>
-							<checkbox label="Show Blog Feed" path=showBlogFeed require=enabled></checkbox>
+							<checkbox label="Show Blog Feed" path=showBlogFeed></checkbox>
 						</group>
 					</div>
 				</div>
@@ -894,32 +894,14 @@ const SettingsDiv = (() => {
 		// Settings 
 
 		const settingsDone = {}
-		const requires = {}
 		let labelCounter = 0
 
-		const getSetting = path => path.split(".").reduce((a, b) => a[b], settings)
-		const isInvalidSetting = path => path.split(".").reduce((a, b) => (a ? a[b] : null), settings) === null
 		const joinPaths = (group, path) => (!group || path.includes(".") ? path : `${group}.${path}`)
-
-		const setSetting = (path, value) => {
-			MESSAGING.send("setSetting", { path, value })
-
-			const callbacks = onSettingCallbacks[path]
-			if(callbacks) {
-				callbacks.forEach(fn => {
-					try { fn(value, path) }
-					catch(ex) { console.error(ex) }
-				})
-			}
-		}
-
 
 		settingsDiv.$findAll("group").forEach(group => {
 			const groupPath = group.getAttribute("path") || ""
 			const title = html`<h4>${group.getAttribute("label") || ""}</h4>`
 			group.prepend(title)
-
-			const relativeOptions = []
 
 			if(group.hasAttribute("minimizable")) {
 				const updateGroup = () => {
@@ -954,34 +936,15 @@ const SettingsDiv = (() => {
 				const update = state => {
 					lastState = state
 					toggle.classList.toggle("checked", state)
-
-					relativeOptions.forEach(x => {
-						if(!state) { x.setAttribute("disabled", "") }
-						else { x.removeAttribute("disabled") }
-					})
 				}
 
 				toggle.$on("click", () => {
 					const state = !lastState
-					setSetting(settingPath, state)
+					SETTINGS.set(settingPath, state)
 					update(state)
 				})
 
-				$.setImmediate(() => update(getSetting(settingPath)))
-			}
-
-			const requireHandler = item => {
-				if(!item.hasAttribute("require")) { return }
-				const requirePath = joinPaths(groupPath, item.getAttribute("require"))
-
-				const target = item.$find("input") || item
-		
-				if(!requires[requirePath]) { requires[requirePath] = [] }
-				requires[requirePath].push(target)
-		
-				if(!getSetting(requirePath)) {
-					target.setAttribute("disabled", "")
-				}
+				$.setImmediate(() => update(SETTINGS.get(settingPath)))
 			}
 
 			group.$findAll("select").forEach(select => {
@@ -995,8 +958,6 @@ const SettingsDiv = (() => {
 
 				select.before(wrapper)
 				wrapper.append(select)
-
-				requireHandler(select)
 
 				const titleOption = select.options[0] && select.options[0].hasAttribute("disabled") ? select.options[0] : null
 				const titleOptionFormat = titleOption ? titleOption.textContent : null
@@ -1013,19 +974,29 @@ const SettingsDiv = (() => {
 					}
 				}
 
-				select.value = getSetting(settingPath)
+				select.value = SETTINGS.get(settingPath)
 				update()
 
 				select.$on("change", () => {
 					const selected = select.selectedOptions[0]
 					if(!selected || selected.hasAttribute("disabled")) { return }
-					setSetting(settingPath, select.value)
+					SETTINGS.set(settingPath, select.value)
 					update()
 				})
 
 
-				if(settingPath.startsWith(groupPath)) {
-					relativeOptions.push(select)
+				const requirePath = joinPaths(groupPath, select.getAttribute("require") || "enabled")
+				if(SETTINGS.isValid(requirePath)) {
+					const requireUpdate = value => {
+						if(value) {
+							select.removeAttribute("disabled")
+						} else {
+							select.setAttribute("disabled", "")
+						}
+					}
+					
+					SETTINGS.onChange(requirePath, requireUpdate)
+					requireUpdate(SETTINGS.get(requirePath))
 				}
 			})
 
@@ -1039,33 +1010,28 @@ const SettingsDiv = (() => {
 				checkbox.classList.add("btr-settings-checkbox")
 				checkbox.prepend(input, label)
 
-				requireHandler(checkbox)
-
-				if(isInvalidSetting(settingPath)) {
+				if(!SETTINGS.isValid(settingPath)) {
 					label.textContent += " (Bad setting)"
 					return
 				}
 
-				const update = state => {
-					const req = requires[settingPath]
-					if(!req) { return }
-
-					req.forEach(x => {
-						if(!state) { x.setAttribute("disabled", "") }
-						else { x.removeAttribute("disabled") }
-					})
-				}
-
-				input.checked = !!getSetting(settingPath)
+				input.checked = !!SETTINGS.get(settingPath)
 				input.$on("change", () => {
-					setSetting(settingPath, input.checked)
-					update(input.checked)
+					SETTINGS.set(settingPath, input.checked)
 				})
 
-				update(input.checked)
-
-				if(settingPath.startsWith(groupPath)) {
-					relativeOptions.push(input)
+				const requirePath = joinPaths(groupPath, checkbox.getAttribute("require") || "enabled")
+				if(SETTINGS.isValid(requirePath)) {
+					const requireUpdate = value => {
+						if(value) {
+							input.removeAttribute("disabled")
+						} else {
+							input.setAttribute("disabled", "")
+						}
+					}
+					
+					SETTINGS.onChange(requirePath, requireUpdate)
+					requireUpdate(SETTINGS.get(requirePath))
 				}
 			})
 		})
@@ -1073,7 +1039,7 @@ const SettingsDiv = (() => {
 		const wipGroup = settingsDiv.$find("#btr-settings-wip")
 		Object.entries(settings).forEach(([groupPath, settingsGroup]) => {
 			Object.entries(settingsGroup).forEach(([settingName, settingValue]) => {
-				const defaultValueInfo = DEFAULT_SETTINGS[groupPath][settingName]
+				const defaultValueInfo = SETTINGS.defaultSettings[groupPath][settingName]
 				const settingPath = `${groupPath}.${settingName}`
 				if(settingsDone[settingPath] || defaultValueInfo.hidden) { return }
 
@@ -1089,7 +1055,7 @@ const SettingsDiv = (() => {
 					input.checked = !!settingValue
 					input.$on("change", () => {
 						settingsGroup[settingName] = input.checked
-						setSetting(settingPath, input.checked)
+						SETTINGS.set(settingPath, input.checked)
 					})
 				} else {
 					wipGroup.append(html`<div>${settingPath} (${typeof settingValue})`)
@@ -1099,13 +1065,6 @@ const SettingsDiv = (() => {
 	}
 
 	return {
-		toggle: toggleSettingsDiv,
-		onSettingChange(settingPath, fn) {
-			if(!onSettingCallbacks[settingPath]) {
-				onSettingCallbacks[settingPath] = []
-			}
-
-			onSettingCallbacks[settingPath].push(fn)
-		}
+		toggle: toggleSettingsDiv
 	}
 })()

@@ -2,7 +2,6 @@
 
 let settings
 let currentPage
-let blogFeedData
 
 let loggedInUser = -1
 let loggedInUserPromise = null
@@ -139,7 +138,7 @@ function Init() {
 
 	const headWatcher = document.$watch(">head").$then()
 	const bodyWatcher = document.$watch(">body", body => {
-		body.classList.toggle("btr-no-hamburger", settings.general.noHamburger)
+		body.classList.toggle("btr-no-hamburger", settings.navigation.noHamburger)
 		body.classList.toggle("btr-hide-ads", settings.general.hideAds)
 		body.classList.toggle("btr-small-chat-button", settings.general.chatEnabled && settings.general.smallChatButton)
 
@@ -225,11 +224,8 @@ function PreInit() {
 	}
 	
 	currentPage = GET_PAGE(pathname)
-	STORAGE.get(["settings", "cachedBlogFeedV2"], data => {
-		settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
-		if(data.settings) { APPLY_SETTINGS(data.settings, settings) }
-		
-		blogFeedData = data.cachedBlogFeedV2
+	SETTINGS.load(_settings => {
+		settings = JSON.parse(JSON.stringify(_settings))
 
 		// Change settings to be name: value
 		Object.values(settings).forEach(group => {
@@ -266,7 +262,7 @@ function PreInit() {
 				}
 			}
 
-			SettingsDiv.onSettingChange("general.theme", updateTheme)
+			SETTINGS.onChange("general.theme", updateTheme)
 		}
 		
 		InjectJS.send(

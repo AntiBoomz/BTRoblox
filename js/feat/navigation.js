@@ -265,7 +265,7 @@ const Navigation = (() => {
 			updateAgeBracket(settings.navigation.hideAgeBracket)
 		})
 
-		SettingsDiv.onSettingChange("navigation.hideAgeBracket", value => {
+		SETTINGS.onChange("navigation.hideAgeBracket", value => {
 			updateAgeBracket(value)
 		})
 
@@ -296,21 +296,20 @@ const Navigation = (() => {
 
 				MESSAGING.send("requestBlogFeed", updateBlogFeed)
 
-				if(blogFeedData) {
-					try { updateBlogFeed(blogFeedData) }
-					catch(ex) { console.error(ex) }
-				}
+				STORAGE.get(["cachedBlogFeedV2"], data => {
+					if(data.cachedBlogFeedV2) {
+						updateBlogFeed(data.cachedBlogFeedV2)
+					}
+				})
 			}
 
 			blogfeed.style.display = enabled ? "" : "none"
 		}
 
-
 		toggleBlogFeed(settings.navigation.showBlogFeed)
-		SettingsDiv.onSettingChange("navigation.showBlogFeed", value => {
+		SETTINGS.onChange("navigation.showBlogFeed", value => {
 			toggleBlogFeed(value)
 		})
-
 		
 		const navWatcher = document.$watch("#navigation").$then()
 

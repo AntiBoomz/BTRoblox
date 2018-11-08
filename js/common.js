@@ -10,6 +10,11 @@ if(IS_EDGE) { window.chrome = Object.assign({}, browser) }
 const IS_DEV_MODE = IS_FIREFOX ? chrome.runtime.id.endsWith("@temporary-addon") :
 	IS_CHROME ? chrome.runtime.id === "follfgiodgdohjfmfmnjhnbkecbiobmd" : false
 
+const IS_BACKGROUND_PAGE = chrome && chrome.extension && chrome.extension.getBackgroundPage
+
+const getURL = chrome.runtime.getURL
+
+
 const DOLLARS_TO_ROBUX_RATIOS = {
 	devex350: [350, 100e3],
 	devex250: [250, 100e3],
@@ -31,90 +36,6 @@ const DOLLARS_TO_ROBUX_RATIOS = {
 
 let DOLLARS_TO_ROBUX_RATIO = DOLLARS_TO_ROBUX_RATIOS.devex350
 
-const getURL = chrome.runtime.getURL
-
-const DEFAULT_SETTINGS = {
-	_version: 2,
-	general: {
-		theme: { default: true, value: "default" },
-		hideAds: { default: true, value: true },
-		noHamburger: { default: true, value: true },
-		chatEnabled: { default: true, value: true },
-		smallChatButton: { default: true, value: true },
-		fastSearch: { default: true, value: true },
-		fixAudioPreview: { default: true, value: true },
-
-		robuxToDollars: { default: true, value: false },
-		robuxToDollarsRate: { default: true, value: "devex350" },
-		hoverPreview: { default: true, value: true },
-		hoverPreviewMode: { default: true, value: "default" },
-		shoutAlerts: { default: true, value: true }
-	},
-	navigation: {
-		enabled: { default: true, value: true },
-		items: { default: true, value: "", hidden: true },
-		hideAgeBracket: { default: true, value: true },
-		showBlogFeed: { default: true, value: true }
-	},
-	catalog: {
-		enabled: { default: true, value: true }
-	},
-	itemdetails: {
-		enabled: { default: true, value: true },
-		itemPreviewer: { default: true, value: true },
-		itemPreviewerMode: { default: true, value: "default" },
-
-		explorerButton: { default: true, value: true },
-		downloadButton: { default: true, value: true },
-		contentButton: { default: true, value: true },
-
-		imageBackgrounds: { default: true, value: true },
-		whiteDecalThumbnailFix: { default: true, value: true },
-
-		addOwnersList: { default: true, value: true },
-		thisPackageContains: { default: true, value: true } // Packages are no longer in use..?
-	},
-	gamedetails: {
-		enabled: { default: true, value: true },
-		showBadgeOwned: { default: true, value: true },
-		addServerPager: { default: true, value: true }
-	},
-	groups: {
-		enabled: { default: true, value: true },
-		expandGroupList: { default: true, value: true }
-	},
-	inventory: {
-		enabled: { default: true, value: true },
-		inventoryTools: { default: true, value: true }
-	},
-	profile: {
-		enabled: { default: true, value: true },
-		embedInventoryEnabled: { default: true, value: true }
-	},
-	friends: {
-		alwaysShowUnfriend: { default: true, value: true }
-	},
-	versionhistory: {
-		enabled: { default: true, value: true }
-	}
-}
-
-const APPLY_SETTINGS = (data, settings) => {
-	Object.entries(settings).forEach(([groupName, group]) => {
-		const dataGroup = data[groupName]
-		if(!(group instanceof Object && dataGroup instanceof Object)) { return }
-
-		Object.entries(group).forEach(([settingName, sett]) => {
-			const dataSett = dataGroup[settingName]
-			if(!(sett instanceof Object && dataSett instanceof Object)) { return }
-
-			if(dataSett.default === false && typeof dataSett.value === typeof sett.value && dataSett.value !== sett.value) {
-				sett.value = dataSett.value
-				sett.default = sett.value === DEFAULT_SETTINGS[groupName][settingName].value
-			}
-		})
-	})
-}
 
 const EXCLUDED_PAGES = [
 	"^/userads/",
@@ -212,8 +133,9 @@ const GET_PAGE = path => {
 }
 
 const STORAGE = chrome.storage.local
+
 const MESSAGING = (() => {
-	if(chrome && chrome.extension && chrome.extension.getBackgroundPage) {
+	if(IS_BACKGROUND_PAGE) {
 		const listenersByName = {}
 		const ports = []
 
@@ -324,4 +246,215 @@ const MESSAGING = (() => {
 			this.port.postMessage(info)
 		}
 	}
+})()
+
+
+const SETTINGS = (() => {
+	const SETTINGS = {
+		defaultSettings: {
+			_version: 2,
+			general: {
+				theme: { default: true, value: "default", validValues: ["default", "simblk", "sky", "red", "night"] },
+				hideAds: { default: true, value: true },
+				chatEnabled: { default: true, value: true },
+				smallChatButton: { default: true, value: true },
+				fastSearch: { default: true, value: true },
+				fixAudioPreview: { default: true, value: true },
+
+				robuxToDollars: { default: true, value: false },
+				robuxToDollarsRate: { default: true, value: "devex350", validValues: ["devex350", "devex250", "nbc5", "nbc10", "nbc25", "nbc50", "nbc100", "nbc200", "bc5", "bc10", "bc25", "bc50", "bc100", "bc200"] },
+				hoverPreview: { default: true, value: true },
+				hoverPreviewMode: { default: true, value: "always", validValues: ["always", "never"] }
+			},
+			navigation: {
+				enabled: { default: true, value: true },
+				items: { default: true, value: "", hidden: true },
+				hideAgeBracket: { default: true, value: true },
+				showBlogFeed: { default: true, value: true },
+				noHamburger: { default: true, value: true }
+			},
+			catalog: {
+				enabled: { default: true, value: true }
+			},
+			itemdetails: {
+				enabled: { default: true, value: true },
+				itemPreviewer: { default: true, value: true },
+				itemPreviewerMode: { default: true, value: "always", validValues: ["always", "animations", "never"] },
+
+				explorerButton: { default: true, value: true },
+				downloadButton: { default: true, value: true },
+				contentButton: { default: true, value: true },
+
+				imageBackgrounds: { default: true, value: true },
+				whiteDecalThumbnailFix: { default: true, value: true },
+
+				addOwnersList: { default: true, value: true },
+				thisPackageContains: { default: true, value: true } // Packages are no longer in use..?
+			},
+			gamedetails: {
+				enabled: { default: true, value: true },
+				showBadgeOwned: { default: true, value: true },
+				addServerPager: { default: true, value: true }
+			},
+			groups: {
+				enabled: { default: true, value: true },
+				expandGroupList: { default: true, value: true },
+				shoutAlerts: { default: true, value: true }
+			},
+			inventory: {
+				enabled: { default: true, value: true },
+				inventoryTools: { default: true, value: true }
+			},
+			profile: {
+				enabled: { default: true, value: true },
+				embedInventoryEnabled: { default: true, value: true }
+			},
+			friends: {
+				alwaysShowUnfriend: { default: true, value: true }
+			},
+			versionhistory: {
+				enabled: { default: true, value: true }
+			}
+		}
+	}
+
+	const onChangeListeners = []
+	let loadPromise
+
+	if(IS_BACKGROUND_PAGE) {
+		MESSAGING.listen({
+			setSetting(data, respond) {
+				SETTINGS.load(() => {
+					SETTINGS.set(data.path, data.value)
+				})
+
+				respond()
+			}
+		})
+	}
+
+	const getSetting = (path, root) => path.split(".").reduce((t, i) => (t ? t[i] : null), root)
+
+	return Object.assign(SETTINGS, {
+		loaded: false,
+
+		initSettings(loadedData) {
+			const settings = JSON.parse(JSON.stringify(SETTINGS.defaultSettings, (key, value) => (key === "validValues" ? undefined : value)))
+
+			if(loadedData) {
+				Object.entries(settings).forEach(([groupName, group]) => {
+					const dataGroup = loadedData[groupName]
+					if(!(group instanceof Object && dataGroup instanceof Object)) { return }
+		
+					Object.entries(group).forEach(([settingName, setting]) => {
+						const dataSetting = dataGroup[settingName]
+						if(!(setting instanceof Object && dataSetting instanceof Object)) { return }
+
+						// No need to set default or unchanged settings
+						if(dataSetting.default || dataSetting.value === setting.value) { return }
+
+						// Do not load settings of wrong type
+						if(typeof dataSetting.value !== typeof setting.value) { return }
+
+						// Do not load invalid values for multi-choice options
+						const defaultSetting = this.defaultSettings[groupName][settingName]
+						if(defaultSetting.validValues && !defaultSetting.validValues.includes(dataSetting.value)) { return }
+						
+						setting.value = dataSetting.value
+						setting.default = setting.value === defaultSetting.value
+					})
+				})
+			}
+
+			return settings
+		},
+
+		load(fn) {
+			if(!loadPromise) {
+				loadPromise = new Promise(resolve => {
+					STORAGE.get(["settings"], data => {
+						this.loadedSettings = this.initSettings(data.settings)
+						this.loaded = true
+
+						resolve(this.loadedSettings)
+					})
+				})
+			}
+
+			loadPromise.then(fn)
+		},
+
+		isValid(settingPath) {
+			if(!this.loaded) { throw new Error("Settings are not loaded") }
+
+			const setting = getSetting(settingPath, this.loadedSettings)
+			return !!(setting && "value" in setting)
+		},
+
+		get(settingPath) {
+			if(!this.loaded) { throw new Error("Settings are not loaded") }
+			
+			const setting = getSetting(settingPath, this.loadedSettings)
+
+			if(!(setting && "value" in setting)) {
+				throw new TypeError(`'${settingPath}' is not a valid setting`)
+			}
+
+			return setting.value
+		},
+
+		set(settingPath, value) {
+			if(!this.loaded) { throw new Error("Settings are not loaded") }
+			
+			const setting = getSetting(settingPath, this.loadedSettings)
+
+			if(!(setting && "value" in setting)) {
+				throw new TypeError(`'${settingPath}' is not a valid setting`)
+			}
+
+			if(typeof value !== typeof setting.value) {
+				throw new TypeError(`Invalid Value - Type mismatch (expected ${typeof setting.value}, got ${typeof value})`)
+			}
+
+			const defaultSetting = getSetting(settingPath, this.defaultSettings)
+			if(defaultSetting.validValues && !defaultSetting.validValues.includes(value)) {
+				throw new TypeError(`Invalid Value - Value '${value}' is not in validValues`)
+			}
+
+			if(IS_BACKGROUND_PAGE) {
+				if(setting.value !== value) {
+					setting.value = value
+					setting.default = setting.value === defaultSetting.value
+
+					STORAGE.set({ settings: this.loadedSettings })
+
+					const listeners = onChangeListeners[settingPath]
+					if(listeners) {
+						listeners.forEach(fn => {
+							try { fn(value) }
+							catch(ex) { console.error(ex) }
+						})
+					}
+				}
+			} else {
+				MESSAGING.send("setSetting", { path: settingPath, value })
+
+				const listeners = onChangeListeners[settingPath]
+				if(listeners) {
+					listeners.forEach(fn => {
+						try { fn(value) }
+						catch(ex) { console.error(ex) }
+					})
+				}
+			}
+		},
+
+		onChange(settingPath, fn) {
+			if(!onChangeListeners[settingPath]) {
+				onChangeListeners[settingPath] = []
+			}
+
+			onChangeListeners[settingPath].push(fn)
+		}
+	})
 })()
