@@ -5,6 +5,7 @@
 	let shoutCachePromise
 	let previousCheck = 0
 	let checkInterval
+	let isSuspending = false
 	let wasEnabled
 
 	const loadShoutCache = () => {
@@ -64,8 +65,9 @@
 	}
 
 	const executeCheck = async () => {
-		if(Date.now() - previousCheck < 5000) { return }
-		previousCheck = Date.now()
+		if(isSuspending || Date.now() - previousCheck < 5000) { return }
+		const checkTime = Date.now()
+		previousCheck = checkTime
 
 		const userId = await fetch("https://www.roblox.com/game/GetCurrentUser.ashx", { credentials: "include" }).then(resp => resp.text())
 		if(!Number.isSafeInteger(+userId)) { return }
@@ -74,7 +76,6 @@
 
 		const shoutCache = await loadShoutCache()
 		const shoutFilters = await loadShoutFilters()
-		let existing = await new Promise(res => chrome.notifications.getAll(res))
 		const notifs = []
 		let didChange = false
 
@@ -119,39 +120,31 @@
 					return
 				}
 
-				if(!(existing[notif.id] && notif.wasCreated)) {
+				if(!notif.wasCreated) {
 					notifs.push(notif)
 				}
 			}
 		})
 
 		if(didChange) { saveShoutCache() }
-		if(!notifs.length) { return }
-	
+		if(!notifs.length || previousCheck !== checkTime) { return }
+		
 		let hasExecutedNotifs = false
 		let hasPlayedSound = false
 
 		const execNotifs = async () => {
-			if(hasExecutedNotifs) { return }
+			if(hasExecutedNotifs || previousCheck !== checkTime) { return }
 			hasExecutedNotifs = true
-			
-			existing = await new Promise(res => chrome.notifications.getAll(res))
 
-			notifs.forEach(notif => {
-				if(existing[notif.id] && notif.wasCreated) { return }
-
-				createNotif(notif, () => {
-					if(notif.wasCreated) { return }
-		
-					notif.wasCreated = true
-					saveShoutCache()
-		
-					if(!hasPlayedSound) {
-						hasPlayedSound = true
-						new Audio("res/notification.mp3").play()
-					}
-				})
-			})
+			notifs.forEach(notif => createNotif(notif, () => {
+				notif.wasCreated = true
+				saveShoutCache()
+	
+				if(!hasPlayedSound) {
+					hasPlayedSound = true
+					new Audio("res/notification.mp3").play()
+				}
+			}))
 		}
 
 		const urlInfo = new URL("https://thumbnails.roblox.com/v1/groups/icons?size=150x150&format=png")
@@ -175,7 +168,6 @@
 				}
 			}
 		}).then(execNotifs, execNotifs)
-
 		setTimeout(execNotifs, 5e3)
 	}
 
@@ -209,14 +201,22 @@
 		})
 	})
 
-	const checkResync = () => {
+	chrome.runtime.onSuspend.addListener(() => {
+		isSuspending = true
+	})
+
+	chrome.runtime.onSuspendCanceled.addListener(() => {
+		isSuspending = false
+	})
+
+	const updateCheck = () => {
 		clearInterval(checkInterval)
 		checkInterval = setInterval(executeCheck, 10.1e3)
 		executeCheck()
 	}
 
 	if(IS_CHROME) {
-		chrome.alarms.onAlarm.addListener(checkResync)
+		chrome.alarms.onAlarm.addListener(updateCheck)
 	} else if(window.chrome && window.chrome.alarms) {
 		chrome.alarms.clearAll()
 	}
@@ -226,30 +226,28 @@
 		
 		if(wasEnabled !== isEnabled) {
 			wasEnabled = isEnabled
+
 			if(isEnabled) {
 				if(IS_CHROME) {
-					chrome.alarms.getAll(alarms => {
-						const alarm1 = alarms.find(x => x.name === "ShoutCheck")
-						const alarm2 = alarms.find(x => x.name === "ShoutCheck2")
-
-						if(alarms.length !== 2 || !alarm1 || !alarm2 || Math.abs(alarm2.scheduledTime - alarm1.scheduledTime) < 29e3) {
-							chrome.alarms.clearAll(() => {
-								chrome.alarms.create("ShoutCheck", { periodInMinutes: 1, when: Date.now() + 30e3 })
-								chrome.alarms.create("ShoutCheck2", { periodInMinutes: 1, when: Date.now() + 60e3 })
-							})
+					chrome.alarms.clearAll(() => {
+						for(let i = 0; i < 3; i++) {
+							chrome.alarms.create(`ShoutCheck${i}`, { periodInMinutes: 1, when: Date.now() + i * 20e3 })
 						}
 					})
 				}
-
-				checkResync()
+				
+				updateCheck()
 			} else {
+				if(IS_CHROME) {
+					chrome.alarms.clearAll()
+				}
+				
 				clearInterval(checkInterval)
-				if(IS_CHROME) { chrome.alarms.clearAll() }
 			}
 		}
 	}
 
-	SETTINGS.load(() => onUpdate())
+	chrome.runtime.onInstalled.addListener(() => SETTINGS.load(onUpdate))
 	SETTINGS.onChange("groups.shoutAlerts", onUpdate)
 
 	MESSAGING.listen({
