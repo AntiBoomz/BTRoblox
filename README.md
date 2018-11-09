@@ -16,6 +16,7 @@ BTROBLOX
 API Docs
 ========
 
+* https://abtesting.roblox.com/docs
 * https://abuse.roblox.com/docs (offline)
 * https://accountsettings.roblox.com/docs
 * https://ads.roblox.com/docs (broken)
