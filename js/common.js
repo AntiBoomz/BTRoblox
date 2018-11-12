@@ -263,7 +263,7 @@ const SETTINGS = {
 			robuxToDollars: { default: true, value: false },
 			robuxToDollarsRate: { default: true, value: "devex350", validValues: ["devex350", "devex250", "nbc5", "nbc10", "nbc25", "nbc50", "nbc100", "nbc200", "bc5", "bc10", "bc25", "bc50", "bc100", "bc200"] },
 			hoverPreview: { default: true, value: true },
-			hoverPreviewMode: { default: true, value: "always", validValues: ["always", "never"] }
+			hoverPreviewMode: { default: true, value: "never", validValues: ["always", "never"] }
 		},
 		navigation: {
 			enabled: { default: true, value: true },
@@ -278,7 +278,7 @@ const SETTINGS = {
 		itemdetails: {
 			enabled: { default: true, value: true },
 			itemPreviewer: { default: true, value: true },
-			itemPreviewerMode: { default: true, value: "always", validValues: ["always", "animations", "never"] },
+			itemPreviewerMode: { default: true, value: "never", validValues: ["always", "animations", "never"] },
 
 			explorerButton: { default: true, value: true },
 			downloadButton: { default: true, value: true },
