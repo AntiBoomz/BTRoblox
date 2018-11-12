@@ -201,8 +201,6 @@ const SettingsDiv = (() => {
 			</div>
 		</div>
 	</div>`
-
-	const onSettingCallbacks = {}
 	
 	let currentContent
 	const switchContent = name => {
