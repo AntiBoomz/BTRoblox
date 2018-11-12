@@ -283,7 +283,7 @@ pageInit.profile = function(userId) {
 
 				placeIdList.push(placeId)
 				if(!lastGamePromise) {
-					lastGamePromise = new Promise(resolve => {
+					lastGamePromise = new SyncPromise(resolve => {
 						$.setImmediate(() => {
 							lastGamePromise = null
 							const list = placeIdList.splice(0, placeIdList.length).join("&placeIds=")

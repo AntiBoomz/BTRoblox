@@ -272,7 +272,7 @@ const RBXAvatar = (() => {
 				return parts.HumanoidRootPart
 			}
 	
-			const R6Promise = new Promise(resolveTree => {
+			const R6Promise = new SyncPromise(resolveTree => {
 				const path = getURL("res/previewer/character.rbxm")
 				AssetCache.loadModel(true, path, model => {
 					const tree = RecurseTree(model[0])
@@ -280,7 +280,7 @@ const RBXAvatar = (() => {
 				})
 			})
 	
-			const R15Promise = new Promise(resolveTree => {
+			const R15Promise = new SyncPromise(resolveTree => {
 				const path = getURL("res/previewer/characterR15.rbxm")
 				AssetCache.loadModel(true, path, model => {
 					const tree = RecurseTree(model[0])
@@ -289,7 +289,7 @@ const RBXAvatar = (() => {
 			})
 
 			
-			Promise.all([R6Promise, R15Promise]).then(([R6Tree, R15Tree]) => {
+			SyncPromise.all([R6Promise, R15Promise]).then(([R6Tree, R15Tree]) => {
 				this.R6Tree = R6Tree
 				this.R15Tree = R15Tree
 				this.loaded = true
@@ -915,7 +915,7 @@ const RBXAvatar = (() => {
 					if(!initialized) {
 						initialized = true
 
-						const meshPromise = AssetCache.loadMesh(true, meshId, mesh => applyMesh(obj, mesh))
+						const meshDefer = AssetCache.loadMesh(true, meshId, mesh => applyMesh(obj, mesh))
 
 						if(texId) {
 							await AssetCache.loadImage(true, texId, url => {
@@ -924,7 +924,7 @@ const RBXAvatar = (() => {
 							})
 						}
 
-						await meshPromise
+						await meshDefer
 					}
 				}
 
@@ -1049,7 +1049,7 @@ const RBXAvatar = (() => {
 				}
 				
 				const result = asset.enable()
-				if(result instanceof Promise) {
+				if(result instanceof SyncPromise) {
 					await result
 				}
 			}

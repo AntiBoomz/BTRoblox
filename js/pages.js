@@ -53,7 +53,7 @@ function getProductInfo(assetId) {
 }
 
 function getXsrfToken() {
-	return new Promise(resolve => {
+	return new SyncPromise(resolve => {
 		if(document.readyState !== "loading") {
 			resolve()
 			return
@@ -339,7 +339,7 @@ const HoverPreview = (() => {
 						return
 					}
 
-					Promise.all([preview.appearanceLoadedPromise, ...assetPromises]).then(() => {
+					SyncPromise.all([preview.appearanceLoadedPromise, ...assetPromises]).then(() => {
 						$.setImmediate(() => {
 							if(debounceCounter !== debounce) { return }
 							
@@ -375,7 +375,7 @@ const HoverPreview = (() => {
 
 				const doMultiple = list => {
 					const promises = list.map(id => getProductInfo(id).then(json => doStuff(json.AssetId, json.AssetTypeId)))
-					Promise.all(promises).then(finalizeLoad)
+					SyncPromise.all(promises).then(finalizeLoad)
 				}
 				
 				if(isBundle) {

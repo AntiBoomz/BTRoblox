@@ -132,6 +132,130 @@ const GET_PAGE = path => {
 	return null
 }
 
+
+class SyncPromise extends Promise {
+	static resolve(value) {
+		return new SyncPromise(resolve => resolve(value))
+	}
+
+	static reject(value) {
+		return new SyncPromise((_, reject) => reject(value))
+	}
+
+	static all(list) {
+		return new SyncPromise(resolve => {
+			const result = []
+			let defersLeft = list.length
+
+			list.forEach((defer, index) => {
+				defer.then(value => {
+					result[index] = value
+					if(--defersLeft === 0) {
+						resolve(result)
+					}
+				})
+			})
+		})
+	}
+
+	constructor(fn) {
+		let resolve
+		let reject
+
+		super((_resolve, _reject) => {
+			resolve = _resolve
+			reject = _reject
+		})
+
+		this._resolve = resolve
+		this._reject = reject
+
+		this._finished = false
+		this._resolved = false
+		this._onfinish = []
+
+		if(fn) {
+			try { fn(value => this.resolve(value), value => this.reject(value)) }
+			catch(ex) { this.reject(ex) }
+		}
+	}
+
+	resolve(value) {
+		if(!this._finished) {
+			this._finished = true
+
+			this._resolved = true
+			this._value = value
+
+			this._onfinish.forEach(args => this._then(...args))
+			delete this._onfinish
+
+			this._resolve(value)
+		}
+
+		return this
+	}
+
+	reject(value) {
+		if(!this._finished) {
+			this._finished = true
+
+			this._resolved = false
+			this._value = value
+
+			this._onfinish.forEach(args => this._then(...args))
+			delete this._onfinish
+
+			this._reject(value)
+		}
+
+		return this
+	}
+
+	_then(defer, onresolve, onreject) {
+		if(!this._resolved) {
+			this._onfinish.push([defer, onresolve, onreject])
+			return
+		}
+		
+		if(this._resolved) {
+			if(this._value instanceof SyncPromise || this._value instanceof Promise) {
+				return this._value.then(value => {
+					this._value = value
+					this._then(defer, onresolve, onreject)
+				}, ex => defer.reject(ex))
+			}
+
+			try { defer.resolve(onresolve ? onresolve(this._value) : this._value) }
+			catch(ex) {
+				console.error(ex)
+				defer.reject(ex)
+			}
+		} else if(!this._resolved) {
+			try { defer.reject(onreject ? onreject(this._value) : this._value) }
+			catch(ex) {
+				console.error(ex)
+				defer.reject(ex)
+			}
+		}
+	}
+
+	then(onresolve, onreject) {
+		const defer = new SyncPromise()
+		this._then(defer, onresolve, onreject)
+		return defer
+	}
+
+	catch(onreject) {
+		return this.then(null, onreject)
+	}
+
+	finally(onfinally) {
+		this.then(() => onfinally(), () => onfinally())
+		return this
+	}
+}
+
 const STORAGE = chrome.storage.local
 
 const MESSAGING = (() => {
@@ -317,7 +441,7 @@ const SETTINGS = {
 	},
 
 	_onChangeListeners: [],
-	_loadPromise: null,
+	_loadDefer: null,
 
 	loadedSettings: null,
 	loaded: false,
@@ -354,18 +478,18 @@ const SETTINGS = {
 	},
 
 	load(fn) {
-		if(!this._loadPromise) {
-			this._loadPromise = new Promise(resolve => {
+		if(!this._loadDefer) {
+			this._loadDefer = new SyncPromise(resolve => {
 				STORAGE.get(["settings"], data => {
 					this.loadedSettings = this._initSettings(data.settings)
 					this.loaded = true
-
+	
 					resolve(this.loadedSettings)
 				})
 			})
 		}
 
-		this._loadPromise.then(fn)
+		this._loadDefer.then(fn)
 	},
 	
 	_getSetting(path, root) {

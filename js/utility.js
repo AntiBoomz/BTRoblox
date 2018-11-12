@@ -110,6 +110,7 @@ const $ = function(selector) { return $.find(document, selector) }
 				__proto__: watcherProto
 			}
 		},
+
 		$watchAll(...args) {
 			this.targetPromise.then(target => {
 				target.$watchAll(...args)
@@ -117,6 +118,7 @@ const $ = function(selector) { return $.find(document, selector) }
 
 			return this
 		},
+
 		$then(cb) {
 			if(!this.finishPromise) { throw new Error("Tried to call $then before $watch") }
 			
@@ -133,6 +135,7 @@ const $ = function(selector) { return $.find(document, selector) }
 
 			return nxt
 		},
+
 		$promise() {
 			return this.finishPromise || this.targetPromise
 		}
@@ -154,6 +157,7 @@ const $ = function(selector) { return $.find(document, selector) }
 			args.forEach((val, index) => fn(obj, val, index))
 			return obj
 		},
+
 		watch(target, selectors, filter, callback) {
 			if(!callback) {
 				callback = filter
@@ -170,7 +174,7 @@ const $ = function(selector) { return $.find(document, selector) }
 
 			let observer = Observers.get(target)
 
-			const promises = selectors.map(selector => new Promise(resolve => {
+			const promises = selectors.map(selector => new SyncPromise(resolve => {
 				let getter
 
 				if(selector.indexOf(",") === -1) {
@@ -246,7 +250,7 @@ const $ = function(selector) { return $.find(document, selector) }
 				}
 			}))
 
-			const finishPromise = Promise.all(promises).then(elems => {
+			const finishPromise = SyncPromise.all(promises).then(elems => {
 				if(callback) {
 					try { callback(...elems) }
 					catch(ex) { console.error(ex) }
@@ -256,7 +260,7 @@ const $ = function(selector) { return $.find(document, selector) }
 			})
 
 			return {
-				targetPromise: Promise.resolve(target),
+				targetPromise: SyncPromise.resolve(target),
 				finishPromise,
 				__proto__: watcherProto
 			}

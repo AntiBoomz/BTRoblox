@@ -10,7 +10,7 @@
 
 	const loadShoutCache = () => {
 		if(shoutCachePromise) { return shoutCachePromise }
-		return shoutCachePromise = new Promise(resolve => {
+		return shoutCachePromise = new SyncPromise(resolve => {
 			const cache = { version: 5 }
 
 			STORAGE.get("shoutCache", data => {
@@ -24,14 +24,14 @@
 		})
 	}
 
-	const saveShoutCache = () => new Promise(async resolve => {
+	const saveShoutCache = () => new SyncPromise(async resolve => {
 		const cache = await loadShoutCache()
 		STORAGE.set({ shoutCache: cache }, resolve)
 	})
 
 	const loadShoutFilters = () => {
 		if(shoutFilterPromise) { return shoutFilterPromise }
-		return shoutFilterPromise = new Promise(resolve => {
+		return shoutFilterPromise = new SyncPromise(resolve => {
 			STORAGE.get("shoutFilters", data => {
 				if("shoutFilters" in data) {
 					resolve(data.shoutFilters)

@@ -6,7 +6,7 @@ const AssetCache = (() => {
 	const resolveCache = {}
 	const resolveQueue = []
 	const fileCache = {}
-	let resolvePromise
+	let resolveDefer
 	let xsrfToken
 
 	const prefixUrl = getURL("")
@@ -45,7 +45,7 @@ const AssetCache = (() => {
 
 		const cached = resolveCache[paramString]
 		if(cached) {
-			if(cached instanceof Promise) {
+			if(cached instanceof SyncPromise) {
 				cached.then(finished)
 				return
 			}
@@ -65,8 +65,8 @@ const AssetCache = (() => {
 			userAssetId: params.has("userAssetId") ? params.get("userAssetId") : undefined
 		})
 
-		if(!resolvePromise) {
-			resolvePromise = new Promise((resolve, reject) => {
+		if(!resolveDefer) {
+			resolveDefer = new SyncPromise((resolve, reject) => {
 				setTimeout(async () => {
 					if(!xsrfToken) {
 						xsrfToken = await getXsrfToken()
@@ -85,7 +85,7 @@ const AssetCache = (() => {
 					}
 
 					resolveQueue.splice(0, resolveQueue.length)
-					resolvePromise = null
+					resolveDefer = null
 
 					let didRetry = false
 					const tryFetch = () => fetch(resolveApiUrl, info).then(async resp => {
@@ -110,7 +110,7 @@ const AssetCache = (() => {
 			})
 		}
 
-		resolveCache[paramString] = resolvePromise.then(json => {
+		resolveCache[paramString] = resolveDefer.then(json => {
 			const data = json.find(x => x.requestId === requestId)
 
 			if(data && data.location) {
@@ -145,7 +145,7 @@ const AssetCache = (() => {
 			if(!cacheResult) {
 				cacheResult = cache[url] = { finished: false }
 
-				cacheResult.promise = new Promise(cacheResolve => {
+				cacheResult.defer = new SyncPromise(cacheResolve => {
 					resolveAssetUrl(url, resolvedUrl => {
 						if(!resolvedUrl) {
 							console.log("Failed to resolve", url)
@@ -170,13 +170,13 @@ const AssetCache = (() => {
 						if(!fileResult) {
 							fileResult = fileCache[resolvedUrl] = { finished: false }
 							
-							fileResult.promise = fetch(resolvedUrl).then(async resp => {
+							fileResult.defer = fetch(resolvedUrl).then(async resp => {
 								if(IS_EDGE) {
 									const blob = await resp.blob()
 									const reader = new FileReader()
 									reader.readAsBinaryString(blob)
 									
-									return new Promise(resolve => reader.addEventListener("load", () => {
+									return new SyncPromise(resolve => reader.addEventListener("load", () => {
 										fileResult.result = $.strToBuffer(reader.result)
 										fileResult.finished = true
 										resolve()
@@ -191,7 +191,7 @@ const AssetCache = (() => {
 						const onFileDone = () => {
 							const methodResult = constructor(fileResult.result)
 		
-							if(methodResult instanceof Promise) {
+							if(methodResult instanceof SyncPromise) {
 								methodResult.then(result => {
 									cacheResult.finished = true
 									cacheResult.result = result
@@ -212,7 +212,7 @@ const AssetCache = (() => {
 						if(fileResult.finished) {
 							onFileDone()
 						} else {
-							fileResult.promise.then(onFileDone, ex => {
+							fileResult.defer.then(onFileDone, ex => {
 								console.error("FileResult Error", ex)
 								cacheResult.finished = true
 								cacheResult.result = null
@@ -227,11 +227,11 @@ const AssetCache = (() => {
 				if(cacheResult.finished) {
 					cb(cacheResult.result)
 				} else {
-					cacheResult.promise.then(cb)
+					cacheResult.defer.then(cb)
 				}
 			}
 
-			return cacheResult.promise
+			return cacheResult.defer
 		}
 	}
 
@@ -242,7 +242,7 @@ const AssetCache = (() => {
 		loadImage: createMethod(buffer => {
 			const reader = new FileReader()
 			reader.readAsDataURL(new Blob([new Uint8Array(buffer)], { type: "image/png" }))
-			return new Promise(resolve => reader.onload = () => resolve(reader.result))
+			return new SyncPromise(resolve => reader.onload = () => resolve(reader.result))
 		}),
 
 		loadBuffer: createMethod(buffer => buffer),
@@ -252,6 +252,7 @@ const AssetCache = (() => {
 		toAssetUrl(id) {
 			return `https://assetgame.roblox.com/asset/?id=${+id}`
 		},
+
 		resolveAssetId(url) {
 			const params = resolveAssetUrlParams(url)
 

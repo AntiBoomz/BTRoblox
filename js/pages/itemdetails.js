@@ -405,7 +405,7 @@ const initPreview = (assetId, assetTypeId, isBundle) => {
 					if(autoLoading) {
 						lastAnimPromise = loadAnim()
 					} else {
-						const initPromise = new Promise(x => preview.on("init", x))
+						const initPromise = new SyncPromise(x => preview.on("init", x))
 						lastAnimPromise = (lastAnimPromise || initPromise).then(loadAnim)
 					}
 				}
@@ -583,7 +583,7 @@ pageInit.itemdetails = function(assetId) {
 
 		initPreview(assetId, assetTypeId)
 
-		const canAccessPromise = new Promise(resolve => {
+		const canAccessPromise = new SyncPromise(resolve => {
 			const data = itemCont.dataset
 			const canAccess = data.userassetId || (data.productId && !+data.expectedPrice)
 			if(canAccess) { return resolve(true) }

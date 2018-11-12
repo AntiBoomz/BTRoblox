@@ -93,7 +93,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 			promises.push(getPage(i, items))
 		}
 
-		Promise.all(promises).then(() => {
+		SyncPromise.all(promises).then(() => {
 			constructPage(items, itemStart, itemEnd)
 			isBusy = false
 			pager.setPage(page)

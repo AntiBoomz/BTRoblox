@@ -866,7 +866,7 @@ const SettingsDiv = (() => {
 	const initSettingsDiv = async () => {
 		let areFiltersInit = false
 
-		await new Promise(resolve =>
+		await new SyncPromise(resolve =>
 			injectCSS("btr-settings.css").$on("load", resolve, { once: true })
 		)
 		

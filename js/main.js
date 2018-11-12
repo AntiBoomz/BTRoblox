@@ -154,7 +154,7 @@ function Init() {
 		if(!linkify.dataset.asHttpRegex) { linkify.dataset.asHttpRegex = "^$" }
 	})
 
-	loggedInUserPromise = new Promise(resolve => {
+	loggedInUserPromise = new SyncPromise(resolve => {
 		headWatcher.$watch(`meta[name="user-data"]`, meta => {
 			const userId = +meta.dataset.userid
 			loggedInUser = Number.isSafeInteger(userId) ? userId : -1

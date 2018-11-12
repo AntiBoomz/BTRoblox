@@ -14,7 +14,7 @@ const RBXPreview = (() => {
 						return
 					}
 
-					await new Promise(res => setTimeout(res, 1e3))
+					await new SyncPromise(res => setTimeout(res, 1e3))
 					return csrfFetch(url, { credentials: "include" }).then(callback)
 				}
 
@@ -38,7 +38,7 @@ const RBXPreview = (() => {
 					return
 				}
 
-				await new Promise(res => setTimeout(res, 1e3))
+				await new SyncPromise(res => setTimeout(res, 1e3))
 				return csrfFetch(url, { credentials: "include" }).then(callback)
 			}
 
@@ -49,7 +49,7 @@ const RBXPreview = (() => {
 	}
 
 	function getDefaultAppearance(cb) {
-		Promise.all([getAvatarRules(), getAvatarData()]).then(([rules, data]) => {
+		SyncPromise.all([getAvatarRules(), getAvatarData()]).then(([rules, data]) => {
 			const bodyColors = {}
 
 			Object.entries(data.bodyColors).forEach(([name, value]) => {
@@ -111,8 +111,8 @@ const RBXPreview = (() => {
 			
 			{
 				let resolve
-				const promise = new Promise(res => resolve = res)
-				this.appearanceLoadedPromise = Promise.resolve().then(() => promise)
+				const promise = new SyncPromise(res => resolve = res)
+				this.appearanceLoadedPromise = SyncPromise.resolve().then(() => promise)
 				this.appearanceLoadedPromise.resolve = resolve
 			}
 
@@ -178,7 +178,7 @@ const RBXPreview = (() => {
 					}
 	
 					const assetPromises = data.assets.map(asset => this.addAsset(asset.id, asset.assetType.id))
-					this.appearanceLoadedPromise.resolve(Promise.all(assetPromises))
+					this.appearanceLoadedPromise.resolve(SyncPromise.all(assetPromises))
 				})
 				
 				if(this.waitForAppearance) {
@@ -251,7 +251,7 @@ const RBXPreview = (() => {
 			this.previewTargets.push(asset)
 
 			if(!this.enabled) {
-				await new Promise(resolve => this.on("enabled", resolve))
+				await new SyncPromise(resolve => this.on("enabled", resolve))
 			}
 
 			asset.loaded = true
@@ -275,7 +275,7 @@ const RBXPreview = (() => {
 			this.assets.push(asset)
 
 			if(!this.enabled) {
-				await new Promise(resolve => this.on("enabled", resolve))
+				await new SyncPromise(resolve => this.on("enabled", resolve))
 			}
 
 			asset.loaded = true

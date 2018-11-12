@@ -164,7 +164,7 @@ const initFastSearch = () => {
 
 		if(!friendsLoaded) {
 			if(!friendsPromise) {
-				friendsPromise = new Promise(resolve => {
+				friendsPromise = new SyncPromise(resolve => {
 					loggedInUserPromise.then(userId => {
 						const url = `https://www.roblox.com/users/friends/list-json?pageSize=200&userId=${userId}`
 						fetch(url, { credentials: "include" }).then(async resp => {
@@ -183,7 +183,7 @@ const initFastSearch = () => {
 									UserId: friend.UserId,
 									Username: friend.Username,
 
-									presence: Promise.resolve({
+									presence: SyncPromise.resolve({
 										UserPresenceType: friend.InStudio ? 3 : friend.InGame ? 2 : friend.IsOnline ? 1 : 0,
 										LastLocation: friend.LastLocation,
 										PlaceId: friend.PlaceId
