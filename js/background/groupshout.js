@@ -69,10 +69,11 @@
 		const checkTime = Date.now()
 		previousCheck = checkTime
 
-		const userId = await fetch("https://www.roblox.com/game/GetCurrentUser.ashx", { credentials: "include" }).then(resp => resp.text())
+		const userId = await fetch("https://www.roblox.com/game/GetCurrentUser.ashx", { credentials: "include" }).then(resp => (resp.ok ? resp.text() : null))
 		if(!Number.isSafeInteger(+userId)) { return }
 
-		const json = await fetch(`https://groups.roblox.com/v1/users/${userId}/groups/roles`).then(resp => resp.json())
+		const json = await fetch(`https://groups.roblox.com/v1/users/${userId}/groups/roles`).then(resp => (resp.ok ? resp.json() : null))
+		if(!json) { return }
 
 		const shoutCache = await loadShoutCache()
 		const shoutFilters = await loadShoutFilters()
