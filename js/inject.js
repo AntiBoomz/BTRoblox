@@ -250,8 +250,8 @@ const INJECT_SCRIPT = () => {
 							<input type=text class=input-field>
 						</li>
 						<li class=pager-total>
-							<span class=fixed-spacing>of</span>
-							<span class=btr-server-max>0</span>
+							<span style=padding-top:0;>of</span>
+							<span class=btr-server-max style=padding-top:0;>0</span>
 						</li>
 						<li class=pager-next><a><span class=icon-right></a></li>
 						<li class=last><a><span class=icon-last-page></a></li>
