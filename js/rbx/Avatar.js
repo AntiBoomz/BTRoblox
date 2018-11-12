@@ -915,7 +915,7 @@ const RBXAvatar = (() => {
 					if(!initialized) {
 						initialized = true
 
-						const meshDefer = AssetCache.loadMesh(true, meshId, mesh => applyMesh(obj, mesh))
+						const meshPromise = AssetCache.loadMesh(true, meshId, mesh => applyMesh(obj, mesh))
 
 						if(texId) {
 							await AssetCache.loadImage(true, texId, url => {
@@ -924,7 +924,7 @@ const RBXAvatar = (() => {
 							})
 						}
 
-						await meshDefer
+						await meshPromise
 					}
 				}
 

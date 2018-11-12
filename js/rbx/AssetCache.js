@@ -6,7 +6,7 @@ const AssetCache = (() => {
 	const resolveCache = {}
 	const resolveQueue = []
 	const fileCache = {}
-	let resolveDefer
+	let resolvePromise
 	let xsrfToken
 
 	const prefixUrl = getURL("")
@@ -65,8 +65,8 @@ const AssetCache = (() => {
 			userAssetId: params.has("userAssetId") ? params.get("userAssetId") : undefined
 		})
 
-		if(!resolveDefer) {
-			resolveDefer = new SyncPromise((resolve, reject) => {
+		if(!resolvePromise) {
+			resolvePromise = new SyncPromise((resolve, reject) => {
 				setTimeout(async () => {
 					if(!xsrfToken) {
 						xsrfToken = await getXsrfToken()
@@ -85,7 +85,7 @@ const AssetCache = (() => {
 					}
 
 					resolveQueue.splice(0, resolveQueue.length)
-					resolveDefer = null
+					resolvePromise = null
 
 					let didRetry = false
 					const tryFetch = () => fetch(resolveApiUrl, info).then(async resp => {
@@ -110,7 +110,7 @@ const AssetCache = (() => {
 			})
 		}
 
-		resolveCache[paramString] = resolveDefer.then(json => {
+		resolveCache[paramString] = resolvePromise.then(json => {
 			const data = json.find(x => x.requestId === requestId)
 
 			if(data && data.location) {

@@ -441,7 +441,7 @@ const SETTINGS = {
 	},
 
 	_onChangeListeners: [],
-	_loadDefer: null,
+	_loadPromise: null,
 
 	loadedSettings: null,
 	loaded: false,
@@ -478,8 +478,8 @@ const SETTINGS = {
 	},
 
 	load(fn) {
-		if(!this._loadDefer) {
-			this._loadDefer = new SyncPromise(resolve => {
+		if(!this._loadPromise) {
+			this._loadPromise = new SyncPromise(resolve => {
 				STORAGE.get(["settings"], data => {
 					this.loadedSettings = this._initSettings(data.settings)
 					this.loaded = true
@@ -489,7 +489,7 @@ const SETTINGS = {
 			})
 		}
 
-		this._loadDefer.then(fn)
+		this._loadPromise.then(fn)
 	},
 	
 	_getSetting(path, root) {
