@@ -108,6 +108,24 @@ const RBXPreview = (() => {
 			this.waitForAppearance = "waitForAppearance" in opts ? opts.waitForAppearance : true
 			this.appearanceLoadedPromise = new SyncPromise()
 
+			this.defaultScales = {
+				width: 1,
+				height: 1,
+				depth: 1,
+				head: 1,
+				proportion: 0,
+				bodyType: 0
+			}
+
+			this.defaultBodyColors = {
+				head: "#F5CD30",
+				leftarm: "#F5CD30",
+				rightarm: "#F5CD30",
+				torso: "#0D69AC",
+				leftleg: "#A4BD47",
+				rightleg: "#A4BD47"
+			}
+
 			this.scene = new RBXScene.AvatarScene()
 			this.container.append(this.scene.canvas)
 
@@ -158,11 +176,10 @@ const RBXPreview = (() => {
 					this.appearance = data
 
 					this.trigger("avatarRulesLoaded")
-					
-					this.scene.avatar.setBodyColors(data.bodyColors)
 	
 					if(this.packagesVisible) {
 						this.scene.avatar.setScales(data.scales)
+						this.scene.avatar.setBodyColors(data.bodyColors)
 					}
 	
 					if(!this.playerType && this.autoLoadPlayerType) {
@@ -213,16 +230,11 @@ const RBXPreview = (() => {
 			if(visible) {
 				if(this.appearance) {
 					this.scene.avatar.setScales(this.appearance.scales)
+					this.scene.avatar.setBodyColors(this.appearance.bodyColors)
 				}
 			} else {
-				this.scene.avatar.setScales({
-					width: 1,
-					height: 1,
-					depth: 1,
-					head: 1,
-					proportion: 0,
-					bodyType: 0
-				})
+				this.scene.avatar.setScales(this.defaultScales)
+				this.scene.avatar.setBodyColors(this.defaultBodyColors)
 			}
 
 			this.scene.avatar.shouldRefreshBodyParts = true

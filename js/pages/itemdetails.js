@@ -76,8 +76,11 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 					update()
 
 					if(this.packagesVisible) {
-						this.appearance.scales[scaleName] = input.value
+						this.appearance.scales[scaleName] = +input.value
 						this.scene.avatar.setScales(this.appearance.scales)
+					} else {
+						this.defaultScales[scaleName] = +input.value
+						this.scene.avatar.setScales(this.defaultScales)
 					}
 				})
 
@@ -89,7 +92,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 				update()
 
 				this.on("packagesToggled", () => {
-					input.value = this.scene.avatar.scales[scaleName]
+					input.value = this.packagesVisible ? this.scene.avatar.scales[scaleName] : this.defaultScales[scaleName]
 					update()
 				})
 			})
