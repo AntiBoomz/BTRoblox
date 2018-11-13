@@ -402,7 +402,7 @@ const SETTINGS = {
 		itemdetails: {
 			enabled: { default: true, value: true },
 			itemPreviewer: { default: true, value: true },
-			itemPreviewerMode: { default: true, value: "never", validValues: ["always", "animations", "never"] },
+			itemPreviewerMode: { default: true, value: "always", validValues: ["always", "animations", "never"] },
 
 			explorerButton: { default: true, value: true },
 			downloadButton: { default: true, value: true },
