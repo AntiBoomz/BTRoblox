@@ -245,11 +245,10 @@ const RBXScene = (() => {
 			if(this.started) { return }
 			this.started = true
 
-			const resolved = Promise.resolve()
 			const innerUpdate = () => {
 				this.update()
-				resolved.then(() => this.render())
-
+				this.render()
+				
 				this._afId = requestAnimationFrame(innerUpdate)
 			}
 

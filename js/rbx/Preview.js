@@ -93,9 +93,7 @@ const RBXPreview = (() => {
 
 			this.playerType = null
 			this.anims = []
-			this.assets = []
 			this.assetMap = {}
-			this.previewTargets = []
 			this.previewMap = {}
 
 			this.animLoadCounter = 0
@@ -108,13 +106,7 @@ const RBXPreview = (() => {
 
 			this.appearance = null
 			this.waitForAppearance = "waitForAppearance" in opts ? opts.waitForAppearance : true
-			
-			{
-				let resolve
-				const promise = new SyncPromise(res => resolve = res)
-				this.appearanceLoadedPromise = SyncPromise.resolve().then(() => promise)
-				this.appearanceLoadedPromise.resolve = resolve
-			}
+			this.appearanceLoadedPromise = new SyncPromise()
 
 			this.scene = new RBXScene.AvatarScene()
 			this.container.append(this.scene.canvas)
@@ -176,9 +168,9 @@ const RBXPreview = (() => {
 					if(!this.playerType && this.autoLoadPlayerType) {
 						this.setPlayerType(data.playerAvatarType)
 					}
-	
-					const assetPromises = data.assets.map(asset => this.addAsset(asset.id, asset.assetType.id))
-					this.appearanceLoadedPromise.resolve(SyncPromise.all(assetPromises))
+
+					data.assets.map(asset => this.addAsset(asset.id, asset.assetType.id))
+					this.appearanceLoadedPromise.resolve()
 				})
 				
 				if(this.waitForAppearance) {
@@ -212,9 +204,10 @@ const RBXPreview = (() => {
 		setPackagesVisible(bool) {
 			const visible = this.packagesVisible = !!bool
 
-			this.scene.avatar.bodyparts.forEach(bp => {
-				if(this.previewMap[bp.asset.assetId]) { return }
-				bp.hidden = !visible
+			Object.values(this.assetMap).forEach(asset => {
+				if(asset.bodyparts.length || asset.clothing.length) {
+					asset.setEnabled(visible)
+				}
 			})
 
 			if(visible) {
@@ -239,63 +232,53 @@ const RBXPreview = (() => {
 		setAccessoriesVisible(bool) {
 			const visible = this.accessoriesVisible = !!bool
 
-			this.scene.avatar.accessories.forEach(acc => {
-				if(this.previewMap[acc.asset.assetId]) { return }
-				acc.obj.visible = visible
+			Object.values(this.assetMap).forEach(asset => {
+				if(asset.accessories.length) {
+					asset.setEnabled(visible)
+				}
 			})
 		}
 
-		async addAssetPreview(assetId, assetTypeId) {
+		addAssetPreview(assetId, assetTypeId) {
 			if(this.previewMap[assetId]) { return }
-			const asset = this.previewMap[assetId] = { assetId, assetTypeId }
-			this.previewTargets.push(asset)
+			const asset = this.scene.avatar.addAsset(assetId, assetTypeId)
 
-			if(!this.enabled) {
-				await new SyncPromise(resolve => this.on("enabled", resolve))
+			if(asset) {
+				this.previewMap[assetId] = asset
+				asset.setPriority(2)
+				asset.once("remove", () => {
+					delete this.previewMap[assetId]
+				})
 			}
 
-			asset.loaded = true
-			return this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
+			return SyncPromise.resolve()
 		}
 
 		removeAssetPreview(assetId) {
 			const asset = this.previewMap[assetId]
-			if(!asset) { return }
-			delete this.previewMap[assetId]
-			this.previewTargets.splice(this.previewTargets.indexOf(asset), 1)
-
-			if(!this.assetMap[assetId]) {
-				this.scene.avatar.removeAsset(assetId)
+			if(asset) {
+				asset.remove()
 			}
 		}
 
-		async addAsset(assetId, assetTypeId, info) {
+		addAsset(assetId, assetTypeId) {
 			if(this.assetMap[assetId]) { return }
-			const asset = this.assetMap[assetId] = { assetId, assetTypeId, info: info || {} }
-			this.assets.push(asset)
+			const asset = this.scene.avatar.addAsset(assetId, assetTypeId)
 
-			if(!this.enabled) {
-				await new SyncPromise(resolve => this.on("enabled", resolve))
+			if(asset) {
+				this.assetMap[assetId] = asset
+				asset.once("remove", () => {
+					delete this.assetMap[assetId]
+				})
 			}
-
-			asset.loaded = true
-			const previews = this.previewTargets.filter(x => x.loaded && x.assetTypeId === assetTypeId)
 			
-			previews.forEach(x => this.scene.avatar.removeAsset(x.assetId))
-			const promise = this.scene.avatar.addAsset(asset.assetId, asset.assetTypeId)
-			previews.forEach(x => this.scene.avatar.addAsset(x.assetId, x.assetTypeId))
-
-			return promise
+			return SyncPromise.resolve()
 		}
 
 		removeAsset(assetId) {
 			const asset = this.assetMap[assetId]
-			if(!asset) { return }
-			delete this.assetMap[assetId]
-			this.assets.splice(this.assets.indexOf(asset), 1)
-
-			if(!this.previewMap[assetId]) {
-				this.scene.avatar.removeAsset(assetId)
+			if(asset) {
+				asset.remove()
 			}
 		}
 

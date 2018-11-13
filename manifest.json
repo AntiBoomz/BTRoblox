@@ -54,10 +54,14 @@
 				"lib/three.min.js",
 				"js/rbx/Parser.js",
 				"js/rbx/AssetCache.js",
-				"js/rbx/Animator.js",
-				"js/rbx/Avatar.js",
+				"js/rbx/Avatar/Animator.js",
+				"js/rbx/Avatar/AvatarRigs.js",
+				"js/rbx/Avatar/Composites.js",
+				"js/rbx/Avatar/Avatar.js",
+				"js/rbx/Avatar/Appearance.js",
 				"js/rbx/Scene.js",
 				"js/rbx/Preview.js",
+
 				"js/rbx/ApiDump.js",
 				"js/rbx/Explorer.js",
 
