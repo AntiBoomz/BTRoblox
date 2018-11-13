@@ -89,8 +89,6 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 				update()
 
 				this.on("packagesToggled", () => {
-					input.disabled = !this.packagesVisible
-
 					input.value = this.scene.avatar.scales[scaleName]
 					update()
 				})
@@ -104,9 +102,11 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		}
 
 		const typeInput = typeSwitch.$find("input")
+		bodyPopup.classList.toggle("disabled", !typeInput.checked)
 
 		this.on("playertypechanged", type => {
 			typeInput.checked = type === "R15"
+			bodyPopup.classList.toggle("disabled", !typeInput.checked)
 		})
 
 		typeInput.$on("change", () => {

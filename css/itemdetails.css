@@ -339,11 +339,11 @@ a:not(.disabled) > .btr-icon-content:hover {
 	transition: .2s opacity .1s, 0s z-index .25s;
 }
 
-.btr-body-btn:hover ~ .btr-body-popup,
-.btr-body-btn:focus ~ .btr-body-popup,
-.btr-body-btn:focus-within ~ .btr-body-popup,
-.btr-body-popup:hover,
-.btr-body-popup:focus-within {
+.btr-body-btn:hover ~ .btr-body-popup:not(.disabled),
+.btr-body-btn:focus ~ .btr-body-popup:not(.disabled),
+.btr-body-btn:focus-within ~ .btr-body-popup:not(.disabled),
+.btr-body-popup:not(.disabled):hover,
+.btr-body-popup:not(.disabled):focus-within {
 	opacity: 1;
 
 	z-index: 4;
