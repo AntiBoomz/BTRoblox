@@ -1,14 +1,14 @@
 "use strict"
 
 const RBXComposites = (() => {
+	const renderers = {}
+
 	class CompositeTexture {
 		constructor(hasThree, constructorFn, ...args) {
 			this.canvas = document.createElement("canvas")
 			this.context = this.canvas.getContext("2d")
 
 			if(hasThree) {
-				this.compositeRenderer = new THREE.WebGLRenderer({ alpha: true })
-
 				this.scene = new THREE.Scene()
 				this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100)
 
@@ -29,6 +29,8 @@ const RBXComposites = (() => {
 			this.canvas.height = this.height
 
 			if(hasThree) {
+				const key = `${this.width}x${this.height}`
+				this.compositeRenderer = renderers[key] = renderers[key] || new THREE.WebGLRenderer({ alpha: true })
 				this.compositeRenderer.setSize(this.width, this.height)
 				this.camera.updateProjectionMatrix()
 			}
