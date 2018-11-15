@@ -312,6 +312,10 @@ const RBXAvatar = (() => {
 			RBXAvatarRigs.load(() => {
 				this.shouldRefreshRig = true
 			})
+
+			if(this.bodyColors) {
+				this.setBodyColors(this.bodyColors)
+			}
 		}
 
 		update() {
@@ -363,6 +367,9 @@ const RBXAvatar = (() => {
 		}
 
 		setBodyColors(bodyColors) {
+			this.bodyColors = bodyColors
+			if(!this.hasInit) { return }
+
 			this.r6Composite.bodyColors = bodyColors
 			this.r6Composite.shouldUpdateBodyColors = true
 			this.r6Composite.update()
