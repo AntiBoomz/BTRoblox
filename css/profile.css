@@ -138,6 +138,10 @@
 
 /* Description */
 
+.btr-profile-about > .section-content {
+	padding-bottom: 8px;
+}
+
 .btr-profile .profile-about-content .profile-about-text {
 	text-align: center;
 	line-height: 1.5em;
