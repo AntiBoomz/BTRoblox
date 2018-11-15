@@ -206,7 +206,7 @@ pageInit.profile = function(userId) {
 					content.style.maxHeight = `${height}px`
 					content.style.transition = `max-height ${duration}s`
 
-					$.setImmediate(() => content.style.maxHeight = "")
+					window.requestAnimationFrame(() => content.style.maxHeight = "0px")
 					clearTimeout(selected.$animTimeout)
 				}
 
