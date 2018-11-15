@@ -492,39 +492,6 @@ Place APIs
     }
     ```
 
-#### Get badges for a place
-* https://www.roblox.com/badges/list-badges-for-place?placeId=606849621
-    ```json
-    {
-        "PlaceId": 606849621,
-        "GameBadges": [
-            {
-                "BadgeAssetId": 958186367,
-                "IsOwned": false,
-                "Rarity": 0.001,
-                "RarityName": "Impossible",
-                "TotalAwarded": 51447,
-                "TotalAwardedYesterday": 406,
-                "Created": "\/Date(1501819242473)\/",
-                "Updated": "\/Date(1502000310663)\/",
-                "AssetSeoUrl": "https://www.roblox.com/catalog/958186367/Most-Valuable-Player-MVP",
-                "CreatorId": 210085248,
-                "Thumbnail": {
-                    "Final": false,
-                    "Url": "https://t1.rbxcdn.com/2f0ab14d980657742dfbe8d54745672a",
-                    "RetryUrl": null,
-                    "UserId": 0,
-                    "EndpointType": "Avatar"
-                },
-                "Name": "Most Valuable Player (MVP)",
-                "FormatName": null,
-                "Description": "The rarest badge of them all! Obtain all other badges for this MVP badge. You\u0027ll also get an exclusive wheel for any of your vehicles!",
-                "AssetRestrictionIcon": null
-            }
-        ]
-    }
-    ```
-
 
 Universe APIs
 -------------
