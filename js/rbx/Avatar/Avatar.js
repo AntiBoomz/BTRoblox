@@ -543,12 +543,12 @@ const RBXAvatar = (() => {
 			const assets = []
 
 			this.appearance.assets.forEach(asset => {
-				if(!asset.enabled) { return }
-
 				if(!asset.loaded) {
 					asset.load()
 					if(!asset.loaded) { return }
 				}
+
+				if(!asset.enabled) { return }
 
 				if(UniqueAssetTypeIds.includes(asset.typeId)) {
 					if(!perTypes[asset.typeId] || perTypes[asset.typeId].priority <= asset.priority) {

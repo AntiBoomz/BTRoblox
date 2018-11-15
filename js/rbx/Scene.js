@@ -246,8 +246,10 @@ const RBXScene = (() => {
 			this.started = true
 
 			const innerUpdate = () => {
+				this.hasRendered = false
 				this.update()
 				this.render()
+				this.hasRendered = true
 				
 				this._afId = requestAnimationFrame(innerUpdate)
 			}

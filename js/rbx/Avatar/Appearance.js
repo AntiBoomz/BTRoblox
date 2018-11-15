@@ -35,7 +35,6 @@ const RBXAppearance = (() => {
 		load() {
 			if(this.loaded || this.loading) { return }
 			this.loading = true
-
 			this[this.type]()
 		}
 
@@ -79,7 +78,7 @@ const RBXAppearance = (() => {
 				this.loaded = true
 				this.didLoadSucceed = true
 
-				this.trigger("load")
+				this.trigger("success")
 				this.trigger("update")
 			}
 		}
@@ -221,9 +220,12 @@ const RBXAppearance = (() => {
 				const scaleTypeValue = hanInst.Children.find(x => x.Name === "AvatarPartScaleType")
 				const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
 
+				const meshId = meshInst.MeshId
+				const texId = meshInst.TextureId
+
 				this.addAccessory({
-					meshId: meshInst.MeshId,
-					texId: meshInst.TextureId,
+					meshId,
+					texId,
 					color: meshInst.VertexColor ? [...meshInst.VertexColor] : null,
 					opacity: 1 - (meshInst.Transparency || 0),
 
@@ -238,7 +240,10 @@ const RBXAppearance = (() => {
 					scaleType
 				})
 
-				this.success()
+				SyncPromise.all([
+					AssetCache.loadMesh(true, meshId),
+					AssetCache.loadImage(true, texId)
+				]).then(() => this.success())
 			})
 		}
 
@@ -349,6 +354,7 @@ const RBXAppearance = (() => {
 				asset.off("update", onUpdate)
 			})
 
+			onUpdate()
 			return asset
 		}
 	}

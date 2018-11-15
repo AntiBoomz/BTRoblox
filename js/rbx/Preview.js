@@ -186,8 +186,8 @@ const RBXPreview = (() => {
 						this.setPlayerType(data.playerAvatarType)
 					}
 
-					data.assets.map(asset => this.addAsset(asset.id, asset.assetType.id))
-					this.appearanceLoadedPromise.resolve()
+					const promises = data.assets.map(asset => this.addAsset(asset.id, asset.assetType.id))
+					SyncPromise.all(promises).finally(() => this.appearanceLoadedPromise.resolve())
 				})
 				
 				if(this.waitForAppearance) {
@@ -261,6 +261,13 @@ const RBXPreview = (() => {
 				asset.once("remove", () => {
 					delete this.previewMap[assetId]
 				})
+
+				if(!asset.loaded) {
+					return new SyncPromise(resolve => {
+						asset.once("success", resolve)
+						asset.once("fail", resolve)
+					})
+				}
 			}
 
 			return SyncPromise.resolve()
@@ -269,6 +276,7 @@ const RBXPreview = (() => {
 		removeAssetPreview(assetId) {
 			const asset = this.previewMap[assetId]
 			if(asset) {
+				delete this.previewMap[assetId]
 				asset.remove()
 			}
 		}
@@ -282,6 +290,13 @@ const RBXPreview = (() => {
 				asset.once("remove", () => {
 					delete this.assetMap[assetId]
 				})
+
+				if(!asset.loaded) {
+					return new SyncPromise(resolve => {
+						asset.once("success", resolve)
+						asset.once("fail", resolve)
+					})
+				}
 			}
 			
 			return SyncPromise.resolve()
@@ -290,6 +305,7 @@ const RBXPreview = (() => {
 		removeAsset(assetId) {
 			const asset = this.assetMap[assetId]
 			if(asset) {
+				delete this.assetMap[assetId]
 				asset.remove()
 			}
 		}

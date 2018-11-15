@@ -340,7 +340,7 @@ const HoverPreview = (() => {
 					}
 
 					SyncPromise.all([preview.appearanceLoadedPromise, ...assetPromises]).then(() => {
-						$.setImmediate(() => {
+						const enable = () => {
 							if(debounceCounter !== debounce) { return }
 							
 							const lowItems = [12, 30, 31]
@@ -356,7 +356,13 @@ const HoverPreview = (() => {
 
 							thumbCont.classList.remove("btr-preview-loading")
 							self.$find(thumbContSelector).append(preview.container)
-						})
+						}
+
+						if(preview.scene.hasRendered) {
+							window.requestAnimationFrame(enable)
+						} else {
+							enable()
+						}
 					})
 				}
 
