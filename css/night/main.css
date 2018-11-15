@@ -62,6 +62,7 @@ html #BodyWrapper,
 html #BodyWrapper #Body,
 html .section-content,
 html .dropdown-menu,
+html .open .dropdown-menu,
 html .popover,
 html .modal-dialog .modal-content,
 html .notification-stream-body {
@@ -146,18 +147,18 @@ html .btn-control-md:hover, html .btn-control-md:focus, html .btn-control-md.act
 	color: var(--btr-theme-text-secondary);
 }
 
-html .pager .first a, html .pager .last a, html .pager .pager-prev a, html .pager .pager-next a {
+html .rbx-body .pager .first a, html .rbx-body .pager .last a, html .rbx-body .pager .pager-prev a, html .rbx-body .pager .pager-next a {
 	background-color: var(--btr-theme-item);
 	border-color: var(--btr-theme-border-lighter);
 }
 
-html .pager .first a:hover, html .pager .last a:hover, html .pager .pager-prev a:hover, html .pager .pager-next a:hover {
+html .rbx-body .pager .first a:hover, html .rbx-body .pager .last a:hover, html .rbx-body .pager .pager-prev a:hover, html .rbx-body .pager .pager-next a:hover {
 	background-color: var(--btr-theme-item-hover);
 }
 
-html .pager .first a span, html .pager .last a span, html .pager .pager-prev a span, html .pager .pager-next a span,
-html .pager .disabled>a span, html .pager .disabled>a:hover span, html .pager .disabled>a:focus span,
-html .pager .first a:hover span, html .pager .last a:hover span, html .pager html .pager-prev a:hover span, html .pager .pager-next a:hover span {
+html .rbx-body .pager .first a span, html .rbx-body .pager .last a span, html .rbx-body .pager .pager-prev a span, html .rbx-body .pager .pager-next a span,
+html .rbx-body .pager .disabled>a span, html .rbx-body .pager .disabled>a:hover span, html .rbx-body .pager .disabled>a:focus span,
+html .rbx-body .pager .first a:hover span, html .rbx-body .pager .last a:hover span, html .rbx-body .pager html .rbx-body .pager-prev a:hover span, html .rbx-body .pager .pager-next a:hover span {
 	background-color: transparent;
 }
 
@@ -182,7 +183,8 @@ html .radio label::before {
 
 html .form-control,
 html .btr-server-pager .btr-server-input,
-html body .content .btr-CurrentPage {
+html body .content .btr-CurrentPage,
+html .btr-pager-holder input.pager-cur {
 	background-color: var(--btr-theme-item-hover);
 	border-color: var(--btr-theme-divider);
 }

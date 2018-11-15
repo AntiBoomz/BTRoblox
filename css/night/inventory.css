@@ -8,3 +8,11 @@ html .menu-vertical .menu-option:hover,
 html .menu-vertical .menu-option .menu-secondary-option:hover {
 	background-color: var(--btr-theme-item-hover);
 }
+
+html .item-card-thumb-container {
+	border-bottom-color: var(--btr-theme-border-lighter);
+}
+
+html .menu-vertical .menu-option-content span[class^="icon-"] {
+	filter: invert(80%);
+}

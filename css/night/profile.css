@@ -33,3 +33,19 @@ html .btr-profile .btr-games-list .btr-game-icon {
 html .profile-game .container-buttons .btn-control-xs > span {
 	filter: invert(70%);
 }
+
+html .game-card-name-secondary,
+html .btr-profile .btr-games-list .btr-game-desc-content.btr-no-description:after {
+	color: var(--btr-theme-text-disabled);
+}
+
+html .profile-avatar-left .enable-three-dee,
+html .profile-avatar-left .enable-three-dee:hover {
+	background-color: var(--btr-theme-item);
+	border-color: var(--btr-theme-border-lighter);
+	color: var(--btr-theme-text-secondary);
+}
+
+html .profile-avatar-left .enable-three-dee:hover {
+	background-color: var(--btr-theme-item-hover);
+}
