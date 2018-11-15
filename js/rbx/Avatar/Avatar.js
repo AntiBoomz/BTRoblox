@@ -236,8 +236,9 @@ const RBXAvatar = (() => {
 			this.offsetPos = this.model.position
 			this.offsetRot = new THREE.Euler()
 
-			const att = this.defaultHatAttachment = new THREE.Group()
+			const att = new THREE.Group()
 			att.position.set(0, 0.5, 0)
+			this.defaultHatAttachment = { obj: att }
 
 			this.scales = {
 				width: 1,
@@ -526,7 +527,7 @@ const RBXAvatar = (() => {
 			this.root.rotation.copy(this.offsetRot)
 			this.offsetRot = this.root.rotation
 
-			parts.Head.add(this.defaultHatAttachment)
+			parts.Head.add(this.defaultHatAttachment.obj)
 
 			this.model.add(this.root)
 			this.animator.setJoints(animJoints)
