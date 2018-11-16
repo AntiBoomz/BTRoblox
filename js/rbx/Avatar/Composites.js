@@ -1,7 +1,7 @@
 "use strict"
 
 const RBXComposites = (() => {
-	const compositeRenderer = new THREE.WebGLRenderer({ alpha: true })
+	const renderers = {}
 
 	class CompositeTexture {
 		constructor(hasThree, constructorFn, ...args) {
@@ -29,6 +29,14 @@ const RBXComposites = (() => {
 			this.canvas.height = this.height
 
 			if(hasThree) {
+				const key = `${this.width}x${this.height}`
+
+				if(!renderers[key]) {
+					renderers[key] = new THREE.WebGLRenderer({ alpha: true })
+					renderers[key].setSize(this.width, this.height)
+				}
+
+				this.compositeRenderer = renderers[key]
 				this.camera.updateProjectionMatrix()
 			}
 
@@ -46,9 +54,8 @@ const RBXComposites = (() => {
 
 			this.beforeComposite.forEach(fn => fn())
 			if(this.scene) {
-				compositeRenderer.setViewport(0, 0, this.width, this.height)
-				compositeRenderer.render(this.scene, this.camera)
-				ctx.drawImage(compositeRenderer.domElement, 0, 0, this.width, this.height, 0, 0, this.width, this.height)
+				this.compositeRenderer.render(this.scene, this.camera)
+				ctx.drawImage(this.compositeRenderer.domElement, 0, 0, this.width, this.height, 0, 0, this.width, this.height)
 			}
 			this.afterComposite.forEach(fn => fn())
 

@@ -337,7 +337,7 @@ const RBXAvatar = (() => {
 			})
 
 			while(mergeUpdateQueue.length) {
-				mergeUpdateQueue.pop()()
+				mergeUpdateQueue.shift()()
 			}
 		}
 
