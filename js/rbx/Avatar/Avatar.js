@@ -826,7 +826,9 @@ const RBXAvatar = (() => {
 				}
 
 				// Roblox Weirdness: Mesh.Offset doesn't get position-scaled
-				if(acc.offset) { acc.obj.matrix.multiply(new THREE.Matrix4().makeTranslation(...acc.offset)) }
+				if(acc.offset) {
+					acc.obj.position.add(new Vector3(...acc.offset).applyQuaternion(acc.obj.quaternion))
+				}
 
 				acc.obj.matrixWorldNeedsUpdate = true
 
