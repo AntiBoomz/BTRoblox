@@ -75,13 +75,14 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 				input.$on("input", () => {
 					update()
 
-					if(this.packagesVisible) {
-						this.appearance.scales[scaleName] = +input.value
-						this.scene.avatar.setScales(this.appearance.scales)
-					} else {
-						this.defaultScales[scaleName] = +input.value
-						this.scene.avatar.setScales(this.defaultScales)
+					const targetScales = this.packagesVisible ? this.appearance.scales : this.defaultScales
+					targetScales[scaleName] = +input.value
+
+					if(scaleName === "width") {
+						targetScales.depth = 0.5 + targetScales.width / 2 // What a surprise, undefined scaling behavior.,,
 					}
+
+					this.scene.avatar.setScales(targetScales)
 				})
 
 				input.min = rule.min
