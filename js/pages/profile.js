@@ -463,34 +463,36 @@ pageInit.profile = function(userId) {
 		const pager = createPager(true)
 		hlist.after(pager)
 
+		let currentPage = 1
 		let isLoading = false
 		let prevData = null
 
 		function loadPage(page, cursor) {
 			isLoading = true
 
-			const url = `https://www.roblox.com/users/inventory/list-json?assetTypeId=21&itemsPerPage=10&userId=${userId}&cursor=${cursor}&pageNumber=${page}`
+			const url = `https://badges.roblox.com/v1/users/${userId}/badges?sortOrder=Desc&limit=10&cursor=${cursor}`
 			fetch(url).then(async response => {
 				const json = await response.json()
 				isLoading = false
 				prevData = json
 
-				if(json && json.IsValid) {
-					pager.setPage(json.Data.Page)
-					pager.togglePrev(json.Data.previousPageCursor != null)
-					pager.toggleNext(json.Data.nextPageCursor != null)
+				if(json) {
+					currentPage = page
+					pager.setPage(currentPage)
+					pager.togglePrev(json.previousPageCursor != null)
+					pager.toggleNext(json.nextPageCursor != null)
 					hlist.$empty()
 
-					if(json.Data.Items.length === 0) {
+					if(!json.data.length) {
 						const text = `${+userId === +loggedInUser ? "You have" : "This user has"} no badges`
 						hlist.append(html`<div class="section-content-off btr-section-content-off">${text}</div>`)
 					} else {
-						json.Data.Items.forEach(data => {
+						json.data.forEach(data => {
 							hlist.append(html`
 							<li class="list-item badge-item asset-item" ng-non-bindable>
-								<a href="${data.Item.AbsoluteUrl}" class="badge-link" title="${data.Item.Name}">
-									<img src="${data.Thumbnail.Url}" alt="${data.Item.Name}">
-									<span class="item-name text-overflow">${data.Item.Name}</span>
+								<a href="/badges/${data.id}/" class="badge-link" title="${data.name}">
+									<img src="/asset-thumbnail/image?assetId=${data.iconImageId}&width=150&height=150" alt="${data.name}">
+									<span class="item-name text-overflow">${data.name}</span>
 								</a>
 							</li>`)
 						})
@@ -500,14 +502,14 @@ pageInit.profile = function(userId) {
 		}
 
 		pager.onprevpage = () => {
-			if(!isLoading && prevData && prevData.Data && prevData.Data.previousPageCursor) {
-				loadPage(prevData.Data.Page - 1, prevData.Data.previousPageCursor)
+			if(!isLoading && prevData && prevData.previousPageCursor) {
+				loadPage(currentPage - 1, prevData.previousPageCursor)
 			}
 		}
 
 		pager.onnextpage = () => {
-			if(!isLoading && prevData && prevData.Data && prevData.Data.nextPageCursor) {
-				loadPage(prevData.Data.Page + 1, prevData.Data.nextPageCursor)
+			if(!isLoading && prevData && prevData.nextPageCursor) {
+				loadPage(currentPage + 1, prevData.nextPageCursor)
 			}
 		}
 
