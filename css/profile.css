@@ -215,6 +215,7 @@
 .btr-profile .btr-profile-playerbadges .hlist .list-item img {
 	width: 90px;
 	height: 90px;
+	border: 1px solid #B8B8B8;
 }
 
 .btr-profile .btr-profile-playerbadges .hlist .list-item .item-name {
