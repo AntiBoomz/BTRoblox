@@ -2,5 +2,6 @@
 .gitattributes export-ignore
 bin export-ignore
 res -diff -merge
+*.svg -diff
 README.md export-ignore
 manifest.firefox.json export-ignore
