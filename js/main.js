@@ -134,7 +134,7 @@ const initAdBlock = () => {
 }
 
 function Init() {
-	DOLLARS_TO_ROBUX_RATIO = DOLLARS_TO_ROBUX_RATIOS[settings.general.robuxToDollarsRate] || DOLLARS_TO_ROBUX_RATIO
+	DOLLARS_TO_ROBUX_RATIO = DOLLARS_TO_ROBUX_RATIOS[settings.general.robuxToUSDRate] || DOLLARS_TO_ROBUX_RATIO
 
 	const headWatcher = document.$watch(">head").$then()
 	const bodyWatcher = document.$watch(">body", body => {

@@ -1,7 +1,7 @@
 "use strict"
 
 pageInit.money = function() {
-	if(settings.general.robuxToDollars) {
+	if(settings.general.robuxToUSD) {
 		document.$watch("#MyTransactions_tab").$then().$watch("table > tbody").$then()
 			.$watchAll(".datarow", item => {
 				item.$watch(".Amount .robux", label => {

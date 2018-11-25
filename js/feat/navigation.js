@@ -221,7 +221,7 @@ const Navigation = (() => {
 			list.prepend(html`<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>`)
 		})
 
-		if(settings.general.robuxToDollars) {
+		if(settings.general.robuxToUSD) {
 			headerWatcher.$watch("#nav-robux-balance", bal => {
 				const btn = html`
 				<li><a href=/develop/developer-exchange class=rbx-menu-item></a></li>`

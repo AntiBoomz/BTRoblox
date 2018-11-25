@@ -450,7 +450,7 @@ const initPreview = (assetId, assetTypeId, isBundle) => {
 pageInit.itemdetails = function(assetId) {
 	if(!settings.itemdetails.enabled) { return }
 
-	if(settings.general.robuxToDollars) {
+	if(settings.general.robuxToUSD) {
 		document.$watch(".icon-robux-price-container .text-robux-lg", label => {
 			const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
 			label.after(

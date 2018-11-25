@@ -28,15 +28,15 @@ const SettingsDiv = (() => {
 						<checkbox label="Show Chat" path=chatEnabled></checkbox>
 						<checkbox label="Minimize Chat" path=smallChatButton require=chatEnabled></checkbox>
 					</div>
-					<div style=margin-top:10px>
-						<checkbox label="Show Robux to USD" path=robuxToDollars></checkbox>
-						<select path=robuxToDollarsRate>
-							<option selected disabled>Robux Rate: (%opt%)</option>
-							<optgroup label="DevEx">
+					<div style=margin-top:5px>
+						<checkbox label="Show Robux to USD" path=robuxToUSD></checkbox>
+						<select path=robuxToUSDRate>
+							<option selected disabled>R$ to USD Rate: (%opt%)</option>
+							<optgroup label=DevEx>
 								<option value=devex350>DevEx $350</option>
 								<option value=devex250>DevEx $250</option>
 							</optgroup>
-							<optgroup label="NBC">
+							<optgroup label=NBC>
 								<option value=nbc5>NBC $5</option>
 								<option value=nbc10>NBC $10</option>
 								<option value=nbc25>NBC $25</option>
@@ -44,7 +44,7 @@ const SettingsDiv = (() => {
 								<option value=nbc100>NBC $100</option>
 								<option value=nbc200>NBC $200</option>
 							</optgroup>
-							<optgroup label="BC">
+							<optgroup label=BC>
 								<option value=bc5>BC $5</option>
 								<option value=bc10>BC $10</option>
 								<option value=bc25>BC $25</option>
@@ -950,6 +950,7 @@ const SettingsDiv = (() => {
 				settingsDone[settingPath] = true
 
 				const wrapper = html`<div class=btr-select></div>`
+
 				if(select.hasAttribute("label")) {
 					wrapper.append(html`<label>${select.getAttribute("label") || ""}</label>`)
 				}
@@ -978,10 +979,10 @@ const SettingsDiv = (() => {
 				select.$on("change", () => {
 					const selected = select.selectedOptions[0]
 					if(!selected || selected.hasAttribute("disabled")) { return }
+
 					SETTINGS.set(settingPath, select.value)
 					update()
 				})
-
 
 				const requirePath = joinPaths(groupPath, select.getAttribute("require") || "enabled")
 				if(SETTINGS.isValid(requirePath)) {
@@ -1002,15 +1003,21 @@ const SettingsDiv = (() => {
 				const settingPath = joinPaths(groupPath, checkbox.getAttribute("path"))
 				settingsDone[settingPath] = true
 
-				const input = html`<input id=btr-settings-input-${labelCounter} type=checkbox>`
-				const label = html`<label for=btr-settings-input-${labelCounter++}>${checkbox.getAttribute("label")}`
-
 				checkbox.classList.add("btr-settings-checkbox")
-				checkbox.prepend(input, label)
 
-				if(!SETTINGS.isValid(settingPath)) {
-					label.textContent += " (Bad setting)"
-					return
+				const input = html`<input type=checkbox>`
+				checkbox.prepend(input)
+
+				if(checkbox.hasAttribute("label")) {
+					input.id = `btr-settings-input-${labelCounter}`
+					const label = html`<label for=btr-settings-input-${labelCounter++}>${checkbox.getAttribute("label")}</label>`
+
+					checkbox.append(label)
+
+					if(!SETTINGS.isValid(settingPath)) {
+						label.textContent += " (Bad setting)"
+						return
+					}
 				}
 
 				input.checked = !!SETTINGS.get(settingPath)

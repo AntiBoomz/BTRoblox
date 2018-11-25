@@ -33,7 +33,7 @@ pageInit.inventory = function() {
 			})
 	}
 
-	if(settings.general.robuxToDollars) {
+	if(settings.general.robuxToUSD) {
 		modifyTemplate("assets-list", template => {
 			const label = template.$find(".item-card-price")
 			if(!label) { return }

@@ -1,7 +1,7 @@
 "use strict"
 
 pageInit.catalog = function() {
-	if(settings.general.robuxToDollars) {
+	if(settings.general.robuxToUSD) {
 		modifyTemplate("catalog-item-card", template => {
 			const label = template.$find(".item-card-price")
 			if(!label) { return }

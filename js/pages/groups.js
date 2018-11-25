@@ -1,7 +1,7 @@
 "use strict"
 
 pageInit.groups = function() {
-	if(settings.general.robuxToDollars) {
+	if(settings.general.robuxToUSD) {
 		document.$watch("#ctl00_cphRoblox_rbxGroupFundsPane_GroupFunds").$then().$watch(".robux", label => {
 			label.style.display = "inline-block" // To fix whitespace
 			const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
@@ -134,7 +134,7 @@ pageInit.groups = function() {
 }
 
 pageInit.groupadmin = function() {
-	if(settings.general.robuxToDollars) {
+	if(settings.general.robuxToUSD) {
 		document.$watch("#GroupTitle").$then().$watch(".robux", label => {
 			const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
 			label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
