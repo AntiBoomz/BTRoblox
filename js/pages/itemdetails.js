@@ -260,7 +260,11 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 			</div>`
 
 			this.bundleAlts = {}
-			this.buttons.after(this.bundleAnims)
+
+			const parent = $("#AssetThumbnail")
+			if(parent) {
+				parent.append(this.bundleAnims)
+			}
 
 			// Move camera down
 			this.scene.cameraOffset.y -= 1
@@ -491,7 +495,9 @@ pageInit.itemdetails = function(assetId) {
 		})
 	
 	if(settings.itemdetails.addOwnersList) {
-		document.$watch("#resellers", resellers => {
+		let wasOwnersListSetup = false
+		
+		const setupOwnersList = (parent, name, ownerAssetId = assetId) => {
 			const owners = html`
 			<div class=btr-owners-container>
 				<div class=container-header>
@@ -501,24 +507,34 @@ pageInit.itemdetails = function(assetId) {
 				</div>
 				<button class="btn-control-sm btr-see-more-owners">See More</button>
 			</div>`
-			resellers.append(owners)
 
-			resellers.$watch(".container-header", header => {
-				const rBtn = html`<button class=btn-secondary-xs style=float:right;margin:2px;>Resellers</button>`
+			parent.classList.add("btr-owners-parent")
+			parent.append(owners)
+
+			let firstLoaded = false
+			let isLoading = false
+			let cursor = ""
+			
+			parent.$watch(".container-header", header => {
+				const rBtn = html`<button class=btn-secondary-xs style=float:right;margin:2px;>${name}</button>`
 				const oBtn = html`<button class=btn-control-xs style=float:right;margin:2px;>Owners</button>`
 				header.append(rBtn, oBtn)
 				
 				oBtn.$on("click", () => {
-					resellers.classList.add("btr-owners-active")
+					parent.classList.add("btr-owners-active")
 
 					rBtn.classList.replace("btn-secondary-xs", "btn-control-xs")
 					oBtn.classList.replace("btn-control-xs", "btn-secondary-xs")
 
 					owners.$find(".container-header").append(rBtn, oBtn)
+
+					if(!firstLoaded) {
+						loadOwners()
+					}
 				})
 
 				rBtn.$on("click", () => {
-					resellers.classList.remove("btr-owners-active")
+					parent.classList.remove("btr-owners-active")
 
 					oBtn.classList.replace("btn-secondary-xs", "btn-control-xs")
 					rBtn.classList.replace("btn-control-xs", "btn-secondary-xs")
@@ -527,16 +543,18 @@ pageInit.itemdetails = function(assetId) {
 				})
 			})
 
-			let isLoading = false
-			let cursor = ""
-
 			const loadOwners = () => {
 				if(isLoading) { return }
 				isLoading = true
 
-				const url = `https://inventory.roblox.com/v1/assets/${assetId}/owners?limit=50&cursor=${cursor}`
+				const url = `https://inventory.roblox.com/v1/assets/${ownerAssetId}/owners?limit=50&cursor=${cursor}`
 				fetch(url).then(async resp => {
 					const data = await resp.json()
+
+					if(!firstLoaded) {
+						firstLoaded = true
+						// TODO(anti): Remove (and create before request) a "Loading" thang
+					}
 
 					if(data.nextPageCursor) {
 						cursor = data.nextPageCursor
@@ -547,6 +565,7 @@ pageInit.itemdetails = function(assetId) {
 
 					data.data.forEach(item => {
 						if(!item.owner || item.owner.userId === 1) { return }
+
 						const elem = html`
 						<div class=btr-owner-item>
 							<a href=/users/${item.owner.userId}/profile class="avatar avatar-headshot-md list-header">
@@ -555,8 +574,10 @@ pageInit.itemdetails = function(assetId) {
 									alt="${item.owner.username}"
 								>
 							</a>
-							<a class="text-name username" href=/users/${item.owner.userId}/profile>${item.owner.username}</a>
-							<div style="flex: 1 1 auto"></div>
+							<div class=btr-owner-cont>
+								<a class="text-name username" href=/users/${item.owner.userId}/profile>${item.owner.username}</a>
+								<div class=btr-owner-date>Since ${new Date(item.updated).$format("M/D/YYYY hh:mm:ss")}</div>
+							</div>
 							<div class=btr-serial>${item.serialNumber ? `#${item.serialNumber}` : `N/A`}</div>
 						</div>`
 
@@ -565,9 +586,45 @@ pageInit.itemdetails = function(assetId) {
 				})
 			}
 
-			loadOwners()
-
 			owners.$find(".btr-see-more-owners").$on("click", loadOwners)
+		}
+
+		document.$watch("#item-container", itemCont => {
+			if(itemCont.dataset.itemType === "Asset") {
+				document.$watch("#resellers", resellers => {
+					wasOwnersListSetup = true
+					setupOwnersList(resellers, "Resellers")
+				})
+		
+				onDocumentReady(() => {
+					if(wasOwnersListSetup) { return }
+		
+					const recommended = $(".recommendations-container")
+					if(recommended) {
+						setupOwnersList(recommended, "Recommended")
+					}
+				})
+			} else if(itemCont.dataset.itemType === "Bundle") {
+				document.$watch("#item-container .bundle-items > h3", h3 => {
+					const parent = h3.parentNode
+
+					fetch(`https://catalog.roblox.com/v1/bundles/${assetId}/details`, { cache: "force-cache" }).then(async resp => {
+						if(!resp.ok) { return }
+
+						const json = await resp.json()
+						if(!json) { return }
+
+						const targetAsset = json.items.find(x => x.type === "Asset")
+						if(!targetAsset) { return }
+
+						const header = html`<div class=container-header></div>`
+						h3.before(header)
+						header.append(h3)
+
+						setupOwnersList(parent, "Included Items", targetAsset.id)
+					})
+				})
+			}
 		})
 	}
 	

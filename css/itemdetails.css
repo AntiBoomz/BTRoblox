@@ -396,15 +396,15 @@ a:not(.disabled) > .btr-icon-content:hover {
 	background-position: 0 0, 10px 10px;
 }
 
-#resellers:not(.btr-owners-active) .btr-owners-container {
+.btr-owners-parent:not(.btr-owners-active) .btr-owners-container {
 	display: none !important;
 }
 
-#resellers.btr-owners-active > *:not(.btr-owners-container) {
+.btr-owners-parent.btr-owners-active > *:not(.btr-owners-container) {
 	display: none !important;
 }
 
-#resellers .btr-owners-container .section-content {
+.btr-owners-container .section-content {
 	text-align: center;
 	padding: 4px 0;
 }
@@ -446,9 +446,20 @@ a:not(.disabled) > .btr-icon-content:hover {
 	flex: 0 0 auto;
 }
 
+.btr-owner-item .btr-owner-cont {
+	flex: 1 1 auto;
+	text-align: left;
+	margin-bottom: -10px;
+}
+
 .btr-owner-item .username {
 	overflow: hidden;
 	text-overflow: ellipsis;
+}
+.btr-owner-item .btr-owner-date {
+	font-size: 12px;
+	font-weight: bold;
+	color: #b8b8b8;
 }
 
 .btr-owner-item .btr-serial {
