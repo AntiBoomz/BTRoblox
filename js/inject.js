@@ -257,7 +257,7 @@ const INJECT_SCRIPT = () => {
 						<li class=last><a><span class=icon-last-page></a></li>
 					</ul>`).appendTo($(".rbx-running-games-footer"))
 
-					const updatePager = function() {
+					const updatePager = () => {
 						pager.find(".pager-cur input").val(curPage)
 						pager.find(".btr-server-max").text(maxPage)
 
@@ -280,8 +280,12 @@ const INJECT_SCRIPT = () => {
 							curPage = Math.floor(startIndex / 10) + 1
 							maxPage = Math.max(1, Math.ceil(args[0].TotalCollectionSize / 10))
 							
-							$("#rbx-game-server-item-container").find(">.rbx-game-server-item").remove()
+							$("#rbx-game-server-item-container").find(">.rbx-game-server-item, >.section-content-off").remove()
 							updatePager()
+
+							if(!args[0].Collection.length) {
+								$("#rbx-game-server-item-container").append(`<p class=section-content-off>No Servers Found.</p>`)
+							}
 
 							return success.apply(this, args)
 						}
@@ -311,7 +315,7 @@ const INJECT_SCRIPT = () => {
 								}
 							},
 							keypress(e) {
-								if (e.which === 13) {
+								if(e.which === 13) {
 									$(this).blur()
 								}
 							}
