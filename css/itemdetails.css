@@ -109,39 +109,6 @@ a:not(.disabled) > .btr-icon-content:hover {
 	pointer-events: auto;
 }
 
-.btr-thumb-btn-container {
-	display: flex;
-	position: absolute;
-	bottom: 8px;
-	right: 8px;
-
-	align-items: flex-end;
-	flex-direction: column;
-}
-
-#item-container .btr-preview-enabled:not(.btr-preview-active) .three-dee-animated-icon ~ .btr-thumb-btn-container {
-	bottom: 60px;
-}
-
-
-#item-container .btr-preview-enabled .enable-three-dee:not(.three-dee-animated-icon) {
-	right: 46px;
-	z-index: 2; /* otherwise margin goes over */
-}
-
-#item-container:not([data-item-type="Bundle"]) .btr-preview-enabled:not(.btr-preview-active) .enable-three-dee:not(.three-dee-animated-icon) ~ .btr-thumb-btn-container .btr-preview-btn {
-	margin-left: 50px;
-}
-
-
-#AssetThumbnail.btr-preview-active .enable-three-dee,
-#AssetThumbnail.btr-preview-active .asset-status-icon,
-#AssetThumbnail.btr-preview-active .asset-restriction-icon,
-.btr-preview-container ~ .bundle-animation-btn-container {
-	display: none;
-}
-
-
 
 .btr-bundle-animations {
 	position: absolute;
@@ -239,13 +206,31 @@ a:not(.disabled) > .btr-icon-content:hover {
 
 
 
+.btr-thumb-btn-container {
+	display: inline-flex;
+
+	align-items: flex-end;
+	flex-direction: column;
+
+	vertical-align: bottom;
+	margin: 12px;
+	margin-left: -2px;
+}
+
+#AssetThumbnail.btr-preview-active .thumbnail-buttons > :not(.btr-thumb-btn-container),
+#AssetThumbnail.btr-preview-active .asset-status-icon,
+#AssetThumbnail.btr-preview-active .asset-restriction-icon,
+.btr-preview-container ~ .bundle-animation-btn-container {
+	display: none;
+}
+
 .btr-thumb-btn {
 	position: relative;
 	display: inline-flex;
 	width: 38px;
 	height: 38px;
 
-	margin: 4px;
+	margin: 12px 0 0;
 
 	justify-content: center;
 	align-items: center;
@@ -356,7 +341,7 @@ a:not(.disabled) > .btr-icon-content:hover {
 	width: 18px;
 	height: 18px;
 	left: -18px;
-	bottom: 59px;
+	bottom: 70px;
 
 	border: 10px solid transparent;
 	border-right-color: #0074BD;

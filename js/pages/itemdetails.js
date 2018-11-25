@@ -204,10 +204,11 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		if(this.isShown === !!bool) { return }
 		this.isShown = !!bool
 
-		document.$watch("#AssetThumbnail", thumb => {
+		document.$watch(["#AssetThumbnail", "#AssetThumbnail .thumbnail-buttons"], (thumb, btns) => {
 			if(this.isShown) {
 				thumb.classList.add("btr-preview-enabled")
-				thumb.append(this.dropdown, this.typeSwitch, this.buttons)
+				thumb.append(this.dropdown, this.typeSwitch)
+				btns.append(this.buttons)
 				if(this.bundleAnims) { thumb.append(this.bundleAnims) }
 			} else {
 				thumb.classList.remove("btr-preview-enabled")
