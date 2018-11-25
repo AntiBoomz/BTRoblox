@@ -273,27 +273,8 @@ a:not(.disabled) > .btr-icon-content:hover {
 .btr-icon-body { background-position: 0 -28px; }
 .btr-icon-preview { background-position: 0 -56px; }
 
-.btr-thumb-btn:not(.btr-preview-btn):not(.checked) span {
+.btr-thumb-btn:not(.checked) span {
 	background-position-x: -28px;
-}
-
-.btr-preview-btn.checked:after {
-	content: "✕";
-	display: flex;
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	color: #191919;
-
-	align-items: center;
-	justify-content: center;
-
-	font-size: 28px;
-	font-weight: 800;
-
-	pointer-events: none;
 }
 
 .btr-thumb-btn:hover {
