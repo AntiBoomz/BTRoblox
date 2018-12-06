@@ -109,10 +109,10 @@ pageInit.profile = function(userId) {
 
 				if(status.classList.contains("icon-game")) {
 					statusText.classList.add("btr-status-ingame")
-					statusLabel.textContent = statusTitle
+					statusLabel.textContent = statusTitle || "In Game"
 					
 					const link = status.parentElement
-					if(link.href.includes("PlaceId=")) {
+					if(link.href && link.href.includes("PlaceId=")) {
 						const anchor = html`<a href="${link.href}" title="${status.title}"></a>`
 						statusText.before(anchor)
 						anchor.prepend(statusText)
