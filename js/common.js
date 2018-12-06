@@ -431,7 +431,8 @@ const SETTINGS = {
 		},
 		profile: {
 			enabled: { default: true, value: true },
-			embedInventoryEnabled: { default: true, value: true }
+			embedInventoryEnabled: { default: true, value: true },
+			lastOnline: { default: true, value: true }
 		},
 		friends: {
 			alwaysShowUnfriend: { default: true, value: true }

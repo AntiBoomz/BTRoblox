@@ -157,6 +157,40 @@ pageInit.profile = function(userId) {
 		.$watch(".profile-stats-container", stats => {
 			stats.closest(".profile-statistics").remove()
 			left.$find(".placeholder-stats").replaceWith(stats)
+
+			if(settings.profile.lastOnline) {
+				stats.classList.add("btr-lastOnline")
+
+				const label = html`
+				<li class=profile-stat>
+					<p class=text-label>Last Online</p>
+					<p class=text-lead>Loading</p>
+				</li>`
+
+				if(stats.firstElementChild) {
+					stats.firstElementChild.after(label)
+				} else {
+					stats.prepend(label)
+				}
+
+				xsrfFetch(`https://api.roblox.com/users/${userId}/OnlineStatus/`).then(async resp => {
+					if(!resp.ok) {
+						label.$find(".text-lead").textContent = "Failed"
+						return
+					}
+
+					const presence = await resp.json()
+					const lastOnline = new Date(presence.LastOnline)
+
+					if(presence.PresenceType === 0) {
+						label.$find(".text-lead").textContent = `${lastOnline.$since()} ago`
+					} else {
+						label.$find(".text-lead").textContent = "Now"
+					}
+
+					label.$find(".text-lead").title = lastOnline.$format("MMM D, YYYY | hh:mm A (T)")
+				})
+			}
 		})
 		.$watch(".see-more-roblox-badges-button", btn => {
 			const badges = btn.parentElement.parentElement

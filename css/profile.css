@@ -173,6 +173,10 @@
 	margin-top: 10px;
 }
 
+.btr-profile .profile-stats-container.btr-lastOnline .profile-stat {
+	width: 33.33%;
+}
+
 /* About Footer */
 
 .btr-profile .profile-about-footer {

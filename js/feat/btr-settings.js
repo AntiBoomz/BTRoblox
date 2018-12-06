@@ -61,6 +61,7 @@ const SettingsDiv = (() => {
 				</group>
 				<group label=Profile path=profile toggleable>
 					<checkbox label="Embed Inventory" path=embedInventoryEnabled></checkbox>
+					<checkbox label="Show Last Online" path=lastOnline></checkbox>
 				</group>
 				<group label=Groups path=groups toggleable>
 					<checkbox label="Group Shout Notifications" path=shoutAlerts require=false></checkbox>
