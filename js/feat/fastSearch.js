@@ -62,17 +62,21 @@ const initFastSearch = () => {
 		</li>`
 
 		// Presence
-		if(!json.presence) {
-			const url = `https://www.roblox.com/presence/user?userId=${json.UserId}`
-			json.presence = fetch(url, { credentials: "include" })
-				.then(resp => resp.json())
-		}
 
-		json.presence.then(presence => {
+		const updatePresence = presence => {
+			const status = item.$find(".btr-fastsearch-status")
+			status.classList.remove("game", "studio", "online")
+
+			const oldFollowBtn = item.$find(".btr-fastsearch-follow")
+			if(oldFollowBtn) {
+				oldFollowBtn.remove()
+			}
+
 			switch(presence.UserPresenceType) {
 			case 0: break
 			case 2: {
-				item.$find(".btr-fastsearch-status").classList.add("game")
+				status.classList.add("game")
+
 				const followBtn = html`<button class="btr-fastsearch-follow btn-primary-xs">Join Game</button>`
 
 				if(presence.PlaceId) {
@@ -85,11 +89,24 @@ const initFastSearch = () => {
 				break
 			}
 			case 3:
-				item.$find(".btr-fastsearch-status").classList.add("studio")
+				status.classList.add("studio")
 				break
-			default: item.$find(".btr-fastsearch-status").classList.add("online")
+			default:
+				status.classList.add("online")
 			}
-		})
+		}
+
+		if(!json.presence) {
+			const url = `https://www.roblox.com/presence/user?userId=${json.UserId}`
+			json.presence = fetch(url, { credentials: "include" })
+				.then(resp => resp.json())
+		}
+
+		if(json.dirtyPresence) {
+			json.dirtyPresence.then(updatePresence)
+		}
+		
+		json.presence.then(updatePresence)
 
 		return item
 	}
@@ -170,20 +187,17 @@ const initFastSearch = () => {
 						fetch(url, { credentials: "include" }).then(async resp => {
 							const json = await resp.json()
 
-							Object.entries(requestCache).forEach(([key, item]) => {
-								if(item.IsFriend) {
-									delete requestCache[key]
-								}
-							})
-
 							json.Friends.forEach(friend => {
 								const key = friend.Username.toLowerCase()
+								const oldItem = requestCache[key]
+
 								const item = {
 									IsFriend: true,
 									UserId: friend.UserId,
 									Username: friend.Username,
 
-									presence: SyncPromise.resolve({
+									presence: oldItem && oldItem.presence,
+									dirtyPresence: SyncPromise.resolve({
 										UserPresenceType: friend.InStudio ? 3 : friend.InGame ? 2 : friend.IsOnline ? 1 : 0,
 										LastLocation: friend.LastLocation,
 										PlaceId: friend.PlaceId
@@ -192,6 +206,12 @@ const initFastSearch = () => {
 
 								requestCache[key] = item
 								friendsList[friend.UserId] = item
+							})
+
+							Object.entries(requestCache).forEach(([key, item]) => {
+								if(item.IsFriend && !friendsList[item.UserId]) {
+									delete requestCache[key]
+								}
 							})
 
 							friendsLoaded = true
