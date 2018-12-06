@@ -120,10 +120,21 @@ pageInit.profile = function(userId) {
 					}
 				} else if(status.classList.contains("icon-studio")) {
 					statusText.classList.add("btr-status-studio")
-					statusLabel.textContent = statusTitle
+					statusLabel.textContent = statusTitle || "In Studio"
+
+					$(".profile-container").$watch("#profile-header-more").$then().$watch(">script", script => {
+						if(script.textContent.includes("play_placeId=")) {
+							const id = +script.textContent.match(/play_placeId=(\d+)/)[1]
+							if(Number.isSafeInteger(id) && id !== 0) {
+								const anchor = html`<a href="/games/${id}/" title="${statusTitle}"></a>`
+								statusText.before(anchor)
+								anchor.prepend(statusText)
+							}
+						}
+					})
 				} else {
 					statusText.classList.add("btr-status-online")
-					statusLabel.textContent = statusTitle
+					statusLabel.textContent = statusTitle || "Online"
 				}
 			}
 		})
