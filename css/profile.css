@@ -156,8 +156,9 @@
 	max-height: 240px;
 }
 
-.btr-profile .profile-about-content .profile-about-text:after {
-	text-align: left;
+.btr-profile .profile-about-content .profile-about-text .toggle-para {
+	background: white;
+	padding-left: 4px;
 }
 
 .btr-profile .profile-about-content .profile-about-content-text {
