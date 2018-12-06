@@ -247,14 +247,14 @@ pageInit.profile = function(userId) {
 				})
 				.$on("click", ".btr-btn-toggle-profile", () => {
 					const placeId = e.currentTarget.getAttribute("data-placeid")
-					csrfFetch("https://www.roblox.com/game/toggle-profile", {
+					xsrfFetch("https://www.roblox.com/game/toggle-profile", {
 						method: "POST",
 						credentials: "include",
 						body: new URLSearchParams({ placeId, addToProfile: false })
 					})
 				})
 				.$on("click", ".btr-btn-shutdown-all", () => {
-					csrfFetch("https://www.roblox.com/Games/shutdown-all-instances", {
+					xsrfFetch("https://www.roblox.com/Games/shutdown-all-instances", {
 						method: "POST",
 						credentials: "include",
 						body: new URLSearchParams({ placeId })

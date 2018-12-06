@@ -109,7 +109,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 
 			isBusy = true
 
-			csrfFetch("https://www.roblox.com/places/revert", {
+			xsrfFetch("https://www.roblox.com/places/revert", {
 				method: "POST",
 				credentials: "include",
 				body: new URLSearchParams({ assetVersionID: versionId })

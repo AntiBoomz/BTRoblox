@@ -17,7 +17,7 @@ pageInit.develop = function() {
 
 				if(Number.isNaN(placeId)) { return }
 
-				csrfFetch("https://www.roblox.com/game/toggle-profile", {
+				xsrfFetch("https://www.roblox.com/game/toggle-profile", {
 					method: "POST",
 					credentials: "include",
 					body: new URLSearchParams({ placeId, addToProfile: !isVisible })

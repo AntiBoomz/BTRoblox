@@ -67,7 +67,7 @@ function getXsrfToken() {
 }
 
 let cachedXsrfToken
-async function csrfFetch(url, init) {
+async function xsrfFetch(url, init) {
 	if(!init) { init = {} }
 	if(!init.headers) { init.headers = {} }
 
