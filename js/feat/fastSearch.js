@@ -41,8 +41,8 @@ const initFastSearch = () => {
 		}
 
 		const item = html`
-		<li class="rbx-navbar-search-option rbx-clickable-li" data-searchurl=https://www.roblox.com/User.aspx?userName=${json.Username}&wot=>
-			<a class=btr-fastsearch-anchor href=https://www.roblox.com/User.aspx?userName=${json.Username}>
+		<li class="rbx-navbar-search-option rbx-clickable-li" data-searchurl=/User.aspx?userId=${json.UserId}&searchTerm=>
+			<a class=btr-fastsearch-anchor href=/users/${json.UserId}/profile>
 				<div class=btr-fastsearch-avatar>
 					<img class=btr-fastsearch-thumbnail src=https://www.roblox.com/headshot-thumbnail/image?userId=${json.UserId}&width=48&height=48&format=png>
 					<div class=btr-fastsearch-status>
