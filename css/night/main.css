@@ -347,3 +347,13 @@ body[data-btr-page="membership"] a:link, body[data-btr-page="membership"] a:visi
 	background-color: var(--btr-theme-item-hover);
 	border-top-color: var(--btr-theme-border-lighter);
 }
+
+/* Roblox badges page */
+
+.content > #badge-container.badge-container .stack .stack-list .stack-row {
+	background: var(--btr-theme-item-hover);
+}
+
+.content > #badge-container.badge-container .stack .stack-list .stack-row.selectedFadeOut {
+	background-color: #4A7691;
+}
