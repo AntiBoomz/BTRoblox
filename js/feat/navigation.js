@@ -328,7 +328,20 @@ const Navigation = (() => {
 				blog.parentNode.after(blogfeed)
 			})
 			.$watch("#nav-trade", trade => {
-				trade.href = "/my/money.aspx"
+				const href = "/my/money.aspx"
+
+				const updateHref = () => trade.getAttribute("href") !== href && trade.setAttribute("href", href)
+			
+				new MutationObserver(updateHref).observe(
+					trade,
+					{
+						attributes: true,
+						attributeFilter: ["href"]
+					}
+				)
+
+				updateHref()
+
 				const label = trade.$find("span:not([class^='icon-nav'])")
 				if(label) { label.textContent = "Money" }
 			})
