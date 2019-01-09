@@ -39,7 +39,7 @@ pageInit.inventory = function() {
 			if(!label) { return }
 			label.style.display = "flex"
 
-			const div = html`<div style="flex:1 1 auto"></div>`
+			const div = html`<div style="flex:1 0 auto"></div>`
 			while(label.firstChild) { div.append(label.firstChild) }
 
 			label.append(div)
