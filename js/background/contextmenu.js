@@ -31,9 +31,8 @@
 		}
 	}
 
-	chrome.contextMenus.onClicked.addListener(onContextMenuClick)
-	chrome.runtime.onInstalled.addListener(() => {
-		chrome.contextMenus.create({
+	const contextMenus = [
+		{
 			id: "assetLink",
 			title: "Copy asset id",
 			contexts: ["link"],
@@ -43,45 +42,40 @@
 				"*://*.roblox.com/library/*/*",
 				"*://*.roblox.com/My/Item.aspx*ID=*"
 			]
-		})
-
-		chrome.contextMenus.create({
+		},
+		{
 			id: "bundleLink",
 			title: "Copy bundle id",
 			contexts: ["link"],
 			targetUrlPatterns: [
 				"*://*.roblox.com/bundles/*/*"
 			]
-		})
-
-		chrome.contextMenus.create({
+		},
+		{
 			id: "badgeLink",
 			title: "Copy badge id",
 			contexts: ["link"],
 			targetUrlPatterns: [
 				"*://*.roblox.com/badges/*/*"
 			]
-		})
-
-		chrome.contextMenus.create({
+		},
+		{
 			id: "pluginLink",
 			title: "Copy plugin id",
 			contexts: ["link"],
 			targetUrlPatterns: [
 				"*://*.roblox.com/plugins/*/*"
 			]
-		})
-
-		chrome.contextMenus.create({
+		},
+		{
 			id: "gamepassLink",
 			title: "Copy game pass id",
 			contexts: ["link"],
 			targetUrlPatterns: [
 				"*://*.roblox.com/game-pass/*/*"
 			]
-		})
-
-		chrome.contextMenus.create({
+		},
+		{
 			id: "groupLink",
 			title: "Copy group id",
 			contexts: ["link"],
@@ -89,9 +83,8 @@
 				"*://*.roblox.com/*roup.aspx*gid=*",
 				"*://*.roblox.com/*roups.aspx*gid=*"
 			]
-		})
-
-		chrome.contextMenus.create({
+		},
+		{
 			id: "placeLink",
 			title: "Copy place id",
 			contexts: ["link"],
@@ -100,24 +93,46 @@
 				"*://*.roblox.com/refer?*PlaceId=*",
 				"*://*.roblox.com/games/refer?*PlaceId=*"
 			]
-		})
-
-		chrome.contextMenus.create({
+		},
+		{
 			id: "universeLink",
 			title: "Copy universe id",
 			contexts: ["link"],
 			targetUrlPatterns: [
-				"*://*.roblox.com/universes/*id=*",
+				"*://*.roblox.com/universes/*id=*"
 			]
-		})
-
-		chrome.contextMenus.create({
+		},
+		{
 			id: "userLink",
 			title: "Copy user id",
 			contexts: ["link"],
 			targetUrlPatterns: [
 				"*://*.roblox.com/users/*/*"
 			]
+		}
+	]
+
+	function toggleContextMenus() {
+		if(SETTINGS.get("general.enableContextMenus")) {
+			contextMenus.forEach(menu => {
+				chrome.contextMenus.update(menu.id, { visible: true })
+			})
+		} else {
+			contextMenus.forEach(menu => {
+				chrome.contextMenus.update(menu.id, { visible: false })
+			})
+		}
+	}
+
+	chrome.contextMenus.onClicked.addListener(onContextMenuClick)
+	chrome.runtime.onInstalled.addListener(() => {
+		contextMenus.forEach(menu => {
+			menu.visible = false
+			chrome.contextMenus.create(menu)
 		})
+
+		SETTINGS.load(toggleContextMenus)
 	})
+
+	SETTINGS.onChange("general.enableContextMenus", toggleContextMenus)
 }
