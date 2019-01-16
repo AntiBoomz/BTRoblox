@@ -28,7 +28,7 @@ const SettingsDiv = (() => {
 						<checkbox label="Show Chat" path=chatEnabled></checkbox>
 						<checkbox label="Minimize Chat" path=smallChatButton require=chatEnabled></checkbox>
 					</div>
-					<checkbox label="Copy Asset Id Context Menu Options" path=enableContextMenus></checkbox>
+					<checkbox label="Show 'Copy Id' Context Items" path=enableContextMenus></checkbox>
 					<div style=margin-top:5px>
 						<checkbox label="Show Robux to USD" path=robuxToUSD></checkbox>
 						<select path=robuxToUSDRate>
