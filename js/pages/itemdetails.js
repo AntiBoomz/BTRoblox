@@ -543,12 +543,31 @@ pageInit.itemdetails = function(assetId) {
 				})
 			})
 
+			const seeMore = owners.$find(".btr-see-more-owners")
+
 			const loadOwners = () => {
 				if(isLoading) { return }
 				isLoading = true
 
+				seeMore.textContent = "Loading..."
+				seeMore.setAttribute("disabled", "")
+
 				const url = `https://inventory.roblox.com/v1/assets/${ownerAssetId}/owners?limit=50&cursor=${cursor}`
-				fetch(url).then(async resp => {
+				let retriesLeft = 10
+
+				const handler = async resp => {
+					if(!resp.ok) {
+						if(retriesLeft > 0) {
+							retriesLeft--
+							setTimeout(() => fetch(url).then(handler), 2e3)
+						} else {
+							isLoading = false
+							seeMore.textContent = "See More"
+							seeMore.removeAttribute("disabled")
+						}
+						return
+					}
+
 					const data = await resp.json()
 
 					if(!firstLoaded) {
@@ -559,8 +578,10 @@ pageInit.itemdetails = function(assetId) {
 					if(data.nextPageCursor) {
 						cursor = data.nextPageCursor
 						isLoading = false
+						seeMore.textContent = "See More"
+						seeMore.removeAttribute("disabled")
 					} else {
-						owners.$find(".btr-see-more-owners").remove()
+						seeMore.remove()
 					}
 
 					data.data.forEach(item => {
@@ -583,10 +604,11 @@ pageInit.itemdetails = function(assetId) {
 
 						owners.$find(".section-content").append(elem)
 					})
-				})
+				}
+				fetch(url).then(handler)
 			}
 
-			owners.$find(".btr-see-more-owners").$on("click", loadOwners)
+			seeMore.$on("click", loadOwners)
 		}
 
 		document.$watch("#item-container", itemCont => {
