@@ -121,7 +121,8 @@ const initAdBlock = () => {
 						cont.includes("cedexis.com") ||
 						cont.includes("pingdom.net") ||
 						cont.includes("Roblox.Hashcash") ||
-						cont.includes("Roblox.VideoPreRollDFP")
+						cont.includes("Roblox.VideoPreRollDFP") ||
+						cont.includes("googletag.enableServices()")
 					) {
 						script.remove()
 					} else if(cont.includes("Roblox.EventStream.Init")) { // Stops e.png logging
