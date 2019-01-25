@@ -52,42 +52,58 @@ function getProductInfo(assetId) {
 	return productCache[assetId] = productCache[assetId] || getUncachedProductInfo(assetId)
 }
 
-function getXsrfToken() {
-	return new SyncPromise(resolve => {
-		if(document.readyState !== "loading") {
-			resolve()
-			return
+{
+	let cachedXsrfToken
+	let docXsrfTokenPromise
+
+	window.getXsrfToken = async function getXsrfToken() {
+		if(!docXsrfTokenPromise) {
+			docXsrfTokenPromise = new SyncPromise(resolve => {
+				document.$watch(">head").$then().$watch(">script", x => x.textContent.includes("XsrfToken.setToken"), x => {
+					const token = x.textContent.replace(/^[^]*XsrfToken\.setToken\('([^']+)'\)[^]*$/, "$1")
+					if(!cachedXsrfToken) {
+						cachedXsrfToken = token
+					}
+
+					resolve()
+				})
+
+				onDocumentReady(resolve)
+			}).then(() => {
+				if(IS_DEV_MODE && !cachedXsrfToken) {
+					console.warn("[BTRoblox] Didn't find XsrfToken from the document")
+				}
+			})
 		}
 
-		onDocumentReady(resolve)
-		document.$watch(">body").$then().$watch(">script", x => x.textContent.includes("XsrfToken.setToken"), x => {
-			resolve(x.textContent.replace(/^[^]*XsrfToken\.setToken\('([^']+)'\)[^]*$/, "$1"))
-		})
-	})
+		return docXsrfTokenPromise.then(() => cachedXsrfToken)
+	}
+
+	window.setXsrfToken = token => cachedXsrfToken = token
 }
 
-let cachedXsrfToken
-async function xsrfFetch(url, init) {
-	if(!init) { init = {} }
-	if(!init.headers) { init.headers = {} }
-
-	cachedXsrfToken = await getXsrfToken()
-	init.headers["X-CSRF-TOKEN"] = cachedXsrfToken
+async function xsrfFetch(url, init = {}) {
+	const options = {
+		...init,
+		headers: { ...init.headers }
+	}
+	
+	options.headers["X-CSRF-TOKEN"] = await getXsrfToken()
 
 	let retryCount = 0
 
 	const handle = response => {
 		if(response.status === 403 && response.statusText === "XSRF Token Validation Failed") {
 			if(++retryCount < 2) {
-				cachedXsrfToken = init.headers["X-CSRF-TOKEN"] = response.headers.get("X-CSRF-TOKEN")
-				return fetch(url, init).then(handle)
+				setXsrfToken(options.headers["X-CSRF-TOKEN"] = response.headers.get("X-CSRF-TOKEN"))
+				return fetch(url, options).then(handle)
 			}
 		}
 
 		return response
 	}
 
-	return fetch(url, init).then(handle)
+	return fetch(url, options).then(handle)
 }
 
 function startDownload(blob, fileName) {
