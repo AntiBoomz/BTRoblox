@@ -451,6 +451,19 @@ Place APIs
     }
     ```
 
+#### Toggle game visibility in profile
+```http
+POST https://www.roblox.com/game/toggle-profile HTTP/1.1
+Cookie: .ROBLOSECURITY=*
+X-CSRF-TOKEN: *
+Content-Type: application/json
+Content-Length: 42
+
+{"placeId":1076067099,"addToProfile":true}
+```
+```json
+{"isValid":true,"data":{"inShowcase":true},"error":""}
+```
 
 Universe APIs
 -------------
