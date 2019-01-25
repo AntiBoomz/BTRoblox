@@ -60,7 +60,7 @@ const INJECT_SCRIPT = () => {
 	function PreInit() {
 		if(window.googletag) {
 			if(IS_DEV_MODE) {
-				alert("Failed to load inject before googletag")
+				console.warn("[BTRoblox] Failed to load inject before googletag")
 			}
 		} else {
 			const googletag = window.googletag = {}
