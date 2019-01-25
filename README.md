@@ -1,6 +1,21 @@
 BTROBLOX
 ========
 
+BTRoblox, or Better Roblox, is an extension that aims to enhance Roblox website's look and functionality by adding a plethora of new features and modifying the layout of some existing pages.
+
+
+Installation
+------------
+#### Chrome / Opera
+[Chrome Web Store](https://chrome.google.com/webstore/detail/btroblox/hbkpclpemjeibhioopcebchdmohaieln)
+
+#### Firefox
+[Firefox Add-ons store](https://addons.mozilla.org/en-US/firefox/addon/btroblox/)
+
+
+Other stuff
+-----------
+
 * [Roblox Mesh Format (wiki)](http://wiki.roblox.com/index.php?title=Roblox_Mesh_Format) <!--Backup: https://pastebin.com/yCknWRaj-->
 * [Roblox Web Apis by Seranok](https://github.com/matthewdean/roblox-web-apis)
 * [API Docs](#api-docs)
