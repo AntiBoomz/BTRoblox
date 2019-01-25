@@ -184,7 +184,7 @@ pageInit.profile = function(userId) {
 					stats.prepend(label)
 				}
 
-				xsrfFetch(`https://api.roblox.com/users/${userId}/OnlineStatus/`).then(async resp => {
+				xsrfFetch(`https://api.roblox.com/users/${userId}/onlinestatus/`).then(async resp => {
 					if(!resp.ok) {
 						label.$find(".text-lead").textContent = "Failed"
 						return
