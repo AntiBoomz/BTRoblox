@@ -3,15 +3,11 @@ BTROBLOX
 
 BTRoblox, or Better Roblox, is an extension that aims to enhance Roblox website's look and functionality by adding a plethora of new features and modifying the layout of some existing pages.
 
-
 Installation
 ------------
-#### Chrome / Opera
-[Chrome Web Store](https://chrome.google.com/webstore/detail/btroblox/hbkpclpemjeibhioopcebchdmohaieln)
+<a href="https://chrome.google.com/webstore/detail/btroblox/hbkpclpemjeibhioopcebchdmohaieln" title="Available in the Chrome Web Store"><img src="/img/ChromeWebStore_BadgeWBorder_v2_206x58.png"></a>
 
-#### Firefox
-[Firefox Add-ons store](https://addons.mozilla.org/en-US/firefox/addon/btroblox/)
-
+<a href="https://addons.mozilla.org/en-US/firefox/addon/btroblox/" title="Get the add-on from the Firefox Add-ons store"><img src="/img/AMO-button_1.png"></a>
 
 Other stuff
 -----------
