@@ -270,8 +270,6 @@ const INJECT_SCRIPT = () => {
 											return
 										}
 
-										console.log("Out of pages")
-
 										wantedRelativePage = 9
 										wantedCursorId = lastCursorId
 									}
@@ -339,7 +337,7 @@ const INJECT_SCRIPT = () => {
 									posts.splice(0, posts.length)
 
 									const promise = requestWallPosts(
-										pageNum,
+										Math.max(0, pageNum),
 										`https://groups.roblox.com/${v2 ? "v2" : "v1"}/groups/${groupId}/wall/posts?&limit=100&sortOrder=Desc&cursor=`
 									)
 
