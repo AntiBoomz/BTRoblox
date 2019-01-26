@@ -34,7 +34,77 @@ const DOLLARS_TO_ROBUX_RATIOS = {
 	bv200: [199.99, 35e3]
 }
 
+const SETTINGS = {
+	defaultSettings: {
+		_version: 2,
+		general: {
+			theme: { default: true, value: "default", validValues: ["default", "simblk", "sky", "red", "night"] },
+			hideAds: { default: true, value: true },
+			chatEnabled: { default: true, value: true },
+			smallChatButton: { default: true, value: true },
+			fastSearch: { default: true, value: true },
+			fixAudioPreview: { default: true, value: true },
 
+			robuxToUSD: { default: true, value: false },
+			robuxToUSDRate: { default: true, value: "nbc10", validValues: ["devex350", "devex250", "nbc5", "nbc10", "nbc25", "nbc50", "nbc100", "nbc200", "bc5", "bc10", "bc25", "bc50", "bc100", "bc200"] },
+	
+			hoverPreview: { default: true, value: true },
+			hoverPreviewMode: { default: true, value: "always", validValues: ["always", "never"] },
+		
+			enableContextMenus: { default: true, value: true }
+		},
+		navigation: {
+			enabled: { default: true, value: true },
+			items: { default: true, value: "", hidden: true },
+			hideAgeBracket: { default: true, value: true },
+			showBlogFeed: { default: true, value: true },
+			noHamburger: { default: true, value: true }
+		},
+		catalog: {
+			enabled: { default: true, value: true }
+		},
+		itemdetails: {
+			enabled: { default: true, value: true },
+			itemPreviewer: { default: true, value: true },
+			itemPreviewerMode: { default: true, value: "always", validValues: ["always", "animations", "never"] },
+
+			explorerButton: { default: true, value: true },
+			downloadButton: { default: true, value: true },
+			contentButton: { default: true, value: true },
+
+			imageBackgrounds: { default: true, value: true },
+			whiteDecalThumbnailFix: { default: true, value: true },
+
+			addOwnersList: { default: true, value: true },
+			thisPackageContains: { default: true, value: true } // Packages are no longer in use..?
+		},
+		gamedetails: {
+			enabled: { default: true, value: true },
+			showBadgeOwned: { default: true, value: true },
+			addServerPager: { default: true, value: true }
+		},
+		groups: {
+			enabled: { default: true, value: true },
+			shoutAlerts: { default: true, value: true },
+			expandGroupList: { default: true, value: true } // deprecated
+		},
+		inventory: {
+			enabled: { default: true, value: true },
+			inventoryTools: { default: true, value: true }
+		},
+		profile: {
+			enabled: { default: true, value: true },
+			embedInventoryEnabled: { default: true, value: true },
+			lastOnline: { default: true, value: true }
+		},
+		friends: {
+			alwaysShowUnfriend: { default: true, value: true }
+		},
+		versionhistory: {
+			enabled: { default: true, value: true }
+		}
+	}
+}
 
 const EXCLUDED_PAGES = [
 	"^/userads/",
@@ -372,77 +442,7 @@ const MESSAGING = (() => {
 })()
 
 
-const SETTINGS = {
-	defaultSettings: {
-		_version: 2,
-		general: {
-			theme: { default: true, value: "default", validValues: ["default", "simblk", "sky", "red", "night"] },
-			hideAds: { default: true, value: true },
-			chatEnabled: { default: true, value: true },
-			smallChatButton: { default: true, value: true },
-			fastSearch: { default: true, value: true },
-			fixAudioPreview: { default: true, value: true },
-
-			robuxToUSD: { default: true, value: false },
-			robuxToUSDRate: { default: true, value: "nbc10", validValues: ["devex350", "devex250", "nbc5", "nbc10", "nbc25", "nbc50", "nbc100", "nbc200", "bc5", "bc10", "bc25", "bc50", "bc100", "bc200"] },
-	
-			hoverPreview: { default: true, value: true },
-			hoverPreviewMode: { default: true, value: "always", validValues: ["always", "never"] },
-		
-			enableContextMenus: { default: true, value: true }
-		},
-		navigation: {
-			enabled: { default: true, value: true },
-			items: { default: true, value: "", hidden: true },
-			hideAgeBracket: { default: true, value: true },
-			showBlogFeed: { default: true, value: true },
-			noHamburger: { default: true, value: true }
-		},
-		catalog: {
-			enabled: { default: true, value: true }
-		},
-		itemdetails: {
-			enabled: { default: true, value: true },
-			itemPreviewer: { default: true, value: true },
-			itemPreviewerMode: { default: true, value: "always", validValues: ["always", "animations", "never"] },
-
-			explorerButton: { default: true, value: true },
-			downloadButton: { default: true, value: true },
-			contentButton: { default: true, value: true },
-
-			imageBackgrounds: { default: true, value: true },
-			whiteDecalThumbnailFix: { default: true, value: true },
-
-			addOwnersList: { default: true, value: true },
-			thisPackageContains: { default: true, value: true } // Packages are no longer in use..?
-		},
-		gamedetails: {
-			enabled: { default: true, value: true },
-			showBadgeOwned: { default: true, value: true },
-			addServerPager: { default: true, value: true }
-		},
-		groups: {
-			enabled: { default: true, value: true },
-			expandGroupList: { default: true, value: true },
-			shoutAlerts: { default: true, value: true }
-		},
-		inventory: {
-			enabled: { default: true, value: true },
-			inventoryTools: { default: true, value: true }
-		},
-		profile: {
-			enabled: { default: true, value: true },
-			embedInventoryEnabled: { default: true, value: true },
-			lastOnline: { default: true, value: true }
-		},
-		friends: {
-			alwaysShowUnfriend: { default: true, value: true }
-		},
-		versionhistory: {
-			enabled: { default: true, value: true }
-		}
-	},
-
+Object.assign(SETTINGS, {
 	_onChangeListeners: [],
 	_loadPromise: null,
 
@@ -571,8 +571,7 @@ const SETTINGS = {
 
 		this._onChangeListeners[settingPath].push(fn)
 	}
-}
-
+})
 
 if(IS_BACKGROUND_PAGE) {
 	MESSAGING.listen({
