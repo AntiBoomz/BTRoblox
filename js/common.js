@@ -1,5 +1,7 @@
 "use strict"
 
+const getURL = chrome.runtime.getURL
+
 const BROWSER_NAME = navigator.userAgent.includes("Edge/") ? "Edge" : navigator.userAgent.includes("Chrome/") ? "Chrome" : "Firefox"
 const IS_EDGE = BROWSER_NAME === "Edge"
 const IS_FIREFOX = BROWSER_NAME === "Firefox"
@@ -12,9 +14,7 @@ const IS_DEV_MODE = IS_FIREFOX ? chrome.runtime.id.endsWith("@temporary-addon") 
 
 const IS_BACKGROUND_PAGE = chrome && chrome.extension && chrome.extension.getBackgroundPage
 
-const getURL = chrome.runtime.getURL
-
-
+// Separated for more accuracy when dealing with massive numbers
 const DOLLARS_TO_ROBUX_RATIOS = {
 	devex350: [350, 100e3],
 	devex250: [250, 100e3],
@@ -34,7 +34,6 @@ const DOLLARS_TO_ROBUX_RATIOS = {
 	bv200: [199.99, 35e3]
 }
 
-let DOLLARS_TO_ROBUX_RATIO = DOLLARS_TO_ROBUX_RATIOS.devex350
 
 
 const EXCLUDED_PAGES = [

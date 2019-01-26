@@ -63,8 +63,8 @@ function onDocumentReady(cb) {
 }
 
 const FormatNumber = num => String(num).replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/yg, "$1,")
-
-const RobuxToUSD = amt => FormatNumber((Math.ceil((amt * DOLLARS_TO_ROBUX_RATIO[0]) / DOLLARS_TO_ROBUX_RATIO[1] * 100) / 100).toFixed(2))
+const GetRobuxRatio = () => DOLLARS_TO_ROBUX_RATIOS[settings.general.robuxToUSDRate]
+const RobuxToUSD = amt => FormatNumber((Math.ceil((amt * GetRobuxRatio()[0]) / GetRobuxRatio()[1] * 100) / 100).toFixed(2))
 
 const injectCSS = path => {
 	const link = document.createElement("link")
@@ -135,8 +135,6 @@ const initAdBlock = () => {
 }
 
 function Init() {
-	DOLLARS_TO_ROBUX_RATIO = DOLLARS_TO_ROBUX_RATIOS[settings.general.robuxToUSDRate] || DOLLARS_TO_ROBUX_RATIO
-
 	const headWatcher = document.$watch(">head").$then()
 	const bodyWatcher = document.$watch(">body", body => {
 		body.classList.toggle("btr-no-hamburger", settings.navigation.noHamburger)

@@ -43,7 +43,7 @@ pageInit.inventory = function() {
 			while(label.firstChild) { div.append(label.firstChild) }
 
 			label.append(div)
-			const text = `($\{{::(((item.Product.PriceInRobux)*${DOLLARS_TO_ROBUX_RATIO[0]})/${DOLLARS_TO_ROBUX_RATIO[1]})|number:2}})`
+			const text = `($\{{::(((item.Product.PriceInRobux)*${GetRobuxRatio()[0]})/${GetRobuxRatio()[1]})|number:2}})`
 			label.title = `{{::item.Product.IsFree && "Free " || "R$ "}}{{::(item.Product.PriceInRobux)|number:0}} ${text}`
 			label.append(html`
 			<div style="flex:0 1 auto;padding-left:4px;overflow:hidden;text-overflow:ellipsis;" ng-if=item.HasPrice class=text-robux ng-cloak> ${text}</div>

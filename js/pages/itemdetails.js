@@ -459,7 +459,7 @@ pageInit.itemdetails = function(assetId) {
 		})
 			.$watch(".recommended-items .item-card-price .text-robux", label => {
 				label.style.display = "inline"
-				label.textContent += ` ($\{{::((item.Item.Price*${DOLLARS_TO_ROBUX_RATIO[0]})/${DOLLARS_TO_ROBUX_RATIO[1]})|number:2}})`
+				label.textContent += ` ($\{{::((item.Item.Price*${GetRobuxRatio()[0]})/${GetRobuxRatio()[1]})|number:2}})`
 				label.title = "R$ " + label.textContent
 			})
 			.$watch("#item-average-price", label => {
