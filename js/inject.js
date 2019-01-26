@@ -38,18 +38,37 @@ const INJECT_SCRIPT = () => {
 	function HijackAngular(moduleName, objects) {
 		try {
 			const module = angular.module(moduleName)
+			const done = {}
+
 			module._invokeQueue.forEach(x => {
-				const newhandler = objects[x[2][0]]
+				const name = x[2][0]
+				const newhandler = objects[name]
 
 				if(typeof newhandler === "function") {
 					const data = x[2][1]
 					const oldhandler = data[data.length - 1]
 
 					data[data.length - 1] = function(...args) {
-						return newhandler.call(this, oldhandler, args)
+						const argMap = {}
+
+						for(let i = 0; i < data.length - 1; i++) {
+							argMap[data[i]] = args[i]
+						}
+
+						return newhandler.call(this, oldhandler, args, argMap)
 					}
+
+					done[name] = true
 				}
 			})
+
+			if(IS_DEV_MODE) {
+				Object.entries(objects).forEach(([name]) => {
+					if(!done[name]) {
+						console.warn(`Failed to hijack ${moduleName}.${name}`)
+					}
+				})
+			}
 		} catch(ex) {
 			if(IS_DEV_MODE) {
 				console.warn(ex)
@@ -196,6 +215,149 @@ const INJECT_SCRIPT = () => {
 						return result
 					}
 				})
+			}
+
+			if(currentPage === "groups" && settings.groups.enabled && settings.groups.redesign) {
+				if(settings.groups.pagedGroupWall) {
+					const postCursors = [""]
+					const btrPagerStatus = { prev: false, next: false, input: false }
+					let requestCounter = 0
+					let lastPageNum = 0
+
+					const setPageNumber = (pageNum, hasMore) => {
+						lastPageNum = pageNum
+
+						btrPagerStatus.prev = pageNum !== 0
+						btrPagerStatus.next = hasMore
+						btrPagerStatus.input = true
+						
+						const pager = document.querySelector(".btr-comment-pager")
+						pager.querySelector("input").value = pageNum + 1
+						pager.querySelector(".first").classList.toggle("disabled", !btrPagerStatus.prev)
+						pager.querySelector(".pager-prev").classList.toggle("disabled", !btrPagerStatus.prev)
+						pager.querySelector(".pager-next").classList.toggle("disabled", !btrPagerStatus.next)
+						pager.querySelector(".last").classList.toggle("disabled", !btrPagerStatus.next)
+					}
+
+					const requestWallPosts = (page, baseUrl) => {
+						const myCounter = ++requestCounter
+						// console.log("Requesting page", page)
+
+						btrPagerStatus.prev = false
+						btrPagerStatus.next = false
+						btrPagerStatus.input = false
+
+						let wantedCursorId = Math.floor(page / 10)
+						let wantedRelativePage = page % 10
+
+						return new Promise(resolve => {
+							const nextRequest = () => {
+								const lastCursorId = Math.min(postCursors.length - 1, wantedCursorId)
+								const url = baseUrl + postCursors[lastCursorId]
+
+								fetch(url, { credentials: "include" }).then(async resp => {
+									if(myCounter !== requestCounter) { return } // Request was cancelled
+
+									const json = await resp.json()
+
+									if(json.nextPageCursor) {
+										postCursors.push(json.nextPageCursor)
+									}
+									
+									if(lastCursorId < wantedCursorId) {
+										if(json.nextPageCursor) {
+											nextRequest()
+											return
+										}
+
+										console.log("Out of pages")
+
+										wantedRelativePage = 9
+										wantedCursorId = lastCursorId
+									}
+
+									if(json.data.length === 0 && lastCursorId > 0) {
+										console.log("Went over")
+
+										for(let i = postCursors.length; i-- > lastCursorId;) {
+											postCursors.pop()
+										}
+
+										wantedRelativePage = 9
+										wantedCursorId = lastCursorId - 1
+
+										nextRequest()
+										return
+									}
+
+									const maxRelativePage = Math.max(0, Math.floor((json.data.length - 1) / 10))
+									const relativePage = Math.min(wantedRelativePage, maxRelativePage)
+									const newPageNum = wantedCursorId * 10 + relativePage
+
+									setPageNumber(newPageNum, json.nextPageCursor || maxRelativePage > relativePage)
+
+									const dataSlice = json.data.slice(relativePage * 10, (relativePage + 1) * 10)
+									// console.log("Resolved to page", newPageNum)
+
+									resolve({
+										previousPageCursor: null,
+										nextPageCursor: null,
+										data: dataSlice
+									})
+								})
+							}
+		
+							nextRequest()
+						})
+					}
+
+					HijackAngular("group", {
+						groupWallController(func, funcArgs, argMap) {
+							argMap.groupWallService.loadWallPosts = new Proxy(argMap.groupWallService.loadWallPosts, {
+								apply(target, thisArg, args) {
+									const [groupId, cursor, , v2] = args
+									let pageNum = lastPageNum
+									
+									if(cursor === "prev") {
+										pageNum = lastPageNum - 1
+									} else if(cursor === "next") {
+										pageNum = lastPageNum + 1
+									} else if(cursor === "input") {
+										const input = document.querySelector(".btr-comment-pager input")
+										const value = parseInt(input.value, 10)
+
+										if(Number.isSafeInteger(value)) {
+											pageNum = Math.max(0, value - 1)
+										}
+									} else if(cursor === "first") {
+										pageNum = lastPageNum - 100
+									} else if(cursor === "last") {
+										pageNum = lastPageNum + 100
+									}
+									
+									const posts = argMap.$scope.groupWall.posts
+									posts.splice(0, posts.length)
+
+									const promise = requestWallPosts(
+										pageNum,
+										`https://groups.roblox.com/${v2 ? "v2" : "v1"}/groups/${groupId}/wall/posts?&limit=100&sortOrder=Desc&cursor=`
+									)
+
+									promise.then(() => {
+										setTimeout(() => argMap.$scope.$digest(), 0)
+									})
+
+									return promise
+								}
+							})
+
+							argMap.$scope.btrPagerStatus = btrPagerStatus
+
+							const result = func.apply(this, funcArgs)
+							return result
+						}
+					})
+				}
 			}
 		} else {
 			console.warn("[BTR] window.angular not set")
@@ -360,12 +522,12 @@ const INJECT_SCRIPT = () => {
 
 			prm.add_pageLoaded(() => ContentJS.send("ajaxUpdate"))
 
-			if(currentPage === "groups" && settings.groups.enabled) {
+			if(currentPage === "groups_old" && settings.groups.enabled) {
 				prm.add_pageLoaded(() => $(".GroupWallPane .linkify").linkify())
 			}
 		}
 
-		if(currentPage === "groups" && settings.groups.enabled) {
+		if(currentPage === "groups_old" && settings.groups.enabled) {
 			window.fitStringToWidthSafeText = text => text
 			const items = document.querySelectorAll(".GroupListName")
 			

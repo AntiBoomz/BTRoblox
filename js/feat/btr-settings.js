@@ -65,8 +65,14 @@ const SettingsDiv = (() => {
 					<checkbox label="Show Last Online" path=lastOnline></checkbox>
 				</group>
 				<group label=Groups path=groups toggleable>
-					<checkbox label="Group Shout Notifications" path=shoutAlerts require=false></checkbox>
-					<button id=btr-open-shout-filter class=btn-control-xs>Modify Shout Filters</button>
+					<div>
+						<checkbox label="Group Shout Notifications" path=shoutAlerts require=false></checkbox>
+						<button id=btr-open-shout-filter class=btn-control-xs>Modify Shout Filters</button>
+					</div>
+					<div>
+						<checkbox label="Enable Redesign" path=redesign></checkbox>
+						<button id=btr-open-group-redesign class=btn-control-xs>Modify Redesign Options</button>
+					</div>
 				</group>
 				<group label="Game Details" path=gamedetails toggleable>
 					<checkbox label="Highlight Owned Badges" path=showBadgeOwned></checkbox>
@@ -136,6 +142,24 @@ const SettingsDiv = (() => {
 						</select>
 					</group>
 				</div>
+			</div>
+			<div class=btr-settings-content id=btr-settings-group-redesign data-name=groupRedesign>
+				<div class=btr-settings-content-header>
+					<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
+					<h4>Group Redesign Options</h4>
+				</div>
+				<div>
+					<group label="Redesign" toggleable=redesign path=groups>
+						<checkbox label="Modify Layout" path=modifyLayout require=redesign></checkbox>
+						<checkbox label="Make Group Wall Paged" path=pagedGroupWall require=redesign></checkbox>
+						<checkbox label="Show User Rank On Group Wall" path=groupWallRanks require=redesign></checkbox>
+						<checkbox label="Show Selected Role Member Count" path=selectedRoleCount require=redesign></checkbox>
+						<checkbox label="Hide Payout Container" path=hidePayout require=redesign></checkbox>
+						<checkbox label="Hide Large Social Container" path=hideBigSocial require=redesign></checkbox>
+						<checkbox label="Show Title On Social Icon Hover" path=modifySmallSocialLinksTitle require=redesign></checkbox>
+					</group>
+				</div>
+			
 			</div>
 			<div class=btr-settings-content id=btr-settings-nav-editor data-name=navigationEditor>
 				<div class=btr-settings-content-header>
@@ -891,6 +915,10 @@ const SettingsDiv = (() => {
 			switchContent("main")
 		})
 
+		settingsDiv.$on("click", "#btr-open-group-redesign", () => {
+			switchContent("groupRedesign")
+		})
+
 		// Settings 
 
 		const settingsDone = {}
@@ -945,6 +973,7 @@ const SettingsDiv = (() => {
 				})
 
 				$.setImmediate(() => update(SETTINGS.get(settingPath)))
+				SETTINGS.onChange(settingPath, update)
 			}
 
 			group.$findAll("select").forEach(select => {
@@ -1026,6 +1055,8 @@ const SettingsDiv = (() => {
 				input.$on("change", () => {
 					SETTINGS.set(settingPath, input.checked)
 				})
+
+				SETTINGS.onChange(settingPath, state => input.checked = state)
 
 				const requirePath = joinPaths(groupPath, checkbox.getAttribute("require") || "enabled")
 				if(SETTINGS.isValid(requirePath)) {

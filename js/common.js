@@ -86,6 +86,16 @@ const SETTINGS = {
 		groups: {
 			enabled: { default: true, value: true },
 			shoutAlerts: { default: true, value: true },
+
+			redesign: { default: true, value: true },
+			modifyLayout: { default: true, value: true },
+			selectedRoleCount: { default: true, value: true },
+			pagedGroupWall: { default: true, value: true },
+			groupWallRanks: { default: true, value: true },
+			hidePayout: { default: true, value: true },
+			hideBigSocial: { default: true, value: true },
+			modifySmallSocialLinksTitle: { default: true, value: true },
+
 			expandGroupList: { default: true, value: true } // deprecated
 		},
 		inventory: {
@@ -138,8 +148,12 @@ const PAGE_INFO = {
 		matches: ["^/games/?$"],
 		css: ["games.css"]
 	},
-	groups: {
+	groups_old: {
 		matches: ["^/my/groups\\.aspx", "^/groups/group\\.aspx"],
+		css: ["groups_old.css"]
+	},
+	groups: {
+		matches: ["^/groups/(\\d+)/*"],
 		css: ["groups.css"]
 	},
 	groupadmin: {

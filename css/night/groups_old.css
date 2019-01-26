@@ -1,0 +1,62 @@
+html #SearchControls .content,
+html .StatusView .bottom .content {
+	background: transparent;
+}
+
+html body, html .text, html pre,
+html h2, html h2 a:link, html h2 a:visited, html h2 a:active, html h2 .text,
+html #GroupThumbnails .GroupListItemContainer #linked-group-list-name,
+html .MyRank span, html .btr-grouprank {
+	color: var(--btr-theme-text-secondary);
+}
+
+html #SearchControls,
+html .GroupControlsBox,
+html #left-column .StandardBox,
+html .tab-content, html .tab-container+div>div,
+html .tab.active, html .tab {
+	background-color: var(--btr-theme-item-hover);
+	border-color: var(--btr-theme-border-lighter);
+}
+
+html .GroupListItemContainer:hover, html .GroupListItemContainer.selected:hover,
+html .tab:hover {
+	background-color: var(--btr-theme-item-hover-hover);
+}
+
+html .GroupWallPostText {
+	background-color: var(--btr-theme-item-hover-hover);
+	border-color: var(--btr-theme-border-lighter);
+	color: var(--btr-theme-text-secondary);
+}
+
+html input {
+	background-color: var(--btr-theme-item-hover-hover);
+	border-color: var(--btr-theme-item-hover);
+	color: var(--btr-theme-text-secondary);
+}
+
+html #mid-column .StandardBox {
+	background-color: var(--btr-theme-item-hover);
+}
+
+html .StatusView .top {
+	color: #191919;
+}
+
+html .GroupWallPane {
+	background-color: var(--btr-theme-item) !important;
+}
+
+html .GroupWallPane .AlternatingItemTemplateEven {
+	background-color: var(--btr-theme-item);
+}
+
+html .GroupWallPane .AlternatingItemTemplateOdd {
+	background-color: var(--btr-theme-item-hover);
+}
+
+html a:link, html a:visited, html a:active,
+html #left-column .StandardBox a, html #mid-column .StandardBox a, html #right-column .StandardBox a {
+	color: #00A2FF;
+}
