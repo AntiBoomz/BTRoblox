@@ -1,8 +1,12 @@
 /* Groups redesign */
 
+.btr-redesign .btr-description-label {
+	padding-top: 32px;
+}
+
 .btr-redesign .group-description {
-	padding-top: 24px;
-	padding-bottom: 6px;
+	padding-top: 8px;
+	padding-bottom: 8px;
 }
 
 .btr-redesign social-link-icon-list {
@@ -11,13 +15,17 @@
 	right: 44px;
 }
 
-.btr-redesign .btr-shout-container {
-	margin-bottom: 28px;
-	margin-top: -12px;
+.btr-redesign .btr-group-about {
+	margin-bottom: 18px;
+}
+
+.btr-redesign .btr-shout-container .shout-container {
+	margin-bottom: 18px;
 }
 
 .btr-redesign .rbx-tabs-horizontal {
-	margin-bottom: 4px;
+	margin-top: 18px;
+	margin-bottom: 15px;
 }
 
 .btr-hidePayout group-payouts,

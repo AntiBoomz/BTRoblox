@@ -218,140 +218,152 @@ const INJECT_SCRIPT = () => {
 			}
 
 			if(currentPage === "groups" && settings.groups.enabled && settings.groups.redesign) {
-				if(settings.groups.pagedGroupWall) {
-					const postCursors = [""]
-					const btrPagerStatus = { prev: false, next: false, input: false }
-					let requestCounter = 0
-					let lastPageNum = 0
-
-					const setPageNumber = (pageNum, hasMore) => {
-						lastPageNum = pageNum
-
-						btrPagerStatus.prev = pageNum !== 0
-						btrPagerStatus.next = hasMore
-						btrPagerStatus.input = true
-						
-						const pager = document.querySelector(".btr-comment-pager")
-						pager.querySelector("input").value = pageNum + 1
-						pager.querySelector(".first").classList.toggle("disabled", !btrPagerStatus.prev)
-						pager.querySelector(".pager-prev").classList.toggle("disabled", !btrPagerStatus.prev)
-						pager.querySelector(".pager-next").classList.toggle("disabled", !btrPagerStatus.next)
-						pager.querySelector(".last").classList.toggle("disabled", !btrPagerStatus.next)
-					}
-
-					const requestWallPosts = (page, baseUrl) => {
-						const myCounter = ++requestCounter
-						// console.log("Requesting page", page)
-
-						btrPagerStatus.prev = false
-						btrPagerStatus.next = false
-						btrPagerStatus.input = false
-
-						let wantedCursorId = Math.floor(page / 10)
-						let wantedRelativePage = page % 10
-
-						return new Promise(resolve => {
-							const nextRequest = () => {
-								const lastCursorId = Math.min(postCursors.length - 1, wantedCursorId)
-								const url = baseUrl + postCursors[lastCursorId]
-
-								fetch(url, { credentials: "include" }).then(async resp => {
-									if(myCounter !== requestCounter) { return } // Request was cancelled
-
-									const json = await resp.json()
-
-									if(json.nextPageCursor) {
-										postCursors.push(json.nextPageCursor)
-									}
-									
-									if(lastCursorId < wantedCursorId) {
-										if(json.nextPageCursor) {
-											nextRequest()
-											return
-										}
-
-										wantedRelativePage = 9
-										wantedCursorId = lastCursorId
-									}
-
-									if(json.data.length === 0 && lastCursorId > 0) {
-										console.log("Went over")
-
-										for(let i = postCursors.length; i-- > lastCursorId;) {
-											postCursors.pop()
-										}
-
-										wantedRelativePage = 9
-										wantedCursorId = lastCursorId - 1
-
-										nextRequest()
-										return
-									}
-
-									const maxRelativePage = Math.max(0, Math.floor((json.data.length - 1) / 10))
-									const relativePage = Math.min(wantedRelativePage, maxRelativePage)
-									const newPageNum = wantedCursorId * 10 + relativePage
-
-									setPageNumber(newPageNum, json.nextPageCursor || maxRelativePage > relativePage)
-
-									const dataSlice = json.data.slice(relativePage * 10, (relativePage + 1) * 10)
-									// console.log("Resolved to page", newPageNum)
-
-									resolve({
-										previousPageCursor: null,
-										nextPageCursor: null,
-										data: dataSlice
-									})
-								})
-							}
-		
-							nextRequest()
-						})
-					}
-
+				if(settings.groups.modifyLayout) {
 					HijackAngular("group", {
-						groupWallController(func, funcArgs, argMap) {
-							argMap.groupWallService.loadWallPosts = new Proxy(argMap.groupWallService.loadWallPosts, {
-								apply(target, thisArg, args) {
-									const [groupId, cursor, , v2] = args
-									let pageNum = lastPageNum
-									
-									if(cursor === "prev") {
-										pageNum = lastPageNum - 1
-									} else if(cursor === "next") {
-										pageNum = lastPageNum + 1
-									} else if(cursor === "input") {
-										const input = document.querySelector(".btr-comment-pager input")
-										const value = parseInt(input.value, 10)
+						layout(func, args) {
+							const result = func.apply(this, args)
+							result.aboutText = "Members"
+							return result
+						},
+						groupController(func, args, argMap) {
+							const result = func.apply(this, args)
+							const { $scope } = argMap
 
-										if(Number.isSafeInteger(value)) {
-											pageNum = Math.max(0, value - 1)
-										}
-									} else if(cursor === "first") {
-										pageNum = lastPageNum - 100
-									} else if(cursor === "last") {
-										pageNum = lastPageNum + 100
-									}
-									
-									const posts = argMap.$scope.groupWall.posts
-									posts.splice(0, posts.length)
-
-									const promise = requestWallPosts(
-										Math.max(0, pageNum),
-										`https://groups.roblox.com/${v2 ? "v2" : "v1"}/groups/${groupId}/wall/posts?&limit=100&sortOrder=Desc&cursor=`
-									)
-
-									promise.then(() => {
-										setTimeout(() => argMap.$scope.$digest(), 0)
-									})
-
-									return promise
+							$scope.getTabsCount = new Proxy($scope.getTabsCount, {
+								apply(target, thisArg, targs) {
+									return target.apply(thisArg, targs) + ($scope.library.currentGroup.areGroupGamesVisible ? 1 : 0)
 								}
 							})
 
-							argMap.$scope.btrPagerStatus = btrPagerStatus
+							return result
+						}
+					})
+				}
+				if(settings.groups.pagedGroupWall) {
+					const createCustomPager = $scope => {
+						const wallPosts = []
+						const pageSize = 10
+						let loadMorePromise = null
+						let nextPageCursor = ""
+						let requestCounter = 0
+						let lastPageNum = 0
+						let isLoadingPosts = false
 
-							const result = func.apply(this, funcArgs)
+						window.test = $scope
+
+						const btrPagerStatus = {
+							prev: false,
+							next: false,
+							input: false,
+							pageNum: 1
+						}
+
+						const setPageNumber = page => {
+							btrPagerStatus.prev = page > 0
+							btrPagerStatus.next = !!nextPageCursor || wallPosts.length > ((page + 1) * pageSize)
+							btrPagerStatus.input = true
+							btrPagerStatus.pageNum = page + 1
+
+							lastPageNum = page
+
+							const startIndex = page * pageSize
+							const endIndex = startIndex + pageSize
+
+							$scope.groupWall.posts = wallPosts.slice(startIndex, endIndex).map($scope.convertResultToPostObject)
+							$scope.$applyAsync()
+						}
+
+						const loadMorePosts = () => {
+							if(loadMorePromise) {
+								return loadMorePromise
+							}
+
+							return loadMorePromise = new Promise(async resolve => {
+								const groupId = $scope.library.currentGroup.id
+								const baseUrl = `https://groups.roblox.com/v2/groups/${groupId}/wall/posts?sortOrder=Desc&limit=100&cursor=`
+								
+								const resp = await fetch(baseUrl + nextPageCursor, { credentials: "include" })
+								const json = await resp.json()
+
+								if(!loadMorePromise) { return }
+
+								nextPageCursor = json.nextPageCursor || null
+								wallPosts.push(...json.data.filter(x => x.poster))
+
+								loadMorePromise = null
+								resolve()
+							})
+						}
+
+						const requestWallPosts = page => {
+							if(!Number.isSafeInteger(page)) { return }
+							const myCounter = ++requestCounter
+
+							btrPagerStatus.prev = false
+							btrPagerStatus.next = false
+							btrPagerStatus.input = false
+
+							page = Math.max(0, Math.floor(page))
+							isLoadingPosts = true
+
+							const startIndex = page * pageSize
+							const endIndex = startIndex + pageSize
+							
+							const tryAgain = () => {
+								if(requestCounter !== myCounter) { return }
+
+								if(wallPosts.length < endIndex && nextPageCursor !== null) {
+									loadMorePosts().then(tryAgain)
+									return
+								}
+
+								const maxPage = Math.max(0, Math.floor((wallPosts.length - 1) / pageSize))
+								setPageNumber(Math.min(maxPage, page))
+
+								isLoadingPosts = false
+							}
+
+							tryAgain()
+						}
+
+						$scope.groupWall.pager.isBusy = () => isLoadingPosts
+						$scope.groupWall.pager.loadFirstPage = () => {
+							wallPosts.splice(0, wallPosts.length)
+							nextPageCursor = ""
+							loadMorePromise = null
+							requestWallPosts(0)
+						}
+						$scope.groupWall.pager.loadNextPage = () => {}
+
+						$scope.btrPagerStatus = btrPagerStatus
+						$scope.btrLoadWallPosts = cursor => {
+							let pageNum = lastPageNum
+
+							if(cursor === "prev") {
+								pageNum = lastPageNum - 1
+							} else if(cursor === "next") {
+								pageNum = lastPageNum + 1
+							} else if(cursor === "input") {
+								const input = document.querySelector(".btr-comment-pager input")
+								const value = parseInt(input.value, 10)
+
+								if(Number.isSafeInteger(value)) {
+									pageNum = Math.max(0, value - 1)
+								}
+							} else if(cursor === "first") {
+								pageNum = lastPageNum - 50
+							} else if(cursor === "last") {
+								pageNum = lastPageNum + 50
+							}
+
+							requestWallPosts(pageNum)
+						}
+					}
+
+					HijackAngular("group", {
+						groupWallController(func, args, argMap) {
+							const result = func.apply(this, args)
+							createCustomPager(argMap.$scope)
 							return result
 						}
 					})
