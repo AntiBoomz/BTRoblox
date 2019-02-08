@@ -124,6 +124,10 @@ body .btr-game-main-container {
 	border: 1px solid #E3E3E3;
 }
 
+.dark-theme.btr-gamedetails #game-instances .stack-list .stack-row {
+	border-color: #656668;
+}
+
 /* Pager */
 
 .rbx-running-games-footer .pager.btr-server-pager {
@@ -157,6 +161,16 @@ body .btr-game-main-container {
 #rbx-passes-container .store-card,
 #rbx-gear-container .store-card {
 	border: 1px solid #E3E3E3;
+}
+
+
+.dark-theme.btr-gamedetails #rbx-passes-container .store-card,
+.dark-theme.btr-gamedetails #rbx-gear-container .store-card {
+	border-color: #656668;
+}
+
+.dark-theme.btr-gamedetails .store-card .store-card-caption {
+	border-top-color: #656668;
 }
 
 /* Other */

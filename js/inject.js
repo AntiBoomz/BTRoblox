@@ -415,23 +415,24 @@ const INJECT_SCRIPT = () => {
 					$(".rbx-running-games-load-more").hide() // Hide Load More
 
 					const pager = $(`
-					<ul class="pager btr-server-pager">
-						<li class=first><a><span class=icon-first-page></a></li>
-						<li class=pager-prev><a><span class=icon-left></a></li>
-						<li class=pager-cur>
-							<input type=text class=input-field>
-						</li>
-						<li class=pager-total>
-							<span style=padding-top:0;>of</span>
-							<span class=btr-server-max style=padding-top:0;>0</span>
-						</li>
-						<li class=pager-next><a><span class=icon-right></a></li>
-						<li class=last><a><span class=icon-last-page></a></li>
-					</ul>`).appendTo($(".rbx-running-games-footer"))
+					<div class=btr-pager-holder>
+						<ul class="pager btr-server-pager">
+							<li class=first><a><span class=icon-first-page></a></li>
+							<li class=pager-prev><a><span class=icon-left></a></li>
+							<li class=pager-mid>
+								Page&nbsp;
+								<input class=pager-cur type=text></input>
+								&nbsp;of&nbsp;
+								<span class=pager-total></span>
+							</li>
+							<li class=pager-next><a><span class=icon-right></a></li>
+							<li class=last><a><span class=icon-last-page></a></li>
+						</ul>
+					</div>`).appendTo($(".rbx-running-games-footer"))
 
 					const updatePager = () => {
-						pager.find(".pager-cur input").val(curPage)
-						pager.find(".btr-server-max").text(maxPage)
+						pager.find(".pager-cur").val(curPage)
+						pager.find(".pager-total").text(maxPage)
 
 						pager.find(".first").toggleClass("disabled", curPage <= 1)
 						pager.find(".pager-prev").toggleClass("disabled", curPage <= 1)
@@ -491,7 +492,7 @@ const INJECT_SCRIPT = () => {
 									$(this).blur()
 								}
 							}
-						}, ".pager-cur input")
+						}, ".pager-cur")
 				}
 
 				const init = () => {
