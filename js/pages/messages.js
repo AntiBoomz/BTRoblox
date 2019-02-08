@@ -37,11 +37,10 @@ pageInit.messages = function() {
 		curPage.setAttribute("ng-keydown", "keyDown($event)")
 
 		template.$find(".roblox-markAsUnreadInbox").append(
-			html`<button class="btr-markAllAsReadInbox btn-control-sm">Mark All As Read</button>`
+			html`<button class="btn-control-sm btr-markAllAsReadInbox">Mark All As Read</button>`
 		)
 	})
 
-	
 	
 	function getMessages(page, callback) {
 		$.get(`/messages/api/get-messages?messageTab=0&pageNumber=${page}&pageSize=20`, callback)

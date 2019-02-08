@@ -41,7 +41,7 @@ const initFastSearch = () => {
 		}
 
 		const item = html`
-		<li class="rbx-navbar-search-option rbx-clickable-li" data-searchurl=/User.aspx?userId=${json.UserId}&searchTerm=>
+		<li class="rbx-navbar-search-option rbx-clickable-li btr-fastsearch" data-searchurl=/User.aspx?userId=${json.UserId}&searchTerm=>
 			<a class=btr-fastsearch-anchor href=/users/${json.UserId}/profile>
 				<div class=btr-fastsearch-avatar>
 					<img class=btr-fastsearch-thumbnail src=https://www.roblox.com/headshot-thumbnail/image?userId=${json.UserId}&width=48&height=48&format=png>
@@ -49,12 +49,12 @@ const initFastSearch = () => {
 					</div>
 				</div>
 				<div class=btr-fastsearch-text>
-					<div>
+					<div class=btr-fastsearch-name>
 						${json.Username.slice(0, hlFrom)}
 						<b>${json.Username.slice(hlFrom, hlTo)}</b>
 						${json.Username.slice(hlTo)}
 					</div>
-					<div class="text-label xsmall">
+					<div class="text-label">
 						${json.Alias ? `Formerly '${json.Alias}'` : json.IsFriend ? "You are friends" : ""}
 					</div>
 				</div>

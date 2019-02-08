@@ -112,6 +112,7 @@
 
 .btr-profile .profile-avatar-left {
 	width: 100%;
+	background: transparent !important;
 }
 
 .btr-profile .profile-avatar-left .btr-toggle-items {
@@ -128,6 +129,10 @@
 	pointer-events: none;
 	transition: opacity 0.3s;
 	z-index: 10000;
+}
+
+.dark-theme.btr-profile .profile-avatar-right {
+	border: 1px solid #232527;
 }
 
 .btr-profile .profile-avatar-right.visible {
@@ -204,6 +209,7 @@
 .btr-profile .btr-profile-robloxbadges .asset-item .item-name {
 	width:100%;
 	text-align: center;
+	font-size: 14px;
 }
 
 /* Player Badges */
@@ -223,9 +229,15 @@
 	border: 1px solid #B8B8B8;
 }
 
+.dark-theme.btr-profile .btr-profile-playerbadges .hlist .list-item img {
+	border-color: #656668;
+}
+
 .btr-profile .btr-profile-playerbadges .hlist .list-item .item-name {
 	width: 100%;
 	text-align: center;
+	font-size: 14px;
+	font-weight: 500;
 }
 
 /* Games */
@@ -259,7 +271,6 @@
 
 	background-color: #fdfdfd;
 	border: 1px solid #b8b8b8;
-	color: #191919;
 	cursor: pointer;
 	font-weight: 400;
 
@@ -267,6 +278,11 @@
 
 	user-select: none;
 	-moz-user-select: none;
+}
+
+.dark-theme.btr-profile .btr-games-list .btr-game-button {
+	background-color: #656668;
+	border-color: #656668;
 }
 
 .btr-profile .btr-games-list .btr-game-button:hover {
@@ -352,9 +368,7 @@
 	text-decoration: underline;
 }
 
-.btr-profile .btr-games-list .btr-game-desc-content.btr-no-description:after {
-	display: block;
-	content: "This game has no description";
+.btr-profile .btr-games-list .btr-game-desc-content.btr-no-description {
 	color: #757575;
 }
 
@@ -404,7 +418,7 @@
 
 /* Favorites */
 
-.btr-profile .btr-profile-favorites .game-card {
+html .btr-profile .btr-profile-favorites .game-card {
 	float: left;
 	width: 33.333%;
 	height: auto;
@@ -417,8 +431,16 @@
 	border: 1px solid #E3E3E3;
 }
 
+.dark-theme .btr-profile-favorites .game-card-container {
+	border-color: #656668;
+}
+
 .btr-profile-favorites .game-card-thumb-container {
 	border-bottom: 1px solid #E3E3E3;
+}
+
+.dark-theme .btr-profile-favorites .game-card-thumb-container {
+	border-bottom-color: #656668;
 }
 
 .btr-profile-favorites .game-card-thumb-container,
@@ -432,20 +454,24 @@
 	margin-bottom: 100%;
 }
 
+.btr-profile-favorites .game-card .game-card-name {
+	font-size: 14px;
+}
+
 .btr-profile-favorites .game-card-name-secondary {
 	padding-bottom: 2px;
 }
 
 .btr-profile-favorites .card-item .btr-creator-link {
 	display: inline-block;
-	vertical-align: sub;
-	max-width: calc(100% - 16px)
+	vertical-align: bottom;
+	max-width: calc(100% - 22px)
 }
 
 .btr-profile-favorites .input-group-btn {
 	float: right;
 	width: 140px;
-	margin-right: 6px;
+	margin-right: 10px;
 	margin-top: -4px;
 }
 
@@ -490,8 +516,16 @@
 	border: 1px solid #E3E3E3;
 }
 
+.dark-theme .btr-profile-groups .game-card-container {
+	border-color: #656668;
+}
+
 .btr-profile-groups .game-card-thumb-container {
 	border-bottom: 1px solid #E3E3E3;
+}
+
+.dark-theme .btr-profile-groups .game-card-thumb-container {
+	border-bottom-color: #656668;
 }
 
 .btr-profile-groups .game-card-thumb-container,
@@ -503,6 +537,10 @@
 .btr-profile-groups .game-card-thumb-container .game-card-thumb.unloaded {
 	height: 0;
 	margin-bottom: 100%;
+}
+
+.btr-profile-groups .game-card .game-card-name {
+	font-size: 14px;
 }
 
 /* Inventory */

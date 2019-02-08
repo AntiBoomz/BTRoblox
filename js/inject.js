@@ -561,7 +561,6 @@ const INJECT_SCRIPT = () => {
 	}
 
 	ContentJS.listen("TEMPLATE_INIT", key => templates[key] = true)
-	ContentJS.listen("refreshInventory", () => $(".btr-it-reload").click())
 	ContentJS.listen("linkify", cl => {
 		const target = $(`.${cl}`)
 		target.removeClass(cl)

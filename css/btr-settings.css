@@ -123,7 +123,7 @@
 	font-size: 12px;
 }
 
-.btr-settings-enabled-toggle {
+.btr-settings .btr-settings-enabled-toggle {
 	position: absolute;
 	top: 8px;
 	right: 8px;
@@ -207,7 +207,7 @@
 .btr-settings-content group > h4 {
 	display: block;
 	color: #191919;
-	font-size: 21px;
+	font-size: 18px;
 	margin: 0 0 5px;
 	padding: 0;
 	line-height: 1em;

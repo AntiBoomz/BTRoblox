@@ -293,7 +293,8 @@ const RBXScene = (() => {
 			ground.material.defines = { FLAT_SHADOWS: "" }
 			
 			const updateColor = theme => {
-				const color = theme === "night" ? 0x424242 : 0xFFFFFF
+				const color = theme === "night" ? 0x424242 :
+					(document.body.classList.contains("dark-theme") ? 0x656668 : 0xFFFFFF)
 				ground.material.color = new THREE.Color(color)
 				this.renderer.setClearColor(color)
 			}

@@ -143,18 +143,24 @@ a:not(.disabled) > .btr-icon-content:hover {
 	transition: .05s linear .05s;
 	border: 1px solid #B8B8B8;
 
+	background-color: #fff !important;
+
 	align-items: center;
 	justify-content: center;
+}
+
+.dark-theme .btr-bundle-animations .btr-bundle-btn,
+.dark-theme .btr-bundle-animations .btr-bundle-btn-alt {
+	background-color: #656668 !important;
 }
 
 .btr-bundle-animations .btr-bundle-btn:not([disabled]):hover,
 .btr-bundle-animations .btr-bundle-btn-alt:hover {
 	box-shadow: 0 1px 4px 0 rgba(25,25,25,0.3);
-	background-color: #fff;
 }
 
 .btr-bundle-animations .btr-bundle-btn[disabled] {
-	background-color: #eee;
+	background-color: #eee !important;
 	cursor: default;
 }
 
@@ -282,11 +288,11 @@ a:not(.disabled) > .btr-icon-content:hover {
 	box-shadow: 0 1px 3px rgba(150,150,150,0.74);
 }
 
-.btr-thumb-popup {
+.btr-thumb-btn-container .btr-thumb-popup {
 	position: absolute;
 	left: 100%;
 	margin-left: 10px;
-	height: 186px;
+	height: 190px;
 	width: 300px;
 	bottom: 0;
 
@@ -296,6 +302,8 @@ a:not(.disabled) > .btr-icon-content:hover {
 	border-radius: 4px;
 	box-shadow: 0 -5px 20px rgba(25,25,25,0.15);
 	opacity: 0;
+
+	font-size: 15px;
 
 	z-index: -1;
 
@@ -340,7 +348,7 @@ a:not(.disabled) > .btr-icon-content:hover {
 	float: right;
 }
 
-.btr-body-popup > input {
+.btr-thumb-popup.btr-body-popup > input {
 	-webkit-appearance: none;
 	height: 6px;
 	border-radius: 3px;
@@ -359,6 +367,10 @@ a:not(.disabled) > .btr-icon-content:hover {
 	height: 12px;
 	border-radius: 50%;
 	background: white;
+}
+
+.dark-theme .btr-thumb-popup.btr-body-popup > input::-webkit-slider-runnable-track {
+	background: none;
 }
 
 .btr-body-popup > input[disabled]::-webkit-slider-thumb {

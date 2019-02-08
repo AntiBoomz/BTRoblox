@@ -55,8 +55,8 @@ pageInit.profile = function(userId) {
 		</div>
 		<div class=btr-profile-favorites>
 			<div class=container-header>
-				<h3>Favorite Places</h3>
-				<a href=./favorites class="btn-secondary-xs btn-fixed-width btn-more">Favorites</a>
+				<h3>Favorites</h3>
+				<a href=./favorites class="btn-secondary-xs btn-fixed-width btn-more see-all-link-icon">See All</a>
 			</div>
 			<div class=section-content>
 				<ul class="hlist game-cards">
@@ -206,6 +206,11 @@ pageInit.profile = function(userId) {
 		.$watch(".see-more-roblox-badges-button", btn => {
 			const badges = btn.parentElement.parentElement
 			left.$find(".placeholder-robloxbadges").replaceWith(badges)
+
+			const content = badges.$find(".section-content")
+			if(content) { // dark theme fix
+				content.classList.remove("remove-panel")
+			}
 
 			badges.classList.add("btr-profile-robloxbadges")
 			badges.$find(".btn-more").setAttribute("ng-show", badges.$find(".badge-list").children.length > 10)
@@ -454,7 +459,12 @@ pageInit.profile = function(userId) {
 						descToggle.remove()
 					}
 
-					descContent.classList.toggle("btr-no-description", descContent.textContent.trim() === "")
+					if(!descContent.textContent.trim()) {
+						descContent.classList.toggle("btr-no-description", true)
+						descContent.textContent = "This game has no description"
+					} else {
+						descContent.classList.toggle("btr-no-description", false)
+					}
 				}
 
 				updateDesc()
@@ -599,10 +609,10 @@ pageInit.profile = function(userId) {
 								</div>
 								<div class="text-overflow game-card-name">${item.Name}</div>
 							</a>
-							<div class="text-overflow game-card-name-secondary">
+							<div class="text-overflow game-card-name-secondary text-secondary small">
 								${item.Members} ${item.Members === 1 ? "Member" : "Members"}
 							</div>
-							<div class="text-overflow game-card-name-secondary">${item.Rank}</div>
+							<div class="text-overflow game-card-name-secondary text-secondary small">${item.Rank}</div>
 						</div>
 					</li>`
 
@@ -621,9 +631,6 @@ pageInit.profile = function(userId) {
 		const favorites = right.$find(".btr-profile-favorites")
 		const hlist = favorites.$find(".hlist")
 		hlist.setAttribute("ng-non-bindable", "")
-
-		const header = favorites.$find(".container-header h3")
-		header.textContent = "Favorite Places"
 
 		const pageSize = 6
 		const pager = createPager(false, true)
@@ -686,7 +693,6 @@ pageInit.profile = function(userId) {
 					hlist.$empty()
 
 					const categoryName = dropdownLabel.textContent
-					header.textContent = `Favorite ${categoryName}`
 
 					const items = json.Data.Items
 					if(!items.length) {
@@ -703,8 +709,8 @@ pageInit.profile = function(userId) {
 										<div class="text-overflow game-card-name" title="${data.Item.Name}" ng-non-bindable>${data.Item.Name}</div>
 									</a>
 									<div class="game-card-name-secondary btr-creator-link-container">
-										<span class="text-label xsmall">By </span>
-										<a class="text-link xsmall text-overflow btr-creator-link" title="${data.Creator.Name}" href="${data.Creator.CreatorProfileLink}">
+										<span class="text-secondary">By </span>
+										<a class="text-link text-secondary text-overflow btr-creator-link" title="${data.Creator.Name}" href="${data.Creator.CreatorProfileLink}">
 											${data.Creator.Name}
 										</a>
 									</div>

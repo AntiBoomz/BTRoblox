@@ -59,7 +59,7 @@ pageInit.inventory = function() {
 
 	if(settings.inventory.inventoryTools) {
 		modifyTemplate("assets-list", template => {
-			const categories = ["Models", "Meshes", "Decals", "Animations", "Audio"]
+			const categories = ["Models", "Meshes", "Decals", "Animations", "Audio", "MeshParts"]
 			categories.forEach((v, i) => { categories[i] = `currentData.category.name == "${v}"` })
 
 			const visibility = `staticData.isOwnPage && (${categories.join(" || ")})`
@@ -67,7 +67,6 @@ pageInit.inventory = function() {
 			template.$findAll(".assets-explorer-title").forEach(title => {
 				title.after(html`
 				<div class="header-content" ng-show="${visibility}">
-					<a class="hidden btr-it-reload" ng-click="newPage(currentData.currentPage)"/>
 					<a class="btn btn-secondary-sm btr-it-btn btr-it-remove disabled" style="float:right;margin:4px 10px;">Remove</a>
 				</div>`)
 			})
@@ -137,27 +136,27 @@ pageInit.inventory = function() {
 
 				function removeItem(index) {
 					const item = items[index]
-					if(item) {
-						const url = `https://api.roblox.com/Marketplace/ProductInfo?assetId=${item.assetId}`
-						fetch(url).then(async response => {
-							const data = await response.json()
-							if(validAssetTypes.indexOf(data.AssetTypeId) === -1) { return console.log("Bad assetType", data) }
+					if(!item) { return }
 
-							xsrfFetch("https://www.roblox.com/asset/delete-from-inventory", {
-								method: "POST",
-								credentials: "include",
-								body: new URLSearchParams({ assetId: item.assetId })
-							}).then(() => {
-								item.obj.remove()
-								if(--itemsLeft === 0) {
-									isRemoving = false
-									InjectJS.send("refreshInventory")
-								}
-							})
+					const url = `https://api.roblox.com/Marketplace/ProductInfo?assetId=${item.assetId}`
+					fetch(url).then(async response => {
+						const data = await response.json()
+						if(validAssetTypes.indexOf(data.AssetTypeId) === -1) { return console.log("Bad assetType", data) }
+
+						xsrfFetch("https://www.roblox.com/asset/delete-from-inventory", {
+							method: "POST",
+							credentials: "include",
+							body: new URLSearchParams({ assetId: item.assetId })
+						}).then(() => {
+							item.obj.remove()
+							if(--itemsLeft === 0) {
+								isRemoving = false
+								InjectJS.send("refreshInventory")
+							}
 						})
+					})
 
-						setTimeout(removeItem, 250, index + 1)
-					}
+					setTimeout(removeItem, 250, index + 1)
 				}
 
 				removeItem(0)

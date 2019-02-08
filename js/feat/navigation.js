@@ -8,7 +8,7 @@ const Navigation = (() => {
 
 	const buttonElements = {
 		topleft: {
-			bi_Home: htmlstring`<li><a class=nav-menu-title href=/home>Home</a></li>`
+			bi_Home: htmlstring`<li class=cursor-pointer><a class="nav-menu-title text-header font-header-2" href=/home>Home</a></li>`
 		},
 		topright: {
 			bi_Friends: html`
@@ -169,7 +169,7 @@ const Navigation = (() => {
 			Object.entries(savedItems.topleftCustom).forEach(([text, url]) => {
 				const name = `cu_${text}`
 				const elem = items[name] = html`
-				<li><a class=nav-menu-title href="${url}">${text}</a></li>`
+				<li class=cursor-pointer><a class="nav-menu-title text-header font-header-2" href="${url}">${text}</a></li>`
 				registered.set(elem, name)
 			})
 
@@ -319,9 +319,9 @@ const Navigation = (() => {
 			.$watch("#nav-blog", blog => {
 				blog.parentNode.before(html`
 				<li>
-					<a href=/premium/membership id=nav-bc class="font-gray-1 text-nav">
+					<a href=/premium/membership id=nav-bc class="text-nav">
 						<span class=icon-nav-bc-btr></span>
-						<span>Builders Club</span>
+						<span class=font-header-2>Builders Club</span>
 					</a>
 				</li>`)
 	
