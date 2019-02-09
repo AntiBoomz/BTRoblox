@@ -29,15 +29,36 @@ const Navigation = (() => {
 	}
 
 	const topLeftBars = []
+	const savedItems = {}
 	let rplusCompatMode = false
 	let isEnabled = false
 	let topRightBar
-	let savedItems
+
+	const arrayEquals = (a, b) => JSON.stringify(a) === JSON.stringify(b)
+
+	const loadSavedItems = savedData => {
+		const items = savedData && JSON.parse(savedData) || {}
+		const topleft = items.topleft || defaultItems.topleft
+		const topright = items.topright || defaultItems.topright
+
+		if(!savedItems.topleft || !arrayEquals(savedItems.topleft, topleft)) {
+			savedItems.topleft = topleft
+			requestTopLeftUpdate()
+		}
+
+		if(!savedItems.topright || !arrayEquals(savedItems.topright, topright)) {
+			savedItems.topright = topright
+			requestTopRightUpdate()
+		}
+	}
 
 	const saveSavedItems = () => {
 		MESSAGING.send("setSetting", {
 			path: "navigation.items",
-			value: JSON.stringify(savedItems)
+			value: JSON.stringify({
+				topleft: !arrayEquals(savedItems.topleft, defaultItems.topleft) ? savedItems.topleft : undefined,
+				topright: !arrayEquals(savedItems.topright, defaultItems.topright) ? savedItems.topright : undefined
+			})
 		})
 	}
 
@@ -108,6 +129,8 @@ const Navigation = (() => {
 		const self = topRightBar
 		let prev
 
+		if(!self) { return }
+
 		saved.forEach(x => {
 			const rem = x[0] === "-"
 			const item = self.items[rem ? x.slice(1) : x]
@@ -144,12 +167,11 @@ const Navigation = (() => {
 
 	const initNavigation = () => {
 		isEnabled = settings.navigation.enabled
-		savedItems = settings.navigation.items && JSON.parse(settings.navigation.items) || {}
 
-		if(!savedItems.topleft) { savedItems.topleft = defaultItems.topleft }
-		if(!savedItems.topleftCustom) { savedItems.topleftCustom = {} }
-		if(!savedItems.topright) { savedItems.topright = defaultItems.topright }
-
+		loadSavedItems(settings.navigation.items)
+		SETTINGS.onChange("navigation.items", value => {
+			loadSavedItems(value)
+		})
 
 		const headerWatcher = document.$watch("#header > .container-fluid").$then()
 
@@ -163,13 +185,6 @@ const Navigation = (() => {
 
 			Object.entries(buttonElements.topleft).forEach(([name, data]) => {
 				const elem = items[name] = html(data)
-				registered.set(elem, name)
-			})
-
-			Object.entries(savedItems.topleftCustom).forEach(([text, url]) => {
-				const name = `cu_${text}`
-				const elem = items[name] = html`
-				<li class=cursor-pointer><a class="nav-menu-title text-header font-header-2" href="${url}">${text}</a></li>`
 				registered.set(elem, name)
 			})
 

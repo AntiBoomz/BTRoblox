@@ -93,7 +93,12 @@ const SettingsDiv = (() => {
 				</group>
 				<group label="Version History" path=versionhistory toggleable>
 				</group>
-				<group label="WIP / Other" minimizable minimized id=btr-settings-wip>
+				<group label="WIP / Other" minimizable minimized>
+					<div id=btr-settings-wip>
+					</div>
+					<div style="margin-top: 12px; text-align: right;">
+						<button id=btr-reset-settings class=btn-control-xs>Reset settings to default</button>
+					</div>
 				</group>
 			</div>
 			<div class=btr-settings-content id=btr-settings-shout-filters data-name=shoutFilters>
@@ -455,11 +460,9 @@ const SettingsDiv = (() => {
 		},
 		open() {
 			switchContent("navigationEditor")
-			if(!this.isInit) {
-				this.init()
-			} else {
-				this.switchTab(this.tab.name)
-			}
+
+			if(!this.isInit) { this.init() }
+			this.switchTab("topleft")
 		},
 		init() {
 			this.isInit = true
@@ -480,8 +483,6 @@ const SettingsDiv = (() => {
 			} else {
 				this.elem.classList.add("btr-nav-disabled")
 			}
-
-			this.switchTab("topleft")
 		},
 		initTopRight() {
 			const topright = this.elem.$find("#btr-naveditor-topright")
@@ -507,15 +508,11 @@ const SettingsDiv = (() => {
 				return item
 			})
 			
-			const list = Navigation.topright.getCurrent().map(name => {
-				const item = allItems.find(x => x.name === name)
-				topright.append(item.elem)
-				item.listElem.classList.add("disabled")
-				return item
-			})
+			let list = Navigation.topright.getCurrent().map(name => allItems.find(x => x.name === name))
 
 			const updatePos = slow => {
 				let offset = 0
+
 				list.forEach(x => {
 					if(x !== dragging) {
 						x.elem.style.transition = slow ? "all .25s" : ""
@@ -533,6 +530,28 @@ const SettingsDiv = (() => {
 					list.map(x => x.name)
 				)
 			}
+
+			const forceUpdateElems = () => {
+				allItems.forEach(item => {
+					if(list.includes(item)) {
+						topright.append(item.elem)
+						item.listElem.classList.add("disabled")
+					} else {
+						item.elem.remove()
+						item.listElem.classList.remove("disabled")
+					}
+				})
+			}
+
+			forceUpdateElems()
+			SETTINGS.onChange("navigation.items", () => {
+				setTimeout(() => {
+					list = Navigation.topright.getCurrent().map(name => allItems.find(x => x.name === name))
+					forceUpdateElems()
+					updatePos(false)
+				}, 0)
+			})
+
 
 			{ // Fix order and update robux label
 				const msg = allItems.find(x => x.name === "bi_Messages")
@@ -729,12 +748,7 @@ const SettingsDiv = (() => {
 				return { elem, listElem, name }
 			})
 			
-			const list = Navigation.topleft.getCurrent().map(name => {
-				const item = allItems.find(x => x.name === name)
-				topleft.append(item.elem)
-				item.listElem.classList.add("disabled")
-				return item
-			})
+			let list = Navigation.topleft.getCurrent().map(name => allItems.find(x => x.name === name))
 
 			const updatePos = slow => {
 				list.forEach((x, i) => {
@@ -751,6 +765,27 @@ const SettingsDiv = (() => {
 					list.map(x => x.name)
 				)
 			}
+
+			const forceUpdateElems = () => {
+				allItems.forEach(item => {
+					if(list.includes(item)) {
+						topleft.append(item.elem)
+						item.listElem.classList.add("disabled")
+					} else {
+						item.elem.remove()
+						item.listElem.classList.remove("disabled")
+					}
+				})
+			}
+
+			forceUpdateElems()
+			SETTINGS.onChange("navigation.items", () => {
+				setTimeout(() => {
+					list = Navigation.topleft.getCurrent().map(name => allItems.find(x => x.name === name))
+					forceUpdateElems()
+					updatePos(false)
+				}, 0)
+			})
 
 			const mouseup = ev => {
 				if(ev.button !== 0) { return }
@@ -919,6 +954,41 @@ const SettingsDiv = (() => {
 			switchContent("groupRedesign")
 		})
 
+		const resetButton = settingsDiv.$find("#btr-reset-settings")
+		const resetButtonDefaultText = resetButton.textContent
+		let isResetting = false
+		let resetInterval
+		let resetTimer
+
+		resetButton.$on("click", () => {
+			if(!isResetting) {
+				isResetting = true
+
+				resetTimer = 3
+				resetButton.textContent = `Are you sure? (${resetTimer})`
+
+				resetInterval = setInterval(() => {
+					if(--resetTimer > 0) {
+						resetButton.textContent = `Are you sure? (${resetTimer})`
+						return
+					}
+
+					clearInterval(resetInterval)
+					resetInterval = null
+					resetButton.textContent = resetButtonDefaultText
+					isResetting = false
+				}, 1e3)
+				return
+			}
+
+			clearInterval(resetInterval)
+			resetInterval = null
+			resetButton.textContent = resetButtonDefaultText
+			isResetting = false
+
+			SETTINGS.resetToDefault()
+		})
+
 		// Settings 
 
 		const settingsDone = {}
@@ -997,9 +1067,9 @@ const SettingsDiv = (() => {
 				}
 
 				const update = () => {
-					if(titleOption) {
-						const optionText = select.selectedOptions[0] ? select.selectedOptions[0].textContent : ""
-						titleOption.textContent = titleOptionFormat.replace(/%opt%/g, () => optionText)
+					const selected = select.selectedOptions[0]
+					if(titleOption && titleOption !== selected) {
+						titleOption.textContent = titleOptionFormat.replace(/%opt%/g, () => selected.textContent)
 						select.value = titleOption.value
 					}
 				}
@@ -1012,6 +1082,11 @@ const SettingsDiv = (() => {
 					if(!selected || selected.hasAttribute("disabled")) { return }
 
 					SETTINGS.set(settingPath, select.value)
+					update()
+				})
+				
+				SETTINGS.onChange(settingPath, value => {
+					select.value = value
 					update()
 				})
 

@@ -501,16 +501,25 @@ Object.assign(SETTINGS, {
 					this.loadedSettings = this._initSettings(data.settings)
 					this.loaded = true
 	
-					resolve(this.loadedSettings)
+					resolve()
 				})
 			})
 		}
 
-		this._loadPromise.then(fn)
+		this._loadPromise.then(() => fn(this.loadedSettings))
 	},
 	
 	_getSetting(path, root) {
-		return path.split(".").reduce((t, i) => (t ? t[i] : null), root)
+		const index = path.indexOf(".")
+		if(index === -1) { return }
+
+		const groupName = path.slice(0, index)
+		const settingName = path.slice(index + 1)
+
+		const group = root[groupName]
+		if(!group) { return }
+
+		return group[settingName]
 	},
 
 	isValid(settingPath) {
@@ -576,6 +585,16 @@ Object.assign(SETTINGS, {
 				})
 			}
 		}
+	},
+
+	resetToDefault() {
+		if(!this.loaded) { throw new Error("Settings are not loaded") }
+
+		Object.entries(this.defaultSettings).forEach(([groupName, group]) => {
+			Object.entries(group).forEach(([settingName, setting]) => {
+				this.set(`${groupName}.${settingName}`, setting.value)
+			})
+		})
 	},
 
 	onChange(settingPath, fn) {
