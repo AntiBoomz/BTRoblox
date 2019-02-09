@@ -442,6 +442,14 @@ body #navigation .rbx-scrollbar .mCSB_container {
 	white-space: nowrap;
 	overflow: auto;
 	overscroll-behavior: contain;
+
+	background: #FFF;
+	color: #191919;
+}
+
+.btr-explorer-parent,
+.btr-explorer-parent input {
+	font-family: "Source Sans Pro",Arial,Helvetica,sans-serif !important;
 }
 
 .btr-explorer-parent .btr-explorer div,
