@@ -339,8 +339,6 @@
 .btr-settings-content .btr-select {
 	display: inline-block;
 	width: 50%;
-	
-	color: #191919;
 }
 
 .btr-settings-content select {
@@ -348,6 +346,8 @@
 	font-size: 14px;
 	padding: 2px 0;
 	font-weight: 400;
+
+	color: #191919;
 }
 
 .btr-settings-content select option {
@@ -386,7 +386,7 @@
 }
 
 .dark-theme .btr-settings-header-list > button.btn-control-xs:before {
-	filter: invert(30%);
+	filter: invert(40%);
 }
 
 .btr-settings-header-list > button.btn-secondary-xs:before {
