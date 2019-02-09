@@ -82,6 +82,16 @@ a.disabled > .btr-icon-content {
 	filter: invert(75%);
 }
 
+.dark-theme .btr-icon-download,
+.dark-theme .btr-icon-content {
+	filter: invert(75%);
+}
+
+.dark-theme a.disabled > .btr-icon-download,
+.dark-theme a.disabled > .btr-icon-content {
+	filter: invert(40%);
+}
+
 .btr-icon-download { background-position-y: -28px; }
 .btr-icon-content { background-position-y: -56px; }
 
