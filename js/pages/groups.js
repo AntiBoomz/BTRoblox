@@ -93,7 +93,7 @@
 
 		if(settings.groups.groupWallRanks) {
 			modifyTemplate("group-comments", template => {
-				template.$find(".wall-comment-name").append(html`<span class="btr-grouprank">({{post.poster.role.name}})</span>`)
+				template.$find(".wall-comment-name").append(html`<span class="btr-grouprank text-label">({{post.poster.role.name}})</span>`)
 			})
 		}
 	}

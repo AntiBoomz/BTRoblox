@@ -36,7 +36,8 @@
 	margin-top: 12px;
 }
 
-.btr-profile .btr-section-content-off {
+.btr-profile .btr-section-content-off,
+.dark-theme.btr-profile .btr-section-content-off {
 	background: none;
 }
 
@@ -132,7 +133,7 @@
 }
 
 .dark-theme.btr-profile .profile-avatar-right {
-	border: 1px solid #232527;
+	outline: 1px solid #232527;
 }
 
 .btr-profile .profile-avatar-right.visible {
@@ -199,25 +200,29 @@
 	overflow: hidden;
 }
 
-.btr-profile .btr-profile-robloxbadges .asset-item span[title] {
-	transform: scale(0.65);
+.btr-profile .btr-profile-robloxbadges .asset-item .asset-thumb-container {
+	display: inline-block;
+	width: 90px;
+	height: 90px;
+
+	border-radius: 3px;
+}
+
+.btr-profile .btr-profile-robloxbadges .asset-item .asset-thumb-container span {
+	/* Resize the background image without needing to redo all positions */
+	transform: scale(calc(88 / 140));
 	transform-origin: 0 0;
-	margin-left: 4px;
-	margin-bottom: -49%;
 }
 
 .btr-profile .btr-profile-robloxbadges .asset-item .item-name {
 	width:100%;
 	text-align: center;
 	font-size: 14px;
+
+	padding: 0 1px;
 }
 
 /* Player Badges */
-
-.btr-profile .btr-profile-playerbadges .hlist {
-/*	min-height: 122px;
-	max-height: 244px;*/
-}
 
 .btr-profile .btr-profile-playerbadges .hlist .list-item {
 	width: 20%;
@@ -227,6 +232,7 @@
 	width: 90px;
 	height: 90px;
 	border: 1px solid #B8B8B8;
+	border-radius: 3px;
 }
 
 .dark-theme.btr-profile .btr-profile-playerbadges .hlist .list-item img {
@@ -238,6 +244,8 @@
 	text-align: center;
 	font-size: 14px;
 	font-weight: 500;
+
+	padding: 0 1px;
 }
 
 /* Games */

@@ -280,7 +280,11 @@ body #navigation .rbx-scrollbar .mCSB_container {
 }
 
 .btr-pager-holder .pager-mid {
-	padding-right: 4px;
+	padding-right: 9px;
+}
+
+.btr-pager-holder .pager-mid span {
+	padding-right: 0;
 }
 
 .btr-pager-holder input.pager-cur {
@@ -288,6 +292,7 @@ body #navigation .rbx-scrollbar .mCSB_container {
 	height: 28px;
 
 	background-color: white;
+	color: #191919;
 	border: 1px solid #B8B8B8;
 	border-radius: 3px;
 
