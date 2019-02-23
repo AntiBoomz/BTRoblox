@@ -78,19 +78,24 @@ pageInit.profile = function(userId) {
 			cont.parentNode.classList.add("btr-profile-container")
 			cont.setAttribute("ng-if", "false") // Let's make angular clean it up :)
 		})
-		.$watch(".profile-about-content", desc => {
-			left.$find(".placeholder-desc").replaceWith(desc)
+		.$watch(".profile-about", about => {
+			left.$find(".profile-about").setAttribute("ng-controller", about.getAttribute("ng-controller"))
 
-			desc.$find(".profile-about-content-text").classList.add("linkify")
-		})
-		.$watch(".profile-about-footer", footer => {
-			left.$find(".placeholder-footer").replaceWith(footer)
-
-			const tooltip = footer.$find(".tooltip-pastnames")
-			if(tooltip) { tooltip.setAttribute("data-container", "body") } // Display tooltip over side panel
-		})
-		.$watch(".profile-about .profile-social-networks", social => {
-			left.$find(".btr-profile-about .container-header").append(social)
+			about
+				.$watch(".profile-about-content", desc => {
+					left.$find(".placeholder-desc").replaceWith(desc)
+		
+					desc.$find(".profile-about-content-text").classList.add("linkify")
+				})
+				.$watch(".profile-about-footer", footer => {
+					left.$find(".placeholder-footer").replaceWith(footer)
+		
+					const tooltip = footer.$find(".tooltip-pastnames")
+					if(tooltip) { tooltip.setAttribute("data-container", "body") } // Display tooltip over side panel
+				})
+				.$watch(".profile-social-networks", social => {
+					left.$find(".btr-profile-about .container-header").append(social)
+				})
 		})
 		.$watch(".profile-header-top .header-caption", () => { // Wait for the first element after status
 			const status = $(".profile-avatar-status")
