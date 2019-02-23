@@ -679,9 +679,9 @@ pageInit.itemdetails = function(assetId) {
 		})
 
 		canAccessPromise.then(canAccess => {
-			if(!canAccess && StrictCheckAssetTypeIds.includes(assetTypeId)) { return }
+			const strictDisabled = !canAccess && StrictCheckAssetTypeIds.includes(assetTypeId)
 
-			if(settings.itemdetails.explorerButton && !InvalidExplorableAssetTypeIds.includes(assetTypeId)) {
+			if(settings.itemdetails.explorerButton && !InvalidExplorableAssetTypeIds.includes(assetTypeId) && (!strictDisabled || assetTypeId === 24)) {
 				const explorer = new Explorer()
 				let explorerInitialized = false
 
@@ -724,7 +724,7 @@ pageInit.itemdetails = function(assetId) {
 				})
 			}
 
-			if(settings.itemdetails.downloadButton && !InvalidDownloadableAssetTypeIds.includes(assetTypeId)) {
+			if(settings.itemdetails.downloadButton && !InvalidDownloadableAssetTypeIds.includes(assetTypeId) && !strictDisabled) {
 				let isDownloading = false
 
 				const createDownloadButton = actualUrl => {
@@ -784,7 +784,7 @@ pageInit.itemdetails = function(assetId) {
 			}
 
 			const assetTypeContainer = ContainerAssetTypeIds[assetTypeId]
-			if(settings.itemdetails.contentButton && assetTypeContainer) {
+			if(settings.itemdetails.contentButton && assetTypeContainer && !strictDisabled) {
 				const btn = html`<a class="btr-content-button disabled" href="#"><div class="btr-icon-content"></div></a>`
 
 				document.$watch("#item-container").$then().$watch(">.section-content", cont => {
