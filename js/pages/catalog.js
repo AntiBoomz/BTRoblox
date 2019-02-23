@@ -31,7 +31,9 @@ pageInit.catalog = function() {
 	})
 
 	modifyTemplate("catalog-item-card", template => {
-		template.$find(".item-card-container").classList.add("btr-item-card-container")
+		const cont = template.$find(".item-card-container")
+		cont.classList.add("btr-item-card-container")
+		cont.setAttribute("btr-item-info", "{{item.ItemType===1}}")
 
 		const hover = html`<div class="btr-item-card-more">
 			<div class=text-secondary>
@@ -52,10 +54,12 @@ pageInit.catalog = function() {
 
 		getProductInfo(assetId).then(data => {
 			const ulabel = self.$find(".btr-updated-label")
-			ulabel.textContent = ulabel.title = `${$.dateSince(data.Updated, startDate)} ago`
+			ulabel.textContent = `${$.dateSince(data.Updated, startDate)} ago`
+			ulabel.parentNode.title = ulabel.parentNode.textContent
 
 			const slabel = self.$find(".btr-sales-label")
-			slabel.textContent = slabel.title = FormatNumber(data.Sales)
+			slabel.textContent = FormatNumber(data.Sales)
+			slabel.parentNode.title = slabel.parentNode.textContent
 		})
 	})
 }
