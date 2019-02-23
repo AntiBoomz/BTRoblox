@@ -8,7 +8,7 @@ const Navigation = (() => {
 
 	const buttonElements = {
 		topleft: {
-			bi_Home: htmlstring`<li class=cursor-pointer><a class="nav-menu-title text-header font-header-2" href=/home>Home</a></li>`
+			bi_Home: htmlstring`<li class=cursor-pointer><a class="nav-menu-title text-header" href=/home>Home</a></li>`
 		},
 		topright: {
 			bi_Friends: html`
@@ -334,9 +334,9 @@ const Navigation = (() => {
 			.$watch("#nav-blog", blog => {
 				blog.parentNode.before(html`
 				<li>
-					<a href=/premium/membership id=nav-bc class="text-nav">
-						<span class=icon-nav-bc-btr></span>
-						<span class=font-header-2>Builders Club</span>
+					<a href=/premium/membership id=nav-bc class="dynamic-overflow-container text-nav">
+						<div><span class=icon-nav-bc-btr></span></div>
+						<span class=dynamic-ellipsis-item>Builders Club</span>
 					</a>
 				</li>`)
 	
