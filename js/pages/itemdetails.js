@@ -736,19 +736,13 @@ pageInit.itemdetails = function(assetId) {
 					})
 
 					const doNamedDownload = event => {
+						const self = event.currentTarget
 						event.preventDefault()
 
 						if(isDownloading) { return }
 						isDownloading = true
 
-						AssetCache.loadBuffer(actualUrl || assetId, ab => {
-							isDownloading = false
-
-							if(!(ab instanceof ArrayBuffer)) {
-								alert("Failed to download")
-								return
-							}
-
+						const download = (ab, fileType) => {
 							const blobUrl = URL.createObjectURL(new Blob([ab]))
 
 							const title = $("#item-container .item-name-container h2")
@@ -756,15 +750,78 @@ pageInit.itemdetails = function(assetId) {
 								? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-")
 								: new URL(btn.href).pathname
 
-							fileName += `.${GetAssetFileType(assetTypeId, ab)}`
+							fileName += `.${fileType || GetAssetFileType(assetTypeId, ab)}`
 
 							startDownload(blobUrl, fileName)
 							URL.revokeObjectURL(blobUrl)
-						})
-					}
+						}
+
+						if(assetTypeId === 4 && self.classList.contains("btr-download-obj")) {
+							AssetCache.loadMesh(actualUrl || assetId, mesh => {
+								const lines = []
+
+								lines.push("o Mesh")
+
+								for(let i = 0, len = mesh.vertices.length; i < len; i += 3) {
+									lines.push(`v ${mesh.vertices[i]} ${mesh.vertices[i + 1]} ${mesh.vertices[i + 2]}`)
+								}
+
+								lines.push("")
+
+								for(let i = 0, len = mesh.normals.length; i < len; i += 3) {
+									lines.push(`vn ${mesh.normals[i]} ${mesh.normals[i + 1]} ${mesh.normals[i + 2]}`)
+								}
+
+								lines.push("")
+
+								for(let i = 0, len = mesh.uvs.length; i < len; i += 2) {
+									lines.push(`vt ${mesh.uvs[i]} ${mesh.uvs[i + 1]}`)
+								}
+
+								lines.push("")
+								
+								for(let i = 0, len = mesh.faces.length; i < len; i += 3) {
+									lines.push(`f ${mesh.faces[i] + 1} ${mesh.faces[i + 1] + 1} ${mesh.faces[i + 2] + 1}`)
+								}
+
+								download(lines.join("\n"), "obj")
+							})
+						} else {
+							AssetCache.loadBuffer(actualUrl || assetId, ab => {
+								isDownloading = false
 	
-					btn.href = actualUrl || `/asset/?id=${assetId}`
-					btn.$on("click", doNamedDownload)
+								if(!(ab instanceof ArrayBuffer)) {
+									alert("Failed to download")
+									return
+								}
+	
+								download(ab)
+							})
+						}
+					}
+					
+					if(assetTypeId === 4) {
+						btn.dataset.toggle = "popover"
+						btn.dataset.bind = "popover-btr-download"
+
+						btn.after(html`
+						<div class=rbx-popover-content data-toggle=popover-btr-download>
+							<ul class=dropdown-menu role=menu>
+								<li>
+									<a class=btr-download-mesh href="/asset/?id=${assetId}">Download as .mesh</a>
+								</li>
+								<li>
+									<a class=btr-download-obj>Download as .obj</a>
+								</li>
+							</ul>
+						</div>
+						`)
+
+						btn.parentNode.$on("click", ".btr-download-mesh, .btr-download-obj", doNamedDownload)
+					} else {
+						btn.href = actualUrl || `/asset/?id=${assetId}`
+						btn.$on("click", doNamedDownload)
+					}
 				}
 
 				if(assetTypeId === 3) {
