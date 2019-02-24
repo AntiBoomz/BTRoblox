@@ -25,37 +25,44 @@ Links
 API Docs
 ========
 
-* https://abtesting.roblox.com/docs (empty)
-* https://abuse.roblox.com/docs (offline)
-* https://accountsettings.roblox.com/docs
-* https://ads.roblox.com/docs (broken)
-* https://api.roblox.com/docs
-* https://assetdelivery.roblox.com/docs
-* https://auth.roblox.com/docs
-* https://avatar.roblox.com/docs
-* https://badges.roblox.com/docs
-* https://billing.roblox.com/docs
-* https://captcha.roblox.com/docs (empty)
-* https://catalog.roblox.com/docs
-* https://chat.roblox.com/docs
-* https://clientsettings.roblox.com/docs (empty)
-* https://develop.roblox.com/docs
-* https://followings.roblox.com/docs
-* https://friends.roblox.com/docs
-* https://gameinternationalization.roblox.com/docs
-* https://gamejoin.roblox.com/docs (empty)
-* https://games.roblox.com/docs
-* https://gamepersistence.roblox.com/docs (empty)
-* https://groups.roblox.com/docs
-* https://inventory.roblox.com/docs
-* https://locale.roblox.com/docs
-* https://notifications.roblox.com/docs
-* https://points.roblox.com/docs
-* https://presence.roblox.com/docs
-* https://publish.roblox.com/docs
-* https://textfilter.roblox.com/docs (empty)
-* https://thumbnails.roblox.com/docs
-* https://translations.roblox.com/docs (offline)
+| Domain | Description |
+| -: | :- |
+| [abtesting.roblox.com](https://abtesting.roblox.com/docs) | Endpoints for the A/B Testing framework |
+| [abuse.roblox.com](https://abuse.roblox.com/docs) | This Api is temporarily offline. |
+| [accountsettings.roblox.com](https://accountsettings.roblox.com/docs) | All endpoints for account/user settings. |
+| [ads.roblox.com](https://ads.roblox.com/docs) | Ads configuration endpoints. |
+| [api.roblox.com](https://api.roblox.com/docs) | Miscellaneous endpoints |
+| [assetdelivery.roblox.com](https://assetdelivery.roblox.com/docs) | Serves asset content. |
+| [auth.roblox.com](https://auth.roblox.com/docs) | All endpoints that tamper with authentication sessions. |
+| [avatar.roblox.com](https://avatar.roblox.com/docs) | Endpoints relating to the customization of player avatars. |
+| [badges.roblox.com](https://badges.roblox.com/docs) | Endpoints for badges and badge awards management. |
+| [billing.roblox.com](https://billing.roblox.com/docs) | Real money transactions and interaction. |
+| [captcha.roblox.com](https://captcha.roblox.com/docs) | Captcha Api Site |
+| [catalog.roblox.com](https://catalog.roblox.com/docs) | Catalog items browsing and searching. Content and user based catalog items recommendations. |
+| [chat.roblox.com](https://chat.roblox.com/docs) | All chat and party related endpoints. |
+| [clientsettings.roblox.com](https://clientsettings.roblox.com/docs) | Used by various Roblox clients to retrieve configuration information. |
+| [clientsettingscdn.roblox.com](https://clientsettingscdn.roblox.com/docs) | Used by various Roblox clients to retrieve configuration information. |
+| [develop.roblox.com](https://develop.roblox.com/docs) | Game development configuration endpoints. |
+| [economy.roblox.com](https://economy.roblox.com/docs) | Endpoints related to transactions and currency. |
+| [followings.roblox.com](https://followings.roblox.com/docs) | Establishes follow relationship between subscriber entities (users, groups, etc) and source entities (games, groups, assets, etc.) |
+| [friends.roblox.com](https://friends.roblox.com/docs) | Friends, followers, and contacts management. |
+| [gameinternationalization.roblox.com](https://gameinternationalization.roblox.com/docs) | Manages internationalization of games such as translating in game content. |
+| [gamejoin.roblox.com](https://gamejoin.roblox.com/docs) | All endpoints around launching a game. |
+| [gamepersistence.roblox.com](https://gamepersistence.roblox.com/docs) | Endpoints for the in-game datastore system for storing data for games. |
+| [games.roblox.com](https://games.roblox.com/docs) | All endpoints for game discovery, and details. |
+| [groups.roblox.com](https://groups.roblox.com/docs) | Groups management. |
+| [inventory.roblox.com](https://inventory.roblox.com/docs) | All endpoints for viewing (but not granting) ownership of items. |
+| [locale.roblox.com](https://locale.roblox.com/docs) | User locale management. |
+| [metrics.roblox.com](https://metrics.roblox.com/docs) | Record metrics across Roblox. |
+| [notifications.roblox.com](https://notifications.roblox.com/docs) | All notification stream endpoints. |
+| [points.roblox.com](https://points.roblox.com/docs) | The web Api for the in-game PointsService. |
+| [premiumfeatures.roblox.com](https://premiumfeatures.roblox.com/docs) | This Api is temporarily offline. |
+| [presence.roblox.com](https://presence.roblox.com/docs) | All endpoints for managing presence. |
+| [publish.roblox.com](https://publish.roblox.com/docs) | All endpoints handling file uploads. |
+| [textfilter.roblox.com](https://textfilter.roblox.com/docs) | High volume text filtering. |
+| [thumbnails.roblox.com](https://thumbnails.roblox.com/docs) | Endpoints for requesting thumbnails. |
+| [translationroles.roblox.com](https://translationroles.roblox.com/docs) | Manages translation roles of developers in game localization. |
+| [translations.roblox.com](https://translations.roblox.com/docs) | This Api is temporarily offline. |
 
 
 Undocumented APIs
