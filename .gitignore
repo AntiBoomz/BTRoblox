@@ -1,6 +1,4 @@
 .vscode
-bin/btroblox.chrome.zip
-bin/btroblox.firefox.zip
-bin/output.js
 res_dev
+bin
 switch.bat
