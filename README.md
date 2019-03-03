@@ -14,12 +14,6 @@ Links
 * [Roblox Web Apis by Seranok](https://github.com/matthewdean/roblox-web-apis)
 * [API Docs](#api-docs)
 * [Undocumented APIs](#undocumented-apis)
-    * [Friend APIs](#friend-apis)
-    * [User APIs](#user-apis)
-    * [Group APIs](#group-apis)
-    * [Asset APIs](#asset-apis)
-    * [Place APIs](#place-apis)
-    * [Universe APIs](#universe-apis)
 
 
 API Docs
@@ -67,7 +61,218 @@ API Docs
 
 Undocumented APIs
 =================
+* [User APIs](#user-apis)
+* [Friend APIs](#friend-apis)
+* [Group APIs](#group-apis)
+* [Asset APIs](#asset-apis)
+* [Place APIs](#place-apis)
+* [Universe APIs](#universe-apis)
+* [Home Page APIs](#home-page-apis)
+* [Profile Page APIs](#profile-page-apis)
 
+
+User APIs
+---------
+#### Get info about currently logged in user
+* https://www.roblox.com/game/GetCurrentUser.ashx
+    ```json
+    261
+    ```
+
+* https://www.roblox.com/my/account/json
+    ```json
+    {
+        "UserId": 261,
+        "Name": "Shedletsky",
+        "UserEmail": "d****@dummy.com",
+        "IsEmailVerified": true,
+        "AgeBracket": 0,
+        "UserAbove13": true
+    }
+    ```
+
+* https://api.roblox.com/users/account-info
+    ```json
+    {
+        "UserId": 261,
+        "Username": "Shedletsky",
+        "HasPasswordSet": true,
+        "Email": {
+            "Value": "d****@dummy.com",
+            "IsVerified": true
+        },
+        "AgeBracket": 0,
+        "Roles": [],
+        "MembershipType": 0,
+        "RobuxBalance": 0,
+        "NotificationCount": 0,
+        "EmailNotificationEnabled": false,
+        "PasswordNotificationEnabled": false,
+        "CountryCode": "US"
+    }
+    ```
+
+* https://www.roblox.com/my/settings/json
+    ```json
+    {
+        "ChangeUsernameEnabled": true,
+        "IsAdmin": false,
+        "UserId": 261,
+        "Name": "Shedletsky",
+        "IsEmailOnFile": true,
+        "IsEmailVerified": true,
+        "IsPhoneFeatureEnabled": true,
+        "RobuxRemainingForUsernameChange": 0,
+        "PreviousUserNames": "",
+        "UseSuperSafePrivacyMode": false,
+        "IsSuperSafeModeEnabledForPrivacySetting": false,
+        "UseSuperSafeChat": false,
+        "IsAppChatSettingEnabled": true,
+        "IsGameChatSettingEnabled": true,
+        "IsAccountPrivacySettingsV2Enabled": true,
+        "IsSetPasswordNotificationEnabled": false,
+        "ChangePasswordRequiresTwoStepVerification": false,
+        "ChangeEmailRequiresTwoStepVerification": false,
+        "UserEmail": "d****@dummy.com",
+        "UserEmailMasked": true,
+        "UserEmailVerified": true,
+        "CanHideInventory": true,
+        "CanTrade": false,
+        "MissingParentEmail": false,
+        "IsUpdateEmailSectionShown": true,
+        "IsUnder13UpdateEmailMessageSectionShown": false,
+        "IsUserConnectedToFacebook": false,
+        "IsTwoStepToggleEnabled": false,
+        "AgeBracket": 0,
+        "UserAbove13": true,
+        "ClientIpAddress": "123.123.123.123",
+        "AccountAgeInDays": 0,
+        "IsOBC": false,
+        "IsTBC": false,
+        "IsAnyBC": false,
+        "IsPremium": false,
+        "IsBcRenewalMembership": false,
+        "BcExpireDate": "\/Date(-0)\/",
+        "BcRenewalPeriod": null,
+        "BcLevel": null,
+        "HasCurrencyOperationError": false,
+        "CurrencyOperationErrorMessage": null,
+        "BlockedUsersModel": {
+            "BlockedUserIds": [156],
+            "BlockedUsers": [{
+                "uid": 156,
+                "Name": "builderman"
+            }],
+            "MaxBlockedUsers": 50,
+            "Total": 1,
+            "Page": 1
+        },
+        "Tab": null,
+        "ChangePassword": false,
+        "IsAccountPinEnabled": true,
+        "IsAccountRestrictionsFeatureEnabled": true,
+        "IsAccountRestrictionsSettingEnabled": false,
+        "IsAccountSettingsSocialNetworksV2Enabled": false,
+        "IsUiBootstrapModalV2Enabled": true,
+        "IsI18nBirthdayPickerInAccountSettingsEnabled": true,
+        "InApp": false,
+        "MyAccountSecurityModel": {
+            "IsEmailSet": true,
+            "IsEmailVerified": true,
+            "IsTwoStepEnabled": true,
+            "ShowSignOutFromAllSessions": true,
+            "TwoStepVerificationViewModel": {
+                "UserId": 261,
+                "IsEnabled": true,
+                "CodeLength": 0,
+                "ValidCodeCharacters": null
+            }
+        },
+        "ApiProxyDomain": "https://api.roblox.com",
+        "AccountSettingsApiDomain": "https://accountsettings.roblox.com",
+        "AuthDomain": "https://auth.roblox.com",
+        "IsDisconnectFbSocialSignOnEnabled": true,
+        "IsDisconnectXboxEnabled": true,
+        "NotificationSettingsDomain": "https://notifications.roblox.com",
+        "AllowedNotificationSourceTypes": ["Test", "FriendRequestReceived", "FriendRequestAccepted", "PartyInviteReceived", "PartyMemberJoined", "ChatNewMessage", "PrivateMessageReceived", "UserAddedToPrivateServerWhiteList", "ConversationUniverseChanged", "TeamCreateInvite", "GameUpdate", "DeveloperMetricsAvailable"],
+        "AllowedReceiverDestinationTypes": ["DesktopPush", "NotificationStream"],
+        "BlacklistedNotificationSourceTypesForMobilePush": [],
+        "MinimumChromeVersionForPushNotifications": 50,
+        "PushNotificationsEnabledOnFirefox": true,
+        "LocaleApiDomain": "https://locale.roblox.com",
+        "HasValidPasswordSet": true,
+        "IsUpdateEmailApiEndpointEnabled": true,
+        "FastTrackMember": null,
+        "IsFastTrackAccessible": false,
+        "HasFreeNameChange": false,
+        "IsAgeDownEnabled": true,
+        "IsSendVerifyEmailApiEndpointEnabled": true,
+        "IsPromotionChannelsEndpointEnabled": true,
+        "ReceiveNewsletter": false,
+        "SocialNetworksVisibilityPrivacy": 6,
+        "SocialNetworksVisibilityPrivacyValue": "AllUsers",
+        "Facebook": null,
+        "Twitter": "@Shedletsky",
+        "YouTube": null,
+        "Twitch": null
+    }
+    ```
+
+#### Get online status of an user
+* https://api.roblox.com/users/261/onlinestatus/
+    ```json
+    {
+        "GameId": null,
+        "IsOnline": false,
+        "LastLocation": "Offline",
+        "LastOnline": "2019-02-19T15:15:51.311703-06:00",
+        "LocationType": 2,
+        "PlaceId": null,
+        "VisitorId": 261,
+        "PresenceType": 0
+    }
+    ```
+
+#### Get presence of an user
+* https://www.roblox.com/presence/user?userId=261
+    ```json
+    {
+        "UserPresenceType": 0,
+        "LastLocation": "Website",
+        "AbsolutePlaceUrl": null,
+        "PlaceId": null,
+        "GameId": null,
+        "IsGamePlayableOnCurrentDevice": false,
+        "UserId": 261,
+        "EndpointType": "Presence"
+    }
+    ```
+
+#### Get presence of multiple users
+* https://www.roblox.com/presence/users?userIds=261&userIds=156
+    ```json
+    [
+        {
+            "UserPresenceType": 0,
+            "LastLocation": "Website",
+            "AbsolutePlaceUrl": null,
+            "PlaceId": null,
+            "GameId": null,
+            "IsGamePlayableOnCurrentDevice": false,
+            "UserId": 261,
+            "EndpointType": "Presence"
+        }, {
+            "UserPresenceType": 0,
+            "LastLocation": "Website",
+            "AbsolutePlaceUrl": null,
+            "PlaceId": null,
+            "GameId": null,
+            "IsGamePlayableOnCurrentDevice": false,
+            "UserId": 156,
+            "EndpointType": "Presence"
+        }
+    ]
+    ```
 
 Friend APIs
 -----------
@@ -118,269 +323,12 @@ Friend APIs
     ]
     ```
 
-
-Home APIs
----------
-* https://www.roblox.com/home/recently-visited-places
-* https://www.roblox.com/user/favorites/places
-
-#### Friend Activity
-* https://www.roblox.com/games?SortFilter=17&TimeFilter=0
-
-
-
-User APIs
----------
-#### Get currently logged in user
-* https://www.roblox.com/game/GetCurrentUser.ashx
-    ```json
-    4719353
-    ```
-
-#### Get presence of an user
-* https://www.roblox.com/presence/user?userId=261
-    ```json
-    {
-        "UserPresenceType": 0,
-        "LastLocation": "Website",
-        "AbsolutePlaceUrl": null,
-        "PlaceId": null,
-        "GameId": null,
-        "IsGamePlayableOnCurrentDevice": false,
-        "UserId": 261,
-        "EndpointType": "Presence"
-    }
-    ```
-
-#### Get presence of multiple users
-* https://www.roblox.com/presence/users?userIds=261&userIds=4719353&userIds=13645&userIds=5736873
-    ```json
-    [
-        {
-            "UserPresenceType": 0,
-            "LastLocation": "Offline",
-            "AbsolutePlaceUrl": null,
-            "PlaceId": null,
-            "GameId": null,
-            "IsGamePlayableOnCurrentDevice": false,
-            "UserId": 261,
-            "EndpointType": "Presence"
-        },
-        {
-            "UserPresenceType": 1,
-            "LastLocation": "Online",
-            "AbsolutePlaceUrl": null,
-            "PlaceId": null,
-            "GameId": null,
-            "IsGamePlayableOnCurrentDevice": false,
-            "UserId": 4719353,
-            "EndpointType": "Presence"
-        },
-        {
-            "UserPresenceType": 2,
-            "LastLocation": "Playing Jailbreak",
-            "AbsolutePlaceUrl": null,
-            "PlaceId": 606849621,
-            "GameId": "b44569db-8c5f-4a4c-b6ee-e3f8aa4486ce",
-            "IsGamePlayableOnCurrentDevice": true,
-            "UserId": 13645,
-            "EndpointType": "Presence"
-        },
-        {
-            "UserPresenceType": 3,
-            "LastLocation": "Creating Welcome to ROBLOX Building",
-            "AbsolutePlaceUrl": null,
-            "PlaceId": 41324860,
-            "GameId": null,
-            "IsGamePlayableOnCurrentDevice": true,
-            "UserId": 1,
-            "EndpointType": "Presence"
-        }
-    ]
-    ```
-
-#### Get groups of an user
-* https://www.roblox.com/users/profile/playergroups-json?userId=4719353
-    ```json
-    {
-        "NumberOfGroups": 11,
-        "Groups": [
-            {
-                "Id": 1012168,
-                "AgentId": 53447039,
-                "Name": "Studio Aurora",
-                "EmblemId": 233176697,
-                "Description": "We make games.\r\n\r\nWant to see other great studios? Take a look in our allies tab.\r\n\r\nBranch Groups:\r\nAurora Australis: https://www.roblox.com/My/Groups.aspx?gid=2664663\r\n\r\nOur Games:\r\nHeroes\u0027 Legacy: https://www.roblox.com/My/Groups.aspx?gid=1173357\r\nYggdrasil: https://www.roblox.com/games/361122402/Yggdrasil\r\nTales from the Valley: https://www.roblox.com/games/503506257/Tales-from-the-Valley",
-                "GroupUrl": "https://www.roblox.com/groups/group.aspx?gid=1012168",
-                "Rank": "Developer",
-                "Members": 190,
-                "IsPrimary": true,
-                "GroupThumbnailWidth": 150,
-                "GroupThumbnailHeight": 150,
-                "Emblem": {
-                    "Final": true,
-                    "Url": "https://t4.rbxcdn.com/97833c42fc66b82229ba52cace239ceb",
-                    "RetryUrl": "",
-                    "IsApproved": false
-                }
-            },
-            ...
-        ],
-        "ProfileLangResources": {
-            "ActionAccept": "Accept",
-            "ActionAddFriend": "Add Friend",
-            "ActionBlockUser": "Block User",
-            ...
-        }
-    }
-    ```
-
-#### Get collections of an user
-* https://www.roblox.com/users/profile/robloxcollections-json?userId=4719353
-    ```json
-    {
-        "CollectionsItems": [
-            {
-                "AssetSeoUrl": "https://www.roblox.com/catalog/20721282/Pwnda",
-                "Thumbnail": {
-                    "Final": true,
-                    "Url": "https://t6.rbxcdn.com/eccdbdd489e9307deb03371e07d30f90",
-                    "RetryUrl": null,
-                    "UserId": 0,
-                    "EndpointType": "Avatar"
-                },
-                "Name": "Pwnda",
-                "FormatName": null,
-                "Description": "You think you\u0027re tough? He eats Punji sticks for breakfast.",
-                "AssetRestrictionIcon": {
-                    "TooltipText": "Serialized limited release, resellable.",
-                    "CssTag": "limited-unique",
-                    "LoadAssetRestrictionIconCss": false,
-                    "HasTooltip": false
-                }
-            }
-        ]
-    }
-    ```
-
-#### Get player badges of an user
-* https://www.roblox.com/users/profile/playerassets-json?assetTypeId=21&userId=4719353
-    * Was made to be used in profiles, so only shows first 6 badges
-    ```json
-    {
-        "Title": "Player Badges",
-        "Label": "badges",
-        "ModalAssetViewType": 1,
-        "MaxNumberOfVisibleAssets": 6,
-        "Assets": [
-            {
-                "AssetSeoUrl": "https://www.roblox.com/library/1622555285/1-Million-Money",
-                "Thumbnail": {
-                    "Final": true,
-                    "Url": "https://t4.rbxcdn.com/ae0f12952957dde734e84bb858928629",
-                    "RetryUrl": null,
-                    "UserId": 0,
-                    "EndpointType": "Avatar"
-                },
-                "Name": "1 Million Money",
-                "FormatName": null,
-                "Description": "You have made 💰1,000,000 in Metal Detecting Simulator! Congrats! 🤑",
-                "AssetRestrictionIcon": null
-            },
-            ...
-        ],
-        "UserId": 4719353,
-        "IsSeeAllHeaderButtonVisible": true,
-        "AssetTypeInventoryUrl": "https://www.roblox.com/users/4719353/inventory/#!/badges",
-        "ProfileLangResources": {
-            "ActionAccept": "Accept",
-            "ActionAddFriend": "Add Friend",
-            "ActionBlockUser": "Block User",
-            ...
-        }
-    }
-    ```
-
-#### Get games on an user's profile
-* https://www.roblox.com/users/profile/playergames-json?userId=4719353
-    ```json
-    {
-        "Title": "Games",
-        "Games": [
-            {
-                "CreatorID": 0,
-                "CreatorName": "AntiBoomz0r",
-                "CreatorAbsoluteUrl": "https://www.roblox.com/users/4719353/profile",
-                "Plays": 70806,
-                "Price": 0,
-                "ProductID": 0,
-                "IsOwned": false,
-                "IsVotingEnabled": true,
-                "TotalUpVotes": 1102,
-                "TotalDownVotes": 93,
-                "TotalBought": 0,
-                "UniverseID": 71178001,
-                "HasErrorOcurred": false,
-                "Favorites": 3119,
-                "Description": "A very much Work In Progress (WIP) project that I work on whenever I happen to have a small sliver of motivation.\r\n\r\nNew stuff:\r\nTesting a map made out of triangles - Leave your experiences in the comment section (Was it laggy, did it make A!R nicer to play et cetera)\r\n\r\nNew controls\r\nBarrel rolling! Press A or D\r\n\r\n\r\nControls:\r\nW - Increase throttle\r\nS - Decrease throttle\r\nA/D - Barrel roll\r\nM - Mute/Unmute music\r\nMouse - Movement\r\n\r\nThis game not your style? Check out Score Squadron by GollyGreg!\r\nhttp://www.roblox.com/Score-Squadron-place?id=154544998",
-                "GameDetailReferralUrl": "https://www.roblox.com/games/refer?PlaceId=150810024\u0026Position=1\u0026PageType=Profile",
-                "Thumbnail": {
-                    "Final": true,
-                    "Url": "https://t0.rbxcdn.com/47d0bf07cca42d1a31d5947c273c0935",
-                    "RetryUrl": null,
-                    "UserId": 0,
-                    "EndpointType": "Avatar"
-                },
-                "UseDataSrc": false,
-                "IsAsyncThumbnailEnabled": false,
-                "GamePageResources": null,
-                "Name": "A!R - Fly \u0026 Fight [WIP]",
-                "PlaceID": 150810024,
-                "PlayerCount": 0,
-                "ImageId": 0,
-                "IsSecure": false,
-                "ShowExperimentalMode": false
-            },
-            ...
-        ],
-        "ModalAssetViewType": 4,
-        "ProfileLangResources": {
-            "ActionAccept": "Accept",
-            "ActionAddFriend": "Add Friend",
-            "ActionBlockUser": "Block User",
-            ...
-        },
-        "GamePageResources": {
-            "abelFilterDefault": "Default",
-            "ActionDisableExperimentalMode": "Disable",
-            "ActionSeeAll": "See All",
-            ...
-        }
-    }
-    ```
-
-#### Get online status of an user
-* https://api.roblox.com/users/4719353/onlinestatus/
-    * Only api (that I've found) that gives accurate last online info
-    ```json
-    {
-        "GameId": null,
-        "IsOnline": false,
-        "LastLocation": "Offline",
-        "LastOnline": "2019-01-25T13:21:49.074256-06:00",
-        "LocationType": 2,
-        "PlaceId": null,
-        "VisitorId": 4719353,
-        "PresenceType": 0
-    }
-    ```
-
 Group APIs
 -------------
 #### Get role name of an user
-* https://www.roblox.com/Game/LuaWebService/HandleSocialRequest.ashx?method=GetGroupRole&playerid=4719353&groupid=1012168
+* https://www.roblox.com/Game/LuaWebService/HandleSocialRequest.ashx?method=GetGroupRole&playerid=261&groupid=2814397
     ```
-    Developer
+    Owner
     ```
 
 #### Get thumbnails of groups
@@ -455,6 +403,242 @@ Place APIs
         "UsePortraitMode": false,
         "IsExperimental": false,
         "Price": 0
+    }
+    ```
+
+#### Get place settings
+* https://www.roblox.com/places/47324/settings
+    ```json
+    {
+        "DefaultFormatNameString": "{0}\\u0027s Place Number: {1}",
+        "IUser": {
+            "Name": "Shedletsky",
+            "Description": "*snip*",
+            "AccountId": 261,
+            "Created": "*snip*",
+            "AccountStatus": 0,
+            "UseSuperSafePrivacyMode": false,
+            "UseSuperSafeConversationMode": false,
+            "AgeBracket": 0,
+            "Birthdate": "*snip*",
+            "GenderType": 0,
+            "Id": 261
+        },
+        "GameDetailsResources": {
+            "IsValueCreated": false,
+            "Value": {
+                "ActionShareGameToChat": "Share to chat",
+                "HeadingDescription": "Description",
+                "HeadingRecommendedGames": "Recommended Games",
+                "LabelAbout": "About",
+                ...
+            }
+        },
+        "ID": 47324,
+        "DefaultUserName": "Shedletsky",
+        "DefaultPlaceNumber": "82",
+        "Name": "Sword Fights on the Heights IV",
+        "Description": "Death before dishonor.",
+        "DescriptionMaxCharacterCount": 1000,
+        "Genre": "All",
+        "Access": "Everyone",
+        "IsPublic": false,
+        "DeviceSectionHeader": null,
+        "SellGameAccessSectionHeader": null,
+        "ShouldShowStartPlaceNameOrDescriptionUpdateAlsoUpdatesGames": false,
+        "NumberOfMaxPlayersList": [
+            1,
+            2,
+            3,
+            ...
+        ],
+        "NumberOfPlayersList": [
+            1,
+            2,
+            3,
+            ...
+        ],
+        "IsAllGenresAllowed": false,
+        "AllowedGearTypes": [
+            {
+                "GearTypeDisplayName": "Melee",
+                "IsSelected": false,
+                "EncodedBitMask": "1"
+            },
+            {
+                "GearTypeDisplayName": "Power ups",
+                "IsSelected": false,
+                "EncodedBitMask": "8"
+            },
+            {
+                "GearTypeDisplayName": "Ranged",
+                "IsSelected": false,
+                "EncodedBitMask": "2"
+            },
+            {
+                "GearTypeDisplayName": "Navigation",
+                "IsSelected": false,
+                "EncodedBitMask": "16"
+            },
+            {
+                "GearTypeDisplayName": "Explosives",
+                "IsSelected": false,
+                "EncodedBitMask": "4"
+            },
+            {
+                "GearTypeDisplayName": "Musical",
+                "IsSelected": false,
+                "EncodedBitMask": "32"
+            },
+            {
+                "GearTypeDisplayName": "Social",
+                "IsSelected": false,
+                "EncodedBitMask": "64"
+            },
+            {
+                "GearTypeDisplayName": "Transport",
+                "IsSelected": false,
+                "EncodedBitMask": "256"
+            },
+            {
+                "GearTypeDisplayName": "Building",
+                "IsSelected": false,
+                "EncodedBitMask": "128"
+            }
+        ],
+        "ChatType": "Classic",
+        "IsCopyingAllowed": false,
+        "IsCommentsAllowed": true,
+        "NumberOfPlayersMax": 50,
+        "NumberOfPlayersPreferred": 40,
+        "NumberOfCustomSocialSlots": 10,
+        "IsSocialSlotTypesEnabled": true,
+        "SocialSlotType": 1,
+        "SellGameAccess": false,
+        "ShowAllowPrivateServers": false,
+        "ArePrivateServersAllowed": false,
+        "PrivateServersPrice": 0,
+        "PrivateServerMinPrice": 0,
+        "MarketplaceTaxRate": 0.9,
+        "ActivePrivateServersCount": 0,
+        "ActivePrivateServersSubscriptionsCount": 0,
+        "PrivateServerConfigurationLink": "https://develop.roblox.com/v1/universes//configuration/vip-servers",
+        "Price": 0,
+        "PrivateServersHelpLink": null,
+        "OverridesDefaultAvatar": false,
+        "UsePortraitMode": false,
+        "BCSellRequirement": null,
+        "BCSellReqirementMet": true,
+        "SellingVisible": true,
+        "BCSellReqirementText": "Pay to Play places are a premium feature only available to users with None.",
+        "Creator": {
+            "Name": "Shedletsky",
+            "CreatorTargetId": 261,
+            "CreatorType": 0
+        },
+        "PublishStep": 0,
+        "MaxPublishStepReached": 0,
+        "PlayableDevices": [
+            {
+                "DeviceType": 1,
+                "Selected": true
+            },
+            {
+                "DeviceType": 2,
+                "Selected": true
+            },
+            {
+                "DeviceType": 3,
+                "Selected": true
+            },
+            {
+                "DeviceType": 4,
+                "Selected": false
+            }
+        ],
+        "FinalPublishStep": 4,
+        "VersionHistoryOnConfigurePageEnabled": true,
+        "DefaultDevelopTabName": "Game",
+        "PortraitModeEnabled": false,
+        "RedirectTermsToHelpFullUrl": "https://en.help.roblox.com/hc/articles/115004647846-Roblox-Terms-of-Use",
+        "UserIsAnyBuildersClubMember": false,
+        "IsPremium": false,
+        "UserIsSellerBanned": false,
+        "DeviceConfigurationEnabled": true,
+        "ConsoleContentAgreementEnabled": true,
+        "ShowDeveloperProducts": true,
+        "CurrentUniverse": null,
+        "AllowPlaceToBeCopiedInGame": false,
+        "AllowPlaceToBeUpdatedInGame": false,
+        "DeveloperProductUniverseId": 0,
+        "TemplateID": null,
+        "AccessTypesUsingPermissions": null,
+        "AccessTypeSelectList": [
+            {
+                "Disabled": false,
+                "Group": null,
+                "Selected": false,
+                "Text": "Everyone",
+                "Value": null
+            },
+            {
+                "Disabled": false,
+                "Group": null,
+                "Selected": false,
+                "Text": "Friends",
+                "Value": null
+            }
+        ],
+        "UserAgreementModel": null,
+        "MachineID": "WEB946",
+        "BaseScripts": [
+            "~/js/roblox.js",
+            "~/js/jquery.tipsy.js",
+            "~/js/GoogleAnalytics/GoogleAnalyticsEvents.js",
+            "~/js/JSErrorTracker.js",
+            "~/js/jquery.cookie.js",
+            "~/js/common/forms.js",
+            "~/js/jquery.simplemodal-1.3.5.js",
+            "~/js/GenericConfirmation.js",
+            "~/js/JavaScriptEndpoints.js",
+            "~/js/XsrfToken.js"
+        ],
+        "Title": "Roblox Studio",
+        "Groups": null,
+        "PrimaryGroupId": null,
+        "MetaTagListViewModel": {
+            "FacebookMetaTags": null,
+            "TwitterMetaTags": null,
+            "StructuredDataTags": {
+                "StructuredDataContext": "http://schema.org",
+                "StructuredDataType": "Organization",
+                "StructuredDataName": "Roblox",
+                "RobloxUrl": "https://www.roblox.com/",
+                "RobloxLogoUrl": "https://images.rbxcdn.com/c69b74f49e785df33b732273fad9dbe0.png",
+                "RobloxFacebookUrl": "https://www.facebook.com/ROBLOX/",
+                "RobloxTwitterUrl": "https://twitter.com/roblox",
+                "RobloxLinkedInUrl": "https://www.linkedin.com/company/147977",
+                "RobloxInstagramUrl": "https://www.instagram.com/roblox/",
+                "RobloxYouTubeUrl": "https://www.youtube.com/user/roblox",
+                "RobloxGooglePlusUrl": "https://plus.google.com/+roblox",
+                "RobloxTwitchTvUrl": "https://www.twitch.tv/roblox",
+                "Title": "Roblox",
+                "Description": null,
+                "Images": null,
+                "ImageWidth": null,
+                "ImageHeight": null
+            },
+            "Description": "Roblox is a global platform that brings people together through play.",
+            "Keywords": "free games, online games, building games, virtual worlds, free mmo, gaming cloud, physics engine",
+            "NoIndexNoFollow": false,
+            "IncludeReferrerOriginTag": false
+        },
+        "XsrfToken": "*snip*",
+        "XsrfTokensEnabled": true,
+        "IsSiftScienceEnabled": false,
+        "JavascriptErrorTrackerViewModel": {
+            "InitializeParameter": "{ \\u0027suppressConsoleError\\u0027: true}"
+        }
     }
     ```
 
@@ -543,3 +727,264 @@ Universe APIs
     }
     ```
 
+
+Home Page APIs
+---------
+* https://www.roblox.com/home/recently-visited-places
+* https://www.roblox.com/user/favorites/places
+
+#### Friend Activity
+* https://www.roblox.com/games?SortFilter=17&TimeFilter=0
+
+
+
+Profile Page APIs
+------------
+
+#### Get groups of an user
+* https://www.roblox.com/users/profile/playergroups-json?userId=261
+    ```json
+    {
+        "NumberOfGroups": 27,
+        "Groups": [
+            {
+                "Id": 2814397,
+                "AgentId": 121238002,
+                "Name": "Shedletsky Studios",
+                "EmblemId": 454138426,
+                "Description": "Join to get updates about my new games in your ROBLOX feed!",
+                "GroupUrl": "https://www.roblox.com/groups/2814397/Shedletsky-Studios",
+                "Rank": "Owner",
+                "Members": 6841,
+                "IsPrimary": true,
+                "GroupThumbnailWidth": 150,
+                "GroupThumbnailHeight": 150,
+                "Emblem": {
+                    "Final": true,
+                    "Url": "https://t7.rbxcdn.com/c3f73a0973d07d4d15f5bbfdffdf6594",
+                    "RetryUrl": "",
+                    "IsApproved": false
+                }
+            },
+            {
+                "Id": 3428946,
+                "AgentId": 372937350,
+                "Name": "Eccentric Society",
+                "EmblemId": 996523669,
+                "Description": "https://www.roblox.com/catalog/26943368/Eccentric-Shop-Teacher\r\n\r\nAn \"elite\" group for owners of the rarest (4 exist, no limited is rarer), most unique (no direct re-textures), and unobtainable (none are for trade) limited on ROBLOX: Eccentric Shop Teacher. \r\n\r\nOnly owners can join this prestigious society, hehe.\r\n\r\nOwners: Linkmon99, Merely, Shedletsky (sonofsevenless), Runite\r\n\r\n\r\nNote:\r\nWhile the tablets have 1 stock each, as whole there are around 20 making them less rare than the eccentric shop teacher. Second place is Lady of the Federation which 5 exist.",
+                "GroupUrl": "https://www.roblox.com/groups/3428946/Eccentric-Society",
+                "Rank": "Proprietors",
+                "Members": 4,
+                "IsPrimary": false,
+                "GroupThumbnailWidth": 150,
+                "GroupThumbnailHeight": 150,
+                "Emblem": {
+                    "Final": true,
+                    "Url": "https://t3.rbxcdn.com/4ab1ed89ec044a036c9d99005fd39281",
+                    "RetryUrl": "",
+                    "IsApproved": false
+                }
+            },
+            ...
+        ],
+        "ProfileLangResources": {
+            "ActionAccept": "Accept",
+            "ActionAddFriend": "Add Friend",
+            "ActionBlockUser": "Block User",
+            ...
+        }
+    }
+    ```
+
+#### Get collections of an user
+* https://www.roblox.com/users/profile/robloxcollections-json?userId=261
+    ```json
+    {
+        "CollectionsItems": [
+            {
+                "AssetSeoUrl": "https://www.roblox.com/catalog/1114768/The-Kleos-Aphthiton",
+                "Thumbnail": {
+                    "Final": true,
+                    "Url": "https://t3.rbxcdn.com/0af97318f7dfc4313441e87cfcdc059d",
+                    "RetryUrl": null,
+                    "UserId": 0,
+                    "EndpointType": "Avatar"
+                },
+                "Name": "The Kleos Aphthiton",
+                "FormatName": null,
+                "Description": "Kleos Aphthiton: undying glory. This helm was won in the August 2007 Grand Melee competition. Other helms like it were awarded to the top four finishers in that contest. It is very rare.",
+                "AssetRestrictionIcon": {
+                    "TooltipText": "Discontinued item, resellable.",
+                    "CssTag": "limited",
+                    "LoadAssetRestrictionIconCss": false,
+                    "HasTooltip": false
+                }
+            },
+            {
+                "AssetSeoUrl": "https://www.roblox.com/catalog/6128663/Crown-of-the-Dark-Lord-of-SQL",
+                "Thumbnail": {
+                    "Final": true,
+                    "Url": "https://t0.rbxcdn.com/3098434922e315e109bc9799cac2b8b4",
+                    "RetryUrl": null,
+                    "UserId": 0,
+                    "EndpointType": "Avatar"
+                },
+                "Name": "Crown of the Dark Lord of SQL",
+                "FormatName": null,
+                "Description": "SELECT * from users WHERE accountid = 111627",
+                "AssetRestrictionIcon": {
+                    "TooltipText": null,
+                    "CssTag": null,
+                    "LoadAssetRestrictionIconCss": false,
+                    "HasTooltip": false
+                }
+            },
+            ...
+        ]
+    }
+    ```
+
+#### Get player badges of an user
+* https://www.roblox.com/users/profile/playerassets-json?assetTypeId=21&userId=261
+    * Was made to be used in profiles, so only shows first 6 badges
+    ```json
+    {
+        "Title": "Player Badges",
+        "Label": "badges",
+        "ModalAssetViewType": 1,
+        "MaxNumberOfVisibleAssets": 6,
+        "Assets": [
+            {
+                "AssetSeoUrl": "https://www.roblox.com/badges/1946785131/Risk",
+                "Thumbnail": {
+                    "Final": true,
+                    "Url": "https://t6.rbxcdn.com/4c1865391b1b027532d2b332ac2dc62b",
+                    "RetryUrl": null,
+                    "UserId": 0,
+                    "EndpointType": "Avatar"
+                },
+                "Name": "Risk",
+                "FormatName": null,
+                "Description": "Get a streak of 5 kills",
+                "AssetRestrictionIcon": null
+            },
+            {
+                "AssetSeoUrl": "https://www.roblox.com/badges/1916274658/By-the-Book",
+                "Thumbnail": {
+                    "Final": true,
+                    "Url": "https://t6.rbxcdn.com/2176e6a0e08757e1354ebf6709c335aa",
+                    "RetryUrl": null,
+                    "UserId": 0,
+                    "EndpointType": "Avatar"
+                },
+                "Name": "By the Book!",
+                "FormatName": null,
+                "Description": "You read the rules!",
+                "AssetRestrictionIcon": null
+            },
+            ...
+        ],
+        "UserId": 261,
+        "IsSeeAllHeaderButtonVisible": true,
+        "AssetTypeInventoryUrl": "https://www.roblox.com/users/261/inventory/#!/badges",
+        "ProfileLangResources": {
+            "ActionAccept": "Accept",
+            "ActionAddFriend": "Add Friend",
+            "ActionBlockUser": "Block User",
+            "ActionCancelBlockUser": "Cancel",
+            ...
+        }
+    }
+    ```
+
+#### Get games on an user's profile
+* https://www.roblox.com/users/profile/playergames-json?userId=261
+    ```json
+    {
+        "Title": "Games",
+        "Games": [
+            {
+                "CreatorID": 0,
+                "CreatorName": "Shedletsky",
+                "CreatorAbsoluteUrl": "https://www.roblox.com/users/261/profile",
+                "Plays": 17022411,
+                "Price": 0,
+                "ProductID": 0,
+                "IsOwned": false,
+                "IsVotingEnabled": true,
+                "TotalUpVotes": 28624,
+                "TotalDownVotes": 6076,
+                "TotalBought": 0,
+                "UniverseID": 156639,
+                "HasErrorOcurred": false,
+                "Favorites": 244706,
+                "Description": "Death before dishonor.",
+                "GameDetailReferralUrl": "https://www.roblox.com/games/refer?PlaceId=47324\\u0026Position=1\\u0026PageType=Profile",
+                "Thumbnail": {
+                    "Final": true,
+                    "Url": "https://t0.rbxcdn.com/47624390b8be1002eb244280d0cee967",
+                    "RetryUrl": null,
+                    "UserId": 0,
+                    "EndpointType": "Avatar"
+                },
+                "UseDataSrc": false,
+                "IsAsyncThumbnailEnabled": false,
+                "GamePageResources": null,
+                "Name": "Sword Fights on the Heights IV",
+                "PlaceID": 47324,
+                "PlayerCount": 26,
+                "ImageId": 0,
+                "IsSecure": false,
+                "ShowExperimentalMode": false
+            },
+            {
+                "CreatorID": 0,
+                "CreatorName": "Shedletsky",
+                "CreatorAbsoluteUrl": "https://www.roblox.com/users/261/profile",
+                "Plays": 104271,
+                "Price": 0,
+                "ProductID": 0,
+                "IsOwned": false,
+                "IsVotingEnabled": true,
+                "TotalUpVotes": 1227,
+                "TotalDownVotes": 230,
+                "TotalBought": 0,
+                "UniverseID": 34927903,
+                "HasErrorOcurred": false,
+                "Favorites": 5049,
+                "Description": "I can\\u0027t tell if I\\u0027m making fun of cart ride games or paying homage to them. Favorite if you like riding carts into my face.",
+                "GameDetailReferralUrl": "https://www.roblox.com/games/refer?PlaceId=77814493\\u0026Position=2\\u0026PageType=Profile",
+                "Thumbnail": {
+                    "Final": true,
+                    "Url": "https://t6.rbxcdn.com/bad82e1d58c247788cb501879e9f6dbe",
+                    "RetryUrl": null,
+                    "UserId": 0,
+                    "EndpointType": "Avatar"
+                },
+                "UseDataSrc": false,
+                "IsAsyncThumbnailEnabled": false,
+                "GamePageResources": null,
+                "Name": "Ride a Cart Into My Face",
+                "PlaceID": 77814493,
+                "PlayerCount": 0,
+                "ImageId": 0,
+                "IsSecure": false,
+                "ShowExperimentalMode": false
+            },
+            ...
+        ],
+        "ModalAssetViewType": 4,
+        "ProfileLangResources": {
+            "ActionAccept": "Accept",
+            "ActionAddFriend": "Add Friend",
+            "ActionBlockUser": "Block User",
+            ...
+        },
+        "GamePageResources": {
+            "abelFilterDefault": "Default",
+            "ActionDisableExperimentalMode": "Disable",
+            "ActionSeeAll": "See All",
+            ...
+        }
+    }
+    ```
