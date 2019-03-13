@@ -50,7 +50,7 @@ API Docs
 | [metrics.roblox.com](https://metrics.roblox.com/docs) | Record metrics across Roblox. |
 | [notifications.roblox.com](https://notifications.roblox.com/docs) | All notification stream endpoints. |
 | [points.roblox.com](https://points.roblox.com/docs) | The web Api for the in-game PointsService. |
-| [premiumfeatures.roblox.com](https://premiumfeatures.roblox.com/docs) | This Api is temporarily offline. |
+| [premiumfeatures.roblox.com](https://premiumfeatures.roblox.com/docs) | This API is for premium features and anything pertaining to account add ons |
 | [presence.roblox.com](https://presence.roblox.com/docs) | All endpoints for managing presence. |
 | [publish.roblox.com](https://publish.roblox.com/docs) | All endpoints handling file uploads. |
 | [textfilter.roblox.com](https://textfilter.roblox.com/docs) | High volume text filtering. |
