@@ -831,7 +831,7 @@ body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
 	font-weight: 500;
 }
 
-.btr-fastsearch-anchor .btr-fastsearch-text .text-label {
+.btr-fastsearch-anchor .btr-fastsearch-text .text-label:defined {
 	font-size: 12px;
 	font-weight: 400;
 }
