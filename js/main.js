@@ -120,6 +120,7 @@ const initAdBlock = () => {
 						cont.includes("scorecardresearch.com") ||
 						cont.includes("cedexis.com") ||
 						cont.includes("pingdom.net") ||
+						cont.includes("ns1p.net") ||
 						cont.includes("Roblox.Hashcash") ||
 						cont.includes("Roblox.VideoPreRollDFP") ||
 						cont.includes("googletag.enableServices()")
