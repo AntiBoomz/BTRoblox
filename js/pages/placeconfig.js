@@ -11,7 +11,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 
 	async function getPage(page, target) {
 		const url = `https://api.roblox.com/assets/${assetId}/versions?page=${page}`
-		const response = await fetch(url, { credentials: "include" })
+		const response = await $.fetch(url, { credentials: "include" })
 		const json = await response.json()
 
 		if(Array.isArray(target)) {
@@ -294,7 +294,7 @@ pageInit.placeconfig = function(placeId) {
 		}
 
 		const url = `https://api.roblox.com/assets/${placeId}/versions`
-		fetch(url, { credentials: "include" }).then(async resp => {
+		$.fetch(url, { credentials: "include" }).then(async resp => {
 			let json
 			try { json = await resp.json() }
 			catch(ex) { console.warn(ex) }

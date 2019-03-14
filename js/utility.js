@@ -147,6 +147,35 @@ const $ = function(selector) { return $.find(document, selector) }
 	const immediatePromise = Promise.resolve()
 
 	Object.assign($, {
+		fetch(...args) {
+			return new SyncPromise(resolve => {
+				MESSAGING.send("fetch", args, async respData => {
+					const blobResp = await fetch(respData.blobUrl)
+
+					const resp = new Response(
+						await blobResp.blob(),
+						{
+							status: respData.status,
+							statusText: respData.statusText,
+							headers: respData.headers
+						}
+					)
+
+					Object.defineProperties(resp, {
+						redirected: { value: respData.redirected },
+						type: { value: respData.type },
+						url: { value: respData.url }
+					})
+
+					if(!resp.ok) {
+						console.error(args.length > 1 && args[1].method || "GET", resp.url, `${resp.status} (${resp.statusText})`)
+					}
+
+					resolve(resp)
+				})
+			})
+		},
+		
 		toDict(fn, ...args) {
 			if(typeof fn !== "function" && fn !== null) {
 				throw new TypeError("No function given to toDict")

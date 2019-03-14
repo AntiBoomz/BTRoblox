@@ -43,7 +43,7 @@ const ProhibitedReasons = {
 }
 
 async function getUncachedProductInfo(assetId) {
-	const response = await fetch(`https://api.roblox.com/marketplace/productinfo?assetId=${assetId}`)
+	const response = await $.fetch(`https://api.roblox.com/marketplace/productinfo?assetId=${assetId}`)
 	return response.json()
 }
 
@@ -96,14 +96,14 @@ async function xsrfFetch(url, init = {}) {
 		if(response.status === 403 && response.statusText === "XSRF Token Validation Failed") {
 			if(++retryCount < 2) {
 				setXsrfToken(options.headers["X-CSRF-TOKEN"] = response.headers.get("X-CSRF-TOKEN"))
-				return fetch(url, options).then(handle)
+				return $.fetch(url, options).then(handle)
 			}
 		}
 
 		return response
 	}
 
-	return fetch(url, options).then(handle)
+	return $.fetch(url, options).then(handle)
 }
 
 function startDownload(blob, fileName) {
@@ -402,7 +402,7 @@ const HoverPreview = (() => {
 				
 				if(isBundle) {
 					const url = `https://catalog.roblox.com/v1/bundles/${assetId}/details`
-					fetch(url).then(async resp => {
+					$.fetch(url).then(async resp => {
 						if(debounceCounter !== debounce) { return }
 						const json = await resp.json()
 						const list = json.items.filter(x => x.type === "Asset").map(x => x.id)

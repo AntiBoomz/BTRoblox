@@ -139,7 +139,7 @@ pageInit.inventory = function() {
 					if(!item) { return }
 
 					const url = `https://api.roblox.com/Marketplace/ProductInfo?assetId=${item.assetId}`
-					fetch(url).then(async response => {
+					$.fetch(url).then(async response => {
 						const data = await response.json()
 						if(validAssetTypes.indexOf(data.AssetTypeId) === -1) { return console.log("Bad assetType", data) }
 

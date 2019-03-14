@@ -98,7 +98,7 @@ const initFastSearch = () => {
 
 		if(!json.presence) {
 			const url = `https://www.roblox.com/presence/user?userId=${json.UserId}`
-			json.presence = fetch(url, { credentials: "include" })
+			json.presence = $.fetch(url, { credentials: "include" })
 				.then(resp => resp.json())
 		}
 
@@ -184,7 +184,7 @@ const initFastSearch = () => {
 				friendsPromise = new SyncPromise(resolve => {
 					loggedInUserPromise.then(userId => {
 						const url = `https://www.roblox.com/users/friends/list-json?pageSize=200&userId=${userId}`
-						fetch(url, { credentials: "include" }).then(async resp => {
+						$.fetch(url, { credentials: "include" }).then(async resp => {
 							const json = await resp.json()
 
 							json.Friends.forEach(friend => {
@@ -231,7 +231,7 @@ const initFastSearch = () => {
 			if(!(search in requestCache)) {
 				let cached = promiseCache[search]
 				if(!cached) {
-					cached = promiseCache[search] = fetch(`https://api.roblox.com/users/get-by-username?username=${search}`)
+					cached = promiseCache[search] = $.fetch(`https://api.roblox.com/users/get-by-username?username=${search}`)
 						.then(async resp => {
 							const json = await resp.json()
 

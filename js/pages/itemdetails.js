@@ -425,7 +425,7 @@ const initPreview = (assetId, assetTypeId, isBundle) => {
 
 		if(isBundle) {
 			const url = `https://catalog.roblox.com/v1/bundles/${assetId}/details`
-			fetch(url).then(async resp => {
+			$.fetch(url).then(async resp => {
 				const data = await resp.json()
 
 				data.items.forEach(item => {
@@ -559,7 +559,7 @@ pageInit.itemdetails = function(assetId) {
 					if(!resp.ok) {
 						if(retriesLeft > 0) {
 							retriesLeft--
-							setTimeout(() => fetch(url).then(handler), 2e3)
+							setTimeout(() => $.fetch(url).then(handler), 2e3)
 						} else {
 							isLoading = false
 							seeMore.textContent = "See More"
@@ -605,7 +605,7 @@ pageInit.itemdetails = function(assetId) {
 						owners.$find(".section-content").append(elem)
 					})
 				}
-				fetch(url).then(handler)
+				$.fetch(url).then(handler)
 			}
 
 			seeMore.$on("click", loadOwners)
@@ -630,7 +630,7 @@ pageInit.itemdetails = function(assetId) {
 				document.$watch("#item-container .bundle-items > h3", h3 => {
 					const parent = h3.parentNode
 
-					fetch(`https://catalog.roblox.com/v1/bundles/${assetId}/details`, { cache: "force-cache" }).then(async resp => {
+					$.fetch(`https://catalog.roblox.com/v1/bundles/${assetId}/details`, { cache: "force-cache" }).then(async resp => {
 						if(!resp.ok) { return }
 
 						const json = await resp.json()
@@ -913,7 +913,7 @@ pageInit.itemdetails = function(assetId) {
 
 						const url = `https://assetgame.roblox.com/asset-thumbnail/json?assetId=${imgId}&width=420&height=420`
 						const load = () => {
-							fetch(url).then(async resp => {
+							$.fetch(url).then(async resp => {
 								const json = await resp.json()
 
 								if(json.Final) {

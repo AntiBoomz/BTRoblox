@@ -63,7 +63,7 @@ pageInit.messages = function() {
 		document.$find(".roblox-messages-btns").after(progress)
 
 		const unreadUrl = "/messages/api/get-my-unread-messages-count"
-		const unread = await fetch(unreadUrl, { credentials: "include", cache: "no-store" }).then(resp => resp.json())
+		const unread = await $.fetch(unreadUrl, { credentials: "include", cache: "no-store" }).then(resp => resp.json())
 
 		const messages = []
 		let messagesLeft = unread.count
@@ -87,7 +87,7 @@ pageInit.messages = function() {
 			const url = `/messages/api/mark-messages-read`
 			const body = JSON.stringify({ messageIds: list })
 
-			return fetch(url, { credentials: "include", method: "POST", body, headers }).then(resp => {
+			return $.fetch(url, { credentials: "include", method: "POST", body, headers }).then(resp => {
 				if(resp.status === 403 && resp.headers.has("X-CSRF-TOKEN")) {
 					headers["X-CSRF-TOKEN"] = resp.headers.get("X-CSRF-TOKEN")
 					messages.push(...list)
@@ -106,7 +106,7 @@ pageInit.messages = function() {
 			if(curPage >= maxPage || messagesLeft <= 0) { return }
 
 			const pageUrl = `/messages/api/get-messages?messageTab=0&pageSize=20&pageNumber=${curPage}`
-			return fetch(pageUrl, { credentials: "include", cache: "no-store" }).then(async resp => {
+			return $.fetch(pageUrl, { credentials: "include", cache: "no-store" }).then(async resp => {
 				const json = await resp.json()
 				maxPage = json.TotalPages
 

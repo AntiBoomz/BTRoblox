@@ -390,7 +390,7 @@ const SettingsDiv = (() => {
 		})
 
 		loggedInUserPromise.then(async userId => {
-			const resp = await fetch(`https://api.roblox.com/users/${userId}/groups`)
+			const resp = await $.fetch(`https://api.roblox.com/users/${userId}/groups`)
 			const json = await resp.json()
 
 			json.sort((a, b) => (a.Name < b.Name ? -1 : 1)).forEach(group => {

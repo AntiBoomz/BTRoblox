@@ -18,7 +18,8 @@
 			"js/common.js",
 			"js/background/blogfeed.js",
 			"js/background/groupshout.js",
-			"js/background/contextmenu.js"
+			"js/background/contextmenu.js",
+			"js/background/fetch.js"
 		]
 	},
 

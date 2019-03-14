@@ -185,7 +185,7 @@ function Init() {
 			if(typeof url !== "string" || url.search(/^https?:\/\/c\d\.rbxcdn\.com\/[0-9a-f]{32}$/i) === -1) { return }
 			let cached = fixedAudioCache[url]
 			if(!cached) {
-				cached = fixedAudioCache[url] = fetch(url, { credentials: "omit", redirect: "manual" })
+				cached = fixedAudioCache[url] = $.fetch(url, { credentials: "omit", redirect: "manual" })
 					.then(async resp => {
 						if(!resp.ok || resp.redirected) { return false }
 						return URL.createObjectURL(await resp.blob())

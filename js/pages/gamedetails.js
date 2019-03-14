@@ -88,7 +88,7 @@ pageInit.gamedetails = function(placeId) {
 				const badgeList = badgeQueue.splice(0, badgeQueue.length)
 				const url = `https://badges.roblox.com/v1/users/${userId}/badges/awarded-dates?badgeIds=${badgeList.map(x => x.badgeId).join(",")}`
 
-				fetch(url, { credentials: "include" }).then(async response => {
+				$.fetch(url, { credentials: "include" }).then(async response => {
 					if(!response.ok) {
 						console.warn("[BTR] Failed to get badge data")
 						return
@@ -133,7 +133,7 @@ pageInit.gamedetails = function(placeId) {
 			const label = stat.$find(".text-lead")
 			const url = `https://api.roblox.com/marketplace/productinfo?assetId=${placeId}`
 
-			fetch(url).then(async resp => {
+			$.fetch(url).then(async resp => {
 				const json = await resp.json()
 				label.title = new Date(json.Updated).$format("M/D/YYYY h:mm:ss A (T)")
 				label.textContent = `${$.dateSince(json.Updated, new Date())} ago`
@@ -176,7 +176,7 @@ pageInit.gamedetails = function(placeId) {
 			}
 
 			const url = `https://api.roblox.com/universes/get-universe-places?placeId=${placeId}`
-			fetch(url).then(async resp => {
+			$.fetch(url).then(async resp => {
 				const json = await resp.json()
 				const rootPlaceId = json.RootPlace
 				if(rootPlaceId === placeId) { return }

@@ -88,7 +88,7 @@ const AssetCache = (() => {
 					resolvePromise = null
 
 					let didRetry = false
-					const tryFetch = () => fetch(resolveApiUrl, info).then(async resp => {
+					const tryFetch = () => $.fetch(resolveApiUrl, info).then(async resp => {
 						if(resp.ok) {
 							try { resolve(await resp.json()) }
 							catch(ex) { console.error(ex) }
@@ -170,7 +170,7 @@ const AssetCache = (() => {
 						if(!fileResult) {
 							fileResult = fileCache[resolvedUrl] = { finished: false }
 							
-							fileResult.defer = fetch(resolvedUrl).then(async resp => {
+							fileResult.defer = $.fetch(resolvedUrl).then(async resp => {
 								if(IS_EDGE) {
 									const blob = await resp.blob()
 									const reader = new FileReader()

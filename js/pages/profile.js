@@ -354,7 +354,7 @@ pageInit.profile = function(userId) {
 							const list = placeIdList.splice(0, placeIdList.length).join("&placeIds=")
 							const fetchUrl = `https://games.roblox.com/v1/games/multiget-place-details?placeIds=${list}`
 
-							fetch(fetchUrl, { credentials: "include" }).then(resp => {
+							$.fetch(fetchUrl, { credentials: "include" }).then(resp => {
 								if(!resp.ok) {
 									console.warn("[BTRoblox]: Failed to load place details")
 									return
@@ -437,7 +437,7 @@ pageInit.profile = function(userId) {
 
 				function getThumbnail() {
 					function retryUntilFinal(thumbUrl, cb) {
-						fetch(thumbUrl).then(async response => {
+						$.fetch(thumbUrl).then(async response => {
 							const json = await response.json()
 
 							if(json && json.Final) { cb(json) }
@@ -505,7 +505,7 @@ pageInit.profile = function(userId) {
 			const hlist = friends.$find(".hlist")
 
 			if(hlist.children.length === 9) {
-				fetch(`https://api.roblox.com/users/${userId}/friends`).then(async response => {
+				$.fetch(`https://api.roblox.com/users/${userId}/friends`).then(async response => {
 					const list = await response.json()
 					if(list.length < 10) { return }
 					const friend = list[9]
@@ -541,7 +541,7 @@ pageInit.profile = function(userId) {
 			isLoading = true
 
 			const url = `https://badges.roblox.com/v1/users/${userId}/badges?sortOrder=Desc&limit=10&cursor=${cursor}`
-			fetch(url).then(async response => {
+			$.fetch(url).then(async response => {
 				const json = await response.json()
 				isLoading = false
 				prevData = json
@@ -607,7 +607,7 @@ pageInit.profile = function(userId) {
 
 		onDocumentReady(() => {
 			const url = `https://www.roblox.com/users/profile/playergroups-json?userId=${userId}`
-			fetch(url).then(async response => {
+			$.fetch(url).then(async response => {
 				const json = await response.json()
 
 				pager.setMaxPage(Math.floor((json.NumberOfGroups - 1) / pageSize) + 1)
@@ -698,7 +698,7 @@ pageInit.profile = function(userId) {
 			}).toString()
 
 			const url = `https://www.roblox.com/users/favorites/list-json?${params}`
-			fetch(url).then(async response => {
+			$.fetch(url).then(async response => {
 				const json = await response.json()
 				isLoading = false
 

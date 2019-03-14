@@ -102,7 +102,7 @@ pageInit.groups_old = function() {
 					let promise = rankNameCache[userId]
 					if(!promise) {
 						const url = `https://www.roblox.com/Game/LuaWebService/HandleSocialRequest.ashx?method=GetGroupRole&playerid=${userId}&groupid=${groupId}`
-						promise = rankNameCache[userId] = fetch(url).then(resp => resp.text())
+						promise = rankNameCache[userId] = $.fetch(url).then(resp => resp.text())
 					}
 					
 					promise.then(rankname => {
