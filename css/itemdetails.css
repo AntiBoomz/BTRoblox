@@ -299,7 +299,7 @@ a:not(.disabled) > .btr-icon-content:hover {
 .btr-thumb-btn [class^="btr-icon"] {
 	flex: 0 0 auto;
 	display: inline-block;
-	background-image: url(/res/previewer/icons.svg);
+	background-image: url(/res/previewerIcons.svg);
 	background-repeat: no-repeat;
 	background-size: auto auto;
 	width: 28px;
