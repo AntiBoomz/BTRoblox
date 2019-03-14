@@ -296,7 +296,7 @@ class SyncPromise extends Promise {
 	}
 
 	_then(defer, onresolve, onreject) {
-		if(!this._resolved) {
+		if(!this._finished) {
 			this._onfinish.push([defer, onresolve, onreject])
 			return
 		}
