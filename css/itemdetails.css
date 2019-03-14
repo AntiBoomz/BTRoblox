@@ -133,13 +133,13 @@ a:not(.disabled) > .btr-icon-content:hover {
 	width: 38px;
 	bottom: 36px;
 	height: auto;
-	padding-top: 10px;
 	flex-direction: column;
 	z-index: -1;
 	transition: z-index 0s;
 }
 
-.btr-bundle-alt-container:hover {
+.btr-bundle-alt-container:hover,
+.btr-bundle-alt-container.selected {
 	z-index: 0;
 	transition: .6s z-index 0s;
 }
@@ -184,6 +184,10 @@ a:not(.disabled) > .btr-icon-content:hover {
     vertical-align: middle;
 }
 
+.dark-theme .btr-bundle-animations .btr-bundle-btn > div[class^="btr-anim-icon-"] {
+	background-image: url(https://www.roblox.com/images/Shared/animation_dark_09282018.svg)
+}
+
 .btr-bundle-animations .btr-bundle-btn.selected > div[class^="btr-anim-icon-"] {
 	background-position-x: -28px;
 }
@@ -196,18 +200,27 @@ a:not(.disabled) > .btr-icon-content:hover {
 .btr-bundle-animations .btr-anim-icon-climb { background-position: 0 -140px }
 .btr-bundle-animations .btr-anim-icon-idle { background-position: 0 -168px }
 
-.btr-bundle-animations .btr-bundle-btn-alt {
+.btr-bundle-animations .btr-bundle-btn-alt:defined {
 	position: relative;
 	height: 17px;
 	padding: 2px;
 	font-size: 11px;
 	margin: 0;
 	margin-top: -1px;
-	margin-bottom: -10px;
+	margin-bottom: -12px;
+
+	border-radius: 3px;
 }
 
-.btr-bundle-animations .btr-bundle-btn:hover .btr-bundle-btn-alt,
-.btr-bundle-animations .btr-bundle-btn-alt.selected {
+.btr-bundle-animations .btr-bundle-alt-container.selected .btr-bundle-btn-alt {
+	margin-bottom: -16px;
+}
+
+.btr-bundle-animations .btr-bundle-alt-container.selected .btr-bundle-btn-alt:last-child {
+	margin-bottom: -4px;
+}
+
+.btr-bundle-animations .btr-bundle-btn:hover .btr-bundle-btn-alt {
 	margin-bottom: 0;
 }
 
@@ -217,9 +230,13 @@ a:not(.disabled) > .btr-icon-content:hover {
 }
 
 .btr-bundle-animations .btr-bundle-btn-alt.selected {
-	font-weight: bold;
+	font-weight: 900;
+	color: #333;
 }
 
+.dark-theme .btr-bundle-animations .btr-bundle-btn-alt.selected {
+	color: #FFF;
+}
 
 
 .btr-thumb-btn-container {
@@ -231,6 +248,12 @@ a:not(.disabled) > .btr-icon-content:hover {
 	vertical-align: bottom;
 	margin: 12px;
 	margin-left: -2px;
+}
+
+#AssetThumbnail:not(.btr-preview-active) .enable-three-dee + .btr-thumb-btn-container {
+	position: absolute;
+	bottom: 56px;
+	right: 0;
 }
 
 #AssetThumbnail.btr-preview-active .thumbnail-buttons > :not(.btr-thumb-btn-container),

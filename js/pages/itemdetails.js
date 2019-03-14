@@ -138,7 +138,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 			setTimeout(() => {
 				if(this.enabled) {
 					const btn = $("#AssetThumbnail .three-dee-animated-icon")
-					if(btn && !btn.$find(".icon-bigplay")) {
+					if(btn && btn.$find(".icon-pause-fill, .icon-bigstop-fill")) {
 						btn.click()
 					}
 				}
@@ -279,13 +279,15 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		const root = this.bundleAnims.$find(`.btr-bundle-btn[data-anim="${animName}"]`)
 	
 		if(root) {
+			const isAlt = name !== animName
+			let altCont
 			let btn
 
-			if(name === animName) {
+			if(!isAlt) {
 				btn = root
 				root.removeAttribute("disabled")
 			} else {
-				let altCont = this.bundleAlts[animName]
+				altCont = this.bundleAlts[animName]
 				if(!altCont) {
 					altCont = this.bundleAlts[animName] = html`<div class=btr-bundle-alt-container></div>`
 					root.prepend(altCont)
@@ -304,6 +306,12 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 
 				this.bundleAnims.$findAll(".selected").forEach(x => x.classList.remove("selected"))
 				btn.classList.add("selected")
+
+				if(isAlt) {
+					altCont.classList.add("selected")
+					root.classList.add("selected")
+				}
+
 				this.playAnimation(name)
 
 				const curName = $("#current-animation-name")
