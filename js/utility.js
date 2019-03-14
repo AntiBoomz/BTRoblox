@@ -147,9 +147,9 @@ const $ = function(selector) { return $.find(document, selector) }
 	const immediatePromise = Promise.resolve()
 
 	Object.assign($, {
-		fetch(...args) {
+		fetch(url, init = {}) {
 			return new SyncPromise(resolve => {
-				MESSAGING.send("fetch", args, async respData => {
+				MESSAGING.send("fetch", [url, init], async respData => {
 					const resp = await fetch(respData.dataUrl)
 
 					Object.defineProperties(resp, {
@@ -163,7 +163,7 @@ const $ = function(selector) { return $.find(document, selector) }
 					})
 
 					if(!resp.ok) {
-						console.error(args.length > 1 && args[1].method || "GET", resp.url, `${resp.status} (${resp.statusText})`)
+						console.error(`${init.method && init.method.toUpperCase() || "GET"} ${resp.url} ${resp.status} (${resp.statusText})`)
 					}
 
 					resolve(resp)
