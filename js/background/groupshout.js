@@ -202,13 +202,15 @@
 		})
 	})
 
-	chrome.runtime.onSuspend.addListener(() => {
-		isSuspending = true
-	})
-
-	chrome.runtime.onSuspendCanceled.addListener(() => {
-		isSuspending = false
-	})
+	if("onSuspend" in chrome.runtime) {
+		chrome.runtime.onSuspend.addListener(() => {
+			isSuspending = true
+		})
+	
+		chrome.runtime.onSuspendCanceled.addListener(() => {
+			isSuspending = false
+		})
+	}
 
 	const updateCheck = () => {
 		clearInterval(checkInterval)
