@@ -150,18 +150,13 @@ const $ = function(selector) { return $.find(document, selector) }
 		fetch(...args) {
 			return new SyncPromise(resolve => {
 				MESSAGING.send("fetch", args, async respData => {
-					const blobResp = await fetch(respData.blobUrl)
-
-					const resp = new Response(
-						await blobResp.blob(),
-						{
-							status: respData.status,
-							statusText: respData.statusText,
-							headers: respData.headers
-						}
-					)
+					const resp = await fetch(respData.dataUrl)
 
 					Object.defineProperties(resp, {
+						ok: { value: respData.ok },
+						status: { value: respData.status },
+						statusText: { value: respData.statusText },
+						headers: { value: new Headers(respData.headers) },
 						redirected: { value: respData.redirected },
 						type: { value: respData.type },
 						url: { value: respData.url }

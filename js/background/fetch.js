@@ -5,10 +5,15 @@ MESSAGING.listen({
 	async fetch([url, init = {}], respond) {
 		const resp = await fetch(url, init)
 		const blob = await resp.blob()
-		const blobUrl = URL.createObjectURL(blob)
+
+		const fileReader = new FileReader()
+		fileReader.readAsDataURL(blob)
+
+		await new Promise(resolve => fileReader.onload = resolve)
 		
 		respond({
-			blobUrl,
+			dataUrl: fileReader.result,
+			ok: resp.ok,
 			status: resp.status,
 			statusText: resp.statusText,
 			headers: Array.from(resp.headers.entries()),
@@ -16,7 +21,5 @@ MESSAGING.listen({
 			type: resp.type,
 			url: resp.url
 		})
-
-		setTimeout(() => URL.revokeObjectURL(blobUrl), 1e3)
 	}
 })
