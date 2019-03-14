@@ -1,7 +1,5 @@
 "use strict"
 
-const getURL = chrome.runtime.getURL
-
 const BROWSER_NAME = navigator.userAgent.includes("Edge/") ? "Edge" : navigator.userAgent.includes("Chrome/") ? "Chrome" : "Firefox"
 const IS_EDGE = BROWSER_NAME === "Edge"
 const IS_FIREFOX = BROWSER_NAME === "Firefox"
@@ -13,6 +11,46 @@ const IS_DEV_MODE = IS_FIREFOX ? chrome.runtime.id.endsWith("@temporary-addon") 
 	IS_CHROME ? chrome.runtime.id === "follfgiodgdohjfmfmnjhnbkecbiobmd" : false
 
 const IS_BACKGROUND_PAGE = chrome && chrome.extension && chrome.extension.getBackgroundPage
+
+
+const AssetShortcuts = {
+	"res/previewer/characterModels.rbxm": "https://assetgame.roblox.com/asset/?id=2957693598",
+	"res/previewer/face.png": "https://assetgame.roblox.com/asset/?id=2957705858",
+
+	"res/previewer/heads/head.mesh": "https://assetgame.roblox.com/asset/?id=2957715294",
+	"res/previewer/heads/headA.mesh": "https://assetgame.roblox.com/asset/?id=2957717479",
+	"res/previewer/heads/headB.mesh": "https://assetgame.roblox.com/asset/?id=2957719621",
+	"res/previewer/heads/headC.mesh": "https://assetgame.roblox.com/asset/?id=2957735435",
+	"res/previewer/heads/headD.mesh": "https://assetgame.roblox.com/asset/?id=2957735527",
+	"res/previewer/heads/headE.mesh": "https://assetgame.roblox.com/asset/?id=2957735616",
+	"res/previewer/heads/headF.mesh": "https://assetgame.roblox.com/asset/?id=2957735708",
+	"res/previewer/heads/headG.mesh": "https://assetgame.roblox.com/asset/?id=2957735779",
+	"res/previewer/heads/headH.mesh": "https://assetgame.roblox.com/asset/?id=2957735870",
+	"res/previewer/heads/headI.mesh": "https://assetgame.roblox.com/asset/?id=2957735956",
+	"res/previewer/heads/headJ.mesh": "https://assetgame.roblox.com/asset/?id=2957736171",
+	"res/previewer/heads/headK.mesh": "https://assetgame.roblox.com/asset/?id=2957736290",
+	"res/previewer/heads/headL.mesh": "https://assetgame.roblox.com/asset/?id=2957736404",
+	"res/previewer/heads/headM.mesh": "https://assetgame.roblox.com/asset/?id=2957736496",
+	"res/previewer/heads/headN.mesh": "https://assetgame.roblox.com/asset/?id=2957736621",
+	"res/previewer/heads/headO.mesh": "https://assetgame.roblox.com/asset/?id=2957736751",
+	"res/previewer/heads/headP.mesh": "https://assetgame.roblox.com/asset/?id=2957736879",
+	
+	"res/previewer/meshes/leftarm.mesh": "https://assetgame.roblox.com/asset/?id=2957740508",
+	"res/previewer/meshes/leftleg.mesh": "https://assetgame.roblox.com/asset/?id=2957740624",
+	"res/previewer/meshes/rightarm.mesh": "https://assetgame.roblox.com/asset/?id=2957740703",
+	"res/previewer/meshes/rightleg.mesh": "https://assetgame.roblox.com/asset/?id=2957740776",
+	"res/previewer/meshes/torso.mesh": "https://assetgame.roblox.com/asset/?id=2957740857",
+
+	"res/previewer/compositing/CompositPantsTemplate.mesh": "https://assetgame.roblox.com/asset/?id=2957742558",
+	"res/previewer/compositing/CompositShirtTemplate.mesh": "https://assetgame.roblox.com/asset/?id=2957742631",
+	"res/previewer/compositing/CompositTShirt.mesh": "https://assetgame.roblox.com/asset/?id=2957742706",
+	"res/previewer/compositing/R15CompositLeftArmBase.mesh": "https://assetgame.roblox.com/asset/?id=2957742791",
+	"res/previewer/compositing/R15CompositRightArmBase.mesh": "https://assetgame.roblox.com/asset/?id=2957742881",
+	"res/previewer/compositing/R15CompositTorsoBase.mesh": "https://assetgame.roblox.com/asset/?id=2957742957"
+}
+
+const getURL = path => AssetShortcuts[path] || chrome.runtime.getURL(path)
+
 
 // Separated for more accuracy when dealing with massive numbers
 const DOLLARS_TO_ROBUX_RATIOS = {

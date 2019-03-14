@@ -273,8 +273,11 @@ const RBXAvatar = (() => {
 					face: createImage()
 				}
 			}
-			
-			images.clothing.face.defaultSrc = getURL("res/previewer/face.png")
+
+			AssetCache.loadImage(true, getURL("res/previewer/face.png"), url => {
+				images.clothing.face.defaultSrc = url
+				this.shouldRefreshBodyParts = true
+			})
 
 			this.headComposite = new RBXComposites.Texture(false, RBXComposites.HeadCompositeConstructor, textures)
 			this.r6Composite = new RBXComposites.Texture(true, RBXComposites.R6CompositeConstructor, textures)
