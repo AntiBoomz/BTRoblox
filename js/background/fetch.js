@@ -3,6 +3,18 @@
 
 MESSAGING.listen({
 	async fetch([url, init = {}], respond) {
+		if(init._body) {
+			const body = init._body
+			
+			switch(body.type) {
+			case "URLSearchParams":
+				init.body = new URLSearchParams(body.data)
+				break
+			}
+
+			delete init._body
+		}
+
 		const resp = await fetch(url, init)
 		const blob = await resp.blob()
 

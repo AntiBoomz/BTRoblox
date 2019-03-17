@@ -148,6 +148,16 @@ const $ = function(selector) { return $.find(document, selector) }
 
 	Object.assign($, {
 		fetch(url, init = {}) {
+
+			if(init.body) {
+				if(init.body instanceof URLSearchParams) {
+					init._body = { type: "URLSearchParams", data: init.body.toString() }
+					delete init.body
+				} else if(typeof init.body !== "string") {
+					throw new TypeError("init.body should be a string")
+				}
+			}
+
 			return new SyncPromise(resolve => {
 				MESSAGING.send("fetch", [url, init], async respData => {
 					const resp = await fetch(respData.dataUrl)
