@@ -112,6 +112,19 @@ User APIs
     }
     ```
 
+* https://www.roblox.com/mobileapi/userinfo
+    ```json
+    {
+        "UserID": 261,
+        "UserName": "Shedletsky",
+        "RobuxBalance": 9001,
+        "TicketsBalance": 0,
+        "ThumbnailUrl": "http://t6.rbxcdn.com/a1c9c2b1cab0731732a59d96f840838e",
+        "IsAnyBuildersClubMember": true,
+        "IsPremium": false
+    }
+    ```
+
 * https://www.roblox.com/my/settings/json
     ```json
     {
