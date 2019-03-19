@@ -186,10 +186,6 @@ const PAGE_INFO = {
 		matches: ["^/games/?$"],
 		css: ["games.css"]
 	},
-	groups_old: {
-		matches: ["^/my/groups\\.aspx", "^/groups/group\\.aspx"],
-		css: ["groups_old.css"]
-	},
 	groups: {
 		matches: ["^/groups/(\\d+)/*"],
 		css: ["groups.css"]

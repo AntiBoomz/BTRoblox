@@ -532,32 +532,6 @@ const INJECT_SCRIPT = () => {
 			const prm = Sys.WebForms.PageRequestManager.getInstance()
 
 			prm.add_pageLoaded(() => ContentJS.send("ajaxUpdate"))
-
-			if(currentPage === "groups_old" && settings.groups.enabled) {
-				prm.add_pageLoaded(() => $(".GroupWallPane .linkify").linkify())
-			}
-		}
-
-		if(currentPage === "groups_old" && settings.groups.enabled) {
-			window.fitStringToWidthSafeText = text => text
-			const items = document.querySelectorAll(".GroupListName")
-			
-			items.forEach(item => {
-				item.classList.remove("GroupListName")
-				const text = item.textContent
-				item.textContent = ""
-
-				const span = document.createElement("span")
-				span.textContent = text
-				span.classList.add("btr-groupListName")
-				item.append(span)
-			})
-
-			$(() => {
-				items.forEach(item => {
-					item.classList.add("GroupListName")
-				})
-			})
 		}
 	}
 
