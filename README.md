@@ -325,12 +325,6 @@ Friend APIs
 
 Group APIs
 -------------
-#### Get role name of an user
-* https://www.roblox.com/Game/LuaWebService/HandleSocialRequest.ashx?method=GetGroupRole&playerid=261&groupid=2814397
-    ```
-    Owner
-    ```
-
 #### Get thumbnails of groups
 * https://www.roblox.com/group-thumbnails?params=[{groupId:1},{groupId:2}]
     ```json
