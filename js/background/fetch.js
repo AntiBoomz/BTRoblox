@@ -17,14 +17,19 @@ MESSAGING.listen({
 
 		const resp = await fetch(url, init)
 		const blob = await resp.blob()
-
 		const fileReader = new FileReader()
-		fileReader.readAsDataURL(blob)
 
+		fileReader.readAsDataURL(blob)
 		await new Promise(resolve => fileReader.onload = resolve)
+
+		let dataUrl = fileReader.result
+
+		if(dataUrl === "data:") { // Why does filereader return an unreadable data url...?
+			dataUrl = `data:${blob.type};base64,`
+		}
 		
 		respond({
-			dataUrl: fileReader.result,
+			dataUrl,
 			ok: resp.ok,
 			status: resp.status,
 			statusText: resp.statusText,
