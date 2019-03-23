@@ -374,35 +374,9 @@ const $ = function(selector) { return $.find(document, selector) }
 		},
 
 		find(self, selector) {
-			if(IS_EDGE) {
-				const oldId = self.id
-				self.id = "btr-find-thang"
-				try {
-					const result = self.querySelector(selector.replace(/(^|,)\s*(?=>)/g, "$&#btr-find-thang"))
-					self.id = oldId
-					return result
-				} catch(ex) {
-					self.id = oldId
-					throw ex
-				}
-			}
-
 			return self.querySelector(selector.replace(/(^|,)\s*(?=>)/g, "$&:scope"))
 		},
 		findAll(self, selector) {
-			if(IS_EDGE) {
-				const oldId = self.id
-				self.id = "btr-find-thang"
-				try {
-					const result = self.querySelectorAll(selector.replace(/(^|,)\s*(?=>)/g, "$&#btr-find-thang"))
-					self.id = oldId
-					return result
-				} catch(ex) {
-					self.id = oldId
-					throw ex
-				}
-			}
-
 			return self.querySelectorAll(selector.replace(/(^|,)\s*(?=>)/g, "$&:scope"))
 		},
 

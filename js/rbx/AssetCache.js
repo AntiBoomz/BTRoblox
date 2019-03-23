@@ -171,18 +171,6 @@ const AssetCache = (() => {
 							fileResult = fileCache[resolvedUrl] = { finished: false }
 							
 							fileResult.defer = $.fetch(resolvedUrl).then(async resp => {
-								if(IS_EDGE) {
-									const blob = await resp.blob()
-									const reader = new FileReader()
-									reader.readAsBinaryString(blob)
-									
-									return new SyncPromise(resolve => reader.addEventListener("load", () => {
-										fileResult.result = $.strToBuffer(reader.result)
-										fileResult.finished = true
-										resolve()
-									}, { once: true }))
-								}
-								
 								fileResult.result = await resp.arrayBuffer()
 								fileResult.finished = true
 							})

@@ -1,14 +1,11 @@
 "use strict"
 
-const BROWSER_NAME = navigator.userAgent.includes("Edge/") ? "Edge" : navigator.userAgent.includes("Chrome/") ? "Chrome" : "Firefox"
-const IS_EDGE = BROWSER_NAME === "Edge"
+const BROWSER_NAME = navigator.userAgent.includes("Chrome/") ? "Chrome" : "Firefox"
 const IS_FIREFOX = BROWSER_NAME === "Firefox"
 const IS_CHROME = BROWSER_NAME === "Chrome"
 
-if(IS_EDGE) { window.chrome = Object.assign({}, browser) }
-
 const IS_DEV_MODE = IS_FIREFOX ? chrome.runtime.id.endsWith("@temporary-addon") :
-	IS_CHROME ? chrome.runtime.id === "follfgiodgdohjfmfmnjhnbkecbiobmd" : false
+	IS_CHROME ? chrome.runtime.id !== "hbkpclpemjeibhioopcebchdmohaieln" : false
 
 const IS_BACKGROUND_PAGE = chrome && chrome.extension && chrome.extension.getBackgroundPage
 
