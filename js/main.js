@@ -182,14 +182,61 @@ function Init() {
 		const fixedAudioCache = {}
 
 		InjectJS.listen("audioPreviewFix", url => {
-			if(typeof url !== "string" || url.search(/^https?:\/\/c\d\.rbxcdn\.com\/[0-9a-f]{32}$/i) === -1) { return }
+			if(typeof url !== "string" || url.search(/^https?:\/\/c\d\.rbxcdn\.com\/[0-9a-f]{32}(?:bork)?$/i) === -1) { return }
+
 			let cached = fixedAudioCache[url]
 			if(!cached) {
-				cached = fixedAudioCache[url] = $.fetch(url, { credentials: "omit", redirect: "manual" })
-					.then(async resp => {
-						if(!resp.ok || resp.redirected) { return false }
-						return URL.createObjectURL(await resp.blob())
+				cached = fixedAudioCache[url] = new SyncPromise(resolve => {
+					const source = new MediaSource()
+					const blobUrl = URL.createObjectURL(source)
+					let counter = 0
+
+					source.addEventListener("sourceopen", async () => {
+						const myCounter = ++counter
+
+						const resp = await fetch(url.replace(/bork$/, ""), { credentials: "omit", redirect: "manual" })
+						if(!resp.ok || resp.redirected) { return }
+
+						const reader = resp.body.getReader()
+						const mimeType = resp.headers.get("Content-Type")
+						const sourceBuffer = source.addSourceBuffer(mimeType)
+						const chunks = []
+						let reading = true
+						
+						const append = () => {
+							if(myCounter !== counter) { return }
+							if(sourceBuffer.updating || source.readyState !== "open") { return }
+
+							if(!chunks.length) {
+								if(!reading) {
+									source.endOfStream()
+								}
+
+								return
+							}
+
+							sourceBuffer.appendBuffer(chunks.shift())
+						}
+
+						const process = ({ done, value: chunk }) => {
+							if(myCounter !== counter) { return }
+
+							if(done) {
+								reading = false
+							} else {
+								chunks.push(chunk)
+								reader.read().then(process)
+							}
+
+							append()
+						}
+
+						sourceBuffer.addEventListener("updateend", append)
+						reader.read().then(process)
 					})
+
+					resolve(blobUrl)
+				})
 			}
 			
 			cached.then(blobUrl => {
