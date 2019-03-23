@@ -344,7 +344,7 @@
 .btr-settings-content select {
 	display: block;
 	font-size: 14px;
-	padding: 2px 0;
+	padding: 1px 4px;
 	font-weight: 400;
 
 	color: #191919;
