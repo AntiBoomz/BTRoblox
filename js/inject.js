@@ -376,6 +376,7 @@ const INJECT_SCRIPT = () => {
 		if(settings.general.fixAudioPreview) {
 			ContentJS.listen("audioPreviewFix", (url, blobUrl) => {
 				document.querySelectorAll(`.MediaPlayerIcon[data-mediathumb-url="${url}"]`).forEach(btn => {
+					btn.classList.add("btr-audioFix")
 					btn.dataset.mediathumbUrl = blobUrl
 					btn.click()
 				})
