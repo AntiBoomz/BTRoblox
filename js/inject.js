@@ -384,6 +384,15 @@ const INJECT_SCRIPT = () => {
 				console.warn("[BTRoblox] Fixed broken audio previewer")
 			})
 
+			if(settings.general.fixAudioVolume) {
+				$(document).on("jPlayer_ready", "#MediaPlayerSingleton", ev => {
+					const audio = ev.currentTarget.querySelector("audio")
+					if(audio) {
+						audio.volume = 0.3
+					}
+				})
+			}
+
 			$(document).on("jPlayer_error", "#MediaPlayerSingleton", ev => {
 				const errorInfo = ev.jPlayer.error
 				const url = errorInfo.context
