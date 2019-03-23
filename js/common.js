@@ -133,9 +133,7 @@ const SETTINGS = {
 			groupWallRanks: { default: true, value: true },
 			hidePayout: { default: true, value: true },
 			hideBigSocial: { default: true, value: true },
-			modifySmallSocialLinksTitle: { default: true, value: true },
-
-			expandGroupList: { default: true, value: true } // deprecated
+			modifySmallSocialLinksTitle: { default: true, value: true }
 		},
 		inventory: {
 			enabled: { default: true, value: true },
