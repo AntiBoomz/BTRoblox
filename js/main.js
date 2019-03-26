@@ -34,24 +34,51 @@ const InjectJS = {
 	}
 }
 
-const templateListeners = {}
+const templatePromises = {}
 const domParser = new DOMParser()
-function modifyTemplate(id, callback) {
-	if(!templateListeners[id]) {
-		const listeners = templateListeners[id] = []
 
-		InjectJS.listen(`TEMPLATE_${id}`, (responseId, html) => {
-			const doc = domParser.parseFromString(`<body>${html}</body>`, "text/html")
-
-			listeners.forEach(fn => fn(doc.body))
-
-			InjectJS.send(`TEMPLATE_${responseId}`, doc.body.innerHTML)
-		}, { once: true })
-
-		InjectJS.send("TEMPLATE_INIT", id)
+function modifyTemplate(idList, callback) {
+	if(typeof idList === "string") {
+		idList = [idList]
 	}
 
-	templateListeners[id].push(callback)
+	const templates = new Array(idList.length)
+	let templatesLeft = idList.length
+
+	const finish = () => {
+		try { callback(...templates) }
+		catch(ex) {
+			console.error(ex)
+
+			if(IS_DEV_MODE) {
+				alert("Hey, modifyTemplate errored!")
+			}
+		}
+
+		idList.forEach((id, i) => {
+			InjectJS.send(`TEMPLATE_${id}`, templates[i].innerHTML)
+		})
+	}
+
+	idList.forEach((id, index) => {
+		if(!templatePromises[id]) {
+			templatePromises[id] = new SyncPromise(resolve => InjectJS.listen(
+				`TEMPLATE_${id}`,
+				html => resolve(domParser.parseFromString(`<body>${html}</body>`, "text/html").body),
+				{ once: true }
+			))
+
+			InjectJS.send("TEMPLATE_INIT", id)
+		}
+		
+		templatePromises[id].then(template => {
+			templates[index] = template
+
+			if(--templatesLeft === 0) {
+				finish()
+			}
+		})
+	})
 }
 
 function onDocumentReady(cb) {

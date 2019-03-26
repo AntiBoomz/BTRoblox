@@ -2,7 +2,6 @@
 
 const INJECT_SCRIPT = () => {
 	const templates = {}
-	let templateRequestCounter = 0
 	let settingsAreLoaded = false
 	let gtsNode
 
@@ -148,20 +147,20 @@ const INJECT_SCRIPT = () => {
 			angular.module("ng").run(["$templateCache", t => {
 				const put = t.put
 				t.put = (key, value) => {
+					const result = put.call(t, key, value)
+
 					if(templates[key]) {
 						delete templates[key]
-						const id = ++templateRequestCounter
 
-						ContentJS.listen(`TEMPLATE_${id}`, changedValue => {
+						ContentJS.listen(`TEMPLATE_${key}`, changedValue => {
 							put.call(t, key, changedValue)
 						}, { once: true })
 
-						put.call(t, key, value)
-						ContentJS.send(`TEMPLATE_${key}`, id, value)
+						ContentJS.send(`TEMPLATE_${key}`, value)
 						return
 					}
 
-					return put.call(t, key, value)
+					return result
 				}
 			}])
 
