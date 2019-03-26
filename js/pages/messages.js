@@ -1,34 +1,35 @@
 "use strict"
 
 pageInit.messages = function() {
-	document.$watch(".roblox-messages-container").$then()
-		.$watchAll(".rbx-tab-content", container => {
-			const inbox = container.$find("#MessagesInbox")
-			if(inbox) {
-				inbox.$watchAll(".roblox-message-row", row => {
-					const span = row.$find(".message-summary-date")
-					if(!span) { return }
-					const fixedDate = RobloxTime(span.textContent.replace("|", ""))
-					if(fixedDate) {
-						span.setAttribute("btr-timestamp", "")
-						span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
-					}
-				})
-			}
+	document.$watch(">body", body => body.classList.add("btr-messages")).$then()
+		.$watch(".roblox-messages-container").$then()
+			.$watchAll(".rbx-tab-content", container => {
+				const inbox = container.$find("#MessagesInbox")
+				if(inbox) {
+					inbox.$watchAll(".roblox-message-row", row => {
+						const span = row.$find(".message-summary-date")
+						if(!span) { return }
+						const fixedDate = RobloxTime(span.textContent.replace("|", ""))
+						if(fixedDate) {
+							span.setAttribute("btr-timestamp", "")
+							span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
+						}
+					})
+				}
 
-			const content = container.$find(".tab-content")
-			if(content) {
-				content.$watch(">.roblox-message-body", body => {
-					const span = body.$find(".message-detail .date")
-					if(!span) { return }
-					const fixedDate = RobloxTime(span.textContent.replace("|", ""))
-					if(fixedDate) {
-						span.setAttribute("btr-timestamp", "")
-						span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
-					}
-				})
-			}
-		})
+				const content = container.$find(".tab-content")
+				if(content) {
+					content.$watch(">.roblox-message-body", body => {
+						const span = body.$find(".message-detail .date")
+						if(!span) { return }
+						const fixedDate = RobloxTime(span.textContent.replace("|", ""))
+						if(fixedDate) {
+							span.setAttribute("btr-timestamp", "")
+							span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
+						}
+					})
+				}
+			})
 
 	modifyTemplate("messages-nav", template => {
 		const curPage = template.$find(".CurrentPage")
@@ -36,23 +37,11 @@ pageInit.messages = function() {
 		curPage.setAttribute("contentEditable", true)
 		curPage.setAttribute("ng-keydown", "keyDown($event)")
 
-		template.$find(".roblox-markAsUnreadInbox").append(
+		template.$find(".roblox-markAsUnreadInbox").after(
+			" ",
 			html`<button class="btn-control-sm btr-markAllAsReadInbox">Mark All As Read</button>`
 		)
 	})
-
-	
-	function getMessages(page, callback) {
-		$.get(`/messages/api/get-messages?messageTab=0&pageNumber=${page}&pageSize=20`, callback)
-	}
-
-	function getMessageCount(callback) {
-		$.get("/messages/api/get-my-unread-messages-count", callback)
-	}
-
-	function markMessagesAsRead(list, callback) {
-		$.post("/messages/api/mark-messages-read", { messageIds: list }, callback)
-	}
 
 	let isWorking = false
 	async function markAllAsRead() {

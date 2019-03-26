@@ -16,3 +16,7 @@ body .content .btr-CurrentPage {
 
 	color: #191919;
 }
+
+.btr-messages .message-actions .btn-control-sm {
+	margin-right: 6px;
+}
