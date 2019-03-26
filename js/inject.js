@@ -165,17 +165,25 @@ const INJECT_SCRIPT = () => {
 
 			if(settings.general.smallChatButton) {
 				HijackAngular("chat", {
-					chatController(func, args) {
-						const scope = args[0]
-						func.apply(this, args)
+					chatController(func, args, argMap) {
+						const result = func.apply(this, args)
 
-						const library = scope.chatLibrary
-						const width = library.chatLayout.widthOfChat
+						try {
+							const { $scope } = argMap
 
-						scope.$watch(() => library.chatLayout.collapsed, value => {
-							library.chatLayout.widthOfChat = value ? 54 + 6 : width
-							library.dialogDict.collapsed = value
-						})
+							const library = $scope.chatLibrary
+							const width = library.chatLayout.widthOfChat
+	
+							$scope.$watch(() => library.chatLayout.collapsed, value => {
+								library.chatLayout.widthOfChat = value ? 54 + 6 : width
+								library.dialogDict.collapsed = value
+							})
+						} catch(ex) {
+							console.error(ex)
+							if(IS_DEV_MODE) { alert("HijackAngular Error") }
+						}
+
+						return result
 					}
 				})
 			}
@@ -184,17 +192,24 @@ const INJECT_SCRIPT = () => {
 				HijackAngular("assetsExplorer", {
 					assetsService(handler, args) {
 						const result = handler.apply(this, args)
-						const tbuat = result.beginUpdateAssetsItems
 
-						result.beginUpdateAssetsItems = function(...iargs) {
-							const promise = tbuat.apply(result, iargs)
-							ContentJS.send("inventoryUpdateBegin")
-							promise.then(() => {
-								setTimeout(() => {
-									ContentJS.send("inventoryUpdateEnd")
-								}, 0)
-							})
-							return promise
+						try {
+							const tbuat = result.beginUpdateAssetsItems
+							result.beginUpdateAssetsItems = function(...iargs) {
+								const promise = tbuat.apply(result, iargs)
+	
+								ContentJS.send("inventoryUpdateBegin")
+								promise.then(() => {
+									setTimeout(() => {
+										ContentJS.send("inventoryUpdateEnd")
+									}, 0)
+								})
+	
+								return promise
+							}
+						} catch(ex) {
+							console.error(ex)
+							if(IS_DEV_MODE) { alert("HijackAngular Error") }
 						}
 
 						return result
@@ -204,25 +219,32 @@ const INJECT_SCRIPT = () => {
 
 			if(currentPage === "messages") {
 				HijackAngular("messages", {
-					rbxMessagesNav(handler, args) {
+					rbxMessagesNav(handler, args, argMap) {
 						const result = handler.apply(this, args)
 
-						const link = result.link
-						result.link = function(u) {
-							u.keyDown = function($event) {
-								if($event.which === 13) {
-									const value = $event.target.textContent * 1
-									if(!Number.isNaN(value)) {
-										args[1].search({ page: value })
-									} else {
-										$event.target.textContent = u.currentStatus.currentPage
-									}
+						try {
+							const { $location } = argMap
 
-									$event.preventDefault()
+							const link = result.link
+							result.link = function(u) {
+								u.keyDown = function($event) {
+									if($event.which === 13) {
+										const value = $event.target.textContent * 1
+	
+										if(!Number.isNaN(value)) {
+											$location.search({ page: value })
+										} else {
+											$event.target.textContent = u.currentStatus.currentPage
+										}
+	
+										$event.preventDefault()
+									}
 								}
+								return link.call(this, u)
 							}
-							
-							return link.call(this, u)
+						} catch(ex) {
+							console.error(ex)
+							if(IS_DEV_MODE) { alert("HijackAngular Error") }
 						}
 
 						return result
@@ -238,8 +260,9 @@ const INJECT_SCRIPT = () => {
 						}
 					})
 				}
+
 				if(settings.groups.pagedGroupWall) {
-					const createCustomPager = $scope => {
+					const createCustomPager = ({ $scope }) => {
 						const wallPosts = []
 						const pageSize = 10
 						let loadMorePromise = null
@@ -324,13 +347,13 @@ const INJECT_SCRIPT = () => {
 						}
 
 						$scope.groupWall.pager.isBusy = () => isLoadingPosts
+						$scope.groupWall.pager.loadNextPage = () => {}
 						$scope.groupWall.pager.loadFirstPage = () => {
 							wallPosts.splice(0, wallPosts.length)
 							nextPageCursor = ""
 							loadMorePromise = null
 							requestWallPosts(0)
 						}
-						$scope.groupWall.pager.loadNextPage = () => {}
 
 						$scope.btrPagerStatus = btrPagerStatus
 						$scope.btrLoadWallPosts = cursor => {
@@ -360,7 +383,14 @@ const INJECT_SCRIPT = () => {
 					HijackAngular("group", {
 						groupWallController(func, args, argMap) {
 							const result = func.apply(this, args)
-							createCustomPager(argMap.$scope)
+
+							try {
+								createCustomPager(argMap)
+							} catch(ex) {
+								console.error(ex)
+								if(IS_DEV_MODE) { alert("HijackAngular Error") }
+							}
+
 							return result
 						}
 					})

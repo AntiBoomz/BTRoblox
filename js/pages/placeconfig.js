@@ -134,7 +134,9 @@ function CreateNewVersionHistory(assetId, assetType) {
 			const assetUrl = `https://assetgame.roblox.com/asset/?id=${assetId}&version=${version}`
 			AssetCache.loadBlob(assetUrl, blob => {
 				isBusy = false
-				startDownload(URL.createObjectURL(blob), fileName)
+				const blobUrl = URL.createObjectURL(blob)
+				startDownload(blobUrl, fileName)
+				URL.revokeObjectURL(blobUrl)
 			})
 		})
 
@@ -220,12 +222,13 @@ pageInit.placeconfig = function(placeId) {
 					eview.setUint32(16, fileOffset, true)
 
 					const blob = new Blob([...files, ...centralDirectory, eoc])
-					const bloburl = URL.createObjectURL(blob)
+					const blobUrl = URL.createObjectURL(blob)
 
 					btn.classList.remove("disabled")
 					btn.textContent = origText
 
-					startDownload(bloburl, `${fileName}.zip`)
+					startDownload(blobUrl, `${fileName}.zip`)
+					URL.revokeObjectURL(blobUrl)
 				}
 				return
 			}
