@@ -2,67 +2,57 @@
 
 {
 	function enableRedesign() {
-		const groupWatcher = document.$watch("body", body => {
+		document.$watch("body", body => {
 			body.classList.toggle("btr-redesign", settings.groups.modifyLayout)
 			body.classList.toggle("btr-hidePayout", settings.groups.hidePayout)
 			body.classList.toggle("btr-hideBigSocial", settings.groups.hideBigSocial)
-		}).$then().$watch("#group-container").$then()
+		})
 
 		if(settings.groups.modifySmallSocialLinksTitle) {
-			groupWatcher.$watch(".social-links .section-content", links => {
-				links.$watchAll("social-link-card", card => {
-					card.$watch("a", a => {
-						try {
-							const small = $(`social-link-icon-list a[href="${a.href}"]`)
-							if(!small) {
-								console.log("no small")
-							}
-							small.title = a.title
-						} catch(ex) {}
-					})
-				})
+			modifyTemplate(["social-link-icon-list", "social-link-icon"], (listTemplate, iconTemplate) => {
+				iconTemplate.$find("a").title = `{{ $ctrl.title || $ctrl.type }}`
+				listTemplate.$find("social-link-icon").title = "socialLink.title"
 			})
 		}
 
 		if(settings.groups.modifyLayout) {
-			modifyTemplate("group-base", template => {
-				const list = template.$find("#horizontal-tabs")
+			modifyTemplate(["group-base", "group-games", "group-about"], (baseTemplate, gamesTemplate, aboutTemplate) => {
+				const list = baseTemplate.$find("#horizontal-tabs")
+
+				list.setAttribute("ng-class", `{'btr-four-wide': library.currentGroup.areGroupGamesVisible}`)
 				
 				const about = list.$find("#about")
 				about.setAttribute("ng-click", "Data.btrGamesTabSelected=false")
-				about.setAttribute("ng-class", about.getAttribute("ng-class").replace(/Data.activeTab == /, "!Data.btrGamesTabSelected && Data.activeTab == "))
-				about.after(html`<li class=rbx-tab ng-class="{'active': Data.activeTab == 'about' && Data.btrGamesTabSelected }" ng-if="library.currentGroup.areGroupGamesVisible" ng-style="{ 'width': getTabWidth() }" ng-click="Data.btrGamesTabSelected=true" ui-sref=about><a class=rbx-tab-heading><span class=text-lead>Games</span></a>`)
+				about.setAttribute("ng-class", about.getAttribute("ng-class").replace(/Data.activeTab === /, "!Data.btrGamesTabSelected && Data.activeTab === "))
+				about.after(html`<li class="rbx-tab group-tab" ng-class="{'active': Data.btrGamesTabSelected && Data.activeTab === groupConstants.currentTab[1] }" ng-if="library.currentGroup.areGroupGamesVisible" ng-click="Data.btrGamesTabSelected=true" ui-sref=about><a class=rbx-tab-heading><span class=text-lead>Games</span></a>`)
+			
+				gamesTemplate.$find(">*").setAttribute("ng-class", "{'ng-hide': library.currentGroup.areGroupGamesVisible && !Data.btrGamesTabSelected}")
+				aboutTemplate.$find("group-members-list").setAttribute("ng-class", "{'ng-hide': library.currentGroup.areGroupGamesVisible && Data.btrGamesTabSelected}")
+				
+				const groupHeader = baseTemplate.$find(".group-header")
+				const groupAbout = groupHeader.parentNode
+				groupAbout.parentNode.classList.add("btr-group-container")
+				groupAbout.classList.add("btr-group-about")
+
+				const socialLinks = aboutTemplate.$find("social-links-container")
+				socialLinks.classList.add("col-xs-12")
+				groupAbout.after(socialLinks)
+				
+				const shout = aboutTemplate.$find(".shout-container").parentNode
+				shout.classList.add("col-xs-12", "btr-shout-container")
+				groupAbout.after(shout)
+
+				const descContent = aboutTemplate.$find(".group-description").parentNode
+				const origDesc = descContent.parentNode
+
+				groupHeader.after(
+					origDesc.$find("social-link-icon-list"), // Small social links
+					html`<div class="text-label btr-description-label">Description</div>`,
+					...descContent.childNodes
+				)
+
+				origDesc.remove()
 			})
-
-			modifyTemplate("group-about", template => {
-				template.$find("div[group-members-list]").setAttribute("ng-class", "{'ng-hide': Data.btrGamesTabSelected}")
-				template.$find("div[group-games]").setAttribute("ng-class", "{'ng-hide': !Data.btrGamesTabSelected}")
-			})
-
-			groupWatcher
-				.$watch(".group-header", head => {
-					head.parentNode.parentNode.classList.add("btr-group-container")
-					head.parentNode.classList.add("btr-group-about")
-				})
-				.$watch(".group-description", desc => {
-					const parent = desc.parentNode.parentNode
-
-					$(".group-header").after(
-						parent.$find("social-link-icon-list"),
-						html`<div class="text-label btr-description-label">Description</div>`,
-						...desc.parentNode.childNodes
-					)
-
-					parent.remove()
-				})
-				.$watch(".shout-container", shout => {
-					shout.parentNode.classList.add("col-xs-12", "btr-shout-container")
-					$(".group-header").parentNode.after(shout.parentNode)
-				})
-				.$watch("social-links-container", social => {
-					social.classList.add("col-xs-12")
-					$(".group-header").parentNode.after(social)
-				})
 		}
 
 		if(settings.groups.selectedRoleCount) {

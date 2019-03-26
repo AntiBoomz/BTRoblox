@@ -39,32 +39,31 @@ const INJECT_SCRIPT = () => {
 			const module = angular.module(moduleName)
 			const done = {}
 
-			module._invokeQueue.forEach(x => {
-				const name = x[2][0]
-				const newhandler = objects[name]
+			module._invokeQueue.forEach(data => {
+				const [, type, [name, value]] = data
+				const fn = objects[name]
+				if(!fn) { return }
 
-				if(typeof newhandler === "function") {
-					const data = x[2][1]
-					const oldhandler = data[data.length - 1]
+				done[name] = true
+				if(type === "constant" || type === "component") {
+					try { fn(value) }
+					catch(ex) { console.error(ex) }
 
-					data[data.length - 1] = function(...args) {
-						const argMap = {}
+					return
+				}
 
-						for(let i = 0; i < data.length - 1; i++) {
-							argMap[data[i]] = args[i]
-						}
-
-						return newhandler.call(this, oldhandler, args, argMap)
-					}
-
-					done[name] = true
+				const oldFn = value[value.length - 1]
+				value[value.length - 1] = function(...args) {
+					const argMap = Object.fromEntries(args.map((x, i) => [value[i], x]))
+					return fn.call(this, oldFn, args, argMap)
 				}
 			})
 
 			if(IS_DEV_MODE) {
-				Object.entries(objects).forEach(([name]) => {
+				Object.keys(objects).forEach(name => {
 					if(!done[name]) {
 						console.warn(`Failed to hijack ${moduleName}.${name}`)
+						if(IS_DEV_MODE) { alert("HijackAngular Missing Module") }
 					}
 				})
 			}
@@ -232,24 +231,10 @@ const INJECT_SCRIPT = () => {
 			}
 
 			if(currentPage === "groups" && settings.groups.enabled && settings.groups.redesign) {
-				if(settings.groups.modifyLayout) {
-					HijackAngular("group", {
-						layout(func, args) {
-							const result = func.apply(this, args)
-							result.aboutText = "Members"
-							return result
-						},
-						groupController(func, args, argMap) {
-							const result = func.apply(this, args)
-							const { $scope } = argMap
-
-							$scope.getTabsCount = new Proxy($scope.getTabsCount, {
-								apply(target, thisArg, targs) {
-									return target.apply(thisArg, targs) + ($scope.library.currentGroup.areGroupGamesVisible ? 1 : 0)
-								}
-							})
-
-							return result
+				if(settings.groups.modifySmallSocialLinksTitle) {
+					HijackAngular("socialLinksJumbotron", {
+						socialLinkIcon(component) {
+							component.bindings.title = "<"
 						}
 					})
 				}

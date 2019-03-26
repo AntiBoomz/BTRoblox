@@ -5,12 +5,8 @@ body.btr-hide-ads .content {
 /* Groups redesign */
 
 .btr-redesign .btr-description-label {
-	padding-top: 32px;
-}
-
-.btr-redesign .group-description {
-	padding-top: 8px;
-	padding-bottom: 8px;
+	padding-top: 16px;
+	padding-bottom: 4px;
 }
 
 .btr-redesign social-link-icon-list {
@@ -30,6 +26,14 @@ body.btr-hide-ads .content {
 .btr-redesign .rbx-tabs-horizontal {
 	margin-top: 18px;
 	margin-bottom: 8px;
+}
+
+.btr-redesign .btr-four-wide > .group-tab {
+	width: 25%
+}
+
+.btr-redesign .group-wall ~ .loading .spinner {
+	margin: 0;
 }
 
 .btr-hidePayout group-payouts,
