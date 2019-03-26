@@ -53,6 +53,19 @@
 
 				origDesc.remove()
 			})
+
+			modifyTemplate("group-members-list", template => {
+				const link = template.$find(".avatar-container > a")
+				const href = link.getAttribute("ng-href")
+
+				if(href === `{{ profilePageUrl(member.userId) }}`) {
+					link.setAttribute("ng-href", `{{ profilePageUrl(member.userId) || ("/users/" + member.userId + "/profile") }}`)
+				} else {
+					if(IS_DEV_MODE) {
+						alert("profilePageUrl got fixed?")
+					}
+				}
+			})
 		}
 
 		if(settings.groups.selectedRoleCount) {
