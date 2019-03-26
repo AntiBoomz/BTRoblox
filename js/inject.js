@@ -117,7 +117,7 @@ const INJECT_SCRIPT = () => {
 
 				setTimeout(() => {
 					proto.insertBefore = insertBefore
-					
+
 					if(!didIt && IS_DEV_MODE) {
 						alert("Failed to rek googletag")
 					}
@@ -252,7 +252,7 @@ const INJECT_SCRIPT = () => {
 				})
 			}
 
-			if(currentPage === "groups" && settings.groups.enabled && settings.groups.redesign) {
+			if(currentPage === "groups" && settings.groups.redesign) {
 				if(settings.groups.modifySmallSocialLinksTitle) {
 					HijackAngular("socialLinksJumbotron", {
 						socialLinkIcon(component) {

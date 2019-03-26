@@ -120,9 +120,7 @@ const SETTINGS = {
 			addServerPager: { default: true, value: true }
 		},
 		groups: {
-			enabled: { default: true, value: true },
 			shoutAlerts: { default: true, value: true },
-
 			redesign: { default: true, value: true },
 			modifyLayout: { default: true, value: true },
 			selectedRoleCount: { default: true, value: true },

@@ -91,14 +91,12 @@
 	}
 
 	pageInit.groups = function() {
-		if(!settings.groups.enabled) { return }
+		if(settings.general.hoverPreview) {
+			HoverPreview.register(".item-card", ".item-card-thumb-container")
+		}
 
 		if(settings.groups.redesign) {
 			enableRedesign()
-		}
-			
-		if(settings.general.hoverPreview) {
-			HoverPreview.register(".item-card", ".item-card-thumb-container")
 		}
 	}
 }

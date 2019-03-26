@@ -29,6 +29,7 @@ const SettingsDiv = (() => {
 						<checkbox label="Minimize Chat" path=smallChatButton require=chatEnabled></checkbox>
 					</div>
 					<checkbox label="Show 'Copy Id' Context Items" path=enableContextMenus></checkbox>
+					<checkbox label="Lower Default Audio Volume" path=fixAudioVolume></checkbox>
 					<div style=margin-top:5px>
 						<checkbox label="Show Robux to USD" path=robuxToUSD></checkbox>
 						<select path=robuxToUSDRate>
@@ -64,7 +65,7 @@ const SettingsDiv = (() => {
 					<checkbox label="Embed Inventory" path=embedInventoryEnabled></checkbox>
 					<checkbox label="Show Last Online" path=lastOnline></checkbox>
 				</group>
-				<group label=Groups path=groups toggleable>
+				<group label=Groups path=groups>
 					<div>
 						<checkbox label="Group Shout Notifications" path=shoutAlerts require=false></checkbox>
 						<button id=btr-open-shout-filter class=btn-control-xs>Modify Shout Filters</button>
