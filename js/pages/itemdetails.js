@@ -661,9 +661,18 @@ pageInit.itemdetails = function(category, assetId) {
 			desc.parentNode.before(elem)
 		})
 
-		getProductInfo(assetId).then(data => {
+		const apply = data => {
 			elem.$find(".field-content").textContent = data.Sales
-		})
+		}
+
+		if(category === "game-pass") {
+			$.fetch(`http://api.roblox.com/marketplace/game-pass-product-info?gamePassId=${assetId}`).then(async resp => {
+				if(!resp.ok) { return }
+				apply(await resp.json())
+			})
+		} else {
+			getProductInfo(assetId).then(apply)
+		}
 	}
 
 	if(category === "bundles") {
