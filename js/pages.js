@@ -59,7 +59,7 @@ function getProductInfo(assetId) {
 	window.getXsrfToken = async function getXsrfToken() {
 		if(!docXsrfTokenPromise) {
 			docXsrfTokenPromise = new SyncPromise(resolve => {
-				document.$watch(">head").$then().$watch(">script", x => x.textContent.includes("XsrfToken.setToken"), x => {
+				document.$watch(">body").$then().$watch(">script", x => x.textContent.includes("XsrfToken.setToken"), x => {
 					const token = x.textContent.replace(/^[^]*XsrfToken\.setToken\('([^']+)'\)[^]*$/, "$1")
 					if(!cachedXsrfToken) {
 						cachedXsrfToken = token
