@@ -208,10 +208,11 @@ const $ = function(selector) { return $.find(document, selector) }
 			let observer = Observers.get(target)
 
 			const promises = selectors.map(selector => new SyncPromise(resolve => {
-				let getter
+				const defGetter = filter ? () => Array.prototype.find.call(target.$findAll(selector), x => filter(x)) : () => target.$find(selector)
+				let getter = defGetter
 
 				if(selector.indexOf(",") === -1) {
-					if(document.contains(target)) {
+					if(!filter && document.contains(target)) {
 						const idMatch = selector.match(/^\s*#([\w-]+)\s*$/)
 						if(idMatch) {
 							const id = idMatch[1]
@@ -219,8 +220,7 @@ const $ = function(selector) { return $.find(document, selector) }
 								const elem = document.getElementById(id)
 
 								if(elem && !target.contains(elem)) {
-									getter = () => target.$find(selector)
-									return getter()
+									return (getter = defGetter)()
 								}
 								
 								return elem
@@ -234,8 +234,7 @@ const $ = function(selector) { return $.find(document, selector) }
 							if(collection.length < 10) {
 								getter = () => {
 									if(collection.length >= 10) {
-										getter = () => target.$find(selector)
-										return getter()
+										return (getter = defGetter)()
 									}
 
 									for(let i = 0, len = collection.length; i < len; i++) {
@@ -263,9 +262,8 @@ const $ = function(selector) { return $.find(document, selector) }
 					}
 				}
 
-				if(!getter) { getter = () => target.$find(selector) }
 				const elem = getter()
-
+				
 				if(elem) {
 					resolve(elem)
 				} else {
