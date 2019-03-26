@@ -8,7 +8,7 @@ const Navigation = (() => {
 
 	const buttonElements = {
 		topleft: {
-			bi_Home: htmlstring`<li class=cursor-pointer><a class="nav-menu-title text-header" href=/home>Home</a></li>`
+			bi_Home: htmlstring`<li class=cursor-pointer><a class="font-header-2 nav-menu-title text-header" href=/home>Home</a></li>`
 		},
 		topright: {
 			bi_Friends: html`
@@ -336,7 +336,7 @@ const Navigation = (() => {
 				<li>
 					<a href=/premium/membership id=nav-bc class="dynamic-overflow-container text-nav">
 						<div><span class=icon-nav-bc-btr></span></div>
-						<span class=dynamic-ellipsis-item>Builders Club</span>
+						<span class="font-header-2 dynamic-ellipsis-item">Builders Club</span>
 					</a>
 				</li>`)
 	
