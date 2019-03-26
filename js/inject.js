@@ -77,53 +77,68 @@ const INJECT_SCRIPT = () => {
 	}
 
 	function PreInit() {
+		const onSet = (a, b, c) => {
+			if(a[b]) { return c(a[b]) }
+
+			Object.defineProperty(a, b, {
+				enumerable: false,
+				configurable: true,
+				set(v) {
+					delete a[b]
+					a[b] = v
+					c(v)
+				}
+			})
+		}
+
 		if(window.googletag) {
 			if(IS_DEV_MODE) {
 				console.warn("[BTRoblox] Failed to load inject before googletag")
 			}
 		} else {
-			const googletag = window.googletag = {}
+			onSet(window, "googletag", gtag => onSet(gtag, "cmd", () => {
+				let didIt = false
 
-			Object.defineProperty(googletag, "cmd", {
-				enumerable: false,
-				configurable: true,
-				set: value => {
-					delete googletag.cmd
-					googletag.cmd = value
+				const proto = Node.prototype
+				const insertBefore = proto.insertBefore
+				proto.insertBefore = function(...args) {
+					const node = args[0]
+					if(node instanceof Node && node.nodeName === "SCRIPT" && node.src.includes("googletagservices.com")) {
+						didIt = true
 
-					let didIt = false
-
-					const proto = Node.prototype
-					const insertBefore = proto.insertBefore
-					proto.insertBefore = function(...args) {
-						const node = args[0]
-						if(node instanceof Node && node.nodeName === "SCRIPT" && node.src.includes("googletagservices.com")) {
-							didIt = true
-
-							if(!settingsAreLoaded) {
-								gtsNode = { this: this, node }
-								return
-							} else if(settings.general.hideAds) {
-								return
-							}
+						if(!settingsAreLoaded) {
+							gtsNode = { this: this, node }
+							return
+						} else if(settings.general.hideAds) {
+							return
 						}
-
-						return insertBefore.apply(this, args)
 					}
 
-					setTimeout(() => {
-						proto.insertBefore = insertBefore
-						if(!didIt && IS_DEV_MODE) {
-							alert("Failed to rek googletag")
-						}
-					}, 0)
+					return insertBefore.apply(this, args)
 				}
-			})
+
+				setTimeout(() => {
+					proto.insertBefore = insertBefore
+					
+					if(!didIt && IS_DEV_MODE) {
+						alert("Failed to rek googletag")
+					}
+				}, 0)
+			}))
 		}
 	}
 
-
 	function PostInit() {
+		if(gtsNode) {
+			if(!settings.general.hideAds) {
+				gtsNode.this.insertBefore(gtsNode.node)
+			}
+
+			gtsNode = null
+		}
+	}
+
+	function DocumentReady() {
 		if(!window.jQuery) {
 			console.warn("[BTR] window.jQuery not set")
 			return
@@ -248,8 +263,6 @@ const INJECT_SCRIPT = () => {
 						let requestCounter = 0
 						let lastPageNum = 0
 						let isLoadingPosts = false
-
-						window.test = $scope
 
 						const btrPagerStatus = {
 							prev: false,
@@ -557,18 +570,12 @@ const INJECT_SCRIPT = () => {
 		[settings, currentPage, matches, IS_DEV_MODE] = initData
 		settingsAreLoaded = true
 
-		if(gtsNode) {
-			if(!settings.general.hideAds) {
-				gtsNode.this.insertBefore(gtsNode.node)
-			}
-
-			gtsNode = null
-		}
+		PostInit()
 
 		if(document.readyState === "loading") {
-			document.addEventListener("DOMContentLoaded", PostInit)
+			document.addEventListener("DOMContentLoaded", DocumentReady)
 		} else {
-			PostInit()
+			DocumentReady()
 		}
 	})
 
