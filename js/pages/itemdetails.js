@@ -455,9 +455,7 @@ const initPreview = (assetId, assetTypeId, isBundle) => {
 }
 
 
-pageInit.itemdetails = function(assetId) {
-	if(!settings.itemdetails.enabled) { return }
-
+pageInit.itemdetails = function(category, assetId) {
 	if(settings.general.robuxToUSD) {
 		document.$watch(".icon-robux-price-container .text-robux-lg", label => {
 			const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
@@ -492,6 +490,8 @@ pageInit.itemdetails = function(assetId) {
 		HoverPreview.register(".item-card", ".item-card-thumb-container")
 	}
 
+	if(!settings.itemdetails.enabled) { return }
+
 	document.$watch("#AjaxCommentsContainer").$then().$watch(".comments").$then()
 		.$watchAll(".comment-item", comment => {
 			const span = comment.$find(".text-date-hint")
@@ -502,10 +502,14 @@ pageInit.itemdetails = function(assetId) {
 			}
 		})
 	
+
 	if(settings.itemdetails.addOwnersList) {
 		let wasOwnersListSetup = false
 		
 		const setupOwnersList = (parent, name, ownerAssetId = assetId) => {
+			if(wasOwnersListSetup) { return }
+			wasOwnersListSetup = true
+
 			const owners = html`
 			<div class=btr-owners-container>
 				<div class=container-header>
@@ -561,16 +565,21 @@ pageInit.itemdetails = function(assetId) {
 				seeMore.setAttribute("disabled", "")
 
 				const url = `https://inventory.roblox.com/v1/assets/${ownerAssetId}/owners?limit=50&cursor=${cursor}`
-				let retriesLeft = 10
+				const maxRetries = 10
+				let retriesLeft = maxRetries
 
 				const handler = async resp => {
 					if(!resp.ok) {
 						if(retriesLeft > 0) {
 							retriesLeft--
+							seeMore.textContent = `Loading... (${maxRetries - retriesLeft})`
 							setTimeout(() => $.fetch(url).then(handler), 2e3)
 						} else {
 							isLoading = false
-							seeMore.textContent = "See More"
+
+							const failText = seeMore.textContent = "Failed to load owners, try again later"
+							setTimeout(() => (seeMore.textContent === failText ? seeMore.textContent = "See More" : null), 2e3)
+
 							seeMore.removeAttribute("disabled")
 						}
 						return
@@ -597,14 +606,14 @@ pageInit.itemdetails = function(assetId) {
 
 						const elem = html`
 						<div class=btr-owner-item>
-							<a href=/users/${item.owner.userId}/profile class="avatar avatar-headshot-md list-header">
+							<a href=/users/${item.owner.userId}/profile title="${item.owner.username}" class="avatar avatar-headshot-md list-header">
 								<img class=avatar-card-image 
 									src=https://www.roblox.com/headshot-thumbnail/image?userId=${item.owner.userId}&width=60&height=60&format=png
 									alt="${item.owner.username}"
 								>
 							</a>
 							<div class=btr-owner-cont>
-								<a class="text-name username" href=/users/${item.owner.userId}/profile>${item.owner.username}</a>
+								<a class="text-name username" title="${item.owner.username}" href=/users/${item.owner.userId}/profile>${item.owner.username}</a>
 								<div class=btr-owner-date>Since ${new Date(item.updated).$format("M/D/YYYY hh:mm:ss")}</div>
 							</div>
 							<div class=btr-serial>${item.serialNumber ? `#${item.serialNumber}` : `N/A`}</div>
@@ -613,59 +622,56 @@ pageInit.itemdetails = function(assetId) {
 						owners.$find(".section-content").append(elem)
 					})
 				}
-				$.fetch(url).then(handler)
+				$.fetch(url, { credentials: "include" }).then(handler)
 			}
 
 			seeMore.$on("click", loadOwners)
 		}
 
-		document.$watch("#item-container", itemCont => {
-			if(itemCont.dataset.itemType === "Asset") {
-				document.$watch("#resellers", resellers => {
-					wasOwnersListSetup = true
-					setupOwnersList(resellers, "Resellers")
-				})
-		
-				onDocumentReady(() => {
-					if(wasOwnersListSetup) { return }
-		
-					const recommended = $(".recommendations-container")
-					if(recommended) {
-						setupOwnersList(recommended, "Recommended")
-					}
-				})
-			} else if(itemCont.dataset.itemType === "Bundle") {
-				document.$watch("#item-container .bundle-items > h3", h3 => {
-					const parent = h3.parentNode
+		if(category === "bundles") {
+			document.$watch(
+				".bundle-items .item-card-link[href]",
+				x => !x.textContent.trim().startsWith("Rthro"),
+				firstItem => {
+					const itemId = firstItem.href.replace(/^.*roblox\.com\/[^/]+\/(\d+).*$/, "$1")
 
-					$.fetch(`https://catalog.roblox.com/v1/bundles/${assetId}/details`, { cache: "force-cache" }).then(async resp => {
-						if(!resp.ok) { return }
+					const h3 = $(".bundle-items > h3")
+					const header = html`<div class=container-header></div>`
+					h3.before(header)
+					header.append(h3)
+	
+					setupOwnersList(header.parentNode, "Included Items", itemId)
+				}
+			)
+		} else {
+			document.$watch(".recommendations-container, #resellers", parent => {
+				setupOwnersList(parent, parent.$find("h3").textContent)
+			})
+		}
+	}
+	
+	if(settings.itemdetails.showSales && category !== "bundles") {
+		const elem = html`
+		<div class="clearfix item-field-container">
+			<div class="text-label text-overflow field-label">Sales</div>
+			<span class=field-content>-</div>
+		</div>`
 
-						const json = await resp.json()
-						if(!json) { return }
-
-						const targetAsset = json.items.find(x => x.type === "Asset")
-						if(!targetAsset) { return }
-
-						const header = html`<div class=container-header></div>`
-						h3.before(header)
-						header.append(h3)
-
-						setupOwnersList(parent, "Included Items", targetAsset.id)
-					})
-				})
-			}
+		document.$watch("#item-details-description", desc => {
+			desc.parentNode.before(elem)
 		})
+
+		getProductInfo(assetId).then(data => {
+			elem.$find(".field-content").textContent = data.Sales
+		})
+	}
+
+	if(category === "bundles") {
+		document.$watch("body", () => initPreview(assetId, null, true)) // Gotta wait for body for previewer to not break
+		return
 	}
 	
 	document.$watch("#item-container", itemCont => {
-		if(itemCont.dataset.itemType !== "Asset") {
-			if(itemCont.dataset.itemType === "Bundle") {
-				initPreview(assetId, null, true)
-			}
-			return
-		}
-		
 		const assetTypeName = itemCont.dataset.assetType
 		const assetTypeId = AssetTypeIds.indexOf(assetTypeName)
 		if(assetTypeId === -1) {
@@ -906,13 +912,12 @@ pageInit.itemdetails = function(assetId) {
 
 		if(settings.itemdetails.whiteDecalThumbnailFix && assetTypeId === 13) {
 			const emptyImg = "https://t3.rbxcdn.com/a95654871aa1ffd3c6fc38e1ac3bf369"
-			const invalidImg = "https://t5.rbxcdn.com/7e9f63b26670543d8296072a2738a519"
 			let fixingThumb = false
 			let newThumb
 
 			const fixThumb = () => {
 				if(newThumb) { img.src = newThumb }
-				if(fixingThumb) { return }
+				if(fixingThumb || img.src !== emptyImg) { return }
 
 				fixingThumb = true
 
@@ -928,39 +933,18 @@ pageInit.itemdetails = function(assetId) {
 					$.all(".thumbnail-span > img, .thumbnail-span-original > img").forEach(img => {
 						img.src = newThumb
 					})
-
-					/*
-					let waitTime = 100
-
-					const url = `https://assetgame.roblox.com/asset-thumbnail/image?assetId=${imgId}&width=420&height=420`
-					const load = () => {
-						$.fetch(url).then(async resp => {
-							const json = await resp.json()
-
-							if(json.Final) {
-								img.src = json.Url
-							} else {
-								setTimeout(load, waitTime += 100)
-							}
-						})
-					}
-
-					load()
-					*/
 				})
 			}
 
 			document.$watch("#AssetThumbnail").$then().$watchAll(".thumbnail-span", parent => {
 				parent.$watchAll("img", img => {
-					const check = () => img.src === emptyImg && fixThumb(img)
-					check()
-					
-					new MutationObserver(check)
-						.observe(img, { attributes: true, attributeFilter: ["src"] })
-				})
+					new MutationObserver(() => fixThumb(img)).observe(img, { attributes: true, attributeFilter: ["src"] })
+					fixThumb(img)
+				}
+				)
 			})
 		}
 
-		
+
 	})
 }

@@ -108,6 +108,8 @@ const SETTINGS = {
 			downloadButton: { default: true, value: true },
 			contentButton: { default: true, value: true },
 
+			showSales: { default: true, value: true },
+
 			imageBackgrounds: { default: true, value: true },
 			whiteDecalThumbnailFix: { default: true, value: true },
 
@@ -200,7 +202,7 @@ const PAGE_INFO = {
 		css: ["inventory.css"]
 	},
 	itemdetails: {
-		matches: ["^/(?:catalog|library|game-pass|badges|bundles)/(\\d+)/"],
+		matches: ["^/(catalog|library|game-pass|badges|bundles)/(\\d+)/"],
 		css: ["itemdetails.css"]
 	},
 	membership: {

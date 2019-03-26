@@ -393,20 +393,26 @@ a:not(.disabled) > .btr-icon-content:hover {
 	cursor: pointer;
 }
 
-.btr-body-popup > input::-webkit-slider-thumb {
+.btr-body-popup > input[type=range]::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	appearance: none;
-	width: 12px;
-	height: 12px;
+	width: 16px;
+	height: 16px;
 	border-radius: 50%;
 	background: white;
+	margin-top: -5px;
+	border-width: 1px;
 }
 
-.dark-theme .btr-thumb-popup.btr-body-popup > input::-webkit-slider-runnable-track {
+.btr-body-popup > input[type=range]:not(:disabled)::-webkit-slider-thumb:hover {
+	box-shadow: none;
+}
+
+.dark-theme .btr-thumb-popup.btr-body-popup > input[type=range]::-webkit-slider-runnable-track {
 	background: none;
 }
 
-.btr-body-popup > input[disabled]::-webkit-slider-thumb {
+.btr-body-popup > input[type=range][disabled]::-webkit-slider-thumb {
 	background: lightgray;
 }
 
@@ -494,21 +500,27 @@ a:not(.disabled) > .btr-icon-content:hover {
 .btr-owner-item .btr-owner-cont {
 	flex: 1 1 auto;
 	text-align: left;
-	margin-bottom: -10px;
+	overflow: hidden;
+	padding-right: 4px;
+	white-space: nowrap;
 }
 
 .btr-owner-item .username {
+	display: block;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
+
 .btr-owner-item .btr-owner-date {
 	font-size: 12px;
 	font-weight: bold;
 	color: #b8b8b8;
+
+	white-space: nowrap;
 }
 
 .btr-owner-item .btr-serial {
-	margin-right: 10px;
+	margin-right: 5px;
 	font-size: 16px;
 	font-weight: bold;
 }
