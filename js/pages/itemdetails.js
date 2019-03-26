@@ -961,68 +961,6 @@ pageInit.itemdetails = function(assetId) {
 			})
 		}
 
-		if(settings.itemdetails.thisPackageContains && assetTypeId === 32) {
-			const cont = html`
-			<div class="btr-package-contents">
-				<div class="container-header">
-					<h3>This Package Contains...</h3>
-				</div>
-				<ul class="hlist">
-				</ul>
-			</div>`
-
-			const assetThumb = "https://assetgame.roblox.com/asset-thumbnail/image?width=150&height=150&format=png&assetId="
-
-			AssetCache.loadText(assetId, text => {
-				text.split(";").forEach(childId => {
-					const card = html`
-					<li class="list-item item-card">
-						<div class="item-card-container">
-							<a class="item-card-link" href="https://www.roblox.com/catalog/${childId}/">
-								<div class="item-card-thumb-container">
-									<img class="item-card-thumb" src="${assetThumb}${childId}">
-								</div>
-								<div class="text-overflow item-card-name">Loading</div>
-							</a>
-							<div class="text-overflow item-card-creator">
-								<span class="xsmall text-label">By</span>
-								<a class="xsmall text-overflow text-link">ROBLOX</a>
-							</div>
-							<div class="text-overflow item-card-price">
-								<span class="text-label">Offsale</span>
-							</div>
-						</div>
-					</li>`
-
-					getProductInfo(childId).then(data => {
-						if(data.IsForSale) {
-							if(data.PriceInRobux) {
-								const price = card.$find(".item-card-price")
-								price.innerHTML = htmlstring`
-								<span class=icon-robux-16x16></span>
-								<span class=text-robux>${data.PriceInRobux}</span>`
-							} else {
-								const label = card.$find(".item-card-price .text-label")
-								label.classList.add("text-robux")
-								label.textContent = "Free"
-							}
-						} else {
-							card.$find(".item-card-price .text-label").textContent = "Offsale"
-						}
-
-						const creator = card.$find(".item-card-creator .text-link")
-						creator.href = `https://www.roblox.com/users/${data.Creator.Id}/profile`
-						creator.textContent = data.Creator.Name
-
-						card.$find(".item-card-name").textContent = data.Name
-						card.$find(".item-card-link").href += data.Name.replace(/[^a-zA-Z0-9]+/g, "-")
-					})
-
-					cont.$find(".hlist").append(card)
-				})
-			})
-
-			document.$watch("#item-container").$then().$watch(">.section-content", content => content.after(cont))
-		}
+		
 	})
 }

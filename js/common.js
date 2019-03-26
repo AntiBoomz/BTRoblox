@@ -111,8 +111,7 @@ const SETTINGS = {
 			imageBackgrounds: { default: true, value: true },
 			whiteDecalThumbnailFix: { default: true, value: true },
 
-			addOwnersList: { default: true, value: true },
-			thisPackageContains: { default: true, value: true } // Packages are no longer in use..?
+			addOwnersList: { default: true, value: true }
 		},
 		gamedetails: {
 			enabled: { default: true, value: true },
