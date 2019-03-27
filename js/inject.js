@@ -57,7 +57,7 @@ const INJECT_SCRIPT = () => {
 					value[value.length - 1] = function(...args) {
 						const argMap = {}
 						args.forEach((x, i) => argMap[value[i]] = x)
-						
+
 						return fn.call(this, oldFn, args, argMap)
 					}
 				}
@@ -157,7 +157,7 @@ const INJECT_SCRIPT = () => {
 
 						ContentJS.listen(`TEMPLATE_${key}`, changedValue => {
 							put.call(t, key, changedValue)
-						}, { once: true })
+						})
 
 						ContentJS.send(`TEMPLATE_${key}`, value)
 						return
