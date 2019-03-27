@@ -949,11 +949,8 @@ pageInit.itemdetails = function(category, assetId) {
 				parent.$watchAll("img", img => {
 					new MutationObserver(() => fixThumb(img)).observe(img, { attributes: true, attributeFilter: ["src"] })
 					fixThumb(img)
-				}
-				)
+				})
 			})
 		}
-
-
 	})
 }
