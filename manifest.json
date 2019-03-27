@@ -6,7 +6,7 @@
 	"description": "Enhance your Roblox experience!",
 	"version": "2.9.1",
 	"author": "AntiBoomz",
-	"minimum_chrome_version": "55",
+	"minimum_chrome_version": "68",
 
 	"icons": {
 		"128":"res/icon_128.png"
