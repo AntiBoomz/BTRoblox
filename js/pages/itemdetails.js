@@ -662,7 +662,7 @@ pageInit.itemdetails = function(category, assetId) {
 		})
 
 		const apply = data => {
-			elem.$find(".field-content").textContent = data.Sales
+			elem.$find(".field-content").textContent = FormatNumber(data.Sales)
 		}
 
 		if(category === "game-pass") {
