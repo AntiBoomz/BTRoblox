@@ -154,17 +154,21 @@
 	overflow: hidden;
 }
 
-.btr-profile .profile-about-content .profile-about-text.para-overflow-toggle:not(.para-height) {
+.btr-profile .profile-about-content .profile-about-text.para-height {
+	max-height: 265px;
+}
+
+.btr-profile .profile-about-content .profile-about-text.para-overflow-toggle-off {
 	padding-bottom: 26px;
 }
 
-.btr-profile .profile-about-content .profile-about-text.para-height {
-	max-height: 240px;
+.btr-profile .profile-about-content .profile-about-text .toggle-para {
+	background-color: white;
+	padding-left: 4px
 }
 
-.btr-profile .profile-about-content .profile-about-text .toggle-para {
-	background: white;
-	padding-left: 4px;
+.dark-theme.btr-profile .profile-about-content .profile-about-text .toggle-para {
+	background-color: #393b3d;
 }
 
 .btr-profile .profile-about-content .profile-about-content-text {
@@ -342,10 +346,11 @@
 .btr-profile .btr-games-list .btr-game-desc {
 	position: relative;
 	width: 100%;
-	padding: 6px 16px;
+	padding: 6px 16px 0;
 	margin-top: 16px;
+	margin-bottom: 6px;
 
-	max-height: 168px;
+	max-height: 162px;
 	overflow: hidden;
 
 	white-space: pre-wrap;
@@ -364,11 +369,11 @@
 	bottom: 0;
 	z-index: 1000;
 	background: #fff;
-	padding: 1px 6px;
+	padding: 1px 0 1px 4px;
 }
 
-.btr-profile .btr-games-list .btr-game-desc:not(.expanded) .btr-toggle-description:before {
-	content: "...";
+.dark-theme.btr-profile .btr-games-list .btr-game-desc .btr-toggle-description {
+	background: #393b3d;
 }
 
 .btr-profile .btr-games-list .btr-game-desc .btr-toggle-description:hover {
@@ -430,7 +435,7 @@ html .btr-profile .btr-profile-favorites .game-card {
 	float: left;
 	width: 33.333%;
 	height: auto;
-	padding: 0 4px;
+	padding: 0 6px;
 	margin-top: 2px;
 	margin-bottom: 8px;
 }
@@ -470,10 +475,11 @@ html .btr-profile .btr-profile-favorites .game-card {
 	padding-bottom: 2px;
 }
 
-.btr-profile-favorites .card-item .btr-creator-link {
+.btr-profile-favorites .card-item .btr-creator-link:any-link {
 	display: inline-block;
 	vertical-align: bottom;
-	max-width: calc(100% - 22px)
+	max-width: calc(100% - 22px);
+	font-size: 12px;
 }
 
 .btr-profile-favorites .input-group-btn {
