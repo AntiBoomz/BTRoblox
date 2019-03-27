@@ -170,13 +170,15 @@ const $ = function(selector) { return $.find(document, selector) }
 				init.xsrf = cachedXsrfToken || true
 			}
 
-			return new SyncPromise(resolve => {
+			return new SyncPromise((resolve, reject) => {
 				MESSAGING.send("fetch", [url, init], async respData => {
-					const resp = await fetch(respData.dataUrl)
-
-					if(respData.xsrf) {
-						cachedXsrfToken = respData.xsrf
+					if(!respData.success) {
+						console.error("$.fetch Error:", respData.error)
+						reject(new Error(respData.error))
+						return
 					}
+
+					const resp = await fetch(respData.dataUrl)
 
 					Object.defineProperties(resp, {
 						ok: { value: respData.ok },
