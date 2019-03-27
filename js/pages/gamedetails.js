@@ -37,7 +37,9 @@ pageInit.gamedetails = function(placeId) {
 			})
 	}
 
-	document.$watch("body", body => body.classList.add("btr-gamedetails")).$then()
+
+
+	const watcher = document.$watch("body", body => body.classList.add("btr-gamedetails")).$then()
 		.$watch(["#tab-about", "#tab-game-instances"], (aboutTab, gameTab) => {
 			aboutTab.$find(".text-lead").textContent = "Recommended"
 
@@ -126,19 +128,6 @@ pageInit.gamedetails = function(placeId) {
 			})
 		})
 		.$watch("#carousel-game-details", details => details.setAttribute("data-is-video-autoplayed-on-ready", "false"))
-		.$watch(".game-stats-container", x => x.$find(".text-label").textContent === "Updated", stats => {
-			const stat = Array.prototype.find.call(stats.children, x => x.$find(".text-label").textContent === "Updated")
-			if(!stat) { return }
-
-			const label = stat.$find(".text-lead")
-			const url = `https://api.roblox.com/marketplace/productinfo?assetId=${placeId}`
-
-			$.fetch(url).then(async resp => {
-				const json = await resp.json()
-				label.title = new Date(json.Updated).$format("M/D/YYYY h:mm:ss A (T)")
-				label.textContent = `${$.dateSince(json.Updated, new Date())} ago`
-			})
-		})
 		.$watch(".game-play-button-container", cont => {
 			const makeBox = (rootPlaceId, rootPlaceName) => {
 				if(+rootPlaceId === +placeId) { return }
@@ -185,6 +174,25 @@ pageInit.gamedetails = function(placeId) {
 				makeBox(rootPlaceId, rootPlace ? rootPlace.Name : "")
 			})
 		})
+	
+	getProductInfo(placeId).then(data => {
+		watcher.$watch(".game-stats-container").$then()
+			.$watch(
+				".game-stat .text-lead",
+				x => x.previousElementSibling.textContent === "Created",
+				label => {
+					label.title = new Date(data.Created).$format("M/D/YYYY h:mm:ss A (T)")
+				}
+			)
+			.$watch(
+				".game-stat .text-lead",
+				x => x.previousElementSibling.textContent === "Updated",
+				label => {
+					label.title = new Date(data.Updated).$format("M/D/YYYY h:mm:ss A (T)")
+					label.textContent = `${$.dateSince(data.Updated, new Date())} ago`
+				}
+			)
+	})
 
 	onDocumentReady(() => {
 		const placeEdit = $("#game-context-menu .dropdown-menu .VisitButtonEditGLI")
