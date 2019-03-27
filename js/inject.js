@@ -53,9 +53,13 @@ const INJECT_SCRIPT = () => {
 				}
 
 				const oldFn = value[value.length - 1]
-				value[value.length - 1] = function(...args) {
-					const argMap = Object.fromEntries(args.map((x, i) => [value[i], x]))
-					return fn.call(this, oldFn, args, argMap)
+				if(typeof oldFn === "function") {
+					value[value.length - 1] = function(...args) {
+						const argMap = {}
+						args.forEach((x, i) => argMap[value[i]] = x)
+						
+						return fn.call(this, oldFn, args, argMap)
+					}
 				}
 			})
 
