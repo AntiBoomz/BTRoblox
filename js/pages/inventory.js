@@ -13,10 +13,10 @@ pageInit.inventory = function() {
 				new MutationObserver(() => {
 					if(!requested) {
 						requested = true
-						setTimeout(() => {
+						$.setImmediate(() => {
 							iframe.style.height = `${body.clientHeight}px`
 							requested = false
-						}, 200)
+						})
 					}
 				}).observe(body, { childList: true, subtree: true })
 			}).$then()
