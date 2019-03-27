@@ -71,9 +71,10 @@
 		if(settings.groups.selectedRoleCount) {
 			modifyTemplate("group-members-list", template => {
 				const label = template.$find(".group-dropdown > button .rbx-selection-label")
-				label.after(html`<span class=btr-role-member-count ng-if="$ctrl.data.currentRoleMemberCount>0">({{$ctrl.data.currentRoleMemberCount}})</span>`)
+				label.after(html`<span class=btr-role-member-count title="{{ $ctrl.data.currentRoleMemberCount | number }}" ng-if="$ctrl.data.currentRoleMemberCount>0">({{ $ctrl.data.currentRoleMemberCount | abbreviate }})</span>`)
 				
 				template.$find(".dropdown-menu li a").title = `{{ role.name }}`
+				template.$find(".dropdown-menu li a .role-member-count").title = `{{ role.memberCount | number }}`
 			})
 		}
 
