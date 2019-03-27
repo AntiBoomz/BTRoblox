@@ -15,13 +15,13 @@ const RBXPreview = (() => {
 					}
 
 					await new SyncPromise(res => setTimeout(res, 1e3))
-					return xsrfFetch(url, { credentials: "include" }).then(callback)
+					return $.fetch(url, { credentials: "include" }).then(callback)
 				}
 
 				return resp.json()
 			}
 
-			avatarRulePromise = xsrfFetch(url, { credentials: "include" }).then(callback)
+			avatarRulePromise = $.fetch(url, { credentials: "include" }).then(callback)
 		}
 
 		return avatarRulePromise
@@ -39,13 +39,13 @@ const RBXPreview = (() => {
 				}
 
 				await new SyncPromise(res => setTimeout(res, 1e3))
-				return xsrfFetch(url, { credentials: "include" }).then(callback)
+				return $.fetch(url, { credentials: "include" }).then(callback)
 			}
 
 			return resp.json()
 		}
 
-		return xsrfFetch(url, { credentials: "include" }).then(callback)
+		return $.fetch(url, { credentials: "include" }).then(callback)
 	}
 
 	function getDefaultAppearance(cb) {

@@ -104,15 +104,16 @@ function CreateNewVersionHistory(assetId, assetType) {
 		.$on("click", ".btr-version-revert", e => {
 			if(isBusy) { return }
 
-			const versionId = parseInt(e.currentTarget.getAttribute("data-versionId"), 10)
+			const versionId = parseInt(e.currentTarget.dataset.versionId, 10)
 			if(Number.isNaN(versionId)) { return }
 
 			isBusy = true
 
-			xsrfFetch("https://www.roblox.com/places/revert", {
+			$.fetch("https://www.roblox.com/places/revert", {
 				method: "POST",
 				credentials: "include",
-				body: new URLSearchParams({ assetVersionID: versionId })
+				body: new URLSearchParams({ assetVersionID: versionId }),
+				xsrf: true
 			}).then(response => {
 				isBusy = false
 				if(response.status === 200) { loadPage(1) }
@@ -121,7 +122,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 		.$on("click", ".btr-version-download", e => {
 			if(isBusy) { return }
 
-			const version = parseInt(e.currentTarget.getAttribute("data-version"), 10)
+			const version = parseInt(e.currentTarget.dataset.version, 10)
 			if(Number.isNaN(version)) { return }
 
 			isBusy = true

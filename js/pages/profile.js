@@ -71,8 +71,11 @@ pageInit.profile = function(userId) {
 		<div class=placeholder-collections style=display:none></div>
 		<div class=placeholder-inventory style=display:none></div>
 	</div>`
-	
-	document.$watch("body", body => body.classList.add("btr-profile")).$watch(".profile-container").$then()
+
+	const onlineStatus = settings.profile.lastOnline && $.fetch(`https://api.roblox.com/users/${userId}/onlinestatus/`)
+	const bodyWatcher = document.$watch("body", body => body.classList.add("btr-profile")).$then()
+
+	bodyWatcher.$watch(".profile-container").$then()
 		.$watch(".rbx-tabs-horizontal", cont => {
 			cont.before(left, right, bottom)
 			cont.parentNode.classList.add("btr-profile-container")
@@ -157,18 +160,22 @@ pageInit.profile = function(userId) {
 			const toggleItems = html`<span class="btr-toggle-items btn-control btn-control-sm">Show Items</span>`
 			avatar.$find("#UserAvatar").append(toggleItems)
 
-			function toggleVisible(ev) {
-				const visible = !avatarRight.classList.contains("visible")
+			let visible = false
+
+			function toggleVisible() {
+				visible = !visible
 				avatarRight.classList.toggle("visible", visible)
 
 				toggleItems.textContent = visible ? "Hide Items" : "Show Items"
-				ev.stopImmediatePropagation()
 			}
 
-			toggleItems.$on("click", toggleVisible)
-			document.body.$on("click", ev => {
-				if(!avatarRight.contains(ev.target) && avatarRight.classList.contains("visible")) { toggleVisible(ev) }
+			toggleItems.$on("click", ev => {
+				toggleVisible()
+				ev.stopPropagation()
 			})
+
+			avatarRight.$on("click", ev => ev.stopPropagation())
+			document.$on("click", () => visible && toggleVisible())
 		})
 		.$watch(".profile-stats-container", stats => {
 			stats.closest(".profile-statistics").remove()
@@ -189,7 +196,8 @@ pageInit.profile = function(userId) {
 					stats.prepend(label)
 				}
 
-				xsrfFetch(`https://api.roblox.com/users/${userId}/onlinestatus/`).then(async resp => {
+				
+				onlineStatus.then(async resp => {
 					if(!resp.ok) {
 						label.$find(".text-lead").textContent = "Failed"
 						return
@@ -310,19 +318,24 @@ pageInit.profile = function(userId) {
 					desc.classList.toggle("expanded", expanded)
 					btn.textContent = expanded ? "Show Less" : "Read More"
 				})
-				.$on("click", ".btr-btn-toggle-profile", () => {
-					const placeId = e.currentTarget.getAttribute("data-placeid")
-					xsrfFetch("https://www.roblox.com/game/toggle-profile", {
+			
+			document.body
+				.$on("click", ".btr-btn-toggle-profile", ev => {
+					const placeId = ev.currentTarget.dataset.placeid
+					$.fetch("https://www.roblox.com/game/toggle-profile", {
 						method: "POST",
 						credentials: "include",
-						body: new URLSearchParams({ placeId, addToProfile: false })
+						body: new URLSearchParams({ placeId, addToProfile: false }),
+						xsrf: true
 					})
 				})
-				.$on("click", ".btr-btn-shutdown-all", () => {
-					xsrfFetch("https://www.roblox.com/Games/shutdown-all-instances", {
+				.$on("click", ".btr-btn-shutdown-all", ev => {
+					const placeId = ev.currentTarget.dataset.placeid
+					$.fetch("https://www.roblox.com/Games/shutdown-all-instances", {
 						method: "POST",
 						credentials: "include",
-						body: new URLSearchParams({ placeId })
+						body: new URLSearchParams({ placeId }),
+						xsrf: true
 					})
 				})
 
@@ -414,7 +427,8 @@ pageInit.profile = function(userId) {
 								<li><a onclick=Roblox.GameLauncher.editGameInStudio(${placeId})><div>Edit</div></a></li>
 								<li><a href="/places/${placeId}/stats"><div>Developer Stats</div></a></li>
 								<li><a href="/places/${placeId}/update"><div>Configure this Place</div></a></li>
-								<li><a class="btr-btn-toggle-profile" data-placeid="${placeId}"><div>Remove from Profile</div></a></li>
+								<li><a class=btr-btn-toggle-profile data-placeid="${placeId}"><div>Remove from Profile</div></a></li>
+								<li><a class=btr-btn-shutdown-all data-placeid="${placeId}"><div>Shut Down All Servers</div></a></li> 
 							</ul>
 						</div>
 					</div>`
@@ -425,7 +439,8 @@ pageInit.profile = function(userId) {
 						if(!data) { return }
 
 						dropdown.$find(".dropdown-menu").children[2].after(
-							html`<li><a href=/universes/configure?id=${data.universeId}><div>Configure this Game</div></a></li>`
+							html`<li><a href=/universes/configure?id=${data.universeId}><div>Configure this Game</div></a></li>`,
+							html`<li><a href=/localization/games/${data.universeId}/configure><div>Configure Localization</div></a></li>`,
 						)
 					})
 				})

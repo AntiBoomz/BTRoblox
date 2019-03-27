@@ -723,8 +723,9 @@ pageInit.itemdetails = function(category, assetId) {
 					cont.parentNode.classList.add("btr-explorer-btn-shown")
 				})
 
-				document.body.$on("click", ".btr-explorer-parent", ev => {
-					ev.stopImmediatePropagation()
+				
+				explorer.element.$on("click", ev => {
+					ev.stopPropagation()
 				})
 
 				btn.$watchAll(".popover", popover => {

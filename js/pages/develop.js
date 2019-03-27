@@ -17,10 +17,11 @@ pageInit.develop = function() {
 
 				if(Number.isNaN(placeId)) { return }
 
-				xsrfFetch("https://www.roblox.com/game/toggle-profile", {
+				$.fetch("https://www.roblox.com/game/toggle-profile", {
 					method: "POST",
 					credentials: "include",
-					body: new URLSearchParams({ placeId, addToProfile: !isVisible })
+					body: new URLSearchParams({ placeId, addToProfile: !isVisible }),
+					xsrf: true
 				}).then(async response => {
 					const json = await response.json()
 					if(json.isValid) {

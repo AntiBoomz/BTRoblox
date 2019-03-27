@@ -7,7 +7,6 @@ const AssetCache = (() => {
 	const resolveQueue = []
 	const fileCache = {}
 	let resolvePromise
-	let xsrfToken
 
 	const prefixUrl = getURL("")
 
@@ -68,18 +67,12 @@ const AssetCache = (() => {
 		if(!resolvePromise) {
 			resolvePromise = new SyncPromise((resolve, reject) => {
 				setTimeout(async () => {
-					if(!xsrfToken) {
-						xsrfToken = await getXsrfToken()
-					}
-
 					const resolveApiUrl = `https://assetdelivery.roblox.com/v1/assets/batch`
 					const info = {
 						method: "POST",
 						credentials: "include",
 						headers: {
 							"Content-Type": "application/json",
-							"Roblox-Place-Id": 0,
-							"X-CSRF-TOKEN": xsrfToken
 						},
 						body: JSON.stringify(resolveQueue)
 					}
@@ -87,25 +80,16 @@ const AssetCache = (() => {
 					resolveQueue.splice(0, resolveQueue.length)
 					resolvePromise = null
 
-					let didRetry = false
-					const tryFetch = () => $.fetch(resolveApiUrl, info).then(async resp => {
+					$.fetch(resolveApiUrl, info).then(async resp => {
 						if(resp.ok) {
 							try { resolve(await resp.json()) }
 							catch(ex) { console.error(ex) }
 						} else {
-							if(!didRetry && resp.statusText.includes("Token Validation Failed")) {
-								xsrfToken = info.headers["X-CSRF-TOKEN"] = resp.headers.get("X-CSRF-TOKEN")
-								didRetry = true
-								return tryFetch()
-							}
-
 							console.error("resolveAssetUrl", resp.status, resp.statusText)
 						}
-						
+
 						reject()
 					})
-
-					tryFetch()
 				}, 16)
 			})
 		}

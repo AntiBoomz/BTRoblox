@@ -143,10 +143,11 @@ pageInit.inventory = function() {
 						const data = await response.json()
 						if(validAssetTypes.indexOf(data.AssetTypeId) === -1) { return console.log("Bad assetType", data) }
 
-						xsrfFetch("https://www.roblox.com/asset/delete-from-inventory", {
+						$.fetch("https://www.roblox.com/asset/delete-from-inventory", {
 							method: "POST",
 							credentials: "include",
-							body: new URLSearchParams({ assetId: item.assetId })
+							body: new URLSearchParams({ assetId: item.assetId }),
+							xsrf: true
 						}).then(() => {
 							item.obj.remove()
 							if(--itemsLeft === 0) {

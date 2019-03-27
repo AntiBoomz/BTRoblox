@@ -145,6 +145,7 @@ const $ = function(selector) { return $.find(document, selector) }
 	
 	const immediateStatus = { counter: 0 }
 	const immediatePromise = Promise.resolve()
+	let cachedXsrfToken
 
 	Object.assign($, {
 		fetch(url, init = {}) {
@@ -157,9 +158,25 @@ const $ = function(selector) { return $.find(document, selector) }
 				}
 			}
 
+			if(init.xsrf) {
+				if(!cachedXsrfToken) {
+					const matches = document.documentElement.innerHTML.match(/XsrfToken\.setToken\('([^']+)'\)/)
+
+					if(matches) {
+						cachedXsrfToken = matches[1]
+					}
+				}
+
+				init.xsrf = cachedXsrfToken || true
+			}
+
 			return new SyncPromise(resolve => {
 				MESSAGING.send("fetch", [url, init], async respData => {
 					const resp = await fetch(respData.dataUrl)
+
+					if(respData.xsrf) {
+						cachedXsrfToken = respData.xsrf
+					}
 
 					Object.defineProperties(resp, {
 						ok: { value: respData.ok },
@@ -263,7 +280,7 @@ const $ = function(selector) { return $.find(document, selector) }
 				}
 
 				const elem = getter()
-				
+
 				if(elem) {
 					resolve(elem)
 				} else {
@@ -381,86 +398,81 @@ const $ = function(selector) { return $.find(document, selector) }
 			while(self.lastChild) { self.removeChild(self.lastChild) }
 		},
 
-		on(self, eventNames, selector, callback, once) {
-			if(typeof selector === "function") { [selector, callback, once] = [null, selector, callback] }
+		on(self, events, selector, callback, config) {
+			if(typeof selector === "function") { [selector, callback, config] = [null, selector, callback] }
+			if(!self.$events) { Object.defineProperty(self, "$events", { value: {} }) }
 
-			eventNames.split(" ").forEach(eventType => {
-				if(!eventType.length) { return }
-				if(!self.$events) { Object.defineProperty(self, "$events", { value: {} }) }
+			events.split(" ").forEach(eventType => {
+				eventType = eventType.trim()
+
+				const eventName = eventType.replace(/^([^.]+).*$/, "$1")
+				if(!eventName) { return }
 
 				let listeners = self.$events[eventType]
 				if(!listeners) { listeners = self.$events[eventType] = [] }
 
-				const listener = {
-					selector,
-					callback,
-					once,
-					handler(...args) {
-						const event = args[0]
-						if(!selector) { return callback.apply(this, args) }
+				const handler = event => {
+					if(!selector) {
+						return callback.call(self, event, self)
+					}
 
-						let path = event.path
-						if(!path) {
-							let target = event.target
-							path = [target]
-							while(target.parentNode) {
-								target = target.parentNode
-								path.push(target)
-							}
-							path.push(window)
-						}
+					let immediateStop = false
+					event.stopImmediatePropagation = function() {
+						immediateStop = true
+						return this.prototype.stopImmediatePropagation.call(this)
+					}
 
-						const query = this.$findAll(selector)
-						const final = path.indexOf(this)
+					const maxIndex = event.path.indexOf(self)
+					for(let i = 0; i < maxIndex; i++) {
+						const node = event.path[i]
 
-						const sP = event.stopPropagation
-						let hasStoppedPropagation = false
-						event.stopPropagation = function(...spArgs) {
-							hasStoppedPropagation = true
-							return sP.apply(this, spArgs)
-						}
-
-						for(let i = 0; i < final; i++) {
-							const node = path[i]
-							const index = Array.prototype.indexOf.call(query, node)
-							if(index === -1) { continue }
-
+						if(node.matches(selector)) {
 							Object.defineProperty(event, "currentTarget", { value: node, configurable: true })
-							callback.apply(this, args)
+							callback.call(self, event, self)
 							delete event.currentTarget
 
-							if(hasStoppedPropagation) { break }
+							if(immediateStop) { break }
 						}
 					}
+
+					delete event.stopImmediatePropagation
+				}
+
+				const listener = {
+					selector, callback,
+					params: [eventName, handler, config]
 				}
 
 				listeners.push(listener)
-				self.addEventListener(eventType, listener.handler, false)
+				self.addEventListener(...listener.params)
 			})
 
 			return self
 		},
-		once(...args) {
-			return this.on(...args, true)
+		once(self, events, selector, callback, config) {
+			if(typeof selector === "function") { [selector, callback, config] = [null, selector, callback] }
+			return this.on(self, events, selector, callback, { ...config, once: true })
 		},
-		off(self, eventNames, selector, callback) {
+		off(self, events, selector, callback) {
 			if(!self.$events) { return self }
 			if(typeof selector !== "string") { [selector, callback] = [null, selector] }
 
-			eventNames.split(" ").forEach(eventType => {
-				if(!eventType.length) { return }
-				if(!self.$events) { return }
+			events.split(" ").forEach(eventType => {
+				eventType = eventType.trim()
 
 				const listeners = self.$events[eventType]
 				if(!listeners) { return }
 
-				const removeAll = selector == null && callback == null
-				for(let i = 0; i < listeners.length; i++) {
-					const listener = listeners[i]
-					if(removeAll || (selector && listener.selector === selector) || (callback && listener.callback === callback)) {
-						listeners.splice(i--, 1)
-						self.removeEventListener(eventType, listener.handler)
+				for(let i = listeners.length; i--;) {
+					const x = listeners[i]
+					if((!selector || x.selector === selector) && (!callback || x.callback === callback)) {
+						self.removeEventListener(...x.params)
+						listeners.splice(i, 1)
 					}
+				}
+
+				if(!listeners.length) {
+					delete self.$events[eventType]
 				}
 			})
 
