@@ -9,16 +9,27 @@ pageInit.inventory = function() {
 
 				const iframe = window.parent.document.getElementById("btr-injected-inventory")
 				let requested = false
+				let lastHeight
 
-				new MutationObserver(() => {
+				const updateHeight = () => {
 					if(!requested) {
 						requested = true
+
 						$.setImmediate(() => {
-							iframe.style.height = `${body.clientHeight}px`
+							const height = `${body.clientHeight}px`
+							if(lastHeight !== height) {
+								lastHeight = iframe.style.height = height
+							}
+
 							requested = false
 						})
 					}
-				}).observe(body, { childList: true, subtree: true })
+				}
+
+				onDocumentReady(() => {
+					updateHeight()
+					new MutationObserver(updateHeight).observe(body, { childList: true, subtree: true })
+				})
 			}).$then()
 			.$watch("#chat-container", chat => chat.remove())
 			.$watchAll("script", script => {
