@@ -424,9 +424,10 @@ const $ = function(selector) { return $.find(document, selector) }
 						return this.prototype.stopImmediatePropagation.call(this)
 					}
 
-					const maxIndex = event.path.indexOf(self)
+					const path = event.composedPath()
+					const maxIndex = path.indexOf(self)
 					for(let i = 0; i < maxIndex; i++) {
-						const node = event.path[i]
+						const node = path[i]
 
 						if(node.matches(selector)) {
 							Object.defineProperty(event, "currentTarget", { value: node, configurable: true })
