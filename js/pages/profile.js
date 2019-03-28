@@ -259,64 +259,245 @@ pageInit.profile = function(userId) {
 			const pager = createPager(false, true)
 			hlist.after(pager)
 
+			const gameItems = []
+			let lastRequest
 			let selected
 
-			function select(item, instant) {
-				if(item.$getThumbnail) {
-					item.$getThumbnail()
-					delete item.$getThumbnail
+			pager.onsetpage = page => {
+				pager.setPage(page)
+				gameItems.forEach(item => item.updateVisibility())
+			}
+
+			class GameDetailsRequest {
+				constructor() {
+					this.placeIdList = []
+					this.executed = false
+				}
+				canJoin() {
+					return !this.executed && this.placeIdList.length < 50
+				}
+				append(placeId) {
+					this.placeIdList.push(placeId)
+
+					if(!this.promise) {
+						this.promise = new SyncPromise(resolve =>
+							$.setImmediate(() => this.execute(resolve))
+						)
+					}
+				}
+				execute(resolve) {
+					this.executed = true
+
+					const places = this.placeIdList.join("&placeIds=")
+					const fetchUrl = `https://games.roblox.com/v1/games/multiget-place-details?placeIds=${places}`
+
+					$.fetch(fetchUrl, { credentials: "include" }).then(resp => {
+						if(!resp.ok) {
+							console.warn("[BTRoblox]: Failed to load place details")
+							return
+						}
+
+						resolve(resp.json())
+					})
+				}
+			}
+
+			class GameItem {
+				constructor(slide) {
+					this.init(slide)
 				}
 
-				const duration = instant ? 0 : .25
+				async init(slide) {
+					const slideImage = await slide.$watch(".slide-item-image").$promise()
+					const slideName = await slide.$watch(".slide-item-name").$promise()
+					const slideDesc = await slide.$watch(".slide-item-description").$promise()
+					const slideEmblemLink = await slide.$watch(".slide-item-emblem-container > a").$promise()
+					const slideStats = await slide.$watch(".slide-item-stats > .hlist").$promise()
+					
+					const index = this.index = +slide.dataset.index
+					const pageIndex = this.pageIndex = Math.floor(index / pageSize)
+					const placeId = this.placeId = slideImage.dataset.emblemId
 
-				if(selected) {
-					selected.classList.remove("selected")
+					const title = slideName.textContent
+					const desc = slideDesc.textContent
+					const url = slideEmblemLink.href
+					const iconThumb = slideImage.dataset.src
+					this.iconRetryUrl = slideImage.dataset.retry
 
-					const content = selected.$find(".btr-game-content")
+					const item = this.item = html`
+					<li class="btr-game">
+						<div class="btr-game-button">
+							<span class="btr-game-title">${title}</span>
+						</div>
+						<div class="btr-game-content">
+							<div class="btr-game-thumb-container">
+								<a href="${url}">
+									<img class="btr-game-thumb">
+									<img class="btr-game-icon" src="${iconThumb}">
+								</a>
+							</div>
+							<div class="btr-game-desc">
+								<span class="btr-game-desc-content">${desc}</span>
+							</div>
+							<div class="btr-game-info">
+								<div class="btr-game-playbutton-container">
+									<div class="btr-game-playbutton btn-primary-lg VisitButtonPlay VisitButtonPlayGLI" placeid="${placeId}"  data-action=play data-is-membership-level-ok=true>
+										Play
+									</div>
+								</div>
+								<div class="btr-game-stats"></div>
+							</div>
+						</div>
+					</li>`
+
+					item.$find(".btr-game-stats").append(slideStats)
+					item.$find(".btr-game-button").$on("click", () => this.toggle())
+
+					hlist.append(item)
+					pager.setMaxPage(pageIndex + 1)
+					gameItems.push(this)
+
+					this.updateVisibility()
+				}
+
+				updateVisibility() {
+					const visible = this.pageIndex === (pager.curPage - 1)
+					this.item.classList.toggle("visible", visible)
+
+					if(visible && this.index === (pager.curPage - 1) * pageSize) {
+						this.select(true)
+					}
+					
+					if(visible && !this.firstVisible) {
+						this.firstVisible = true
+						
+						this.item.$find(".btr-game-thumb").src = `https://www.roblox.com/asset-thumbnail/image?assetId=${this.placeId}&width=768&height=432`
+
+						lastRequest = (lastRequest && lastRequest.canJoin()) ? lastRequest : new GameDetailsRequest()
+						lastRequest.append(this.placeId)
+
+						const gamePromise = lastRequest.promise.then(data => data.find(x => +x.placeId === +this.placeId))
+
+						loggedInUserPromise.then(loggedInUser => {
+							if(+userId !== +loggedInUser) { return }
+
+							const dropdown = html`
+							<div class="btr-game-dropdown">
+								<a class="rbx-menu-item" data-toggle="popover" data-container="body" data-bind="btr-placedrop-${this.placeId}">
+									<span class="icon-more"></span>
+								</a>
+								<div data-toggle="btr-placedrop-${this.placeId}" style="display:none">
+									<ul class="dropdown-menu" role="menu">
+										<li><a onclick=Roblox.GameLauncher.editGameInStudio(${this.placeId})><div>Edit</div></a></li>
+										<li><a href="/places/${this.placeId}/stats"><div>Developer Stats</div></a></li>
+										<li><a href="/places/${this.placeId}/update"><div>Configure this Place</div></a></li>
+										<li><a class=btr-btn-toggle-profile data-placeid="${this.placeId}"><div>Remove from Profile</div></a></li>
+										<li><a class=btr-btn-shutdown-all data-placeid="${this.placeId}"><div>Shut Down All Servers</div></a></li> 
+									</ul>
+								</div>
+							</div>`
+
+							this.item.$find(".btr-game-button").before(dropdown)
+
+							gamePromise.then(data => {
+								if(!data) { return }
+
+								dropdown.$find(".dropdown-menu").children[2].after(
+									html`<li><a href=/universes/configure?id=${data.universeId}><div>Configure this Game</div></a></li>`,
+									html`<li><a href=/localization/games/${data.universeId}/configure><div>Configure Localization</div></a></li>`,
+								)
+							})
+						})
+
+						const descElem = this.item.$find(".btr-game-desc")
+						const descContent = this.item.$find(".btr-game-desc-content")
+						const descToggle = html`<span class="btr-toggle-description">Read More</span>`
+
+						descToggle.$on("click", () => {
+							const expanded = !descElem.classList.contains("expanded")
+							descElem.classList.toggle("expanded", expanded)
+
+							descToggle.textContent = expanded ? "Show Less" : "Read More"
+						})
+
+						const updateDesc = () => {
+							if(descContent.offsetHeight > 156) {
+								descElem.append(descToggle)
+							} else {
+								descToggle.remove()
+							}
+
+							if(!descContent.textContent.trim()) {
+								descContent.classList.toggle("btr-no-description", true)
+								descContent.textContent = "This game has no description"
+							} else {
+								descContent.classList.toggle("btr-no-description", false)
+							}
+						}
+
+						updateDesc()
+
+						gamePromise.then(data => {
+							if(data) {
+								descContent.textContent = data.description
+
+								if(!data.isPlayable) {
+									const btn = this.item.$find(".btr-game-playbutton")
+									btn.classList.remove("VisitPlayButton")
+									btn.setAttribute("disabled", "")
+									btn.title = ProhibitedReasons[data.reasonProhibited] || data.reasonProhibited
+								}
+							}
+
+							Linkify(descContent)
+							updateDesc()
+						})
+					}
+				}
+
+				deselect(instant) {
+					if(this !== selected) { return }
+					selected = null
+
+					this.item.classList.remove("selected")
+	
+					const content = this.item.$find(".btr-game-content")
 					const height = content.scrollHeight
+					const duration = instant ? 0 : .25
 
 					content.style.maxHeight = `${height}px`
 					content.style.transition = `max-height ${duration}s`
 
 					window.requestAnimationFrame(() => content.style.maxHeight = "0px")
-					clearTimeout(selected.$animTimeout)
+					clearTimeout(this.animTimeout)
 				}
 
-				if(selected !== item) {
-					selected = item
-					item.classList.add("selected")
+				select(instant) {
+					if(this === selected) { return }
 
-					const content = item.$find(".btr-game-content")
+					if(selected) { selected.deselect() }
+					selected = this
+
+					this.item.classList.add("selected")
+
+					const content = this.item.$find(".btr-game-content")
 					const height = content.scrollHeight
+					const duration = instant ? 0 : .25
 
 					content.style.maxHeight = `${height}px`
 					content.style.transition = `max-height ${duration}s`
 
-					item.$animTimeout = setTimeout(() => content.style.maxHeight = "none", duration * 1e3)
-				} else {
-					selected = null
+					this.animTimeout = setTimeout(() => content.style.maxHeight = "none", duration * 1e3)
+				}
+
+				toggle(instant) {
+					if(this !== selected) {
+						this.select(instant)
+					} else {
+						this.deselect(instant)
+					}
 				}
 			}
-
-			function loadPage(page) {
-				pager.setPage(page)
-
-				$.each(hlist.children, (obj, index) => {
-					obj.classList.toggle("visible", Math.floor(index / pageSize) + 1 === page)
-				})
-
-				select(hlist.children[(page - 1) * pageSize], true)
-			}
-
-			hlist
-				.$on("click", ".btr-toggle-description", e => {
-					const btn = e.currentTarget
-					const desc = btn.parentNode
-					const expanded = !desc.classList.contains("expanded")
-
-					desc.classList.toggle("expanded", expanded)
-					btn.textContent = expanded ? "Show Less" : "Read More"
-				})
 			
 			document.body
 				.$on("click", ".btr-btn-toggle-profile", ev => {
@@ -338,180 +519,8 @@ pageInit.profile = function(userId) {
 					})
 				})
 
-			pager.onsetpage = loadPage
-			
-			const placeIdList = []
-			let lastGamePromise
-
-			switcher.$watch(">.hlist").$then().$watchAll(".slide-item-container", async slide => {
-				const slideImage = await slide.$watch(".slide-item-image").$promise()
-				const slideName = await slide.$watch(".slide-item-name").$promise()
-				const slideDesc = await slide.$watch(".slide-item-description").$promise()
-				const slideEmblemLink = await slide.$watch(".slide-item-emblem-container > a").$promise()
-				const slideStats = await slide.$watch(".slide-item-stats > .hlist").$promise()
-				
-				const index = +slide.dataset.index
-				const placeId = slideImage.dataset.emblemId
-
-				const title = slideName.textContent
-				const desc = slideDesc.textContent
-				const url = slideEmblemLink.href
-				const iconThumb = slideImage.dataset.src
-
-				placeIdList.push(placeId)
-				if(!lastGamePromise) {
-					lastGamePromise = new SyncPromise(resolve => {
-						$.setImmediate(() => {
-							lastGamePromise = null
-							const list = placeIdList.splice(0, placeIdList.length).join("&placeIds=")
-							const fetchUrl = `https://games.roblox.com/v1/games/multiget-place-details?placeIds=${list}`
-
-							$.fetch(fetchUrl, { credentials: "include" }).then(resp => {
-								if(!resp.ok) {
-									console.warn("[BTRoblox]: Failed to load place details")
-									return
-								}
-
-								resolve(resp.json())
-							})
-						})
-					})
-				}
-
-				const gamePromise = lastGamePromise.then(a => a.find(b => +b.placeId === +placeId))
-
-				const item = html`
-				<li class="btr-game">
-					<div class="btr-game-button">
-						<span class="btr-game-title">${title}</span>
-					</div>
-					<div class="btr-game-content">
-						<div class="btr-game-thumb-container">
-							<a href="${url}">
-								<img class="btr-game-thumb">
-								<img class="btr-game-icon" src="${iconThumb}">
-							</a>
-						</div>
-						<div class="btr-game-desc">
-							<span class="btr-game-desc-content">${desc}</span>
-						</div>
-						<div class="btr-game-info">
-							<div class="btr-game-playbutton-container">
-								<div class="btr-game-playbutton btn-primary-lg VisitButtonPlay VisitButtonPlayGLI" placeid="${placeId}"  data-action=play data-is-membership-level-ok=true>
-									Play
-								</div>
-							</div>
-							<div class="btr-game-stats"></div>
-						</div>
-					</div>
-				</li>`
-
-				item.classList.toggle("visible", (index / pageSize) < 1)
-				item.$find(".btr-game-stats").append(slideStats)
-
-				item.$find(".btr-game-button").$on("click", () => {
-					select(item)
-				})
-
-				loggedInUserPromise.then(loggedInUser => {
-					if(+userId !== +loggedInUser) { return }
-
-					const dropdown = html`
-					<div class="btr-game-dropdown">
-						<a class="rbx-menu-item" data-toggle="popover" data-container="body" data-bind="btr-placedrop-${placeId}">
-							<span class="icon-more"></span>
-						</a>
-						<div data-toggle="btr-placedrop-${placeId}" style="display:none">
-							<ul class="dropdown-menu" role="menu">
-								<li><a onclick=Roblox.GameLauncher.editGameInStudio(${placeId})><div>Edit</div></a></li>
-								<li><a href="/places/${placeId}/stats"><div>Developer Stats</div></a></li>
-								<li><a href="/places/${placeId}/update"><div>Configure this Place</div></a></li>
-								<li><a class=btr-btn-toggle-profile data-placeid="${placeId}"><div>Remove from Profile</div></a></li>
-								<li><a class=btr-btn-shutdown-all data-placeid="${placeId}"><div>Shut Down All Servers</div></a></li> 
-							</ul>
-						</div>
-					</div>`
-
-					item.$find(".btr-game-button").before(dropdown)
-
-					gamePromise.then(data => {
-						if(!data) { return }
-
-						dropdown.$find(".dropdown-menu").children[2].after(
-							html`<li><a href=/universes/configure?id=${data.universeId}><div>Configure this Game</div></a></li>`,
-							html`<li><a href=/localization/games/${data.universeId}/configure><div>Configure Localization</div></a></li>`,
-						)
-					})
-				})
-
-				hlist.append(item)
-				pager.setMaxPage(Math.floor((hlist.children.length - 1) / pageSize) + 1)
-
-				const iconRetryUrl = slideImage.dataset.retry
-
-				function getThumbnail() {
-					function retryUntilFinal(thumbUrl, cb) {
-						$.fetch(thumbUrl).then(async response => {
-							const json = await response.json()
-
-							if(json && json.Final) { cb(json) }
-							else { setTimeout(retryUntilFinal, 500, thumbUrl, cb) }
-						})
-					}
-
-					if(iconRetryUrl) {
-						retryUntilFinal(iconRetryUrl, json => {
-							item.$find(".btr-game-icon").src = json.Url
-						})
-					}
-
-					if(Number.isSafeInteger(+placeId)) {
-						const thumbUrl = `https://www.roblox.com/asset-thumbnail/json?assetId=${placeId}&width=768&height=432&format=jpeg`
-						retryUntilFinal(thumbUrl, json => {
-							item.$find(".btr-game-thumb").src = json.Url
-						})
-					}
-				}
-
-				item.$getThumbnail = getThumbnail
-
-				if(index === 0) { select(item, true) }
-
-				const descElem = item.$find(".btr-game-desc")
-				const descContent = item.$find(".btr-game-desc-content")
-				const descToggle = html`<span class="btr-toggle-description">Read More</span>`
-
-				const updateDesc = () => {
-					if(descContent.offsetHeight > 156) {
-						descElem.append(descToggle)
-					} else {
-						descToggle.remove()
-					}
-
-					if(!descContent.textContent.trim()) {
-						descContent.classList.toggle("btr-no-description", true)
-						descContent.textContent = "This game has no description"
-					} else {
-						descContent.classList.toggle("btr-no-description", false)
-					}
-				}
-
-				updateDesc()
-				gamePromise.then(data => {
-					if(data) {
-						descContent.textContent = data.description
-
-						if(!data.isPlayable) {
-							const btn = item.$find(".btr-game-playbutton")
-							btn.classList.remove("VisitPlayButton")
-							btn.setAttribute("disabled", "")
-							btn.title = ProhibitedReasons[data.reasonProhibited] || data.reasonProhibited
-						}
-					}
-
-					Linkify(descContent)
-					updateDesc()
-				})
+			switcher.$watch(">.hlist").$then().$watchAll(".slide-item-container", slide => {
+				gameItems.push(new GameItem(slide))
 			})
 		})
 		.$watch(".home-friends", friends => {
@@ -541,14 +550,6 @@ pageInit.profile = function(userId) {
 		.$watch(".favorite-games-container", favorites => favorites.remove())
 		.$watch(".profile-collections", collections => newCont.$find(".placeholder-collections").replaceWith(collections))
 	
-	bodyWatcher.$watch(".container-footer", () => {
-		const games = newCont.$find(".placeholder-games")
-		if(games) {
-			games.remove()
-			newCont.$find(".btr-profile-right").append(newCont.$find(".btr-profile-groups")) // Move groups to right column
-		}
-	})
-
 	function initPlayerBadges() {
 		const badges = newCont.$find(".btr-profile-playerbadges")
 		const hlist = badges.$find(".hlist")
