@@ -40,13 +40,14 @@ body.btr-hide-ads .content {
 	display: flex;
 }
 
-.btr-redesign group-members-list .dropdown-menu li a .text-overflow {
+.btr-redesign group-members-list .group-members-list-container-header .group-dropdown .dropdown-menu li a .text-overflow {
 	max-width: none;
 	flex: 1 1 auto;
 }
 
 .btr-redesign group-members-list .dropdown-menu li a .role-member-count {
-	flex: 0 0 auto;
+	flex: 1 0 auto;
+	text-align: right;
 }
 
 .btr-redesign group-members-list .dropdown-menu li a .role-member-count::before {

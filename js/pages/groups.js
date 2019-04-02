@@ -35,11 +35,10 @@
 				groupAbout.classList.add("btr-group-about")
 
 				const socialLinks = aboutTemplate.$find("social-links-container")
-				socialLinks.classList.add("col-xs-12")
 				groupAbout.after(socialLinks)
 				
 				const shout = aboutTemplate.$find(".shout-container").parentNode
-				shout.classList.add("col-xs-12", "btr-shout-container")
+				shout.classList.add("btr-shout-container")
 				groupAbout.after(shout)
 
 				const descContent = aboutTemplate.$find(".group-description").parentNode
@@ -55,17 +54,6 @@
 			})
 
 			modifyTemplate("group-members-list", template => {
-				const link = template.$find(".avatar-container > a")
-				const href = link.getAttribute("ng-href")
-
-				if(href === `{{ profilePageUrl(member.userId) }}`) {
-					link.setAttribute("ng-href", `{{ profilePageUrl(member.userId) || ("/users/" + member.userId + "/profile") }}`)
-				} else {
-					if(IS_DEV_MODE) {
-						alert("profilePageUrl got fixed?")
-					}
-				}
-
 				template.$find(".dropdown-menu li a").title = `{{ role.name }}`
 				template.$find(".dropdown-menu li a .role-member-count").title = `{{ role.memberCount | number }}`
 			})
