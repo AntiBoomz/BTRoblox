@@ -36,6 +36,7 @@ API Docs
 | [chat.roblox.com](https://chat.roblox.com/docs) | All chat and party related endpoints. |
 | [clientsettings.roblox.com](https://clientsettings.roblox.com/docs) | Used by various Roblox clients to retrieve configuration information. |
 | [clientsettingscdn.roblox.com](https://clientsettingscdn.roblox.com/docs) | Used by various Roblox clients to retrieve configuration information. |
+| [contacts.roblox.com](https://contacts.roblox.com/docs) | Contacts and userTag management. |
 | [develop.roblox.com](https://develop.roblox.com/docs) | Game development configuration endpoints. |
 | [economy.roblox.com](https://economy.roblox.com/docs) | Endpoints related to transactions and currency. |
 | [followings.roblox.com](https://followings.roblox.com/docs) | Establishes follow relationship between subscriber entities (users, groups, etc) and source entities (games, groups, assets, etc.) |
