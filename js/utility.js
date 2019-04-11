@@ -210,6 +210,11 @@ const $ = function(selector) { return $.find(document, selector) }
 			return obj
 		},
 
+		wrapWith(self, wrap) {
+			self.before(wrap)
+			wrap.append(self)
+		},
+
 		watch(target, selectors, filter, callback) {
 			if(!callback) {
 				callback = filter
@@ -605,7 +610,8 @@ const $ = function(selector) { return $.find(document, selector) }
 	})
 
 	Assign([window.Node, Node], {
-		$empty() { return $.empty(this) }
+		$empty() { return $.empty(this) },
+		$wrapWith(...args) { return $.wrapWith(this, ...args) }
 	})
 }
 
