@@ -211,6 +211,11 @@ function Linkify(elem) {
 }
 
 const HoverPreview = (() => {
+	const invalidThumbnails = [
+		`https://t1.rbxcdn.com/2a8edb4fb90f669af867371f927e4b46`,
+		`https://t4.rbxcdn.com/6aa6eb3c8680be7c47f1122f4fb9ebf2`
+	]
+
 	const lastPreviewedAssets = []
 	const invalidAssets = {}
 	let preview
@@ -265,6 +270,9 @@ const HoverPreview = (() => {
 
 				clearTarget()
 				if(invalidAssets[assetId]) { return }
+
+				const img = thumbCont.$find("img")
+				if(img && invalidThumbnails.includes(img.src)) { return }
 
 				const debounce = ++debounceCounter
 				const assetPromises = []
