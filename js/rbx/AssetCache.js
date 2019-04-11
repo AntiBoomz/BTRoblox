@@ -24,7 +24,7 @@ const AssetCache = (() => {
 			}
 
 			return urlInfo.searchParams
-		} catch(ex) { }
+		} catch(ex) {}
 
 		return null
 	}
@@ -32,6 +32,11 @@ const AssetCache = (() => {
 	function resolveAssetUrl(url, finished) {
 		if(url.startsWith(prefixUrl)) {
 			finished(url)
+			return
+		}
+
+		if(url.match(/https?:\/\/..\.rbxcdn\.com/)) {
+			finished(url.replace(/^http:/, "https:"))
 			return
 		}
 
