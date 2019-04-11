@@ -62,4 +62,66 @@ pageInit.catalog = function() {
 			slabel.parentNode.title = slabel.parentNode.textContent
 		})
 	})
+
+	if(true) {
+		const ownedRequestList = []
+		const listeners = {}
+
+		const port = MESSAGING.connect("filterOwnedAssets", assetsOwned => {
+			Object.entries(assetsOwned).forEach(([id, isOwned]) => {
+				const list = listeners[id]
+				if(list) {
+					for(let i = list.length; i--;) {
+						const { elem, fn } = list[i]
+
+						if(document.body.contains(elem)) {
+							fn(isOwned)
+						} else {
+							list.splice(i, 1)
+						}
+					}
+
+					if(!list.length) {
+						delete listeners[id]
+					}
+				}
+			})
+		})
+
+		const getIsAssetOwned = (id, elem, fn) => {
+			if(!ownedRequestList.length) {
+				$.setImmediate(() => {
+					port.postMessage(ownedRequestList.splice(0, ownedRequestList.length))
+				})
+			}
+
+			ownedRequestList.push(id)
+
+			if(!listeners[id]) { listeners[id] = [] }
+			listeners[id].push({ elem, fn })
+		}
+
+		bodyWatcher.$watch("#results .hlist").$then()
+			.$watchAll(".list-item", item => {
+				item.$watch(["a", ".item-card-thumb-container"], (anchor, thumb) => {
+					const match = anchor.href.match(/\/(catalog|library|bundles)\/(\d+)/)
+					if(!match) { return console.log("bad", anchor) }
+
+					const id = match[1] === "bundles" ? "bundle_" + match[2] : match[2]
+					let ownedLabel
+
+					getIsAssetOwned(id, anchor, isOwned => {
+						if(isOwned) {
+							if(!ownedLabel) {
+								ownedLabel = html`<span class=btr-item-owned style="position:absolute;bottom:-2px;right:-2px;z-index:1000;width:34px;height:34px;background:#02b757;border-radius:50%;transform:scale(.55);display:flex;align-items:center;justify-content:center;"><span class=icon-checkmark-white-bold title="You own this item" style="bottom:auto;left:auto;"></span></span>`
+							}
+
+							thumb.append(ownedLabel)
+						} else if(ownedLabel) {
+							ownedLabel.remove()
+						}
+					})
+				})
+			})
+	}
 }
