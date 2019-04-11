@@ -863,6 +863,10 @@ body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
 
 /* Audio fix */
 
+.btr-audioFix {
+	position: relative;
+}
+
 .btr-audioFix::after {
 	display: block;
 	content: "";
@@ -870,24 +874,23 @@ body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
 	background-size: 100%;
 	position: absolute;
 
-	transform: scale(0) rotate(18deg);
+	transform: scale(0) rotate(-18deg);
 
 	width: 100%;
 	height: 100%;
 	top: -50%;
-	right: -20%;
+	left: -20%;
 
 	pointer-events: none;
-	transition: .5s;
 
 	animation: audioFix 1.5s ease 1;
 }
 
 @keyframes audioFix {
-	0% { transform: scale(0) rotate(18deg); }
-	30% { transform: scale(.7) rotate(18deg); }
-	70% { transform: scale(.7) rotate(18deg); }
-	100% { transform: scale(0) rotate(18deg); }
+	0% { transform: scale(0) rotate(-10deg); }
+	30% { transform: scale(.7) rotate(-18deg); }
+	70% { transform: scale(.7) rotate(-18deg); }
+	100% { transform: scale(0) rotate(-10deg); }
 }
 
 /* Ew */

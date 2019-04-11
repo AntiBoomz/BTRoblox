@@ -205,6 +205,18 @@ function Init() {
 		bodyWatcher.$watch("#chat-container", cont => cont.remove())
 	}
 
+	if(settings.general.fixAudioPreview) {
+		InjectJS.listen("fixAudioPreview", async url => {
+			if(!url.match(/^https?:\/\/c\d\.rbxcdn\.com\/[0-9a-f]{32}$/)) {
+				console.log("bad url")
+				return
+			}
+			
+			const resp = await fetch(url)
+			InjectJS.send("fixAudioPreview", url, URL.createObjectURL(await resp.blob()))
+		})
+	}
+
 	if(currentPage && pageInit[currentPage.name]) {
 		try { pageInit[currentPage.name].apply(currentPage, currentPage.matches) }
 		catch(ex) { console.error(ex) }

@@ -408,30 +408,39 @@ const INJECT_SCRIPT = () => {
 			$(document).on("jPlayer_ready", "#MediaPlayerSingleton", ev => {
 				const audio = ev.currentTarget.querySelector("audio")
 				if(audio) {
-					audio.volume = 0.25
+					audio.volume = 0.3
 				}
 			})
 		}
 
 		if(settings.general.fixAudioPreview) {
-			const done = {}
+			const fixing = {}
 
-			$(document).on("jPlayer_error", "#MediaPlayerSingleton", ev => {
-				const errorInfo = ev.jPlayer.error
-				const url = errorInfo.context
+			ContentJS.listen("fixAudioPreview", (url, blobUrl) => {
+				console.log("fixed", url, fixing[url])
+				if(!fixing[url]) { return }
 
-				if(errorInfo.type === "e_url" && url.includes("rbxcdn.com") && !done[url]) {
-					done[url] = true
+				document.querySelectorAll(`.MediaPlayerIcon[data-mediathumb-url="${url}"]`).forEach(btn => {
+					btn.classList.add("btr-audioFix")
+					setTimeout(() => btn.classList.remove("btr-audioFix"), 1.5e3)
 
-					fetch(url, { mode: "no-cors" }).then(() => {
-						const btn = document.querySelector(`.MediaPlayerIcon[data-mediathumb-url="${url}"]`)
-						if(!btn) { return }
+					if(btn.classList.contains("icon-pause")) { btn.click() }
 
-						btn.classList.add("btr-audioFix")
-						
-						setTimeout(() => btn.click(), 10)
-						setTimeout(() => btn.classList.remove("btr-audioFix"), 1.5e3)
-					})
+					btn.dataset.mediathumbUrl = blobUrl
+					btn.click()
+				})
+			})
+
+			$(document).on("jPlayer_canplay", "#MediaPlayerSingleton", ev => {
+				delete fixing[ev.jPlayer.status.src]
+			})
+
+			$(document).on("jPlayer_loadstart", "#MediaPlayerSingleton", ev => {
+				const url = ev.jPlayer.status.src
+
+				if(url.includes("rbxcdn.com") && !fixing[url]) {
+					fixing[url] = true
+					ContentJS.send("fixAudioPreview", url)
 				}
 			})
 		}
