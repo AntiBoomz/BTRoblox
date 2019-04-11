@@ -874,22 +874,20 @@ body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
 
 	width: 100%;
 	height: 100%;
-	top: -35%;
-	right: -13%;
+	top: -50%;
+	right: -20%;
 
 	pointer-events: none;
 	transition: .5s;
 
-	animation: audioFix .5s ease 1;
-}
-
-.btr-audioFix:hover::after {
-	transform: scale(.7) rotate(18deg);
+	animation: audioFix 1.5s ease 1;
 }
 
 @keyframes audioFix {
 	0% { transform: scale(0) rotate(18deg); }
-	100% { transform: scale(.7) rotate(18deg); }
+	30% { transform: scale(.7) rotate(18deg); }
+	70% { transform: scale(.7) rotate(18deg); }
+	100% { transform: scale(0) rotate(18deg); }
 }
 
 /* Ew */
