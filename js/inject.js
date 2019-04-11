@@ -417,7 +417,6 @@ const INJECT_SCRIPT = () => {
 			const fixing = {}
 
 			ContentJS.listen("fixAudioPreview", (url, blobUrl) => {
-				console.log("fixed", url, fixing[url])
 				if(!fixing[url]) { return }
 
 				document.querySelectorAll(`.MediaPlayerIcon[data-mediathumb-url="${url}"]`).forEach(btn => {
