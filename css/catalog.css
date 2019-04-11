@@ -12,6 +12,10 @@
 	width: 100%;
 }
 
+.btr-catalog #results .item-cards-stackable {
+	overflow: initial;
+}
+
 @media (min-width: 768px) {
 	.btr-catalog .item-card-container .btr-item-card-more .item-card-label {
 		font-size: 11px;
