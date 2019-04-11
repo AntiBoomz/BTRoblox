@@ -771,7 +771,7 @@ pageInit.itemdetails = function(category, assetId) {
 
 							const title = $("#item-container .item-name-container h2")
 							let fileName = title
-								? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-")
+								? title.textContent.trim().replace(/[^a-zA-Z0-9_]+/g, "-").replace(/(^-+)|(-+$)/g, "")
 								: new URL(btn.href).pathname
 
 							fileName += `.${fileType || GetAssetFileType(assetTypeId, ab)}`
