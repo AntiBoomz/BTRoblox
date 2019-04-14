@@ -8,6 +8,8 @@
 	"author": "AntiBoomz",
 	"minimum_chrome_version": "68",
 
+	"incognito": "split",
+
 	"icons": {
 		"128":"res/icon_128.png"
 	},
