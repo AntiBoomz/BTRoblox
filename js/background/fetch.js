@@ -25,8 +25,7 @@ const OwnerAssetCache = {
 			Object.defineProperties(typeData, {
 				type: { configurable: true, value: assetType },
 				lastUpdate: { configurable: true, value: 0, writable: true },
-				isPopulating: { configurable: true, value: false, writable: true },
-				isUpdating: { configurable: true, value: false, writable: true }
+				currentOperation: { configurable: true, value: null, writable: true }
 			})
 		})
 
@@ -107,113 +106,104 @@ const OwnerAssetCache = {
 		return [newItems, json.nextPageCursor]
 	},
 
-	async populate(onchange) {
-		const loggedIn = await this.getLoggedInUser()
-		if(!loggedIn) { return }
-
-		const list = Object.values(this.data.types).filter(x => !x.isPopulating)
-		const promises = []
-
-		list.forEach(next => {
-			const delay = 300e3 - (Date.now() - next.lastPopulate)
-			if(delay > 0) { return }
-
-			next.isPopulating = true
-			const promise = new Promise(async resolve => {
-				const removedSet = new Set(next.list)
-				let changes = onchange ? {} : null
-				let cursor = ""
-	
-				while(true) {
-					try {
-						// eslint-disable-next-line no-await-in-loop
-						const [newItems, newCursor] = await this.request(next, true, cursor)
-
-						newItems.forEach(id => {
-							removedSet.delete(id)
-	
-							next.list.add(id)
-							this.markAsset(next, id, true, changes)
-						})
-	
-						if(!newCursor) { break }
-						cursor = newCursor
-
-						if(onchange && Object.keys(changes).length) {
-							onchange(changes)
-							changes = {}
-						}
-					} catch(ex) {
-						console.error(ex)
-
-						next.isPopulating = false
-						return
-					}
-				}
-	
-				removedSet.forEach(id => {
-					this.markAsset(next, id, false, changes)
-				})
-
-				if(onchange && Object.keys(changes).length) {
-					onchange(changes)
-				}
-	
-				next.isPopulating = false
-				next.lastPopulate = Date.now()
-				next.lastUpdate = Date.now() // Populate also works as an update
-				this.markDirty()
-
-				resolve()
-			})
-
-			promises.push(promise)
-		})
-
-		return Promise.all(promises)
-	},
-
 	async update(onchange) {
 		const loggedIn = await this.getLoggedInUser()
 		if(!loggedIn) { return }
 
-		const list = Object.values(this.data.types).filter(x => !x.isUpdating && !x.isPopulating)
+		const list = Object.values(this.data.types)
 		const promises = []
 		
 		list.forEach(async next => {
-			const delay = 10e3 - (Date.now() - next.lastUpdate)
-			if(delay > 0) { return }
+			let operation = next.currentOperation
 
-			next.isUpdating = true
-			const promise = new Promise(async resolve => {
-				const changes = onchange ? {} : null
+			if(!operation) {
+				const timeUntilPopulate = 300e3 - (Date.now() - next.lastPopulate)
+				const timeUntilUpdate = 10e3 - (Date.now() - next.lastUpdate)
 
-				try {
-					const [newItems] = await this.request(next, false)
-	
-					newItems.forEach(id => {
-						next.list.add(id)
-						this.markAsset(next, id, true, changes)
+				if(timeUntilPopulate > 0 && timeUntilUpdate > 0) { return }
+
+				operation = {
+					onchange: [],
+					promise: null
+				}
+
+				let changes = {}
+
+				const pushChanges = () => {
+					if(Object.keys(changes).length) {
+						operation.onchange.forEach(fn => fn(changes))
+						changes = {}
+					}
+				}
+				
+				if(timeUntilPopulate <= 0) {
+					operation.promise = new Promise(async resolve => {
+						const removedSet = new Set(next.list)
+						let cursor = ""
+			
+						while(true) {
+							try {
+								// eslint-disable-next-line no-await-in-loop
+								const [newItems, newCursor] = await this.request(next, true, cursor)
+
+								newItems.forEach(id => {
+									removedSet.delete(id)
+			
+									next.list.add(id)
+									this.markAsset(next, id, true, changes)
+								})
+			
+								if(!newCursor) { break }
+								cursor = newCursor
+								pushChanges()
+							} catch(ex) {
+								console.error(ex)
+								resolve(false)
+								return
+							}
+						}
+						
+						removedSet.forEach(id => {
+							this.markAsset(next, id, false, changes)
+						})
+
+						next.currentOperation = null
+						next.lastPopulate = Date.now()
+						next.lastUpdate = Date.now() // Populate also works as an update
+						this.markDirty()
+
+						pushChanges()
+						resolve(true)
 					})
-				} catch(ex) {
-					console.error(ex)
-	
-					next.isUpdating = false
-					return
+				} else {
+					operation.promise = new Promise(async resolve => {
+						try {
+							const [newItems] = await this.request(next, false)
+			
+							newItems.forEach(id => {
+								next.list.add(id)
+								this.markAsset(next, id, true, changes)
+							})
+						} catch(ex) {
+							console.error(ex)
+							resolve(false)
+							return
+						}
+		
+						next.currentOperation = null
+						next.lastUpdate = Date.now()
+						this.markDirty()
+		
+						pushChanges()
+						resolve(true)
+					})
 				}
 
-				if(onchange && Object.keys(changes).length) {
-					onchange(changes)
-				}
-	
-				next.isUpdating = false
-				next.lastUpdate = Date.now()
-				this.markDirty()
+				next.currentOperation = operation
+			}
 
-				resolve()
-			})
-
-			promises.push(promise)
+			if(onchange) { operation.onchange.push(onchange) }
+			promises.push(operation.promise)
 		})
 
 		return Promise.all(promises)
@@ -265,10 +255,8 @@ MESSAGING.listen({
 
 		respond(map, true)
 
-		Promise.all([
-			OwnerAssetCache.populate(changes => respond(changes, true)),
-			OwnerAssetCache.update(changes => respond(changes, true))
-		]).then(() => { respond({}) })
+		OwnerAssetCache.update(changes => respond(changes, true))
+			.then(() => respond({}))
 	},
 
 	async fetch([url, init], respond) {
