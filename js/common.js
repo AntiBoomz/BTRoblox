@@ -373,58 +373,46 @@ const STORAGE = chrome.storage.local
 const MESSAGING = (() => {
 	if(IS_BACKGROUND_PAGE) {
 		const listenersByName = {}
-		const connectionsByName = {}
 		const ports = []
 
 		chrome.runtime.onConnect.addListener(port => {
-			if(port.name === "regular") {
-				let alive = true
-				ports.push(port)
-	
-				port.onMessage.addListener(msg => {
-					const listener = listenersByName[msg.name]
-	
-					if(listener) {
-						let final = false
-	
-						const respond = (response, hasMore) => {
-							if(alive && !final && "id" in msg) {
-								final = !(hasMore === true)
-	
-								port.postMessage({
-									id: msg.id,
-									data: response,
-									final
-								})
-							}
-						}
-	
-						respond.cancel = () => {
-							if(alive && !final && "id" in msg) {
-								final = true
-								port.postMessage({ id: msg.id, final, cancel: true })
-							}
-						}
-	
-						listener(msg.data, respond, port)
-					}
-				})
-	
-				port.onDisconnect.addListener(() => {
-					alive = false
-					const index = ports.indexOf(port)
-					if(index !== -1) { ports.splice(index, 1) }
-				})
-			} else if(port.name.startsWith("connect_")) {
-				const respond = data => port.postMessage(data)
+			let alive = true
+			ports.push(port)
 
-				port.onMessage.addListener(msg => {
-					const listener = connectionsByName[port.name]
-					if(listener) {
-						listener(msg, respond, port)
+			port.onMessage.addListener(msg => {
+				const listener = listenersByName[msg.name]
+
+				if(listener) {
+					let final = false
+
+					const respond = (response, hasMore) => {
+						if(alive && !final && "id" in msg) {
+							final = !(hasMore === true)
+
+							port.postMessage({
+								id: msg.id,
+								data: response,
+								final
+							})
+						}
 					}
-				})
-			}
+
+					respond.cancel = () => {
+						if(alive && !final && "id" in msg) {
+							final = true
+							port.postMessage({ id: msg.id, final, cancel: true })
+						}
+					}
+
+					listener(msg.data, respond, port)
+				}
+			})
+
+			port.onDisconnect.addListener(() => {
+				alive = false
+				const index = ports.indexOf(port)
+				if(index !== -1) { ports.splice(index, 1) }
+			})
 		})
 
 		return {
@@ -441,19 +429,6 @@ const MESSAGING = (() => {
 				} else {
 					console.warn(`Listener '${name}' already exists`)
 				}
-			},
-
-			onconnect(name, callback) {
-				if(typeof name === "object") {
-					Object.entries(name).forEach(([key, fn]) => this.onconnect(key, fn))
-					return
-				}
-				
-				if(!connectionsByName[`connect_${name}`]) {
-					connectionsByName[`connect_${name}`] = callback
-				} else {
-					console.warn(`Listener '${name}' already exists`)
-				}
 			}
 		}
 	}
@@ -462,12 +437,6 @@ const MESSAGING = (() => {
 		callbacks: {},
 		responseCounter: 0,
 
-		connect(name, callback) {
-			const port = chrome.runtime.connect({ name: `connect_${name}` })
-			port.onMessage.addListener(callback)
-			return port
-		},
-
 		send(name, data, callback) {
 			if(typeof data === "function") {
 				callback = data
@@ -475,7 +444,7 @@ const MESSAGING = (() => {
 			}
 
 			if(!this.port) {
-				const port = this.port = chrome.runtime.connect({ name: "regular" })
+				const port = this.port = chrome.runtime.connect()
 
 				const doDisconnect = () => {
 					clearTimeout(this.portTimeout)

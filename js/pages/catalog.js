@@ -67,7 +67,7 @@ pageInit.catalog = function() {
 		const ownedRequestList = []
 		const listeners = {}
 
-		const port = MESSAGING.connect("filterOwnedAssets", assetsOwned => {
+		const updateAssetsOwned = assetsOwned => {
 			Object.entries(assetsOwned).forEach(([id, isOwned]) => {
 				const list = listeners[id]
 				if(list) {
@@ -86,12 +86,13 @@ pageInit.catalog = function() {
 					}
 				}
 			})
-		})
+		}
 
 		const getIsAssetOwned = (id, elem, fn) => {
 			if(!ownedRequestList.length) {
 				$.setImmediate(() => {
-					port.postMessage(ownedRequestList.splice(0, ownedRequestList.length))
+					const list = ownedRequestList.splice(0, ownedRequestList.length)
+					MESSAGING.send("filterOwnedAssets", list, updateAssetsOwned)
 				})
 			}
 

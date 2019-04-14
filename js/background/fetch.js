@@ -4,13 +4,9 @@ const invalidXsrfTokens = {}
 let cachedXsrfToken
 
 const OwnerAssetCache = {
-	assetTypes: [ "17", "18", "19", "41", "42", "43", "44", "45", "46", "47", "11", "12", "bundles", "8"],
-	assetMap: {},
+	assetTypes: ["17", "18", "19", "41", "42", "43", "44", "45", "46", "47", "11", "12", "bundles", "8"],
 	data: null,
-
-	listeners: new Map(),
-	assetMapChanges: {},
-	replicatingChanges: false,
+	assetMap: {},
 
 	resetData() {
 		this.data = {
@@ -22,19 +18,46 @@ const OwnerAssetCache = {
 
 		this.assetTypes.forEach(assetType => {
 			const typeData = this.data.types[assetType] = {
-				list: [],
+				list: new Set(),
 				lastPopulate: 0
 			}
 
 			Object.defineProperties(typeData, {
 				type: { configurable: true, value: assetType },
 				lastUpdate: { configurable: true, value: 0, writable: true },
-				populateCursor: { configurable: true, value: null, writable: true }
+				isPopulating: { configurable: true, value: false, writable: true },
+				isUpdating: { configurable: true, value: false, writable: true }
 			})
 		})
-		
+
 		this.assetMap = {}
-		this.markDirty()
+	},
+	
+	markAsset(next, id, owned, copyTo) {
+		if(next.type === "bundles") {
+			id = "bundle_" + id
+		}
+
+		if(owned) {
+			this.assetMap[id] = true
+		} else {
+			delete this.assetMap[id]
+		}
+
+		if(copyTo) {
+			copyTo[id] = !!owned
+		}
+	},
+
+	markDirty() {
+		if(!this.markedDirty) {
+			this.markedDirty = true
+
+			setTimeout(() => {
+				this.markedDirty = false
+				localStorage.setItem("OwnerAssetCache", JSON.stringify(this.data, (k, v) => (v instanceof Set ? Array.from(v) : v)))
+			}, 1e3)
+		}
 	},
 
 	async getLoggedInUser() {
@@ -67,185 +90,133 @@ const OwnerAssetCache = {
 	},
 
 
-	async request(next, populate = false) {
-		const cursor = populate ? `&cursor=${next.populateCursor || ""}` : ""
+	async request(next, populate = false, cursor = "") {
+		const cursorParam = populate ? `&cursor=${cursor}` : ""
 		const url = next.type === "bundles"
-			? `https://catalog.roblox.com/v1/users/${this.data.lastUserId}/bundles?sortOrder=Desc&limit=100${cursor}`
-			: `https://inventory.roblox.com/v2/users/${this.data.lastUserId}/inventory/${next.type}?sortOrder=Desc&limit=100${cursor}`
-		
-		let newItems
-		let newCursor
+			? `https://catalog.roblox.com/v1/users/${this.data.lastUserId}/bundles?sortOrder=Desc&limit=${populate ? 100 : 25}${cursorParam}`
+			: `https://inventory.roblox.com/v2/users/${this.data.lastUserId}/inventory/${next.type}?sortOrder=Desc&limit=${populate ? 100 : 25}${cursorParam}`
 
-		try {
-			const resp = await fetch(url)
+		const resp = await fetch(url)
+		if(!resp.ok) { throw new Error("Response not ok") }
 
-			if(!resp.ok) {
-				throw new Error(`Bad response from ${url}`)
-			}
+		const json = await resp.json()
+		const newItems = next.type === "bundles"
+			? json.data.map(x => x.id)
+			: json.data.map(x => x.assetId)
 
-			const json = await resp.json()
-
-			newItems = next.type === "bundles"
-				? json.data.map(x => "bundle_" + x.id)
-				: json.data.map(x => x.assetId)
-
-			newCursor = json.nextPageCursor
-
-			if(!newItems.length) {
-				throw new Error(`Empty newItems from ${url}`)
-			}
-		} catch(ex) {
-			console.error(ex)
-		}
-
-		if(!populate) {
-			next.lastUpdate = Date.now()
-			this.markDirty()
-		}
-
-		if(!newItems) {
-			if(populate) {
-				next.populateCursor = null
-				next.lastPopulate = Date.now()
-				this.markDirty()
-			}
-
-			return false
-		}
-
-		newItems.forEach(id => {
-			if(!next.list.includes(id)) {
-				next.list.push(id)
-				this.markAsset(id, true)
-			}
-		})
-
-		if(populate) {
-			if(newCursor) {
-				next.populateCursor = newCursor
-				await new SyncPromise(res => setTimeout(res, 500))
-				return this.request(next, true)
-			}
-
-			next.populateCursor = null
-			next.lastPopulate = Date.now()
-			this.markDirty()
-		} else {
-			if(newCursor) {
-				next.populateCursor = newCursor
-			}
-		}
-
-		return true
+		return [newItems, json.nextPageCursor]
 	},
 
-	async populateNext() {
-		if(!this.listeners.size) {
-			return setTimeout(() => this.populateNext(), 5e3)
-		}
-
+	async populate(onchange) {
 		const loggedIn = await this.getLoggedInUser()
-		if(!loggedIn) {
-			return setTimeout(() => this.populateNext(), 10e3)
-		}
+		if(!loggedIn) { return }
 
-		const next = Object.values(this.data.types).reduce((a, b) => (a.lastPopulate < b.lastPopulate ? a : b))
-		const delay = Math.max(500, 120e3 - (Date.now() - next.lastPopulate))
+		const list = Object.values(this.data.types).filter(x => !x.isPopulating)
+		const promises = []
 
-		setTimeout(
-			async () => {
-				next.list.forEach(id => this.markAsset(id, false, false))
-				next.list = []
+		list.forEach(next => {
+			const delay = 300e3 - (Date.now() - next.lastPopulate)
+			if(delay > 0) { return }
 
-				try {
-					await this.request(next, true)
-				} catch(ex) {
-					console.error(ex)
-				}
-
-				this.populateNext()
-			},
-			delay
-		)
-	},
-
-	async next() {
-		if(!this.listeners.size) {
-			return setTimeout(() => this.next(), 5e3)
-		}
-
-		const loggedIn = await this.getLoggedInUser()
-		if(!loggedIn) {
-			return setTimeout(() => this.next(), 10e3)
-		}
-
-		const list = Object.values(this.data.types)
-		
-		if(!list.length) {
-			return setTimeout(() => this.next(), 10e3)
-		}
-		
-		const next = list.reduce((a, b) => (a.lastUpdate < b.lastUpdate ? a : b))
-		const delay = Math.max(1e3, 20e3 - (Date.now() - next.lastUpdate))
-
-		setTimeout(
-			async () => {
-				try {
-					await this.request(next, false)
-				} catch(ex) {
-					console.error(ex)
-				}
-
-				this.next()
-			},
-			delay
-		)
-	},
-
-	markAsset(id, owned, replicate = true) {
-		const isMarked = !!this.assetMap[id]
-		if(isMarked === !!owned) { return }
-
-		if(owned) {
-			this.assetMap[id] = true
-		} else {
-			delete this.assetMap[id]
-		}
-
-		if(replicate && this.listeners.size) {
-			if(this.assetMapChanges[id]) {
-				delete this.assetMapChanges[id]
-			} else {
-				this.assetMapChanges[id] = !!owned
-			}
-
-			if(!this.replicatingChanges) {
-				this.replicatingChanges = true
-
-				setTimeout(() => {
-					this.replicatingChanges = false
-					const changes = this.assetMapChanges
+			next.isPopulating = true
+			const promise = new Promise(async resolve => {
+				const removedSet = new Set(next.list)
+				let changes = onchange ? {} : null
+				let cursor = ""
 	
-					if(!Object.entries(changes).length) {
+				while(true) {
+					try {
+						// eslint-disable-next-line no-await-in-loop
+						const [newItems, newCursor] = await this.request(next, true, cursor)
+
+						newItems.forEach(id => {
+							removedSet.delete(id)
+	
+							next.list.add(id)
+							this.markAsset(next, id, true, changes)
+						})
+	
+						if(!newCursor) { break }
+						cursor = newCursor
+
+						if(onchange && Object.keys(changes).length) {
+							onchange(changes)
+							changes = {}
+						}
+					} catch(ex) {
+						console.error(ex)
+
+						next.isPopulating = false
 						return
 					}
+				}
+	
+				removedSet.forEach(id => {
+					this.markAsset(next, id, false, changes)
+				})
 
-					this.assetMapChanges = {}
-					this.listeners.forEach(fn => fn(changes))
-				}, 100)
-			}
-		}
+				if(onchange && Object.keys(changes).length) {
+					onchange(changes)
+				}
+	
+				next.isPopulating = false
+				next.lastPopulate = Date.now()
+				next.lastUpdate = Date.now() // Populate also works as an update
+				this.markDirty()
+
+				resolve()
+			})
+
+			promises.push(promise)
+		})
+
+		return Promise.all(promises)
 	},
 
-	markDirty() {
-		if(!this.markedDirty) {
-			this.markedDirty = true
+	async update(onchange) {
+		const loggedIn = await this.getLoggedInUser()
+		if(!loggedIn) { return }
 
-			setTimeout(() => {
-				this.markedDirty = false
-				localStorage.setItem("OwnerAssetCache", JSON.stringify(this.data))
-			}, 1e3)
-		}
+		const list = Object.values(this.data.types).filter(x => !x.isUpdating && !x.isPopulating)
+		const promises = []
+		
+		list.forEach(async next => {
+			const delay = 10e3 - (Date.now() - next.lastUpdate)
+			if(delay > 0) { return }
+
+			next.isUpdating = true
+			const promise = new Promise(async resolve => {
+				const changes = onchange ? {} : null
+
+				try {
+					const [newItems] = await this.request(next, false)
+	
+					newItems.forEach(id => {
+						next.list.add(id)
+						this.markAsset(next, id, true, changes)
+					})
+				} catch(ex) {
+					console.error(ex)
+	
+					next.isUpdating = false
+					return
+				}
+
+				if(onchange && Object.keys(changes).length) {
+					onchange(changes)
+				}
+	
+				next.isUpdating = false
+				next.lastUpdate = Date.now()
+				this.markDirty()
+
+				resolve()
+			})
+
+			promises.push(promise)
+		})
+
+		return Promise.all(promises)
 	},
 
 	init() {
@@ -253,28 +224,36 @@ const OwnerAssetCache = {
 
 		const savedCache = localStorage.getItem("OwnerAssetCache")
 		if(savedCache) {
-			Object.entries(JSON.parse(savedCache)).forEach(([key, value]) => {
-				if(key === "types") {
-					Object.entries(value).forEach(([type, data]) => {
-						if(this.assetTypes.includes(type)) {
-							Object.assign(this.data.types[type], data)
-							data.list.forEach(id => this.markAsset(id, true))
-						}
+			const parsed = JSON.parse(savedCache)
+
+			if(parsed.types) {
+				Object.entries(this.data.types).forEach(([type, next]) => {
+					const savedNext = parsed.types[type]
+					if(!savedNext) { return }
+
+					Object.assign(next, savedNext)
+
+					if(Array.isArray(next.list)) {
+						next.list = new Set(next.list)
+					}
+
+					next.list.forEach(id => {
+						this.markAsset(next, id, true)
 					})
-				} else {
-					this.data[key] = value
-				}
-			})
+				})
+
+				delete parsed.types
+			}
+
+			Object.assign(this.data, parsed)
 		}
 
-		this.populateNext()
-		this.next()
 		return this
 	}
 }.init()
 
-MESSAGING.onconnect({
-	filterOwnedAssets(assetIds, respond, port) {
+MESSAGING.listen({
+	filterOwnedAssets(assetIds, respond) {
 		const map = {}
 
 		assetIds.forEach(x => {
@@ -284,21 +263,14 @@ MESSAGING.onconnect({
 			}
 		})
 
-		if(Object.entries(map).length) {
-			respond(map)
-		}
+		respond(map, true)
 
-		if(!OwnerAssetCache.listeners.has(port)) {
-			OwnerAssetCache.listeners.set(port, respond)
+		Promise.all([
+			OwnerAssetCache.populate(changes => respond(changes, true)),
+			OwnerAssetCache.update(changes => respond(changes, true))
+		]).then(() => { respond({}) })
+	},
 
-			port.onDisconnect.addListener(() => {
-				OwnerAssetCache.listeners.delete(port)
-			})
-		}
-	}
-})
-
-MESSAGING.listen({
 	async fetch([url, init], respond) {
 		try {
 			if(init._body) {
