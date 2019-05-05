@@ -144,7 +144,7 @@ const SETTINGS = {
 			alwaysShowUnfriend: { default: true, value: true }
 		},
 		versionhistory: {
-			enabled: { default: true, value: true }
+			enabled: { default: true, value: false }
 		}
 	}
 }

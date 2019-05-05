@@ -92,8 +92,8 @@ const SettingsDiv = (() => {
 				</group>
 				<group label=Catalog path=catalog toggleable>
 				</group>
-				<group label="Version History" path=versionhistory toggleable>
-				</group>
+				<!--group label="Version History" path=versionhistory toggleable>
+				</group-->
 				<group label="WIP / Other" minimizable minimized>
 					<div id=btr-settings-wip>
 					</div>
