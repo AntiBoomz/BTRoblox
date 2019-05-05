@@ -166,23 +166,28 @@ const AssetCache = (() => {
 						}
 		
 						const onFileDone = () => {
-							const methodResult = constructor(fileResult.result)
-		
-							if(methodResult instanceof SyncPromise) {
-								methodResult.then(result => {
+							try {
+								const methodResult = constructor(fileResult.result)
+			
+								if(methodResult instanceof SyncPromise) {
+									methodResult.then(result => {
+										cacheResult.finished = true
+										cacheResult.result = result
+										cacheResolve(result)
+									}, ex => {
+										console.error("MethodResult Error", ex)
+										cacheResult.finished = true
+										cacheResult.result = null
+										cacheResolve(null)
+									})
+								} else {
 									cacheResult.finished = true
-									cacheResult.result = result
-									cacheResolve(result)
-								}, ex => {
-									console.error("MethodResult Error", ex)
-									cacheResult.finished = true
-									cacheResult.result = null
-									cacheResolve(null)
-								})
-							} else {
-								cacheResult.finished = true
-								cacheResult.result = methodResult
-								cacheResolve(methodResult)
+									cacheResult.result = methodResult
+									cacheResolve(methodResult)
+								}
+							} catch(ex) {
+								console.error(ex)
+								console.log("Failed to load", url, "=>", resolvedUrl)
 							}
 						}
 		
