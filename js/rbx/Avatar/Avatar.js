@@ -233,8 +233,11 @@ const RBXAvatar = (() => {
 
 			this.playerType = null
 
-			this.offsetPos = this.model.position
-			this.offsetRot = new THREE.Euler()
+			this.offset = new THREE.Group()
+			this.model.add(this.offset)
+
+			this.offsetPos = this.offset.position
+			this.offsetRot = this.offset.rotation
 
 			const att = new THREE.Group()
 			att.position.set(0, 0.5, 0)
@@ -456,7 +459,7 @@ const RBXAvatar = (() => {
 			this.shouldRefreshRig = false
 		
 			if(this.root) {
-				this.model.remove(this.root)
+				this.offset.remove(this.root)
 
 				const recDispose = tar => {
 					if(tar.isMesh) {
@@ -534,12 +537,9 @@ const RBXAvatar = (() => {
 				return
 			}
 
-			this.root.rotation.copy(this.offsetRot)
-			this.offsetRot = this.root.rotation
-
 			parts.Head.add(this.defaultHatAttachment.obj)
 
-			this.model.add(this.root)
+			this.offset.add(this.root)
 			this.animator.setJoints(animJoints)
 
 			this._refreshBodyParts()

@@ -855,6 +855,10 @@ body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
 	top: 4px;
 }
 
+.btr-preview-container-parent > :not(.btr-preview-container) {
+	opacity: 0;
+}
+
 .btr-preview-canvas {
 	user-select: none;
 	-moz-user-select: none;

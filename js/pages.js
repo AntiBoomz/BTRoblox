@@ -243,6 +243,9 @@ const HoverPreview = (() => {
 		}
 
 		if(preview) {
+			const parent = preview.container.parentNode
+			if(parent) { parent.classList.remove("btr-preview-container-parent") }
+
 			preview.setEnabled(false)
 			preview.container.remove()
 
@@ -326,6 +329,7 @@ const HoverPreview = (() => {
 
 							thumbCont.classList.remove("btr-preview-loading")
 							self.$find(thumbContSelector).append(preview.container)
+							preview.container.parentNode.classList.add("btr-preview-container-parent")
 						}
 
 						if(preview.scene.hasRendered) {

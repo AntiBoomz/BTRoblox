@@ -89,7 +89,7 @@ const RBXPreview = (() => {
 	class AvatarPreviewer extends Previewer {
 		constructor(opts = {}) {
 			super()
-			this.container = html`<div style="width:100%; height:100%;"></div>`
+			this.container = html`<div class=btr-preview-container style="width:100%; height:100%;"></div>`
 
 			this.playerType = null
 			this.anims = []
