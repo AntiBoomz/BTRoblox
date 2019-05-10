@@ -6,7 +6,6 @@
 	height: 193px;
 }
 
-
 .btr-explorer-button,
 .btr-download-button,
 .btr-content-button {
@@ -381,7 +380,7 @@ a:not(.disabled) > .btr-icon-content:hover {
 	float: right;
 }
 
-.btr-thumb-popup.btr-body-popup > input {
+.btr-thumb-popup.btr-body-popup > input[type=range] {
 	-webkit-appearance: none;
 	height: 6px;
 	border-radius: 3px;
