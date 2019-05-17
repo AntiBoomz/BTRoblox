@@ -556,6 +556,34 @@ pageInit.itemdetails = function(category, assetId) {
 			})
 
 			const seeMore = owners.$find(".btr-see-more-owners")
+			const nameCache = {}
+
+			const getUserName = userId => {
+				const cached = nameCache[userId]
+
+				if(cached) {
+					return cached
+				}
+
+				return nameCache[userId] = new SyncPromise(resolve =>
+					MESSAGING.send("getUserName", userId, resolve)
+				)
+			}
+
+			const createElement = (userId, userName, item) => html`
+				<div class=btr-owner-item>
+					<a href=/users/${userId}/profile title="${userName}" class="avatar avatar-headshot-md list-header">
+						<img class=avatar-card-image 
+							src=https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=60&height=60&format=png
+							alt="${userName}"
+						>
+					</a>
+					<div class=btr-owner-cont>
+						<a class="text-name username" title="${userName}" href=/users/${userId}/profile>${userName}</a>
+						<div class=btr-owner-date>Since ${new Date(item.updated).$format("M/D/YYYY hh:mm:ss")}</div>
+					</div>
+					<div class=btr-serial>${item.serialNumber ? `#${item.serialNumber}` : `N/A`}</div>
+				</div>`
 
 			const loadOwners = () => {
 				if(isLoading) { return }
@@ -564,7 +592,7 @@ pageInit.itemdetails = function(category, assetId) {
 				seeMore.textContent = "Loading..."
 				seeMore.setAttribute("disabled", "")
 
-				const url = `https://inventory.roblox.com/v1/assets/${ownerAssetId}/owners?limit=50&cursor=${cursor}`
+				const url = `https://inventory.roblox.com/v2/assets/${ownerAssetId}/owners?limit=50&cursor=${cursor}`
 				const maxRetries = 10
 				let retriesLeft = maxRetries
 
@@ -602,26 +630,21 @@ pageInit.itemdetails = function(category, assetId) {
 					}
 
 					data.data.forEach(item => {
-						if(!item.owner || item.owner.userId === 1) { return }
+						if(!item.owner || item.owner.type !== "User" || item.owner.id === 1) { return }
+						const userId = item.owner.id
+						const result = getUserName(userId)
 
-						const elem = html`
-						<div class=btr-owner-item>
-							<a href=/users/${item.owner.userId}/profile title="${item.owner.username}" class="avatar avatar-headshot-md list-header">
-								<img class=avatar-card-image 
-									src=https://www.roblox.com/headshot-thumbnail/image?userId=${item.owner.userId}&width=60&height=60&format=png
-									alt="${item.owner.username}"
-								>
-							</a>
-							<div class=btr-owner-cont>
-								<a class="text-name username" title="${item.owner.username}" href=/users/${item.owner.userId}/profile>${item.owner.username}</a>
-								<div class=btr-owner-date>Since ${new Date(item.updated).$format("M/D/YYYY hh:mm:ss")}</div>
-							</div>
-							<div class=btr-serial>${item.serialNumber ? `#${item.serialNumber}` : `N/A`}</div>
-						</div>`
-
+						const elem = createElement(userId, result instanceof Promise ? `User#${userId}` : result, item)
 						owners.$find(".section-content").append(elem)
+
+						if(result instanceof Promise) {
+							result.then(userName => {
+								elem.replaceWith(createElement(userId, userName, item))
+							})
+						}
 					})
 				}
+
 				$.fetch(url, { credentials: "include" }).then(handler)
 			}
 

@@ -236,11 +236,38 @@ const OwnerAssetCache = {
 			}
 
 			Object.assign(this.data, parsed)
-		}
+		} 
 
 		return this
 	}
 }.init()
+
+const UserNameCache = {
+	cache: {},
+
+	get(userId) {
+		const cache = this.cache[userId]
+		if(cache) { return cache }
+
+		return this._fetch(userId)
+	},
+
+	_fetch(userId) {
+		const promise = this.cache[userId] = new Promise(async resolve => {
+			try {
+				const resp = await fetch(`https://api.roblox.com/users/${userId}`)
+				const json = await resp.json()
+				resolve(json.Username)
+			} catch(ex) {
+				console.error(ex)
+				resolve("Failed to get username")
+			}
+		})
+
+		setTimeout(() => delete this.cache[userId], 60e3)
+		return promise
+	}
+}
 
 MESSAGING.listen({
 	filterOwnedAssets(assetIds, respond) {
@@ -257,6 +284,10 @@ MESSAGING.listen({
 
 		OwnerAssetCache.update(changes => respond(changes, true))
 			.then(() => respond({}))
+	},
+
+	getUserName(userId, respond) {
+		UserNameCache.get(userId).then(respond)
 	},
 
 	async fetch([url, init], respond) {
