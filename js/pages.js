@@ -244,7 +244,7 @@ const HoverPreview = (() => {
 
 		if(preview) {
 			const parent = preview.container.parentNode
-			if(parent) { parent.classList.remove("btr-preview-container-parent") }
+			if(parent instanceof Element) { parent.classList.remove("btr-preview-container-parent") }
 
 			preview.setEnabled(false)
 			preview.container.remove()
