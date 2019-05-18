@@ -30,7 +30,7 @@ pageInit.catalog = function() {
 		cat.classList.add("section-content")
 	})
 
-	modifyTemplate("catalog-item-card", template => {
+	modifyTemplate("item-card", template => {
 		const cont = template.$find(".item-card-container")
 		cont.classList.add("btr-item-card-container")
 		cont.setAttribute("btr-item-info", "{{item.ItemType===1}}")
