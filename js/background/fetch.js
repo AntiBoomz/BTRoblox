@@ -55,7 +55,7 @@ const OwnerAssetCache = {
 			setTimeout(() => {
 				this.markedDirty = false
 				localStorage.setItem("OwnerAssetCache", JSON.stringify(this.data, (k, v) => (v instanceof Set ? Array.from(v) : v)))
-			}, 1e3)
+			}, 10e3)
 		}
 	},
 
@@ -236,7 +236,7 @@ const OwnerAssetCache = {
 			}
 
 			Object.assign(this.data, parsed)
-		} 
+		}
 
 		return this
 	}
@@ -282,7 +282,8 @@ MESSAGING.listen({
 
 		respond(map, true)
 
-		OwnerAssetCache.update(changes => respond(changes, true))
+		OwnerAssetCache
+			.update(changes => respond(changes, true))
 			.then(() => respond({}))
 	},
 
