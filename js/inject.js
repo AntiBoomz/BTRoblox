@@ -418,10 +418,13 @@ const INJECT_SCRIPT = () => {
 
 			ContentJS.listen("fixAudioPreview", (url, blobUrl) => {
 				if(!fixing[url]) { return }
+				delete fixing[url]
+				
+				console.warn("[BTRoblox] Fixed broken audio previewer")
 
 				document.querySelectorAll(`.MediaPlayerIcon[data-mediathumb-url="${url}"]`).forEach(btn => {
 					btn.classList.add("btr-audioFix")
-					setTimeout(() => btn.classList.remove("btr-audioFix"), 1.5e3)
+					setTimeout(() => btn.classList.remove("btr-audioFix"), 5e3)
 
 					if(btn.classList.contains("icon-pause")) { btn.click() }
 
@@ -434,12 +437,28 @@ const INJECT_SCRIPT = () => {
 				delete fixing[ev.jPlayer.status.src]
 			})
 
+			$(document).on("jPlayer_error", "#MediaPlayerSingleton", ev => {
+				const errorInfo = ev.jPlayer.error
+				const url = errorInfo.context
+				const data = fixing[url]
+
+				if(errorInfo.type === "e_url" && data) {
+					clearTimeout(data.timeout)
+					ContentJS.send("fixAudioPreview", url)
+				}
+			})
+
 			$(document).on("jPlayer_loadstart", "#MediaPlayerSingleton", ev => {
 				const url = ev.jPlayer.status.src
 
 				if(url.includes("rbxcdn.com") && !fixing[url]) {
-					fixing[url] = true
-					ContentJS.send("fixAudioPreview", url)
+					const data = fixing[url] = {}
+
+					data.timeout = setTimeout(() => {
+						if(fixing[url]) {
+							ContentJS.send("fixAudioPreview", url)
+						}
+					}, 500)
 				}
 			})
 		}
