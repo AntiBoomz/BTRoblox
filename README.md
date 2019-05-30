@@ -48,11 +48,12 @@ API Docs
 | [groups.roblox.com](https://groups.roblox.com/docs) | Groups management. |
 | [inventory.roblox.com](https://inventory.roblox.com/docs) | All endpoints for viewing (but not granting) ownership of items. |
 | [locale.roblox.com](https://locale.roblox.com/docs) | User locale management. |
+| [localizationtables.roblox.com](https://localizationtables.roblox.com/docs) | Handles managing of localization tables. |
 | [metrics.roblox.com](https://metrics.roblox.com/docs) | Record metrics across Roblox. |
 | [midas.roblox.com](https://midas.roblox.com/docs) | Handle requests around making purchases using Midas |
 | [notifications.roblox.com](https://notifications.roblox.com/docs) | All notification stream endpoints. |
 | [points.roblox.com](https://points.roblox.com/docs) | The web Api for the in-game PointsService. |
-| [premiumfeatures.roblox.com](https://premiumfeatures.roblox.com/docs) | This API is for premium features and anything pertaining to account add ons |
+| [premiumfeatures.roblox.com](https://premiumfeatures.roblox.com/docs) | This API is for premium features and anything pertaining to account add ons. |
 | [presence.roblox.com](https://presence.roblox.com/docs) | All endpoints for managing presence. |
 | [publish.roblox.com](https://publish.roblox.com/docs) | All endpoints handling file uploads. |
 | [textfilter.roblox.com](https://textfilter.roblox.com/docs) | High volume text filtering. |
