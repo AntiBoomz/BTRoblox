@@ -102,27 +102,39 @@ pageInit.catalog = function() {
 			listeners[id].push({ elem, fn })
 		}
 
-		bodyWatcher.$watch("#results .hlist").$then()
-			.$watchAll(".list-item", item => {
-				item.$watch(["a", ".item-card-thumb-container"], (anchor, thumb) => {
-					const match = anchor.href.match(/\/(catalog|library|bundles)\/(\d+)/)
-					if(!match) { return console.log("bad", anchor) }
+		const hookItem = item => {
+			item.$watch(["a", ".item-card-thumb-container"], (anchor, thumb) => {
+				const match = anchor.href.match(/\/(catalog|library|bundles)\/(\d+)/)
+				if(!match) { return console.log("bad", anchor) }
 
-					const id = match[1] === "bundles" ? "bundle_" + match[2] : match[2]
-					let ownedLabel
+				const id = match[1] === "bundles" ? "bundle_" + match[2] : match[2]
+				let ownedLabel
 
-					getIsAssetOwned(id, anchor, isOwned => {
-						if(isOwned) {
-							if(!ownedLabel) {
-								ownedLabel = html`<span class=btr-item-owned style="position:absolute;bottom:-2px;right:-2px;z-index:1000;width:34px;height:34px;background:#02b757;border-radius:50%;transform:scale(.55);display:flex;align-items:center;justify-content:center;"><span class=icon-checkmark-white-bold title="You own this item" style="bottom:auto;left:auto;"></span></span>`
-							}
-
-							thumb.append(ownedLabel)
-						} else if(ownedLabel) {
-							ownedLabel.remove()
+				getIsAssetOwned(id, anchor, isOwned => {
+					if(isOwned) {
+						if(!ownedLabel) {
+							ownedLabel = html`<span class=btr-item-owned style="position:absolute;bottom:-2px;right:-2px;z-index:1000;width:34px;height:34px;background:#02b757;border-radius:50%;transform:scale(.55);display:flex;align-items:center;justify-content:center;"><span class=icon-checkmark-white-bold title="You own this item" style="bottom:auto;left:auto;"></span></span>`
 						}
-					})
+
+						thumb.append(ownedLabel)
+					} else if(ownedLabel) {
+						ownedLabel.remove()
+					}
 				})
+			})
+		}
+		
+		bodyWatcher.$watch(".catalog-results").$then()
+			.$watchAll("div", page => {
+				if(page.matches("#results")) {
+					page.$watch(".hlist").$then()
+						.$watchAll(".list-item", hookItem)
+				} else if(page.matches("div[landing-page")) {
+					page.$watchAll("div", par =>
+						par.$watch(".hlist").$then()
+							.$watchAll(".list-item", hookItem)
+					)
+				}
 			})
 	}
 }
