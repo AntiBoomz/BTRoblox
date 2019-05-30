@@ -97,7 +97,8 @@ const SETTINGS = {
 			noHamburger: { default: true, value: true }
 		},
 		catalog: {
-			enabled: { default: true, value: true }
+			enabled: { default: true, value: true },
+			showOwnedAssets: { default: true, value: false }
 		},
 		itemdetails: {
 			enabled: { default: true, value: true },

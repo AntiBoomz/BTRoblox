@@ -63,7 +63,7 @@ pageInit.catalog = function() {
 		})
 	})
 
-	if(true) {
+	if(settings.catalog.showOwnedAssets) {
 		const ownedRequestList = []
 		const listeners = {}
 
