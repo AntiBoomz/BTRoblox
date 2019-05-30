@@ -12,7 +12,7 @@
 	width: 100%;
 }
 
-.btr-catalog #results .item-cards-stackable {
+.btr-catalog .catalog-results .item-cards-stackable {
 	overflow: initial;
 }
 
