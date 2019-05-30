@@ -745,6 +745,15 @@ const RBXParser = (() => {
 				return this.parseText($.bufferToStr(buffer))
 			case "2.00":
 				return this.parseBin(buffer)
+			case "3.00":
+				console.warn("[BTRoblox] Tried to load mesh version 3.00 which is not yet supported")
+				
+				return {
+					vertices: new Float32Array(0),
+					normals: new Float32Array(0),
+					uvs: new Float32Array(0),
+					faces: new Float32Array(0)
+				}
 			default:
 				throw new Error("Unsupported mesh version")
 			}
