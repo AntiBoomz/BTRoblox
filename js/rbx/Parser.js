@@ -51,6 +51,7 @@ const RBXParser = (() => {
 		SetIndex(n) { this.index = n }
 		GetIndex() { return this.index }
 		GetRemaining() { return this.length - this.index }
+		GetLength() { return this.length }
 		Jump(n) { this.index += n }
 
 		Array(n) {
@@ -744,16 +745,9 @@ const RBXParser = (() => {
 			case "1.01":
 				return this.parseText($.bufferToStr(buffer))
 			case "2.00":
-				return this.parseBin(buffer)
+				return this.parseBin(buffer, 2)
 			case "3.00":
-				console.warn("[BTRoblox] Tried to load mesh version 3.00 which is not yet supported")
-				
-				return {
-					vertices: new Float32Array(0),
-					normals: new Float32Array(0),
-					uvs: new Float32Array(0),
-					faces: new Float32Array(0)
-				}
+				return this.parseBin(buffer, 3)
 			default:
 				throw new Error("Unsupported mesh version")
 			}
@@ -799,27 +793,73 @@ const RBXParser = (() => {
 			return { vertices, normals, uvs, faces }
 		}
 
-		parseBin(buffer) {
+		parseBin(buffer, version = 2) {
 			const reader = new ByteReader(buffer)
-			assert(reader.String(12) === "version 2.00", "Bad header")
+			assert(reader.String(12) === `version ${version}.00`, "Bad header")
 
 			const newline = reader.Byte()
 			assert(newline === 0x0A || newline === 0x0D && reader.Byte() === 0x0A, "Bad newline")
 
 			const begin = reader.GetIndex()
-			const headerSize = reader.UInt16LE(); assert(headerSize === 12, "Invalid header size")
-			const vertexSize = reader.Byte(); assert(vertexSize >= 32, "Invalid vertex size")
-			const faceSize = reader.Byte(); assert(faceSize >= 12, "Invalid face size")
+			
+			let headerSize
+			let vertexSize
+			let faceSize
+			let lodSize
 
-			const vertexCount = reader.UInt32LE()
-			const faceCount = reader.UInt32LE()
+			let vertexCount
+			let faceCount
+			let lodCount
+
+			if(version === 2) {
+				headerSize = reader.UInt16LE()
+				assert(headerSize >= 12, `Invalid header size ${headerSize}`)
+
+				vertexSize = reader.Byte()
+				faceSize = reader.Byte()
+
+				vertexCount = reader.UInt32LE()
+				faceCount = reader.UInt32LE()
+			} else {
+				headerSize = reader.UInt16LE()
+				assert(headerSize >= 16, `Invalid header size ${headerSize}`)
+
+				vertexSize = reader.Byte()
+				faceSize = reader.Byte()
+				lodSize = reader.UInt16LE()
+				assert(lodSize === 4, `Invalid lod size ${lodSize}`)
+
+				lodCount = reader.UInt16LE()
+				vertexCount = reader.UInt32LE()
+				faceCount = reader.UInt32LE()
+			}
+
+			assert(vertexSize >= 32, `Invalid vertex size ${vertexSize}`)
+			assert(faceSize >= 12, `Invalid face size ${faceSize}`)
+
+			const headerEnd = begin + headerSize
+			const vertexEnd = headerEnd + vertexSize * vertexCount
+			const faceEnd = vertexEnd + faceSize * faceCount
+			const fileEnd = version === 3 ? faceEnd + lodSize * lodCount : faceEnd
+
+			assert(fileEnd === reader.GetLength(), `Invalid file size (expected ${fileEnd}, got ${reader.GetLength()})`)
+
+			let realFaceCount = faceCount
+			let faceOffset = 0
+
+			if(version === 3) {
+				reader.SetIndex(faceEnd)
+
+				faceOffset = reader.UInt32LE()
+				realFaceCount = reader.UInt32LE() - faceOffset
+			}
 
 			const vertices = new Float32Array(vertexCount * 3)
 			const normals = new Float32Array(vertexCount * 3)
 			const uvs = new Float32Array(vertexCount * 2)
-			const faces = new Uint32Array(faceCount * 3)
+			const faces = new Uint32Array(realFaceCount * 3)
 
-			reader.SetIndex(begin + headerSize)
+			reader.SetIndex(headerEnd)
 			for(let i = 0; i < vertexCount; i++) {
 				vertices[i * 3] = reader.FloatLE()
 				vertices[i * 3 + 1] = reader.FloatLE()
@@ -832,18 +872,25 @@ const RBXParser = (() => {
 				uvs[i * 2] = reader.FloatLE()
 				uvs[i * 2 + 1] = 1 - reader.FloatLE()
 
-				reader.Jump(vertexSize - 32)
+				if(vertexSize !== 32) {
+					reader.Jump(vertexSize - 32)
+				}
 			}
 
-			for(let i = 0; i < faceCount; i++) {
+			reader.SetIndex(vertexEnd + faceSize * faceOffset)
+			for(let i = 0; i < realFaceCount; i++) {
 				faces[i * 3] = reader.UInt32LE()
 				faces[i * 3 + 1] = reader.UInt32LE()
 				faces[i * 3 + 2] = reader.UInt32LE()
 
-				reader.Jump(faceSize - 12)
+				if(faceSize !== 12) {
+					reader.Jump(faceSize - 12)
+				}
 			}
 
-			if(reader.GetRemaining() > 0) { console.warn("Leftover data in mesh") }
+			reader.Jump(fileEnd)
+			if(reader.GetRemaining() > 0) { console.warn("Leftover data in mesh", version) }
+
 			return { vertices, normals, uvs, faces }
 		}
 	}
