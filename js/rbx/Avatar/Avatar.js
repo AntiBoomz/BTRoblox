@@ -704,13 +704,31 @@ const RBXAvatar = (() => {
 					const changes = joints[jointName]
 					const C0 = changes && changes[joint.part0.name] || joint.origC0
 					const C1 = changes && changes[joint.part1.name] || joint.origC1
+
+					const scale0 = joint.part0.rbxScaleMod
+					const scale1 = joint.part1.rbxScaleMod
 	
-					joint.c0.position.setFromMatrixPosition(C0).multiply(joint.part0.rbxScaleMod)
+					joint.c0.position.setFromMatrixPosition(C0).multiply(scale0)
 					joint.c0.rotation.setFromRotationMatrix(C0)
 	
-					joint.c1.position.setFromMatrixPosition(C1).multiply(joint.part1.rbxScaleMod)
+					joint.c1.position.setFromMatrixPosition(C1).multiply(scale1)
 					joint.c1.rotation.setFromRotationMatrix(C1)
 				})
+
+				// Weird RootRigAttachment.C0.Y recalculation...
+				// God damnit Roblox, try to follow your own scaling rules
+				// instead of hardcoding stuff like this q.q
+				const rootJoint = this.joints.Root
+				const leftHip = this.joints.LeftHip
+				const rightHip = this.joints.RightHip
+
+				if(rootJoint && (leftHip || rightHip)) {
+					const rootHeight = rootJoint.part0.rbxSize[1]
+					const minHipHeight = Math.min(leftHip.c0.position.y, rightHip.c0.position.y)
+					const newY = -rootHeight / 2 - minHipHeight - rootJoint.c1.position.y
+
+					rootJoint.c0.position.setY(newY)
+				}
 			}
 
 			updateSizes()
