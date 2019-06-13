@@ -23,6 +23,7 @@ API Docs
 | -: | :- |
 | [abtesting.roblox.com](https://abtesting.roblox.com/docs) | Endpoints for the A/B Testing framework |
 | [abuse.roblox.com](https://abuse.roblox.com/docs) | This Api is temporarily offline. |
+| [accountinformation.roblox.com](https://accountinformation.roblox.com/docs) | All endpoints for accessing/modifying account information |
 | [accountsettings.roblox.com](https://accountsettings.roblox.com/docs) | All endpoints for account/user settings. |
 | [ads.roblox.com](https://ads.roblox.com/docs) | Ads configuration endpoints. |
 | [api.roblox.com](https://api.roblox.com/docs) | Miscellaneous endpoints |
@@ -38,6 +39,7 @@ API Docs
 | [clientsettingscdn.roblox.com](https://clientsettingscdn.roblox.com/docs) | Used by various Roblox clients to retrieve configuration information. |
 | [contacts.roblox.com](https://contacts.roblox.com/docs) | Contacts and userTag management. |
 | [develop.roblox.com](https://develop.roblox.com/docs) | Game development configuration endpoints. |
+| [discussions.roblox.com](https://discussions.roblox.com/docs) | This Api is temporarily offline. |
 | [economy.roblox.com](https://economy.roblox.com/docs) | Endpoints related to transactions and currency. |
 | [followings.roblox.com](https://followings.roblox.com/docs) | Establishes follow relationship between subscriber entities (users, groups, etc) and source entities (games, groups, assets, etc.) |
 | [friends.roblox.com](https://friends.roblox.com/docs) | Friends, followers, and contacts management. |
