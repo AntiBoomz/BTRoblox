@@ -219,17 +219,14 @@ const HoverPreview = (() => {
 	const frontCameraRotation = [0.15, 0.25, 0]
 	const backCameraRotation = [0.15, 2.89, 0]
 
-
+	const bundleCache = {}
 	const lastPreviewedAssets = []
 	const invalidAssets = {}
 	let preview
 	let debounceCounter = 0
 	let currentTarget
-	let lastCameraDir
 
 	const setCameraDir = cameraDir => {
-		lastCameraDir = cameraDir
-
 		if(cameraDir === "Back") {
 			preview.scene.cameraRotation.set(...backCameraRotation)
 		} else {
@@ -254,6 +251,7 @@ const HoverPreview = (() => {
 		preview.container.append(rotBtn)
 
 		rotBtn.$on("mousedown", ev => {
+			if(ev.button !== 0) { return }
 			let reqId
 			let last
 
@@ -268,6 +266,7 @@ const HoverPreview = (() => {
 			reqId = requestAnimationFrame(update)
 
 			document.documentElement.$once("mouseup", () => {
+				if(ev.button !== 0) { return }
 				cancelAnimationFrame(reqId)
 			})
 
@@ -410,10 +409,8 @@ const HoverPreview = (() => {
 								const center = box.max.clone().add(box.min).divideScalar(2)
 								const radius = box.max.clone().sub(center).multiply(new THREE.Vector3(1, 1, 0.5)).length()
 
-								center.y -= 0.5
-
 								preview.scene.cameraFocus.copy(center)
-								preview.scene.cameraZoom = 2 + radius * 0.6
+								preview.scene.cameraZoom = 2 + radius * 0.8
 
 								setCameraDir(cameraDir || "Front")
 							} else {
@@ -447,11 +444,15 @@ const HoverPreview = (() => {
 				}
 				
 				if(isBundle) {
-					const url = `https://catalog.roblox.com/v1/bundles/${assetId}/details`
-					$.fetch(url).then(async resp => {
-						if(debounceCounter !== debounce) { return }
-						const json = await resp.json()
+					let promise = bundleCache[assetId]
 
+					if(!promise) {
+						const url = `https://catalog.roblox.com/v1/bundles/${assetId}/details`
+						promise = bundleCache[assetId] = $.fetch(url).then(resp => resp.json())
+					}
+
+					promise.then(json => {
+						if(debounceCounter !== debounce) { return }
 						if(json.bundleType === "AvatarAnimations") { return }
 
 						json.items.forEach(item => {
@@ -463,8 +464,14 @@ const HoverPreview = (() => {
 						finalizeLoad()
 					})
 				} else {
-					addAssetPreview(assetId)
-					finalizeLoad()
+					getProductInfo(assetId).then(data => {
+						if(debounceCounter !== debounce) { return }
+
+						if(WearableAssetTypeIds.includes(data.AssetTypeId)) {
+							addAssetPreview(assetId)
+							finalizeLoad()
+						}
+					})
 				}
 			})
 		}

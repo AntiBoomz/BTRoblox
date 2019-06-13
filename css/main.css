@@ -881,6 +881,8 @@ body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
 	background-position: 0 calc(100% * (69 / 76));
 	cursor: pointer;
 	pointer-events: auto;
+
+	transform: scaleY(0.7) scaleX(1) rotate(-90deg);
 }
 
 .btr-hover-preview-camera-rotate:hover {

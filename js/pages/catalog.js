@@ -48,6 +48,8 @@ pageInit.catalog = function() {
 
 	document.$on("mouseover", ".btr-item-card-container", ev => {
 		const self = ev.currentTarget
+		if(self.dataset.hoverStats) { return }
+		self.dataset.hoverStats = true
 
 		const matches = self.closest("a").href.match(/\/(catalog|bundles)\/(\d+)\//, "$1")
 		if(!matches) { return }
