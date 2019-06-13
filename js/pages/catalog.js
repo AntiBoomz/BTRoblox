@@ -33,12 +33,12 @@ pageInit.catalog = function() {
 	modifyTemplate("item-card", template => {
 		const cont = template.$find(".item-card-container")
 		cont.classList.add("btr-item-card-container")
-		cont.setAttribute("btr-item-info", "{{item.ItemType===1}}")
+		cont.setAttribute("btr-item-type", "{{item.ItemType}}")
 
 		const hover = html`<div class="btr-item-card-more">
 			<div class=text-secondary>
 				<div class="text-overflow item-card-label" ng-if="item.ItemType===1">Updated: <span class=btr-updated-label>Loading...</span></div>
-				<div class="text-overflow item-card-label" ng-if="item.ItemType===1">Sales: <span class=btr-sales-label>Loading...</span></div>
+				<div class="text-overflow item-card-label" ng-if="item.ItemType===1||item.ItemType===2">Sales: <span class=btr-sales-label>Loading...</span></div>
 				<div class="text-overflow item-card-label" ng-if="!item.Creator">By <span class="text-link creator-name" ng-click="creatorClick($event, 'https://www.roblox.com/users/1/profile')">ROBLOX</span></div>
 			</div>
 		</div>`
@@ -49,18 +49,43 @@ pageInit.catalog = function() {
 	document.$on("mouseover", ".btr-item-card-container", ev => {
 		const self = ev.currentTarget
 
-		const assetId = self.closest("a").href.replace(/^.+\/catalog\/(\d+)\/.+$/, "$1")
+		const matches = self.closest("a").href.match(/\/(catalog|bundles)\/(\d+)\//, "$1")
+		if(!matches) { return }
+
+		const assetType = matches[1]
+		const assetId = matches[2]
 		if(!Number.isSafeInteger(+assetId)) { return }
 
-		getProductInfo(assetId).then(data => {
-			const ulabel = self.$find(".btr-updated-label")
-			ulabel.textContent = `${$.dateSince(data.Updated, startDate)} ago`
-			ulabel.parentNode.title = ulabel.parentNode.textContent
+		if(assetType === "bundles") {
+			$.fetch(`https://catalog.roblox.com/v1/catalog/items`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					items: [{
+						itemType: "Bundle",
+						id: assetId
+					}]
+				}),
+				xsrf: true
+			}).then(async resp => {
+				if(!resp.ok) { return }
+				const data = await resp.json()
 
-			const slabel = self.$find(".btr-sales-label")
-			slabel.textContent = FormatNumber(data.Sales)
-			slabel.parentNode.title = slabel.parentNode.textContent
-		})
+				const slabel = self.$find(".btr-sales-label")
+				slabel.textContent = FormatNumber(data.data[0].purchaseCount)
+				slabel.parentNode.title = slabel.parentNode.textContent
+			})
+		} else {
+			getProductInfo(assetId).then(data => {
+				const ulabel = self.$find(".btr-updated-label")
+				ulabel.textContent = `${$.dateSince(data.Updated, startDate)} ago`
+				ulabel.parentNode.title = ulabel.parentNode.textContent
+	
+				const slabel = self.$find(".btr-sales-label")
+				slabel.textContent = FormatNumber(data.Sales)
+				slabel.parentNode.title = slabel.parentNode.textContent
+			})
+		}
 	})
 
 	if(settings.catalog.showOwnedAssets) {
