@@ -818,6 +818,7 @@ const RBXParser = (() => {
 				vertexSize = reader.Byte()
 				faceSize = reader.Byte()
 
+				lodCount = 2
 				vertexCount = reader.UInt32LE()
 				faceCount = reader.UInt32LE()
 			} else {
@@ -844,54 +845,79 @@ const RBXParser = (() => {
 
 			assert(fileEnd === reader.GetLength(), `Invalid file size (expected ${fileEnd}, got ${reader.GetLength()})`)
 
-			let realFaceCount = faceCount
-			let faceOffset = 0
+			const meshLods = []
+			let lodLevels
 
 			if(version === 3) {
 				reader.SetIndex(faceEnd)
 
-				faceOffset = reader.UInt32LE()
-				realFaceCount = reader.UInt32LE() - faceOffset
-			}
-
-			const vertices = new Float32Array(vertexCount * 3)
-			const normals = new Float32Array(vertexCount * 3)
-			const uvs = new Float32Array(vertexCount * 2)
-			const faces = new Uint32Array(realFaceCount * 3)
-
-			reader.SetIndex(headerEnd)
-			for(let i = 0; i < vertexCount; i++) {
-				vertices[i * 3] = reader.FloatLE()
-				vertices[i * 3 + 1] = reader.FloatLE()
-				vertices[i * 3 + 2] = reader.FloatLE()
-
-				normals[i * 3] = reader.FloatLE()
-				normals[i * 3 + 1] = reader.FloatLE()
-				normals[i * 3 + 2] = reader.FloatLE()
-
-				uvs[i * 2] = reader.FloatLE()
-				uvs[i * 2 + 1] = 1 - reader.FloatLE()
-
-				if(vertexSize !== 32) {
-					reader.Jump(vertexSize - 32)
+				lodLevels = []
+				for(let i = 0; i < lodCount; i++) {
+					lodLevels.push(reader.UInt32LE())
 				}
+			} else {
+				lodLevels = [0, faceCount]
 			}
 
-			reader.SetIndex(vertexEnd + faceSize * faceOffset)
-			for(let i = 0; i < realFaceCount; i++) {
-				faces[i * 3] = reader.UInt32LE()
-				faces[i * 3 + 1] = reader.UInt32LE()
-				faces[i * 3 + 2] = reader.UInt32LE()
+			for(let lod = 1; lod < lodCount; lod++) {
+				const faceOffset = lodLevels[lod - 1]
+				const realFaceCount = lodLevels[lod] - faceOffset
+				
+				const faces = new Uint32Array(realFaceCount * 3)
+				let vertexMin = Infinity
+				let vertexMax = -Infinity
 
-				if(faceSize !== 12) {
-					reader.Jump(faceSize - 12)
+				reader.SetIndex(vertexEnd + faceOffset * faceSize)
+				for(let i = 0; i < realFaceCount; i++) {
+					const i0 = faces[i * 3] = reader.UInt32LE()
+					const i1 = faces[i * 3 + 1] = reader.UInt32LE()
+					const i2 = faces[i * 3 + 2] = reader.UInt32LE()
+
+					if(i2 > vertexMax) { vertexMax = i2 }
+					if(i1 > vertexMax) { vertexMax = i1 }
+					if(i0 > vertexMax) { vertexMax = i0 }
+					if(i0 < vertexMin) { vertexMin = i0 }
+					if(i1 < vertexMin) { vertexMin = i1 }
+					if(i2 < vertexMin) { vertexMin = i2 }
+
+					if(faceSize !== 12) {
+						reader.Jump(faceSize - 12)
+					}
 				}
+
+				for(let i = 0; i < realFaceCount; i++) {
+					faces[i] -= vertexMin
+				}
+
+				const realVertexCount = (vertexMax - vertexMin) + 1
+
+				const vertices = new Float32Array(realVertexCount * 3)
+				const normals = new Float32Array(realVertexCount * 3)
+				const uvs = new Float32Array(realVertexCount * 2)
+
+				reader.SetIndex(headerEnd + vertexMin * vertexSize)
+				for(let i = 0; i < realVertexCount; i++) {
+					vertices[i * 3] = reader.FloatLE()
+					vertices[i * 3 + 1] = reader.FloatLE()
+					vertices[i * 3 + 2] = reader.FloatLE()
+
+					normals[i * 3] = reader.FloatLE()
+					normals[i * 3 + 1] = reader.FloatLE()
+					normals[i * 3 + 2] = reader.FloatLE()
+
+					uvs[i * 2] = reader.FloatLE()
+					uvs[i * 2 + 1] = 1 - reader.FloatLE()
+
+					if(vertexSize !== 32) {
+						reader.Jump(vertexSize - 32)
+					}
+				}
+
+				meshLods.push({ vertices, normals, uvs, faces })
+				break // We only need the first lod level
 			}
 
-			reader.Jump(fileEnd)
-			if(reader.GetRemaining() > 0) { console.warn("Leftover data in mesh", version) }
-
-			return { vertices, normals, uvs, faces }
+			return meshLods[0]
 		}
 	}
 
