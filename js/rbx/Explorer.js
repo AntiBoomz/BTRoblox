@@ -218,6 +218,19 @@
 							fixNums([value.Density, value.Friction, value.Elasticity, value.FrictionWeight, value.ElasticityWeight]).join(", ") :
 							"false"
 						break
+					case "NumberSequence":
+						valueItem.textContent = value.map(x => `(${fixNums([x.Time, x.Value]).join(", ")})`).join(", ")
+						break
+					case "NumberRange":
+						valueItem.textContent = `${fixNums([value.Min, value.Max]).join(", ")}`
+						break
+					case "ColorSequence":
+						valueItem.textContent = value.map(x => `(${fixNums([x.Time])[0]}, (${fixNums(x.Color).map(x => Math.round(x * 255)).join(", ")}))`).join(", ")
+						break
+					case "Axes":
+					case "Faces":
+						valueItem.textContent = Object.entries(value).filter(x => x[1]).map(x => x[0]).join(", ")
+						break
 					default:
 						console.log("Unknown property type", name, prop)
 						valueItem.textContent = String(value)

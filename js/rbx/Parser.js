@@ -53,6 +53,11 @@ const RBXParser = (() => {
 		GetRemaining() { return this.length - this.index }
 		GetLength() { return this.length }
 		Jump(n) { this.index += n }
+		Clone() {
+			const clone = new ByteReader(this)
+			clone.SetIndex(this.index)
+			return clone
+		}
 
 		Array(n) {
 			const result = new Uint8Array(this.buffer, this.index, n)
@@ -525,6 +530,30 @@ const RBXParser = (() => {
 				}
 				break
 			}
+			case "Faces":
+				for(let i = 0; i < instCount; i++) {
+					const data = chunk.Byte()
+
+					values[i] = {
+						Right: !!(data & 1),
+						Top: !!(data & 2),
+						Back: !!(data & 4),
+						Left: !!(data & 8),
+						Bottom: !!(data & 16),
+						Front: !!(data & 32)
+					}
+				}
+				break
+			case "Axes":
+				for(let i = 0; i < instCount; i++) {
+					const data = chunk.Byte()
+					values[i] = {
+						X: !!(data & 1),
+						Y: !!(data & 2),
+						Z: !!(data & 4)
+					}
+				}
+				break
 			case "BrickColor":
 				values = chunk.RBXInterleavedUint32(instCount)
 				break
@@ -554,6 +583,7 @@ const RBXParser = (() => {
 				}
 				break
 			}
+			// case "Vector2int16": break // Not used anywhere?
 			case "CFrame": {
 				for(let vi = 0; vi < instCount; vi++) {
 					const value = values[vi] = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
@@ -590,6 +620,7 @@ const RBXParser = (() => {
 				}
 				break
 			}
+			// case "Quaternion": break // Not used anywhere?
 			case "Enum":
 				values = chunk.RBXInterleavedUint32(instCount)
 				break
@@ -603,6 +634,44 @@ const RBXParser = (() => {
 				}
 				break
 			}
+			// case "Vector3int16": break // Not used anywhere?
+			case "NumberSequence": {
+				for(let i = 0; i < instCount; i++) {
+					const seqLength = chunk.UInt32LE()
+					const seq = values[i] = []
+
+					for(let j = 0; j < seqLength; j++) {
+						seq.push({
+							Time: chunk.FloatLE(),
+							Value: chunk.FloatLE(),
+							Envelope: chunk.FloatLE()
+						})
+					}
+				}
+				break
+			}
+			case "ColorSequence":
+				for(let i = 0; i < instCount; i++) {
+					const seqLength = chunk.UInt32LE()
+					const seq = values[i] = []
+
+					for(let j = 0; j < seqLength; j++) {
+						seq.push({
+							Time: chunk.FloatLE(),
+							Color: [chunk.FloatLE(), chunk.FloatLE(), chunk.FloatLE()],
+							EnvelopeMaybe: chunk.FloatLE()
+						})
+					}
+				}
+				break
+			case "NumberRange":
+				for(let i = 0; i < instCount; i++) {
+					values[i] = {
+						Min: chunk.FloatLE(),
+						Max: chunk.FloatLE()
+					}
+				}
+				break
 			case "Rect2D": {
 				const x0 = chunk.RBXInterleavedFloat(instCount)
 				const y0 = chunk.RBXInterleavedFloat(instCount)
@@ -672,8 +741,11 @@ const RBXParser = (() => {
 				}
 				break
 			}
-			case "PhysicalConfigData": break
-			default: console.warn(`[ParseRBXBin] Unimplemented dataType '${typeName}' for ${group.ClassName}.${prop}`)
+			case "PhysicalConfigData":
+				// Not necessary to implement
+				break
+			default:
+				console.warn(`[ParseRBXBin] Unimplemented dataType '${typeName}' for ${group.ClassName}.${prop}`)
 			}
 
 			values.forEach((value, i) => {
