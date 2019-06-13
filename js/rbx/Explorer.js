@@ -25,6 +25,7 @@
 		"InternalHeadScale", "InternalBodyScale", // Humanoid
 		"PlayCount", // Sound
 		"UnionOperation.AssetId", "UnionOperation.InitialSize", // Unions
+		"Terrain.PhysicsGrid", "Terrain.SmoothGrid", "Terrain.MaterialColors", // Terrain
 
 		// Super legacy stuff
 		"Model.Controller", "Part.Controller",
