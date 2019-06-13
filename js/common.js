@@ -260,13 +260,24 @@ class SyncPromise extends Promise {
 			const result = []
 			let defersLeft = list.length
 
+			if(!defersLeft) {
+				return resolve(result)
+			}
+
 			list.forEach((defer, index) => {
-				defer.then(value => {
-					result[index] = value
+				if(defer instanceof Promise) {
+					defer.then(value => {
+						result[index] = value
+						if(--defersLeft === 0) {
+							resolve(result)
+						}
+					})
+				} else {
+					result[index] = null
 					if(--defersLeft === 0) {
 						resolve(result)
 					}
-				})
+				}
 			})
 		})
 	}

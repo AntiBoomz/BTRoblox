@@ -90,6 +90,13 @@ const RBXAnimator = (() => {
 			this.previousUpdate = performance.now()
 		}
 
+		reset() {
+			Object.values(this.joints).forEach(joint => {
+				joint.joint.position.set(0, 0, 0)
+				joint.joint.rotation.set(0, 0, 0)
+			})
+		}
+
 		update() {
 			if(!this.playing || !this.anim || !this.joints) { return }
 

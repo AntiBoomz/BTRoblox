@@ -216,11 +216,26 @@ const HoverPreview = (() => {
 		`https://t4.rbxcdn.com/6aa6eb3c8680be7c47f1122f4fb9ebf2`
 	]
 
+	const frontCameraRotation = [0.15, 0.25, 0]
+	const backCameraRotation = [0.15, 2.89, 0]
+
+
 	const lastPreviewedAssets = []
 	const invalidAssets = {}
 	let preview
 	let debounceCounter = 0
 	let currentTarget
+	let lastCameraDir
+
+	const setCameraDir = cameraDir => {
+		lastCameraDir = cameraDir
+
+		if(cameraDir === "Back") {
+			preview.scene.cameraRotation.set(...backCameraRotation)
+		} else {
+			preview.scene.cameraRotation.set(...frontCameraRotation)
+		}
+	}
 
 	const initPreview = () => {
 		preview = this.preview = new RBXPreview.AvatarPreviewer({
@@ -233,7 +248,31 @@ const HoverPreview = (() => {
 		preview.container.style.pointerEvents = "none"
 		
 		preview.scene.cameraControlsEnabled = false
-		preview.scene.cameraRotation.set(0.15, 0.25, 0)
+		preview.scene.cameraRotation.set(...frontCameraRotation)
+
+		const rotBtn = html`<span class="btr-hover-preview-camera-rotate"></span>`
+		preview.container.append(rotBtn)
+
+		rotBtn.$on("mousedown", ev => {
+			let reqId
+			let last
+
+			const update = time => {
+				const elapsed = time - (last || time)
+				last = time
+
+				preview.scene.cameraRotation.y += elapsed / 1e3
+				reqId = requestAnimationFrame(update)
+			}
+
+			reqId = requestAnimationFrame(update)
+
+			document.documentElement.$once("mouseup", () => {
+				cancelAnimationFrame(reqId)
+			})
+
+			ev.preventDefault()
+		}).$on("click", ev => ev.preventDefault())
 	}
 
 	const clearTarget = () => {
@@ -250,7 +289,7 @@ const HoverPreview = (() => {
 			preview.container.remove()
 
 			while(lastPreviewedAssets.length) {
-				preview.removeAssetPreview(lastPreviewedAssets.pop())
+				lastPreviewedAssets.pop().remove()
 			}
 		}
 	}
@@ -290,17 +329,6 @@ const HoverPreview = (() => {
 				thumbCont.addEventListener("mouseleave", mouseLeave, { once: true })
 
 				const isBundle = anchor.href.includes("/bundles/")
-				const assetTypeId = !isBundle && await getProductInfo(assetId).then(json => json.AssetTypeId)
-				const isWearable = WearableAssetTypeIds.includes(assetTypeId)
-				const isPackage = assetTypeId === 32
-
-				if(debounceCounter !== debounce) { return } // assetTypeId yields
-
-				if(!isWearable && (!isPackage && !isBundle)) {
-					invalidAssets[assetId] = true
-					clearTarget()
-					return
-				}
 
 				const finalizeLoad = () => {
 					if(debounceCounter !== debounce) { return }
@@ -312,50 +340,110 @@ const HoverPreview = (() => {
 						return
 					}
 
+					preview.startLoadingAssets()
 					SyncPromise.all([preview.appearanceLoadedPromise, ...assetPromises]).then(() => {
-						const enable = () => {
+						if(debounceCounter !== debounce) { return }
+
+						thumbCont.classList.remove("btr-preview-loading")
+
+						const wasSomethingChanged = lastPreviewedAssets.find(asset => !asset.isEmpty())
+						if(!wasSomethingChanged) {
+							invalidAssets[assetId] = true
+							clearTarget()
+							return
+						}
+
+						// Let other asset listeners run
+						// otherwise accessories do not get properly initialized .-.'
+						$.setImmediate(() => {
 							if(debounceCounter !== debounce) { return }
-							
-							const lowItems = [12, 30, 31]
-							const midItems = [2, 11, 27, 28, 29, 45, 47]
-							const scales = preview.scene.avatar.scales
-							const bodyHeightScale = scales.height * (1 + (0.3 - 0.1 * scales.proportion) * scales.bodyType)
 
-							const cameraOffset = lowItems.includes(assetTypeId) ? 2.3 : midItems.includes(assetTypeId) ? 3 : 4.5
-							const cameraZoom = isBundle || assetTypeId === 32 ? 4 : 3
+							preview.scene.update()
+							preview.scene.avatar.animator.reset()
+							preview.scene.render()
 
-							preview.scene.cameraFocus.set(0, cameraOffset * bodyHeightScale, 0)
-							preview.scene.cameraZoom = cameraZoom * bodyHeightScale
+							const addedObjects = []
+							let cameraDir
 
-							thumbCont.classList.remove("btr-preview-loading")
-							self.$find(thumbContSelector).append(preview.container)
-							preview.container.parentNode.classList.add("btr-preview-container-parent")
-						}
+							lastPreviewedAssets.forEach(asset => {
+								asset.accessories.forEach(acc => {
+									if(acc.obj) {
+										addedObjects.push(acc.obj)
 
-						if(preview.scene.hasRendered) {
-							window.requestAnimationFrame(enable)
-						} else {
-							enable()
-						}
+										if(acc.attName.endsWith("BackAttachment")) {
+											if(!cameraDir) {
+												cameraDir = "Back"
+											}
+										} else {
+											cameraDir = "Front"
+										}
+									}
+								})
+
+								asset.bodyparts.forEach(bp => {
+									if(bp.obj) {
+										addedObjects.push(bp.obj)
+										cameraDir = "Front"
+									}
+								})
+							})
+
+							if(addedObjects.length) {
+								const box = new THREE.Box3()
+
+								addedObjects.forEach(obj => {
+									const geom = obj.geometry
+									geom.computeBoundingSphere()
+
+									const sphere = geom.boundingSphere
+									const worldCenter = new THREE.Vector3().setFromMatrixPosition(obj.matrixWorld)
+									const worldEuler = new THREE.Euler().setFromRotationMatrix(obj.matrixWorld)
+
+									worldCenter.add(sphere.center.clone().applyEuler(worldEuler))
+
+									const radius = sphere.radius * Math.max(...obj.scale.toArray())
+
+									box.expandByPoint(worldCenter.addScalar(radius))
+									box.expandByPoint(worldCenter.addScalar(-2 * radius))
+								})
+
+								const center = box.max.clone().add(box.min).divideScalar(2)
+								const radius = box.max.clone().sub(center).multiply(new THREE.Vector3(1, 1, 0.5)).length()
+
+								center.y -= 0.5
+
+								preview.scene.cameraFocus.copy(center)
+								preview.scene.cameraZoom = 2 + radius * 0.6
+
+								setCameraDir(cameraDir || "Front")
+							} else {
+								preview.scene.cameraFocus.set(0, 3, 0)
+								preview.scene.cameraZoom = 3
+								
+								setCameraDir("Front")
+							}
+
+							preview.scene.update()
+							preview.scene.render()
+
+							const thumb = self.$find(thumbContSelector)
+							thumb.append(preview.container)
+							thumb.classList.add("btr-preview-container-parent")
+						})
 					})
 				}
 
-				const doStuff = (itemId, itemTypeId) => {
-					if(debounceCounter !== debounce) { return }
+				const addAssetPreview = itemId => {
+					if(!preview) { initPreview() }
 
-					if(WearableAssetTypeIds.includes(itemTypeId)) {
-						if(!preview) { initPreview() }
-						preview.setEnabled(true)
-						thumbCont.classList.add("btr-preview-loading")
+					const asset = preview.addAssetPreview(itemId)
+					if(!asset) { return }
 
-						lastPreviewedAssets.push(itemId)
-						assetPromises.push(preview.addAssetPreview(itemId, itemTypeId))
-					}
-				}
+					preview.setEnabled(true)
+					thumbCont.classList.add("btr-preview-loading")
 
-				const doMultiple = list => {
-					const promises = list.map(id => getProductInfo(id).then(json => doStuff(json.AssetId, json.AssetTypeId)))
-					SyncPromise.all(promises).then(finalizeLoad)
+					lastPreviewedAssets.push(asset)
+					assetPromises.push(asset.loadPromise)
 				}
 				
 				if(isBundle) {
@@ -363,16 +451,19 @@ const HoverPreview = (() => {
 					$.fetch(url).then(async resp => {
 						if(debounceCounter !== debounce) { return }
 						const json = await resp.json()
-						const list = json.items.filter(x => x.type === "Asset").map(x => x.id)
-						if(list.length) { doMultiple(list) }
+
+						if(json.bundleType === "AvatarAnimations") { return }
+
+						json.items.forEach(item => {
+							if(item.type === "Asset") {
+								addAssetPreview(item.id)
+							}
+						})
+
+						finalizeLoad()
 					})
-				} else if(isPackage) {
-					AssetCache.loadText(assetId, text => {
-						if(debounceCounter !== debounce) { return }
-						doMultiple(text.split(";"))
-					})
-				} else if(isWearable) {
-					doStuff(assetId, assetTypeId)
+				} else {
+					addAssetPreview(assetId)
 					finalizeLoad()
 				}
 			})

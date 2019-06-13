@@ -82,8 +82,6 @@ const RBXScene = (() => {
 			this.prevDragEvent = null
 			this.isDragging = false
 
-			this._onUpdate = []
-
 			const renderer = this.renderer = new THREE.WebGLRenderer({
 				antialias: true,
 				alpha: true
@@ -245,11 +243,8 @@ const RBXScene = (() => {
 			this.started = true
 
 			const innerUpdate = () => {
-				this.hasRendered = false
 				this.update()
 				this.render()
-				this.hasRendered = true
-				
 				this._afId = requestAnimationFrame(innerUpdate)
 			}
 

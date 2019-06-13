@@ -9,10 +9,6 @@ const RBXAvatar = (() => {
 		"RightFoot", "RightHand", "RightLowerArm", "RightLowerLeg", "RightUpperArm", "RightUpperLeg", "UpperTorso"
 	]
 
-	const UniqueAssetTypeIds = [
-		2, 11, 12, 17, 18, 28, 29, 30, 31
-	]
-
 	const ScaleMods = {
 		Default: {
 			LeftHand: new Vector3(1.066, 1.174, 1.231),
@@ -233,8 +229,13 @@ const RBXAvatar = (() => {
 
 			this.playerType = null
 
+			this.hipOffset = new THREE.Group()
+			this.model.add(this.hipOffset)
+
+			this.hipOffsetPos = this.hipOffset.position
+
 			this.offset = new THREE.Group()
-			this.model.add(this.offset)
+			this.hipOffset.add(this.offset)
 
 			this.offsetPos = this.offset.position
 			this.offsetRot = this.offset.rotation
@@ -366,10 +367,6 @@ const RBXAvatar = (() => {
 			})
 
 			this.shouldRefreshBodyParts = true
-		}
-
-		addAsset(assetId, assetTypeId) {
-			return this.appearance.addAsset(assetId, assetTypeId)
 		}
 
 		setBodyColors(bodyColors) {
@@ -529,10 +526,10 @@ const RBXAvatar = (() => {
 
 			if(this.playerType === "R6") {
 				this.root = CreateModel(RBXAvatarRigs.R6Tree)
-				this.root.position.set(0, 3, 0)
+				this.hipOffsetPos.set(0, 3, 0)
 			} else if(this.playerType === "R15") {
 				this.root = CreateModel(RBXAvatarRigs.R15Tree)
-				this.root.position.set(0, 2.35, 0)
+				this.hipOffsetPos.set(0, 2.35, 0)
 			} else {
 				return
 			}
@@ -549,7 +546,6 @@ const RBXAvatar = (() => {
 			if(!RBXAvatarRigs.loaded) { return }
 			this.shouldRefreshBodyParts = false
 
-			const perTypes = {}
 			const assets = []
 
 			this.appearance.assets.forEach(asset => {
@@ -560,16 +556,11 @@ const RBXAvatar = (() => {
 
 				if(!asset.enabled) { return }
 
-				if(UniqueAssetTypeIds.includes(asset.typeId)) {
-					if(!perTypes[asset.typeId] || perTypes[asset.typeId].priority <= asset.priority) {
-						perTypes[asset.typeId] = asset
-					}
-				} else {
-					assets.push(asset)
-				}
+				asset.lastIndex = assets.length
+				assets.push(asset)
 			})
 
-			assets.push(...Object.values(perTypes))
+			assets.sort((a, b) => (a.priority === b.priority ? a.lastIndex - b.lastIndex : a.priority - b.priority))
 
 			const parts = {}
 			const joints = {}
@@ -579,8 +570,10 @@ const RBXAvatar = (() => {
 			
 			assets.forEach(asset => {
 				asset.bodyparts.forEach(bp => {
+					bp.obj = null
+
 					if(bp.playerType && bp.playerType !== this.playerType) { return }
-					parts[bp.target] = Object.assign(parts[bp.target] || {}, bp)
+					parts[bp.target] = Object.assign(parts[bp.target] || {}, bp, { source: bp })
 				})
 
 				asset.attachments.forEach(att => {
@@ -644,6 +637,10 @@ const RBXAvatar = (() => {
 						part.rbxMeshOpacity = opacity
 						part.rbxMesh.material.opacity = opacity
 						part.rbxMesh.material.needsUpdate = true
+					}
+
+					if(changes && changes.source) {
+						changes.source.obj = part.rbxMesh
 					}
 
 					const meshId = changes && changes.meshId || part.rbxDefaultMesh
@@ -781,7 +778,7 @@ const RBXAvatar = (() => {
 
 				const hipHeight = min / max >= 0.95 ? min : max
 
-				this.root.position.y = hipHeight + rootHeight
+				this.hipOffsetPos.setY(hipHeight + rootHeight)
 				this.animator.setRootScale(hipHeight / 1.35)
 			}
 

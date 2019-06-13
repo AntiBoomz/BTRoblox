@@ -869,6 +869,24 @@ body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
 	-moz-user-select: none;
 }
 
+.btr-hover-preview-camera-rotate {
+	background-image: url(https://images.rbxcdn.com/db9908040c0b7dfd0ce0d81e287f4664-generic_01312019.svg);
+	background-repeat: no-repeat;
+	background-size: 200% auto;
+	width: 22px;
+	height: 22px;
+	position: absolute;
+	top: 2px;
+	right: 2px;
+	background-position: 0 calc(100% * (69 / 76));
+	cursor: pointer;
+	pointer-events: auto;
+}
+
+.btr-hover-preview-camera-rotate:hover {
+	filter: invert(30%);
+}
+
 
 /* Audio fix */
 
