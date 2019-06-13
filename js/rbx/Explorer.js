@@ -225,7 +225,7 @@
 						valueItem.textContent = `${fixNums([value.Min, value.Max]).join(", ")}`
 						break
 					case "ColorSequence":
-						valueItem.textContent = value.map(x => `(${fixNums([x.Time])[0]}, (${fixNums(x.Color).map(x => Math.round(x * 255)).join(", ")}))`).join(", ")
+						valueItem.textContent = value.map(x => `(${fixNums([x.Time])[0]}, (${fixNums(x.Color).map(num => Math.round(num * 255)).join(", ")}))`).join(", ")
 						break
 					case "Axes":
 					case "Faces":
