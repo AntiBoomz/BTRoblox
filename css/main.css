@@ -272,6 +272,11 @@ body #navigation .rbx-scrollbar .mCSB_container {
 .btr-pager-holder {
 	width: 100%;
 	text-align: center;
+	box-sizing: border-box;
+}
+
+.btr-pager-holder * {
+	box-sizing: inherit;
 }
 
 .btr-pager-holder .pager {

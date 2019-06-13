@@ -93,8 +93,9 @@ const SettingsDiv = (() => {
 				<group label=Catalog path=catalog toggleable>
 					<checkbox label="Show Owned Items (WIP)" path=showOwnedAssets></checkbox>
 				</group>
-				<!--group label="Version History" path=versionhistory toggleable>
-				</group-->
+				<group label="Place Configure" path=placeConfigure>
+					<checkbox label="Version History" path=versionHistory></checkbox>
+				</group>
 				<group label="WIP / Other" minimizable minimized>
 					<div id=btr-settings-wip>
 					</div>

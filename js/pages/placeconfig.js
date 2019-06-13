@@ -3,108 +3,93 @@
 function CreateNewVersionHistory(assetId, assetType) {
 	const versionHistory = html`<div class="btr-versionHistory"></div>`
 	const versionList = html`<ul class="btr-versionList"></ul>`
+
 	const pager = createPager()
 	const pageSize = 40
-
 	let isBusy = false
-	let actualPageSize
 
-	async function getPage(page, target) {
-		const url = `https://api.roblox.com/assets/${assetId}/versions?page=${page}`
-		const response = await $.fetch(url, { credentials: "include" })
-		const json = await response.json()
+	async function loadPage(page) {
+		if(isBusy) { return }
+		isBusy = true
 
-		if(Array.isArray(target)) {
-			const offset = (page - 1) * actualPageSize
+		const clampedPage = Math.max(1, page)
+		const pageStart = (clampedPage - 1) * pageSize
 
-			json.forEach((v, i) => {
-				target[offset + i] = v
-			})
-		} else {
-			target(json)
+		const innerPageOffset = pageStart % 10
+		const innerPageStart = Math.floor(pageStart / 10) + 1
+		const innerPageEnd = Math.floor((pageStart + pageSize - 1) / 10) + 1
+
+		const innerPromises = []
+
+		for(let i = innerPageStart; i <= innerPageEnd; i++) {
+			const url = `https://www.roblox.com/places/version-history?assetID=${assetId}&page=${i}`
+
+			innerPromises.push(fetch(url).then(async resp => {
+				const text = await resp.text()
+				const matches = text.match(/(<tr>[^]*?asset-version-id[^]*?<\/tr>)/gm)
+
+				return matches ? matches.map(x => ({
+					versionNumber: x.match(/td>(\d+)/)[1],
+					created: x.match(/td>(\d*\/\d*\/\d*[^<]+)/)[1],
+					assetVersionId: x.match(/asset-version-id="(\d+)/)[1],
+					published: x.includes("icon-checkmark")
+				})) : []
+			}))
 		}
-	}
 
-	function constructPage(items, itemStart, itemEnd) {
+
+		const results = (await Promise.all(innerPromises)).flat()
+		const pageEnd = Math.min(results.length - innerPageOffset, pageSize)
+
+		const maxVersion = +results[0].versionNumber + innerPageStart * 10
+		const maxPage = Math.max(1, Math.floor((maxVersion - 1) / pageSize) + 1)
+
+		pager.setMaxPage(maxPage)
+		pager.setPage(Math.min(maxPage, clampedPage))
+
 		versionList.$empty()
 
-		for(let i = itemStart; i <= itemEnd; i++) {
-			const item = items[i]
-			if(!item) { break }
+		for(let i = innerPageOffset; i < pageEnd; i++) {
+			const item = results[i]
 
 			const card = html`
 			<li class="list-item">
 				<div class="version-card" style="padding:2px 0">
 					<div class="version-dropdown">
-						<a class="rbx-menu-item" data-toggle="popover" data-container="body" data-bind="btr-versiondrop-${i}">
+						<a class="rbx-menu-item" data-toggle="popover" data-container="body" data-bind="btr-versiondrop-${item.versionNumber}">
 							<span class="icon-more"></span>
 						</a>
-						<div data-toggle="btr-versiondrop-${i}">
+						<div data-toggle="btr-versiondrop-${item.versionNumber}">
 							<ul class="dropdown-menu btr-version-dropdown-menu">
-								<li><a class="btr-version-revert" data-versionId="${item.Id}">Revert</a></li>
-								<li><a class="btr-version-download" data-version="${item.VersionNumber}">Download</a></li>
+								<li><a class="btr-version-revert" data-versionid="${item.assetVersionId}">Revert</a></li>
+								<li><a class="btr-version-download" data-version="${item.versionNumber}">Download</a></li>
 							</ul>
 						</div>
 					</div>
 					<div class="version-thumb-container" style="display:none"><img class="version-thumb" style="display:none"></div>
-					<div class="version-number">Version ${item.VersionNumber}</div>
-					<div class="version-date">${new Date(item.Created).$format("M/D/YY hh:mm A (T)")}</div>
+					<div class="version-number">Version ${item.versionNumber}</div>
+					<div class="version-date">${new Date(`${item.created} UTC`).$format("M/D/YY hh:mm A")} <span class=icon-checkmark-16x16 title="Published" style="float:right;margin-top:2px;${item.published ? "" : "display:none"}"></span></div>
 				</div>
 			</li>`
 
-			/* New roblox thumbnails ruined this ;-;
-			img.attr("src", "").hide()
-			function tryGetThumbnail() {
-				if(thumbnailCache[data.Id])
-					return img.attr("src", thumbnailCache[data.Id]);
-
-				$.get("/Thumbs/RawAsset.ashx?assetVersionId={0}&imageFormat=png&width=110&height=110".format(data.Id), (data) => {
-					if(data === "PENDING")
-						return setTimeout(tryGetThumbnail, 1000);
-
-					thumbnailCache[data.Id] = data
-					img.attr("src", data).show()
-				})
-			}
-
-			tryGetThumbnail() */
 			versionList.append(card)
 		}
 
 		const script = document.createElement("script")
 		script.innerHTML = "Roblox.BootstrapWidgets.SetupPopover()"
 		versionList.append(script)
+
+		isBusy = false
 	}
 
-
-	function loadPage(page) {
-		if(isBusy) { return }
-		isBusy = true
-
-		const promises = []
-		const items = []
-		const itemStart = (page - 1) * pageSize
-		const itemEnd = itemStart + pageSize - 1
-
-		const pageFrom = Math.floor(itemStart / actualPageSize) + 1
-		const pageTo = Math.floor(itemEnd / actualPageSize) + 1
-
-		for(let i = pageFrom; i <= pageTo; i++) {
-			promises.push(getPage(i, items))
-		}
-
-		SyncPromise.all(promises).then(() => {
-			constructPage(items, itemStart, itemEnd)
-			isBusy = false
-			pager.setPage(page)
-		})
-	}
+	pager.onsetpage = loadPage
+	loadPage(1)
 
 	document.documentElement
 		.$on("click", ".btr-version-revert", e => {
 			if(isBusy) { return }
 
-			const versionId = parseInt(e.currentTarget.dataset.versionId, 10)
+			const versionId = +e.currentTarget.dataset.versionid
 			if(Number.isNaN(versionId)) { return }
 
 			isBusy = true
@@ -122,7 +107,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 		.$on("click", ".btr-version-download", e => {
 			if(isBusy) { return }
 
-			const version = parseInt(e.currentTarget.dataset.version, 10)
+			const version = +e.currentTarget.dataset.version
 			if(Number.isNaN(version)) { return }
 
 			isBusy = true
@@ -140,18 +125,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 				URL.revokeObjectURL(blobUrl)
 			})
 		})
-
-	pager.onsetpage = loadPage
-
-
-	isBusy = true
-	getPage(1, json => {
-		actualPageSize = json.length
-		pager.setMaxPage(Math.floor((json[0].VersionNumber - 1) / pageSize) + 1)
-		pager.setPage(1)
-		constructPage(json, 0, pageSize - 1)
-		isBusy = false
-	})
+	
 
 	versionHistory.append(versionList)
 	versionHistory.append(pager)
@@ -161,14 +135,14 @@ function CreateNewVersionHistory(assetId, assetType) {
 
 
 pageInit.placeconfig = function(placeId) {
-	if(!settings.versionhistory.enabled) { return }
+	if(!settings.placeConfigure.versionHistory) { return }
 
 	const newVersionHistory = CreateNewVersionHistory(placeId, "place")
 
 	document.$watch("#versionHistory").$then()
 		.$watch("#versionHistoryItems", cont => cont.replaceWith(newVersionHistory))
 		.$watch(">.headline h2", header => {
-			header.after(html`<a class="btn btn-secondary-sm btr-downloadAsZip" style="float:right;margin-top:4px;">Download as .zip</a>`)
+			header.after(html`<a class="btn btn-secondary-sm btr-downloadAsZip" style="float:right;margin-top:4px;">Download all versions</a>`)
 		})
 
 	document.$on("click", ".btr-downloadAsZip:not(.disabled)", e => {

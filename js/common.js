@@ -144,8 +144,8 @@ const SETTINGS = {
 		friends: {
 			alwaysShowUnfriend: { default: true, value: true }
 		},
-		versionhistory: {
-			enabled: { default: true, value: false }
+		placeConfigure: {
+			versionHistory: { default: true, value: true }
 		}
 	}
 }
