@@ -56,7 +56,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 				<div class=btr-body-outfits>
 					<label>Outfits</label>
 
-					<div class="btr-body-outfit-btn selected" data-outfit=default>
+					<div class="btr-body-outfit-btn selected" data-outfit=current>
 						<div class=btr-body-outfit-icon>
 							<img src="https://www.roblox.com/avatar-thumbnail/image?userId=4719353&width=150&height=150&format=png">
 						</div>
@@ -68,7 +68,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 						</div>
 						<span class=btr-body-outfit-title>Bundle</span>
 					</div>
-					<div class=btr-body-outfit-btn data-outfit=1116516198>
+					<div class=btr-body-outfit-btn data-outfit=default>
 						<div class=btr-body-outfit-icon>
 							<img src="https://www.roblox.com/outfit-thumbnail/image?width=150&height=150&format=png&userOutfitId=1116516198">
 						</div>
@@ -115,7 +115,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		</div>`
 
 		const bodyPopup = buttons.$find(".btr-body-popup")
-		const bodyBtn = buttons.$find(".btr-body-btn")
+		// const bodyBtn = buttons.$find(".btr-body-btn")
 
 		const inputSliders = []
 		const customOutfitBtn = buttons.$find(`.btr-body-outfit-btn[data-outfit="custom"]`)
@@ -145,7 +145,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 					this.scene.avatar.setScales(targetScales)
 
 					if(!customOutfitBtn.classList.contains("selected")) {
-						customOutfitBtn.click()
+						this.selectOutfit("custom")
 					}
 				})
 
@@ -176,8 +176,9 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		const typeInput = typeSwitch.$find("input")
 		const typeUpdate = () => {
 			typeInput.checked = this.playerType === "R15"
-			bodyPopup.classList.toggle("disabled", !typeInput.checked)
-			bodyBtn.toggleAttribute("disabled", !typeInput.checked)
+			bodyPopup.$findAll("input").forEach(x => x.toggleAttribute("disabled", !typeInput.checked))
+			// bodyPopup.classList.toggle("disabled", !typeInput.checked)
+			// bodyBtn.toggleAttribute("disabled", !typeInput.checked)
 		}
 
 		this.on("playertypechanged", typeUpdate)
@@ -209,22 +210,9 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 			const self = ev.currentTarget
 			const target = self.dataset.outfit
 			if(!target || self.classList.contains("selected")) { return }
-
 			if(target === "bundle" && !this.bundleOutfitId) { return }
 
-			buttons.$findAll(".btr-body-outfit-btn.selected").forEach(x => x.classList.remove("selected"))
-			buttons.$find(`.btr-body-outfit-btn[data-outfit="${target}"]`).classList.add("selected")
-
-			if(target === "default") {
-				this.outfitId = null
-				this.reloadOutfit()
-			} else if(target === "bundle") {
-				this.outfitId = this.bundleOutfitId
-				this.reloadOutfit()
-			} else if(target !== "custom") {
-				this.outfitId = target
-				this.reloadOutfit()
-			}
+			this.selectOutfit(target)
 		})
 
 		const disableOrigThumbs = () => {
@@ -266,7 +254,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 			const anim = this.getAnimation(assetId)
 
 			if(anim && anim.animType === "swim") {
-				this.scene.avatar.offsetPos.set(0, 1.5, .5)
+				this.scene.avatar.offsetPos.set(0, 0, .5)
 				this.scene.avatar.offsetRot.set(-Math.PI / 2, 0, 0)
 			} else {
 				this.scene.avatar.offsetPos.set(0, 0, 0)
@@ -292,6 +280,28 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 				this.prevAnimName = null
 			}
 		})
+	}
+
+	selectOutfit(target) {
+		target = target || "current"
+
+		if(target === "current") {
+			this.outfitId = null
+		} else if(target === "bundle") {
+			this.outfitId = this.bundleOutfitId
+		} else if(target === "default") {
+			this.outfitId = 1116516198
+		} else if(target !== "custom") {
+			this.outfitId = target
+			target = "custom"
+		}
+
+		this.buttons.$findAll(".btr-body-outfit-btn.selected").forEach(x => x.classList.remove("selected"))
+		this.buttons.$find(`.btr-body-outfit-btn[data-outfit="${target}"]`).classList.add("selected")
+
+		if(target !== "custom") {
+			this.reloadOutfit()
+		}
 	}
 
 	setVisible(bool) {
@@ -455,15 +465,11 @@ const initPreview = (assetId, assetTypeId, isBundle) => {
 
 	if(settings.itemdetails.itemPreviewer && (isPackage || isBundle || isPreviewable)) {
 		const previewerMode = settings.itemdetails.itemPreviewerMode
+		const preview = new ItemPreviewer()
 		let autoLoading = false
 		let bundleOutfitId
-		let preview
 
 		const addAssetPreview = (itemId, itemName = "Unknown") => {
-			if(!preview) {
-				preview = new ItemPreviewer()
-				preview.setBundleOutfit(bundleOutfitId)
-			}
 			const assetPreview = preview.addAssetPreview(itemId)
 
 			AssetCache.loadModel(itemId, model => {
@@ -531,7 +537,11 @@ const initPreview = (assetId, assetTypeId, isBundle) => {
 						addAssetPreview(item.id, item.name)
 					} else if(item.type === "UserOutfit") {
 						bundleOutfitId = item.id
-						if(preview) { preview.setBundleOutfit(bundleOutfitId) }
+						preview.setBundleOutfit(bundleOutfitId)
+						
+						if(data.bundleType !== "AvatarAnimations") {
+							preview.selectOutfit("bundle")
+						}
 					}
 				})
 			})

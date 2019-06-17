@@ -449,6 +449,10 @@ a:not(.disabled) > .btr-icon-content:hover {
 	float: right;
 }
 
+.btr-thumb-popup.btr-body-popup input[disabled] {
+	opacity: 0.5;
+}
+
 .btr-thumb-popup.btr-body-popup input[type=range] {
 	-webkit-appearance: none;
 	height: 6px;
