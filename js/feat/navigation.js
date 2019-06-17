@@ -345,7 +345,7 @@ const Navigation = (() => {
 			.$watch("#nav-trade", trade => {
 				const href = "/my/money.aspx"
 
-				const updateHref = () => trade.getAttribute("href") !== href && trade.setAttribute("href", href)
+				const updateHref = () => trade.getAttribute("href") !== href && (trade.href = href)
 			
 				new MutationObserver(updateHref).observe(
 					trade,
