@@ -660,23 +660,21 @@ const RBXAvatar = (() => {
 			Object.entries(this.images.clothing).forEach(([name, img]) => {
 				const texId = clothing[name]
 
-				if(texId !== img.rbxTexId) {
+				if(!texId) {
+					delete img.rbxTexId
+					setImageSource(img, img.defaultSrc || "")
+				} else if(texId !== img.rbxTexId) {
 					img.rbxTexId = texId
+					let gotAsync = false
 
-					if(texId) {
-						let gotAsync = false
-	
-						AssetCache.loadImage(true, texId, url => {
-							if(img.rbxTexId === texId) {
-								gotAsync = true
-								setImageSource(img, url)
-							}
-						})
-						
-						if(!gotAsync) {
-							setImageSource(img, img.defaultSrc || "")
+					AssetCache.loadImage(true, texId, url => {
+						if(img.rbxTexId === texId) {
+							gotAsync = true
+							setImageSource(img, url)
 						}
-					} else {
+					})
+					
+					if(!gotAsync) {
 						setImageSource(img, img.defaultSrc || "")
 					}
 				}
