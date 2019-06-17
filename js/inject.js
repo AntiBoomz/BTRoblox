@@ -77,7 +77,7 @@ const INJECT_SCRIPT = () => {
 			}
 		}
 	}
-
+	
 	function PreInit() {
 		const onSet = (a, b, c) => {
 			if(a[b]) { return c(a[b]) }
