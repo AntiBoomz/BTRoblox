@@ -69,16 +69,23 @@ pageInit.inventory = function() {
 	if(!settings.inventory.enabled) { return }
 
 	if(settings.inventory.inventoryTools) {
-		modifyTemplate("assets-list", template => {
-			const categories = ["Models", "Meshes", "Decals", "Animations", "Audio", "MeshParts"]
-			categories.forEach((v, i) => { categories[i] = `currentData.category.name == "${v}"` })
+		const validAssetTypes = [
+			10, 13, 40, 3, 24,
+			2, 11, 12
+		]
 
-			const visibility = `staticData.isOwnPage && (${categories.join(" || ")})`
+		modifyTemplate("assets-list", template => {
+			const visibility = `staticData.isOwnPage && (${
+				validAssetTypes
+					.map(x => `currentData.AssetTypeId == ${x}`)
+					.join(" || ")
+			})`
 
 			template.$findAll(".assets-explorer-title").forEach(title => {
 				title.after(html`
 				<div class="header-content" ng-show="${visibility}">
 					<a class="btn btn-secondary-sm btr-it-btn btr-it-remove disabled" style="float:right;margin:4px 10px;">Remove</a>
+					<div id="btr-inventory-refresh-btn" ng-click="cursorPaging.loadFirstPage()" style="display:none"></div>
 				</div>`)
 			})
 
@@ -142,7 +149,6 @@ pageInit.inventory = function() {
 					}
 				}
 
-				const validAssetTypes = [10, 13, 40, 3, 24]
 				let itemsLeft = items.length
 
 				function removeItem(index) {
@@ -163,7 +169,8 @@ pageInit.inventory = function() {
 							item.obj.remove()
 							if(--itemsLeft === 0) {
 								isRemoving = false
-								InjectJS.send("refreshInventory")
+								$("#btr-inventory-refresh-btn").click()
+								// InjectJS.send("refreshInventory")
 							}
 						})
 					})
