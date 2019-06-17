@@ -216,6 +216,22 @@ const HoverPreview = (() => {
 		`https://t4.rbxcdn.com/6aa6eb3c8680be7c47f1122f4fb9ebf2`
 	]
 
+	const ClothingParts = {
+		shirt: [
+			"LowerTorso", "UpperTorso", "Torso",
+			"LeftUpperArm", "LeftLowerArm", "LeftHand", "LeftArm",
+			"RightUpperArm", "RightLowerArm", "RightHand", "RightArm"
+		],
+		pants: [
+			"LeftUpperLeg", "LeftLowerLeg", "LeftFoot", "LeftLeg",
+			"RightUpperLeg", "RightLowerLeg", "RightFoot", "RightLeg"
+		],
+		tshirt: [
+			"LowerTorso", "UpperTorso", "Torso"
+		],
+		face: ["Head"]
+	}
+
 	const frontCameraRotation = [0.15, 0.25, 0]
 	const backCameraRotation = [0.15, 2.89, 0]
 
@@ -361,13 +377,13 @@ const HoverPreview = (() => {
 							preview.scene.avatar.animator.reset()
 							preview.scene.render()
 
-							const addedObjects = []
+							const addedObjects = new Set()
 							let cameraDir
 
 							lastPreviewedAssets.forEach(asset => {
 								asset.accessories.forEach(acc => {
 									if(acc.obj) {
-										addedObjects.push(acc.obj)
+										addedObjects.add(acc.obj)
 
 										if(acc.attName.endsWith("BackAttachment")) {
 											if(!cameraDir) {
@@ -381,13 +397,20 @@ const HoverPreview = (() => {
 
 								asset.bodyparts.forEach(bp => {
 									if(bp.obj) {
-										addedObjects.push(bp.obj)
+										addedObjects.add(bp.obj)
 										cameraDir = "Front"
+									}
+								})
+
+								asset.clothing.forEach(clothing => {
+									const parts = ClothingParts[clothing.target]
+									if(parts) {
+										parts.forEach(name => (name in avatar.parts && addedObjects.add(avatar.parts[name].rbxMesh)))
 									}
 								})
 							})
 
-							if(addedObjects.length) {
+							if(addedObjects.size) {
 								const box = new THREE.Box3()
 
 								addedObjects.forEach(obj => {
