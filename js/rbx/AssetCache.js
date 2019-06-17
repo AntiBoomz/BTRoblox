@@ -224,7 +224,21 @@ const AssetCache = (() => {
 		loadImage: createMethod(buffer => {
 			const reader = new FileReader()
 			reader.readAsDataURL(new Blob([new Uint8Array(buffer)], { type: "image/png" }))
-			return new SyncPromise(resolve => reader.onload = () => resolve(reader.result))
+
+			return new SyncPromise(resolve => reader.onload = () => {
+				const src = reader.result
+
+				const preload = new Image()
+				preload.src = src
+	
+				if(preload.complete) {
+					resolve(src)
+				} else {
+					preload.addEventListener("load", () => {
+						resolve(src)
+					}, { once: true })
+				}
+			})
 		}),
 
 		loadBuffer: createMethod(buffer => buffer),
