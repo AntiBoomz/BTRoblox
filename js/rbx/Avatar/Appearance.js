@@ -6,9 +6,7 @@ const RBXAppearance = (() => {
 	const InvertCFrame = RBXAvatar.InvertCFrame
 	
 	const BodyPartEnum = [null, "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
-
 	const R15FolderPriority = ["R15ArtistIntent", "R15", "R15Fixed"]
-
 	const HeadMeshes = {
 		6340170: "headA", 6340101: "headB", 6340258: "headC", 6340192: "headD", 8330576: "headE", 6340161: "headF",
 		8330389: "headG", 6340208: "headH", 6340141: "headI", 6340133: "headJ", 8330578: "headK", 6340269: "headL",

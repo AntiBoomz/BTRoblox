@@ -116,7 +116,6 @@ const RBXPreview = (() => {
 			this.appearance = null
 			this.waitForAppearance = "waitForAppearance" in opts ? opts.waitForAppearance : true
 			this.appearanceLoadedPromise = new SyncPromise()
-			this.isAppearanceLoaded = false
 
 			this.scene = new RBXScene.AvatarScene()
 			this.container.append(this.scene.canvas)
@@ -221,12 +220,15 @@ const RBXPreview = (() => {
 
 			this.outfitAssets.forEach(asset => asset.remove())
 
-			const promises = data.assets
-				.filter(asset => !SkippableAssetTypes.includes(asset.assetType.id))
-				.map(asset => this.addAsset(asset.id))
-				.filter(x => x)
+			data.assets.forEach(asset => {
+				if(!SkippableAssetTypes.includes(asset.assetType.id)) {
+					this.addAsset(asset.id)
+				}
+			})
+
+			this.scene.avatar.waitForAppearance()
+				.then(() => this.appearanceLoadedPromise.resolve())
 			
-			SyncPromise.all(promises).finally(() => this.appearanceLoadedPromise.resolve())
 			this.trigger("appearanceLoaded")
 		}
 

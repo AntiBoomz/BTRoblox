@@ -355,8 +355,10 @@ const HoverPreview = (() => {
 						return
 					}
 
+					const avatar = preview.scene.avatar
+
 					preview.startLoadingAssets()
-					SyncPromise.all([preview.appearanceLoadedPromise, ...assetPromises]).then(() => {
+					preview.appearanceLoadedPromise.then(() => avatar.waitForAppearance()).then(() => {
 						if(debounceCounter !== debounce) { return }
 
 						thumbCont.classList.remove("btr-preview-loading")
@@ -374,7 +376,7 @@ const HoverPreview = (() => {
 							if(debounceCounter !== debounce) { return }
 
 							preview.scene.update()
-							preview.scene.avatar.animator.reset()
+							avatar.animator.reset()
 							preview.scene.render()
 
 							const addedObjects = new Set()
