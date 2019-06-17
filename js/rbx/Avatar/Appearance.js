@@ -110,7 +110,7 @@ const RBXAppearance = (() => {
 					case "ShirtGraphic": {
 						this.addClothing({
 							target: "tshirt",
-							texId: tshirt.Graphic
+							texId: child.Graphic
 						})
 					} break
 					}
