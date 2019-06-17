@@ -407,6 +407,7 @@ const RBXParser = (() => {
 			reader.Jump(8)
 
 			this.result = []
+			this.sharedStrings = []
 			this.groups = new Array(groupsCount)
 			this.instances = new Array(instancesCount)
 
@@ -430,9 +431,11 @@ const RBXParser = (() => {
 				case "PRNT":
 					this.parsePRNT(chunkReader)
 					break
+				case "SSTR":
+					this.parseSSTR(chunkReader)
+					break
 
 				case "META": break
-				case "SSTR": break
 
 				default:
 					throw new Error(`[ParseRBXBin] Unexpected chunk '${chunkType}'`)
@@ -444,10 +447,23 @@ const RBXParser = (() => {
 			return this.result
 		}
 
+		parseSSTR(chunk) {
+			chunk.UInt32LE() // version
+			const stringCount = chunk.UInt32LE()
+
+			for(let i = 0; i < stringCount; i++) {
+				const md5 = chunk.Array(16)
+				const length = chunk.UInt32LE()
+				const value = chunk.String(length)
+
+				this.sharedStrings[i] = { md5, value }
+			}
+		}
+
 		parseINST(chunk) {
 			const groupId = chunk.UInt32LE()
 			const className = chunk.String(chunk.UInt32LE())
-			chunk.Byte() // bool IsService
+			chunk.Byte() // isService
 			const instCount = chunk.UInt32LE()
 			const instIds = chunk.RBXInterleavedInt32(instCount)
 
@@ -741,8 +757,10 @@ const RBXParser = (() => {
 				}
 				break
 			}
-			case "PhysicalConfigData":
-				// Not necessary to implement
+			case "SharedString":
+				for(let i = 0; i < instCount; i++) {
+					values[i] = this.sharedStrings[chunk.UInt32LE()].value
+				}
 				break
 			default:
 				console.warn(`[ParseRBXBin] Unimplemented dataType '${typeName}' for ${group.ClassName}.${prop}`)
@@ -780,7 +798,7 @@ const RBXParser = (() => {
 		null, "string", "bool", "int", "float", "double", "UDim", "UDim2",
 		"Ray", "Faces", "Axes", "BrickColor", "Color3", "Vector2", "Vector3", "Vector2int16",
 		"CFrame", "Quaternion", "Enum", "Instance", "Vector3int16", "NumberSequence", "ColorSequence", "NumberRange",
-		"Rect2D", "PhysicalProperties", "Color3uint8", "int64", "PhysicalConfigData"
+		"Rect2D", "PhysicalProperties", "Color3uint8", "int64", "SharedString"
 	]
 
 	class ModelParser {
