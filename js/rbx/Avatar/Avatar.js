@@ -206,7 +206,6 @@ const RBXAvatar = (() => {
 				})
 
 				if(!isDirty) {
-					console.log("Not actually dirty")
 					return
 				}
 			}
