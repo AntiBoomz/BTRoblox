@@ -18,7 +18,7 @@
 	const HiddenProperties = $.toDict(null,
 		"Tags", // Instance
 		"FormFactor", "Elasticity", "Friction", // Parts
-		"PhysicsData", "MeshData", "ChildData", "InitialSize", // Meshparts / Unions
+		"PhysicsData", "MeshData", "ChildData", "InitialSize", "PhysicalConfigData", // Meshparts / Unions
 		"ModelInPrimary", // Model
 		"LODX", "LODY", // Mesh
 		"ScriptGuid", // Script
@@ -152,6 +152,7 @@
 						valueItem.textContent = fixNum(value)
 						break
 					}
+					case "SharedString":
 					case "string": {
 						const input = html`<input type=text readonly>`
 
