@@ -618,6 +618,8 @@ pageInit.itemdetails = function(category, assetId) {
 				<button class="btn-control-sm btr-see-more-owners">See More</button>
 			</div>`
 
+			const ownersList = owners.$find(".section-content")
+
 			parent.classList.add("btr-owners-parent")
 			parent.append(owners)
 
@@ -654,43 +656,62 @@ pageInit.itemdetails = function(category, assetId) {
 			})
 
 			const seeMore = owners.$find(".btr-see-more-owners")
-			const nameCache = {}
 
-			const getUserName = userId => {
-				const cached = nameCache[userId]
+			const createElement = ({ userId, userName, item, thumbUrl }) => {
+				const url = userId ? `/users/${userId}/profile` : ""
 
-				if(cached) {
-					return cached
-				}
-
-				return nameCache[userId] = new SyncPromise(resolve =>
-					MESSAGING.send("getUserName", userId, resolve)
-				)
-			}
-
-			const createElement = (userId, userName, item) => html`
+				const elem = html`
 				<div class=btr-owner-item>
-					<a href=/users/${userId}/profile title="${userName}" class="avatar avatar-headshot-md list-header">
+					<a href="${url}" title="${userName}" class="avatar avatar-headshot-md list-header">
 						<img class=avatar-card-image 
-							src=https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=60&height=60&format=png
+							src="${thumbUrl}"
 							alt="${userName}"
 						>
 					</a>
 					<div class=btr-owner-cont>
-						<a class="text-name username" title="${userName}" href=/users/${userId}/profile>${userName}</a>
+						<a class="text-name username" title="${userName}" href="${url}">${userName}</a>
 						<div class=btr-owner-date>Since ${new Date(item.updated).$format("M/D/YYYY hh:mm:ss")}</div>
 					</div>
 					<div class=btr-serial>${item.serialNumber ? `#${item.serialNumber}` : `N/A`}</div>
 				</div>`
 
+				if(!userId) {
+					elem.$findAll("a").forEach(x => x.removeAttribute("href"))
+				}
+
+				return elem
+			}
+
+			const getNames = request => {
+				const keys = Object.keys(request)
+				if(!keys.length) { return SyncPromise.resolve() }
+
+				const url = `https://www.roblox.com/avatar-thumbnails?params=[${keys.map(x => `{userId:${x}}`).join(",")}]`
+				return fetch(url).then(async resp => {
+					const json = await resp.json()
+
+					json.forEach(user => {
+						const list = request[user.id]
+						list.forEach(x => {
+							x.userName = user.name
+							x.thumbUrl = user.thumbnailUrl
+						})
+					})
+				})
+			}
+
 			const loadOwners = () => {
 				if(isLoading) { return }
 				isLoading = true
 
+				if(!firstLoaded) {
+					firstLoaded = true
+				}
+
 				seeMore.textContent = "Loading..."
 				seeMore.setAttribute("disabled", "")
 
-				const url = `https://inventory.roblox.com/v2/assets/${ownerAssetId}/owners?limit=50&cursor=${cursor}`
+				const url = `https://inventory.roblox.com/v2/assets/${ownerAssetId}/owners?limit=100&cursor=${cursor}`
 				const maxRetries = 10
 				let retriesLeft = maxRetries
 
@@ -711,35 +732,54 @@ pageInit.itemdetails = function(category, assetId) {
 						return
 					}
 
-					const data = await resp.json()
+					const json = await resp.json()
 
-					if(!firstLoaded) {
-						firstLoaded = true
-						// TODO(anti): Remove (and create before request) a "Loading" thang
-					}
-
-					if(data.nextPageCursor) {
-						cursor = data.nextPageCursor
-						isLoading = false
-						seeMore.textContent = "See More"
-						seeMore.removeAttribute("disabled")
+					if(json.nextPageCursor) {
+						cursor = json.nextPageCursor
 					} else {
 						seeMore.remove()
 					}
 
-					data.data.forEach(item => {
-						if(!item.owner || item.owner.type !== "User" || item.owner.id === 1) { return }
-						const userId = item.owner.id
-						const result = getUserName(userId)
+					const request = {}
+					const elems = []
 
-						const elem = createElement(userId, result instanceof Promise ? `User#${userId}` : result, item)
-						owners.$find(".section-content").append(elem)
+					json.data.forEach(item => {
+						if(item.owner && (item.owner.type !== "User" || item.owner.id === 1)) { return }
+						if(!item.owner && !item.serialNumber) { return }
 
-						if(result instanceof Promise) {
-							result.then(userName => {
-								elem.replaceWith(createElement(userId, userName, item))
-							})
+						if(item.owner) {
+							const userId = item.owner.id
+
+							const self = {
+								item,
+								userId,
+								userName: `User#${userId}`,
+								thumbUrl: `https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=60&height=60&format=png`
+							}
+	
+							const list = request[userId] = request[userId] || []
+							list.push(self)
+							elems.push(self)
+						} else {
+							const self = {
+								item,
+								userId: "",
+								userName: `Unknown User`,
+								thumbUrl: `https://t0.rbxcdn.com/36eac87cdcca4e2027787d6ceae80507`
+							}
+	
+							elems.push(self)
 						}
+					})
+
+					getNames(request).finally(() => {
+						isLoading = false
+						seeMore.textContent = "See More"
+						seeMore.removeAttribute("disabled")
+
+						elems.forEach(
+							x => ownersList.append(createElement(x))
+						)
 					})
 				}
 
