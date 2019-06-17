@@ -92,8 +92,8 @@ const OwnerAssetCache = {
 	async request(next, populate = false, cursor = "") {
 		const cursorParam = populate ? `&cursor=${cursor}` : ""
 		const url = next.type === "bundles"
-			? `https://catalog.roblox.com/v1/users/${this.data.lastUserId}/bundles?sortOrder=Desc&limit=${populate ? 100 : 25}${cursorParam}`
-			: `https://inventory.roblox.com/v2/users/${this.data.lastUserId}/inventory/${next.type}?sortOrder=Desc&limit=${populate ? 100 : 25}${cursorParam}`
+			? `https://catalog.roblox.com/v1/users/${this.data.lastUserId}/bundles?sortOrder=Desc&limit=${populate ? 100 : 10}${cursorParam}`
+			: `https://inventory.roblox.com/v2/users/${this.data.lastUserId}/inventory/${next.type}?sortOrder=Desc&limit=${populate ? 100 : 10}${cursorParam}`
 
 		const resp = await fetch(url)
 		if(!resp.ok) { throw new Error("Response not ok") }
@@ -118,7 +118,7 @@ const OwnerAssetCache = {
 
 			if(!operation) {
 				const timeUntilPopulate = 300e3 - (Date.now() - next.lastPopulate)
-				const timeUntilUpdate = 10e3 - (Date.now() - next.lastUpdate)
+				const timeUntilUpdate = 5e3 - (Date.now() - next.lastUpdate)
 
 				if(timeUntilPopulate > 0 && timeUntilUpdate > 0) { return }
 
