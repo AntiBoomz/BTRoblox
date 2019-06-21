@@ -2,6 +2,15 @@
 	max-width: 970px;
 }
 
+#item-details-description {
+	overflow: hidden;
+	white-space: normal;
+}
+
+#item-details-description.content-height {
+	height: 193px;
+}
+
 .btr-explorer-button,
 .btr-download-button,
 .btr-content-button {
