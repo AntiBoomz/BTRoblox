@@ -381,10 +381,6 @@
 	text-decoration: underline;
 }
 
-.btr-profile .btr-games-list .btr-game-desc-content.btr-no-description {
-	color: #757575;
-}
-
 .btr-profile .btr-games-list .btr-game-info {
 	position: relative;
 	height: 80px;

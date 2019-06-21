@@ -86,8 +86,10 @@ pageInit.profile = function(userId) {
 			about
 				.$watch(".profile-about-content", desc => {
 					newCont.$find(".placeholder-desc").replaceWith(desc)
-		
-					desc.$find(".profile-about-content-text").classList.add("linkify")
+
+					const descContent = desc.$find(".profile-about-content-text")
+					descContent.classList.add("text-label", "linkify")
+					descContent.textContent = "This user has no description"
 				})
 				.$watch(".profile-about-footer", footer => {
 					newCont.$find(".placeholder-footer").replaceWith(footer)
@@ -428,10 +430,10 @@ pageInit.profile = function(userId) {
 							}
 
 							if(!descContent.textContent.trim()) {
-								descContent.classList.toggle("btr-no-description", true)
+								descContent.classList.toggle("text-label", true)
 								descContent.textContent = "This game has no description"
 							} else {
-								descContent.classList.toggle("btr-no-description", false)
+								descContent.classList.toggle("text-label", false)
 							}
 						}
 
