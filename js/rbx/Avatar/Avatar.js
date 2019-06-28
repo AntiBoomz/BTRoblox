@@ -887,12 +887,12 @@ const RBXAvatar = (() => {
 				}
 				
 				// Scale and Position
-				const parent = att ? att.parent : this.parts.Head
+				const parent = att.parent
 				const scale = parent ? this.getScaleMod(parent.name, acc.scaleType, parent.rbxScaleType) : new Vector3(1, 1, 1)
 				acc.obj.scale.set(...acc.scale).multiply(scale)
 
 				// Roblox Weirdness: Attachmentless accessories (defaultHatAttachment) do not get position-scaled
-				if(att) {
+				if(acc.attCFrame) {
 					acc.obj.position.setFromMatrixPosition(acc.attCFrame).multiply(scale)
 					acc.obj.rotation.setFromRotationMatrix(acc.attCFrame)
 				} else {
