@@ -123,10 +123,11 @@ const RBXAvatar = (() => {
 	const emptySrc = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII="
 	const graySrc = solidColorDataURL(163, 162, 165)
 	const mergeUpdateQueue = new Set()
+	const imageLoadMap = new Map()
+	let imageLoadIndex = 0
 
 	function setImageSource(img, src) {
 		src = src || emptySrc
-		delete img.preloadSrc
 
 		if(img.src !== src) {
 			img.src = src
@@ -134,15 +135,12 @@ const RBXAvatar = (() => {
 			if(img.complete) {
 				img.updateListeners.forEach(fn => fn())
 			} else {
-				img.src = emptySrc
-				img.preloadSrc = src
+				const index = imageLoadIndex++
+				imageLoadMap.set(img, index)
 
-				const preload = new Image()
-				preload.src = src
-
-				preload.addEventListener("load", () => {
-					if(img.preloadSrc === src) {
-						img.src = src
+				img.addEventListener("load", () => {
+					if(imageLoadMap.get(img) === index) {
+						imageLoadMap.delete(img)
 						img.updateListeners.forEach(fn => fn())
 					}
 				}, { once: true })
