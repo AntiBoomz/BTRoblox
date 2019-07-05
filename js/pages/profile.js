@@ -88,8 +88,12 @@ pageInit.profile = function(userId) {
 					newCont.$find(".placeholder-desc").replaceWith(desc)
 
 					const descContent = desc.$find(".profile-about-content-text")
-					descContent.classList.add("text-label", "linkify")
-					descContent.textContent = "This user has no description"
+					descContent.classList.add("linkify")
+
+					if(!descContent.textContent.trim()) {
+						descContent.classList.add("text-label")
+						descContent.textContent = "This user has no description"
+					}
 				})
 				.$watch(".profile-about-footer", footer => {
 					newCont.$find(".placeholder-footer").replaceWith(footer)
