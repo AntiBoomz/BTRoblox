@@ -506,8 +506,8 @@ const initPreview = (assetId, assetTypeId, isBundle) => {
 					} else if(child.ClassName === "KeyframeSequence") {
 						isAnimation = true
 
-						preview.addAnimation(String(id), id)
-						preview.playAnimation(id)
+						preview.addAnimation(String(itemId), itemId)
+						preview.playAnimation(itemId)
 					}
 				})
 
