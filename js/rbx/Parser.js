@@ -269,6 +269,23 @@ const RBXParser = (() => {
 
 			this.refs = {}
 			this.refWait = []
+			this.sharedStrings = {}
+
+			const sharedStrings = xml.querySelector(":scope > SharedStrings")
+			if(sharedStrings) {
+				Object.values(sharedStrings.children).forEach(child => {
+					if(child.nodeName !== "SharedString") { return }
+					const md5 = child.getAttribute("md5")
+					let value
+
+					try { value = window.atob(child.textContent.trim()) }
+					catch(ex) { console.error(ex) }
+
+					if(typeof md5 === "string" && typeof value === "string") {
+						this.sharedStrings[md5] = { md5, value }
+					}
+				})
+			}
 
 			Object.values(xml.children).forEach(child => {
 				if(child.nodeName === "Item") {
@@ -380,6 +397,12 @@ const RBXParser = (() => {
 					}
 
 					return inst.setProperty(name, target, "Instance")
+				}
+				case "sharedstring": {
+					const md5 = value.trim()
+					const sharedString = this.sharedStrings[md5].value
+
+					return inst.setProperty(name, sharedString, "SharedString")
 				}
 				case "colorsequence":
 				case "numberrange":
