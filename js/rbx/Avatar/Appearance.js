@@ -8,9 +8,23 @@ const RBXAppearance = (() => {
 	const BodyPartEnum = [null, "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
 	const R15FolderPriority = ["R15ArtistIntent", "R15", "R15Fixed"]
 	const HeadMeshes = {
-		6340170: "headA", 6340101: "headB", 6340258: "headC", 6340192: "headD", 8330576: "headE", 6340161: "headF",
-		8330389: "headG", 6340208: "headH", 6340141: "headI", 6340133: "headJ", 8330578: "headK", 6340269: "headL",
-		6340154: "headM", 6340198: "headN", 6340213: "headO", 6340227: "headP"
+		"rbxasset://avatar/heads/head.mesh": "rbxassetid://2957715294",
+		"rbxasset://avatar/heads/headA.mesh": "rbxassetid://2957717479",
+		"rbxasset://avatar/heads/headB.mesh": "rbxassetid://2957719621",
+		"rbxasset://avatar/heads/headC.mesh": "rbxassetid://2957735435",
+		"rbxasset://avatar/heads/headD.mesh": "rbxassetid://2957735527",
+		"rbxasset://avatar/heads/headE.mesh": "rbxassetid://2957735616",
+		"rbxasset://avatar/heads/headF.mesh": "rbxassetid://2957735708",
+		"rbxasset://avatar/heads/headG.mesh": "rbxassetid://2957735779",
+		"rbxasset://avatar/heads/headH.mesh": "rbxassetid://2957735870",
+		"rbxasset://avatar/heads/headI.mesh": "rbxassetid://2957735956",
+		"rbxasset://avatar/heads/headJ.mesh": "rbxassetid://2957736171",
+		"rbxasset://avatar/heads/headK.mesh": "rbxassetid://2957736290",
+		"rbxasset://avatar/heads/headL.mesh": "rbxassetid://2957736404",
+		"rbxasset://avatar/heads/headM.mesh": "rbxassetid://2957736496",
+		"rbxasset://avatar/heads/headN.mesh": "rbxassetid://2957736621",
+		"rbxasset://avatar/heads/headO.mesh": "rbxassetid://2957736751",
+		"rbxasset://avatar/heads/headP.mesh": "rbxassetid://2957736879"
 	}
 
 	class Asset extends EventEmitter {
@@ -44,14 +58,6 @@ const RBXAppearance = (() => {
 		load() {
 			if(this.loaded || this.loading) { return }
 			this.loading = true
-
-			if(this.id in HeadMeshes) {
-				const name = HeadMeshes[this.id]
-				const meshUrl = getURL(`res/previewer/heads/${name}.mesh`)
-
-				this.addBodyPart({ target: "Head", meshId: meshUrl })
-				return
-			}
 
 			AssetCache.loadModel(this.id, model => {
 				if(!model) { return this.fail() }
@@ -195,10 +201,10 @@ const RBXAppearance = (() => {
 		loadHead(mesh) {
 			const scaleTypeValue = mesh.Children.find(x => x.Name === "AvatarPartScaleType")
 			const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
-
+			
 			this.addBodyPart({
 				target: "Head",
-				meshId: mesh.MeshId,
+				meshId: HeadMeshes[mesh.MeshId] || mesh.MeshId,
 				baseTexId: mesh.TextureId,
 				scale: [...mesh.Scale],
 				scaleType
