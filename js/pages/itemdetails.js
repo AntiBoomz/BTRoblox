@@ -836,7 +836,7 @@ pageInit.itemdetails = function(category, assetId) {
 		const elem = html`
 		<div class="clearfix item-field-container">
 			<div class="text-label text-overflow field-label">Sales</div>
-			<span class=field-content>-</div>
+			<span class=field-content></div>
 		</div>`
 
 		document.$watch("#item-details-description", desc => {
