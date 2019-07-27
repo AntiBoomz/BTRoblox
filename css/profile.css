@@ -175,6 +175,23 @@
 	white-space: pre-line;
 }
 
+/* Aliases */
+
+.btr-profile #aliases-container .border-top {
+	display: flex;
+	flex-direction: row;
+	padding-top: 8px;
+}
+
+.btr-profile #aliases-container .border-top > div:first-child {
+	flex: 0 0 auto;
+	margin-right: 8px;
+}
+
+.btr-profile #aliases-container .user-tag-container {
+	flex: 1 1 auto;
+}
+
 /* Stats */
 
 .btr-profile .profile-stats-container {

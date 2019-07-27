@@ -12,6 +12,7 @@ pageInit.profile = function(userId) {
 					<div class=placeholder-status style=display:none></div>
 					<div class=placeholder-avatar style=display:none></div>
 					<div class=placeholder-desc style=display:none></div>
+					<div class=placeholder-aliases style=display:none></div>
 					<div class=placeholder-stats style=display:none></div>
 					<div class=placeholder-footer style=display:none></div>
 				</div>
@@ -95,6 +96,15 @@ pageInit.profile = function(userId) {
 						descContent.textContent = "This user has no description"
 					}
 				})
+				.$watch("#aliases-container", aliases => {
+					newCont.$find(".placeholder-aliases").replaceWith(aliases)
+
+					aliases.$watch(".border-top > div:first-child", header => {
+						header.classList.remove("font-header-2")
+						header.classList.add("text-label")
+						header.textContent = "Alias:"
+					}).$watch(".user-tag", tag => tag.classList.remove("font-header-2"))
+				})
 				.$watch(".profile-about-footer", footer => {
 					newCont.$find(".placeholder-footer").replaceWith(footer)
 		
@@ -161,6 +171,9 @@ pageInit.profile = function(userId) {
 			avatar.classList.remove("section")
 			avatarLeft.classList.remove("col-sm-6", "section-content")
 			avatarRight.classList.remove("col-sm-6", "section-content")
+
+			avatarRight.style.transition = "none" // stop transition on page load
+			setTimeout(() => avatarRight.style.transition = "", 1e3)
 
 			const toggleItems = html`<span class="btr-toggle-items btn-control btn-control-sm">Show Items</span>`
 			avatar.$find("#UserAvatar").append(toggleItems)
