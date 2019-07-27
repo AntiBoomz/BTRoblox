@@ -49,6 +49,7 @@ API Docs
 | [games.roblox.com](https://games.roblox.com/docs) | All endpoints for game discovery, and details. |
 | [groups.roblox.com](https://groups.roblox.com/docs) | Groups management. |
 | [inventory.roblox.com](https://inventory.roblox.com/docs) | All endpoints for viewing (but not granting) ownership of items. |
+| [itemconfiguration.roblox.com](https://itemconfiguration.roblox.com/docs) | Endpoints for configuring items (bundles and avatar assets)  |
 | [locale.roblox.com](https://locale.roblox.com/docs) | User locale management. |
 | [localizationtables.roblox.com](https://localizationtables.roblox.com/docs) | Handles managing of localization tables. |
 | [metrics.roblox.com](https://metrics.roblox.com/docs) | Record metrics across Roblox. |
