@@ -7,6 +7,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 
 		window.scene = this.scene
 		this.isShown = false
+		this.animMap = {}
 
 		const container = html`<div class=btr-preview-container></div>`
 		container.append(this.container)
@@ -334,9 +335,13 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		}
 	}
 
+	getAnimation(animId) {
+		return this.animMap[animId]
+	}
+
 	playAnimation(animId) {
 		const anim = this.getAnimation(animId)
-		if(!anim) { return }
+		if(!anim) { return console.warn("No anim", animId) }
 
 		super.playAnimation(anim.assetId)
 		
@@ -361,7 +366,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		}
 	}
 
-	addAnimation(animId, name) {
+	addAnimation(assetId, name) {
 		if(this.getAnimation(name)) {
 			for(let i = 2; i < Infinity; i++) {
 				const newName = `${name}_${i}`
@@ -373,7 +378,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 			}
 		}
 
-		const anim = super.addAnimation(animId)
+		const anim = this.animMap[assetId] = { assetId }
 		anim.name = name
 		
 		const btn = html`<li><a>${anim.name}</a></li>`
@@ -385,9 +390,11 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 			this.hasDropdown = true
 			this.dropdown.style.display = ""
 		}
+
+		return anim
 	}
 
-	addBundleAnimation(origAnimType, assetId, assetName) {
+	addBundleAnimation(assetId, origAnimType, assetName) {
 		let animType = origAnimType
 		let isAlt = false
 		let altText
@@ -421,7 +428,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 			this.dropdown.style.display = ""
 		}
 
-		const anim = super.addAnimation(assetId)
+		const anim = this.animMap[assetId] = { assetId }
 		anim.name = assetName
 		anim.animType = origAnimType
 		anim.isBundleAnim = true
@@ -466,6 +473,7 @@ const initPreview = (assetId, assetTypeId, isBundle) => {
 	if(settings.itemdetails.itemPreviewer && (isPackage || isBundle || isPreviewable)) {
 		const previewerMode = settings.itemdetails.itemPreviewerMode
 		const preview = new ItemPreviewer()
+		let playedAnim = false
 		let autoLoading = false
 		let bundleOutfitId
 
@@ -489,15 +497,18 @@ const initPreview = (assetId, assetTypeId, isBundle) => {
 								isAnimation = true
 
 								if(isBundle) {
-									preview.addBundleAnimation(value.Name, animId, itemName)
+									preview.addBundleAnimation(animId, value.Name, itemName)
 
-									if(!preview.currentAnim && value.Name === "run") {
+									if(!playedAnim && value.Name === "run") {
+										playedAnim = true
 										preview.playAnimation(animId)
 									}
 								} else {
-									preview.addAnimation(value.Name, animId)
+									preview.addAnimation(animId, value.Name)
 
-									if(!preview.currentAnim) {
+									if(!playedAnim) {
+										playedAnim = true
+										console.log("Play", animId)
 										preview.playAnimation(animId)
 									}
 								}
@@ -506,7 +517,7 @@ const initPreview = (assetId, assetTypeId, isBundle) => {
 					} else if(child.ClassName === "KeyframeSequence") {
 						isAnimation = true
 
-						preview.addAnimation(String(itemId), itemId)
+						preview.addAnimation(itemId, String(itemId))
 						preview.playAnimation(itemId)
 					}
 				})

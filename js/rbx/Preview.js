@@ -102,7 +102,6 @@ const RBXPreview = (() => {
 			this.container = html`<div class=btr-preview-container style="width:100%; height:100%;"></div>`
 
 			this.playerType = null
-			this.animMap = {}
 			this.outfitAssets = new Set()
 			this.previewAssets = new Set()
 
@@ -152,7 +151,7 @@ const RBXPreview = (() => {
 
 				if(!this.playingAnim) {
 					if(this.currentAnim) {
-						this.loadAnimation(this.currentAnim.assetId)
+						this.loadAnimation(this.currentAnim)
 					} else if(!this.disableDefaultAnimations) {
 						this.loadDefaultAnimation()
 					}
@@ -315,27 +314,16 @@ const RBXPreview = (() => {
 			})
 		}
 
-		getAnimation(animId) {
-			return this.animMap[animId]
-		}
-
 		playAnimation(animId) {
-			const anim = this.getAnimation(animId)
-			if(!anim) { return }
-
-			this.currentAnim = anim
+			this.currentAnim = animId
 			this.scene.avatar.animator.pause()
 			this.playingAnim = null
 
 			if(this.enabled) {
-				this.loadAnimation(anim.assetId)
+				this.loadAnimation(animId)
 			} else {
 				this.animLoadCounter++
 			}
-		}
-
-		addAnimation(animId) {
-			return this.animMap[animId] = { assetId: animId }
 		}
 	}
 
