@@ -582,11 +582,6 @@ pageInit.itemdetails = function(category, assetId) {
 				html`<span class=text-robux-lg>&nbsp;($${usd})</span>`
 			)
 		})
-			.$watch(".recommended-items .item-card-price .text-robux", label => {
-				label.style.display = "inline"
-				label.textContent += ` ($\{{::((item.Item.Price*${GetRobuxRatio()[0]})/${GetRobuxRatio()[1]})|number:2}})`
-				label.title = "R$ " + label.textContent
-			})
 			.$watch("#item-average-price", label => {
 				const observer = new MutationObserver(() => {
 					observer.disconnect()
@@ -603,6 +598,14 @@ pageInit.itemdetails = function(category, assetId) {
 					const usd = RobuxToUSD(btn ? btn.dataset.expectedPrice : "")
 					label.textContent += ` ($${usd})`
 				})
+		
+		modifyTemplate("recommendations", template => {
+			const label = template.$find(".item-card-price .text-robux")
+
+			label.style.display = "inline"
+			label.textContent += ` ($\{{::((item.price*${GetRobuxRatio()[0]})/${GetRobuxRatio()[1]}) | number:2}})`
+			label.title = "R$ " + label.textContent
+		})
 	}
 
 	if(settings.general.hoverPreview) {
@@ -832,7 +835,7 @@ pageInit.itemdetails = function(category, assetId) {
 		}
 	}
 	
-	if(settings.itemdetails.showSales) {
+	if(settings.itemdetails.showSales && category !== "bundles") {
 		const elem = html`
 		<div class="clearfix item-field-container">
 			<div class="text-label text-overflow field-label">Sales</div>
@@ -851,18 +854,6 @@ pageInit.itemdetails = function(category, assetId) {
 			$.fetch(`https://api.roblox.com/marketplace/game-pass-product-info?gamePassId=${assetId}`).then(async resp => {
 				if(!resp.ok) { return }
 				apply((await resp.json()).Sales)
-			})
-		} else if(category === "bundles") {
-			$.fetch(`https://catalog.roblox.com/v1/catalog/items`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					items: [{ itemType: "Bundle", id: assetId }]
-				}),
-				xsrf: true
-			}).then(async resp => {
-				if(!resp.ok) { return }
-				apply((await resp.json()).data[0].purchaseCount)
 			})
 		} else {
 			getProductInfo(assetId).then(data => apply(data.Sales))
