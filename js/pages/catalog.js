@@ -42,7 +42,12 @@ pageInit.catalog = function() {
 				<div class="text-overflow item-card-label" ng-if="!item.Creator">By <span class="text-link creator-name" ng-click="creatorClick($event, 'https://www.roblox.com/users/1/profile')">ROBLOX</span></div>
 			</div>
 		</div>`
-		hover.append(template.$find(".creator-name").parentNode)
+
+		const creatorName = template.$find(".creator-name")
+		if(creatorName) {
+			hover.append(creatorName.parentNode)
+		}
+		
 		template.$find(".item-card-caption").append(hover)
 	})
 
