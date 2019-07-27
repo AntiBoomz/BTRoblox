@@ -45,7 +45,7 @@ pageInit.inventory = function() {
 	}
 
 	if(settings.general.robuxToUSD) {
-		modifyTemplate("assets-list", template => {
+		modifyTemplate("assets-explorer", template => {
 			const label = template.$find(".item-card-price")
 			if(!label) { return }
 			label.style.display = "flex"
@@ -74,10 +74,10 @@ pageInit.inventory = function() {
 			2, 11, 12
 		]
 
-		modifyTemplate("assets-list", template => {
-			const visibility = `staticData.isOwnPage && (${
+		modifyTemplate("assets-explorer", template => {
+			const visibility = `$ctrl.staticData.isOwnPage && (${
 				validAssetTypes
-					.map(x => `currentData.AssetTypeId == ${x}`)
+					.map(x => `$ctrl.currentData.AssetTypeId === ${x}`)
 					.join(" || ")
 			})`
 
