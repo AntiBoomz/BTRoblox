@@ -4,7 +4,8 @@
 
 #item-details-description {
 	overflow: hidden;
-	white-space: normal;
+	white-space: pre-line;
+	word-break: break-word;
 }
 
 #item-details-description.content-height {
