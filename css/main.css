@@ -861,7 +861,8 @@ body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
 }
 
 .btr-preview-container-parent > :not(.btr-preview-container) {
-	opacity: 0;
+	opacity: 0 !important;
+	transition: none !important;
 }
 
 .btr-preview-canvas {
