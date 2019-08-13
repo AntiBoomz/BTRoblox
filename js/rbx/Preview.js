@@ -57,6 +57,16 @@ const RBXPreview = (() => {
 		})
 	}
 
+	function getPlayerAppearance(userId) {
+		const outfitPromise = tryGet(`https://avatar.roblox.com/v1/users/${userId}/avatar`)
+
+		return SyncPromise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
+			data = { ...data }
+			data.bodyColors = solveBodyColors(data.bodyColors, rules)
+			return [rules, data]
+		})
+	}
+
 	function getDefaultAppearance() {
 		const outfitPromise = tryGet(`https://avatar.roblox.com/v1/avatar`)
 
@@ -186,7 +196,11 @@ const RBXPreview = (() => {
 			let outfitPromise
 
 			if(this.outfitId) {
-				outfitPromise = getOutfitData(this.outfitId)
+				if(typeof this.outfitId === "string" && this.outfitId.startsWith("plr-")) {
+					outfitPromise = getPlayerAppearance(this.outfitId.slice(4))
+				} else {
+					outfitPromise = getOutfitData(this.outfitId)
+				}
 			} else {
 				outfitPromise = getDefaultAppearance()
 			}
