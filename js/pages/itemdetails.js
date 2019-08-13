@@ -294,7 +294,6 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 			this.outfitId = 1116516198
 		} else if(target !== "custom") {
 			this.outfitId = target
-			target = "custom"
 		}
 
 		this.buttons.$findAll(".btr-body-outfit-btn.selected").forEach(x => x.classList.remove("selected"))
