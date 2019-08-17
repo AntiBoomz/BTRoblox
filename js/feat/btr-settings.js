@@ -1180,6 +1180,8 @@ const SettingsDiv = (() => {
 		})
 	}
 
+	document.$on("click", ".btr-settings-toggle", toggleSettingsDiv)
+
 	return {
 		toggle: toggleSettingsDiv
 	}

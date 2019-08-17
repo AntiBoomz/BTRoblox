@@ -194,7 +194,6 @@ function Init() {
 	loggedInUserPromise.then(userId => {
 		if(userId !== -1) {
 			Navigation.init()
-			document.$on("click", ".btr-settings-toggle", SettingsDiv.toggle)
 		}
 	})
 
