@@ -33,6 +33,7 @@ const RBXPreview = (() => {
 
 	function solveBodyColors(origColors, rules) {
 		const bodyColors = {}
+		if(!origColors) { return bodyColors }
 
 		Object.entries(origColors).forEach(([name, value]) => {
 			const index = name.toLowerCase().replace(/colorid$/, "")
