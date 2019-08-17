@@ -21,8 +21,6 @@ const $ = function(selector) { return $.find(document, selector) }
 		return amt > 0 ? "0".repeat(amt) + str : str
 	}
 
-	let DTF
-
 	const Observers = new WeakMap()
 	const DirectObservers = new WeakMap()
 
@@ -146,6 +144,7 @@ const $ = function(selector) { return $.find(document, selector) }
 	const immediateStatus = { counter: 0 }
 	const immediatePromise = Promise.resolve()
 	let cachedXsrfToken
+	let DTF
 
 	Object.assign($, {
 		fetch(url, init = {}) {
