@@ -12,14 +12,14 @@ const AssetCache = (() => {
 
 	function resolveAssetUrlParams(url) {
 		if(url.startsWith("rbxassetid://")) {
-			url = `https://assetgame.roblox.com/asset/?id=${url.slice(13)}`
+			url = `https://assetdelivery.roblox.com/v1/asset/?id=${url.slice(13)}`
 		} else if(url.startsWith("rbxhttp://")) {
 			url = `https://www.roblox.com/${url.slice(10)}`
 		}
 
 		try {
 			const urlInfo = new URL(url)
-			if(!urlInfo.pathname.match(/^\/*asset\/*$/i)) {
+			if(!urlInfo.pathname.match(/\/*asset\/*$/i)) {
 				return null
 			}
 
