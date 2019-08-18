@@ -322,7 +322,7 @@ const HoverPreview = (() => {
 				const anchor = self.$find(`a[href*="/catalog/"],a[href*="/bundles/"]`)
 				if(!anchor) { return }
 
-				const assetId = anchor.href.replace(/^.+\/(?:bundles|catalog)\/(\d+)\/.+$/, "$1")
+				const assetId = anchor.href.replace(/^.*\/(?:bundles|catalog)\/(\d+)\/.*$/, "$1")
 				if(!Number.isSafeInteger(+assetId)) { return }
 
 				clearTarget()
