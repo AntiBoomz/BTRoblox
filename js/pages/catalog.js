@@ -2,20 +2,20 @@
 
 pageInit.catalog = function() {
 	if(settings.general.robuxToUSD) {
-		modifyTemplate("catalog-item-card", template => {
-			const label = template.$find(".item-card-price")
-			if(!label) { return }
-			label.style.display = "flex"
-
-			const div = html`<div style="flex:1 0 auto"></div>`
-			while(label.firstChild) { div.append(label.firstChild) }
-
-			label.append(div)
-			const text = `($\{{::(((item.BestPrice||item.Price)*${GetRobuxRatio()[0]})/${GetRobuxRatio()[1]})|number:2}})`
-			label.title = `{{::item.IsFree && "Free " || "R$ "}}{{::(item.BestPrice||item.Price)|number:0}} ${text}`
-			label.append(html`
-			<div style="flex:0 1 auto;padding-left:4px;overflow:hidden;text-overflow:ellipsis;" ng-if=item.BestPrice||item.Price class=text-robux ng-cloak> ${text}</div>
-			`)
+		modifyTemplate("item-card", template => {
+			template.$findAll(".item-card-price").forEach(label => {
+				label.style.display = "flex"
+	
+				const div = html`<div style="flex:1 0 auto"></div>`
+				while(label.firstChild) { div.append(label.firstChild) }
+	
+				label.append(div)
+				const text = `($\{{::(((item.lowestPrice||item.price)*${GetRobuxRatio()[0]})/${GetRobuxRatio()[1]})|number:2}})`
+				label.title = `{{::item.IsFree && "Free " || "R$ "}}{{::(item.lowestPrice||item.price)|number:0}} ${text}`
+				label.append(html`
+				<div style="flex:0 1 auto;padding-left:4px;overflow:hidden;text-overflow:ellipsis;" ng-if=item.lowestPrice||item.price class=text-robux ng-cloak> ${text}</div>
+				`)
+			})
 		})
 	}
 
@@ -31,24 +31,19 @@ pageInit.catalog = function() {
 	})
 
 	modifyTemplate("item-card", template => {
-		const cont = template.$find(".item-card-container")
-		cont.classList.add("btr-item-card-container")
-		cont.setAttribute("btr-item-type", "{{item.ItemType}}")
-
-		const hover = html`<div class="btr-item-card-more">
-			<div class=text-secondary>
-				<div class="text-overflow item-card-label" ng-if="item.ItemType===1">Updated: <span class=btr-updated-label>Loading...</span></div>
-				<div class="text-overflow item-card-label" ng-if="item.ItemType===1">Sales: <span class=btr-sales-label>Loading...</span></div>
-				<div class="text-overflow item-card-label" ng-if="!item.Creator">By <span class="text-link creator-name" ng-click="creatorClick($event, 'https://www.roblox.com/users/1/profile')">ROBLOX</span></div>
-			</div>
-		</div>`
-
-		const creatorName = template.$find(".creator-name")
-		if(creatorName) {
-			hover.append(creatorName.parentNode)
-		}
-		
-		template.$find(".item-card-caption").append(hover)
+		template.$findAll(".item-card-container").forEach(cont => {
+			cont.classList.add("btr-item-card-container")
+			cont.setAttribute("btr-item-type", "{{item.itemType}}")
+	
+			const hover = html`<div class="btr-item-card-more">
+				<div class=text-secondary>
+					<div class="text-overflow item-card-label" ng-show="item.itemType==='Asset'">Updated: <span class=btr-updated-label>Loading...</span></div>
+					<div class="text-overflow item-card-label">Sales: {{item.purchaseCount | number:0}}</div>
+				</div>
+			</div>`
+	
+			cont.$find(".item-card-caption").append(hover)
+		})
 	})
 
 	document.$on("mouseover", ".btr-item-card-container", ev => {
@@ -68,86 +63,70 @@ pageInit.catalog = function() {
 				const ulabel = self.$find(".btr-updated-label")
 				ulabel.textContent = `${$.dateSince(data.Updated, startDate)} ago`
 				ulabel.parentNode.title = ulabel.parentNode.textContent
-	
-				const slabel = self.$find(".btr-sales-label")
-				slabel.textContent = FormatNumber(data.Sales)
-				slabel.parentNode.title = slabel.parentNode.textContent
 			})
 		}
 	})
 
 	if(settings.catalog.showOwnedAssets) {
-		const ownedRequestList = []
-		const listeners = {}
+		const updateOwnedAssets = ownedAssets => {
+			Object.entries(ownedAssets).forEach(([key, isOwned]) => {
+				const elems = document.$findAll(`.item-card-thumb-container[data-btr-owned-id="${key}"]`)
 
-		const updateAssetsOwned = assetsOwned => {
-			Object.entries(assetsOwned).forEach(([id, isOwned]) => {
-				const list = listeners[id]
-				if(list) {
-					for(let i = list.length; i--;) {
-						const { elem, fn } = list[i]
+				elems.forEach(thumb => {
+					const ownedLabel = thumb.$find(".btr-item-owned")
 
-						if(document.body.contains(elem)) {
-							fn(isOwned)
-						} else {
-							list.splice(i, 1)
+					if(isOwned) {
+						if(!ownedLabel) {
+							thumb.append(html`<span class=btr-item-owned><span class=icon-checkmark-white-bold title="You own this item" style="bottom:auto;left:auto;"></span></span>`)
+						}
+					} else {
+						if(ownedLabel) {
+							ownedLabel.remove()
 						}
 					}
-
-					if(!list.length) {
-						delete listeners[id]
-					}
-				}
+				})
 			})
 		}
 
-		const getIsAssetOwned = (id, elem, fn) => {
-			if(!ownedRequestList.length) {
+		let currentRequest
+		const checkItem = (anchor, thumb) => {
+			const match = anchor.href.match(/\/(catalog|library|bundles)\/(\d+)/)
+
+			if(!match) {
+				delete thumb.dataset.btrOwnedId
+				return
+			}
+
+			const id = match[1] === "bundles" ? "bundle_" + match[2] : match[2]
+
+			if(!currentRequest) {
+				currentRequest = []
+
 				$.setImmediate(() => {
-					const list = ownedRequestList.splice(0, ownedRequestList.length)
-					MESSAGING.send("filterOwnedAssets", list, updateAssetsOwned)
+					MESSAGING.send("filterOwnedAssets", currentRequest, updateOwnedAssets)
+					currentRequest = null
 				})
 			}
 
-			ownedRequestList.push(id)
-
-			if(!listeners[id]) { listeners[id] = [] }
-			listeners[id].push({ elem, fn })
+			currentRequest.push(id)
+			thumb.dataset.btrOwnedId = id
 		}
 
-		const hookItem = item => {
-			item.$watch(["a", ".item-card-thumb-container"], (anchor, thumb) => {
-				const match = anchor.href.match(/\/(catalog|library|bundles)\/(\d+)/)
-				if(!match) { return console.log("bad", anchor) }
+		document.$watch("#main-view > div[items-container]").$then()
+			.$watchAll(".catalog-results", results => {
+				results.$watch(".hlist").$then()
+					.$watchAll(".list-item", item => {
+						item.$watch([".item-card-container", ".item-card-thumb-container"], (anchor, thumb) => {
+							checkItem(anchor, thumb)
 
-				const id = match[1] === "bundles" ? "bundle_" + match[2] : match[2]
-				let ownedLabel
-
-				getIsAssetOwned(id, anchor, isOwned => {
-					if(isOwned) {
-						if(!ownedLabel) {
-							ownedLabel = html`<span class=btr-item-owned style="position:absolute;bottom:-2px;right:-2px;z-index:1000;width:34px;height:34px;background:#02b757;border-radius:50%;transform:scale(.55);display:flex;align-items:center;justify-content:center;"><span class=icon-checkmark-white-bold title="You own this item" style="bottom:auto;left:auto;"></span></span>`
-						}
-
-						thumb.append(ownedLabel)
-					} else if(ownedLabel) {
-						ownedLabel.remove()
-					}
-				})
-			})
-		}
-		
-		bodyWatcher.$watch(".catalog-results").$then()
-			.$watchAll("div", page => {
-				if(page.matches("#results")) {
-					page.$watch(".hlist").$then()
-						.$watchAll(".list-item", hookItem)
-				} else if(page.matches("div[landing-page")) {
-					page.$watchAll("div", par =>
-						par.$watch(".hlist").$then()
-							.$watchAll(".list-item", hookItem)
-					)
-				}
+							new MutationObserver(() => {
+								checkItem(anchor, thumb)
+							}).observe(anchor, {
+								attributes: true,
+								attributeFilter: ["href"]
+							})
+						})
+					})
 			})
 	}
 }

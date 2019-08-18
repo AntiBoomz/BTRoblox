@@ -834,7 +834,7 @@ pageInit.itemdetails = function(category, assetId) {
 		}
 	}
 	
-	if(settings.itemdetails.showSales && category !== "bundles") {
+	if(settings.itemdetails.showSales) {
 		const elem = html`
 		<div class="clearfix item-field-container">
 			<div class="text-label text-overflow field-label">Sales</div>
@@ -853,6 +853,24 @@ pageInit.itemdetails = function(category, assetId) {
 			$.fetch(`https://api.roblox.com/marketplace/game-pass-product-info?gamePassId=${assetId}`).then(async resp => {
 				if(!resp.ok) { return }
 				apply((await resp.json()).Sales)
+			})
+		} else if(category === "bundles") {
+			const url = "https://catalog.roblox.com/v1/catalog/items/details"
+			
+			const request = $.fetch(url, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					items: [
+						{ id: assetId, itemType: "Bundle", key: `Bundle_${assetId}` }
+					]
+				}),
+				xsrf: true
+			})
+
+			request.then(async resp => {
+				const json = await resp.json()
+				apply(json.data[0].purchaseCount)
 			})
 		} else {
 			getProductInfo(assetId).then(data => apply(data.Sales))
