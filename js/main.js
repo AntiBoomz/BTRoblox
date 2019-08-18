@@ -246,6 +246,28 @@ function PreInit() {
 	}
 	
 	currentPage = GET_PAGE(pathname)
+
+	const cssFiles = ["main.css"]
+	const themeStyles = []
+
+	if(currentPage) { cssFiles.push(...currentPage.css) }
+	cssFiles.forEach(injectCSS)
+
+	const updateTheme = theme => {
+		const oldStyles = themeStyles.splice(0, themeStyles.length)
+
+		if(theme === "default") {
+			oldStyles.forEach(x => x.remove())
+		} else {
+			cssFiles.forEach(file => themeStyles.push(injectCSS(`${theme}/${file}`)))
+
+			themeStyles[0].addEventListener("load", () => {
+				oldStyles.forEach(x => x.remove())
+			}, { once: true })
+		}
+	}
+
+	SETTINGS.onChange("general.theme", updateTheme)
 	SETTINGS.load(_settings => {
 		settings = JSON.parse(JSON.stringify(_settings))
 
@@ -256,36 +278,9 @@ function PreInit() {
 			})
 		})
 
-		{ // Inject CSS
-			const themeStyles = []
+		// Inject theme
+		updateTheme(settings.general.theme)
 
-			const cssFiles = ["main.css"]
-			if(currentPage) { cssFiles.push(...currentPage.css) }
-
-			{ // Initial load
-				const theme = settings.general.theme
-				cssFiles.forEach(file => {
-					if(theme !== "default") { themeStyles.push(injectCSS(`${theme}/${file}`)) }
-					injectCSS(file)
-				})
-			}
-
-			const updateTheme = theme => {
-				const oldStyles = themeStyles.splice(0, themeStyles.length)
-
-				if(theme === "default") {
-					oldStyles.forEach(x => x.remove())
-				} else {
-					cssFiles.forEach(file => themeStyles.push(injectCSS(`${theme}/${file}`)))
-
-					themeStyles[0].addEventListener("load", () => {
-						oldStyles.forEach(x => x.remove())
-					}, { once: true })
-				}
-			}
-
-			SETTINGS.onChange("general.theme", updateTheme)
-		}
 		
 		InjectJS.send(
 			"INIT",
