@@ -147,16 +147,16 @@ const INJECT_SCRIPT = () => {
 		}
 
 		if(window.angular) {
-			angular.module("ng").run(["$templateCache", t => {
-				const put = t.put
-				t.put = (key, value) => {
-					const result = put.call(t, key, value)
+			angular.module("ng").run($templateCache => {
+				const put = $templateCache.put
+				$templateCache.put = (key, value) => {
+					const result = put.call($templateCache, key, value)
 
 					if(templates[key]) {
 						delete templates[key]
 
 						ContentJS.listen(`TEMPLATE_${key}`, changedValue => {
-							put.call(t, key, changedValue)
+							put.call($templateCache, key, changedValue)
 						})
 
 						ContentJS.send(`TEMPLATE_${key}`, value)
@@ -165,7 +165,9 @@ const INJECT_SCRIPT = () => {
 
 					return result
 				}
-			}])
+			})
+
+
 
 			if(settings.general.smallChatButton) {
 				HijackAngular("chat", {
