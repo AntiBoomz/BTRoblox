@@ -25,6 +25,11 @@ const InjectJS = {
 				})
 			}
 
+			if(!ev.detail) {
+				console.warn("[BTRoblox] Didn't get event detail from InjectJS", actions)
+				return
+			}
+
 			return callback(...ev.detail)
 		}
 
