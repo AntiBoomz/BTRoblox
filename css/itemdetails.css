@@ -112,12 +112,25 @@ a:not(.disabled) > .btr-icon-content:hover {
 	width: 420px;
 }
 
+.light-theme .btr-preview-container {
+	background: #fff;
+}
+
+.dark-theme .btr-preview-container {
+	background: #393b3d;
+}
+
 #AssetThumbnail.btr-preview-active .thumbnail-span {
 	display: none !important;
 }
 
 #AssetThumbnail.btr-preview-active {
 	pointer-events: none;
+}
+
+.light-theme #AssetThumbnail.btr-preview-active,
+.dark-theme #AssetThumbnail.btr-preview-active {
+	background: none;
 }
 
 #AssetThumbnail.btr-preview-active > * {

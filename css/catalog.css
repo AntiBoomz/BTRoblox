@@ -6,7 +6,7 @@
 	display: none;
 	position: absolute;
 	z-index: 3;
-	padding: 6px;
+	padding: 0 2px;
 	padding-top: 0;
 	left: 0;
 	width: 100%;
@@ -25,95 +25,27 @@
 		display: block;
 	}
 
-	.btr-catalog .item-card .item-card-container:hover {
-		z-index: 2;
-		box-shadow:  0 1px 2px 0 rgba(25,25,25,0.75);
-
-		margin-bottom: -17px;
-	}
-
-	.btr-catalog .item-card .item-card-container:hover .item-card-caption {
-		padding-bottom: 17px;
-	}
-
-	.btr-catalog .item-card .item-card-container[btr-item-type="1"]:hover {
-		margin-bottom: -47px;
-	}
-
-	.btr-catalog .item-card .item-card-container[btr-item-type="1"]:hover .item-card-caption {
-		padding-bottom: 47px;
-	}
-}
-
-/*
-.btr-pager-input {
-	height: 32px;
-	width: 64px;
-	border: 1px solid #B8B8B8;
-	border-radius: 3px;
-
-	margin-right: 8px;
-	-webkit-appearance: none;
-	-moz-appearance: none;
-	text-align: center;
-}
-
-
-@media (min-width: 768px) {
-	.btr-catalog .item-card-container:hover .btr-item-card-more {
-		display: block;
-	}
-
-	body.btr-catalog .item-card {
-		position: relative;
-		height: 76px;
-		margin-bottom: 20%;
-	}
-
 	.btr-catalog .item-card .item-card-container {
-		float: left;
-		box-shadow: none;
-		border-radius: 0;
+		margin-bottom: -13px;
+		padding-bottom: 18px;
+		height: auto;
+	}
+
+	.btr-catalog .item-card .item-card-container[btr-item-type="Asset"] {
+		margin-bottom: -27px;
+		padding-bottom: 32px;
 	}
 
 	.btr-catalog .item-card .item-card-container:hover {
 		z-index: 2;
-		box-shadow: 0 1px 2px 0 rgba(25,25,25,0.75);
-		transition: none;
+		box-shadow:  0 1px 2px 0 rgba(25, 25, 25, 0.5);
+	}
+	
+	.btr-catalog.light-theme .item-card .item-card-container:hover {
+		background-color: #fff;
 	}
 
-	body.btr-catalog .item-card-price {
-		margin-top: 0/*18px*;
-	}
-
-	.btr-catalog .item-card-thumb-container {
-		border: 1px solid #E3E3E3;
-		border-radius: 0;
-	}
-
-	.btr-catalog .item-card-thumb {
-		border-radius: 0;
+	.btr-catalog.dark-theme .item-card .item-card-container:hover {
+		background-color: #393b3d;
 	}
 }
-
-@media (min-width: 992px) {
-	body.btr-catalog .item-card {
-		margin-bottom: 16.67%;
-	}
-}
-
-@media (min-width: 1150px) {
-	.btr-catalog .content {
-		max-width: 1090px;
-	}
-
-	.btr-catalog .item-card .item-card-container {
-		width: 140px;
-	}
-
-	.btr-catalog .item-card .item-card-thumb-container {
-		width: 140px;
-		height: 140px;
-	}
-}
-*/
