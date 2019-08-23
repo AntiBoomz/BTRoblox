@@ -188,22 +188,20 @@ const INJECT_SCRIPT = () => {
 				}
 			})
 
-
-
 			if(settings.general.smallChatButton) {
 				HijackAngular("chat", {
 					chatController(func, args, argMap) {
 						const result = func.apply(this, args)
 
 						try {
-							const { $scope } = argMap
+							const { $scope, chatUtility } = argMap
 
 							const library = $scope.chatLibrary
 							const width = library.chatLayout.widthOfChat
 	
 							$scope.$watch(() => library.chatLayout.collapsed, value => {
 								library.chatLayout.widthOfChat = value ? 54 + 6 : width
-								library.dialogDict.collapsed = value
+								chatUtility.updateDialogsPosition(library)
 							})
 						} catch(ex) {
 							console.error(ex)
