@@ -40,7 +40,8 @@ const INJECT_SCRIPT = () => {
 			const done = {}
 
 			module._invokeQueue.forEach(data => {
-				const [, type, [name, value]] = data
+				const [, type, data2] = data
+				const [name, value] = data2
 				const fn = objects[name]
 				if(!fn) { return }
 
@@ -52,13 +53,33 @@ const INJECT_SCRIPT = () => {
 					return
 				}
 
-				const oldFn = value[value.length - 1]
-				if(typeof oldFn === "function") {
-					value[value.length - 1] = function(...args) {
-						const argMap = {}
-						args.forEach((x, i) => argMap[value[i]] = x)
+				if(typeof value === "function") {
+					const injects = value.$inject
+					const oldFn = value
 
-						return fn.call(this, oldFn, args, argMap)
+					data2[1] = new Proxy(oldFn, {
+						apply(target, thisArg, args) {
+							const argMap = {}
+							args.forEach((x, i) => argMap[injects[i]] = x)
+
+							return fn.call(thisArg, target, args, argMap)
+						}
+					})
+				} else {
+					const injects = value
+					const oldFn = value[value.length - 1]
+
+					if(typeof oldFn === "function") {
+						value[value.length - 1] = new Proxy(oldFn, {
+							apply(target, thisArg, args) {
+								const argMap = {}
+								args.forEach((x, i) => argMap[injects[i]] = x)
+	
+								return fn.call(thisArg, target, args, argMap)
+							}
+						})
+					} else {
+						done[name] = false
 					}
 				}
 			})
