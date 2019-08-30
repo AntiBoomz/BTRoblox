@@ -134,13 +134,13 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	border: 2px solid #0074bd;
 }
 
-.light-theme #header .btr-nav-notif {
+#header.light-theme .btr-nav-notif {
 	background-color: #393b3d;
 	border: 1px solid #393b3d;
 	color: #fff;
 }
 
-.dark-theme #header .btr-nav-notif {
+#header.dark-theme .btr-nav-notif {
 	border-color: #232527;
 }
 
