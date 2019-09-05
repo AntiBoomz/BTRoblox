@@ -90,7 +90,7 @@ pageInit.catalog = function() {
 
 		let currentRequest
 		const checkItem = (anchor, thumb) => {
-			const match = anchor.href.match(/\/(catalog|library|bundles)\/(\d+)/)
+			const match = anchor.href && anchor.href.match(/\/(catalog|library|bundles)\/(\d+)/)
 
 			if(!match) {
 				delete thumb.dataset.btrOwnedId
@@ -112,21 +112,20 @@ pageInit.catalog = function() {
 			thumb.dataset.btrOwnedId = id
 		}
 
-		document.$watch("#main-view > div[items-container]").$then()
-			.$watchAll(".catalog-results", results => {
-				results.$watch(".hlist").$then()
-					.$watchAll(".list-item", item => {
-						item.$watch([".item-card-container", ".item-card-thumb-container"], (anchor, thumb) => {
+		document.$watch("#results").$then()
+			.$watchAll(".hlist", hlist => {
+				hlist.$watchAll(".list-item", item => {
+					item.$watch([".item-card-container", ".item-card-thumb-container"], (anchor, thumb) => {
+						checkItem(anchor, thumb)
+						
+						new MutationObserver(() => {
 							checkItem(anchor, thumb)
-
-							new MutationObserver(() => {
-								checkItem(anchor, thumb)
-							}).observe(anchor, {
-								attributes: true,
-								attributeFilter: ["href"]
-							})
+						}).observe(anchor, {
+							attributes: true,
+							attributeFilter: ["href"]
 						})
 					})
+				})
 			})
 	}
 }
