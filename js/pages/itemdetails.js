@@ -599,11 +599,17 @@ pageInit.itemdetails = function(category, assetId) {
 				})
 		
 		modifyTemplate("recommendations", template => {
-			const label = template.$find(".item-card-price .text-robux")
+			const label = template.$find(".item-card-price .text-robux-tile")
 
-			label.style.display = "inline"
-			label.textContent += ` ($\{{::((item.price*${GetRobuxRatio()[0]})/${GetRobuxRatio()[1]}) | number:2}})`
-			label.title = "R$ " + label.textContent
+			if(label) {
+				label.style.display = "inline"
+				label.textContent += ` ($\{{::((item.price*${GetRobuxRatio()[0]})/${GetRobuxRatio()[1]}) | number:2}})`
+				label.title = "R$ " + label.textContent
+			} else {
+				if(IS_DEV_MODE) {
+					alert("BTRoblox modifyTemplate('recommendations'): Missing label")
+				}
+			}
 		})
 	}
 
