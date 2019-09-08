@@ -49,9 +49,9 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 
 		const buttons = this.buttons = html`
 		<div class=btr-thumb-btn-container>
-			<div class="btr-thumb-btn btr-hats-btn"><span class=btr-icon-hat></span></div>
-			<div class="btr-thumb-btn btr-body-btn"><span class=btr-icon-body></span></div>
-			<div class="btr-thumb-btn btr-preview-btn"><span class=btr-icon-preview></span></div>
+			<div class="btr-thumb-btn btn-control-xs btr-hats-btn"><span class=btr-icon-hat></span></div>
+			<div class="btr-thumb-btn btn-control-xs btr-body-btn"><span class=btr-icon-body></span></div>
+			<div class="btr-thumb-btn btn-control-xs btr-preview-btn"><span class=btr-icon-preview></span></div>
 			<div class="btr-thumb-popup btr-body-popup">
 
 				<div class=btr-body-outfits>

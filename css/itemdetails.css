@@ -299,16 +299,18 @@ a:not(.disabled) > .btr-icon-content:hover {
 	justify-content: center;
 	align-items: center;
 
-	background: #fff;
-	border: 1px solid #B8B8B8;
-	border-radius: 3px;
-	transition: box-shadow .2 ease-in-out;
-
-	user-select: none;
-	-moz-user-select: none;
 	z-index: 5;
 
 	cursor: pointer;
+}
+
+.dark-theme #AssetThumbnail:not(.btr-preview-active) .btr-thumb-btn.btn-control-xs {
+	border-radius: 3px;
+}
+
+.dark-theme .btr-preview-active .btr-thumb-btn.btn-control-xs {
+	background-color: #656668;
+	box-shadow: 0 1px 4px 0 rgba(25,25,25,0.3);
 }
 
 .btr-thumb-btn[disabled], .btr-thumb-btn[disabled]:hover {
@@ -322,6 +324,7 @@ a:not(.disabled) > .btr-icon-content:hover {
 	width: 44px;
 	height: 44px;
 }
+
 
 #AssetThumbnail:not(.btr-preview-active) .btr-thumb-btn:not(.btr-preview-btn),
 #AssetThumbnail:not(.btr-preview-active) .btr-playertype-switch,
@@ -345,6 +348,18 @@ a:not(.disabled) > .btr-icon-content:hover {
 .btr-icon-hat { background-position: 0 0; }
 .btr-icon-body { background-position: 0 -28px; }
 .btr-icon-preview { background-position: 0 -56px; }
+
+.dark-theme .btr-icon-preview,
+.dark-theme .btr-preview-active .btr-thumb-btn span {
+	filter: brightness(0) invert(1);
+	opacity: 0.7;
+}
+
+.dark-theme .btr-preview-active .btr-thumb-btn:not(.checked) span,
+.dark-theme .btr-preview-btn:hover .btr-icon-preview {
+	opacity: 1;
+}
+
 
 .btr-thumb-btn:not(.checked) span {
 	background-position-x: -28px;
