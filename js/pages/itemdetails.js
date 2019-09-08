@@ -25,12 +25,12 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		</div>`
 
 		this.dropdown = html`
-		<div class="input-group-btn btr-dropdown-container" style="position:absolute;top:6px;left:6px;width:140px;display:none">
+		<div class="input-group-btn btr-dropdown-container" style="position:absolute;top:6px;left:6px;display:none;min-width:100px;max-width:280px;width:auto;">
 			<button type=button class=input-dropdown-btn data-toggle=dropdown>
-				<span class=rbx-selection-label data-bind=label></span>
-				<span class=icon-down-16x16></span>
+				<span class=rbx-selection-label data-bind=label style="overflow:hidden;text-overflow:ellipsis;max-width:230px;"></span>
+				<span class=icon-down-16x16 style="margin-left:8px"></span>
 			</button>
-			<ul data-toggle=dropdown-menu class=dropdown-menu role=menu></ul>
+			<ul data-toggle=dropdown-menu class=dropdown-menu role=menu style="position:relative"></ul>
 		</div>`
 
 		this.dropdownMenu = this.dropdown.$find(".dropdown-menu")
@@ -345,7 +345,9 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		super.playAnimation(anim.assetId)
 		
 		if(this.hasDropdown) {
-			this.dropdown.$find("[data-bind='label']").textContent = anim.isBundleAnim ? "" : anim.name
+			const label = this.dropdown.$find("[data-bind='label']")
+			label.textContent = anim.isBundleAnim ? "Emotes" : anim.name
+			label.title = anim.isBundleAnim ? "" : anim.name
 		}
 
 		if(this.hasBundleAnims) {
@@ -380,7 +382,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		const anim = this.animMap[assetId] = { assetId }
 		anim.name = name
 		
-		const btn = html`<li><a>${anim.name}</a></li>`
+		const btn = html`<li><a title="${anim.name}" style="text-overflow:ellipsis;overflow:hidden">${anim.name}</a></li>`
 		btn.$on("click", () => this.playAnimation(anim.assetId))
 
 		this.dropdownMenu.append(btn)
@@ -522,7 +524,7 @@ const initPreview = (assetId, assetTypeId, isBundle) => {
 						isAnimation = true
 
 						const animId = child.AnimationId
-						preview.addAnimation(animId, String(animId))
+						preview.addAnimation(animId, child.Name)
 						preview.playAnimation(animId)
 					}
 				})
