@@ -11,7 +11,7 @@ const IS_BACKGROUND_PAGE = chrome && chrome.extension && chrome.extension.getBac
 
 
 const AssetShortcuts = {
-	"res/previewer/characterModels.rbxm": "rbxassetid://2957693598",
+	"res/previewer/characterModels.rbxm": "rbxassetid://2957693598&version=3",
 	"res/previewer/face.png": "rbxassetid://2957705858",
 	
 	"res/previewer/meshes/leftarm.mesh": "rbxassetid://2957740508",
