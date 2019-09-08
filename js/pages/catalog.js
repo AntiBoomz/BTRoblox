@@ -42,7 +42,7 @@ pageInit.catalog = function() {
 				</div>
 			</div>`
 	
-			cont.$find(".item-card-caption").append(hover)
+			cont.$find(".item-card-caption").after(hover)
 		})
 	})
 

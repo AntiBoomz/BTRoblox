@@ -3,13 +3,9 @@
 }
 
 .btr-catalog .item-card-container .btr-item-card-more {
-	display: none;
 	position: absolute;
-	z-index: 3;
+	display: none;
 	padding: 0 2px;
-	padding-top: 0;
-	left: 0;
-	width: 100%;
 }
 
 .btr-catalog .catalog-results .item-cards-stackable {
@@ -25,13 +21,12 @@
 		display: block;
 	}
 
-	.btr-catalog .item-card .item-card-container {
+	.btr-catalog .item-card .item-card-container:hover {
 		margin-bottom: -13px;
 		padding-bottom: 18px;
-		height: auto;
 	}
 
-	.btr-catalog .item-card .item-card-container[btr-item-type="Asset"] {
+	.btr-catalog .item-card .item-card-container[btr-item-type="Asset"]:hover {
 		margin-bottom: -27px;
 		padding-bottom: 32px;
 	}
