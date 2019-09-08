@@ -440,58 +440,83 @@ const RBXAvatar = (() => {
 		getScaleMod(partName, scaleType, partScaleType) { // Only use partScaleType with accessories! C:
 			if(this.playerType !== "R15") { return new Vector3(1, 1, 1) }
 
-			let baseScale
-			let startScale
-			let endScale
+			const result = new Vector3()
 
 			if(partName === "Head") {
-				baseScale = new Vector3().setScalar(this.scales.head)
+				result.setScalar(this.scales.head)
 			} else {
-				baseScale = new Vector3(this.scales.width, this.scales.height, this.scales.depth)
+				result.set(this.scales.width, this.scales.height, this.scales.depth)
 			}
+
+			const defaultMod = ScaleMods.Default[partName]
+
+			if(!defaultMod) {
+				return result
+			}
+
+			const rthroMod = ScaleMods.Rthro[partName]
+			const propMod = ScaleMods.Proportion[partName]
+
+			const startScale = new Vector3()
+			const endScale = new Vector3()
 
 			if(scaleType === "ProportionsNormal") {
-				const bodyMod = ScaleMods.Rthro[partName] || new Vector3(1, 1, 1)
-				const propMod = ScaleMods.Proportion[partName] || new Vector3(1, 1, 1)
+				startScale.copy(rthroMod)
 
 				if(partScaleType && partScaleType !== "ProportionsNormal" && partScaleType !== "ProportionsSlender") {
-					const defaultMod = ScaleMods.Default[partName] || new Vector3(1, 1, 1)
-
-					startScale = bodyMod.clone()
-					endScale = bodyMod.clone().multiply(defaultMod).multiply(new Vector3(1, 1, 1).lerp(new Vector3(1, 1, 1).divide(propMod), this.scales.proportion))
+					endScale.multiply(rthroMod).multiply(defaultMod).multiply(
+						new Vector3(1, 1, 1).lerp(
+							new Vector3(1, 1, 1).divide(propMod),
+							this.scales.proportion
+						)
+					)
 				} else {
-					startScale = bodyMod.clone()
-					endScale = new Vector3(1, 1, 1).lerp(new Vector3(1, 1, 1).divide(propMod), this.scales.proportion)
+					endScale.set(1, 1, 1).lerp(
+						new Vector3(1, 1, 1).divide(propMod),
+						this.scales.proportion
+					)
 				}
 			} else if(scaleType === "ProportionsSlender") {
-				const bodyMod = ScaleMods.Rthro[partName] || new Vector3(1, 1, 1)
-				const propMod = ScaleMods.Proportion[partName] || new Vector3(1, 1, 1)
+				startScale.copy(rthroMod).multiply(propMod)
 
 				if(partScaleType && partScaleType !== "ProportionsNormal" && partScaleType !== "ProportionsSlender") {
-					const defaultMod = ScaleMods.Default[partName] || new Vector3(1, 1, 1)
-
-					startScale = bodyMod.clone().multiply(propMod)
-					endScale = bodyMod.clone().multiply(defaultMod).multiply(propMod).multiply(new Vector3(1, 1, 1).lerp(new Vector3(1, 1, 1).divide(propMod), this.scales.proportion))
+					endScale.copy(rthroMod).multiply(defaultMod).multiply(propMod).multiply(
+						new Vector3(1, 1, 1).lerp(
+							new Vector3(1, 1, 1).divide(propMod),
+							this.scales.proportion
+						)
+					)
 				} else {
-					startScale = bodyMod.clone().multiply(propMod)
-					endScale = propMod.clone().lerp(new Vector3(1, 1, 1), this.scales.proportion)
+					endScale.copy(propMod).lerp(
+						new Vector3(1, 1, 1),
+						this.scales.proportion
+					)
 				}
 			} else {
-				const bodyMod = ScaleMods.Default[partName] || new Vector3(1, 1, 1)
-				const propMod = ScaleMods.Proportion[partName] || new Vector3(1, 1, 1)
+				startScale.set(1, 1, 1)
 
 				if(partScaleType && (partScaleType === "ProportionsNormal" || partScaleType === "ProportionsSlender")) {
-					const rthroMod = ScaleMods.Rthro[partName] || new Vector3(1, 1, 1)
-
-					startScale = new Vector3(1, 1, 1)
-					endScale = new Vector3(1, 1, 1).divide(rthroMod).multiply(new Vector3(1, 1, 1).lerp(new Vector3(1, 1, 1).divide(propMod), this.scales.proportion))
+					endScale.set(1, 1, 1).divide(rthroMod).multiply(
+						new Vector3(1, 1, 1).lerp(
+							new Vector3(1, 1, 1).divide(propMod),
+							this.scales.proportion
+						)
+					)
 				} else {
-					startScale = new Vector3(1, 1, 1)
-					endScale = bodyMod.clone().multiply(new Vector3(1, 1, 1).lerp(new Vector3(1, 1, 1).divide(propMod), this.scales.proportion))
+					endScale.copy(defaultMod).multiply(
+						new Vector3(1, 1, 1).lerp(
+							new Vector3(1, 1, 1).divide(propMod),
+							this.scales.proportion
+						)
+					)
 				}
 			}
 
-			return baseScale.multiply(startScale.lerp(endScale, this.scales.bodyType))
+			result.multiply(
+				startScale.lerp(endScale, this.scales.bodyType)
+			)
+
+			return result
 		}
 
 		_refreshRig() {
@@ -829,12 +854,15 @@ const RBXAvatar = (() => {
 				// Calculate hip height
 
 				const rootHeight = this.parts.HumanoidRootPart.rbxSize[1] / 2
-				const [min, max] = [leftHeight - rootHeight, rightHeight - rootHeight].sort((a, b) => a - b)
 
-				const hipHeight = min / max >= 0.95 ? min : max
+				let min = leftHeight - rootHeight
+				let max = rightHeight - rootHeight
+				if(max < min) { [max, min] = [min, max] }
+
+				const hipHeight = min >= max * 0.95 ? min : max
 
 				this.hipOffsetPos.setY(hipHeight + rootHeight)
-				this.animator.setRootScale(hipHeight / 1.35)
+				this.animator.setRootScale(hipHeight / 2)
 			}
 
 			// Remove old accessories
