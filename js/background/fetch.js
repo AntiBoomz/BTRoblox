@@ -4,7 +4,7 @@ const invalidXsrfTokens = {}
 let cachedXsrfToken
 
 const OwnerAssetCache = {
-	assetTypes: ["17", "18", "19", "41", "42", "43", "44", "45", "46", "47", "11", "12", "bundles", "8"],
+	assetTypes: ["17", "18", "19", "41", "42", "43", "44", "45", "46", "47", "11", "12", "bundles", "8", "61"],
 	data: null,
 	assetMap: {},
 

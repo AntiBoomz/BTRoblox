@@ -3,35 +3,31 @@
 const pageInit = {}
 const startDate = new Date()
 
-const AssetTypeIds = (() => {
-	const acc = ["Hair", "Face", "Neck", "Shoulder", "Front", "Back", "Waist"]
-	const anim = ["Climb", "Death", "Fall", "Idle", "Jump", "Run", "Swim", "Walk", "Pose"]
-
-	acc.forEach((value, index) => { acc[index] = `${value}Accessory` })
-	anim.forEach((value, index) => { anim[index] = `${value}Animation` })
-
-	return [null,
-		"Image", "TShirt", "Audio", "Mesh", "Lua", "HTML", "Text", "Hat", "Place", "Model", // 10
-		"Shirt", "Pants", "Decal", "null", "null", "Avatar", "Head", "Face", "Gear", "null", // 20
-		"Badge", "Group Emblem", "null", "Animation", "Arms", "Legs", "Torso", "RightArm", "LeftArm", "LeftLeg", // 30
-		"RightLeg", "Package", "YouTubeVideo", "Game Pass", "App", "null", "Code", "Plugin", "SolidModel", "MeshPart", // 40
-		...acc, // 47
-		...anim // 56
-	]
-})()
+const AssetTypeIds = [
+	null,
+	"Image", "TShirt", "Audio", "Mesh", "Lua", "HTML", "Text", "Hat", "Place", "Model", // 10
+	"Shirt", "Pants", "Decal", "null", "null", "Avatar", "Head", "Face", "Gear", "null", // 20
+	"Badge", "Group Emblem", "null", "Animation", "Arms", "Legs", "Torso", "RightArm", "LeftArm", "LeftLeg", // 30
+	"RightLeg", "Package", "YouTubeVideo", "Game Pass", "App", "null", "Code", "Plugin", "SolidModel", "MeshPart", // 40
+	"HairAccessory", "FaceAccessory", "NeckAccessory", "ShoulderAccessory", "FrontAccessory", "BackAccessory", "WaistAccessory", // 47
+	"ClimbAnimation", "DeathAnimation", "FallAnimation", "IdleAnimation", "JumpAnimation", "RunAnimation", "SwimAnimation", "WalkAnimation", "PoseAnimation", // 56
+	"EarAccessory", "EyeAccessory", "null", "null", // 60
+	"EmoteAnimation"
+]
 
 const StrictCheckAssetTypeIds = [2, 3, 10, 11, 12, 13, 18, 24, 39, 40]
 const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34, 35, 37]
-const AnimationPreviewAssetTypeIds = [24, 48, 49, 50, 51, 52, 53, 54, 55, 56]
+const AnimationPreviewAssetTypeIds = [24, 48, 49, 50, 51, 52, 53, 54, 55, 56, 61]
 const WearableAssetTypeIds = [2, 8, 11, 12, 17, 18, 27, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47]
 const InvalidDownloadableAssetTypeIds = [5, 6, 7, 16, 21, 32, 33, 34, 35, 37]
 const ContainerAssetTypeIds = {
-	2: { typeId: 1, filter: x => x.ClassName === "ShirtGraphic", prop: "Graphic" },
-	11: { typeId: 1, filter: x => x.ClassName === "Shirt", prop: "ShirtTemplate" },
-	12: { typeId: 1, filter: x => x.ClassName === "Pants", prop: "PantsTemplate" },
-	13: { typeId: 1, filter: x => x.ClassName === "Decal", prop: "Texture" },
-	18: { typeId: 1, filter: x => x.ClassName === "Decal", prop: "Texture" },
-	40: { typeId: 4, filter: x => x.ClassName === "MeshPart", prop: "MeshID" }
+	2: { filter: x => x.ClassName === "ShirtGraphic", prop: "Graphic" },
+	11: { filter: x => x.ClassName === "Shirt", prop: "ShirtTemplate" },
+	12: { filter: x => x.ClassName === "Pants", prop: "PantsTemplate" },
+	13: { filter: x => x.ClassName === "Decal", prop: "Texture" },
+	18: { filter: x => x.ClassName === "Decal", prop: "Texture" },
+	40: { filter: x => x.ClassName === "MeshPart", prop: "MeshID" },
+	61: { filter: x => x.ClassName === "Animation", prop: "AnimationId" }
 }
 
 const ProhibitedReasons = {

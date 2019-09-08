@@ -518,6 +518,12 @@ const initPreview = (assetId, assetTypeId, isBundle) => {
 
 						preview.addAnimation(itemId, String(itemId))
 						preview.playAnimation(itemId)
+					} else if(child.ClassName === "Animation") {
+						isAnimation = true
+
+						const animId = child.AnimationId
+						preview.addAnimation(animId, String(animId))
+						preview.playAnimation(animId)
 					}
 				})
 
