@@ -110,6 +110,8 @@ a:not(.disabled) > .btr-icon-content:hover {
 	position: absolute;
 	height: 420px;
 	width: 420px;
+
+	top: 0;
 }
 
 .light-theme .btr-preview-container {
