@@ -36,13 +36,11 @@ pageInit.catalog = function() {
 			cont.setAttribute("btr-item-type", "{{item.itemType}}")
 	
 			const hover = html`<div class="btr-item-card-more">
-				<div class=text-secondary>
-					<div class="text-overflow item-card-label" ng-show="item.itemType==='Asset'">Updated: <span class=btr-updated-label>Loading...</span></div>
-					<div class="text-overflow item-card-label">Sales: {{item.purchaseCount | number:0}}</div>
-				</div>
+				<div class="text-overflow item-card-label" ng-show="item.itemType==='Asset'">Updated: <span class=btr-updated-label>Loading...</span></div>
+				<div class="text-overflow item-card-label">Sales: {{item.purchaseCount | number:0}}</div>
 			</div>`
 	
-			cont.$find(".item-card-caption").after(hover)
+			cont.$find(".item-card-caption").append(hover)
 		})
 	})
 

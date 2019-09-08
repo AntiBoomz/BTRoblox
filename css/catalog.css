@@ -3,9 +3,13 @@
 }
 
 .btr-catalog .item-card-container .btr-item-card-more {
-	position: absolute;
 	display: none;
-	padding: 0 2px;
+
+	position: absolute;
+	left: 0;
+	right: 0;
+	padding-left: inherit;
+	padding-right: inherit;
 }
 
 .btr-catalog .catalog-results .item-cards-stackable {
