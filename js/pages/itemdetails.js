@@ -692,8 +692,12 @@ pageInit.itemdetails = function(category, assetId) {
 
 			const seeMore = owners.$find(".btr-see-more-owners")
 
-			const createElement = ({ userId, userName, item, thumbUrl }) => {
+			const createElement = ({ userId, userName, item }) => {
 				const url = userId ? `/users/${userId}/profile` : ""
+
+				const thumbUrl = userId
+					? `https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=60&height=60&format=png`
+					: `https://t0.rbxcdn.com/36eac87cdcca4e2027787d6ceae80507`
 
 				const elem = html`
 				<div class=btr-owner-item>
@@ -721,15 +725,22 @@ pageInit.itemdetails = function(category, assetId) {
 				const keys = Object.keys(request)
 				if(!keys.length) { return SyncPromise.resolve() }
 
-				const url = `https://www.roblox.com/avatar-thumbnails?params=[${keys.map(x => `{userId:${x}}`).join(",")}]`
-				return fetch(url).then(async resp => {
+				return $.fetch(`https://users.roblox.com/v1/users`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json"
+					},
+					body: JSON.stringify({
+						userIds: keys
+					})
+				}).then(async resp => {
 					const json = await resp.json()
 
-					json.forEach(user => {
+					json.data.forEach(user => {
 						const list = request[user.id]
+
 						list.forEach(x => {
 							x.userName = user.name
-							x.thumbUrl = user.thumbnailUrl
 						})
 					})
 				})
@@ -788,8 +799,7 @@ pageInit.itemdetails = function(category, assetId) {
 							const self = {
 								item,
 								userId,
-								userName: `User#${userId}`,
-								thumbUrl: `https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=60&height=60&format=png`
+								userName: `User#${userId}`
 							}
 	
 							const list = request[userId] = request[userId] || []
@@ -798,9 +808,8 @@ pageInit.itemdetails = function(category, assetId) {
 						} else {
 							const self = {
 								item,
-								userId: "",
-								userName: `Unknown User`,
-								thumbUrl: `https://t0.rbxcdn.com/36eac87cdcca4e2027787d6ceae80507`
+								userId: 0,
+								userName: `Unknown User`
 							}
 	
 							elems.push(self)
