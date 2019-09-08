@@ -130,20 +130,24 @@ const RBXAvatar = (() => {
 		src = src || emptySrc
 
 		if(img.src !== src) {
+			img.src = ""
+
+			const index = imageLoadIndex++
+			imageLoadMap.set(img, index)
+
+			const finish = () => {
+				if(imageLoadMap.get(img) === index) {
+					imageLoadMap.delete(img)
+					img.updateListeners.forEach(fn => fn())
+				}
+			}
+
+			img.addEventListener("load", finish, { once: true })
 			img.src = src
 
 			if(img.complete) {
-				img.updateListeners.forEach(fn => fn())
-			} else {
-				const index = imageLoadIndex++
-				imageLoadMap.set(img, index)
-
-				img.addEventListener("load", () => {
-					if(imageLoadMap.get(img) === index) {
-						imageLoadMap.delete(img)
-						img.updateListeners.forEach(fn => fn())
-					}
-				}, { once: true })
+				img.removeEventListener("load", finish, { once: true })
+				finish()
 			}
 		}
 	}
