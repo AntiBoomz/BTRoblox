@@ -28,16 +28,14 @@
 	.btr-catalog .item-card .item-card-container:hover {
 		margin-bottom: -13px;
 		padding-bottom: 18px;
+		z-index: 2;
+		box-shadow:  0 1px 2px 0 rgba(25, 25, 25, 0.5);
+		height: auto;
 	}
 
 	.btr-catalog .item-card .item-card-container[btr-item-type="Asset"]:hover {
 		margin-bottom: -27px;
 		padding-bottom: 32px;
-	}
-
-	.btr-catalog .item-card .item-card-container:hover {
-		z-index: 2;
-		box-shadow:  0 1px 2px 0 rgba(25, 25, 25, 0.5);
 	}
 	
 	.btr-catalog.light-theme .item-card .item-card-container:hover {
