@@ -62,6 +62,8 @@ API Docs
 | [premiumfeatures.roblox.com](https://premiumfeatures.roblox.com/docs) | This API is for premium features and anything pertaining to account add ons |
 | [presence.roblox.com](https://presence.roblox.com/docs) | All endpoints for managing presence. |
 | [publish.roblox.com](https://publish.roblox.com/docs) | All endpoints handling file uploads. |
+| [ratings.roblox.com](https://ratings.roblox.com/docs) | This Api is temporarily offline. |
+| [surveys.roblox.com](https://surveys.roblox.com/docs) | This Api is temporarily offline. |
 | [textfilter.roblox.com](https://textfilter.roblox.com/docs) | High volume text filtering. |
 | [thumbnails.roblox.com](https://thumbnails.roblox.com/docs) | Endpoints for requesting thumbnails. |
 | [translationroles.roblox.com](https://translationroles.roblox.com/docs) | Manages translation roles of developers in game localization. |
