@@ -10,6 +10,7 @@ BTRoblox, or Better Roblox, is an extension that aims to enhance Roblox website'
 Links
 -----
 
+* [Roblox Consolidated Web Apis](https://api.roblox.com/docs?useConsolidatedPage=true)
 * [Roblox Mesh Format (wiki)](https://developer.roblox.com/articles/Roblox-Mesh-Format) <!--Backup: https://pastebin.com/yCknWRaj-->
 * [Roblox Web Apis by Seranok](https://github.com/matthewdean/roblox-web-apis)
 * [API Docs](#api-docs)
@@ -34,6 +35,7 @@ API Docs
 | [billing.roblox.com](https://billing.roblox.com/docs) | Real money transactions and interaction. |
 | [captcha.roblox.com](https://captcha.roblox.com/docs) | Captcha Api Site |
 | [catalog.roblox.com](https://catalog.roblox.com/docs) | Catalog items browsing and searching. Content and user based catalog items recommendations. |
+| [cdnproviders.roblox.com](https://cdnproviders.roblox.com/docs) | Purpose of Api here. |
 | [chat.roblox.com](https://chat.roblox.com/docs) | All chat and party related endpoints. |
 | [clientsettings.roblox.com](https://clientsettings.roblox.com/docs) | Used by various Roblox clients to retrieve configuration information. |
 | [clientsettingscdn.roblox.com](https://clientsettingscdn.roblox.com/docs) | Used by various Roblox clients to retrieve configuration information. |
