@@ -1082,6 +1082,7 @@ const RBXParser = (() => {
 				.sort((a, b) => a.Time - b.Time)
 			
 			this.result = {
+				authoredHipHeight: sequence.AuthoredHipHeight || null,
 				length: keyframes[keyframes.length - 1].Time,
 				loop: !!sequence.Loop,
 				keyframes: {}
