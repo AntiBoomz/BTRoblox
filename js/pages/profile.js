@@ -559,7 +559,7 @@ pageInit.profile = function(userId) {
 								<span class="avatar-card-link friend-avatar">
 									<img alt="${friend.Username}" class="avatar-card-image" src="/avatar-thumbnail/image?userId=${friend.Id}&width=100&height=100&format=png">
 								</span>
-								<span class="text-overflow friend-name">${friend.Username}</span>
+								<span class="text-overflow friend-name font-caption-header">${friend.Username}</span>
 							</a>
 						</div>
 					</li>`)
