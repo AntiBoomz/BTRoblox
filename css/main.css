@@ -70,7 +70,7 @@
 
 /* Navigation */
 
-.icon-nav-friend-btr, .icon-nav-message-btr, .icon-nav-bc-btr {
+.icon-nav-friend-btr, .icon-nav-message-btr {
 	background-image: url(/res/nav2.svg);
 	background-repeat: no-repeat;
 	background-size: auto auto;
@@ -79,8 +79,15 @@
 	display: inline-block;
 }
 
-.icon-nav-bc-btr { background-position: 0 -56px; }
-a:hover .icon-nav-bc-btr { background-position: -28px -56px; }
+.icon-nav-premium-btr {
+	background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI+PHBhdGggZD0iTTE0IDE0VjJIMnYxNGEyIDIgMCAwIDEtMi0yVjJhMiAyIDAgMCAxIDItMmgxMmEyIDIgMCAwIDEgMiAydjEyYTIgMiAwIDAgMS0yIDJIOHYtMnptLTItOHY2SDh2LTJoMlY2SDZ2MTBINFY0aDh6IiBmaWxsPSIjMzkzYjNkIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiLz48L3N2Zz4=);
+	background-repeat: no-repeat;
+	background-size: 22px;
+	background-position: center;
+	width: 28px;
+	height: 28px;
+	display: inline-block;
+}
 
 .icon-nav-friend-btr { background-position: 0 -28px; }
 a:hover .icon-nav-friend-btr { background-position: -28px -28px; }
@@ -88,27 +95,26 @@ a:hover .icon-nav-friend-btr { background-position: -28px -28px; }
 .icon-nav-message-btr { background-position: 0 0; }
 a:hover .icon-nav-message-btr { background-position: -28px 0; }
 
-.dark-theme .icon-nav-bc-btr { background-position: 0 -56px; filter: invert(74%); }
-.dark-theme a:hover .icon-nav-bc-btr { background-position: 0 -56px; filter: invert(100%); }
+.dark-theme .icon-nav-premium-btr { filter: invert(100%); }
+.dark-theme a:hover .icon-nav-premium-btr { filter: invert(100%) brightness(2); }
 
 .light-theme .icon-nav-friend-btr { filter: invert(76%); }
 .light-theme .icon-nav-message-btr { filter: invert(76%); }
-.light-theme a:not(:hover) .icon-nav-bc-btr { filter: invert(24%); }
-.light-theme a:hover .icon-nav-bc-btr { background-position: 0 -56px; }
+.light-theme a:not(:hover) .icon-nav-premium-btr { filter: invert(24%); }
 
 #nav-message .notification-blue, #nav-friends .notification-blue {
 	display: none;
 }
 
-#nav-bc:hover {
+#nav-premium:hover {
 	color: #00a2ff;
 }
 
-.light-theme #nav-bc:hover {
+.light-theme #nav-premium:hover {
 	color: #393b3d;
 }
 
-.dark-theme #nav-bc:hover {
+.dark-theme #nav-premium:hover {
 	color: #fff;
 }
 

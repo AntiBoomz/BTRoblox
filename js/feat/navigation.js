@@ -334,9 +334,9 @@ const Navigation = (() => {
 			.$watch("#nav-blog", blog => {
 				blog.parentNode.before(html`
 				<li>
-					<a href=/premium/membership id=nav-bc class="dynamic-overflow-container text-nav">
-						<div><span class=icon-nav-bc-btr></span></div>
-						<span class="font-header-2 dynamic-ellipsis-item">Builders Club</span>
+					<a href=/premium/membership id=nav-premium class="dynamic-overflow-container text-nav">
+						<div><span class=icon-nav-premium-btr></span></div>
+						<span class="font-header-2 dynamic-ellipsis-item">Premium</span>
 					</a>
 				</li>`)
 	
