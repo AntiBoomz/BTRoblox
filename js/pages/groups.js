@@ -24,8 +24,11 @@
 				const about = list.$find("#about")
 				about.setAttribute("ng-click", "Data.btrGamesTabSelected=false")
 				about.setAttribute("ng-class", about.getAttribute("ng-class").replace(/Data.activeTab === /, "!Data.btrGamesTabSelected && Data.activeTab === "))
-				about.after(html`<li class="rbx-tab group-tab" ng-class="{'active': Data.btrGamesTabSelected && Data.activeTab === groupConstants.currentTab[1] }" ng-if="library.currentGroup.areGroupGamesVisible" ng-click="Data.btrGamesTabSelected=true" ui-sref=about><a class=rbx-tab-heading><span class=text-lead>Games</span></a>`)
-			
+
+				const games = html`<li class="rbx-tab group-tab" ng-if="library.currentGroup.areGroupGamesVisible" ng-click="Data.btrGamesTabSelected=true" ui-sref=about><a class=rbx-tab-heading><span class=text-lead>Games</span></a>`
+				games.setAttribute("ng-class", about.getAttribute("ng-class").replace(/!(?=Data.btrGamesTabSelected)/, ""))
+				about.after(games)
+
 				gamesTemplate.$find(">*").setAttribute("ng-class", "{'ng-hide': library.currentGroup.areGroupGamesVisible && !Data.btrGamesTabSelected}")
 				aboutTemplate.$find("group-members-list").setAttribute("ng-class", "{'ng-hide': library.currentGroup.areGroupGamesVisible && Data.btrGamesTabSelected}")
 				
@@ -87,7 +90,7 @@
 
 		if(settings.groups.groupWallRanks) {
 			modifyTemplate("group-comments", template => {
-				template.$find(".wall-comment-name").append(html`<span class="btr-grouprank text-label">({{post.poster.role.name}})</span>`)
+				template.$find(".list-body > .text-name").after(html`<span class="btr-grouprank text-label">({{post.poster.role.name}})</span>`)
 			})
 		}
 	}
