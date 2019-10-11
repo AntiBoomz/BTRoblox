@@ -1,4 +1,6 @@
-html body {
+html body,
+html body#rbx-body,
+html body.light-theme {
 	background: #9AE4E8 url(/res/skyBg.png) left 40px no-repeat fixed;
 }
 

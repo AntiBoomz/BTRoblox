@@ -4,7 +4,8 @@ html {
 	min-height: 100%;
 }
 
-html body {
+html body,
+html body.light-theme {
 	background: none;
 }
 

@@ -1,8 +1,8 @@
-html body .container-main > .content {
-	background: #FFF;
+.btr-no-hamburger .container-main {
+	margin-left: 175px;
 }
 
-html .btr-catalog #catalog-content {
-	background: none;
-	box-shadow: none;
+html .container-main > .content {
+	margin: 40px !important;
+	max-width: none !important;
 }

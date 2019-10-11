@@ -295,7 +295,7 @@
 	position: relative;
 	display: inline-block;
 	background: none;
-	height: 16px;
+	height: auto;
 	padding-left: 22px;
 
 	vertical-align: middle;
@@ -346,6 +346,8 @@
 	font-size: 14px;
 	padding: 1px 4px;
 	font-weight: 400;
+
+	max-width: 100%;
 
 	color: #191919;
 }

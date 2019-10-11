@@ -14,12 +14,17 @@ const SettingsDiv = (() => {
 					<div>
 						<select path=theme>
 							<option selected disabled>Select Theme: (%opt%)</option>
-							<option value=default>Default</option>
-							<option value=simblk>Simply Black</option>
-							<option value=sky>Sky</option>
-							<option value=red>Red</option>
-							<option value=night>Dark As Night (WIP)</option>
+							<optgroup label="Themes">
+								<option value=default>Default</option>
+							</optgroup>
+							<optgroup label="Legacy Themes">
+								<option value=simblk>Simply Black</option>
+								<option value=sky>Sky</option>
+								<option value=red>Red</option>
+								<option value=night>Dark As Night</option>
+							</optgroup>
 						</select>
+						<checkbox label="Legacy Theme Compatibility Mode (Disables light/dark themes)" path=disableRobloxThemes></checkbox>
 					</div>
 
 					<checkbox label="Hide Ads" path=hideAds></checkbox>
