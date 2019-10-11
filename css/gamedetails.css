@@ -21,6 +21,10 @@ body .btr-game-main-container {
 	padding: 0 12px 12px;
 }
 
+.light-theme .btr-game-main-container {
+	padding: 12px;
+}
+
 .btr-game-main-container .game-main-content {
 	background: none;
 	padding-left: 0;
