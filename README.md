@@ -69,6 +69,7 @@ API Docs
 | [translationroles.roblox.com](https://translationroles.roblox.com/docs) | Manages translation roles of developers in game localization. |
 | [translations.roblox.com](https://translations.roblox.com/docs) | This Api is temporarily offline. |
 | [users.roblox.com](https://users.roblox.com/docs) | For direct Roblox user information. |
+| [voice.roblox.com](https://voice.roblox.com/docs) | APIs for Voice calls. |
 
 
 Undocumented APIs
