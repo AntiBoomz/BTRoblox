@@ -43,21 +43,19 @@ const SettingsDiv = (() => {
 								<option value=devex350>DevEx $350</option>
 								<option value=devex250>DevEx $250</option>
 							</optgroup>
-							<optgroup label=NBC>
-								<option value=nbc5>NBC $5</option>
-								<option value=nbc10>NBC $10</option>
-								<option value=nbc25>NBC $25</option>
-								<option value=nbc50>NBC $50</option>
-								<option value=nbc100>NBC $100</option>
-								<option value=nbc200>NBC $200</option>
+							<optgroup label=Free>
+								<option value=free5>Free $5</option>
+								<option value=free10>Free $10</option>
+								<option value=free20>Free $20</option>
+								<option value=free50>Free $50</option>
+								<option value=free100>Free $100</option>
 							</optgroup>
-							<optgroup label=BC>
-								<option value=bc5>BC $5</option>
-								<option value=bc10>BC $10</option>
-								<option value=bc25>BC $25</option>
-								<option value=bc50>BC $50</option>
-								<option value=bc100>BC $100</option>
-								<option value=bc200>BC $200</option>
+							<optgroup label=Premium>
+								<option value=premium5>Premium $5</option>
+								<option value=premium10>Premium $10</option>
+								<option value=premium20>Premium $20</option>
+								<option value=premium50>Premium $50</option>
+								<option value=premium100>Premium $100</option>
 							</optgroup>
 						</select>
 					</div>

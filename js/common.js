@@ -37,19 +37,20 @@ const DOLLARS_TO_ROBUX_RATIOS = {
 	devex350: [350, 100e3],
 	devex250: [250, 100e3],
 
-	nbc5: [4.99, 400],
-	nbc10: [9.99, 800],
-	nbc25: [24.99, 2000],
-	nbc50: [49.99, 4500],
-	nbc100: [99.99, 10e3],
-	nbc200: [199.99, 22500],
+	free5: [4.99, 400],
+	premium5: [4.99, 440],
 
-	bc5: [4.99, 450],
-	bc10: [9.99, 1e3],
-	bc25: [24.99, 2750],
-	bc50: [49.99, 6e3],
-	bc100: [99.99, 15e3],
-	bv200: [199.99, 35e3]
+	free10: [9.99, 800],
+	premium10: [9.99, 880],
+
+	free20: [19.99, 1700],
+	premium20: [19.99, 1870],
+
+	free50: [49.99, 4500],
+	premium50: [49.99, 4950],
+
+	free100: [99.99, 10000],
+	premium100: [99.99, 11000]
 }
 
 const SETTINGS = {
@@ -67,7 +68,7 @@ const SETTINGS = {
 			fixAudioVolume: { default: true, value: true },
 
 			robuxToUSD: { default: true, value: false },
-			robuxToUSDRate: { default: true, value: "nbc10", validValues: ["devex350", "devex250", "nbc5", "nbc10", "nbc25", "nbc50", "nbc100", "nbc200", "bc5", "bc10", "bc25", "bc50", "bc100", "bc200"] },
+			robuxToUSDRate: { default: true, value: "nbc10", validValues: ["devex350", "devex250", "free5", "premium5", "free10", "premium10", "free20", "premium20", "free50", "premium50", "free100", "premium100"] },
 	
 			hoverPreview: { default: true, value: true },
 			hoverPreviewMode: { default: true, value: "always", validValues: ["always", "never"] },
