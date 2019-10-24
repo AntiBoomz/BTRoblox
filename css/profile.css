@@ -231,7 +231,7 @@
 
 .btr-profile .btr-profile-robloxbadges .asset-item .asset-thumb-container span {
 	/* Resize the background image without needing to redo all positions */
-	transform: scale(calc(88 / 140));
+	transform: scale(calc(90 / 140));
 	transform-origin: 0 0;
 }
 
@@ -245,19 +245,20 @@
 
 /* Player Badges */
 
-.btr-profile .btr-profile-playerbadges .hlist .list-item {
+.btr-profile .btr-profile-playerbadges .asset-item {
 	width: 20%;
 }
 
-.btr-profile .btr-profile-playerbadges .hlist .list-item img {
+.btr-profile .btr-profile-playerbadges .asset-item .asset-thumb-container {
+	display: inline-block;
 	width: 90px;
-	height: 90px;
-	border: 1px solid #B8B8B8;
+	height: 90x;
 	border-radius: 3px;
 }
 
-.dark-theme.btr-profile .btr-profile-playerbadges .hlist .list-item img {
-	border-color: #656668;
+.btr-profile .btr-profile-playerbadges .asset-item .asset-thumb-container img {
+	width: 90px;
+	height: 90px;
 }
 
 .btr-profile .btr-profile-playerbadges .hlist .list-item .item-name {
@@ -454,14 +455,6 @@ html .btr-profile .btr-profile-favorites .game-card {
 	margin-bottom: 8px;
 }
 
-.btr-profile-favorites .game-card-container {
-	border: 1px solid #E3E3E3;
-}
-
-.dark-theme .btr-profile-favorites .game-card-container {
-	border-color: #656668;
-}
-
 .btr-profile-favorites .game-card-thumb-container {
 	border-bottom: 1px solid #E3E3E3;
 }
@@ -487,6 +480,10 @@ html .btr-profile .btr-profile-favorites .game-card {
 
 .btr-profile-favorites .game-card-name-secondary {
 	padding-bottom: 2px;
+}
+
+.btr-profile-favorites .btr-creator-link-container {
+	line-height: 14px;
 }
 
 .btr-profile-favorites .card-item .btr-creator-link:any-link {
@@ -538,14 +535,6 @@ html .btr-profile .btr-profile-favorites .game-card {
 
 .btr-profile-groups .game-card.visible {
 	display: block;
-}
-
-.btr-profile-groups .game-card-container {
-	border: 1px solid #E3E3E3;
-}
-
-.dark-theme .btr-profile-groups .game-card-container {
-	border-color: #656668;
 }
 
 .btr-profile-groups .game-card-thumb-container {

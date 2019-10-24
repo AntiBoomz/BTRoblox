@@ -25,7 +25,7 @@ pageInit.profile = function(userId) {
 			</div>
 			<div class=btr-profile-playerbadges>
 				<div class=container-header><h3>Player Badges</h3></div>
-				<div class=section-content>
+				<div>
 					<ul class=hlist>
 						<div class="section-content-off btr-section-content-off">This user has no Player Badges</div>
 					</ul>
@@ -33,7 +33,7 @@ pageInit.profile = function(userId) {
 			</div>
 			<div class=btr-profile-groups>
 				<div class=container-header><h3>Groups</h3></div>
-				<div class=section-content>
+				<div>
 					<ul class=hlist>
 						<div class="section-content-off btr-section-content-off">This user is not in any Groups</div>
 					</ul>
@@ -59,7 +59,7 @@ pageInit.profile = function(userId) {
 					<h3>Favorites</h3>
 					<a href=./favorites class="btn-secondary-xs btn-fixed-width btn-more see-all-link-icon">See All</a>
 				</div>
-				<div class=section-content>
+				<div>
 					<ul class="hlist game-cards">
 						<div class="section-content-off btr-section-content-off">This user has no favorite Places</div>
 					</ul>
@@ -237,11 +237,6 @@ pageInit.profile = function(userId) {
 		.$watch(".see-more-roblox-badges-button", btn => {
 			const badges = btn.parentElement.parentElement
 			newCont.$find(".placeholder-robloxbadges").replaceWith(badges)
-
-			const content = badges.$find(".section-content")
-			if(content) { // dark theme fix
-				content.classList.remove("remove-panel")
-			}
 
 			badges.classList.add("btr-profile-robloxbadges")
 			badges.$find(".btn-more").setAttribute("ng-show", badges.$find(".badge-list").children.length > 10)
@@ -546,7 +541,10 @@ pageInit.profile = function(userId) {
 			newCont.$find(".placeholder-friends").replaceWith(friends)
 		})
 		.$watch(".favorite-games-container", favorites => favorites.remove())
-		.$watch(".profile-collections", collections => newCont.$find(".placeholder-collections").replaceWith(collections))
+		.$watch(".profile-collections", collections => {
+			collections.classList.remove("layer", "gray-layer-on")
+			newCont.$find(".placeholder-collections").replaceWith(collections)
+		})
 	
 	function initPlayerBadges() {
 		const badges = newCont.$find(".btr-profile-playerbadges")
@@ -582,8 +580,10 @@ pageInit.profile = function(userId) {
 							hlist.append(html`
 							<li class="list-item badge-item asset-item" ng-non-bindable>
 								<a href="/badges/${data.id}/" class="badge-link" title="${data.name}">
-									<img src="/asset-thumbnail/image?assetId=${data.iconImageId}&width=150&height=150" alt="${data.name}">
-									<span class="item-name text-overflow">${data.name}</span>
+									<span class=asset-thumb-container>
+										<img class=border src="/asset-thumbnail/image?assetId=${data.iconImageId}&width=150&height=150" alt="${data.name}">
+									</span>
+									<span class="font-header-2 text-overflow item-name">${data.name}</span>
 								</a>
 							</li>`)
 						})
