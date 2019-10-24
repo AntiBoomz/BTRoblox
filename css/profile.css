@@ -434,8 +434,9 @@
 
 /* Friends */
 
-.btr-profile .home-friends .friend-list {
-	max-height: 240px;
+.btr-profile .home-friends .people-list {
+	height: 296px;
+	max-height: 296px;
 }
 
 .btr-profile .home-friends .friend {

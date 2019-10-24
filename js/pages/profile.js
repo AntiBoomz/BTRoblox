@@ -542,29 +542,8 @@ pageInit.profile = function(userId) {
 				gameItems.push(new GameItem(slide))
 			})
 		})
-		.$watch(".home-friends", friends => {
+		.$watch("#people-list-container", friends => {
 			newCont.$find(".placeholder-friends").replaceWith(friends)
-			const hlist = friends.$find(".hlist")
-
-			if(hlist.children.length === 9) {
-				$.fetch(`https://api.roblox.com/users/${userId}/friends`).then(async response => {
-					const list = await response.json()
-					if(list.length < 10) { return }
-					const friend = list[9]
-
-					hlist.append(html`
-					<li class="list-item friend">
-						<div class="avatar-container">
-							<a href="/users/${friend.Id}/profile" class="avatar avatar-card-fullbody friend-link" title="${friend.Username}">
-								<span class="avatar-card-link friend-avatar">
-									<img alt="${friend.Username}" class="avatar-card-image" src="/avatar-thumbnail/image?userId=${friend.Id}&width=100&height=100&format=png">
-								</span>
-								<span class="text-overflow friend-name font-caption-header">${friend.Username}</span>
-							</a>
-						</div>
-					</li>`)
-				})
-			}
 		})
 		.$watch(".favorite-games-container", favorites => favorites.remove())
 		.$watch(".profile-collections", collections => newCont.$find(".placeholder-collections").replaceWith(collections))

@@ -242,6 +242,16 @@ const INJECT_SCRIPT = () => {
 				})
 			}
 
+			if(currentPage === "profile" && settings.profile.enabled) {
+				HijackAngular("peopleList", {
+					layoutService(handler, args) {
+						const result = handler.apply(this, args)
+						result.maxNumberOfFriendsDisplayed = 10
+						return result
+					}
+				})
+			}
+
 			if(currentPage === "messages") {
 				HijackAngular("messages", {
 					rbxMessagesNav(handler, args, argMap) {
