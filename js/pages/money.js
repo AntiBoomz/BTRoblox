@@ -4,9 +4,13 @@ pageInit.money = function() {
 	if(settings.general.robuxToUSD) {
 		document.$watch("#MyTransactions_tab").$then().$watch("table > tbody").$then()
 			.$watchAll(".datarow", item => {
-				item.$watch(".Amount .robux", label => {
-					const usd = RobuxToUSD(label.textContent.replace(/,/g, "").replace(/^\((.+)\)$/, "$1").trim())
-					label.after(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
+				item.$watch(".Amount span:last-child", label => {
+					const amt = label.textContent.replace(/,/g, "").replace(/^\((.+)\)$/, "$1").trim()
+
+					if(amt !== "0") {
+						const usd = RobuxToUSD(amt)
+						label.append(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
+					}
 				})
 			})
 		
