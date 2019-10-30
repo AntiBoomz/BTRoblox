@@ -68,7 +68,7 @@ const SETTINGS = {
 			fixAudioVolume: { default: true, value: true },
 
 			robuxToUSD: { default: true, value: false },
-			robuxToUSDRate: { default: true, value: "nbc10", validValues: ["devex350", "devex250", "free5", "premium5", "free10", "premium10", "free20", "premium20", "free50", "premium50", "free100", "premium100"] },
+			robuxToUSDRate: { default: true, value: "free10", validValues: ["devex350", "devex250", "free5", "premium5", "free10", "premium10", "free20", "premium20", "free50", "premium50", "free100", "premium100"] },
 	
 			hoverPreview: { default: true, value: true },
 			hoverPreviewMode: { default: true, value: "always", validValues: ["always", "never"] },

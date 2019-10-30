@@ -1074,7 +1074,7 @@ const SettingsDiv = (() => {
 
 				const update = () => {
 					const selected = select.selectedOptions[0]
-					if(titleOption && titleOption !== selected) {
+					if(selected && titleOption && titleOption !== selected) {
 						titleOption.textContent = titleOptionFormat.replace(/%opt%/g, () => selected.textContent)
 						select.value = titleOption.value
 					}
