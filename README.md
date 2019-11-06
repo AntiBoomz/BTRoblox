@@ -66,6 +66,7 @@ API Docs
 | [surveys.roblox.com](https://surveys.roblox.com/docs) | This Api is temporarily offline. |
 | [textfilter.roblox.com](https://textfilter.roblox.com/docs) | High volume text filtering. |
 | [thumbnails.roblox.com](https://thumbnails.roblox.com/docs) | Endpoints for requesting thumbnails. |
+| [trades.roblox.com](https://trades.roblox.com/docs) | Endpoints for trading collectible items. |
 | [translationroles.roblox.com](https://translationroles.roblox.com/docs) | Manages translation roles of developers in game localization. |
 | [translations.roblox.com](https://translations.roblox.com/docs) | This Api is temporarily offline. |
 | [users.roblox.com](https://users.roblox.com/docs) | For direct Roblox user information. |
