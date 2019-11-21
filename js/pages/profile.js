@@ -19,7 +19,7 @@ pageInit.profile = function(userId) {
 			</div>
 			<div class=placeholder-robloxbadges>
 				<div class=container-header><h3>Roblox Badges</h3></div>
-				<div class=section-content>
+				<div class>
 					<div class="section-content-off btr-section-content-off">This user has no Roblox Badges</div>
 				</div>
 			</div>
@@ -50,7 +50,7 @@ pageInit.profile = function(userId) {
 			</div>
 			<div class=placeholder-friends>
 				<div class=container-header><h3>Friends</h3></div>
-				<div class=section-content>
+				<div class>
 					<div class="section-content-off btr-section-content-off">This user has no Friends</div>
 				</div>
 			</div>
