@@ -113,11 +113,11 @@ class MarkAllAsReadAction {
 			return this.finish()
 		}
 
-		for(let i = maxPage; i--;) {
+		for(let i = maxPage; i-- > 1;) {
 			this.pagesToCheck.push(i)
 		}
 
-		// // Shuffle
+		// Shuffle
 		// for(let i = 0; i < this.pagesToCheck.length; i++) {
 		// 	const j = Math.floor(Math.random() * (this.pagesToCheck.length + 1))
 		// 	const v = this.pagesToCheck[i]
