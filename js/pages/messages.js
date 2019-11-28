@@ -88,8 +88,6 @@ class MarkAllAsReadAction {
 		if(!this.pagesToCheck.length) { return }
 
 		const pageN = this.pagesToCheck.pop()
-		console.log("loadNextPage", pageN)
-		
 		const pageData = await this.loadPage(pageN)
 
 		if(this.state !== "EXECUTE") {
@@ -115,18 +113,18 @@ class MarkAllAsReadAction {
 			return this.finish()
 		}
 
-		for(let i = 1; i < maxPage; i++) {
+		for(let i = maxPage; i--;) {
 			this.pagesToCheck.push(i)
 		}
 
-		// Shuffle
-		for(let i = 0; i < this.pagesToCheck.length; i++) {
-			const j = Math.floor(Math.random() * (this.pagesToCheck.length + 1))
-			const v = this.pagesToCheck[i]
+		// // Shuffle
+		// for(let i = 0; i < this.pagesToCheck.length; i++) {
+		// 	const j = Math.floor(Math.random() * (this.pagesToCheck.length + 1))
+		// 	const v = this.pagesToCheck[i]
 
-			this.pagesToCheck[i] = this.pagesToCheck[j]
-			this.pagesToCheck[j] = v
-		}
+		// 	this.pagesToCheck[i] = this.pagesToCheck[j]
+		// 	this.pagesToCheck[j] = v
+		// }
 
 		for(let i = 0; i < this.threadCount; i++) {
 			this.loadNextPage()
