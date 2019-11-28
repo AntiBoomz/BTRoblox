@@ -2,19 +2,34 @@
 	width: 970px;
 }
 
-body .content .btr-CurrentPage {
+body .content .btr-currentPage {
+	display: contents;
+}
+
+body .content .btr-currentPage input {
 	display: inline-block;
 	background: white;
 	border: 1px solid #b8b8b8;
+	border-radius: 3px;
 
-	height:25px;
-	min-width:5px;
-	border-radius:3px;
-	padding:2px 8px;
-	margin-top:3px;
-	margin-right:6px;
+	width: 38px;
+	height: 25px;
+
+	padding: 2px 0px;
+	margin-top: 3px;
+	margin-right: 6px;
+
+	text-align: center;
 
 	color: #191919;
+
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+body .content .btr-currentPage input::-webkit-inner-spin-button,
+body .content .btr-currentPage input::-webkit-outer-spin-button {
+	display: none;
 }
 
 .btr-messages .message-actions .btn-control-sm {

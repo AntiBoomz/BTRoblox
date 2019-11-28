@@ -88,7 +88,7 @@ const INJECT_SCRIPT = () => {
 				Object.keys(objects).forEach(name => {
 					if(!done[name]) {
 						console.warn(`Failed to hijack ${moduleName}.${name}`)
-						if(IS_DEV_MODE) { alert("HijackAngular Missing Module") }
+						if(IS_DEV_MODE) { alert(`HijackAngular Missing Module '${moduleName}.${name}'`) }
 					}
 				})
 			}
@@ -254,7 +254,7 @@ const INJECT_SCRIPT = () => {
 
 			if(currentPage === "messages") {
 				HijackAngular("messages", {
-					rbxMessagesNav(handler, args, argMap) {
+					messagesNav(handler, args, argMap) {
 						const result = handler.apply(this, args)
 
 						try {
@@ -262,19 +262,25 @@ const INJECT_SCRIPT = () => {
 
 							const link = result.link
 							result.link = function(u) {
-								u.keyDown = function($event) {
-									if($event.which === 13) {
-										const value = $event.target.textContent * 1
-	
-										if(!Number.isNaN(value)) {
-											$location.search({ page: value })
-										} else {
-											$event.target.textContent = u.currentStatus.currentPage
+								try {
+									u.btr_setPage = function($event) {
+										if($event.which === 13) {
+											const value = $event.target.value
+		
+											if(!Number.isNaN(value)) {
+												$location.search({ page: value })
+											} else {
+												$event.target.value = u.currentStatus.currentPage
+											}
+		
+											$event.preventDefault()
 										}
-	
-										$event.preventDefault()
 									}
+								} catch(ex) {
+									console.error(ex)
+									if(IS_DEV_MODE) { alert("HijackAngular Error") }
 								}
+
 								return link.call(this, u)
 							}
 						} catch(ex) {

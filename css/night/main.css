@@ -183,7 +183,7 @@ html .radio label::before {
 
 html .form-control,
 html .btr-server-pager .btr-server-input,
-html body .content .btr-CurrentPage,
+html body .content .btr-currentPage,
 html .btr-pager-holder input.pager-cur {
 	background-color: var(--btr-theme-item);
 	border-color: var(--btr-theme-divider);
@@ -194,7 +194,7 @@ html .input-group .input-field:focus {
 }
 
 html .input-field,
-html body .content .btr-CurrentPage {
+html body .content .btr-currentPage {
 	color: var(--btr-theme-text-secondary);
 }
 
