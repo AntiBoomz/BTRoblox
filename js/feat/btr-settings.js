@@ -68,13 +68,13 @@ const SettingsDiv = (() => {
 					<checkbox label="Embed Inventory" path=embedInventoryEnabled></checkbox>
 					<checkbox label="Show Last Online" path=lastOnline></checkbox>
 				</group>
-				<group label=Groups path=groups>
+				<group label=Groups path=groups toggleable=redesign>
 					<div>
 						<checkbox label="Group Shout Notifications" path=shoutAlerts require=false></checkbox>
 						<button id=btr-open-shout-filter class=btn-control-xs>Modify Shout Filters</button>
 					</div>
 					<div>
-						<checkbox label="Enable Redesign" path=redesign></checkbox>
+						<empty></empty>
 						<button id=btr-open-group-redesign class=btn-control-xs>Modify Redesign Options</button>
 					</div>
 				</group>
@@ -159,18 +159,15 @@ const SettingsDiv = (() => {
 					<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
 					<h4>Group Redesign Options</h4>
 				</div>
-				<div>
-					<group label="Redesign" toggleable=redesign path=groups>
-						<checkbox label="Modify Layout" path=modifyLayout require=redesign></checkbox>
-						<checkbox label="Make Group Wall Paged" path=pagedGroupWall require=redesign></checkbox>
-						<checkbox label="Show User Rank On Group Wall" path=groupWallRanks require=redesign></checkbox>
-						<checkbox label="Show Selected Role Member Count" path=selectedRoleCount require=redesign></checkbox>
-						<checkbox label="Hide Payout Container" path=hidePayout require=redesign></checkbox>
-						<checkbox label="Hide Large Social Container" path=hideBigSocial require=redesign></checkbox>
-						<checkbox label="Show Title On Social Icon Hover" path=modifySmallSocialLinksTitle require=redesign></checkbox>
-					</group>
-				</div>
-			
+				<group label="Redesign" toggleable=redesign path=groups>
+					<checkbox label="Modify Layout" path=modifyLayout require=redesign></checkbox>
+					<checkbox label="Make Group Wall Paged" path=pagedGroupWall require=redesign></checkbox>
+					<checkbox label="Show User Rank On Group Wall" path=groupWallRanks require=redesign></checkbox>
+					<checkbox label="Show Selected Role Member Count" path=selectedRoleCount require=redesign></checkbox>
+					<checkbox label="Hide Payout Container" path=hidePayout require=redesign></checkbox>
+					<checkbox label="Hide Large Social Container" path=hideBigSocial require=redesign></checkbox>
+					<checkbox label="Show Title On Social Icon Hover" path=modifySmallSocialLinksTitle require=redesign></checkbox>
+				</group>
 			</div>
 			<div class=btr-settings-content id=btr-settings-nav-editor data-name=navigationEditor>
 				<div class=btr-settings-content-header>

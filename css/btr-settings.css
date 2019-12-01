@@ -367,6 +367,12 @@
 	vertical-align: bottom;
 }
 
+.btr-settings-content empty {
+	display: inline-block; 
+	width: 50%;
+	height: 20px;
+}
+
 .btr-settings-content checkbox {
 	display: inline-block;
 	width: 50%;
