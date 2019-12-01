@@ -489,6 +489,11 @@ const SettingsDiv = (() => {
 			if(this.onTab[name]) { this.onTab[name]() }
 		},
 		open() {
+			if(document.readyState === "loading") {
+				switchContent("main")
+				return
+			}
+
 			switchContent("navigationEditor")
 
 			if(!this.isInit) { this.init() }
