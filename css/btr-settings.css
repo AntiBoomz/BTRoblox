@@ -237,7 +237,6 @@
 
 	font-size: 12px;
 	font-weight: 400;
-	color: #fff;
 	text-align: right;
 
 	user-select: none;
@@ -498,7 +497,7 @@
 }
 
 .btr-settings-header-list > button.btn-secondary-xs:before {
-	filter: invert(100%);
+	filter: invert(60%);
 }
 
 #btr-filter-blacklist, #btr-filter-whitelist {
