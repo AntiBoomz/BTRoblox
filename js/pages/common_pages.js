@@ -295,7 +295,7 @@ pageInit.common = () => {
 
 	document.$on("click", ".btr-settings-toggle", toggleSettings)
 	if(sessionStorage.getItem("btr-settings-open")) {
-		toggleSettings() 
+		toggleSettings()
 	}
 
 	//
