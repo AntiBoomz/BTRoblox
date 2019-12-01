@@ -695,7 +695,7 @@ Object.assign(SETTINGS, {
 
 		Object.entries(this.defaultSettings).forEach(([groupName, group]) => {
 			Object.entries(group).forEach(([settingName, setting]) => {
-				this.set(`${groupName}.${settingName}`, setting.value)
+				this._localSet(`${groupName}.${settingName}`, setting.value, true, true)
 			})
 		})
 	},
