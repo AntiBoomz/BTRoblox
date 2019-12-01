@@ -239,16 +239,36 @@ const SettingsDiv = (() => {
 		</div>
 	</div>`
 	
+	const contentDivs = {}
+	settingsDiv.$findAll(".btr-settings-content[data-name]").forEach(elem => {
+		elem.classList.remove("selected")
+		contentDivs[elem.dataset.name] = elem
+	})
+
 	let currentContent
 	const switchContent = name => {
-		const next = settingsDiv.$find(`.btr-settings-content[data-name="${name}"]`)
-		if(currentContent) {
-			currentContent.classList.remove("selected")
+		if(currentContent === name) { return }
+
+		const lastElem = currentContent && contentDivs[currentContent]
+		if(lastElem) {
+			lastElem.classList.remove("selected")
 		}
 
-		currentContent = next
-		if(currentContent) {
-			currentContent.classList.add("selected")
+		const newElem = name && contentDivs[name]
+		if(newElem) {
+			newElem.classList.add("selected")
+		}
+
+		currentContent = name
+		sessionStorage.setItem("btr-settings-open", name)
+
+		if(name === "shoutFilters") {
+			if(!areFiltersInit) {
+				areFiltersInit = true
+				initShoutFilters()
+			}
+		} else if(name === "navigationEditor") {
+			NavEditor.open()
 		}
 	}
 
@@ -263,9 +283,14 @@ const SettingsDiv = (() => {
 		}
 
 		if(visible) {
-			sessionStorage.setItem("btr-settings-open", "true")
 			document.body.appendChild(settingsDiv)
-			switchContent("main")
+
+			const lastContentOpen = sessionStorage.getItem("btr-settings-open")
+			if(lastContentOpen && contentDivs[lastContentOpen]) {
+				switchContent(lastContentOpen)
+			} else {
+				switchContent("main")
+			}
 		} else {
 			sessionStorage.removeItem("btr-settings-open")
 			settingsDiv.remove()
@@ -933,30 +958,11 @@ const SettingsDiv = (() => {
 	}
 
 	const initSettingsDiv = async () => {
-		let areFiltersInit = false
-		
-		settingsDiv.$find("#btr-open-shout-filter").$on("click", () => {
-			switchContent("shoutFilters")
-
-			if(!areFiltersInit) {
-				areFiltersInit = true
-				initShoutFilters()
-			}
-		})
-
-		settingsDiv.$on("click", "#btr-open-navigation-editor", () => NavEditor.open())
-
-		settingsDiv.$on("click", "#btr-open-item-previewer-settings", () => {
-			switchContent("itemPreviewerSettings")
-		})
-
-		settingsDiv.$on("click", ".btr-close-subcontent", () => {
-			switchContent("main")
-		})
-
-		settingsDiv.$on("click", "#btr-open-group-redesign", () => {
-			switchContent("groupRedesign")
-		})
+		settingsDiv.$on("click", "#btr-open-shout-filter", () => switchContent("shoutFilters"))
+		settingsDiv.$on("click", "#btr-open-navigation-editor", () => switchContent("navigationEditor"))
+		settingsDiv.$on("click", "#btr-open-item-previewer-settings", () => switchContent("itemPreviewerSettings"))
+		settingsDiv.$on("click", ".btr-close-subcontent", () => switchContent("main"))
+		settingsDiv.$on("click", "#btr-open-group-redesign", () => switchContent("groupRedesign"))
 
 		{
 			const resetButton = settingsDiv.$find("#btr-reset-settings")
