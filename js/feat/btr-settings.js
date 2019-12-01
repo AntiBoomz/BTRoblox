@@ -1010,8 +1010,11 @@ const SettingsDiv = (() => {
 
 		settingsDiv.$findAll("group").forEach(group => {
 			const groupPath = group.getAttribute("path") || ""
+
+			const titleContainer = html`<div class=btr-setting-group-title-container></div>`
 			const title = html`<h4>${group.getAttribute("label") || ""}</h4>`
-			group.prepend(title)
+			titleContainer.prepend(title)
+			group.prepend(titleContainer)
 
 			if(group.hasAttribute("minimizable")) {
 				const updateGroup = () => {
@@ -1042,20 +1045,17 @@ const SettingsDiv = (() => {
 				const toggle = html`<div class=btr-settings-enabled-toggle>`
 				title.after(toggle)
 
-				let lastState
-				const update = state => {
-					lastState = state
-					toggle.classList.toggle("checked", state)
+				const update = () => {
+					const enabled = SETTINGS.get(settingPath)
+					toggle.classList.toggle("checked", enabled)
 				}
 
 				toggle.$on("click", () => {
-					const state = !lastState
-					SETTINGS.set(settingPath, state)
-					update(state)
+					SETTINGS.set(settingPath, !SETTINGS.get(settingPath))
 				})
 
-				$.setImmediate(() => update(SETTINGS.get(settingPath)))
 				SETTINGS.onChange(settingPath, update)
+				update()
 			}
 
 			group.$findAll("select").forEach(select => {
@@ -1074,6 +1074,10 @@ const SettingsDiv = (() => {
 				const resetButton = html`<span class=btr-setting-reset-button>🗙</span>`
 				wrapper.append(resetButton)
 
+				resetButton.$on("click", () => {
+					SETTINGS.reset(settingPath)
+				})
+
 				const titleOption = select.options[0] && select.options[0].hasAttribute("disabled") ? select.options[0] : null
 				const titleOptionFormat = titleOption ? titleOption.textContent : null
 
@@ -1083,7 +1087,7 @@ const SettingsDiv = (() => {
 
 				const update = () => {
 					select.value = SETTINGS.get(settingPath)
-					resetButton.style.display = SETTINGS.getIsDefault(settingPath) ? "none" : ""
+					resetButton.classList.toggle("disabled", SETTINGS.getIsDefault(settingPath))
 
 					const selected = select.selectedOptions[0]
 					if(selected && titleOption && titleOption !== selected) {
@@ -1147,7 +1151,7 @@ const SettingsDiv = (() => {
 
 					const update = () => {
 						input.checked = !!SETTINGS.get(settingPath)
-						resetButton.style.display = SETTINGS.getIsDefault(settingPath) ? "none" : ""
+						resetButton.classList.toggle("disabled", SETTINGS.getIsDefault(settingPath))
 					}
 	
 					SETTINGS.onChange(settingPath, update)
@@ -1188,13 +1192,27 @@ const SettingsDiv = (() => {
 
 					checkbox.append(input)
 					checkbox.append(label)
+
+					const resetButton = html`<span class=btr-setting-reset-button>🗙</span>`
+					checkbox.append(resetButton)
+	
+					resetButton.$on("click", () => {
+						SETTINGS.reset(settingPath)
+					})
+
 					wipGroup.append(checkbox)
 
-					input.checked = !!settingValue
+					const update = () => {
+						input.checked = !!SETTINGS.get(settingPath)
+						resetButton.classList.toggle("disabled", SETTINGS.getIsDefault(settingPath))
+					}
+
 					input.$on("change", () => {
-						settingsGroup[settingName] = input.checked
 						SETTINGS.set(settingPath, input.checked)
 					})
+
+					SETTINGS.onChange(settingPath, update)
+					update()
 				} else {
 					wipGroup.append(html`<div>${settingPath} (${typeof settingValue})`)
 				}

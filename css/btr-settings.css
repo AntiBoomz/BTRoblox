@@ -27,7 +27,7 @@
 .btr-settings {
 	display: flex;
 	flex-direction: column;
-	width: 600px;
+	width: 640px;
 	max-width: 80%;
 	height: auto;
 	max-height: 90%;
@@ -70,6 +70,8 @@
 	overflow: auto;
 	overflow-x: hidden;
 	overscroll-behavior: contain;
+
+	position: relative;
 	
 	padding: 6px;
 }
@@ -86,11 +88,17 @@
 	cursor: pointer;
 }
 
-.btr-setting-reset-button:hover {
-	background: rgba(0, 0, 0, .05);
+.btr-setting-reset-button.disabled {
+	cursor: initial;
+	visibility: hidden;
 }
 
-.btr-setting-reset-button:hover:after {
+.btr-setting-reset-button:hover {
+	background: rgba(0, 0, 0, .05);
+	z-index: 10000;
+}
+
+.btr-setting-reset-button:after {
 	position: absolute;
 	display: block;
 	background: white;
@@ -100,22 +108,22 @@
 	top: 100%;
 	width: 100px;
 
-	margin-top: 14px;
-	margin-right: -0;
+	margin-top: 5px;
+	margin-right: -14px;
 
-	transform: translateX(50%);
+	/* transform: translateX(50%); */
 
 	padding: 1px;
 	border-radius: 6px;
 
 	font-size: 12px;
-	z-index: 10000;
+	z-index: 1;
 
 	content: "Reset to Default";
 	pointer-events: none;
 }
 
-.btr-setting-reset-button:hover:before {
+.btr-setting-reset-button:before {
 	position: absolute;
 	display: block;
 	background: white;
@@ -126,17 +134,23 @@
 	right: 50%;
 	top: 100%;
 
-	margin-top: 11px;
+	margin-top: 2px;
 
 	width: 6px;
 	height: 6px;
 
-	z-index: 10001;
+	z-index: 2;
 	transform: translateX(50%) rotate(45deg);
 
 	content: "";
 	pointer-events: none;
 }
+
+.btr-setting-reset-button:not(:hover):before,
+.btr-setting-reset-button:not(:hover):after {
+	visibility: hidden;
+}
+
 
 .btr-settings-content:not(.selected) { display: none !important; }
 
@@ -272,16 +286,23 @@
 
 .btr-settings-content group {
 	display: block;
-	position: relative;
 	padding: 8px;
+	padding-top: 0; /* Done in .btr-setting-group-title-container */
 	padding-bottom: 12px;
+
+	position: relative;
 }
 
 #btr-settings-main group:not(:first-child) {
 	border-top: 1px solid #E8E8E8;
 }
 
-.btr-settings-content group > h4 {
+.btr-settings-content group .btr-setting-group-title-container {
+	position: relative;
+	padding-top: 8px;
+}
+
+.btr-settings-content group .btr-setting-group-title-container h4 {
 	display: block;
 	/* color: #191919; */
 	font-size: 18px;
@@ -295,21 +316,21 @@
 	overflow: hidden;
 }
 
-.btr-settings-content group[minimizable] h4 {
+.btr-settings-content group[minimizable] .btr-setting-group-title-container h4 {
 	cursor: pointer;
 	margin: -8px -14px 0;
 	padding: 12px 14px;
 }
 
-.btr-settings-content group[minimizable] h4:hover {
+.btr-settings-content group[minimizable] .btr-setting-group-title-container h4:hover {
 	background: rgba(0, 0, 0, .02);
 }
 
-.dark-theme .btr-settings-content group[minimizable] h4:hover {
+.dark-theme .btr-settings-content group[minimizable] .btr-setting-group-title-container h4:hover {
 	background: rgba(255, 255, 255, .05);
 }
 
-.btr-settings-content group[minimizable] h4:after {
+.btr-settings-content group[minimizable] .btr-setting-group-title-container h4:after {
 	content: "";
 	display: block;
 	position: absolute;
@@ -324,11 +345,11 @@
 	border-style: solid;
 }
 
-.dark-theme .btr-settings-content group[minimizable] h4:after {
+.dark-theme .btr-settings-content group[minimizable] .btr-setting-group-title-container h4:after {
 	filter: invert(100%);
 }
 
-.btr-settings-content group[minimizable][minimized] h4:after {
+.btr-settings-content group[minimizable][minimized] .btr-setting-group-title-container h4:after {
 	top: 14px;
 	border-width: 0 1px 1px 0;
 }
