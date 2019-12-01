@@ -488,47 +488,79 @@ Object.assign(SETTINGS, {
 	_onChangeListeners: [],
 	_loadPromise: null,
 
+	settingsLastFetched: -1,
+
 	loadedSettings: null,
 	loaded: false,
 
-	_initSettings(loadedData) {
-		const settings = JSON.parse(JSON.stringify(this.defaultSettings, (key, value) => (key === "validValues" ? undefined : value)))
+	_applySettings(loadedData) {
+		if(!(loadedData instanceof Object)) { return }
 
-		if(loadedData) {
-			Object.entries(settings).forEach(([groupName, group]) => {
-				const dataGroup = loadedData[groupName]
-				if(!(group instanceof Object && dataGroup instanceof Object)) { return }
-	
-				Object.entries(group).forEach(([settingName, setting]) => {
-					const dataSetting = dataGroup[settingName]
-					if(!(setting instanceof Object && dataSetting instanceof Object)) { return }
+		Object.entries(loadedData).forEach(([groupName, group]) => {
+			if(!(typeof groupName === "string" && group instanceof Object)) { return }
 
-					// No need to set default or unchanged settings
-					if(dataSetting.default || dataSetting.value === setting.value) { return }
+			Object.entries(group).forEach(([settingName, setting]) => {
+				if(!(typeof settingName === "string" && setting instanceof Object)) { return }
 
-					// Do not load settings of wrong type
-					if(typeof dataSetting.value !== typeof setting.value) { return }
-
-					// Do not load invalid values for multi-choice options
-					const defaultSetting = this.defaultSettings[groupName][settingName]
-					if(defaultSetting.validValues && !defaultSetting.validValues.includes(dataSetting.value)) { return }
-					
-					setting.value = dataSetting.value
-					setting.default = setting.value === defaultSetting.value
-				})
+				this._localSet(`${groupName}.${settingName}`, setting.value, setting.default)
 			})
-		}
+		})
 
-		return settings
+		if(IS_BACKGROUND_PAGE) {
+			STORAGE.set({ settings: this.loadedSettings })
+		}
+	},
+
+	_updateCachedSettings() {
+		const cacheTimestamp = +localStorage.getItem("btr-cached-settings-timestamp")
+
+		if(!Number.isSafeInteger(cacheTimestamp) || this.settingsLastFetched >= cacheTimestamp) {
+			localStorage.setItem("btr-cached-settings", JSON.stringify(this.loadedSettings))
+			localStorage.setItem("btr-cached-settings-timestamp", this.settingsLastFetched)
+		}
 	},
 
 	load(fn) {
 		if(!this._loadPromise) {
 			this._loadPromise = new SyncPromise(resolve => {
+				this.loadedSettings = JSON.parse(JSON.stringify(
+					this.defaultSettings,
+					(key, value) => (key === "validValues" ? undefined : value)
+				))
+
+				const cachedSettingsString = localStorage.getItem("btr-cached-settings")
+				if(cachedSettingsString) {
+					try {
+						const cachedSettings = JSON.parse(cachedSettingsString)
+
+						if(cachedSettings) {
+							console.log("cacheLoad", cachedSettings)
+							this._applySettings(cachedSettings)
+							
+							this.loaded = true
+
+							const timestamp = +localStorage.getItem("btr-cached-settings-timestamp")
+							if(Number.isSafeInteger(timestamp)) {
+								this.settingsLastFetched = timestamp
+							}
+
+							resolve()
+						}
+					} catch(ex) {
+						console.error(ex)
+					}
+				}
+
 				STORAGE.get(["settings"], data => {
-					this.loadedSettings = this._initSettings(data.settings)
-					this.loaded = true
-	
+					if(data.settings) {
+						console.log("fetchLoad")
+						this._applySettings(data.settings)
+
+						this.loaded = true
+					}
+
+					this.settingsLastFetched = Date.now()
+					this._updateCachedSettings()
 					resolve()
 				})
 			})
@@ -545,74 +577,121 @@ Object.assign(SETTINGS, {
 		const settingName = path.slice(index + 1)
 
 		const group = root[groupName]
-		if(!group) { return }
+		if(!(group instanceof Object)) {
+			return
+		}
 
-		return group[settingName]
+		const setting = group[settingName]
+		if(!(setting instanceof Object && "value" in setting)) {
+			return
+		}
+
+		return setting
 	},
 
-	isValid(settingPath) {
-		if(!this.loaded) { throw new Error("Settings are not loaded") }
+	_isValid(settingPath, value) {
+		const setting = this._getSetting(settingPath, this.loadedSettings)
+
+		if(!setting) {
+			return false // Invalid setting
+		}
+
+		if(typeof value !== typeof setting.value) {
+			return false // Type mismatch
+		}
+
+		const defaultSetting = this._getSetting(settingPath, this.defaultSettings)
+		if(defaultSetting.validValues && !defaultSetting.validValues.includes(value)) {
+			return false // Invalid value
+		}
+
+		return true
+	},
+
+	_localSet(settingPath, value, isDefault = false, shouldSave = false) {
+		if(!this._isValid(settingPath, value)) {
+			return false
+		}
 
 		const setting = this._getSetting(settingPath, this.loadedSettings)
-		return !!(setting && "value" in setting)
+		if(setting.value === value && !!isDefault === setting.default) {
+			return false
+		}
+
+		setting.value = value
+		setting.default = !!isDefault
+
+		this._updateCachedSettings()
+
+		const listeners = this._onChangeListeners[settingPath]
+		if(listeners) {
+			listeners.forEach(fn => {
+				try { fn(setting.value, setting.default) }
+				catch(ex) { console.error(ex) }
+			})
+		}
+
+		if(shouldSave) {
+			if(IS_BACKGROUND_PAGE) {
+				STORAGE.set({ settings: this.loadedSettings })
+			} else {
+				MESSAGING.send("setSetting", { path: settingPath, value, default: !!isDefault })
+			}
+		}
+
+		return true
+	},
+
+	hasSetting(settingPath) {
+		return !!this._getSetting(settingPath, this.loadedSettings)
 	},
 
 	get(settingPath) {
 		if(!this.loaded) { throw new Error("Settings are not loaded") }
 		
 		const setting = this._getSetting(settingPath, this.loadedSettings)
-
-		if(!(setting && "value" in setting)) {
+		if(!setting) {
 			throw new TypeError(`'${settingPath}' is not a valid setting`)
 		}
 
 		return setting.value
 	},
 
-	set(settingPath, value) {
+	getIsDefault(settingPath) {
 		if(!this.loaded) { throw new Error("Settings are not loaded") }
 		
 		const setting = this._getSetting(settingPath, this.loadedSettings)
-
-		if(!(setting && "value" in setting)) {
+		if(!setting) {
 			throw new TypeError(`'${settingPath}' is not a valid setting`)
 		}
 
-		if(typeof value !== typeof setting.value) {
-			throw new TypeError(`Invalid Value - Type mismatch (expected ${typeof setting.value}, got ${typeof value})`)
-		}
+		return setting.default
+	},
+
+	reset(settingPath) {
+		if(!this.loaded) { throw new Error("Settings are not loaded") }
 
 		const defaultSetting = this._getSetting(settingPath, this.defaultSettings)
-		if(defaultSetting.validValues && !defaultSetting.validValues.includes(value)) {
-			throw new TypeError(`Invalid Value - Value '${value}' is not in validValues`)
+		if(!defaultSetting) {
+			throw new TypeError(`'${settingPath}' is not a valid setting`)
 		}
 
-		if(IS_BACKGROUND_PAGE) {
-			if(setting.value !== value) {
-				setting.value = value
-				setting.default = setting.value === defaultSetting.value
-
-				STORAGE.set({ settings: this.loadedSettings })
-
-				const listeners = this._onChangeListeners[settingPath]
-				if(listeners) {
-					listeners.forEach(fn => {
-						try { fn(value) }
-						catch(ex) { console.error(ex) }
-					})
-				}
-			}
-		} else {
-			MESSAGING.send("setSetting", { path: settingPath, value })
-
-			const listeners = this._onChangeListeners[settingPath]
-			if(listeners) {
-				listeners.forEach(fn => {
-					try { fn(value) }
-					catch(ex) { console.error(ex) }
-				})
-			}
+		const value = defaultSetting.value
+		if(!this._isValid(settingPath, value)) {
+			throw new Error(`Invalid value '${typeof value} ${String(value)}' to '${settingPath}'`)
 		}
+
+		this._localSet(settingPath, value, true, true)
+	},
+
+	set(settingPath, value) {
+		if(!this.loaded) { throw new Error("Settings are not loaded") }
+
+		if(!this._isValid(settingPath, value)) {
+			throw new Error(`Invalid value '${typeof value} ${String(value)}' to '${settingPath}'`)
+		}
+
+		this._localSet(settingPath, value, false, true)
 	},
 
 	resetToDefault() {
@@ -638,7 +717,7 @@ if(IS_BACKGROUND_PAGE) {
 	MESSAGING.listen({
 		setSetting(data, respond) {
 			SETTINGS.load(() => {
-				SETTINGS.set(data.path, data.value)
+				SETTINGS._localSet(data.path, data.value, data.default, true)
 			})
 
 			respond()

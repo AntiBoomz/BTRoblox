@@ -956,40 +956,42 @@ const SettingsDiv = (() => {
 			switchContent("groupRedesign")
 		})
 
-		const resetButton = settingsDiv.$find("#btr-reset-settings")
-		const resetButtonDefaultText = resetButton.textContent
-		let isResetting = false
-		let resetInterval
-		let resetTimer
+		{
+			const resetButton = settingsDiv.$find("#btr-reset-settings")
+			const resetButtonDefaultText = resetButton.textContent
+			let isResetting = false
+			let resetInterval
+			let resetTimer
 
-		resetButton.$on("click", () => {
-			if(!isResetting) {
-				isResetting = true
+			resetButton.$on("click", () => {
+				if(!isResetting) {
+					isResetting = true
 
-				resetTimer = 3
-				resetButton.textContent = `Are you sure? (${resetTimer})`
+					resetTimer = 3
+					resetButton.textContent = `Are you sure? (${resetTimer})`
 
-				resetInterval = setInterval(() => {
-					if(--resetTimer > 0) {
-						resetButton.textContent = `Are you sure? (${resetTimer})`
-						return
-					}
+					resetInterval = setInterval(() => {
+						if(--resetTimer > 0) {
+							resetButton.textContent = `Are you sure? (${resetTimer})`
+							return
+						}
 
-					clearInterval(resetInterval)
-					resetInterval = null
-					resetButton.textContent = resetButtonDefaultText
-					isResetting = false
-				}, 1e3)
-				return
-			}
+						clearInterval(resetInterval)
+						resetInterval = null
+						resetButton.textContent = resetButtonDefaultText
+						isResetting = false
+					}, 1e3)
+					return
+				}
 
-			clearInterval(resetInterval)
-			resetInterval = null
-			resetButton.textContent = resetButtonDefaultText
-			isResetting = false
+				clearInterval(resetInterval)
+				resetInterval = null
+				resetButton.textContent = resetButtonDefaultText
+				isResetting = false
 
-			SETTINGS.resetToDefault()
-		})
+				SETTINGS.resetToDefault()
+			})
+		}
 
 		// Settings 
 
@@ -1061,6 +1063,9 @@ const SettingsDiv = (() => {
 				select.before(wrapper)
 				wrapper.append(select)
 
+				const resetButton = html`<span class=btr-setting-reset-button>🗙</span>`
+				wrapper.append(resetButton)
+
 				const titleOption = select.options[0] && select.options[0].hasAttribute("disabled") ? select.options[0] : null
 				const titleOptionFormat = titleOption ? titleOption.textContent : null
 
@@ -1069,6 +1074,9 @@ const SettingsDiv = (() => {
 				}
 
 				const update = () => {
+					select.value = SETTINGS.get(settingPath)
+					resetButton.style.display = SETTINGS.getIsDefault(settingPath) ? "none" : ""
+
 					const selected = select.selectedOptions[0]
 					if(selected && titleOption && titleOption !== selected) {
 						titleOption.textContent = titleOptionFormat.replace(/%opt%/g, () => selected.textContent)
@@ -1076,24 +1084,18 @@ const SettingsDiv = (() => {
 					}
 				}
 
-				select.value = SETTINGS.get(settingPath)
-				update()
-
 				select.$on("change", () => {
 					const selected = select.selectedOptions[0]
 					if(!selected || selected.hasAttribute("disabled")) { return }
 
 					SETTINGS.set(settingPath, select.value)
-					update()
 				})
 				
-				SETTINGS.onChange(settingPath, value => {
-					select.value = value
-					update()
-				})
+				SETTINGS.onChange(settingPath, update)
+				update()
 
 				const requirePath = joinPaths(groupPath, select.getAttribute("require") || "enabled")
-				if(SETTINGS.isValid(requirePath)) {
+				if(SETTINGS.hasSetting(requirePath)) {
 					const requireUpdate = value => {
 						if(value) {
 							select.removeAttribute("disabled")
@@ -1116,37 +1118,50 @@ const SettingsDiv = (() => {
 				const input = html`<input type=checkbox>`
 				checkbox.prepend(input)
 
-				if(checkbox.hasAttribute("label")) {
-					input.id = `btr-settings-input-${labelCounter}`
-					const label = html`<label for=btr-settings-input-${labelCounter++}>${checkbox.getAttribute("label")}</label>`
+				const labelIndex = labelCounter++
+				input.id = `btr-settings-input-${labelIndex}`
 
-					checkbox.append(label)
+				const labelText = checkbox.hasAttribute("label") ? checkbox.getAttribute("label") : settingPath
+				const label = html`<label for=btr-settings-input-${labelIndex}>${labelText}</label>`
+				checkbox.append(label)
 
-					if(!SETTINGS.isValid(settingPath)) {
-						label.textContent += " (Bad setting)"
-						return
+				if(SETTINGS.hasSetting(settingPath)) {
+					input.$on("change", () => {
+						SETTINGS.set(settingPath, input.checked)
+					})
+
+					const resetButton = html`<span class=btr-setting-reset-button>🗙</span>`
+					label.after(resetButton)
+
+					resetButton.$on("click", () => {
+						SETTINGS.reset(settingPath)
+					})
+
+					const update = () => {
+						input.checked = !!SETTINGS.get(settingPath)
+						resetButton.style.display = SETTINGS.getIsDefault(settingPath) ? "none" : ""
 					}
-				}
+	
+					SETTINGS.onChange(settingPath, update)
+					update()
+	
+					const requirePath = joinPaths(groupPath, checkbox.getAttribute("require") || "enabled")
+					if(SETTINGS.hasSetting(requirePath)) {
+						const requireUpdate = () => {
+							const value = SETTINGS.get(requirePath)
 
-				input.checked = !!SETTINGS.get(settingPath)
-				input.$on("change", () => {
-					SETTINGS.set(settingPath, input.checked)
-				})
-
-				SETTINGS.onChange(settingPath, state => input.checked = state)
-
-				const requirePath = joinPaths(groupPath, checkbox.getAttribute("require") || "enabled")
-				if(SETTINGS.isValid(requirePath)) {
-					const requireUpdate = value => {
-						if(value) {
-							input.removeAttribute("disabled")
-						} else {
-							input.setAttribute("disabled", "")
+							if(value) {
+								input.removeAttribute("disabled")
+							} else {
+								input.setAttribute("disabled", "")
+							}
 						}
+						
+						SETTINGS.onChange(requirePath, requireUpdate)
+						requireUpdate()
 					}
-					
-					SETTINGS.onChange(requirePath, requireUpdate)
-					requireUpdate(SETTINGS.get(requirePath))
+				} else {
+					label.textContent += " (Bad setting)"
 				}
 			})
 		})
