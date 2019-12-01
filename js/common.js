@@ -534,9 +534,7 @@ Object.assign(SETTINGS, {
 						const cachedSettings = JSON.parse(cachedSettingsString)
 
 						if(cachedSettings) {
-							console.log("cacheLoad", cachedSettings)
 							this._applySettings(cachedSettings)
-							
 							this.loaded = true
 
 							const timestamp = +localStorage.getItem("btr-cached-settings-timestamp")
@@ -553,9 +551,7 @@ Object.assign(SETTINGS, {
 
 				STORAGE.get(["settings"], data => {
 					if(data.settings) {
-						console.log("fetchLoad")
 						this._applySettings(data.settings)
-
 						this.loaded = true
 					}
 
