@@ -1,10 +1,23 @@
 "use strict"
 
+const pageInit = {}
+
+let areAllContentScriptsLoaded = false
+let isInitDeferred = false
+
 let settings
 let currentPage
 
-let loggedInUser = -1
-let loggedInUserPromise = null
+const injectCSS = path => {
+	const link = document.createElement("link")
+	link.rel = "stylesheet"
+	link.href = getURL(path)
+	
+	const parent = document.head || document.documentElement
+	parent.prepend(link)
+
+	return link
+}
 
 const InjectJS = {
 	queue: [],
@@ -37,6 +50,69 @@ const InjectJS = {
 			document.addEventListener(`content.${action}`, cb)
 		})
 	}
+}
+
+const OptionalLoader = {
+	libraries: {
+		previewer: {
+			promise: null,
+			assets: [
+				"lib/three.min.js",
+				"js/rbx/Avatar/Animator.js",
+				"js/rbx/Avatar/AvatarRigs.js",
+				"js/rbx/Avatar/Composites.js",
+				"js/rbx/Avatar/Avatar.js",
+				"js/rbx/Avatar/Appearance.js",
+				"js/rbx/Scene.js",
+				"js/rbx/Preview.js"
+			]
+		},
+		explorer: {
+			promise: null,
+			assets: [
+				"js/rbx/ApiDump.js",
+				"js/rbx/Explorer.js"
+			]
+		},
+		settings: {
+			promise: null,
+			assets: [
+				"js/feat/btr-settings.js",
+				"css/btr-settings.css"
+			]
+		}
+	},
+
+	_loadLib(name) {
+		const lib = this.libraries[name]
+
+		if(!lib.promise) {
+			const jsAssets = []
+
+			lib.assets.forEach(file => {
+				if(file.endsWith(".js")) {
+					jsAssets.push(file)
+				} else if(file.endsWith(".css")) {
+					injectCSS(file)
+				}
+			})
+
+			if(jsAssets.length > 0) {
+				lib.promise = new SyncPromise(resolve => {
+					MESSAGING.send("loadOptAssets", jsAssets, resolve)
+				})
+			} else {
+				lib.promise = SyncPromise.resolve()
+			}
+
+		}
+
+		return lib.promise
+	},
+
+	loadPreviewer() { return this._loadLib("previewer") },
+	loadExplorer() { return this._loadLib("explorer") },
+	loadSettings() { return this._loadLib("settings") }
 }
 
 const templatePromises = {}
@@ -86,176 +162,10 @@ function modifyTemplate(idList, callback) {
 	})
 }
 
-function onDocumentReady(cb) {
-	if(document.readyState !== "loading") {
-		cb()
-	} else {
-		document.addEventListener("DOMContentLoaded", cb, { once: true })
-	}
-}
-
-const FormatNumber = num => String(num).replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/yg, "$1,")
-const GetRobuxRatio = () => DOLLARS_TO_ROBUX_RATIOS[settings.general.robuxToUSDRate]
-const RobuxToUSD = amt => FormatNumber((Math.ceil((amt * GetRobuxRatio()[0]) / GetRobuxRatio()[1] * 100) / 100).toFixed(2))
-
-const injectCSS = path => {
-	const link = document.createElement("link")
-	link.rel = "stylesheet"
-	link.href = getURL("css/" + path)
-	
-	const parent = document.head || document.documentElement
-	parent.prepend(link)
-
-	return link
-}
-
-const initAdBlock = () => {
-	const iframeSelector = `.ads-container iframe,.abp iframe,.abp-spacer iframe,.abp-container iframe,.top-abp-container iframe,
-	#AdvertisingLeaderboard iframe,#AdvertisementRight iframe,#MessagesAdSkyscraper iframe,.Ads_WideSkyscraper iframe,
-	.profile-ads-container iframe, #ad iframe, iframe[src*="roblox.com/user-sponsorship/"]`
-
-	const iframes = document.getElementsByTagName("iframe")
-	const scripts = document.getElementsByTagName("script")
-	
-	const doneMap = new WeakMap()
-
-	new MutationObserver(() => {
-		for(let i = iframes.length; i--;) {
-			const iframe = iframes[i]
-			if(iframe.matches(iframeSelector)) {
-				iframe.remove()
-			} else if(doneMap.get(iframe)) {
-				break
-			} else {
-				doneMap.set(iframe, true)
-			}
-		}
-
-		for(let i = scripts.length; i--;) {
-			const script = scripts[i]
-			if(doneMap.get(script)) {
-				break
-			} else {
-				doneMap.set(script, true)
-
-				if(script.src) {
-					if(
-						script.src.includes("imasdk.googleapis.com") ||
-						script.src.includes("radar.cedexis.com") ||
-						script.src.includes("ns1p.net")
-					) {
-						script.remove()
-					}
-				} else {
-					const cont = script.textContent
-					if(
-						!cont.includes("ContentJS") && // is not inject.js
-						(
-							cont.includes("google-analytics.com") ||
-							cont.includes("scorecardresearch.com") ||
-							cont.includes("cedexis.com") ||
-							cont.includes("pingdom.net") ||
-							cont.includes("ns1p.net") ||
-							cont.includes("Roblox.Hashcash") ||
-							cont.includes("Roblox.VideoPreRollDFP") ||
-							cont.includes("googletag.enableServices()")
-						)
-					) {
-						script.remove()
-					} else if(cont.includes("Roblox.EventStream.Init")) { // Stops e.png logging
-						script.textContent = cont.replace(/"[^"]*"/g, `""`)
-					}
-				}
-			}
-		}
-	}).observe(document.documentElement, { childList: true, subtree: true })
-}
 
 function Init() {
-	const headWatcher = document.$watch(">head").$then()
-	const bodyWatcher = document.$watch(">body", body => {
-		body.classList.toggle("btr-no-hamburger", settings.navigation.noHamburger)
-		body.classList.toggle("btr-hide-ads", settings.general.hideAds)
-		body.classList.toggle("btr-small-chat-button", settings.general.chatEnabled && settings.general.smallChatButton)
-
-		if(currentPage) {
-			body.dataset.btrPage = currentPage.name
-		}
-	}).$then()
-
-	bodyWatcher.$watch("#roblox-linkify", linkify => {
-		linkify.dataset.regex = /(https?:\/\/)?([a-z0-9-]+\.)*(twitter\.com|youtube\.com|youtu\.be|twitch\.tv|roblox\.com|robloxlabs\.com|shoproblox\.com)(?!\/[A-Za-z0-9-+&@#/=~_|!:,.;]*%)((\/[A-Za-z0-9-+&@#/%?=~_|!:,.;]*)|(?=\s|\b))/.source
-
-		// Empty asHttpRegex matches everything, so every link will be unsecured, so fix that
-		if(!linkify.dataset.asHttpRegex) { linkify.dataset.asHttpRegex = "^$" }
-	})
-
-	loggedInUserPromise = new SyncPromise(resolve => {
-		headWatcher.$watch(`meta[name="user-data"]`, meta => {
-			const userId = +meta.dataset.userid
-			loggedInUser = Number.isSafeInteger(userId) ? userId : -1
-			resolve(loggedInUser)
-		})
-		
-		onDocumentReady(() => resolve(-1))
-	})
-
-	loggedInUserPromise.then(userId => {
-		if(userId !== -1) {
-			Navigation.init()
-		}
-	})
-
-	if(settings.general.fastSearch) { initFastSearch() }
-	if(settings.general.hideAds) { initAdBlock() }
-
-	{
-		const lists = [
-			document.getElementsByClassName("light-theme"),
-			document.getElementsByClassName("dark-theme")
-		]
-
-		const removeThemes = () => {
-			for(let i = lists.length; i--;) {
-				const list = lists[i]
-				for(let j = list.length; j--;) {
-					const elem = list[j]
-					elem.classList.remove("light-theme", "dark-theme")
-				}
-			}
-		}
-
-		const params = [document.documentElement, { attributes: true, attributeFilter: ["class"], subtree: true }]
-		const observer = new MutationObserver(removeThemes)
-
-		const checkSetting = enabled => {
-			if(enabled) {
-				observer.observe(...params)
-				removeThemes()
-			} else {
-				observer.disconnect()
-			}
-		}
-
-		checkSetting(SETTINGS.get("general.disableRobloxThemes"))
-		SETTINGS.onChange("general.disableRobloxThemes", checkSetting)
-	}
-
-	if(!settings.general.chatEnabled) {
-		bodyWatcher.$watch("#chat-container", cont => cont.remove())
-	}
-
-	if(settings.general.fixAudioPreview) {
-		InjectJS.listen("fixAudioPreview", async url => {
-			if(!url.match(/^https?:\/\/c\d\.rbxcdn\.com\/[0-9a-f]{32}$/)) {
-				console.log("bad url")
-				return
-			}
-			
-			const resp = await fetch(url)
-			InjectJS.send("fixAudioPreview", url, URL.createObjectURL(await resp.blob()))
-		})
-	}
+	try { pageInit.common() }
+	catch(ex) { console.error(ex) }
 
 	if(currentPage && pageInit[currentPage.name]) {
 		try { pageInit[currentPage.name].apply(currentPage, currentPage.matches) }
@@ -272,22 +182,21 @@ function PreInit() {
 	const exclude = EXCLUDED_PAGES.some(patt => new RegExp(patt, "i").test(pathname))
 	if(exclude) { return }
 
-	{ // Inject Script
-		const script = document.createElement("script")
-		script.setAttribute("name", "BTRoblox/inject.js")
-		script.textContent = `"use strict";\n(${String(INJECT_SCRIPT)})();`
-		
-		const parent = document.head || document.documentElement
-		parent.prepend(script)
-	}
-	
 	currentPage = GET_PAGE(pathname)
 
-	const cssFiles = ["main.css"]
-	const themeStyles = []
+	//
 
-	if(currentPage) { cssFiles.push(...currentPage.css) }
-	cssFiles.forEach(injectCSS)
+	const script = document.createElement("script")
+	script.setAttribute("name", "BTRoblox/inject.js")
+	script.textContent = `"use strict";\n(${String(INJECT_SCRIPT)})();`
+	
+	const scriptParent = document.head || document.documentElement
+	scriptParent.prepend(script)
+
+	//
+
+	const cssFiles = ["css/main.css"]
+	const themeStyles = []
 
 	const updateTheme = theme => {
 		const oldStyles = themeStyles.splice(0, themeStyles.length)
@@ -295,13 +204,16 @@ function PreInit() {
 		if(theme === "default") {
 			oldStyles.forEach(x => x.remove())
 		} else {
-			cssFiles.forEach(file => themeStyles.push(injectCSS(`${theme}/${file}`)))
+			cssFiles.forEach(file => themeStyles.push(injectCSS(`css/${theme}/${file}`)))
 
 			themeStyles[0].addEventListener("load", () => {
 				oldStyles.forEach(x => x.remove())
 			}, { once: true })
 		}
 	}
+
+	if(currentPage) { cssFiles.push(...currentPage.css.map(x => `css/${x}`)) }
+	cssFiles.forEach(injectCSS)
 
 	SETTINGS.onChange("general.theme", updateTheme)
 	SETTINGS.load(_settings => {
@@ -317,7 +229,6 @@ function PreInit() {
 		// Inject theme
 		updateTheme(settings.general.theme)
 
-		
 		InjectJS.send(
 			"INIT",
 			settings,
@@ -325,8 +236,12 @@ function PreInit() {
 			currentPage ? currentPage.matches : null,
 			IS_DEV_MODE
 		)
-
-		Init()
+		
+		if(areAllContentScriptsLoaded) {
+			Init()
+		} else {
+			isInitDeferred = true
+		}
 	})
 }
 

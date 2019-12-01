@@ -52,25 +52,13 @@
 				"js/inject.js",
 				"js/main.js",
 				
-				"js/feat/btr-settings.js",
 				"js/feat/fastSearch.js",
 				"js/feat/navigation.js",
 				
-				"lib/three.min.js",
 				"js/rbx/Parser.js",
 				"js/rbx/AssetCache.js",
-				"js/rbx/Avatar/Animator.js",
-				"js/rbx/Avatar/AvatarRigs.js",
-				"js/rbx/Avatar/Composites.js",
-				"js/rbx/Avatar/Avatar.js",
-				"js/rbx/Avatar/Appearance.js",
-				"js/rbx/Scene.js",
-				"js/rbx/Preview.js",
 
-				"js/rbx/ApiDump.js",
-				"js/rbx/Explorer.js",
-
-				"js/pages.js",
+				"js/pages/common_pages.js",
 				"js/pages/avatar.js",
 				"js/pages/catalog.js",
 				"js/pages/develop.js",
@@ -83,7 +71,9 @@
 				"js/pages/messages.js",
 				"js/pages/money.js",
 				"js/pages/placeconfig.js",
-				"js/pages/profile.js"
+				"js/pages/profile.js",
+				
+				"js/final.js"
 			],
 			"run_at": "document_start",
 			"all_frames": true

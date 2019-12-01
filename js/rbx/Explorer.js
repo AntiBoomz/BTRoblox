@@ -1,6 +1,6 @@
 "use strict"
 
-{
+const Explorer = (() => {
 	const GroupOrders = [
 		"Appearance", "Data", "Shape", "Goals", "Thrust", "Turn", "Camera", "Behavior", "Image", "Compliance",
 		"AlignOrientation", "AlignPosition", "BallSocket", "Limits", "TwistLimits", "Hinge", "Servo",
@@ -334,5 +334,5 @@
 		}
 	}
 
-	window.Explorer = Explorer
-}
+	return Explorer
+})()

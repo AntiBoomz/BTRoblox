@@ -97,7 +97,9 @@
 
 	pageInit.groups = function() {
 		if(settings.general.hoverPreview) {
-			HoverPreview.register(".item-card", ".item-card-thumb-container")
+			OptionalLoader.loadPreviewer().then(() => {
+				HoverPreview.register(".item-card", ".item-card-thumb-container")
+			})
 		}
 
 		if(settings.groups.redesign) {

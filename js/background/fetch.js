@@ -259,6 +259,26 @@ MESSAGING.listen({
 			.update(changes => respond(changes, true))
 			.then(() => respond({}))
 	},
+
+	loadOptAssets(assets, respond, port) {
+		SyncPromise.all(assets.map(file => {
+			if(file.endsWith(".js")) {
+				return new SyncPromise(resolve => chrome.tabs.executeScript(
+					port.sender.tabId,
+					{ frameId: port.sender.frameId, file, runAt: "document_start" },
+					() => resolve()
+				))
+			} else if(file.endsWith(".css")) {
+				return new SyncPromise(resolve => chrome.tabs.insertCSS(
+					port.sender.tabId,
+					{ frameId: port.sender.frameId, file, runAt: "document_start" },
+					() => resolve()
+				))
+			}
+
+			return SyncPromise.resolve()
+		})).then(respond)
+	},
 	
 	async fetch([url, init], respond) {
 		try {

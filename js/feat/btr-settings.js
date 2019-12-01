@@ -932,10 +932,6 @@ const SettingsDiv = (() => {
 
 	const initSettingsDiv = async () => {
 		let areFiltersInit = false
-
-		await new SyncPromise(resolve =>
-			injectCSS("btr-settings.css").$on("load", resolve, { once: true })
-		)
 		
 		settingsDiv.$find("#btr-open-shout-filter").$on("click", () => {
 			switchContent("shoutFilters")
@@ -1182,8 +1178,6 @@ const SettingsDiv = (() => {
 			})
 		})
 	}
-
-	document.$on("click", ".btr-settings-toggle", toggleSettingsDiv)
 
 	return {
 		toggle: toggleSettingsDiv
