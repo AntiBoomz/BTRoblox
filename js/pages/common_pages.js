@@ -285,12 +285,17 @@ const initAdBlock = () => {
 pageInit.common = () => {
 	const toggleSettings = async () => {
 		await OptionalLoader.loadSettings()
+
+		if(!document.body) { // Stuff breaks if body is not loaded
+			await document.$watch(">body").$promise()
+		}
+
 		SettingsDiv.toggle()
 	}
 
 	document.$on("click", ".btr-settings-toggle", toggleSettings)
 	if(sessionStorage.getItem("btr-settings-open")) {
-		document.$watch(">body", () => toggleSettings()) // Stuff breaks if body is not loaded
+		toggleSettings() 
 	}
 
 	//
