@@ -293,6 +293,10 @@
 	position: relative;
 }
 
+.btr-settings-content group.btr-group-disabled {
+	background:rgba(0, 0, 0, 0.02);
+}
+
 #btr-settings-main group:not(:first-child) {
 	border-top: 1px solid #E8E8E8;
 }
@@ -309,6 +313,11 @@
 	margin: 0 0 5px;
 	padding: 0;
 	line-height: 1em;
+}
+
+.btr-settings-content group.btr-group-disabled .btr-setting-group-title-container h4,
+.btr-settings-content group.btr-group-disabled checkbox input[disabled] + label {
+	opacity: 0.6;
 }
 
 .btr-settings-content group[minimizable] {

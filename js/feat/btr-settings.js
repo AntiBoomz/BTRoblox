@@ -1048,6 +1048,8 @@ const SettingsDiv = (() => {
 				const update = () => {
 					const enabled = SETTINGS.get(settingPath)
 					toggle.classList.toggle("checked", enabled)
+
+					group.classList.toggle("btr-group-disabled", !enabled)
 				}
 
 				toggle.$on("click", () => {
@@ -1182,6 +1184,7 @@ const SettingsDiv = (() => {
 		Object.entries(settings).forEach(([groupPath, settingsGroup]) => {
 			Object.entries(settingsGroup).forEach(([settingName, settingValue]) => {
 				const defaultValueInfo = SETTINGS.defaultSettings[groupPath][settingName]
+
 				const settingPath = `${groupPath}.${settingName}`
 				if(settingsDone[settingPath] || defaultValueInfo.hidden) { return }
 
