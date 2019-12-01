@@ -522,9 +522,9 @@ Object.assign(SETTINGS, {
 				STORAGE.get(["settings"], data => {
 					if(data.settings) {
 						this._applySettings(data.settings)
-						this.loaded = true
 					}
 
+					this.loaded = true
 					resolve()
 				})
 			})
