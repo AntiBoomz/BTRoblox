@@ -488,8 +488,6 @@ Object.assign(SETTINGS, {
 	_onChangeListeners: [],
 	_loadPromise: null,
 
-	settingsLastFetched: -1,
-
 	loadedSettings: null,
 	loaded: false,
 
@@ -499,24 +497,17 @@ Object.assign(SETTINGS, {
 		Object.entries(loadedData).forEach(([groupName, group]) => {
 			if(!(typeof groupName === "string" && group instanceof Object)) { return }
 
-			Object.entries(group).forEach(([settingName, setting]) => {
-				if(!(typeof settingName === "string" && setting instanceof Object)) { return }
-
-				this._localSet(`${groupName}.${settingName}`, setting.value, setting.default)
+			Object.entries(group).forEach(([settingName, loadedSetting]) => {
+				if(!(typeof settingName === "string" && loadedSetting instanceof Object)) { return }
+				
+				if(!loadedSetting.default) { // Ignore default settings
+					this._localSet(`${groupName}.${settingName}`, loadedSetting.value, loadedSetting.default, false)
+				}
 			})
 		})
 
 		if(IS_BACKGROUND_PAGE) {
 			STORAGE.set({ settings: this.loadedSettings })
-		}
-	},
-
-	_updateCachedSettings() {
-		const cacheTimestamp = +localStorage.getItem("btr-cached-settings-timestamp")
-
-		if(!Number.isSafeInteger(cacheTimestamp) || this.settingsLastFetched >= cacheTimestamp) {
-			localStorage.setItem("btr-cached-settings", JSON.stringify(this.loadedSettings))
-			localStorage.setItem("btr-cached-settings-timestamp", this.settingsLastFetched)
 		}
 	},
 
@@ -528,35 +519,12 @@ Object.assign(SETTINGS, {
 					(key, value) => (key === "validValues" ? undefined : value)
 				))
 
-				const cachedSettingsString = localStorage.getItem("btr-cached-settings")
-				if(cachedSettingsString) {
-					try {
-						const cachedSettings = JSON.parse(cachedSettingsString)
-
-						if(cachedSettings) {
-							this._applySettings(cachedSettings)
-							this.loaded = true
-
-							const timestamp = +localStorage.getItem("btr-cached-settings-timestamp")
-							if(Number.isSafeInteger(timestamp)) {
-								this.settingsLastFetched = timestamp
-							}
-
-							resolve()
-						}
-					} catch(ex) {
-						console.error(ex)
-					}
-				}
-
 				STORAGE.get(["settings"], data => {
 					if(data.settings) {
 						this._applySettings(data.settings)
 						this.loaded = true
 					}
 
-					this.settingsLastFetched = Date.now()
-					this._updateCachedSettings()
 					resolve()
 				})
 			})
@@ -610,6 +578,7 @@ Object.assign(SETTINGS, {
 		}
 
 		const setting = this._getSetting(settingPath, this.loadedSettings)
+
 		if(setting.value === value && !!isDefault === setting.default) {
 			return false
 		}
@@ -617,7 +586,13 @@ Object.assign(SETTINGS, {
 		setting.value = value
 		setting.default = !!isDefault
 
-		this._updateCachedSettings()
+		if(shouldSave) {
+			if(IS_BACKGROUND_PAGE) {
+				STORAGE.set({ settings: this.loadedSettings })
+			} else {
+				MESSAGING.send("setSetting", { path: settingPath, value, default: !!isDefault })
+			}
+		}
 
 		const listeners = this._onChangeListeners[settingPath]
 		if(listeners) {
@@ -627,13 +602,6 @@ Object.assign(SETTINGS, {
 			})
 		}
 
-		if(shouldSave) {
-			if(IS_BACKGROUND_PAGE) {
-				STORAGE.set({ settings: this.loadedSettings })
-			} else {
-				MESSAGING.send("setSetting", { path: settingPath, value, default: !!isDefault })
-			}
-		}
 
 		return true
 	},
