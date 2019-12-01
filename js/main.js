@@ -8,15 +8,21 @@ let isInitDeferred = false
 let settings
 let currentPage
 
-const injectCSS = path => {
-	const link = document.createElement("link")
-	link.rel = "stylesheet"
-	link.href = getURL(path)
-	
-	const parent = document.head || document.documentElement
-	parent.prepend(link)
+let mainStyleSheet
+const injectCSS = (...paths) => {
+	if(!paths.length) { return }
 
-	return link
+	if(!mainStyleSheet) {
+		const style = document.createElement("style")
+		style.type = "text/css"
+
+		const parent = document.head || document.documentElement
+		parent.append(style)
+
+		mainStyleSheet = document.styleSheets[document.styleSheets.length - 1]
+	}
+
+	paths.forEach(file => mainStyleSheet.insertRule(`@import url("${getURL("css/" + file)}")`))
 }
 
 const InjectJS = {
@@ -78,7 +84,7 @@ const OptionalLoader = {
 			promise: null,
 			assets: [
 				"js/feat/btr-settings.js",
-				"css/btr-settings.css"
+				"btr-settings.css"
 			]
 		}
 	},
@@ -87,24 +93,18 @@ const OptionalLoader = {
 		const lib = this.libraries[name]
 
 		if(!lib.promise) {
-			const jsAssets = []
+			const jsAssets = lib.assets.filter(file => file.endsWith(".js"))
+			const cssAssets = lib.assets.filter(file => file.endsWith(".css"))
+			
+			if(cssAssets.length) {
+				injectCSS(...cssAssets)
+			}
 
-			lib.assets.forEach(file => {
-				if(file.endsWith(".js")) {
-					jsAssets.push(file)
-				} else if(file.endsWith(".css")) {
-					injectCSS(file)
-				}
-			})
-
-			if(jsAssets.length > 0) {
-				lib.promise = new SyncPromise(resolve => {
-					MESSAGING.send("loadOptAssets", jsAssets, resolve)
-				})
+			if(jsAssets.length) {
+				lib.promise = new SyncPromise(resolve => MESSAGING.send("loadOptAssets", jsAssets, resolve))
 			} else {
 				lib.promise = SyncPromise.resolve()
 			}
-
 		}
 
 		return lib.promise
@@ -186,16 +186,7 @@ function PreInit() {
 
 	//
 
-	const script = document.createElement("script")
-	script.setAttribute("name", "BTRoblox/inject.js")
-	script.textContent = `"use strict";\n(${String(INJECT_SCRIPT)})();`
-	
-	const scriptParent = document.head || document.documentElement
-	scriptParent.prepend(script)
-
-	//
-
-	const cssFiles = ["css/main.css"]
+	const cssFiles = ["main.css"]
 	const themeStyles = []
 
 	const updateTheme = theme => {
@@ -204,7 +195,7 @@ function PreInit() {
 		if(theme === "default") {
 			oldStyles.forEach(x => x.remove())
 		} else {
-			cssFiles.forEach(file => themeStyles.push(injectCSS(`css/${theme}/${file}`)))
+			themeStyles.push(injectCSS(...cssFiles.map(file => `${theme}/${file}`)))
 
 			themeStyles[0].addEventListener("load", () => {
 				oldStyles.forEach(x => x.remove())
@@ -212,8 +203,20 @@ function PreInit() {
 		}
 	}
 
-	if(currentPage) { cssFiles.push(...currentPage.css.map(x => `css/${x}`)) }
-	cssFiles.forEach(injectCSS)
+	if(currentPage) { cssFiles.push(...currentPage.css) }
+
+	injectCSS(...cssFiles)
+
+	//
+
+	const script = document.createElement("script")
+	script.setAttribute("name", "BTRoblox/inject.js")
+	script.textContent = `"use strict";\n(${String(INJECT_SCRIPT)})();`
+	
+	const scriptParent = document.head || document.documentElement
+	scriptParent.prepend(script)
+
+	//
 
 	SETTINGS.onChange("general.theme", updateTheme)
 	SETTINGS.load(_settings => {
