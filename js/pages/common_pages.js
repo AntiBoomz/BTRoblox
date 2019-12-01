@@ -289,6 +289,9 @@ pageInit.common = () => {
 	}
 
 	document.$on("click", ".btr-settings-toggle", toggleSettings)
+	if(sessionStorage.getItem("btr-settings-open") === "true") {
+		document.$watch(">body", () => toggleSettings()) // Stuff breaks if body is not loaded
+	}
 
 	//
 

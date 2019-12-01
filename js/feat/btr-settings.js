@@ -263,9 +263,11 @@ const SettingsDiv = (() => {
 		}
 
 		if(visible) {
+			sessionStorage.setItem("btr-settings-open", "true")
 			document.body.appendChild(settingsDiv)
 			switchContent("main")
 		} else {
+			sessionStorage.removeItem("btr-settings-open")
 			settingsDiv.remove()
 		}
 	}
