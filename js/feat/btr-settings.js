@@ -1042,9 +1042,20 @@ const SettingsDiv = (() => {
 				const toggle = html`<div class=btr-settings-enabled-toggle>`
 				title.after(toggle)
 
+				const resetButton = html`<span class=btr-setting-reset-button>🗙</span>`
+				toggle.append(resetButton)
+
+				resetButton.$on("click", ev => {
+					SETTINGS.reset(settingPath)
+					ev.preventDefault()
+					ev.stopPropagation()
+				})
+
 				const update = () => {
 					const enabled = SETTINGS.get(settingPath)
 					toggle.classList.toggle("checked", enabled)
+
+					resetButton.classList.toggle("disabled", SETTINGS.getIsDefault(settingPath))
 
 					group.classList.toggle("btr-group-disabled", !enabled)
 				}

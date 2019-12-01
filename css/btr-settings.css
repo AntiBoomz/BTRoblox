@@ -93,6 +93,11 @@
 	visibility: hidden;
 }
 
+.btr-settings-enabled-toggle .btr-setting-reset-button {
+	right: 100%;
+	margin-right: 4px;
+}
+
 .btr-setting-reset-button:hover {
 	background: rgba(0, 0, 0, .05);
 	z-index: 10000;
@@ -277,6 +282,7 @@
 	-moz-user-select: none;
 	align-items: center;
 	justify-content: flex-end;
+	color: #fff;
 }
 
 .btr-settings-enabled-toggle.checked:after {
