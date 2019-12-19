@@ -380,30 +380,32 @@ const MESSAGING = (() => {
 			port.onMessage.addListener(msg => {
 				const listener = listenersByName[msg.name]
 
-				if(listener) {
-					let final = false
-
-					const respond = (response, hasMore) => {
-						if(alive && !final && "id" in msg) {
-							final = !(hasMore === true)
-
-							port.postMessage({
-								id: msg.id,
-								data: response,
-								final
-							})
-						}
-					}
-
-					respond.cancel = () => {
-						if(alive && !final && "id" in msg) {
-							final = true
-							port.postMessage({ id: msg.id, final, cancel: true })
-						}
-					}
-
-					listener(msg.data, respond, port)
+				if(!listener) {
+					return
 				}
+
+				let final = false
+
+				const respond = (response, hasMore) => {
+					if(alive && !final && "id" in msg) {
+						final = !(hasMore === true)
+
+						port.postMessage({
+							id: msg.id,
+							data: response,
+							final
+						})
+					}
+				}
+
+				respond.cancel = () => {
+					if(alive && !final && "id" in msg) {
+						final = true
+						port.postMessage({ id: msg.id, final, cancel: true })
+					}
+				}
+
+				listener(msg.data, respond, port)
 			})
 
 			port.onDisconnect.addListener(() => {
