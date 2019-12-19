@@ -115,7 +115,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 	}
 }
 
-const initExplorer = async assetTypeId => {
+const initExplorer = async (assetId, assetTypeId) => {
 	await OptionalLoader.loadExplorer()
 	const explorer = new Explorer()
 	let explorerInitialized = false
@@ -511,7 +511,7 @@ pageInit.itemdetails = function(category, assetId) {
 			const strictDisabled = !canAccess && StrictCheckAssetTypeIds.includes(assetTypeId)
 
 			if(settings.itemdetails.explorerButton && !InvalidExplorableAssetTypeIds.includes(assetTypeId) && (!strictDisabled || assetTypeId === 24)) {
-				initExplorer(assetTypeId)
+				initExplorer(assetId, assetTypeId)
 			}
 
 			if(settings.itemdetails.downloadButton && !InvalidDownloadableAssetTypeIds.includes(assetTypeId) && !strictDisabled) {
