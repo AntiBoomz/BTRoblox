@@ -270,8 +270,8 @@ const SettingsDiv = (() => {
 	}
 
 	let settingsLoadPromise
-	const toggleSettingsDiv = () => {
-		const visible = settingsDiv.parentNode !== document.body
+	const toggleSettingsDiv = force => {
+		const visible = typeof force === "boolean" ? force : settingsDiv.parentNode !== document.body
 
 		if(!settingsLoadPromise) {
 			settingsLoadPromise = initSettingsDiv().then(() => {

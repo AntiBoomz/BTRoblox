@@ -115,6 +115,16 @@ function GetAssetFileType(assetTypeId, buffer) {
 	}
 }
 
+const ToggleSettingsDiv = async force => {
+	await OptionalLoader.loadSettings()
+
+	if(!document.body) { // Stuff breaks if body is not loaded
+		await document.$watch(">body").$promise()
+	}
+
+	SettingsDiv.toggle(force)
+}
+
 function createPager(noSelect, hideWhenEmpty) {
 	const pager = html`
 	<div class=btr-pager-holder>
@@ -275,19 +285,21 @@ const initAdBlock = () => {
 }
 
 pageInit.common = () => {
-	const toggleSettings = async () => {
-		await OptionalLoader.loadSettings()
+	document.$on("click", ".btr-settings-toggle", ToggleSettingsDiv)
 
-		if(!document.body) { // Stuff breaks if body is not loaded
-			await document.$watch(">body").$promise()
+	try {
+		const url = new URL(window.location.href)
+
+		if(url.searchParams.get("btr_settings_open")) {
+			sessionStorage.setItem("btr-settings-open", true)
+
+			url.searchParams.delete("btr_settings_open")
+			window.history.replaceState(null, null, url.toString())
 		}
+	} catch(ex) {}
 
-		SettingsDiv.toggle()
-	}
-
-	document.$on("click", ".btr-settings-toggle", toggleSettings)
 	if(sessionStorage.getItem("btr-settings-open")) {
-		toggleSettings()
+		ToggleSettingsDiv()
 	}
 
 	//

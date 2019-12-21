@@ -9,6 +9,10 @@
 	"minimum_chrome_version": "69",
 	"incognito": "split",
 
+	"browser_action": {
+		"default_title": "Open BTRoblox Settings"
+	},
+
 	"icons": {
 		"128":"res/icon_128.png"
 	},
@@ -20,6 +24,7 @@
 			"js/background/blogfeed.js",
 			"js/background/groupshout.js",
 			"js/background/contextmenu.js",
+			"js/background/browseraction.js",
 			"js/background/fetch.js"
 		]
 	},
