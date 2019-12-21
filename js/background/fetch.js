@@ -264,13 +264,13 @@ MESSAGING.listen({
 		SyncPromise.all(assets.map(file => {
 			if(file.endsWith(".js")) {
 				return new SyncPromise(resolve => chrome.tabs.executeScript(
-					port.sender.tabId,
+					port.sender.tab.id,
 					{ frameId: port.sender.frameId, file, runAt: "document_start" },
 					() => resolve()
 				))
 			} else if(file.endsWith(".css")) {
 				return new SyncPromise(resolve => chrome.tabs.insertCSS(
-					port.sender.tabId,
+					port.sender.tab.id,
 					{ frameId: port.sender.frameId, file, runAt: "document_start" },
 					() => resolve()
 				))
