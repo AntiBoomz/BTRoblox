@@ -512,7 +512,7 @@ const SettingsDiv = (() => {
 				x.style.display = "none"
 			})
 
-			if(settings.navigation.enabled) {
+			if(SETTINGS.get("navigation.enabled")) {
 				this.initTopRight()
 				this.initTopLeft()
 			} else {
@@ -1194,9 +1194,10 @@ const SettingsDiv = (() => {
 		})
 
 		const wipGroup = settingsDiv.$find("#btr-settings-wip")
-		Object.entries(settings).forEach(([groupPath, settingsGroup]) => {
-			Object.entries(settingsGroup).forEach(([settingName, settingValue]) => {
+		Object.entries(SETTINGS.loadedSettings).forEach(([groupPath, settingsGroup]) => {
+			Object.entries(settingsGroup).forEach(([settingName, settingValueInfo]) => {
 				const defaultValueInfo = SETTINGS.defaultSettings[groupPath][settingName]
+				const settingValue = settingValueInfo.value
 
 				const settingPath = `${groupPath}.${settingName}`
 				if(settingsDone[settingPath] || defaultValueInfo.hidden) { return }
