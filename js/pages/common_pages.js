@@ -208,14 +208,6 @@ function Linkify(elem) {
 	InjectJS.send("linkify", className)
 }
 
-function onDocumentReady(cb) {
-	if(document.readyState !== "loading") {
-		cb()
-	} else {
-		document.addEventListener("DOMContentLoaded", cb, { once: true })
-	}
-}
-
 const FormatNumber = num => String(num).replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/yg, "$1,")
 const GetRobuxRatio = () => DOLLARS_TO_ROBUX_RATIOS[settings.general.robuxToUSDRate]
 const RobuxToUSD = amt => FormatNumber((Math.ceil((amt * GetRobuxRatio()[0]) / GetRobuxRatio()[1] * 100) / 100).toFixed(2))
@@ -325,7 +317,7 @@ pageInit.common = () => {
 			resolve(loggedInUser)
 		})
 		
-		onDocumentReady(() => resolve(-1))
+		$.ready(() => resolve(-1))
 	})
 
 	loggedInUserPromise.then(userId => {

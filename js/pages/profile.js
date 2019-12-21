@@ -604,7 +604,7 @@ pageInit.profile = function(userId) {
 			}
 		}
 
-		onDocumentReady(() => loadPage(1, ""))
+		$.ready(() => loadPage(1, ""))
 	}
 
 	function initGroups() {
@@ -626,7 +626,7 @@ pageInit.profile = function(userId) {
 
 		pager.onsetpage = loadPage
 
-		onDocumentReady(() => {
+		$.ready(() => {
 			const url = `https://www.roblox.com/users/profile/playergroups-json?userId=${userId}`
 			$.fetch(url).then(async response => {
 				const json = await response.json()
@@ -771,7 +771,7 @@ pageInit.profile = function(userId) {
 		dropdown.$findAll(".dropdown-menu li").forEach(btn => btn.$on("click", onclick))
 
 		pager.onsetpage = page => loadPage(lastCategory, page)
-		onDocumentReady(() => loadPage(9, 1))
+		$.ready(() => loadPage(9, 1))
 	}
 
 	initGroups()
@@ -785,7 +785,7 @@ pageInit.profile = function(userId) {
 		if(friends) { friends.remove() }
 	}
 
-	onDocumentReady(() => {
+	$.ready(() => {
 		const oldContainer = $(".profile-container > .rbx-tabs-horizontal")
 		if(oldContainer) {
 			oldContainer.remove()

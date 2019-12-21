@@ -74,7 +74,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 	
 					if(!autoLoading && (previewerMode === "always" || previewerMode === "animations" && isAnimation)) {
 						autoLoading = true
-						onDocumentReady(() => preview.setEnabled(true))
+						$.ready(() => preview.setEnabled(true))
 					}
 				}
 			})

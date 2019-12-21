@@ -26,7 +26,7 @@ pageInit.inventory = function() {
 					}
 				}
 
-				onDocumentReady(() => {
+				$.ready(() => {
 					updateHeight()
 					new MutationObserver(updateHeight).observe(body, { childList: true, subtree: true })
 				})

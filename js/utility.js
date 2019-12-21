@@ -147,6 +147,14 @@ const $ = function(selector) { return $.find(document, selector) }
 	let DTF
 
 	Object.assign($, {
+		ready(fn) {
+			if(document.readyState !== "loading") {
+				fn()
+			} else {
+				document.addEventListener("DOMContentLoaded", fn, { once: true })
+			}
+		},
+		
 		fetch(url, init = {}) {
 			if(init.body) {
 				if(init.body instanceof URLSearchParams) {

@@ -196,7 +196,7 @@ pageInit.gamedetails = function(placeId) {
 			)
 	})
 
-	onDocumentReady(() => {
+	$.ready(() => {
 		const placeEdit = $("#game-context-menu .dropdown-menu .VisitButtonEditGLI")
 		if(placeEdit) {
 			placeEdit.parentNode.parentNode.append(

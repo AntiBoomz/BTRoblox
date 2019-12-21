@@ -573,7 +573,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 			}, 0)
 		}
 
-		onDocumentReady(disableOrigThumbs)
+		$.ready(disableOrigThumbs)
 
 		const previewBtn = buttons.$find(".btr-preview-btn")
 		
