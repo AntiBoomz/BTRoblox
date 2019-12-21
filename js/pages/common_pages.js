@@ -235,12 +235,13 @@ const initAdBlock = () => {
 	new MutationObserver(() => {
 		for(let i = iframes.length; i--;) {
 			const iframe = iframes[i]
-			if(iframe.matches(iframeSelector)) {
-				iframe.remove()
-			} else if(doneMap.get(iframe)) {
-				break
-			} else {
-				doneMap.set(iframe, true)
+
+			if(!doneMap.get(iframe)) {
+				if(iframe.matches(iframeSelector)) {
+					iframe.remove()
+				} else {
+					doneMap.set(iframe, true)
+				}
 			}
 		}
 
