@@ -1,20 +1,5 @@
 /* Top bar */
 
-#header .rbx-nav-collapse .rbx-nav-notification {
-	display: none;
-}
-
-#header .rbx-navbar.btr-navbar-1 > li { width: 100% }
-#header .rbx-navbar.btr-navbar-2 > li { width: 50% }
-#header .rbx-navbar.btr-navbar-3 > li { width: 33.33% }
-#header .rbx-navbar.btr-navbar-4 > li { width: 25% }
-#header .rbx-navbar.btr-navbar-5 > li { width: 20% }
-#header .rbx-navbar.btr-navbar-6 > li { width: 16.66% }
-#header .rbx-navbar.btr-navbar-7 > li { width: 14.28% }
-#header .rbx-navbar.btr-navbar-8 > li { width: 12.5% }
-#header .rbx-navbar.btr-navbar-9 > li { width: 11.11% }
-#header .rbx-navbar.btr-navbar-10 > li { width: 10% }
-
 @media (min-width: 992px) and (max-width: 1500px){
 	#header .rbx-navbar {
 		width: 30%;
@@ -49,7 +34,6 @@
 	}
 }
 
-
 /* Fix weird stream button styling */
 
 #header .navbar-stream {
@@ -70,6 +54,14 @@
 }
 
 /* Navigation */
+
+html:not(.btr-naveditor-open) .btr-nav-disabled {
+	display: none;
+}
+
+.btr-naveditor-open .btr-nav-disabled {
+	opacity: 0.5;
+}
 
 .icon-nav-friend-btr, .icon-nav-message-btr {
 	background-image: url(/res/nav2.svg);
@@ -102,10 +94,6 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 .light-theme .icon-nav-friend-btr { filter: invert(76%); }
 .light-theme .icon-nav-message-btr { filter: invert(76%); }
 .light-theme a:not(:hover) .icon-nav-premium-btr { filter: invert(24%); }
-
-#nav-message .notification-blue, #nav-friends .notification-blue {
-	display: none;
-}
 
 #nav-premium:hover {
 	color: #00a2ff;
@@ -149,11 +137,6 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 
 #header.dark-theme .btr-nav-notif {
 	border-color: #232527;
-}
-
-body #navigation .rbx-scrollbar > ul,
-body #navigation .rbx-scrollbar .mCSB_container {
-	margin-right: 12px;
 }
 
 /* btr-no-hamburger TODO: Make sure this stuff is right */

@@ -1,240 +1,470 @@
 "use strict"
 
 const Navigation = (() => {
-	const defaultItems = {
-		topleft: ["bi_Home", "Games", "Catalog", "Create", "-Robux"],
-		topright: ["RPlus", "Settings", "Robux", "bi_Friends", "bi_Messages", "Stream"]
+	const customElements = {
+		btr_Home: `<li class=cursor-pointer><a class="font-header-2 nav-menu-title text-header" href=/home>Home</a></li>`,
+
+		btr_Friends: `
+		<li id="btr-navbar-friends" class="navbar-icon-item">
+			<a class="rbx-menu-item" href="/Friends.aspx">
+				<span class="icon-nav-friend-btr"></span>
+				<span class="btr-nav-notif rbx-text-navbar-right" style="display:none;"></span>
+			</a>
+		</li>`,
+		btr_Messages: `
+		<li id="btr-navbar-messages" class="navbar-icon-item">
+			<a class="rbx-menu-item" href="/My/Messages#!/inbox">
+				<span class="icon-nav-message-btr"></span>
+				<span class="btr-nav-notif rbx-text-navbar-right" style="display:none;"></span>
+			</a>
+		</li>`,
+
+		btr_Money: `
+		<li>
+			<a href="https://www.roblox.com/my/money.aspx" class="dynamic-overflow-container text-nav">
+				<div><span class="icon-nav-trade"></span></div>
+				<span class="font-header-2 dynamic-ellipsis-item">Money</span>
+			</a>
+		</li>`,
+		btr_Premium: `
+		<li>
+			<a href=/premium/membership id=nav-premium class="dynamic-overflow-container text-nav">
+				<div><span class=icon-nav-premium-btr></span></div>
+				<span class="font-header-2 dynamic-ellipsis-item">Premium</span>
+			</a>
+		</li>`,
+		btr_BlogFeed: `<li id=btr-blogfeed></li>`
 	}
 
-	const buttonElements = {
-		topleft: {
-			bi_Home: htmlstring`<li class=cursor-pointer><a class="font-header-2 nav-menu-title text-header" href=/home>Home</a></li>`
-		},
-		topright: {
-			bi_Friends: html`
-			<li id="btr-navbar-friends" class="navbar-icon-item">
-				<a class="rbx-menu-item" href="/Friends.aspx">
-					<span class="icon-nav-friend-btr"></span>
-					<span class="btr-nav-notif rbx-text-navbar-right" style="display:none;"></span>
-				</a>
-			</li>`,
-			bi_Messages: html`
-			<li id="btr-navbar-messages" class="navbar-icon-item">
-				<a class="rbx-menu-item" href="/My/Messages#!/inbox">
-					<span class="icon-nav-message-btr"></span>
-					<span class="btr-nav-notif rbx-text-navbar-right" style="display:none;"></span>
-				</a>
-			</li>`
-		}
+	const navElements = {
+		topleft: [],
+		topright_outer: [],
+		topright: [],
+		sidebar: []
 	}
 
-	const topLeftBars = []
 	const savedItems = {}
-	let rplusCompatMode = false
-	let isEnabled = false
-	let topRightBar
+	let lastSavedItems
+	let editablesLocked = true
 
-	const arrayEquals = (a, b) => JSON.stringify(a) === JSON.stringify(b)
+	const navsToUpdate = new Set()
+	let navUpdateTimeout
 
-	const loadSavedItems = savedData => {
-		const items = savedData && JSON.parse(savedData) || {}
-		const topleft = items.topleft || defaultItems.topleft
-		const topright = items.topright || defaultItems.topright
+	const loadSavedItems = () => {
+		const saveDataString = SETTINGS.get("navigation.itemsV2")
 
-		if(!savedItems.topleft || !arrayEquals(savedItems.topleft, topleft)) {
-			savedItems.topleft = topleft
-			requestTopLeftUpdate()
+		if(lastSavedItems === saveDataString) {
+			return
+		}
+		
+		Object.keys(savedItems).forEach(key => delete savedItems[key])
+
+		const saveData = saveDataString ? JSON.parse(saveDataString) : null
+		if(saveData) {
+			Object.entries(saveData).forEach(([key, value]) => {
+				savedItems[key] = value
+			})
 		}
 
-		if(!savedItems.topright || !arrayEquals(savedItems.topright, topright)) {
-			savedItems.topright = topright
-			requestTopRightUpdate()
-		}
+		Object.values(navElements).forEach(list => list.forEach(cont => requestNavUpdate(cont)))
 	}
 
 	const saveSavedItems = () => {
-		MESSAGING.send("setSetting", {
-			path: "navigation.items",
-			value: JSON.stringify({
-				topleft: !arrayEquals(savedItems.topleft, defaultItems.topleft) ? savedItems.topleft : undefined,
-				topright: !arrayEquals(savedItems.topright, defaultItems.topright) ? savedItems.topright : undefined
-			})
-		})
+		lastSavedItems = JSON.stringify(savedItems)
+		SETTINGS.set("navigation.itemsV2", lastSavedItems)
 	}
 
-	const updateTopLeft = () => {
-		topLeftBars.forEach(self => {
-			const saved = savedItems.topleft
-			let count = 0
-			let prev
+	const sortContItems = cont => {
+		const savedCont = savedItems[cont.type]
 
-			saved.forEach(x => {
-				const rem = x[0] === "-"
-				const item = self.items[rem ? x.slice(1) : x]
-	
-				if(item) {
-					if(rem) {
-						item.style.display = "none"
-					} else {
-						item.style.display = ""
-						if(prev) {
-							prev.after(item)
+		cont.items.forEach(x => {
+			const savedItem = savedCont ? savedCont[x.name] : null
+			x.index2 = x.index + (savedItem && "offset" in savedItem ? savedItem.offset : 0)
+		})
+
+		cont.items.sort((a, b) => a.index2 - b.index2)
+	}
+
+	const requestNavUpdate = tarCont => {
+		console.assert(tarCont)
+		navsToUpdate.add(tarCont)
+
+		if(navUpdateTimeout) {
+			return
+		}
+
+		navUpdateTimeout = $.setImmediate(() => {
+			navUpdateTimeout = null
+
+			const navs = Array.from(navsToUpdate)
+			navsToUpdate.clear()
+
+			navs.forEach(cont => {
+				const savedCont = savedItems[cont.type]
+				sortContItems(cont)
+
+				const children = cont.elem.children
+				const indices = cont.items.map(x => Array.prototype.indexOf.call(children, x.elem)).sort((a, b) => a - b)
+
+				cont.items.forEach((x, i) => {
+					const target = children[indices[i]]
+
+					if(target !== x.elem) {
+						const prevSib = x.elem.previousElementSibling
+						target.before(x.elem)
+						
+						if(prevSib) {
+							prevSib.after(target)
 						} else {
-							self.elem.prepend(item)
+							target.parentNode.prepend(target)
 						}
-						prev = item
-						count++
 					}
-				}
-			})
 
-			Object.entries(self.items).forEach(([name, item]) => {
-				if(!saved.includes(name) && !saved.includes(`-${name}`)) {
-					item.style.display = ""
-					count++
-				}
-			})
-			
-			if(rplusCompatMode) {
-				self.elem.querySelectorAll(".btr-fake-btn").forEach(x => x.remove())
-				const btn = self.elem.children[2]
-				if(btn) {
-					for(let i = 0; i < 5; i++) {
-						btn.before(html`<li class=btr-fake-btn style=display:none><a class=nav-menu-title href=/asd>asd</a></li>`)
+					const savedItem = savedCont ? savedCont[x.name] : null
+					const isVisible = savedItem && "visible" in savedItem ? savedItem.visible : !x.defaultDisabled
+
+					if(x.visible !== isVisible) {
+						x.visible = isVisible
+
+						x.elem.classList.toggle("btr-nav-disabled", !x.visible)
+				
+						if(x.children) {
+							x.children.forEach(child => child.classList.toggle("btr-nav-disabled", !x.visible))
+						}
 					}
-				}
-			}
+				})
 
-			const itemWidthClass = `btr-navbar-${Math.max(1, count)}`
-			if(self.lastWidthClass !== itemWidthClass) {
-				if(self.lastWidthClass) {
-					self.elem.classList.remove(self.lastWidthClass)
-				}
+				cont.items.forEach(x => {
+					let prev = x.elem
 
-				self.lastWidthClass = itemWidthClass
-				self.elem.classList.add(itemWidthClass)
-			}
+					x.children.forEach(child => {
+						prev.after(child)
+						prev = child
+					})
+				})
+			})
 		})
 	}
+	
+	const addEditable = (elem, type) => {
+		const cont = {
+			elem,
+			type,
+			items: []
+		}
 
-	let topleftUpdateImmediate
-	const requestTopLeftUpdate = () => {
-		if(!isEnabled) { return }
-		$.clearImmediate(topleftUpdateImmediate)
-		topleftUpdateImmediate = $.setImmediate(updateTopLeft)
-	}
+		const set = new WeakSet()
+		navElements[type].push(cont)
 
-	const updateTopRight = () => {
-		const saved = savedItems.topright
-		const self = topRightBar
-		let prev
+		let numRbxItems = 0
+		let numCustoms = 0
 
-		if(!self) { return }
+		const addChild = child => {
+			if(set.has(child) || child.matches(".btr-naveditor-item")) {
+				return
+			}
 
-		saved.forEach(x => {
-			const rem = x[0] === "-"
-			const item = self.items[rem ? x.slice(1) : x]
+			set.add(child)
 
+			if(child.classList.contains("rbx-nav-sponsor")) {
+				let parent
+				
+				for(let i = cont.items.length; i--;) {
+					const prev = cont.items[i]
+					if(prev.builtin) {
+						parent = prev
+						break
+					}
+				}
+
+				if(parent) {
+					parent.children.push(child)
+					
+					const prev = parent.children[parent.children.length - 1] || parent.elem
+					prev.after(child)
+
+					if(!parent.visible) {
+						child.classList.toggle("btr-nav-disabled", !parent.visible)
+					}
+				}
+
+				return
+			}
+
+			const index = numRbxItems++
+
+			const item = {
+				elem: child,
+				children: [],
+
+				name: "rbx_" + index,
+				index,
+
+				builtin: true
+			}
+
+			cont.items.push(item)
+
+			if(!editablesLocked) {
+				unlockItem(item, cont)
+			}
+
+			requestNavUpdate(cont)
+		}
+
+		const addCustom = (name, after) => {
+			const btn = html(customElements[name])
+			set.add(btn)
+
+			const afterItem = after ? cont.items.find(x => x.elem === after) : null
+
+			const item = {
+				elem: btn,
+				children: [],
+
+				name,
+				index: (afterItem ? afterItem.index : -1) + (++numCustoms) * 0.01,
+
+				visible: true
+			}
+
+
+			cont.items.push(item)
+			elem.append(btn)
+
+			if(!editablesLocked) {
+				unlockItem(item, cont)
+			}
+
+			requestNavUpdate(cont)
+		}
+
+		const hideNavItem = target => {
+			const item = cont.items.find(x => x.elem === target)
 			if(item) {
-				if(rem) {
-					item.style.display = "none"
-				} else {
-					item.style.display = ""
-					if(prev) {
-						prev.after(item)
-					} else {
-						self.elem.prepend(item)
-					}
-					prev = item
-				}
+				item.defaultDisabled = true
+				requestNavUpdate(cont)
 			}
+		}
+
+		elem.$watchAll("*", child => addChild(child))
+
+		if(type === "topleft") {
+			addCustom("btr_Home", null)
+
+			elem.$watch(".buy-robux", target => hideNavItem(target.parentNode))
+
+		} else if(type === "topright") {
+			elem.$watch("#navbar-robux", robux => {
+				addCustom("btr_Friends", robux)
+				addCustom("btr_Messages", robux)
+			})
+
+		} else if(type === "topright_outer") {
+			elem.$watch(".age-bracket-label", target => hideNavItem(target))
+
+		} else if(type === "sidebar") {
+			elem.$watch("#nav-blog", link => {
+				const blog = link.parentNode
+				addCustom("btr_Premium", blog.previousElementSibling)
+				addCustom("btr_BlogFeed", blog)
+			})
+				.$watch("#nav-trade", trade => {
+					hideNavItem(trade.parentNode)
+					addCustom("btr_Money", trade.parentNode)
+				})
+				.$watch(".rbx-upgrade-now", target => hideNavItem(target))
+				.$watch("#nav-message", target => hideNavItem(target.parentNode))
+				.$watch("#nav-friends", target => hideNavItem(target.parentNode))
+		}
+	}
+
+	const unlockItem = (item, cont) => {
+		const tar = item.elem
+
+		if(tar.classList.contains("navbar-right")) {
+			// Not draggable
+		} else {
+			tar.classList.add("btr-naveditor-item-parent")
+
+			const btn = html`<div class=btr-naveditor-item draggable=true></div>`
+			tar.append(btn)
+			
+			let lastClick
+			btn.$on("click", ev => {
+				ev.preventDefault()
+				ev.stopPropagation()
+
+				if(lastClick && (Date.now() - lastClick) < 500) {
+					lastClick = null
+
+					const savedCont = savedItems[cont.type] = savedItems[cont.type] || {}
+					const savedItem = savedCont[item.name] = savedCont[item.name] || {}
+					savedItem.visible = !item.visible
+
+					if(savedItem.visible === !item.defaultDisabled) {
+						delete savedItem.visible
+					}
+
+					requestNavUpdate(cont)
+					saveSavedItems()
+				} else {
+					lastClick = Date.now()
+				}
+			}).$on("dragstart", ev => {
+				ev.dataTransfer.dropEffect = "move"
+				cont.dragging = item
+			}).$on("dragend", () => {
+				cont.dragging = null
+			})
+		}
+	}
+
+	const lockItem = item => {
+		const tar = item.elem
+
+		tar.classList.remove("btr-naveditor-item-parent")
+		const btn = tar.$find(".btr-naveditor-item")
+		if(btn) {
+			btn.remove()
+		}
+	}
+
+	const checkBounds = (cont, i0, i1, mx, my) => {
+		const item0 = cont.items[i0]
+		const item1 = cont.items[i1]
+		
+		if(!item0 || !item1) {
+			return false
+		}
+
+		const mrect = item0.elem.getBoundingClientRect()
+		const crect = item1.elem.getBoundingClientRect()
+
+		return (crect.right <= mrect.left && mx <= crect.left + Math.min(crect.width, mrect.width))
+			|| (crect.left >= mrect.right && mx >= crect.right - Math.min(crect.width, mrect.width))
+			|| (crect.bottom <= mrect.top && my <= crect.top + Math.min(crect.height, mrect.height))
+			|| (crect.top >= mrect.bottom && my >= crect.bottom - Math.min(crect.height, mrect.height))
+	}
+
+	const unlockEditables = () => {
+		editablesLocked = false
+
+		document.documentElement.classList.add("btr-naveditor-open")
+
+		Object.values(navElements).forEach(list => {
+			list.forEach(cont => {
+				cont.elem.classList.add("btr-naveditor-cont")
+
+				cont.elem
+					.$on("dragover.btr-naveditor", ev => {
+						const target = cont.dragging
+
+						if(!target) {
+							return
+						}
+
+						ev.preventDefault()
+						ev.dataTransfer.dropEffect = "move"
+
+						const savedCont = savedItems[cont.type] || {}
+						const savedItem = savedCont[target.name] || { offset: 0 }
+
+						sortContItems(cont)
+						const myIndex = cont.items.indexOf(target)
+						let targetIndex = myIndex
+
+						while(checkBounds(cont, myIndex, targetIndex - 1, ev.clientX, ev.clientY)) {
+							targetIndex--
+
+							savedItem.offset = (savedItem.offset || 0) - 1
+						}
+
+						while(checkBounds(cont, myIndex, targetIndex + 1, ev.clientX, ev.clientY)) {
+							targetIndex++
+
+							savedItem.offset = (savedItem.offset || 0) + 1
+						}
+
+						if(targetIndex !== myIndex) {
+							savedItems[cont.type] = savedCont
+							savedCont[target.name] = savedItem
+
+							if(savedItem.offset === 0) {
+								delete savedItem.offset
+							}
+
+							requestNavUpdate(cont)
+							saveSavedItems()
+						}
+					})
+					.$on("drop.btr-naveditor", ev => {
+						ev.preventDefault()
+					})
+				
+				cont.items.forEach(y => unlockItem(y, cont))
+			})
 		})
 
-		Object.entries(self.items).forEach(([name, item]) => {
-			if(!saved.includes(name) && !saved.includes(`-${name}`)) {
-				item.style.display = ""
-			}
+		initBlogFeed()
+	}
+
+	const lockEditables = () => {
+		editablesLocked = true
+
+		document.documentElement.classList.remove("btr-naveditor-open")
+
+		Object.values(navElements).forEach(list => {
+			list.forEach(cont => {
+				cont.elem.classList.remove("btr-naveditor-cont")
+
+				cont.elem.$off("dragover.btr-naveditor").$off("drop.btr-naveditor")
+				cont.items.forEach(y => lockItem(y, cont))
+			})
 		})
 	}
 
-	let toprightUpdateImmediate
-	const requestTopRightUpdate = () => {
-		if(!isEnabled) { return }
+	let isBlogFeedInitialized = false
+	const initBlogFeed = () => {
+		if(isBlogFeedInitialized) { return }
 
-		$.clearImmediate(toprightUpdateImmediate)
-		toprightUpdateImmediate = $.setImmediate(updateTopRight)
+		const blogfeed = $("#btr-blogfeed")
+		if(!blogfeed || (blogfeed.classList.contains("btr-nav-disabled") && editablesLocked)) {
+			return
+		}
+
+		isBlogFeedInitialized = true
+
+		const update = data => {
+			blogfeed.$findAll(">.btr-feed").forEach(x => x.remove())
+
+			data.forEach(item => {
+				blogfeed.append(html`
+				<a class="btr-feed" href="${item.url}">
+					<div class="btr-feedtitle">
+						${item.title.trim() + " "}
+						<span class="btr-feeddate">(${$.dateSince(item.date)} ago)</span>
+					</div>
+					<div class="btr-feeddesc">${item.desc}</div>
+				</a>`)
+			})
+		}
+
+		MESSAGING.send("requestBlogFeed", update)
+		STORAGE.get(["cachedBlogFeedV2"], data => {
+			if(data.cachedBlogFeedV2) {
+				update(data.cachedBlogFeedV2)
+			}
+		})
 	}
 
 	const initNavigation = () => {
-		isEnabled = settings.navigation.enabled
-
-		loadSavedItems(settings.navigation.items)
-		SETTINGS.onChange("navigation.items", value => {
-			loadSavedItems(value)
-		})
-
-		const headerWatcher = document.$watch("#header > .container-fluid").$then()
-
-		headerWatcher.$watchAll(".rbx-navbar", bar => {
-			const self = { elem: bar }
-			const registered = self.registered = new Map()
-			const items = self.items = {}
-			const defaults = self.defaults = {}
-
-			topLeftBars.push(self)
-
-			Object.entries(buttonElements.topleft).forEach(([name, data]) => {
-				const elem = items[name] = html(data)
-				registered.set(elem, name)
+		const headerWatcher = document.$watch("#header").$then().$watch(">div").$then()
+		
+		headerWatcher.$watch("#navbar-setting").$then()
+			.$watch(".rbx-popover-content > ul", list => {
+				list.prepend(html`<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>`)
 			})
-
-			bar.$watchAll("li", async li => {
-				if(registered.get(li) || li.classList.contains("btr-fake-btn")) { return }
-				const anchor = await li.$watch("a").$promise()
-				const text = anchor.textContent.trim()
-
-				registered.set(li, text)
-				items[text] = li
-				defaults[text] = true
-
-				requestTopLeftUpdate()
-			})
-		})
-
-		headerWatcher.$watch("ul.navbar-right", bar => {
-			const self = topRightBar = { elem: bar }
-			const items = self.items = {}
-			const defaults = self.defaults = {}
-			const registered = self.registered = new WeakMap()
-			let idkCounter = 0
-
-			Object.entries(buttonElements.topright).forEach(([name, data]) => {
-				items[name] = data
-				registered.set(data, name)
-			})
-
-			bar.$watchAll("li", li => {
-				if(registered.get(li)) { return }
-				let name
-
-				if(li.id === "navbar-setting") { name = "Settings" }
-				else if(li.id === "navbar-robux") { name = "Robux" }
-				else if(li.id === "navbar-rplus") { name = "RPlus" }
-				else if(li.classList.contains("navbar-stream")) { name = "Stream" }
-				else if(li.classList.contains("rbx-navbar-right-search")) { return }
-				else { name = `Unknown-${idkCounter++}` }
-
-				items[name] = li
-				defaults[name] = li
-				registered.set(li, name)
-
-				requestTopRightUpdate()
-			})
-		})
-
-		headerWatcher.$watch("#navbar-setting").$then().$watch(".rbx-popover-content > ul", list => {
-			list.prepend(html`<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>`)
-		})
 
 		if(settings.general.robuxToUSD) {
 			headerWatcher.$watch("#nav-robux-balance", bal => {
@@ -257,129 +487,31 @@ const Navigation = (() => {
 			})
 		}
 
-
-		if(!isEnabled) { return }
-
-			
-		// Roblox+ compatibility
-		headerWatcher.$watch("#navbar-rplus", () => {
-			rplusCompatMode = true
-			requestTopLeftUpdate()
-		})
-
-
-		let ageBracketLabel
-		const updateAgeBracket = disabled => {
-			if(ageBracketLabel) {
-				ageBracketLabel.style.display = disabled ? "none" : ""
-			}
+		if(!settings.navigation.enabled) {
+			return
 		}
 
-		headerWatcher.$watch(".age-bracket-label", elem => {
-			ageBracketLabel = elem
-			updateAgeBracket(settings.navigation.hideAgeBracket)
-		})
+		loadSavedItems()
+		SETTINGS.onChange("navigation.itemsV2", loadSavedItems)
 
-		SETTINGS.onChange("navigation.hideAgeBracket", value => {
-			updateAgeBracket(value)
-		})
-
-
-		const blogfeed = html`<li id=btr-blogfeed style=display:none>Blog feed enabled</li>`
-		let blogfeedInitialized = false
-
-		const updateBlogFeed = data => {
-			blogfeed.$empty()
-
-			data.forEach(item => {
-				blogfeed.append(html`
-				<a class="btr-feed" href="${item.url}">
-					<div class="btr-feedtitle">
-						${item.title.trim() + " "}
-						<span class="btr-feeddate">(${$.dateSince(item.date)} ago)</span>
-					</div>
-					<div class="btr-feeddesc">${item.desc}</div>
-				</a>`)
-			})
-
-			blogfeed.style.display = ""
-		}
-
-		const toggleBlogFeed = enabled => {
-			if(enabled && !blogfeedInitialized) {
-				blogfeedInitialized = true
-
-				MESSAGING.send("requestBlogFeed", updateBlogFeed)
-
-				STORAGE.get(["cachedBlogFeedV2"], data => {
-					if(data.cachedBlogFeedV2) {
-						updateBlogFeed(data.cachedBlogFeedV2)
-					}
-				})
-			}
-
-			blogfeed.style.display = enabled ? "" : "none"
-		}
-
-		toggleBlogFeed(settings.navigation.showBlogFeed)
-		SETTINGS.onChange("navigation.showBlogFeed", value => {
-			toggleBlogFeed(value)
-		})
-		
-		const navWatcher = document.$watch("#navigation").$then()
-
-		navWatcher
-			.$watch("#nav-home", home => home.parentNode.remove())
-			.$watch(".rbx-upgrade-now", upgradeNow => upgradeNow.remove())
-			.$watch("#nav-blog", blog => {
-				blog.parentNode.before(html`
-				<li>
-					<a href=/premium/membership id=nav-premium class="dynamic-overflow-container text-nav">
-						<div><span class=icon-nav-premium-btr></span></div>
-						<span class="font-header-2 dynamic-ellipsis-item">Premium</span>
-					</a>
-				</li>`)
-	
-				blog.parentNode.after(blogfeed)
-			})
-			.$watch("#nav-trade", trade => {
-				const href = "/my/money.aspx"
-
-				const updateHref = () => trade.getAttribute("href") !== href && (trade.href = href)
-			
-				new MutationObserver(updateHref).observe(
-					trade,
-					{
-						attributes: true,
-						attributeFilter: ["href"]
-					}
-				)
-
-				updateHref()
-
-				const label = trade.$find("span:not([class^='icon-nav'])")
-				if(label) { label.textContent = "Money" }
-			})
-			.$watch(["#nav-friends", "#nav-message"], (navFriends, navMessages) => {
-				navMessages.style.display = "none"
-
-				const friends = buttonElements.topright.bi_Friends
-				const messages = buttonElements.topright.bi_Messages
-	
+		document
+			.$watch("#nav-home", x => addEditable(x.closest("ul"), "sidebar"))
+			.$watch("#btr-blogfeed", () => initBlogFeed())
+			.$watch(["#nav-friends", "#nav-message", "#btr-navbar-friends", "#btr-navbar-messages"], (navFriends, navMessages, btrFriends, btrMessages) => {
 				const updateFriends = () => {
-					const notif = friends.$find(".btr-nav-notif")
+					const notif = btrFriends.$find(".btr-nav-notif")
 					const count = navFriends.dataset.count
 	
-					friends.$find("a").href = navFriends.href
+					btrFriends.$find("a").href = navFriends.href
 					notif.textContent = count
 					notif.style.display = count > 0 ? "" : "none"
 				}
 	
 				const updateMessages = () => {
-					const notif = messages.$find(".btr-nav-notif")
+					const notif = btrMessages.$find(".btr-nav-notif")
 					const count = navMessages.dataset.count
 	
-					messages.$find("a").href = navMessages.href
+					btrMessages.$find("a").href = navMessages.href
 					notif.textContent = count
 					notif.style.display = count > 0 ? "" : "none"
 				}
@@ -390,73 +522,17 @@ const Navigation = (() => {
 				updateFriends()
 				updateMessages()
 			})
+
+		headerWatcher
+			.$watchAll(".rbx-navbar", x => addEditable(x, "topleft"))
+			.$watch(".rbx-navbar-right", x => addEditable(x, "topright_outer")).$then()
+				.$watch(".navbar-right", x => addEditable(x, "topright"))
 	}
 	
 	return {
 		init: initNavigation,
-		topleft: {
-			getAll() {
-				return Object.keys(topLeftBars[0].items)
-			},
-			getCurrent() {
-				const self = topLeftBars[0]
-				const curr = []
 
-				Array.from(self.elem.children).forEach(x => {
-					const name = self.registered.get(x)
-					if(x.style.display !== "none" && name) {
-						curr.push(name)
-					}
-				})
-
-				return curr
-			},
-			setCurrent(list) {
-				list = list.slice()
-				const self = topLeftBars[0]
-
-				Object.keys(self.items).forEach(name => {
-					if(!list.includes(name)) {
-						list.push(`-${name}`)
-					}
-				})
-
-				savedItems.topleft = list
-				saveSavedItems()
-				requestTopLeftUpdate()
-			}
-		},
-		topright: {
-			getAll() {
-				return Object.keys(topRightBar.items)
-			},
-			getCurrent() {
-				const self = topRightBar
-				const curr = []
-
-				Array.from(self.elem.children).forEach(x => {
-					const name = self.registered.get(x)
-					if(x.style.display !== "none" && name) {
-						curr.push(name)
-					}
-				})
-
-				return curr
-			},
-			setCurrent(list) {
-				list = list.slice()
-				const self = topRightBar
-
-				Object.keys(self.items).forEach(name => {
-					if(!list.includes(name)) {
-						list.push(`-${name}`)
-					}
-				})
-
-				savedItems.topright = list
-				saveSavedItems()
-				requestTopRightUpdate()
-			}
-		}
+		unlock: unlockEditables,
+		lock: lockEditables
 	}
 })()
