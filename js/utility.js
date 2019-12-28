@@ -63,6 +63,7 @@ const $ = function(selector) { return $.find(document, selector) }
 
 							let matches = false
 							switch(item.type) {
+							case "any": matches = true; break
 							case "name": matches = node.nodeName.toLowerCase() === item.selector; break
 							case "class": matches = node.classList.contains(item.selector); break
 							case "id": matches = node.id === item.selector; break
@@ -97,7 +98,7 @@ const $ = function(selector) { return $.find(document, selector) }
 		}
 	}
 
-	const watchAllSelectorRegex = /^((?:#|\.)?[\w-]+)$/
+	const watchAllSelectorRegex = /^((?:#|\.)?[\w-]+|\*)$/
 	const watcherProto = {
 		$watch(...args) {
 			const finishPromise = this.targetPromise.then(target => target.$watch(...args).finishPromise)
@@ -250,7 +251,7 @@ const $ = function(selector) { return $.find(document, selector) }
 							getter = () => {
 								const elem = document.getElementById(id)
 
-								if(elem && !target.contains(elem)) {
+								if(elem && elem !== target && !target.contains(elem)) {
 									return (getter = defGetter)()
 								}
 								
@@ -270,7 +271,7 @@ const $ = function(selector) { return $.find(document, selector) }
 
 									for(let i = 0, len = collection.length; i < len; i++) {
 										const elem = collection[i]
-										if(target.contains(elem)) {
+										if(elem !== target && target.contains(elem)) {
 											return elem
 										}
 									}
@@ -338,7 +339,9 @@ const $ = function(selector) { return $.find(document, selector) }
 			if(argProps instanceof Object) { Object.assign(props, argProps) }
 
 			let item
-			if(selector[0] === ".") {
+			if(selector === "*") {
+				item = { type: "any", callback, once: props.once }
+			} else if(selector[0] === ".") {
 				item = { type: "class", selector: selector.slice(1), callback, once: props.once }
 			} else if(selector[0] === "#") {
 				item = { type: "id", selector: selector.slice(1), callback, once: props.once }
@@ -350,6 +353,7 @@ const $ = function(selector) { return $.find(document, selector) }
 				let matches = false
 
 				switch(item.type) {
+				case "any": matches = true; break
 				case "name": matches = node.nodeName.toLowerCase() === item.selector.toLowerCase(); break
 				case "class": matches = node.classList.contains(item.selector); break
 				case "id": matches = node.id === item.selector; break
