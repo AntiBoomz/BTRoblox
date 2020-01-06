@@ -37,8 +37,6 @@ pageInit.gamedetails = function(placeId) {
 			})
 	}
 
-
-
 	const watcher = document.$watch("body", body => body.classList.add("btr-gamedetails")).$then()
 		.$watch(["#tab-about", "#tab-game-instances"], (aboutTab, gameTab) => {
 			aboutTab.$find(".text-lead").textContent = "Recommended"
