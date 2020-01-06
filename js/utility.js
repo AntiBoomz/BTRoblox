@@ -119,17 +119,14 @@ const $ = function(selector) { return $.find(document, selector) }
 		},
 
 		$then(cb) {
-			if(!this.finishPromise) { throw new Error("Tried to call $then before $watch") }
-			
 			const nxt = {
-				targetPromise: this.finishPromise,
+				targetPromise: this.finishPromise || this.targetPromise,
 				finishPromise: null,
 				__proto__: watcherProto
 			}
 
 			if(cb) {
-				cb(nxt)
-				return this
+				nxt.targetPromise.then(cb)
 			}
 
 			return nxt

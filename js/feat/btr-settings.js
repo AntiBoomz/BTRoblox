@@ -175,7 +175,7 @@ const SettingsDiv = (() => {
 					<h4>Modify Navigation Buttons</h4>
 				</div>
 				<group>
-					<button id=btr-reset-naveditor class=btn-control-xs>Reset buttons to default</button>
+					<div style=width:100%;text-align:right><button id=btr-reset-naveditor class=btn-control-xs>Reset buttons to default</button></div>
 				</group>
 			</div>
 			<div class=btr-settings-footer>

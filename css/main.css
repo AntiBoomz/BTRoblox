@@ -1,35 +1,32 @@
-/* Top bar */
+/* Naveditor stuff */
 
-@media (min-width: 992px) and (max-width: 1500px){
-	#header .rbx-navbar {
-		width: 30%;
-	}
+html:not(.btr-naveditor-open) .btr-nav-disabled {
+	display: none;
 }
 
-@media (min-width: 768px) and (max-width: 870px) {
-	#header .navbar-left {
-		width: 45%;
-	}
+.btr-naveditor-open .btr-nav-disabled {
+	opacity: 0.5;
 }
 
-@media (min-width: 620px) and (max-width: 700px) {
-	#header .navbar-left {
-		width: 35%;
-	}
+.btr-custom-header .rbx-navbar {
+	white-space: nowrap;
 }
 
-@media (min-width: 544px) and (max-width: 619px) {
-	#header .navbar-left {
-		width: 25%;
-	}
+.btr-custom-header .btr-header-flex {
+	display: flex;
+	align-items: end;
+}
+
+.btr-custom-header .btr-header-flex #navbar-universal-search {
+	flex: 0 1 auto;
+}
+
+.btr-custom-header .btr-header-flex .rbx-navbar-right {
+	flex: 1 0 auto;
 }
 
 @media (max-width: 543px) {
-	#header .rbx-navbar-right {
-		width: calc(100% - 160px);
-	}
-
-	#header .rbx-navbar-icon-group > li {
+	.btr-custom-header .btr-header-flex .rbx-navbar-right .rbx-navbar-icon-group > li {
 		width: 16.66%;
 	}
 }
@@ -54,14 +51,6 @@
 }
 
 /* Navigation */
-
-html:not(.btr-naveditor-open) .btr-nav-disabled {
-	display: none;
-}
-
-.btr-naveditor-open .btr-nav-disabled {
-	opacity: 0.5;
-}
 
 .icon-nav-friend-btr, .icon-nav-message-btr {
 	background-image: url(/res/nav2.svg);

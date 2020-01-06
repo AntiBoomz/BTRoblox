@@ -77,12 +77,12 @@ const Navigation = (() => {
 	const sortContItems = cont => {
 		const savedCont = savedItems[cont.type]
 
-		cont.items.forEach(x => {
+		cont.items.forEach((x, i) => {
 			const savedItem = savedCont ? savedCont[x.name] : null
-			x.index2 = x.index + (savedItem && "offset" in savedItem ? savedItem.offset : 0)
+			x.index2 = i + (savedItem && "offset" in savedItem ? savedItem.offset : 0)
 		})
 
-		cont.items.sort((a, b) => a.index2 - b.index2)
+		return cont.items.slice().sort((a, b) => a.index2 - b.index2)
 	}
 
 	const requestNavUpdate = tarCont => {
@@ -101,12 +101,12 @@ const Navigation = (() => {
 
 			navs.forEach(cont => {
 				const savedCont = savedItems[cont.type]
-				sortContItems(cont)
+				const sortedItems = sortContItems(cont)
 
 				const children = cont.elem.children
-				const indices = cont.items.map(x => Array.prototype.indexOf.call(children, x.elem)).sort((a, b) => a - b)
+				const indices = sortedItems.map(x => Array.prototype.indexOf.call(children, x.elem)).sort((a, b) => a - b)
 
-				cont.items.forEach((x, i) => {
+				sortedItems.forEach((x, i) => {
 					const target = children[indices[i]]
 
 					if(target !== x.elem) {
@@ -134,7 +134,7 @@ const Navigation = (() => {
 					}
 				})
 
-				cont.items.forEach(x => {
+				sortedItems.forEach(x => {
 					let prev = x.elem
 
 					x.children.forEach(child => {
@@ -156,26 +156,17 @@ const Navigation = (() => {
 		const set = new WeakSet()
 		navElements[type].push(cont)
 
-		let numRbxItems = 0
-		let numCustoms = 0
+		const origItems = []
 
 		const addChild = child => {
-			if(set.has(child) || child.matches(".btr-naveditor-item")) {
+			if(set.has(child) || child.matches(".btr-naveditor-item,.btr-ignore")) {
 				return
 			}
 
 			set.add(child)
 
 			if(child.classList.contains("rbx-nav-sponsor")) {
-				let parent
-				
-				for(let i = cont.items.length; i--;) {
-					const prev = cont.items[i]
-					if(prev.builtin) {
-						parent = prev
-						break
-					}
-				}
+				const parent = origItems[origItems.length - 1]
 
 				if(parent) {
 					parent.children.push(child)
@@ -191,19 +182,20 @@ const Navigation = (() => {
 				return
 			}
 
-			const index = numRbxItems++
-
 			const item = {
 				elem: child,
-				children: [],
-
-				name: "rbx_" + index,
-				index,
-
-				builtin: true
+				children: []
 			}
 
-			cont.items.push(item)
+			if(child.id === "navbar-rplus") {
+				item.name = "RPlus"
+				cont.items.unshift(item)
+			} else {
+				item.name = `rbx_${origItems.length}`
+				cont.items.push(item)
+
+				origItems.push(item)
+			}
 
 			if(!editablesLocked) {
 				unlockItem(item, cont)
@@ -216,20 +208,20 @@ const Navigation = (() => {
 			const btn = html(customElements[name])
 			set.add(btn)
 
-			const afterItem = after ? cont.items.find(x => x.elem === after) : null
-
 			const item = {
 				elem: btn,
 				children: [],
 
-				name,
-				index: (afterItem ? afterItem.index : -1) + (++numCustoms) * 0.01,
-
-				visible: true
+				name
 			}
 
+			const index = after ? cont.items.findIndex(x => x.elem === after) : -1
+			if(index === -1) {
+				cont.items.unshift(item)
+			} else {
+				cont.items.splice(index + 1, 0, item)
+			}
 
-			cont.items.push(item)
 			elem.append(btn)
 
 			if(!editablesLocked) {
@@ -253,16 +245,13 @@ const Navigation = (() => {
 			addCustom("btr_Home", null)
 
 			elem.$watch(".buy-robux", target => hideNavItem(target.parentNode))
-
 		} else if(type === "topright") {
 			elem.$watch("#navbar-robux", robux => {
 				addCustom("btr_Friends", robux)
 				addCustom("btr_Messages", robux)
 			})
-
 		} else if(type === "topright_outer") {
 			elem.$watch(".age-bracket-label", target => hideNavItem(target))
-
 		} else if(type === "sidebar") {
 			elem.$watch("#nav-blog", link => {
 				const blog = link.parentNode
@@ -311,9 +300,14 @@ const Navigation = (() => {
 				} else {
 					lastClick = Date.now()
 				}
+			}).$on("dragenter", ev => {
+				ev.preventDefault()
+				ev.stopPropagation()
 			}).$on("dragstart", ev => {
 				ev.dataTransfer.dropEffect = "move"
 				cont.dragging = item
+
+				ev.stopPropagation()
 			}).$on("dragend", () => {
 				cont.dragging = null
 			})
@@ -330,10 +324,7 @@ const Navigation = (() => {
 		}
 	}
 
-	const checkBounds = (cont, i0, i1, mx, my) => {
-		const item0 = cont.items[i0]
-		const item1 = cont.items[i1]
-		
+	const checkBounds = (item0, item1, mx, my) => {
 		if(!item0 || !item1) {
 			return false
 		}
@@ -370,19 +361,17 @@ const Navigation = (() => {
 						const savedCont = savedItems[cont.type] || {}
 						const savedItem = savedCont[target.name] || { offset: 0 }
 
-						sortContItems(cont)
-						const myIndex = cont.items.indexOf(target)
+						const sortedItems = sortContItems(cont)
+						const myIndex = sortedItems.indexOf(target)
 						let targetIndex = myIndex
 
-						while(checkBounds(cont, myIndex, targetIndex - 1, ev.clientX, ev.clientY)) {
+						while(checkBounds(target, sortedItems[targetIndex - 1], ev.clientX, ev.clientY)) {
 							targetIndex--
-
 							savedItem.offset = (savedItem.offset || 0) - 1
 						}
 
-						while(checkBounds(cont, myIndex, targetIndex + 1, ev.clientX, ev.clientY)) {
+						while(checkBounds(target, sortedItems[targetIndex + 1], ev.clientX, ev.clientY)) {
 							targetIndex++
-
 							savedItem.offset = (savedItem.offset || 0) + 1
 						}
 
@@ -491,6 +480,25 @@ const Navigation = (() => {
 			return
 		}
 
+		//
+
+		const wrapper = html`<div class=btr-header-flex></div>`
+
+		headerWatcher
+			.$then(header => {
+				header.classList.add("btr-custom-header")
+				header.prepend(wrapper)
+			})
+			.$watchAll("*", child => {
+				if(child === wrapper || child.matches(`.rbx-navbar.hidden-md`)) {
+					return
+				}
+
+				wrapper.append(child)
+			})
+		
+		//
+
 		loadSavedItems()
 		SETTINGS.onChange("navigation.itemsV2", loadSavedItems)
 
@@ -522,9 +530,17 @@ const Navigation = (() => {
 				updateFriends()
 				updateMessages()
 			})
+			.$watch("#navbar-rplus", () => {
+				$.all(".rbx-navbar").forEach(bar => {
+					for(let i = 5; i--;) {
+						bar.prepend(html`<li class=btr-ignore style=display:none><a></a></li>`)
+					}
+				})
+			})
 
 		headerWatcher
-			.$watchAll(".rbx-navbar", x => addEditable(x, "topleft"))
+			.$watch(".rbx-navbar.hidden-sm", x => addEditable(x, "topleft"))
+			.$watch(".rbx-navbar.hidden-md", x => addEditable(x, "topleft"))
 			.$watch(".rbx-navbar-right", x => addEditable(x, "topright_outer")).$then()
 				.$watch(".navbar-right", x => addEditable(x, "topright"))
 	}
