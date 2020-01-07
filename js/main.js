@@ -10,10 +10,11 @@ let currentPage
 
 let mainStyleSheet
 const injectCSS = (...paths) => {
-	if(!paths.length) { return }
+	if(!paths.length) { return [] }
 
 	if(!mainStyleSheet) {
 		const style = document.createElement("style")
+		style.setAttribute("name", "BTRoblox/inject.css")
 		style.type = "text/css"
 
 		const parent = document.head || document.documentElement
@@ -22,7 +23,24 @@ const injectCSS = (...paths) => {
 		mainStyleSheet = document.styleSheets[document.styleSheets.length - 1]
 	}
 
-	paths.forEach(file => mainStyleSheet.insertRule(`@import url("${getURL("css/" + file)}")`))
+	return paths.map(file => {
+		const index = mainStyleSheet.insertRule(`@import url("${getURL("css/" + file)}")`)
+		return mainStyleSheet.rules[index].cssText
+	})
+}
+
+const removeCSS = rules => {
+	if(!mainStyleSheet) { return }
+
+	rules.forEach(cssText => {
+		const index = Array.prototype.findIndex.call(mainStyleSheet.rules, x => x.cssText === cssText)
+
+		console.log(cssText, index)
+
+		if(index !== -1) {
+			mainStyleSheet.deleteRule(index)
+		}
+	})
 }
 
 const InjectJS = {
@@ -191,15 +209,10 @@ function PreInit() {
 
 	const updateTheme = theme => {
 		const oldStyles = themeStyles.splice(0, themeStyles.length)
+		removeCSS(oldStyles)
 
-		if(theme === "default") {
-			oldStyles.forEach(x => x.remove())
-		} else {
-			themeStyles.push(injectCSS(...cssFiles.map(file => `${theme}/${file}`)))
-
-			themeStyles[0].addEventListener("load", () => {
-				oldStyles.forEach(x => x.remove())
-			}, { once: true })
+		if(theme !== "default") {
+			themeStyles.push(...injectCSS(...cssFiles.map(file => `${theme}/${file}`)))
 		}
 	}
 
