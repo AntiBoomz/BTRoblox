@@ -1,6 +1,7 @@
 "use strict"
 
 const RBXPreview = (() => {
+	const outfitCache = {}
 	let avatarRulePromise
 
 	function tryGet(url) {
@@ -45,37 +46,49 @@ const RBXPreview = (() => {
 	}
 
 	function getOutfitData(id) {
-		const outfitPromise = tryGet(`https://avatar.roblox.com/v1/outfits/${id}/details`)
+		if(!outfitCache[id]) {
+			const outfitPromise = tryGet(`https://avatar.roblox.com/v1/outfits/${id}/details`)
 
-		return SyncPromise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
-			data = { ...data }
+			return outfitCache[id] = SyncPromise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
+				data = { ...data }
 
-			data.scales = data.scale
-			delete data.scale
+				data.scales = data.scale
+				delete data.scale
 
-			data.bodyColors = solveBodyColors(data.bodyColors, rules)
-			return [rules, data]
-		})
+				data.bodyColors = solveBodyColors(data.bodyColors, rules)
+				return [rules, data]
+			})
+		}
+
+		return outfitCache[id]
 	}
 
 	function getPlayerAppearance(userId) {
-		const outfitPromise = tryGet(`https://avatar.roblox.com/v1/users/${userId}/avatar`)
+		if(!outfitCache["user" + userId]) {
+			const outfitPromise = tryGet(`https://avatar.roblox.com/v1/users/${userId}/avatar`)
 
-		return SyncPromise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
-			data = { ...data }
-			data.bodyColors = solveBodyColors(data.bodyColors, rules)
-			return [rules, data]
-		})
+			return outfitCache["user" + userId] = SyncPromise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
+				data = { ...data }
+				data.bodyColors = solveBodyColors(data.bodyColors, rules)
+				return [rules, data]
+			})
+		}
+
+		return outfitCache["user" + userId]
 	}
 
 	function getDefaultAppearance() {
-		const outfitPromise = tryGet(`https://avatar.roblox.com/v1/avatar`)
+		if(!outfitCache.default) {
+			const outfitPromise = tryGet(`https://avatar.roblox.com/v1/avatar`)
 
-		return SyncPromise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
-			data = { ...data }
-			data.bodyColors = solveBodyColors(data.bodyColors, rules)
-			return [rules, data]
-		})
+			return outfitCache.default = SyncPromise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
+				data = { ...data }
+				data.bodyColors = solveBodyColors(data.bodyColors, rules)
+				return [rules, data]
+			})
+		}
+
+		return outfitCache.default
 	}
 
 	const SkippableAssetTypes = [
@@ -946,6 +959,7 @@ const HoverPreview = (() => {
 				thumbCont.addEventListener("mouseleave", mouseLeave, { once: true })
 
 				const isBundle = anchor.href.includes("/bundles/")
+				let targetOutfitId
 
 				const finalizeLoad = () => {
 					if(debounceCounter !== debounce) { return }
@@ -956,6 +970,9 @@ const HoverPreview = (() => {
 						clearTarget()
 						return
 					}
+
+					preview.outfitId = targetOutfitId
+					preview.reloadOutfit()
 
 					const avatar = preview.scene.avatar
 
@@ -1082,9 +1099,13 @@ const HoverPreview = (() => {
 						if(debounceCounter !== debounce) { return }
 						if(json.bundleType === "AvatarAnimations") { return }
 
+						targetOutfitId = null
+
 						json.items.forEach(item => {
 							if(item.type === "Asset") {
 								addAssetPreview(item.id)
+							} else if(item.type === "UserOutfit") {
+								targetOutfitId = item.id
 							}
 						})
 
