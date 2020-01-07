@@ -605,7 +605,7 @@ const SettingsDiv = (() => {
 
 					const selected = select.selectedOptions[0]
 					if(selected && titleOption && titleOption !== selected) {
-						titleOption.textContent = titleOptionFormat.replace(/%opt%/g, () => selected.textContent)
+						titleOption.textContent = titleOptionFormat.replace(/%opt%/g, () => selected.textContent) + " ▾"
 						select.value = titleOption.value
 					}
 				}
