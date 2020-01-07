@@ -6,8 +6,6 @@
 	"description": "Enhance your Roblox experience!",
 	"version": "2.11.9",
 	"author": "AntiBoomz",
-	"minimum_chrome_version": "69",
-	"incognito": "split",
 
 	"browser_action": {
 		"default_title": "Open BTRoblox Settings"
@@ -17,8 +15,13 @@
 		"128":"res/icon_128.png"
 	},
 
+	"applications": {
+		"gecko": {
+			"id": "btroblox@antiboomz.com"
+		}
+	},
+
 	"background": {
-		"persistent": false,
 		"scripts": [
 			"js/common.js",
 			"js/background/blogfeed.js",
@@ -32,7 +35,7 @@
 	"permissions": [
 		"*://*.roblox.com/",
 		"*://*.rbxcdn.com/",
-		"alarms",
+		"clipboardWrite",
 		"contextMenus",
 		"notifications",
 		"storage"
@@ -74,7 +77,7 @@
 				"js/pages/money.js",
 				"js/pages/placeconfig.js",
 				"js/pages/profile.js",
-
+				
 				"js/final.js"
 			],
 			"run_at": "document_start",
