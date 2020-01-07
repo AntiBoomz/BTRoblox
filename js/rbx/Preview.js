@@ -989,13 +989,12 @@ const HoverPreview = (() => {
 							return
 						}
 
-						// Let other asset listeners run
-						// otherwise accessories do not get properly initialized .-.'
 						$.setImmediate(() => {
 							if(debounceCounter !== debounce) { return }
 
 							preview.scene.update()
 							avatar.animator.reset()
+							avatar.update()
 							preview.scene.render()
 
 							const addedObjects = new Set()
@@ -1064,12 +1063,12 @@ const HoverPreview = (() => {
 								setCameraDir("Front")
 							}
 
-							preview.scene.update()
-							preview.scene.render()
-
 							const thumb = self.$find(thumbContSelector)
 							thumb.append(preview.container)
 							thumb.classList.add("btr-preview-container-parent")
+
+							preview.scene.update()
+							preview.scene.render()
 						})
 					})
 				}

@@ -3,6 +3,89 @@
 const RBXAvatar = (() => {
 	const Vector3 = THREE.Vector3
 	
+	function applyMesh(obj, mesh) {
+		const geom = obj.geometry
+
+		geom.addAttribute("position", new THREE.BufferAttribute(mesh.vertices, 3))
+		geom.addAttribute("normal", new THREE.BufferAttribute(mesh.normals, 3))
+		geom.addAttribute("uv", new THREE.BufferAttribute(mesh.uvs, 2))
+		geom.setIndex(new THREE.BufferAttribute(mesh.faces, 1))
+
+		// geom.computeBoundingSphere()
+
+		geom.verticesNeedUpdate = true
+		geom.elementsNeedUpdate = true
+		geom.uvsNeedUpdate = true
+		geom.normalsNeedUpdate = true
+		geom.groupsNeedUpdate = true
+
+		obj.visible = true
+	}
+
+	function clearGeometry(obj) {
+		const geom = obj.geometry
+
+		geom.removeAttribute("position")
+		geom.removeAttribute("normal")
+		geom.removeAttribute("uv")
+		geom.setIndex(null)
+
+		// geom.computeBoundingSphere()
+
+		geom.verticesNeedUpdate = true
+		geom.elementsNeedUpdate = true
+		geom.uvsNeedUpdate = true
+		geom.normalsNeedUpdate = true
+		geom.groupsNeedUpdate = true
+
+		obj.visible = false
+	}
+
+	function CFrame(x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22) {
+		return new THREE.Matrix4().set(
+			r00, r01, r02, x,
+			r10, r11, r12, y,
+			r20, r21, r22, z,
+			0, 0, 0, 1
+		)
+	}
+
+	function InvertCFrame(...args) {
+		return new THREE.Matrix4().getInverse(args[0] instanceof THREE.Matrix4 ? args[0] : CFrame(...args))
+	}
+	
+	function solidColorDataURL(r, g, b) {
+		return `data:image/gif;base64,R0lGODlhAQABAPAA${btoa(String.fromCharCode(0, r, g, b, 255, 255))}/yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==`
+	}
+
+	function createImage(src) {
+		const img = new Image()
+		img.src = src
+		img.crossOrigin = "anonymous"
+		img.updateListeners = []
+
+		return img
+	}
+
+	function createSource(image) {
+		return {
+			image: image || emptyImage,
+			onUpdateListeners: [],
+
+			setImage(img) {
+				this.image = img
+				this.onUpdateListeners.forEach(fn => fn())
+			},
+
+			onUpdate(fn) {
+				this.onUpdateListeners.push(fn)
+			}
+		}
+	}
+
+	const emptyImage = createImage("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=")
+	const grayImage = createImage(solidColorDataURL(163, 162, 165))
+
 	const R6BodyPartNames = ["Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
 	const R15BodyPartNames = [
 		"LeftFoot", "LeftHand", "LeftLowerArm", "LeftLowerLeg", "LeftUpperArm", "LeftUpperLeg", "LowerTorso",
@@ -63,118 +146,8 @@ const RBXAvatar = (() => {
 		}
 	}
 
-	function applyMesh(obj, mesh) {
-		const geom = obj.geometry
-
-		geom.addAttribute("position", new THREE.BufferAttribute(mesh.vertices, 3))
-		geom.addAttribute("normal", new THREE.BufferAttribute(mesh.normals, 3))
-		geom.addAttribute("uv", new THREE.BufferAttribute(mesh.uvs, 2))
-		geom.setIndex(new THREE.BufferAttribute(mesh.faces, 1))
-
-		// geom.computeBoundingSphere()
-
-		geom.verticesNeedUpdate = true
-		geom.elementsNeedUpdate = true
-		geom.uvsNeedUpdate = true
-		geom.normalsNeedUpdate = true
-		geom.groupsNeedUpdate = true
-
-		obj.visible = true
-	}
-
-	function clearGeometry(obj) {
-		const geom = obj.geometry
-
-		geom.removeAttribute("position")
-		geom.removeAttribute("normal")
-		geom.removeAttribute("uv")
-		geom.setIndex(null)
-
-		// geom.computeBoundingSphere()
-
-		geom.verticesNeedUpdate = true
-		geom.elementsNeedUpdate = true
-		geom.uvsNeedUpdate = true
-		geom.normalsNeedUpdate = true
-		geom.groupsNeedUpdate = true
-
-		obj.visible = false
-	}
-
-	function CFrame(x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22) {
-		return new THREE.Matrix4().set(
-			r00, r01, r02, x,
-			r10, r11, r12, y,
-			r20, r21, r22, z,
-			0, 0, 0, 1
-		)
-	}
-
-	function InvertCFrame(...args) {
-		return new THREE.Matrix4().getInverse(args[0] instanceof THREE.Matrix4 ? args[0] : CFrame(...args))
-	}
-	
-	function solidColorDataURL(r, g, b) {
-		return "data:image/gif;base64,R0lGODlhAQABAPAA"
-			+ btoa(String.fromCharCode(0, r, g, b, 255, 255))
-			+ "/yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=="
-	}
-
-	const emptySrc = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII="
-	const graySrc = solidColorDataURL(163, 162, 165)
-	const mergeUpdateQueue = new Set()
-	const imageLoadMap = new Map()
-	let imageLoadIndex = 0
-
-	function setImageSource(img, src) {
-		src = src || emptySrc
-
-		if(img.src !== src) {
-			img.src = ""
-
-			const index = imageLoadIndex++
-			imageLoadMap.set(img, index)
-
-			const finish = () => {
-				if(imageLoadMap.get(img) === index) {
-					imageLoadMap.delete(img)
-					img.updateListeners.forEach(fn => fn())
-				}
-			}
-
-			img.addEventListener("load", finish, { once: true })
-			img.src = src
-
-			if(img.complete) {
-				img.removeEventListener("load", finish, { once: true })
-				finish()
-			}
-		}
-	}
-
-	function createImage() {
-		const img = new Image()
-		img.src = emptySrc
-		img.crossOrigin = "anonymous"
-		img.updateListeners = []
-
-		return img
-	}
-
-	function createTexture(img) {
-		if(!img) { img = createImage() }
-
-		const texture = new THREE.Texture(img)
-		texture.minFilter = THREE.LinearFilter
-
-		if(img instanceof Image) {
-			img.updateListeners.push(() => texture.needsUpdate = true)
-		}
-
-		return texture
-	}
-
-	function mergeTexture(width, height, ...images) {
+	const texturesToMerge = new Set()
+	function mergeTexture(width, height, ...sources) {
 		width = 2 ** Math.ceil(Math.log2(width))
 		height = 2 ** Math.ceil(Math.log2(height))
 
@@ -189,59 +162,57 @@ const RBXAvatar = (() => {
 		texture.wrapT = THREE.RepeatWrapping
 
 		const stack = []
-		let checkIfDirty = false
+		let needsUpdate = false
 
 		function updateFinal() {
-			if(checkIfDirty) {
-				checkIfDirty = false
+			needsUpdate = false
+			texturesToMerge.delete(updateFinal)
 
-				const isDirty = stack.some(img => {
-					if(img instanceof Image) {
-						const mergeSrc = (img.src !== "" && img.src !== emptySrc) ? img.src : ""
-
-						if(img.lastMergeUpdateSrc !== mergeSrc) {
-							return true
-						}
-					}
-
-					return false
-				})
-
-				if(!isDirty) {
-					return
-				}
+			const isDirty = stack.some(entry => entry.dirty)
+			if(!isDirty) {
+				return
 			}
 
-			ctx.clearRect(0, 0, canvas.width, canvas.height)
+			ctx.clearRect(0, 0, width, height)
+			stack.forEach(entry => {
+				const img = entry.source.canvas || entry.source.image
 
-			stack.forEach(img => {
-				img.lastMergeUpdateSrc = (img.src !== "" && img.src !== emptySrc) ? img.src : ""
+				entry._lastImage = img
+				entry.dirty = false
 
-				if(img instanceof HTMLCanvasElement || img.src !== "" && img.src !== emptySrc) {
-					ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, canvas.width, canvas.height)
+				if(img !== emptyImage) {
+					ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, width, height)
 				}
 			})
 
 			texture.needsUpdate = true
 		}
 
-		function requestUpdateFinal() {
-			mergeUpdateQueue.add(updateFinal)
+		const requestUpdateFinal = () => {
+			if(needsUpdate) { return }
+			needsUpdate = true
+			texturesToMerge.add(updateFinal)
+
+			$.setImmediate(() => {
+				if(!needsUpdate) { return }
+				needsUpdate = false
+				updateFinal()
+			})
 		}
 
-		images.forEach(img => {
-			stack.push(img)
+		sources.forEach(source => {
+			const entry = { source, dirty: false }
+			stack.push(entry)
 
-			if(img instanceof Image) {
-				img.updateListeners.push(() => {
-					checkIfDirty = true
-					requestUpdateFinal()
-				})
-			} else if(img instanceof HTMLCanvasElement) {
-				img.updateListeners.push(() => {
-					requestUpdateFinal()
-				})
-			}
+			source.onUpdate(() => {
+				if(source.canvas) {
+					entry.dirty = true
+				} else {
+					entry.dirty = source.image !== entry._lastImage
+				}
+
+				requestUpdateFinal()
+			})
 		})
 
 		updateFinal()
@@ -294,66 +265,61 @@ const RBXAvatar = (() => {
 			if(this.hasInit) { throw new Error("Avatar has already been initialized") }
 			this.hasInit = true
 
-			const textures = this.textures = {
-				pants: createTexture(),
-				shirt: createTexture(),
-				tshirt: createTexture()
-			}
-
-			const images = this.images = {
-				base: {},
-				over: {},
-
+			const sources = this.sources = {
 				clothing: {
-					pants: textures.pants.image,
-					shirt: textures.shirt.image,
-					tshirt: textures.tshirt.image,
-					face: createImage()
-				}
+					pants: createSource(),
+					shirt: createSource(),
+					tshirt: createSource(),
+					face: createSource()
+				},
+
+				base: {},
+				over: {}
 			}
+
+			const textures = this.textures = {}
 
 			const composites = this.composites = {
-				head: new RBXComposites.HeadComposite(textures),
-				r6: new RBXComposites.R6Composite(textures),
-				torso: new RBXComposites.R15TorsoComposite(textures),
-				leftarm: new RBXComposites.R15LeftArmComposite(textures),
-				leftleg: new RBXComposites.R15LeftLegComposite(textures),
-				rightarm: new RBXComposites.R15RightArmComposite(textures),
-				rightleg: new RBXComposites.R15RightLegComposite(textures)
+				head: new RBXComposites.HeadComposite(sources),
+				r6: new RBXComposites.R6Composite(sources),
+				torso: new RBXComposites.R15TorsoComposite(sources),
+				leftarm: new RBXComposites.R15LeftArmComposite(sources),
+				leftleg: new RBXComposites.R15LeftLegComposite(sources),
+				rightarm: new RBXComposites.R15RightArmComposite(sources),
+				rightleg: new RBXComposites.R15RightLegComposite(sources)
 			}
-
-			const loaders = []
-
-			loaders.push(
-				AssetCache.loadImage(true, getURL("res/previewer/face.png"), url => {
-					images.clothing.face.defaultSrc = url
-					this.shouldRefreshBodyParts = true
-				})
-			)
-
-			Object.values(this.composites).forEach(comp => {
-				loaders.push(
-					...comp.loaders
-				)
-			})
-
-			images.base.Head = createImage()
-			images.over.Head = createImage()
-			textures.Head = mergeTexture(256, 256, composites.head.canvas, images.base.Head, images.over.Head, images.clothing.face)
+			
+			sources.base.Head = createSource()
+			sources.over.Head = createSource()
+			textures.Head = mergeTexture(256, 256, composites.head, sources.base.Head, sources.over.Head, sources.clothing.face)
 
 			R6BodyPartNames.forEach(name => {
-				const base = images.base[name] = createImage()
-				const over = images.over[name] = createImage()
+				const base = sources.base[name] = createSource()
+				const over = sources.over[name] = createSource()
 
-				textures[name] = mergeTexture(1024, 512, composites.r6.canvas, base, over)
+				textures[name] = mergeTexture(1024, 512, composites.r6, base, over)
 			})
 
 			R15BodyPartNames.forEach(name => {
 				const compositeName = name.toLowerCase().replace(/upper|lower/g, "").replace(/hand/g, "arm").replace(/foot/g, "leg")
 				const composite = composites[compositeName]
-				const over = images.over[name] = createImage()
 
-				textures[name] = mergeTexture(composite.canvas.width, composite.canvas.height, composite.canvas, over)
+				const over = sources.over[name] = createSource()
+				textures[name] = mergeTexture(composite.canvas.width, composite.canvas.height, composite, over)
+			})
+
+
+			const loaders = []
+
+			loaders.push(
+				AssetCache.loadImage(true, getURL("res/previewer/face.png"), img => {
+					sources.clothing.face.defaultImage = img
+					this.shouldRefreshBodyParts = true
+				})
+			)
+
+			Object.values(this.composites).forEach(comp => {
+				loaders.push(...comp.loaders)
 			})
 
 			RBXAvatarRigs.load(() => {
@@ -363,7 +329,6 @@ const RBXAvatar = (() => {
 			if(this.bodyColors) {
 				this.setBodyColors(this.bodyColors)
 			}
-
 			
 			SyncPromise.all(loaders).then(() => this.baseLoadedPromise.resolve())
 		}
@@ -375,7 +340,9 @@ const RBXAvatar = (() => {
 				loaders.push(asset.loadPromise)
 			})
 
-			return SyncPromise.all(loaders)
+			return new SyncPromise(resolve => {
+				SyncPromise.all(loaders).then(() => $.setImmediate(resolve))
+			})
 		}
 
 		update() {
@@ -393,16 +360,25 @@ const RBXAvatar = (() => {
 				? [this.composites.head, this.composites.r6]
 				: [this.composites.head, this.composites.torso, this.composites.leftarm, this.composites.rightarm, this.composites.leftleg, this.composites.rightleg]
 
-			activeComposites.forEach(comp => {
-				if(comp.needsUpdate) {
-					comp.update()
-				}
-			})
+			while(true) {
+				let updated = false
 
-			mergeUpdateQueue.forEach(fn => {
-				mergeUpdateQueue.delete(fn)
-				fn()
-			})
+				activeComposites.forEach(comp => {
+					if(comp.needsUpdate) {
+						comp.update()
+						updated = true
+					}
+				})
+
+				texturesToMerge.forEach(update => {
+					update()
+					updated = true
+				})
+
+				if(!updated) {
+					break
+				}
+			}
 		}
 
 		resetScales() {
@@ -684,25 +660,25 @@ const RBXAvatar = (() => {
 				}
 			})
 
-			Object.entries(this.images.clothing).forEach(([name, img]) => {
+			Object.entries(this.sources.clothing).forEach(([name, source]) => {
 				const texId = clothing[name]
 
 				if(!texId) {
-					delete img.rbxTexId
-					setImageSource(img, img.defaultSrc || "")
-				} else if(texId !== img.rbxTexId) {
-					img.rbxTexId = texId
+					delete source.rbxTexId
+					source.setImage(source.defaultImage || emptyImage)
+				} else if(texId !== source.rbxTexId) {
+					source.rbxTexId = texId
 					let gotAsync = false
 
-					AssetCache.loadImage(true, texId, url => {
-						if(img.rbxTexId === texId) {
+					AssetCache.loadImage(true, texId, img => {
+						if(source.rbxTexId === texId) {
 							gotAsync = true
-							setImageSource(img, url)
+							source.setImage(img)
 						}
 					})
 					
 					if(!gotAsync) {
-						setImageSource(img, img.defaultSrc || "")
+						source.setImage(source.defaultImage || emptyImage)
 					}
 				}
 			})
@@ -734,29 +710,49 @@ const RBXAvatar = (() => {
 						AssetCache.loadMesh(true, meshId, mesh => part.rbxMeshId === meshId && applyMesh(part.rbxMesh, mesh))
 					}
 
-					const baseImg = this.images.base[partName]
+					const baseSource = this.sources.base[partName]
 					const baseTexId = changes && changes.baseTexId || ""
-					if(baseImg && baseImg.rbxTexId !== baseTexId) {
-						baseImg.rbxTexId = baseTexId
+					if(baseSource && baseSource.rbxTexId !== baseTexId) {
+						baseSource.rbxTexId = baseTexId
 
 						if(baseTexId) {
-							setImageSource(baseImg, graySrc)
-							AssetCache.loadImage(true, baseTexId, url => baseImg.rbxTexId === baseTexId && setImageSource(baseImg, url))
+							let gotAsync = false
+
+							AssetCache.loadImage(true, baseTexId, img => {
+								if(baseSource.rbxTexId === baseTexId) {
+									gotAsync = true
+									baseSource.setImage(img)
+								}
+							})
+
+							if(!gotAsync) {
+								baseSource.setImage(grayImage)
+							}
 						} else {
-							setImageSource(baseImg, "")
+							baseSource.setImage(emptyImage)
 						}
 					}
 
-					const overImg = this.images.over[partName]
+					const overSource = this.sources.over[partName]
 					const overTexId = changes && changes.overTexId || ""
-					if(overImg && overImg.rbxTexId !== overTexId) {
-						overImg.rbxTexId = overTexId
+					if(overSource && overSource.rbxTexId !== overTexId) {
+						overSource.rbxTexId = overTexId
 						
 						if(overTexId) {
-							setImageSource(overImg, graySrc)
-							AssetCache.loadImage(true, overTexId, url => overImg.rbxTexId === overTexId && setImageSource(overImg, url))
+							let gotAsync = false
+
+							AssetCache.loadImage(true, overTexId, img => {
+								if(overSource.rbxTexId === overTexId) {
+									gotAsync = true
+									overSource.setImage(img)
+								}
+							})
+
+							if(!gotAsync) {
+								overSource.setImage(grayImage)
+							}
 						} else {
-							setImageSource(overImg, "")
+							overSource.setImage(emptyImage)
 						}
 					}
 				}
@@ -881,13 +877,11 @@ const RBXAvatar = (() => {
 			// Update accessories
 			accessories.forEach(acc => {
 				if(!acc.obj) {
-					const img = createImage()
-					setImageSource(img, graySrc)
+					const source = createSource(grayImage)
+					const texture = mergeTexture(256, 256, source)
+					texture.needsUpdate = true
 
-					const tex = mergeTexture(256, 256, img)
-					tex.needsUpdate = true
-
-					const mat = new THREE.MeshLambertMaterial({ map: tex, transparent: true })
+					const mat = new THREE.MeshLambertMaterial({ map: texture, transparent: true })
 					const obj = acc.obj = new THREE.Mesh(undefined, mat)
 					obj.visible = false
 					obj.castShadow = true
@@ -897,9 +891,8 @@ const RBXAvatar = (() => {
 					}
 
 					if(acc.texId) {
-						AssetCache.loadImage(true, acc.texId, url => {
-							setImageSource(img, url)
-							tex.needsUpdate = true
+						AssetCache.loadImage(true, acc.texId, img => {
+							source.setImage(img)
 						})
 					}
 				}
@@ -907,7 +900,6 @@ const RBXAvatar = (() => {
 				// Update color
 				if(acc.color) { acc.obj.material.color.setRGB(acc.color[0], acc.color[1], acc.color[2]) }
 				if("opacity" in acc) { acc.obj.material.opacity = acc.opacity }
-
 
 				// Attach to correct attachment
 				const att = this.attachments[acc.attName] || this.defaultHatAttachment
@@ -936,7 +928,6 @@ const RBXAvatar = (() => {
 				}
 
 				acc.obj.matrixWorldNeedsUpdate = true
-
 				this.accessories.push(acc)
 			})
 		}

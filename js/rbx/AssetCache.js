@@ -221,25 +221,20 @@ const AssetCache = (() => {
 		loadAnimation: createMethod(buffer => new RBXParser.AnimationParser().parse(new RBXParser.ModelParser().parse(buffer))),
 		loadModel: createMethod(buffer => new RBXParser.ModelParser().parse(buffer)),
 		loadMesh: createMethod(buffer => new RBXParser.MeshParser().parse(buffer)),
-		loadImage: createMethod(buffer => {
-			const reader = new FileReader()
-			reader.readAsDataURL(new Blob([new Uint8Array(buffer)], { type: "image/png" }))
+		loadImage: createMethod(buffer => new SyncPromise(resolve => {
+			const src = URL.createObjectURL(new Blob([new Uint8Array(buffer)], { type: "image/png" }))
 
-			return new SyncPromise(resolve => reader.onload = () => {
-				const src = reader.result
+			const image = new Image()
+			image.src = src
 
-				const preload = new Image()
-				preload.src = src
-	
-				if(preload.complete) {
-					resolve(src)
-				} else {
-					preload.addEventListener("load", () => {
-						resolve(src)
-					}, { once: true })
-				}
-			})
-		}),
+			if(image.complete) {
+				resolve(image)
+			} else {
+				image.addEventListener("load", () => {
+					resolve(image)
+				}, { once: true })
+			}
+		})),
 
 		loadBuffer: createMethod(buffer => buffer),
 		loadBlob: createMethod(buffer => new Blob([buffer], { type: "image/jpeg" })),

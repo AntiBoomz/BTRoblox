@@ -1,7 +1,26 @@
 "use strict"
 
 const RBXComposites = (() => {
+	const textureCache = new WeakMap()
 	const renderers = {}
+
+	function createTextureFromSource(source) {
+		const cached = textureCache.get(source)
+		if(cached) {
+			return cached
+		}
+
+		const texture = new THREE.Texture(source.image)
+		texture.minFilter = THREE.LinearFilter
+
+		source.onUpdate(() => {
+			texture.image = source.image
+			texture.needsUpdate = true
+		})
+
+		textureCache.set(source, texture)
+		return texture
+	}
 
 	class CompositeTexture {
 		constructor(hasThree, width, height) {
@@ -16,7 +35,7 @@ const RBXComposites = (() => {
 				this.scene.add(ambient)
 			}
 
-			this.canvas.updateListeners = []
+			this.updateListeners = []
 			this.loaders = []
 
 			this.width = width
@@ -26,24 +45,35 @@ const RBXComposites = (() => {
 			this.canvas.height = this.height
 
 			if(hasThree) {
-				const key = `${this.width}x${this.height}`
+				// const key = `${this.width}x${this.height}`
+				const key = `default`
 
 				if(!renderers[key]) {
 					renderers[key] = new THREE.WebGLRenderer({ alpha: true })
-					renderers[key].setSize(this.width, this.height)
+					// renderers[key].setSize(this.width, this.height)
 				}
 
 				this.compositeRenderer = renderers[key]
 				this.camera.updateProjectionMatrix()
 			}
 
-			this.needsUpdate = true
+			this.requestUpdate()
 		}
 
 		setBodyColors() { }
 
 		beforeComposite() { }
 		afterComposite() { }
+
+		requestUpdate() {
+			if(this.needsUpdate) { return }
+			this.needsUpdate = true
+
+			$.setImmediate(() => {
+				if(!this.needsUpdate) { return }
+				this.update()
+			})
+		}
 
 		update() {
 			this.needsUpdate = false
@@ -57,12 +87,19 @@ const RBXComposites = (() => {
 			this.beforeComposite()
 
 			if(this.scene) {
+				this.compositeRenderer.setSize(this.width, this.height)
+				this.camera.updateProjectionMatrix()
+
 				this.compositeRenderer.render(this.scene, this.camera)
 				ctx.drawImage(this.compositeRenderer.domElement, 0, 0, this.width, this.height, 0, 0, this.width, this.height)
 			}
 
 			this.afterComposite()
-			this.canvas.updateListeners.forEach(fn => fn())
+			this.updateListeners.forEach(fn => fn())
+		}
+
+		onUpdate(fn) {
+			this.updateListeners.push(fn)
 		}
 	}
 
@@ -79,10 +116,10 @@ const RBXComposites = (() => {
 	}
 
 	class R6Composite extends CompositeTexture {
-		constructor(textures) {
+		constructor(sources) {
 			super(true, 1024, 512)
 			this.background = "#7F7F7F"
-			this.textures = textures
+			this.sources = sources
 
 			const size = 2
 
@@ -93,7 +130,7 @@ const RBXComposites = (() => {
 	
 			const pantsmesh = this.pantsmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
 				transparent: true,
-				map: this.textures.pants
+				map: createTextureFromSource(this.sources.clothing.pants)
 			}))
 			pantsmesh.visible = false
 			pantsmesh.renderOrder = 1
@@ -101,7 +138,7 @@ const RBXComposites = (() => {
 	
 			const shirtmesh = this.shirtmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
 				transparent: true,
-				map: this.textures.shirt
+				map: createTextureFromSource(this.sources.clothing.shirt)
 			}))
 			shirtmesh.visible = false
 			shirtmesh.renderOrder = 2
@@ -109,15 +146,15 @@ const RBXComposites = (() => {
 	
 			const tshirtmesh = this.tshirtmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
 				transparent: true,
-				map: this.textures.tshirt
+				map: createTextureFromSource(this.sources.clothing.tshirt)
 			}))
 			tshirtmesh.visible = false
 			tshirtmesh.renderOrder = 3
 			this.scene.add(tshirtmesh)
 	
-			this.textures.tshirt.image.updateListeners.push(() => this.needsUpdate = true)
-			this.textures.shirt.image.updateListeners.push(() => this.needsUpdate = true)
-			this.textures.pants.image.updateListeners.push(() => this.needsUpdate = true)
+			this.sources.clothing.tshirt.onUpdate(() => this.requestUpdate())
+			this.sources.clothing.shirt.onUpdate(() => this.requestUpdate())
+			this.sources.clothing.pants.onUpdate(() => this.requestUpdate())
 	
 			let meshUrl = getURL("res/previewer/compositing/CompositShirtTemplate.mesh")
 			this.loaders.push(AssetCache.loadMesh(true, meshUrl, mesh => RBXAvatar.applyMesh(shirtmesh, mesh)))
@@ -179,11 +216,10 @@ const RBXComposites = (() => {
 
 
 	class R15TorsoComposite extends CompositeTexture {
-		constructor(textures) {
+		constructor(sources) {
 			super(true, 388, 272)
 			this.background = "#A3A2A5"
-
-			this.textures = textures
+			this.sources = sources
 			
 			this.camera = new THREE.OrthographicCamera(-this.width / 2, this.width / 2, this.height / 2, -this.height / 2, 0.1, 100)
 			this.camera.position.set(this.width / 2, this.height / 2, 10)
@@ -191,7 +227,7 @@ const RBXComposites = (() => {
 	
 			const pantsmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
 				transparent: true,
-				map: this.textures.pants
+				map: createTextureFromSource(this.sources.clothing.pants)
 			}))
 			pantsmesh.visible = false
 			pantsmesh.renderOrder = 0
@@ -199,15 +235,15 @@ const RBXComposites = (() => {
 	
 			const shirtmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
 				transparent: true,
-				map: this.textures.shirt
+				map: createTextureFromSource(this.sources.clothing.pants)
 			}))
 			shirtmesh.visible = false
 			shirtmesh.renderOrder = 1
 			this.scene.add(shirtmesh)
 	
-			this.textures.tshirt.image.updateListeners.push(() => this.needsUpdate = true)
-			this.textures.shirt.image.updateListeners.push(() => this.needsUpdate = true)
-			this.textures.pants.image.updateListeners.push(() => this.needsUpdate = true)
+			this.sources.clothing.tshirt.onUpdate(() => this.requestUpdate())
+			this.sources.clothing.shirt.onUpdate(() => this.requestUpdate())
+			this.sources.clothing.pants.onUpdate(() => this.requestUpdate())
 	
 			const meshUrl = getURL("res/previewer/compositing/R15CompositTorsoBase.mesh")
 			this.loaders.push(AssetCache.loadMesh(true, meshUrl, mesh => {
@@ -222,13 +258,13 @@ const RBXComposites = (() => {
 		}
 
 		afterComposite() {
-			this.context.drawImage(this.textures.tshirt.image, 2, 74, 128, 128)
+			this.context.drawImage(this.sources.clothing.tshirt.image, 2, 74, 128, 128)
 		}
 	}
 
 
 	class R15LimbComposite extends CompositeTexture {
-		constructor(texture, meshUrl) {
+		constructor(source, meshUrl) {
 			super(true, 264, 284)
 			this.background = "#A3A2A5"
 			
@@ -238,12 +274,12 @@ const RBXComposites = (() => {
 
 			const obj = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
 				transparent: true,
-				map: texture
+				map: createTextureFromSource(source)
 			}))
 			obj.visible = false
 			this.scene.add(obj)
 
-			texture.image.updateListeners.push(() => this.needsUpdate = true)
+			source.onUpdate(() => this.requestUpdate())
 
 			this.loaders.push(
 				AssetCache.loadMesh(true, meshUrl, mesh => RBXAvatar.applyMesh(obj, mesh))
@@ -257,19 +293,19 @@ const RBXComposites = (() => {
 	}
 
 	class R15LeftArmComposite extends R15LimbComposite {
-		constructor(textures) { super(textures.shirt, getURL("res/previewer/compositing/R15CompositLeftArmBase.mesh")) }
+		constructor(sources) { super(sources.clothing.shirt, getURL("res/previewer/compositing/R15CompositLeftArmBase.mesh")) }
 		setBodyColors(bodyColors) { super.setBodyColors(bodyColors, "leftarm") }
 	}
 	class R15RightArmComposite extends R15LimbComposite {
-		constructor(textures) { super(textures.shirt, getURL("res/previewer/compositing/R15CompositRightArmBase.mesh")) }
+		constructor(sources) { super(sources.clothing.shirt, getURL("res/previewer/compositing/R15CompositRightArmBase.mesh")) }
 		setBodyColors(bodyColors) { super.setBodyColors(bodyColors, "rightarm") }
 	}
 	class R15LeftLegComposite extends R15LimbComposite {
-		constructor(textures) { super(textures.pants, getURL("res/previewer/compositing/R15CompositLeftArmBase.mesh")) }
+		constructor(sources) { super(sources.clothing.pants, getURL("res/previewer/compositing/R15CompositLeftArmBase.mesh")) }
 		setBodyColors(bodyColors) { super.setBodyColors(bodyColors, "leftleg") }
 	}
 	class R15RightLegComposite extends R15LimbComposite {
-		constructor(textures) { super(textures.pants, getURL("res/previewer/compositing/R15CompositRightArmBase.mesh")) }
+		constructor(sources) { super(sources.clothing.pants, getURL("res/previewer/compositing/R15CompositRightArmBase.mesh")) }
 		setBodyColors(bodyColors) { super.setBodyColors(bodyColors, "rightleg") }
 	}
 
