@@ -6,3 +6,4 @@ res -diff -merge
 *.svg -diff
 README.md export-ignore
 manifest.firefox.json export-ignore
+manifest.chrome.json export-ignore
