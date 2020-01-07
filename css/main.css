@@ -14,7 +14,7 @@ html:not(.btr-naveditor-open) .btr-nav-disabled {
 
 .btr-custom-header .btr-header-flex {
 	display: flex;
-	align-items: end;
+	align-items: start;
 }
 
 .btr-custom-header .btr-header-flex #navbar-universal-search {
