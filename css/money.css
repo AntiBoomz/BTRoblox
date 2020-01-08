@@ -10,3 +10,8 @@
 .btr-hide-ads #BodyWrapper {
 	width:830px !important;
 }
+
+/* Fix devex robux styling */
+.Amount .icon-robux-16x16:last-child {
+	padding-left: 20px;
+}

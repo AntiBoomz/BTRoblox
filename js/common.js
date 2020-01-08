@@ -199,7 +199,7 @@ const PAGE_INFO = {
 		css: ["messages.css"]
 	},
 	money: {
-		matches: ["^/my/money"],
+		matches: ["^/my/money\\.aspx"],
 		css: ["money.css"]
 	},
 	placeconfig: {
