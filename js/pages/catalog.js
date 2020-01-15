@@ -31,7 +31,6 @@ pageInit.catalog = function() {
 	modifyTemplate("item-card", template => {
 		template.$findAll(".item-card-container").forEach(cont => {
 			cont.classList.add("btr-item-card-container")
-			cont.setAttribute("btr-item-type", "{{item.itemType}}")
 	
 			const hover = html`<div class="btr-item-card-more">
 				<div class="text-overflow item-card-label" ng-show="item.itemType==='Asset'">Updated: <span class=btr-updated-label>Loading...</span></div>
