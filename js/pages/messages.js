@@ -2,9 +2,9 @@
 
 class MarkAllAsReadAction {
 	constructor() {
-		this.getUnreadCountUrl = `https://notifications.roblox.com/v1/messages/unread/count`
-		this.getMessagesUrl = `https://notifications.roblox.com/v1/messages?pageSize=20&messageTab=Inbox&pageNumber=`
-		this.markAsReadUrl = `https://notifications.roblox.com/v1/messages/mark-read`
+		this.getUnreadCountUrl = `https://privatemessages.roblox.com/v1/messages/unread/count`
+		this.getMessagesUrl = `https://privatemessages.roblox.com/v1/messages?pageSize=20&messageTab=Inbox&pageNumber=`
+		this.markAsReadUrl = `https://privatemessages.roblox.com/v1/messages/mark-read`
 
 		this.reqParams = { credentials: "include", cache: "no-store" }
 		this.threadCount = 5
@@ -13,6 +13,8 @@ class MarkAllAsReadAction {
 		this.pagesToCheck = []
 		this.unreadMessageIds = []
 		this.unreadMessagesLeft = 0
+
+		this.elem = $(".btr-markAllAsReadInbox")
 	}
 
 	hasUnreadMessagesLeft() {
@@ -28,11 +30,19 @@ class MarkAllAsReadAction {
 		this.state = "EXECUTE"
 
 		this.getUnreadMessagesLeft()
+
+		if(this.elem) {
+			this.elem.textContent = "Processing..."
+		}
 	}
 
 	finish() {
 		if(this.state === "FINISHED") { return }
 		this.state = "FINISHED"
+
+		if(this.elem) {
+			this.elem.textContent = "Done!"
+		}
 
 		console.log("Done!")
 		window.location.reload(true)
