@@ -1032,28 +1032,13 @@ const HoverPreview = (() => {
 
 							if(addedObjects.size) {
 								const box = new THREE.Box3()
-
-								addedObjects.forEach(obj => {
-									const geom = obj.geometry
-									geom.computeBoundingSphere()
-
-									const sphere = geom.boundingSphere
-									const worldCenter = new THREE.Vector3().setFromMatrixPosition(obj.matrixWorld)
-									const worldEuler = new THREE.Euler().setFromRotationMatrix(obj.matrixWorld)
-
-									worldCenter.add(sphere.center.clone().applyEuler(worldEuler))
-
-									const radius = sphere.radius * Math.max(...obj.scale.toArray())
-
-									box.expandByPoint(worldCenter.addScalar(radius))
-									box.expandByPoint(worldCenter.addScalar(-2 * radius))
-								})
+								addedObjects.forEach(obj => box.expandByObject(obj))
 
 								const center = box.max.clone().add(box.min).divideScalar(2)
-								const radius = box.max.clone().sub(center).multiply(new THREE.Vector3(1, 1, 0.5)).length()
+								const radius = box.max.clone().sub(center).length()
 
 								preview.scene.cameraFocus.copy(center)
-								preview.scene.cameraZoom = 2 + radius * 0.8
+								preview.scene.cameraZoom = Math.max(2.75, radius * 1.7)
 
 								setCameraDir(cameraDir || "Front")
 							} else {
