@@ -23,7 +23,6 @@ API Docs
 | Domain | Description |
 | -: | :- |
 | [abtesting.roblox.com](https://abtesting.roblox.com/docs) | Endpoints for the A/B Testing framework |
-| [abuse.roblox.com](https://abuse.roblox.com/docs) | This Api is temporarily offline. |
 | [accountinformation.roblox.com](https://accountinformation.roblox.com/docs) | All endpoints for accessing/modifying account information |
 | [accountsettings.roblox.com](https://accountsettings.roblox.com/docs) | All endpoints for account/user settings. |
 | [ads.roblox.com](https://ads.roblox.com/docs) | Ads configuration endpoints. |
@@ -61,9 +60,8 @@ API Docs
 | [points.roblox.com](https://points.roblox.com/docs) | The web Api for the in-game PointsService. |
 | [premiumfeatures.roblox.com](https://premiumfeatures.roblox.com/docs) | This API is for premium features and anything pertaining to account add ons |
 | [presence.roblox.com](https://presence.roblox.com/docs) | All endpoints for managing presence. |
+| [privatemessages.roblox.com](https://privatemessages.roblox.com/docs) | All messages page endpoints. |
 | [publish.roblox.com](https://publish.roblox.com/docs) | All endpoints handling file uploads. |
-| [ratings.roblox.com](https://ratings.roblox.com/docs) | This Api is temporarily offline. |
-| [surveys.roblox.com](https://surveys.roblox.com/docs) | This Api is temporarily offline. |
 | [textfilter.roblox.com](https://textfilter.roblox.com/docs) | High volume text filtering. |
 | [thumbnails.roblox.com](https://thumbnails.roblox.com/docs) | Endpoints for requesting thumbnails. |
 | [trades.roblox.com](https://trades.roblox.com/docs) | Endpoints for trading collectible items. |
