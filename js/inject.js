@@ -168,22 +168,36 @@ const INJECT_SCRIPT = () => {
 		}
 
 		if(window.angular) {
+			const templateCache = {}
+
 			angular.module("ng").run($templateCache => {
 				const put = $templateCache.put
+
 				$templateCache.put = (key, value) => {
-					const result = put.call($templateCache, key, value)
+					let result
 
 					if(templates[key]) {
 						delete templates[key]
 
+						let didReturn = false
 						ContentJS.listen(`TEMPLATE_${key}`, changedValue => {
-							put.call($templateCache, key, changedValue)
+							templateCache[key] = changedValue
+
+							result = put.call($templateCache, key, changedValue)
+							didReturn = true
 						})
 
 						ContentJS.send(`TEMPLATE_${key}`, value)
-						return
-					}
 
+						console.assert(didReturn, "Template modified did not return in time")
+					} else {
+						if(key in templateCache) {
+							value = templateCache[key]
+						}
+
+						result = put.call($templateCache, key, value)
+					}
+					
 					return result
 				}
 			})
