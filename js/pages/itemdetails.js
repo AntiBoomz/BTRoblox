@@ -116,10 +116,6 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 }
 
 const initExplorer = async (assetId, assetTypeId) => {
-	await OptionalLoader.loadExplorer()
-	const explorer = new Explorer()
-	let explorerInitialized = false
-
 	const btn = html`
 	<div>
 		<a class="btr-explorer-button" data-toggle="popover" data-bind="btr-explorer-content">
@@ -135,6 +131,9 @@ const initExplorer = async (assetId, assetTypeId) => {
 		cont.parentNode.classList.add("btr-explorer-btn-shown")
 	})
 
+	await OptionalLoader.loadExplorer()
+	const explorer = new Explorer()
+	let explorerInitialized = false
 	
 	explorer.element.$on("click", ev => {
 		ev.stopPropagation()
