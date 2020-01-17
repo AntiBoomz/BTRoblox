@@ -235,7 +235,7 @@ const RBXComposites = (() => {
 	
 			const shirtmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
 				transparent: true,
-				map: createTextureFromSource(this.sources.clothing.pants)
+				map: createTextureFromSource(this.sources.clothing.shirt)
 			}))
 			shirtmesh.visible = false
 			shirtmesh.renderOrder = 1
