@@ -276,6 +276,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 .btr-pager-holder .pager {
 	display: inline-block;
 	margin: 0;
+	width: auto;
 }
 
 .btr-pager-holder .pager-mid {

@@ -187,9 +187,29 @@ const Navigation = (() => {
 				children: []
 			}
 
-			if(child.id === "navbar-rplus") {
-				item.name = "RPlus"
-				cont.items.unshift(item)
+			let customName
+
+			if(type === "topright") {
+				if(child.id === "navbar-rplus") {
+					customName = "RPlus"
+				}
+			} else if(type === "sidebar") {
+				if(child.$find(".rplus-icon")) {
+					customName = "RPlus_ControlPanel"
+				}
+			}
+
+			if(customName) {
+				let target = child.previousElementSibling
+				let index = -1
+
+				while(target && index === -1) {
+					index = cont.items.findIndex(x => x.elem === target)
+					target = target.previousElementSibling
+				}
+
+				child.name = customName
+				cont.items.splice(index + 1, 0, item)
 			} else {
 				item.name = `rbx_${origItems.length}`
 				cont.items.push(item)

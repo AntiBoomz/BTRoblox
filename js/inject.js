@@ -534,6 +534,7 @@ const INJECT_SCRIPT = () => {
 					let maxPage = 1
 
 					$(".rbx-running-games-load-more").hide() // Hide Load More
+					$(".rbx-running-games-footer > .pager").hide() // Hide Roblox+ pager?
 
 					const pager = $(`
 					<div class=btr-pager-holder>
