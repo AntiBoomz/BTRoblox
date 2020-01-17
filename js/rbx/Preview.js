@@ -1038,7 +1038,7 @@ const HoverPreview = (() => {
 								const radius = box.max.clone().sub(center).length()
 
 								preview.scene.cameraFocus.copy(center)
-								preview.scene.cameraZoom = Math.max(2.75, radius * 1.7)
+								preview.scene.cameraZoom = Math.max(3.5, radius * 1.7)
 
 								setCameraDir(cameraDir || "Front")
 							} else {
