@@ -94,15 +94,11 @@ pageInit.gamedetails = function(placeId) {
 						return
 					}
 
-					const json = await response.json()
+					const ownedBadges = (await response.json()).data.map(x => +x.badgeId)
 
-					json.data.forEach(data => {
-						const index = badgeList.findIndex(x => +x.badgeId === +data.badgeId)
-						badgeList.splice(index, 1)
-					})
-
-					badgeList.forEach(data => {
-						data.row.classList.toggle("btr-notowned", true)
+					badgeList.forEach(({ row, badgeId }) => {
+						row.classList.toggle("btr-notowned", ownedBadges.indexOf(badgeId) === -1)
+						row.title = row.classList.contains("btr-notowned") ? "You do not own this badge" : ""
 					})
 				})
 			}
@@ -122,6 +118,9 @@ pageInit.gamedetails = function(placeId) {
 
 					clearTimeout(ownedTimeout)
 					ownedTimeout = setTimeout(updateOwned, 10)
+
+					row.classList.add("btr-notowned")
+					row.title = row.classList.contains("btr-notowned") ? "You do not own this badge" : ""
 				}
 			})
 		})

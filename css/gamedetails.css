@@ -66,28 +66,31 @@ body .btr-game-main-container {
 }
 
 .btr-badges-container .badge-row .badge-content {
-	width:calc(100% - 100px);
+	width: calc(100% - 100px);
 }
 
 .btr-badges-container .badge-row .badge-data-container {
-	width:60%;
+	width: 60%;
 }
 
 .btr-badges-container .badge-row .badge-data-container>p {
-	height:72px;
-	margin:4px 4px;
+	height: 72px;
+	margin: 4px 4px;
 
-	overflow:hidden;
+	overflow: hidden;
 }
 
 .btr-badges-container .badge-row .badge-stats-container {
-	width:40%;
-	margin-top:18px;
+	width: 40%;
+	margin-top: 18px;
+}
+
+.btr-badges-container .badge-row {
+	transition: opacity 1s;
 }
 
 .btr-badges-container .badge-row.btr-notowned {
-	opacity: .6;
-	transition: all 1s;
+	opacity: .5;
 }
 
 .btr-badges-container .badge-row.btr-badgeownedloading:before {
