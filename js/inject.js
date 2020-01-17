@@ -542,10 +542,8 @@ const INJECT_SCRIPT = () => {
 							<li class=first><a><span class=icon-first-page></a></li>
 							<li class=pager-prev><a><span class=icon-left></a></li>
 							<li class=pager-mid>
-								Page&nbsp;
-								<input class=pager-cur type=text></input>
-								&nbsp;of&nbsp;
-								<span class=pager-total></span>
+								Page <input class=pager-cur type=text></input>
+								of <span class=pager-total></span>
 							</li>
 							<li class=pager-next><a><span class=icon-right></a></li>
 							<li class=last><a><span class=icon-last-page></a></li>
