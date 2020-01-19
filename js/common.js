@@ -2,7 +2,7 @@
 
 const MANIFEST = chrome.runtime.getManifest()
 const IS_FIREFOX = "applications" in MANIFEST && "gecko" in MANIFEST.applications
-const IS_CHROME = "minimum_chrome_version" in MANIFEST
+const IS_CHROME = !IS_FIREFOX // Firefox apparently has "minimum_chrome_version" in MANIFEST
 
 const IS_DEV_MODE = IS_FIREFOX ? chrome.runtime.id.endsWith("@temporary-addon") :
 	IS_CHROME ? chrome.runtime.id !== "hbkpclpemjeibhioopcebchdmohaieln" : false
