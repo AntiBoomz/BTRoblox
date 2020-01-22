@@ -112,7 +112,7 @@ const SettingsDiv = (() => {
 					<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
 					<h4>Group Shout Filters</h4>
 					<div class=btr-settings-header-list>
-						<button id=btr-filter-blacklist title="Blacklist: Select groups to not get notifications from"></button>
+						<button id=btr-filter-blacklist title="Blacklist: Select groups to hide notifications from"></button>
 						<button id=btr-filter-whitelist title="Whitelist: Select groups to get notifications from"></button>
 					</div>
 				</div>
