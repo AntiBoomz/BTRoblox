@@ -191,7 +191,9 @@ const SettingsDiv = (() => {
 		contentDivs[elem.dataset.name] = elem
 	})
 
+	let areFiltersInit = false
 	let currentContent
+
 	const switchContent = name => {
 		if(currentContent === name) { return }
 
