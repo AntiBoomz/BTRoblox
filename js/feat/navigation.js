@@ -70,8 +70,14 @@ const Navigation = (() => {
 	}
 
 	const saveSavedItems = () => {
-		lastSavedItems = JSON.stringify(savedItems)
-		SETTINGS.set("navigation.itemsV2", lastSavedItems)
+		const saveData = JSON.stringify(savedItems)
+
+		if(lastSavedItems === saveData) {
+			return
+		}
+
+		SETTINGS.set("navigation.itemsV2", saveData)
+		lastSavedItems = saveData
 	}
 
 	const sortContItems = cont => {
@@ -79,6 +85,8 @@ const Navigation = (() => {
 
 		cont.items.forEach((x, i) => {
 			const savedItem = savedCont ? savedCont[x.name] : null
+
+			x.index = i
 			x.index2 = i + (savedItem && "offset" in savedItem ? savedItem.offset : 0)
 		})
 
@@ -378,30 +386,43 @@ const Navigation = (() => {
 						ev.preventDefault()
 						ev.dataTransfer.dropEffect = "move"
 
-						const savedCont = savedItems[cont.type] || {}
-						const savedItem = savedCont[target.name] || { offset: 0 }
-
 						const sortedItems = sortContItems(cont)
 						const myIndex = sortedItems.indexOf(target)
 						let targetIndex = myIndex
 
 						while(checkBounds(target, sortedItems[targetIndex - 1], ev.clientX, ev.clientY)) {
 							targetIndex--
-							savedItem.offset = (savedItem.offset || 0) - 1
 						}
 
 						while(checkBounds(target, sortedItems[targetIndex + 1], ev.clientX, ev.clientY)) {
 							targetIndex++
-							savedItem.offset = (savedItem.offset || 0) + 1
 						}
 
 						if(targetIndex !== myIndex) {
-							savedItems[cont.type] = savedCont
-							savedCont[target.name] = savedItem
+							const savedCont = savedItems[cont.type] = savedItems[cont.type] || {}
+							savedCont[target.name] = savedCont[target.name] || { offset: 0 }
 
-							if(savedItem.offset === 0) {
-								delete savedItem.offset
+							const other = sortedItems[targetIndex]
+
+							const wantedIndex = other.index2 + (targetIndex > myIndex ? 1e-5 : -1e-5)
+							const btnIndex = Math.floor(wantedIndex)
+							const btns = sortedItems.filter(x => x !== target && x.index2 !== x.index && Math.floor(x.index2) === btnIndex)
+
+							const otherIndex = btns.indexOf(other)
+							if(otherIndex === -1) {
+								btns.push(target)
+							} else {
+								btns.splice(wantedIndex > other.index2 ? otherIndex + 1 : otherIndex, 0, target)
 							}
+
+							btns.forEach((x, i) => {
+								if(i === 0 && btnIndex === x.index) {
+									delete savedCont[x.name]
+								} else {
+									const finalIndex = btnIndex + (i + 1) / (btns.length + 1)
+									savedCont[x.name].offset = finalIndex - x.index
+								}
+							})
 
 							requestNavUpdate(cont)
 							saveSavedItems()
