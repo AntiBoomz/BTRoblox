@@ -175,6 +175,8 @@ const SettingsDiv = (() => {
 					<h4>Modify Navigation Buttons</h4>
 				</div>
 				<group>
+					<div>Drag buttons to move them</div>
+					<div>Double click buttons to toggle visibility</div>
 					<div style=width:100%;text-align:right><button id=btr-reset-naveditor class=btn-control-xs>Reset buttons to default</button></div>
 				</group>
 			</div>
