@@ -106,6 +106,8 @@ const $ = function(selector) { return $.find(document, selector) }
 			return {
 				targetPromise: this.targetPromise,
 				finishPromise,
+
+				parent: this.parent,
 				__proto__: watcherProto
 			}
 		},
@@ -122,6 +124,8 @@ const $ = function(selector) { return $.find(document, selector) }
 			const nxt = {
 				targetPromise: this.finishPromise || this.targetPromise,
 				finishPromise: null,
+				
+				parent: this,
 				__proto__: watcherProto
 			}
 
@@ -130,6 +134,14 @@ const $ = function(selector) { return $.find(document, selector) }
 			}
 
 			return nxt
+		},
+
+		$back() {
+			if(!this.parent) {
+				throw new Error("Cannot call $back on a top level watcher")
+			}
+
+			return this.parent
 		},
 
 		$promise() {
