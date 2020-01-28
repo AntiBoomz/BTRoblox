@@ -840,6 +840,10 @@ body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
 	flex: 0;
 }
 
+.btr-fastsearch-follow:not([disabled]):hover {
+	filter: brightness(125%);
+}
+
 /* Owned Item */
 
 .btr-item-owned {
