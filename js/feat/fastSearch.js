@@ -6,8 +6,10 @@ const initFastSearch = () => {
 	const promiseCache = {}
 	const fsResults = []
 	const friendsList = []
+	const presenceRequests = []
 	let fsUpdateCounter = 0
 	let friendsLoaded = false
+	let requestingPresences = false
 	let friendsPromise
 	let exactTimeout
 
@@ -33,6 +35,43 @@ const initFastSearch = () => {
 		localStorage.setItem("btr-fastsearch-cache", JSON.stringify(cache))
 	}
 
+	const requestPresence = target => {
+		if(presenceRequests.includes(target)) {
+			return
+		}
+
+		target.presence = new SyncPromise()
+		presenceRequests.push(target)
+
+		if(!requestingPresences) {
+			requestingPresences = true
+
+			setTimeout(() => {
+				const requests = presenceRequests.splice(0, presenceRequests.length)
+				const userIds = requests.map(x => x.UserId)
+
+				requestingPresences = false
+
+				const url = `https://presence.roblox.com/v1/presence/users`
+				$.fetch(url, {
+					method: "POST",
+					credentials: "include",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ userIds })
+				}).then(async resp => {
+					const presences = await resp.json()
+
+					presences.userPresences.forEach(presence => {
+						const request = requests.find(x => x.UserId === presence.userId)
+
+						if(request) {
+							request.presence.resolve(presence)
+						}
+					})
+				})
+			}, 1000)
+		}
+	}
 
 	const makeItem = (json, hlFrom, hlTo) => {
 		if(hlFrom == null || json.Alias) {
@@ -64,6 +103,10 @@ const initFastSearch = () => {
 		// Presence
 
 		const updatePresence = presence => {
+			if(!item.parentNode) {
+				return
+			}
+
 			const status = item.$find(".btr-fastsearch-status")
 			status.classList.remove("game", "studio", "online")
 
@@ -72,14 +115,14 @@ const initFastSearch = () => {
 				oldFollowBtn.remove()
 			}
 
-			switch(presence.UserPresenceType) {
+			switch(presence.userPresenceType) {
 			case 0: break
 			case 2: {
 				status.classList.add("game")
 
 				const followBtn = html`<button class="btr-fastsearch-follow btn-primary-xs">Join Game</button>`
 
-				if(presence.PlaceId) {
+				if(presence.placeId) {
 					followBtn.setAttribute("onclick", `return Roblox.GameLauncher.followPlayerIntoGame(${json.UserId}), false`)
 				} else {
 					followBtn.classList.add("disabled")
@@ -97,13 +140,7 @@ const initFastSearch = () => {
 		}
 
 		if(!json.presence) {
-			const url = `https://www.roblox.com/presence/user?userId=${json.UserId}`
-			json.presence = $.fetch(url, { credentials: "include" })
-				.then(resp => resp.json())
-		}
-
-		if(json.dirtyPresence) {
-			json.dirtyPresence.then(updatePresence)
+			requestPresence(json)
 		}
 		
 		json.presence.then(updatePresence)
@@ -183,33 +220,31 @@ const initFastSearch = () => {
 			if(!friendsPromise) {
 				friendsPromise = new SyncPromise(resolve => {
 					loggedInUserPromise.then(userId => {
-						const url = `https://www.roblox.com/users/friends/list-json?pageSize=200&userId=${userId}`
-						$.fetch(url, { credentials: "include" }).then(async resp => {
+						const friendsUrl = `https://friends.roblox.com/v1/users/${userId}/friends`
+						$.fetch(friendsUrl, { credentials: "include" }).then(async resp => {
 							const json = await resp.json()
 
-							json.Friends.forEach(friend => {
-								const key = friend.Username.toLowerCase()
+							json.data.forEach(friend => {
+								const key = friend.name.toLowerCase()
 								const oldItem = requestCache[key]
 
 								const item = {
 									IsFriend: true,
-									UserId: friend.UserId,
-									Username: friend.Username,
+									UserId: friend.id,
+									Username: friend.name,
 
-									presence: oldItem && oldItem.presence,
-									dirtyPresence: SyncPromise.resolve({
-										UserPresenceType: friend.InStudio ? 3 : friend.InGame ? 2 : friend.IsOnline ? 1 : 0,
-										LastLocation: friend.LastLocation,
-										PlaceId: friend.PlaceId
-									})
+									presence: oldItem && oldItem.presence
 								}
-
 								requestCache[key] = item
-								friendsList[friend.UserId] = item
+								friendsList[friend.id] = item
+
+								if(!item.presence) {
+									requestPresence(item)
+								}
 							})
 
 							Object.entries(requestCache).forEach(([key, item]) => {
-								if(item.IsFriend && !friendsList[item.UserId]) {
+								if(item.IsFriend && friendsList[item.UserId] !== item) {
 									delete requestCache[key]
 								}
 							})
