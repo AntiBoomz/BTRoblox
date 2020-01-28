@@ -7,6 +7,7 @@ const initFastSearch = () => {
 	const fsResults = []
 	const friendsList = []
 	const presenceRequests = []
+	let lastPresenceRequest = 0
 	let fsUpdateCounter = 0
 	let friendsLoaded = false
 	let requestingPresences = false
@@ -50,6 +51,7 @@ const initFastSearch = () => {
 				const requests = presenceRequests.splice(0, presenceRequests.length)
 				const userIds = requests.map(x => x.UserId)
 
+				lastPresenceRequest = Date.now()
 				requestingPresences = false
 
 				const url = `https://presence.roblox.com/v1/presence/users`
@@ -61,15 +63,22 @@ const initFastSearch = () => {
 				}).then(async resp => {
 					const presences = await resp.json()
 
-					presences.userPresences.forEach(presence => {
-						const request = requests.find(x => x.UserId === presence.userId)
+					if(presences instanceof Object && "userPresences" in presences) {
+						presences.userPresences.forEach(presence => {
+							const index = requests.findIndex(x => x.UserId === presence.userId)
 
-						if(request) {
-							request.presence.resolve(presence)
-						}
+							if(index !== -1) {
+								const request = requests.splice(index, 1)[0]
+								request.presence.resolve(presence)
+							}
+						})
+					}
+
+					requests.forEach(request => {
+						delete request.presence
 					})
 				})
-			}, 1000)
+			}, Math.max(100, 1500 - (Date.now() - lastPresenceRequest)))
 		}
 	}
 
