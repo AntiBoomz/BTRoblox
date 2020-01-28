@@ -38,21 +38,38 @@ pageInit.gamedetails = function(placeId) {
 	}
 
 	const watcher = document.$watch("body", body => body.classList.add("btr-gamedetails")).$then()
-		.$watch(["#tab-about", "#tab-game-instances"], (aboutTab, gameTab) => {
-			aboutTab.$find(".text-lead").textContent = "Recommended"
+		.$watch("#horizontal-tabs").$then()
+			.$watch(["#tab-about", "#tab-game-instances"], (aboutTab, gameTab) => {
+				aboutTab.$find(".text-lead").textContent = "Recommended"
 
-			aboutTab.classList.remove("active")
-			gameTab.classList.add("active")
+				aboutTab.classList.remove("active")
+				gameTab.classList.add("active")
 
-			const parent = aboutTab.parentNode
-			parent.append(aboutTab)
-			parent.prepend(gameTab)
-		})
-		.$watch(["#about", "#game-instances"], (about, games) => {
+				const parent = aboutTab.parentNode
+				parent.append(aboutTab)
+				parent.prepend(gameTab)
+			})
+		.$back()
+		.$watch("#about", about => {
 			about.classList.remove("active")
-			games.classList.add("active")
 
-			midContainer.append(...Array.from(about.children).filter(x => !x.matches("#rbx-vip-servers, #my-recommended-games")))
+			about.append(
+				html`
+				<div class="section btr-compat-rtrack">
+					<div class=container-header><h3></h3></div>
+					<div class="section-content remove-panel"><pre class="text game-description"></pre></div>
+				</div>`,
+				html`<div class="ng-scope btr-compat-rtrack"></div>`
+			)
+			
+			about.$watchAll("*", x => {
+				if(!x.matches("#rbx-vip-servers, #my-recommended-games, .btr-compat-rtrack")) {
+					midContainer.append(x)
+				}
+			})
+		})
+		.$watch("#game-instances", games => {
+			games.classList.add("active")
 		})
 		.$watch(".game-main-content", mainCont => {
 			mainCont.classList.remove("section-content")

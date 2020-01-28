@@ -193,3 +193,7 @@ body .btr-game-main-container {
 .btr-gamedetails #my-recommended-games .hlist {
 	text-align: center;
 }
+
+.btr-gamedetails #about .btr-compat-rtrack {
+	display: none;
+}
