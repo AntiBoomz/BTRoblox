@@ -377,6 +377,23 @@ const RBXParser = (() => {
 
 					return inst.setProperty(name, vector3, "Vector3")
 				}
+				case "udim2": {
+					const udim2 = [
+						[0, 0],
+						[0, 0]
+					]
+
+					Object.values(propNode.children).forEach(x => {
+						const nodeName = x.nodeName.toUpperCase()
+
+						if(nodeName === "XS") { udim2[0][0] = +x.textContent }
+						else if(nodeName === "XO") { udim2[0][1] = +x.textContent }
+						else if(nodeName === "YS") { udim2[1][0] = +x.textContent }
+						else if(nodeName === "YO") { udim2[0][1] = +x.textContent }
+					})
+
+					return inst.setProperty(name, udim2, "UDim2")
+				}
 				case "physicalproperties": {
 					const props = { CustomPhysics: false, Density: null, Friction: null, Elasticity: null, FrictionWeight: null, ElasticityWeight: null }
 					Object.values(propNode.children).forEach(x => {
