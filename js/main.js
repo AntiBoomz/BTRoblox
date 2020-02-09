@@ -194,6 +194,8 @@ function Init() {
 
 function PreInit() {
 	if(document.contentType !== "text/html") { return }
+	if(window.location.protocol.search(/^https?:$/) === -1) { return }
+	
 	if(IS_FIREFOX && document.readyState === "complete") { return } // Stop reloading extension
 
 	const pathname = window.location.pathname
