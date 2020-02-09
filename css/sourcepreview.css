@@ -1,0 +1,89 @@
+
+body {
+	padding: 0;
+	margin: 0;
+	font-family: "Courier New";
+	font-size: 14px;
+
+	tab-size: 4;
+	-moz-tab-size: 4;
+
+	color: #000;
+}
+
+.content {
+	display: grid;
+	grid-template-columns: min-content auto;
+
+	white-space: pre-wrap;
+}
+
+.line-container {
+	display: contents;
+}
+
+.linenumber {
+	display: inline-block;
+
+	background: #DDDDDD;
+	padding-left: 12px;
+	padding-right: 4px;
+
+	text-align: right;
+
+	white-space: nowrap;
+
+	user-select: none;
+	-moz-user-select: none;
+}
+
+.line {
+	display: flex;
+	max-width: 100%;
+	overflow: hidden;
+}
+
+.line .scope {
+	background: #FAFAFA;
+	width: 14px;
+	min-width: 14px;
+	max-width: 14px;
+
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	user-select: none;
+	-moz-user-select: none;
+}
+
+.line-container.open .scope::before,
+.line-container.closed .scope::before {
+	width: 6px;
+	height: 6px;
+	content: "";
+	border: 0 solid #7F7F7F;
+	border-width: 0 1px 1px 0;
+	transform: rotate(45deg);
+	transform-origin: center;
+	margin-top: -3px;
+}
+
+.line-container.closed .scope::before {
+	transform: rotate(-45deg);
+	margin-top: 0;
+	margin-left: -3px;
+}
+
+.linetext {
+	padding: 1px 6px;
+	max-width: 100%;
+}
+
+.string { color: rgb(127, 0, 127); }
+.comment { color: rgb(0, 127, 9); }
+.keyword { color: rgb(0, 0, 127); font-weight: bold; }
+.global { color: rgb(0, 0, 127); font-weight: bold; }
+.number { color: rgb(0, 127, 127); }
+.operator { color: rgb(127, 127, 0); }

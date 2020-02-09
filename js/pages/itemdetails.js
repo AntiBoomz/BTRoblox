@@ -145,10 +145,10 @@ const initExplorer = async (assetId, assetTypeId) => {
 
 			if(assetTypeId === 32) { // Package, I disabled package exploring elsewhere
 				AssetCache.loadText(assetId, text => text.split(";").forEach(id => {
-					AssetCache.loadModel(id, model => explorer.addModel(id.toString(), model))
+					AssetCache.loadModel(id, model => explorer.addModel(id.toString(), model, id))
 				}))
 			} else {
-				AssetCache.loadModel(assetId, model => explorer.addModel("Main", model))
+				AssetCache.loadModel(assetId, model => explorer.addModel("Main", model, assetId))
 			}
 		}
 

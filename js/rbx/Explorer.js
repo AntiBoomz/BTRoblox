@@ -68,12 +68,19 @@ const Explorer = (() => {
 			element.$on("click", ".btr-explorer", () => this.select([]))
 			this.select([])
 		}
+		
+		getSourceURL(inst, propName) {
+			const assetId = this.element.$find(".btr-explorer-list:not(.hidden)").dataset.assetId
+			let path = `${inst.Name}.${propName}`
+			let target = inst
 
-		openText(value) {
-			const doc = window.open("", "_blank").document
-			const pre = doc.createElement("pre")
-			pre.textContent = value
-			doc.body.append(pre)
+			while(target.Parent) {
+				target = target.Parent
+				path = `${target.Name}.${path}`
+			}
+
+			const hash = $.hashString(inst[propName])
+			return getURL(`sourceviewer.html?assetId=${assetId}&path=${path}&hash=${hash}`)
 		}
 
 		select(items) {
@@ -161,8 +168,8 @@ const Explorer = (() => {
 							input.value = input.title = (tooLong ? value.slice(0, 117) + "..." : value)
 
 							const more = html`<a class=more>...</a>`
-							more.$on("click", () => this.openText(value))
-
+							more.$on("click", () => window.open(this.getSourceURL(inst, "Source"), "_blank"))
+							
 							valueItem.append(more)
 						} else {
 							const id = AssetCache.resolveAssetId(value)
@@ -252,11 +259,13 @@ const Explorer = (() => {
 			})
 		}
 
-		addModel(title, model) {
+		addModel(title, model, assetId) {
 			const lists = this.element.$find(".btr-explorer")
 			const header = this.element.$find(".btr-explorer-header")
 			const element = html`<ul class=btr-explorer-list></ul>`
 			const btn = html`<div class=btr-explorer-view-btn>${title}</div>`
+
+			element.dataset.assetId = assetId
 
 			if(this.models.length) {
 				header.classList.remove("hidden")
@@ -299,7 +308,7 @@ const Explorer = (() => {
 						case "Script":
 						case "LocalScript":
 						case "ModuleScript":
-							this.openText(inst.Source || "")
+							window.open(this.getSourceURL(inst, "Source"), "_blank")
 							break
 						default:
 							item.classList.toggle("closed")

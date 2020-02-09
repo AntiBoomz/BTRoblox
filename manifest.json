@@ -42,6 +42,7 @@
 	],
 
 	"web_accessible_resources": [
+		"sourceviewer.html",
 		"js/inject.js",
 		"lib/*",
 		"css/*",

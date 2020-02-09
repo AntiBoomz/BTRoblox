@@ -7,7 +7,7 @@ const IS_CHROME = !IS_FIREFOX // Firefox apparently has "minimum_chrome_version"
 const IS_DEV_MODE = IS_FIREFOX ? chrome.runtime.id.endsWith("@temporary-addon") :
 	IS_CHROME ? chrome.runtime.id !== "hbkpclpemjeibhioopcebchdmohaieln" : false
 
-const IS_BACKGROUND_PAGE = chrome && chrome.extension && chrome.extension.getBackgroundPage
+const IS_BACKGROUND_PAGE = !!(chrome && chrome.extension && chrome.extension.getBackgroundPage) && window.location.pathname !== "/sourceviewer.html"
 
 
 const AssetShortcuts = {

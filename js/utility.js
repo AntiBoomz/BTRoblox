@@ -579,6 +579,16 @@ const $ = function(selector) { return $.find(document, selector) }
 			return Math.floor(s) + (short ? " sec" : " second" + (Math.floor(s) === 1 ? "" : "s"))
 		},
 
+		hashString(str) {
+			let hash = 0
+
+			for(let i = 0, len = str.length; i < len; i++) {
+				hash = (((hash << 5) - hash) + str.charCodeAt(i)) | 0
+			}
+
+			return (hash >>> 0).toString(16).toUpperCase()
+		},
+
 		strToBuffer(str) {
 			const buff = new ArrayBuffer(str.length)
 			const view = new Uint8Array(buff)
