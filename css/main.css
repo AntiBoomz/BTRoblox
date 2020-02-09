@@ -732,6 +732,9 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	position: absolute;
 	right: 1px;
 	width: 20px;
+
+	user-select: none;
+	-moz-user-select: none;
 }
 
 .btr-property-value .btr-color3-preview {
