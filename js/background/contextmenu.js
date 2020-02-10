@@ -23,7 +23,7 @@
 			const userId = info.linkUrl.replace(/^.*(?:\/users\/)(\d+).*$/i, "$1")
 			copyToClipboard(userId)
 		} else if(menuId === "groupLink") {
-			const groupId = info.linkUrl.replace(/^.*(?:groups?.aspx.*[?&]gid=(\d+)).*$/i, "$1")
+			const groupId = info.linkUrl.replace(/^.*(?:groups?.aspx.*[?&]gid=|\/groups\/)(\d+).*$/i, "$1")
 			copyToClipboard(groupId)
 		} else if(menuId === "universeLink") {
 			const universeId = info.linkUrl.replace(/^.*(?:[&?]id=)(\d+).*$/i, "$1")
@@ -81,7 +81,8 @@
 			contexts: ["link"],
 			targetUrlPatterns: [
 				"*://*.roblox.com/*roup.aspx*gid=*",
-				"*://*.roblox.com/*roups.aspx*gid=*"
+				"*://*.roblox.com/*roups.aspx*gid=*",
+				"*://*.roblox.com/groups/*/*"
 			]
 		},
 		{
