@@ -4,9 +4,7 @@
 
 const AssetCache = (() => {
 	const resolveCache = {}
-	const resolveQueue = []
 	const fileCache = {}
-	let resolvePromise
 
 	const prefixUrl = getURL("")
 
@@ -45,8 +43,9 @@ const AssetCache = (() => {
 			throw new Error(`Invalid Asset Url: '${url}'`)
 		}
 
-		const paramString = params.toString()
+		params.sort() // not sure if sorting will affect functionality, but meh
 
+		const paramString = params.toString()
 		const cached = resolveCache[paramString]
 		if(cached) {
 			if(cached instanceof SyncPromise) {
@@ -58,59 +57,7 @@ const AssetCache = (() => {
 			return
 		}
 
-		const requestId = `${resolveQueue.length}`
-
-		resolveQueue.push({
-			requestId,
-			assetId: params.has("id") ? params.get("id") : undefined,
-			version: params.has("version") ? params.get("version") : undefined,
-			assetVersionId: params.has("assetVersionId") ? params.get("assetVersionId") : undefined,
-			hash: params.has("hash") ? params.get("hash") : undefined,
-			userAssetId: params.has("userAssetId") ? params.get("userAssetId") : undefined
-		})
-
-		if(!resolvePromise) {
-			resolvePromise = new SyncPromise((resolve, reject) => {
-				setTimeout(async () => {
-					const resolveApiUrl = `https://assetdelivery.roblox.com/v1/assets/batch`
-					const info = {
-						method: "POST",
-						credentials: "include",
-						headers: {
-							"Content-Type": "application/json"
-						},
-						body: JSON.stringify(resolveQueue)
-					}
-
-					resolveQueue.splice(0, resolveQueue.length)
-					resolvePromise = null
-
-					$.fetch(resolveApiUrl, info).then(async resp => {
-						if(resp.ok) {
-							try { resolve(await resp.json()) }
-							catch(ex) { console.error(ex) }
-						} else {
-							console.error("resolveAssetUrl", resp.status, resp.statusText)
-						}
-
-						reject()
-					})
-				}, 16)
-			})
-		}
-
-		resolveCache[paramString] = resolvePromise.then(json => {
-			const data = json.find(x => x.requestId === requestId)
-
-			if(data && data.location) {
-				const result = data.location.replace(/^http:/, "https:")
-				finished(resolveCache[paramString] = result)
-				return result
-			}
-
-			finished(resolveCache[paramString] = null)
-			return null
-		})
+		finished(resolveCache[paramString] = `https://assetgame.roblox.com/asset/?${paramString.toString()}`)
 	}
 
 	function createMethod(constructor) {
