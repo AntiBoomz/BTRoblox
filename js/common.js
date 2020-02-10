@@ -106,7 +106,7 @@ const SETTINGS = {
 			addServerPager: { default: true, value: true }
 		},
 		groups: {
-			shoutAlerts: { default: true, value: false },
+			shoutAlerts: { default: true, value: true },
 			redesign: { default: true, value: true },
 			modifyLayout: { default: true, value: true },
 			selectedRoleCount: { default: true, value: true },
