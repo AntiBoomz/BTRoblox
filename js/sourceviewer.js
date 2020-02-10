@@ -232,50 +232,14 @@ const Init = source => {
 }
 
 $.ready(() => {
-	const params = new URLSearchParams(window.location.search)
+	const id = new URLSearchParams(window.location.search).get("id")
 
-	const assetId = params.get("assetId")
-	const fullPath = params.get("path")
-	const hash = params.get("hash")
-	const instProp = fullPath.slice(fullPath.lastIndexOf(".") + 1)
-
-	const possibleResults = []
-	let result
-
-	const checkInst = (inst, path) => {
-		const check = inst.Name + "."
-
-		if(path === check + instProp) {
-			const value = inst[instProp]
-
-			if(typeof value !== "string") {
-				return false
-			}
-
-			if($.hashString(value) !== hash) {
-				possibleResults.push(value)
-				return false
-			}
-
-			result = value
-			return true
+	chrome.runtime.sendMessage(`getSourceViewerData${id}`, source => {
+		if(chrome.runtime.lastError || typeof source !== "string") {
+			Init("-- Failed to load source viewer")
+			return
 		}
 
-		if(!inst.Children || !path.startsWith(check)) {
-			return false
-		}
-
-		const pathRest = path.slice(check.length)
-		return inst.Children.some(child => checkInst(child, pathRest))
-	}
-
-	AssetCache.loadModel(assetId, model => {
-		const success = model.some(inst => checkInst(inst, fullPath))
-
-		if(!success && possibleResults.length) {
-			result = possibleResults[0]
-		}
-
-		Init(result || "-- Failed to find target script")
+		Init(source)
 	})
 })

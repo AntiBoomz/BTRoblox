@@ -69,20 +69,8 @@ const Explorer = (() => {
 			this.select([])
 		}
 
-		openSourceViewer(inst, prop) {
-			const assetId = this.element.$find(".btr-explorer-list:not(.hidden)").dataset.assetId
-			let path = `${inst.Name}.${prop}`
-			let target = inst
-
-			while(target.Parent) {
-				target = target.Parent
-				path = `${target.Name}.${path}`
-			}
-
-			const hash = $.hashString(inst[prop])
-
-			const url = getURL(`sourceviewer.html?assetId=${assetId}&path=${path}&hash=${hash}`)
-			window.open(url, "_blank")
+		openSourceViewer(source) {
+			MESSAGING.send("openSourceViewer", source)
 		}
 
 		select(items) {
@@ -170,7 +158,7 @@ const Explorer = (() => {
 							input.value = input.title = (tooLong ? value.slice(0, 117) + "..." : value)
 
 							const more = html`<a class=more>...</a>`
-							more.$on("click", () => this.openSourceViewer(target, name))
+							more.$on("click", () => this.openSourceViewer(value))
 							
 							valueItem.append(more)
 						} else {
@@ -261,13 +249,11 @@ const Explorer = (() => {
 			})
 		}
 
-		addModel(title, model, assetId) {
+		addModel(title, model) {
 			const lists = this.element.$find(".btr-explorer")
 			const header = this.element.$find(".btr-explorer-header")
 			const element = html`<ul class=btr-explorer-list></ul>`
 			const btn = html`<div class=btr-explorer-view-btn>${title}</div>`
-
-			element.dataset.assetId = assetId
 
 			if(this.models.length) {
 				header.classList.remove("hidden")
@@ -310,7 +296,7 @@ const Explorer = (() => {
 						case "Script":
 						case "LocalScript":
 						case "ModuleScript":
-							this.openSourceViewer(inst, "Source")
+							this.openSourceViewer(inst.Source || "")
 							break
 						default:
 							item.classList.toggle("closed")

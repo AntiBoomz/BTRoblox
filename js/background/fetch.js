@@ -242,6 +242,16 @@ const OwnerAssetCache = {
 	}
 }.init()
 
+const sourceViewerData = {}
+
+chrome.runtime.onMessage.addListener((msg, sender, respond) => {
+	if(typeof msg === "string" && msg.startsWith("getSourceViewerData")) {
+		const id = msg.slice(19)
+
+		respond(sourceViewerData[id])
+	}
+})
+
 MESSAGING.listen({
 	filterOwnedAssets(assetIds, respond) {
 		const map = {}
@@ -258,6 +268,20 @@ MESSAGING.listen({
 		OwnerAssetCache
 			.update(changes => respond(changes, true))
 			.then(() => respond({}))
+	},
+
+	openSourceViewer(source) {
+		let id
+
+		do {
+			id = Math.random().toString(16).slice(2).toUpperCase()
+		} while(id in sourceViewerData)
+
+		sourceViewerData[id] = source
+		setTimeout(() => delete sourceViewerData[id], 10 * 60e3)
+
+		const url = getURL(`sourceviewer.html?id=${id}`)
+		chrome.tabs.create({ url })
 	},
 
 	loadOptAssets(assets, respond, port) {
