@@ -68,10 +68,10 @@ const Explorer = (() => {
 			element.$on("click", ".btr-explorer", () => this.select([]))
 			this.select([])
 		}
-		
-		getSourceURL(inst, propName) {
+
+		openSourceViewer(inst, prop) {
 			const assetId = this.element.$find(".btr-explorer-list:not(.hidden)").dataset.assetId
-			let path = `${inst.Name}.${propName}`
+			let path = `${inst.Name}.${prop}`
 			let target = inst
 
 			while(target.Parent) {
@@ -79,8 +79,10 @@ const Explorer = (() => {
 				path = `${target.Name}.${path}`
 			}
 
-			const hash = $.hashString(inst[propName])
-			return getURL(`sourceviewer.html?assetId=${assetId}&path=${path}&hash=${hash}`)
+			const hash = $.hashString(inst[prop])
+
+			const url = getURL(`sourceviewer.html?assetId=${assetId}&path=${path}&hash=${hash}`)
+			window.open(url, "_blank")
 		}
 
 		select(items) {
@@ -168,7 +170,7 @@ const Explorer = (() => {
 							input.value = input.title = (tooLong ? value.slice(0, 117) + "..." : value)
 
 							const more = html`<a class=more>...</a>`
-							more.$on("click", () => window.open(this.getSourceURL(inst, "Source"), "_blank"))
+							more.$on("click", () => this.openSourceViewer(target, name))
 							
 							valueItem.append(more)
 						} else {
@@ -308,7 +310,7 @@ const Explorer = (() => {
 						case "Script":
 						case "LocalScript":
 						case "ModuleScript":
-							window.open(this.getSourceURL(inst, "Source"), "_blank")
+							this.openSourceViewer(inst, "Source")
 							break
 						default:
 							item.classList.toggle("closed")

@@ -172,12 +172,15 @@ function parseSource(source) {
 	})
 
 	// Add an empty line to the beginning
-	content.append(html`<div class=line-container><div class=linenumber></div><div class=line style=height:16px;><span class=scope></span><span class=linetext></span></div></div>`)
+	content.append(html`<div class=line-container><div class=linenumber></div><div class=line style=height:18px;><span class=scope></span><span class=linetext></span></div></div>`)
 
 	return content
 }
 
-const InitScoping = () => {
+const Init = source => {
+	const content = parseSource(source)
+	document.body.append(content)
+
 	$.all(".line-container.open,.line-container.closed").forEach(elem => {
 		elem.$find(".scope").$on("click", () => {
 			if(elem.classList.contains("open")) {
@@ -273,8 +276,6 @@ $.ready(() => {
 			result = possibleResults[0]
 		}
 
-		const content = parseSource(result || "-- Failed to find target script")
-		document.body.append(content)
-		InitScoping()
+		Init(result || "-- Failed to find target script")
 	})
 })
