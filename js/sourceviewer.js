@@ -234,12 +234,27 @@ const Init = source => {
 $.ready(() => {
 	const id = new URLSearchParams(window.location.search).get("id")
 
-	chrome.runtime.sendMessage(`getSourceViewerData${id}`, source => {
-		if(chrome.runtime.lastError || typeof source !== "string") {
+	if(id) {
+		const key = `sourceViewerData_${id}`
+		const source = localStorage.getItem(key)
+		localStorage.removeItem(key)
+		
+		if(!source) {
 			Init("-- Failed to load source viewer")
 			return
 		}
 
+		window.location.replace(window.location.pathname)
+		sessionStorage.setItem("source", source)
+
 		Init(source)
-	})
+	} else {
+		const savedSource = sessionStorage.getItem("source")
+		if(typeof savedSource !== "string") {
+			Init("-- Failed to load source viewer")
+			return
+		}
+	
+		Init(savedSource)
+	}
 })

@@ -242,15 +242,13 @@ const OwnerAssetCache = {
 	}
 }.init()
 
-const sourceViewerData = {}
+for (let i = localStorage.length; i--;) {
+	const key = localStorage.key(i)
 
-chrome.runtime.onMessage.addListener((msg, sender, respond) => {
-	if(typeof msg === "string" && msg.startsWith("getSourceViewerData")) {
-		const id = msg.slice(19)
-
-		respond(sourceViewerData[id])
+	if(key.startsWith("sourceViewerData_")) {
+		localStorage.removeItem(key)
 	}
-})
+}
 
 MESSAGING.listen({
 	filterOwnedAssets(assetIds, respond) {
@@ -271,14 +269,11 @@ MESSAGING.listen({
 	},
 
 	openSourceViewer(source) {
-		let id
+		const id = Math.random().toString(16).slice(2).toUpperCase()
+		const key = `sourceViewerData_${id}`
 
-		do {
-			id = Math.random().toString(16).slice(2).toUpperCase()
-		} while(id in sourceViewerData)
-
-		sourceViewerData[id] = source
-		setTimeout(() => delete sourceViewerData[id], 10 * 60e3)
+		localStorage.setItem(key, source)
+		setTimeout(() => localStorage.removeItem(key), 10e3)
 
 		const url = getURL(`sourceviewer.html?id=${id}`)
 		chrome.tabs.create({ url })
