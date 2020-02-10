@@ -2,7 +2,6 @@
 "use strict"
 
 const ParseRegex = /\w+|[^\n\S]+|(?:--(?:\[\[([^\]]*|(?!\]\])\])*\]\]|\[=\[([^\]]*|(?!\]=\])\])*\]=\]|\[==\[([^\]]*|(?!\]==\])\])*\]==\]|[^\n]*))|(?:\[\[([^\]]*|(?!\]\])\])*\]\]|\[=\[([^\]]*|(?!\]=\])\])*\]=\]|\[==\[([^\]]*|(?!\]==\])\])*\]==\]|"(?:[^"\\]*|\\.)*"|'(?:[^'\\]*|\\.)*')|(?:(?:-?(?:\d*\.?\d+|0x[0-9a-fA-F]+)(?:[eE]-?\d+)?)|\W)|./yg
-const StringRegex = /^(?:"|'|\[=*\[)/
 const NumberRegex = /^-?(?:\d*\.?\d+|0x[0-9a-fA-F]+)(?:[eE]-?\d+)?$/
 
 const Keywords = new Set([
@@ -42,6 +41,10 @@ const Tables = {
 
 const Operators = new Set(["+", "-", "*", "/", "%", "=", "==", "~=", ">", ">=", "<", "<=", ":", "{", "}", "(", ")", "[", "]", "#"])
 
+const ScopeIn = new Set(["then", "do", "repeat", "function", "(", "{", "["])
+const ScopeOut = new Set(["end", "elseif", "until", ")", "}", "]"])
+const ScopeInOut = new Set(["else"])
+
 function parseSource(source) {
 	const lines = []
 	let tableSelector = null
@@ -75,7 +78,7 @@ function parseSource(source) {
 	}
 
 	// Add an empty line to the beginning
-	content.append(html`<div class=line-container><div class=linenumber></div><div class=line style=height:6px;><span class=scope></span><span class=linetext></span></div></div>`)
+	content.append(html`<div class=line-container><div class=linenumber></div><div class=line style=height:5px;><span class=scope></span><span class=linetext></span></div></div>`)
 
 	current = createLine()
 	while(true) {
@@ -97,19 +100,19 @@ function parseSource(source) {
 			Keywords.has(text) ? "keyword" :
 				Globals.has(text) ? "global" :
 					Operators.has(text) ? "operator" :
-						NumberRegex.test(text) ? "number" :
-							text.length > 1 && StringRegex.test(text) ? "string" :
+						text.length > 1 && (text[0] === "\"" || text[0] === "'" || text[0] === "[") ? "string" :
+							NumberRegex.test(text) ? "number" :
 								"text"
 
-		if(text === "then" || text === "do" || text === "repeat" || text === "function" || text === "(" || text === "{" || text === "[") {
+		if(ScopeIn.has(text)) {
 			depth++
-		} else if(text === "end" || text === "elseif" || text === "until" || text === ")" || text === "}" || text === "]") {
+		} else if(ScopeOut.has(text)) {
 			if(depth === current.depth) {
 				current.depth--
 			}
 
 			depth--
-		} else if(text === "else") {
+		} else if(ScopeInOut.has(text)) {
 			if(depth === current.depth) {
 				current.depth--
 			}
@@ -172,7 +175,7 @@ function parseSource(source) {
 	})
 
 	// Add an empty line to the beginning
-	content.append(html`<div class=line-container><div class=linenumber></div><div class=line style=height:18px;><span class=scope></span><span class=linetext></span></div></div>`)
+	content.append(html`<div class=line-container><div class=linenumber></div><div class=line style=height:5px;><span class=scope></span><span class=linetext></span></div></div>`)
 
 	return content
 }
