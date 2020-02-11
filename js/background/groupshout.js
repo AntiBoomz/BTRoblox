@@ -180,11 +180,7 @@
 		if(!thumbsToGet.length) {
 			execNotifs()
 		} else {
-			const url = new URL("https://thumbnails.roblox.com/v1/groups/icons?size=150x150&format=png")
-
-			thumbsToGet.forEach(notif => {
-				url.searchParams.append("groupIds", notif.groupId)
-			})
+			const url = `https://thumbnails.roblox.com/v1/groups/icons?groupIds=${thumbsToGet.map(x => x.groupId).join(",")}&size=150x150&format=png`
 
 			fetch(url).then(async resp => {
 				const json = await resp.json()
