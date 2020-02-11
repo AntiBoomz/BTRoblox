@@ -19,13 +19,13 @@ pageInit.profile = function(userId) {
 			</div>
 			<div class=placeholder-robloxbadges>
 				<div class=container-header><h3>Roblox Badges</h3></div>
-				<div class>
+				<div class=section-content>
 					<div class="section-content-off btr-section-content-off">This user has no Roblox Badges</div>
 				</div>
 			</div>
 			<div class=btr-profile-playerbadges>
 				<div class=container-header><h3>Player Badges</h3></div>
-				<div>
+				<div class=section-content>
 					<ul class=hlist>
 						<div class="section-content-off btr-section-content-off">This user has no Player Badges</div>
 					</ul>
@@ -33,7 +33,7 @@ pageInit.profile = function(userId) {
 			</div>
 			<div class=btr-profile-groups>
 				<div class=container-header><h3>Groups</h3></div>
-				<div>
+				<div class=section-content>
 					<ul class=hlist>
 						<div class="section-content-off btr-section-content-off">This user is not in any Groups</div>
 					</ul>
@@ -50,7 +50,7 @@ pageInit.profile = function(userId) {
 			</div>
 			<div class=placeholder-friends>
 				<div class=container-header><h3>Friends</h3></div>
-				<div class>
+				<div class=section-content>
 					<div class="section-content-off btr-section-content-off">This user has no Friends</div>
 				</div>
 			</div>
@@ -59,7 +59,7 @@ pageInit.profile = function(userId) {
 					<h3>Favorites</h3>
 					<a href=./favorites class="btn-secondary-xs btn-fixed-width btn-more see-all-link-icon">See All</a>
 				</div>
-				<div>
+				<div class=section-content>
 					<ul class="hlist game-cards">
 						<div class="section-content-off btr-section-content-off">This user has no favorite Places</div>
 					</ul>
@@ -237,6 +237,8 @@ pageInit.profile = function(userId) {
 		.$watch(".see-more-roblox-badges-button", btn => {
 			const badges = btn.parentElement.parentElement
 			newCont.$find(".placeholder-robloxbadges").replaceWith(badges)
+
+			badges.$find(".section-content").classList.remove("remove-panel")
 
 			badges.classList.add("btr-profile-robloxbadges")
 			badges.$find(".btn-more").setAttribute("ng-show", badges.$find(".badge-list").children.length > 10)

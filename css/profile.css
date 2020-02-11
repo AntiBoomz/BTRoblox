@@ -36,8 +36,9 @@
 	margin-top: 12px;
 }
 
-.btr-profile .btr-section-content-off,
-.dark-theme.btr-profile .btr-section-content-off {
+html .btr-profile .btr-section-content-off,
+html .light-theme.btr-profile .btr-section-content-off,
+html .dark-theme.btr-profile .btr-section-content-off {
 	background: none;
 }
 
