@@ -549,85 +549,97 @@ pageInit.profile = function(userId) {
 		})
 	
 	function initPlayerBadges() {
-		const badges = newCont.$find(".btr-profile-playerbadges")
-		const hlist = badges.$find(".hlist")
+		const badgesElem = newCont.$find(".btr-profile-playerbadges")
+		const hlist = badgesElem.$find(".hlist")
 		const pager = createPager(true)
 		hlist.after(pager)
 
+		const thumbClasses = {
+			Error: "icon-broken",
+			InReview: "icon-in-review",
+			Blocked: "icon-blocked",
+			Pending: "icon-pending"
+		}
+
+		const playerBadges = []
+		const pageSize = 10
+
 		let currentPage = 1
 		let isLoading = false
-		let prevData = null
+		let hasMorePages = true
+		let nextPageCursor
 
-		function loadPage(page, cursor) {
+		const openPage = async page => {
+			const pageStart = (page - 1) * pageSize
+			const badges = playerBadges.slice(pageStart, pageStart + pageSize)
+
+			const needsThumbs = badges.filter(x => !x.thumb)
+			if(needsThumbs.length) {
+				const thumbsUrl = `https://thumbnails.roblox.com/v1/badges/icons?badgeIds=${needsThumbs.map(x => x.id).join(",")}&size=150x150&format=Png`
+				const thumbData = await $.fetch(thumbsUrl).then(resp => resp.json())
+
+				thumbData.data.forEach(thumb => {
+					const badge = badges.find(x => x.id === thumb.targetId)
+					badge.thumb = thumb
+				})
+			}
+
+			currentPage = page
+			pager.setPage(currentPage)
+			pager.togglePrev(currentPage > 1)
+			pager.toggleNext(hasMorePages)
+			hlist.$empty()
+
+			if(!badges.length) {
+				const text = `${+userId === +loggedInUser ? "You have" : "This user has"} no badges`
+				hlist.append(html`<div class="section-content-off btr-section-content-off">${text}</div>`)
+			} else {
+				badges.forEach(data => {
+					const thumbUrl = data.thumb.imageUrl || "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
+					const thumbClass = thumbClasses[data.thumb.state] || ""
+					const badgeUrl = `/badges/${data.id}/${data.name.replace(/[^\w\s]+/g, "").trim().replace(/\s+/g, "-")}`
+
+					hlist.append(html`
+					<li class="list-item badge-item asset-item" ng-non-bindable>
+						<a href="${badgeUrl}" class="badge-link" title="${data.name}">
+							<span class=asset-thumb-container>
+								<img class="border ${thumbClass}" src="${thumbUrl}">
+							</span>
+							<span class="font-header-2 text-overflow item-name">${data.name}</span>
+						</a>
+					</li>`)
+				})
+			}
+		}
+
+		const loadPage = async page => {
+			if(isLoading) {
+				return
+			}
+
 			isLoading = true
+			page = Math.max(1, page)
 
-			const url = `https://badges.roblox.com/v1/users/${userId}/badges?sortOrder=Desc&limit=10&cursor=${cursor}`
-			$.fetch(url).then(async response => {
-				const json = await response.json()
-				isLoading = false
+			const lastIndex = page * pageSize
+			while(playerBadges.length < lastIndex && hasMorePages) {
+				const url = `https://badges.roblox.com/v1/users/${userId}/badges?sortOrder=Desc&limit=50&cursor=${nextPageCursor || ""}`
+				const badges = await $.fetch(url).then(resp => resp.json())
 
-				if(!json || !response.ok) {
-					return
-				}
+				nextPageCursor = badges.nextPageCursor
+				hasMorePages = !!nextPageCursor
 
-				prevData = json
-
-				currentPage = page
-				pager.setPage(currentPage)
-				pager.togglePrev(json.previousPageCursor != null)
-				pager.toggleNext(json.nextPageCursor != null)
-				hlist.$empty()
-
-				if(!json.data.length) {
-					const text = `${+userId === +loggedInUser ? "You have" : "This user has"} no badges`
-					hlist.append(html`<div class="section-content-off btr-section-content-off">${text}</div>`)
-				} else {
-					const elems = {}
-
-					json.data.forEach(data => {
-						const elem = html`
-						<li class="list-item badge-item asset-item" ng-non-bindable>
-							<a href="/badges/${data.id}/" class="badge-link" title="${data.name}">
-								<span class=asset-thumb-container>
-									<img src="data:image/gif;base64,R0lGODlhAQABAPAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class=border>
-								</span>
-								<span class="font-header-2 text-overflow item-name">${data.name}</span>
-							</a>
-						</li>`
-
-						elems[data.id] = elem
-						hlist.append(elem)
-					})
-
-					const thumbsUrl = `https://thumbnails.roblox.com/v1/badges/icons?badgeIds=${json.data.map(x => x.id).join(",")}&size=150x150&format=Png`
-					$.fetch(thumbsUrl).then(async resp => {
-						const thumbs = await resp.json()
-
-						thumbs.data.forEach(({ targetId, imageUrl }) => {
-							const elem = elems[targetId]
-
-							if(elem) {
-								elem.$find("img").src = imageUrl
-							}
-						})
-					})
-				}
-			})
-		}
-
-		pager.onprevpage = () => {
-			if(!isLoading && prevData && prevData.previousPageCursor) {
-				loadPage(currentPage - 1, prevData.previousPageCursor)
+				playerBadges.push(...badges.data)
 			}
+
+			page = Math.min(Math.ceil(playerBadges.length / pageSize), page)
+
+			await openPage(page)
+			isLoading = false
 		}
 
-		pager.onnextpage = () => {
-			if(!isLoading && prevData && prevData.nextPageCursor) {
-				loadPage(currentPage + 1, prevData.nextPageCursor)
-			}
-		}
-
-		$.ready(() => loadPage(1, ""))
+		pager.onprevpage = () => loadPage(currentPage - 1)
+		pager.onnextpage = () => loadPage(currentPage + 1)
+		$.ready(() => loadPage(1))
 	}
 
 	function initGroups() {
