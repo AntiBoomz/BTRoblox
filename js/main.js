@@ -261,6 +261,42 @@ function PreInit() {
 			isInitDeferred = true
 		}
 	})
+
+	//
+
+	PERMISSIONS.hasHostAccess().then(hasAccess => {
+		if(hasAccess) {
+			return
+		}
+
+		document.$watch("#header", header => {
+			const btn = html`<div class=btr-rha>BTRoblox requires full access to the Roblox site to work properly. Click here to grant access.</div>`
+			let busy = false
+
+			btn.$on("click", () => {
+				if(btn.classList.contains("finished")) {
+					return window.location.reload()
+				}
+
+				if(busy) {
+					return
+				}
+
+				busy = true
+				PERMISSIONS.requestHostAccess().then(granted => {
+					if(!granted) {
+						busy = false
+						return
+					}
+					
+					btn.classList.add("finished")
+					btn.textContent = "Access granted. Click here to reload the page."
+				})
+			})
+
+			header.after(btn)
+		})
+	})
 }
 
 PreInit()
