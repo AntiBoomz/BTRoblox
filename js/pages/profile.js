@@ -565,31 +565,52 @@ pageInit.profile = function(userId) {
 			$.fetch(url).then(async response => {
 				const json = await response.json()
 				isLoading = false
+
+				if(!json || !response.ok) {
+					return
+				}
+
 				prevData = json
 
-				if(json) {
-					currentPage = page
-					pager.setPage(currentPage)
-					pager.togglePrev(json.previousPageCursor != null)
-					pager.toggleNext(json.nextPageCursor != null)
-					hlist.$empty()
+				currentPage = page
+				pager.setPage(currentPage)
+				pager.togglePrev(json.previousPageCursor != null)
+				pager.toggleNext(json.nextPageCursor != null)
+				hlist.$empty()
 
-					if(!json.data.length) {
-						const text = `${+userId === +loggedInUser ? "You have" : "This user has"} no badges`
-						hlist.append(html`<div class="section-content-off btr-section-content-off">${text}</div>`)
-					} else {
-						json.data.forEach(data => {
-							hlist.append(html`
-							<li class="list-item badge-item asset-item" ng-non-bindable>
-								<a href="/badges/${data.id}/" class="badge-link" title="${data.name}">
-									<span class=asset-thumb-container>
-										<img class=border src="/asset-thumbnail/image?assetId=${data.iconImageId}&width=150&height=150" alt="${data.name}">
-									</span>
-									<span class="font-header-2 text-overflow item-name">${data.name}</span>
-								</a>
-							</li>`)
+				if(!json.data.length) {
+					const text = `${+userId === +loggedInUser ? "You have" : "This user has"} no badges`
+					hlist.append(html`<div class="section-content-off btr-section-content-off">${text}</div>`)
+				} else {
+					const elems = {}
+
+					json.data.forEach(data => {
+						const elem = html`
+						<li class="list-item badge-item asset-item" ng-non-bindable>
+							<a href="/badges/${data.id}/" class="badge-link" title="${data.name}">
+								<span class=asset-thumb-container>
+									<img src="data:image/gif;base64,R0lGODlhAQABAPAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class=border>
+								</span>
+								<span class="font-header-2 text-overflow item-name">${data.name}</span>
+							</a>
+						</li>`
+
+						elems[data.id] = elem
+						hlist.append(elem)
+					})
+
+					const thumbsUrl = `https://thumbnails.roblox.com/v1/badges/icons?badgeIds=${json.data.map(x => x.id).join(",")}&size=150x150&format=Png`
+					$.fetch(thumbsUrl).then(async resp => {
+						const thumbs = await resp.json()
+
+						thumbs.data.forEach(({ targetId, imageUrl }) => {
+							const elem = elems[targetId]
+
+							if(elem) {
+								elem.$find("img").src = imageUrl
+							}
 						})
-					}
+					})
 				}
 			})
 		}
