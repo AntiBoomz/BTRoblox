@@ -82,6 +82,54 @@ const initFastSearch = () => {
 		}
 	}
 
+	const thumbPromises = {}
+	const thumbRequests = []
+	let requestingThumbs
+
+	const sendThumbRequest = () => {
+		if(requestingThumbs) {
+			return
+		}
+
+		requestingThumbs = true
+
+		setTimeout(() => {
+			requestingThumbs = false
+			const thumbs = thumbRequests.splice(0, thumbRequests.length)
+			const url = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${thumbs.join(",")}&size=48x48&format=Png`
+
+			fetch(url).then(async resp => {
+				const json = await resp.json()
+
+				json.data.forEach(thumb => {
+					const thumbPromise = thumbPromises[thumb.targetId]
+
+					if(thumb.imageUrl) {
+						thumbPromise.resolve(thumb.imageUrl)
+					} else {
+						setTimeout(() => {
+							thumbRequests.push(thumb.targetId)
+							sendThumbRequest()
+						}, 500)
+					}
+				})
+			})
+		}, 10)
+	}
+
+	const requestThumb = userId => {
+		const cachedPromise = thumbPromises[userId]
+		if(cachedPromise) {
+			return cachedPromise
+		}
+
+		const promise = thumbPromises[userId] = new SyncPromise()
+		thumbRequests.push(userId)
+
+		sendThumbRequest()
+		return promise
+	}
+
 	const makeItem = (json, hlFrom, hlTo) => {
 		if(hlFrom == null || json.Alias) {
 			hlFrom = 0
@@ -92,9 +140,8 @@ const initFastSearch = () => {
 		<li class="rbx-navbar-search-option rbx-clickable-li btr-fastsearch" data-searchurl=/User.aspx?userId=${json.UserId}&searchTerm=>
 			<a class=btr-fastsearch-anchor href=/users/${json.UserId}/profile>
 				<div class=btr-fastsearch-avatar>
-					<img class=btr-fastsearch-thumbnail src=https://www.roblox.com/headshot-thumbnail/image?userId=${json.UserId}&width=48&height=48&format=png>
-					<div class=btr-fastsearch-status>
-					</div>
+					<img class=btr-fastsearch-thumbnail src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==">
+					<div class=btr-fastsearch-status></div>
 				</div>
 				<div class=btr-fastsearch-text>
 					<div class=btr-fastsearch-name>
@@ -108,6 +155,13 @@ const initFastSearch = () => {
 				</div>
 			</a>
 		</li>`
+
+		requestThumb(json.UserId).then(url => {
+			const img = item.$find("img")
+			if(img) {
+				img.src = url
+			}
+		})
 
 		// Presence
 
