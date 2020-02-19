@@ -597,7 +597,7 @@ pageInit.profile = function(userId) {
 				badges.forEach(data => {
 					const thumbUrl = data.thumb.imageUrl || "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
 					const thumbClass = thumbClasses[data.thumb.state] || ""
-					const badgeUrl = `/badges/${data.id}/${data.name.replace(/[^\w\s]+/g, "").trim().replace(/\s+/g, "-")}`
+					const badgeUrl = `/badges/${data.id}/${FormatUrlName(data.name)}`
 
 					hlist.append(html`
 					<li class="list-item badge-item asset-item" ng-non-bindable>
@@ -677,7 +677,7 @@ pageInit.profile = function(userId) {
 					const parent = html`
 					<li class="list-item game-card ${index < pageSize ? "visible" : ""}">
 						<div class="card-item game-card-container">
-							<a href="/groups/${group.id}/" title="${group.name}">
+							<a href="/groups/${group.id}/${FormatUrlName(group.name)}" title="${group.name}">
 								<div class=game-card-thumb-container>
 									<img class="game-card-thumb card-thumb unloaded">
 								</div>

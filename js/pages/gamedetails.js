@@ -147,11 +147,11 @@ pageInit.gamedetails = function(placeId) {
 				if(+rootPlaceId === +placeId) { return }
 
 				const box = html`
-				<div class='btr-universe-box'>
+				<div class="btr-universe-box">
 					This place is part of 
-					<a class='btr-universe-name text-link' href='//www.roblox.com/games/${rootPlaceId}/'>${rootPlaceName || "..."}</a>
-					<div class='VisitButton VisitButtonPlayGLI btr-universe-visit-button' placeid='${rootPlaceId}' data-action=play data-is-membership-level-ok=true>
-						<a class='btn-secondary-md'>Play</a>
+					<a class="btr-universe-name text-link" href="/games/${rootPlaceId}/${FormatUrlName(rootPlaceName)}">${rootPlaceName || "..."}</a>
+					<div class="VisitButton VisitButtonPlayGLI btr-universe-visit-button" placeid="${rootPlaceId}" data-action=play data-is-membership-level-ok=true>
+						<a class="btn-secondary-md">Play</a>
 					</div>
 				</div>`
 
@@ -161,7 +161,7 @@ pageInit.gamedetails = function(placeId) {
 					const anchor = box.$find(".btr-universe-name")
 					getProductInfo(rootPlaceId).then(data => {
 						anchor.textContent = data.Name
-						anchor.href += data.Name.replace(/\W+/g, " ").trim().replace(/ +/g, "-")
+						anchor.href = `/games/${rootPlaceId}/${FormatUrlName(data.Name)}`
 					})
 				}
 			}
