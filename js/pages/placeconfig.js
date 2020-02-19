@@ -117,7 +117,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 			const fileExt = assetType === "place" ? "rbxl" : "rbxm"
 			const fileName = `${placeName}-${version}.${fileExt}`
 
-			const assetUrl = `https://assetgame.roblox.com/asset/?id=${assetId}&version=${version}`
+			const assetUrl = `https://assetdelivery.roblox.com/v1/asset/?id=${assetId}&version=${version}`
 			AssetCache.loadBlob(assetUrl, blob => {
 				isBusy = false
 				const blobUrl = URL.createObjectURL(blob)
@@ -212,7 +212,7 @@ pageInit.placeconfig = function(placeId) {
 			let retryTime = 1000
 
 			const tryDownload = () => {
-				const url = `https://assetgame.roblox.com/asset/?id=${placeId}&version=${version}`
+				const url = `https://assetdelivery.roblox.com/v1/asset/?id=${placeId}&version=${version}`
 				AssetCache.loadBuffer(url, file => {
 					try {
 						const nameStr = `${fileName}-${version}.rbxl`

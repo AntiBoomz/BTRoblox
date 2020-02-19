@@ -57,7 +57,7 @@ const AssetCache = (() => {
 			return
 		}
 
-		finished(resolveCache[paramString] = `https://assetgame.roblox.com/asset/?${paramString.toString()}`)
+		finished(resolveCache[paramString] = `https://assetdelivery.roblox.com/v1/asset/?${paramString.toString()}`)
 	}
 
 	function createMethod(constructor) {
@@ -188,7 +188,7 @@ const AssetCache = (() => {
 		loadText: createMethod(buffer => $.bufferToStr(buffer)),
 
 		toAssetUrl(id) {
-			return `https://assetgame.roblox.com/asset/?id=${+id}`
+			return `https://assetdelivery.roblox.com/v1/asset/?id=${+id}`
 		},
 
 		resolveAssetId(url) {
