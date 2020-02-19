@@ -750,7 +750,6 @@ Universe APIs
 
 Home Page APIs
 ---------
-* https://www.roblox.com/home/recently-visited-places
 * https://www.roblox.com/user/favorites/places
 
 #### Friend Activity
@@ -760,61 +759,6 @@ Home Page APIs
 
 Profile Page APIs
 ------------
-
-#### Get groups of an user
-* https://www.roblox.com/users/profile/playergroups-json?userId=261
-    ```json
-    {
-        "NumberOfGroups": 27,
-        "Groups": [
-            {
-                "Id": 2814397,
-                "AgentId": 121238002,
-                "Name": "Shedletsky Studios",
-                "EmblemId": 454138426,
-                "Description": "Join to get updates about my new games in your ROBLOX feed!",
-                "GroupUrl": "https://www.roblox.com/groups/2814397/Shedletsky-Studios",
-                "Rank": "Owner",
-                "Members": 6841,
-                "IsPrimary": true,
-                "GroupThumbnailWidth": 150,
-                "GroupThumbnailHeight": 150,
-                "Emblem": {
-                    "Final": true,
-                    "Url": "https://t7.rbxcdn.com/c3f73a0973d07d4d15f5bbfdffdf6594",
-                    "RetryUrl": "",
-                    "IsApproved": false
-                }
-            },
-            {
-                "Id": 3428946,
-                "AgentId": 372937350,
-                "Name": "Eccentric Society",
-                "EmblemId": 996523669,
-                "Description": "https://www.roblox.com/catalog/26943368/Eccentric-Shop-Teacher\r\n\r\nAn \"elite\" group for owners of the rarest (4 exist, no limited is rarer), most unique (no direct re-textures), and unobtainable (none are for trade) limited on ROBLOX: Eccentric Shop Teacher. \r\n\r\nOnly owners can join this prestigious society, hehe.\r\n\r\nOwners: Linkmon99, Merely, Shedletsky (sonofsevenless), Runite\r\n\r\n\r\nNote:\r\nWhile the tablets have 1 stock each, as whole there are around 20 making them less rare than the eccentric shop teacher. Second place is Lady of the Federation which 5 exist.",
-                "GroupUrl": "https://www.roblox.com/groups/3428946/Eccentric-Society",
-                "Rank": "Proprietors",
-                "Members": 4,
-                "IsPrimary": false,
-                "GroupThumbnailWidth": 150,
-                "GroupThumbnailHeight": 150,
-                "Emblem": {
-                    "Final": true,
-                    "Url": "https://t3.rbxcdn.com/4ab1ed89ec044a036c9d99005fd39281",
-                    "RetryUrl": "",
-                    "IsApproved": false
-                }
-            },
-            ...
-        ],
-        "ProfileLangResources": {
-            "ActionAccept": "Accept",
-            "ActionAddFriend": "Add Friend",
-            "ActionBlockUser": "Block User",
-            ...
-        }
-    }
-    ```
 
 #### Get collections of an user
 * https://www.roblox.com/users/profile/robloxcollections-json?userId=261
