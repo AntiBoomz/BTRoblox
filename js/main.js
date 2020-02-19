@@ -270,7 +270,7 @@ function PreInit() {
 		}
 
 		document.$watch("#header", header => {
-			const btn = html`<div class=btr-rha>BTRoblox requires full access to the Roblox site to work properly. Click here to grant access.</div>`
+			const btn = html`<div class=btr-rha>Some permissions required for BTRoblox to function have been disabled. Click here to fix the issue.</div>`
 			let busy = false
 
 			btn.$on("click", () => {
@@ -290,7 +290,8 @@ function PreInit() {
 					}
 					
 					btn.classList.add("finished")
-					btn.textContent = "Access granted. Click here to reload the page."
+					
+					setTimeout(() => window.location.reload(), 500)
 				})
 			})
 
