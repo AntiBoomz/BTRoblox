@@ -42,7 +42,8 @@ API Docs
 | [develop.roblox.com](https://develop.roblox.com/docs) | Game development configuration endpoints. |
 | [discussions.roblox.com](https://discussions.roblox.com/docs) | This Api is temporarily offline. |
 | [economy.roblox.com](https://economy.roblox.com/docs) | Endpoints related to transactions and currency. |
-| [engagementpayouts.roblox.com](https://engagementpayouts.roblox.com/docs) | This Api is temporarily offline. |
+| [economycreatorstats.roblox.com](https://economycreatorstats.roblox.com/docs) | Roblox.EconomyCreatorStats.Api endpoints. |
+| [engagementpayouts.roblox.com](https://engagementpayouts.roblox.com/docs) | For engagement-based payout information |
 | [followings.roblox.com](https://followings.roblox.com/docs) | Establishes follow relationship between subscriber entities (users, groups, etc) and source entities (games, groups, assets, etc.) |
 | [friends.roblox.com](https://friends.roblox.com/docs) | Friends, followers, and contacts management. |
 | [gameinternationalization.roblox.com](https://gameinternationalization.roblox.com/docs) | Manages internationalization of games such as translating in game content. |
