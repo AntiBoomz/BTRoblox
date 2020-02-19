@@ -385,7 +385,7 @@ pageInit.common = () => {
 				return
 			}
 			
-			const resp = await fetch(url)
+			const resp = await $.fetch(url)
 			InjectJS.send("fixAudioPreview", url, URL.createObjectURL(await resp.blob()))
 		})
 	}

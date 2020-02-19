@@ -98,7 +98,7 @@ const initFastSearch = () => {
 			const thumbs = thumbRequests.splice(0, thumbRequests.length)
 			const url = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${thumbs.join(",")}&size=48x48&format=Png`
 
-			fetch(url).then(async resp => {
+			$.fetch(url).then(async resp => {
 				const json = await resp.json()
 
 				json.data.forEach(thumb => {

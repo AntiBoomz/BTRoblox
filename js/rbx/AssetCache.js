@@ -106,7 +106,7 @@ const AssetCache = (() => {
 						if(!fileResult) {
 							fileResult = fileCache[resolvedUrl] = { finished: false }
 							
-							fileResult.defer = fetch(resolvedUrl, { credentials: "include" }).then(async resp => {
+							fileResult.defer = $.fetch(resolvedUrl, { credentials: "include" }).then(async resp => {
 								fileResult.result = await resp.arrayBuffer()
 								fileResult.finished = true
 							})

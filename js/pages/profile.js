@@ -701,7 +701,7 @@ pageInit.profile = function(userId) {
 				hlist.style["min-height"] = `${hlist.scrollHeight + 1}px`
 
 				const thumbUrl = `https://thumbnails.roblox.com/v1/groups/icons?format=png&groupIds=${Object.keys(thumbs).join(",")}&size=150x150`
-				const thumbData = await fetch(thumbUrl).then(resp => resp.json())
+				const thumbData = await $.fetch(thumbUrl).then(resp => resp.json())
 
 				thumbData.data.forEach(thumbInfo => {
 					thumbs[thumbInfo.targetId].src = thumbInfo.imageUrl
