@@ -662,38 +662,50 @@ pageInit.profile = function(userId) {
 		pager.onsetpage = loadPage
 
 		$.ready(() => {
-			const url = `https://www.roblox.com/users/profile/playergroups-json?userId=${userId}`
+			const url = `https://groups.roblox.com/v1/users/${userId}/groups/roles`
 			$.fetch(url).then(async response => {
 				const json = await response.json()
+				const numGroups = json.data.length
 
-				pager.setMaxPage(Math.floor((json.NumberOfGroups - 1) / pageSize) + 1)
-				if(json.NumberOfGroups === 0) { return }
+				pager.setMaxPage(Math.floor((numGroups - 1) / pageSize) + 1)
+				if(numGroups === 0) { return }
 				hlist.$empty()
 
-				json.Groups.forEach((item, index) => {
+				const thumbs = {}
+
+				json.data.forEach(({ group, role }, index) => {
 					const parent = html`
 					<li class="list-item game-card ${index < pageSize ? "visible" : ""}">
 						<div class="card-item game-card-container">
-							<a href="${item.GroupUrl}" title="${item.Name}">
+							<a href="/groups/${group.id}/" title="${group.name}">
 								<div class=game-card-thumb-container>
-									<img class="game-card-thumb card-thumb unloaded" src="${item.Emblem.Url}">
+									<img class="game-card-thumb card-thumb unloaded">
 								</div>
-								<div class="text-overflow game-card-name">${item.Name}</div>
+								<div class="text-overflow game-card-name">${group.name}</div>
 							</a>
 							<div class="text-overflow game-card-name-secondary text-secondary small">
-								${item.Members} ${item.Members === 1 ? "Member" : "Members"}
+								${group.memberCount} ${group.memberCount === 1 ? "Member" : "Members"}
 							</div>
-							<div class="text-overflow game-card-name-secondary text-secondary small">${item.Rank}</div>
+							<div class="text-overflow game-card-name-secondary text-secondary small">${role.name}</div>
 						</div>
 					</li>`
 
 					const thumb = parent.$find(".card-thumb")
+					thumbs[group.id] = thumb
+
 					thumb.$once("load", () => thumb.classList.remove("unloaded"))
 
 					hlist.append(parent)
 				})
 
 				hlist.style["min-height"] = `${hlist.scrollHeight}px`
+
+				const thumbUrl = `https://thumbnails.roblox.com/v1/groups/icons?format=png&groupIds=${Object.keys(thumbs).join(",")}&size=150x150`
+				const thumbData = await fetch(thumbUrl).then(resp => resp.json())
+
+				thumbData.data.forEach(thumbInfo => {
+					thumbs[thumbInfo.targetId].src = thumbInfo.imageUrl
+				})
 			})
 		})
 	}
