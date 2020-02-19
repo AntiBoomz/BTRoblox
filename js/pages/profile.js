@@ -27,7 +27,6 @@ pageInit.profile = function(userId) {
 				<div class=container-header><h3>Player Badges</h3></div>
 				<div class=section-content>
 					<ul class=hlist>
-						<div class="section-content-off btr-section-content-off">This user has no Player Badges</div>
 					</ul>
 				</div>
 			</div>
@@ -552,7 +551,6 @@ pageInit.profile = function(userId) {
 		const badgesElem = newCont.$find(".btr-profile-playerbadges")
 		const hlist = badgesElem.$find(".hlist")
 		const pager = createPager(true)
-		hlist.after(pager)
 
 		const thumbClasses = {
 			Error: "icon-broken",
@@ -573,17 +571,6 @@ pageInit.profile = function(userId) {
 			const pageStart = (page - 1) * pageSize
 			const badges = playerBadges.slice(pageStart, pageStart + pageSize)
 
-			const needsThumbs = badges.filter(x => !x.thumb)
-			if(needsThumbs.length) {
-				const thumbsUrl = `https://thumbnails.roblox.com/v1/badges/icons?badgeIds=${needsThumbs.map(x => x.id).join(",")}&size=150x150&format=Png`
-				const thumbData = await $.fetch(thumbsUrl).then(resp => resp.json())
-
-				thumbData.data.forEach(thumb => {
-					const badge = badges.find(x => x.id === thumb.targetId)
-					badge.thumb = thumb
-				})
-			}
-
 			currentPage = page
 			pager.setPage(currentPage)
 			pager.togglePrev(currentPage > 1)
@@ -591,23 +578,52 @@ pageInit.profile = function(userId) {
 			hlist.$empty()
 
 			if(!badges.length) {
-				const text = `${+userId === +loggedInUser ? "You have" : "This user has"} no badges`
-				hlist.append(html`<div class="section-content-off btr-section-content-off">${text}</div>`)
+				hlist.append(html`<div class="section-content-off btr-section-content-off">This user has no Player Badges</div>`)
 			} else {
+				if(!pager.parentNode) {
+					hlist.after(pager)
+				}
+
 				badges.forEach(data => {
-					const thumbUrl = data.thumb.imageUrl || "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
-					const thumbClass = thumbClasses[data.thumb.state] || ""
 					const badgeUrl = `/badges/${data.id}/${FormatUrlName(data.name)}`
+					const thumbUrl = data.thumb && data.thumb.imageUrl || "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
+					const thumbClass = data.thumb && thumbClasses[data.thumb.state] || ""
 
 					hlist.append(html`
 					<li class="list-item badge-item asset-item" ng-non-bindable>
 						<a href="${badgeUrl}" class="badge-link" title="${data.name}">
 							<span class=asset-thumb-container>
-								<img class="border ${thumbClass}" src="${thumbUrl}">
+								<img class="border ${thumbClass}" src="${thumbUrl}" data-badgeId="${data.id}">
 							</span>
 							<span class="font-header-2 text-overflow item-name">${data.name}</span>
 						</a>
 					</li>`)
+				})
+			}
+			
+			const needsThumbs = badges.filter(x => !x.thumbUrl && !x.gettingThumb)
+			if(needsThumbs.length) {
+				const thumbsUrl = `https://thumbnails.roblox.com/v1/badges/icons?badgeIds=${needsThumbs.map(x => x.id).join(",")}&size=150x150&format=Png`
+				needsThumbs.forEach(x => x.gettingThumb = true)
+
+				$.fetch(thumbsUrl).then(async resp => {
+					const thumbData = await resp.json()
+
+					thumbData.data.forEach(thumb => {
+						const badge = badges.find(x => x.id === thumb.targetId)
+						badge.thumb = thumb
+
+						const img = hlist.$find(`img[data-badgeId="${badge.id}"`)
+						if(img) {
+							const thumbUrl = badge.thumb.imageUrl || "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
+							const thumbClass = thumbClasses[badge.thumb.state] || ""
+
+							img.src = thumbUrl
+							if(thumbClass) {
+								img.classList.add(thumbClass)
+							}
+						}
+					})
 				})
 			}
 		}
@@ -622,7 +638,7 @@ pageInit.profile = function(userId) {
 
 			const lastIndex = page * pageSize
 			while(playerBadges.length < lastIndex && hasMorePages) {
-				const url = `https://badges.roblox.com/v1/users/${userId}/badges?sortOrder=Desc&limit=50&cursor=${nextPageCursor || ""}`
+				const url = `https://badges.roblox.com/v1/users/${userId}/badges?sortOrder=Desc&limit=10&cursor=${nextPageCursor || ""}`
 				const badges = await $.fetch(url).then(resp => resp.json())
 
 				nextPageCursor = badges.nextPageCursor
@@ -639,7 +655,7 @@ pageInit.profile = function(userId) {
 
 		pager.onprevpage = () => loadPage(currentPage - 1)
 		pager.onnextpage = () => loadPage(currentPage + 1)
-		$.ready(() => loadPage(1))
+		loadPage(1)
 	}
 
 	function initGroups() {

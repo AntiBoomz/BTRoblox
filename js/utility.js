@@ -740,5 +740,11 @@ const html = function(...args) {
 	const template = document.createElement("template")
 	template.innerHTML = result
 
-	return template.content.firstElementChild || template.content.firstChild
+	const elem = template.content.firstElementChild || template.content.firstChild
+	
+	if(elem) {
+		elem.remove()
+	}
+
+	return elem
 }
