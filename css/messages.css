@@ -24,6 +24,7 @@ body .content .btr-currentPage input {
 	color: #191919;
 
 	-webkit-appearance: none;
+	-moz-appearance: textfield; /* ugh */
 	appearance: none;
 }
 
