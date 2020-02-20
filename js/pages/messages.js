@@ -143,35 +143,8 @@ class MarkAllAsReadAction {
 }
 
 pageInit.messages = function() {
-	document.$watch(">body", body => body.classList.add("btr-messages")).$then()
-		.$watch(".roblox-messages-container").$then()
-			.$watchAll(".rbx-tab-content", container => {
-				const inbox = container.$find("#MessagesInbox")
-				if(inbox) {
-					inbox.$watchAll(".roblox-message-row", row => {
-						const span = row.$find(".message-summary-date")
-						if(!span) { return }
-						const fixedDate = RobloxTime(span.textContent.replace("|", ""))
-						if(fixedDate) {
-							span.setAttribute("btr-timestamp", "")
-							span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
-						}
-					})
-				}
-
-				const content = container.$find(".tab-content")
-				if(content) {
-					content.$watch(">.roblox-message-body", body => {
-						const span = body.$find(".message-detail .date")
-						if(!span) { return }
-						const fixedDate = RobloxTime(span.textContent.replace("|", ""))
-						if(fixedDate) {
-							span.setAttribute("btr-timestamp", "")
-							span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
-						}
-					})
-				}
-			})
+	document.$watch(">body", body => body.classList.add("btr-messages"))
+	
 
 	modifyTemplate("messages-nav", template => {
 		const curPage = template.$find(".CurrentPage")
