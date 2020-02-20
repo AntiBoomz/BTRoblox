@@ -50,7 +50,7 @@ const RBXComposites = (() => {
 
 				if(!renderers[key]) {
 					renderers[key] = new THREE.WebGLRenderer({ alpha: true })
-					// renderers[key].setSize(this.width, this.height)
+					// renderers[key].setSize(this.width, this.height, false)
 				}
 
 				this.compositeRenderer = renderers[key]
@@ -87,7 +87,7 @@ const RBXComposites = (() => {
 			this.beforeComposite()
 
 			if(this.scene) {
-				this.compositeRenderer.setSize(this.width, this.height)
+				this.compositeRenderer.setSize(this.width, this.height, false)
 				this.camera.updateProjectionMatrix()
 
 				this.compositeRenderer.render(this.scene, this.camera)

@@ -128,7 +128,7 @@ a:not(.disabled) > .btr-icon-content:hover {
 	background-position-x: -28px;
 }
 
-.btr-preview-container {
+.btr-preview-container-itempage {
 	position: absolute;
 	height: 420px;
 	width: 420px;
@@ -136,11 +136,11 @@ a:not(.disabled) > .btr-icon-content:hover {
 	top: 0;
 }
 
-.light-theme .btr-preview-container {
+.light-theme .btr-preview-container-itempage {
 	background: #fff;
 }
 
-.dark-theme .btr-preview-container {
+.dark-theme .btr-preview-container-itempage {
 	background: #393b3d;
 }
 
@@ -306,7 +306,7 @@ a:not(.disabled) > .btr-icon-content:hover {
 #AssetThumbnail.btr-preview-active .thumbnail-buttons > :not(.btr-thumb-btn-container),
 #AssetThumbnail.btr-preview-active .asset-status-icon,
 #AssetThumbnail.btr-preview-active .asset-restriction-icon,
-.btr-preview-container ~ .bundle-animation-btn-container {
+.btr-preview-container-itempage ~ .bundle-animation-btn-container {
 	display: none;
 }
 

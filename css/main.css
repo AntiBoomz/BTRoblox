@@ -884,6 +884,17 @@ body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
 	filter: invert(100%);
 }
 
+.btr-preview-container {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+
 .btr-preview-container-parent > :not(.btr-preview-container) {
 	opacity: 0 !important;
 	transition: none !important;
@@ -892,6 +903,14 @@ body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
 .btr-preview-canvas {
 	user-select: none;
 	-moz-user-select: none;
+
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	width: 100%;
+	height: 100%;
 }
 
 .btr-hover-preview-camera-rotate {

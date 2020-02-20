@@ -206,7 +206,7 @@ const RBXScene = (() => {
 					res.width = width
 					res.height = height
 
-					this.renderer.setSize(width, height)
+					this.renderer.setSize(width, height, false)
 					this.camera.aspect = height === 0 ? 0 : width / height
 					this.camera.updateProjectionMatrix()
 				}

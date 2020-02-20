@@ -123,7 +123,7 @@ const RBXPreview = (() => {
 	class AvatarPreviewer extends Previewer {
 		constructor(opts = {}) {
 			super()
-			this.container = html`<div class=btr-preview-container style="width:100%; height:100%;"></div>`
+			this.container = html`<div class=btr-preview-container></div>`
 
 			this.playerType = null
 			this.outfitAssets = new Set()
@@ -368,7 +368,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		this.isShown = false
 		this.animMap = {}
 
-		const container = html`<div class=btr-preview-container></div>`
+		const container = html`<div class=btr-preview-container-itempage></div>`
 		container.append(this.container)
 		this.container = container
 
@@ -871,8 +871,8 @@ const HoverPreview = (() => {
 			disableDefaultAnimations: false
 		})
 	
-		preview.container.style.position = "absolute"
-		preview.container.style.top = "0"
+		// preview.container.style.position = "absolute"
+		// preview.container.style.top = "0"
 		preview.container.style.pointerEvents = "none"
 		
 		preview.scene.cameraControlsEnabled = false
