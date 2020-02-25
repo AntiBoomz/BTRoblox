@@ -838,6 +838,7 @@ const HoverPreview = (() => {
 			"RightUpperArm", "RightLowerArm", "RightHand", "RightArm"
 		],
 		pants: [
+			"LowerTorso", "UpperTorso", "Torso",
 			"LeftUpperLeg", "LeftLowerLeg", "LeftFoot", "LeftLeg",
 			"RightUpperLeg", "RightLowerLeg", "RightFoot", "RightLeg"
 		],
