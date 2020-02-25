@@ -130,7 +130,7 @@ const INJECT_SCRIPT = () => {
 						didIt = true
 
 						if(!settingsAreLoaded) {
-							gtsNode = { this: this, node }
+							gtsNode = { this: this, args }
 							return
 						} else if(settings.general.hideAds) {
 							return
@@ -154,7 +154,7 @@ const INJECT_SCRIPT = () => {
 	function PostInit() {
 		if(gtsNode) {
 			if(!settings.general.hideAds) {
-				gtsNode.this.insertBefore(gtsNode.node)
+				gtsNode.this.insertBefore(...gtsNode.args)
 			}
 
 			gtsNode = null
