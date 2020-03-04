@@ -482,7 +482,10 @@ pageInit.itemdetails = function(category, assetId) {
 			})
 		} else {
 			getProductInfo(assetId).then(data => {
-				if (data.IsLimited | data.IsLimitedUnique){
+				if (data.IsForSale == false){
+					elem.$find(".field-content-revenue").textContent = "Undefined for Offsale Items"
+				}
+				else if (data.IsLimited | data.IsLimitedUnique){
 					elem.$find(".field-content-revenue").textContent = "Undefined for Limited Items"
 				}
 				else if (data.Creator.Id == 1){
