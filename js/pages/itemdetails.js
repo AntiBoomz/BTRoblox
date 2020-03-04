@@ -436,12 +436,76 @@ pageInit.itemdetails = function(category, assetId) {
 			})
 		}
 	}
-	
+
+	if(settings.itemdetails.showRevenue) {
+		const elem = html`
+		<div class="clearfix item-field-container">
+			<div class="text-label text-overflow field-label">Revenue</div>
+			<span class="icon-robux-16x16"> </span> <span class="field-content-revenue"></div>
+		</div>`
+
+		document.$watch(".field-content-sales", desc => {
+			desc.parentNode.after(elem)
+		})
+
+		const apply = (sales, cost) => {
+			elem.$find(".field-content-revenue").textContent = FormatNumber(Math.round(sales*cost))
+			if(settings.general.robuxToUSD) {
+					const usd = RobuxToUSD(Math.round(sales*cost))
+					elem.$find(".field-content-revenue").textContent += ` ($${usd})`
+			}
+		}
+
+		if(category === "game-pass") {
+			$.fetch(`https://api.roblox.com/marketplace/game-pass-product-info?gamePassId=${assetId}`).then(async resp => {
+				if(!resp.ok) { return }
+				const data = await resp.json()
+				apply(data.Sales, (data.PriceInRobux*0.7))
+			})
+		} else if(category === "bundles") {
+			const url = "https://catalog.roblox.com/v1/catalog/items/details"
+			
+			const request = $.fetch(url, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					items: [
+						{ id: assetId, itemType: "Bundle", key: `Bundle_${assetId}` }
+					]
+				}),
+				xsrf: true
+			})
+
+			request.then(async resp => {
+				const json = await resp.json()
+				apply(json.data[0].purchaseCount, json.data[0].price)
+			})
+		} else {
+			getProductInfo(assetId).then(data => {
+				if (data.IsLimited | data.IsLimitedUnique){
+					elem.$find(".field-content-revenue").textContent = "Undefined for Limited Items"
+				}
+				else if (data.Creator.Id == 1){
+					apply(data.Sales, data.PriceInRobux)
+				}
+				else{
+					const AssetTypes = [8, 18, 19, 41, 42, 43, 44, 45, 46, 47]
+					if (AssetTypes.includes(data.AssetTypeId)){
+						apply(data.Sales, data.PriceInRobux*0.3)
+					}
+					else{
+						apply(data.Sales, data.PriceInRobux*0.7)
+					}
+				}
+			})
+		}
+	}
+
 	if(settings.itemdetails.showSales) {
 		const elem = html`
 		<div class="clearfix item-field-container">
 			<div class="text-label text-overflow field-label">Sales</div>
-			<span class=field-content></div>
+			<span class=field-content-sales></div>
 		</div>`
 
 		document.$watch("#item-details-description", desc => {
@@ -449,7 +513,7 @@ pageInit.itemdetails = function(category, assetId) {
 		})
 
 		const apply = sales => {
-			elem.$find(".field-content").textContent = FormatNumber(sales)
+			elem.$find(".field-content-sales").textContent = FormatNumber(sales)
 		}
 
 		if(category === "game-pass") {

@@ -94,6 +94,7 @@ const SETTINGS = {
 			contentButton: { default: true, value: true },
 
 			showSales: { default: true, value: true },
+			showRevenue: { default: true, value: true },
 
 			imageBackgrounds: { default: true, value: true },
 			whiteDecalThumbnailFix: { default: true, value: true },
