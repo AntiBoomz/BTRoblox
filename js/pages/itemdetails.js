@@ -441,7 +441,7 @@ pageInit.itemdetails = function(category, assetId) {
 		const elem = html`
 		<div class="clearfix item-field-container">
 			<div class="text-label text-overflow field-label">Revenue</div>
-			<span class="icon-robux-16x16"> </span> <span class="field-content-revenue"></div>
+			<span class=field-content><span class="icon-robux-16x16"></span> <span class="field-content-revenue"></span></span>
 		</div>`
 
 		document.$watch(".field-content-sales", desc => {
