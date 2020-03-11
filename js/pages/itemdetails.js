@@ -449,10 +449,10 @@ pageInit.itemdetails = function(category, assetId) {
 		})
 
 		const apply = (sales, cost) => {
-			elem.$find(".field-content-revenue").textContent = FormatNumber(Math.round(sales*cost))
+			elem.$find(".field-content-revenue").textContent = FormatNumber(Math.round(sales * cost))
 			if(settings.general.robuxToUSD) {
-					const usd = RobuxToUSD(Math.round(sales*cost))
-					elem.$find(".field-content-revenue").textContent += ` ($${usd})`
+				const usd = RobuxToUSD(Math.round(sales * cost))
+				elem.$find(".field-content-revenue").textContent += ` ($${usd})`
 			}
 		}
 
@@ -460,7 +460,7 @@ pageInit.itemdetails = function(category, assetId) {
 			$.fetch(`https://api.roblox.com/marketplace/game-pass-product-info?gamePassId=${assetId}`).then(async resp => {
 				if(!resp.ok) { return }
 				const data = await resp.json()
-				apply(data.Sales, (data.PriceInRobux*0.7))
+				apply(data.Sales, data.PriceInRobux * 0.7)
 			})
 		} else if(category === "bundles") {
 			const url = "https://catalog.roblox.com/v1/catalog/items/details"
@@ -482,22 +482,18 @@ pageInit.itemdetails = function(category, assetId) {
 			})
 		} else {
 			getProductInfo(assetId).then(data => {
-				if (data.IsForSale == false){
+				if (!data.IsForSale) {
 					elem.$find(".field-content-revenue").textContent = "Undefined for Offsale Items"
-				}
-				else if (data.IsLimited | data.IsLimitedUnique){
+				} else if (data.IsLimited || data.IsLimitedUnique) {
 					elem.$find(".field-content-revenue").textContent = "Undefined for Limited Items"
-				}
-				else if (data.Creator.Id == 1){
+				} else if (data.Creator.Id === 1) {
 					apply(data.Sales, data.PriceInRobux)
-				}
-				else{
+				} else {
 					const AssetTypes = [8, 18, 19, 41, 42, 43, 44, 45, 46, 47]
-					if (AssetTypes.includes(data.AssetTypeId)){
-						apply(data.Sales, data.PriceInRobux*0.3)
-					}
-					else{
-						apply(data.Sales, data.PriceInRobux*0.7)
+					if (AssetTypes.includes(data.AssetTypeId)) {
+						apply(data.Sales, data.PriceInRobux * 0.3)
+					} else {
+						apply(data.Sales, data.PriceInRobux * 0.7)
 					}
 				}
 			})
