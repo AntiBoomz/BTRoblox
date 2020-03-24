@@ -113,27 +113,28 @@
 		}
 	]
 
-	function toggleContextMenus() {
-		if(SETTINGS.get("general.enableContextMenus")) {
-			contextMenus.forEach(menu => {
-				chrome.contextMenus.update(menu.id, { visible: true })
+	function updateContextMenus() {
+		const enabled = SETTINGS.get("general.enableContextMenus")
+
+		contextMenus.forEach(menu => {
+			menu.visible = enabled
+
+			chrome.contextMenus.create(menu, () => {
+				if(chrome.runtime.lastError) {
+					chrome.contextMenus.update(menu.id, { visible: enabled }, () => {
+						const err = chrome.runtime.lastError
+						if(err) {
+							console.error(`Failed to update contextMenu item ${menu.id}: ${err.message}`)
+						}
+					})
+				}
 			})
-		} else {
-			contextMenus.forEach(menu => {
-				chrome.contextMenus.update(menu.id, { visible: false })
-			})
-		}
+		})
 	}
 
 	chrome.contextMenus.onClicked.addListener(onContextMenuClick)
-	chrome.runtime.onInstalled.addListener(() => {
-		contextMenus.forEach(menu => {
-			menu.visible = false
-			chrome.contextMenus.create(menu)
-		})
+	chrome.runtime.onInstalled.addListener(() => SETTINGS.load(() => chrome.contextMenus.removeAll(updateContextMenus)))
 
-		SETTINGS.load(toggleContextMenus)
-	})
-
-	SETTINGS.onChange("general.enableContextMenus", toggleContextMenus)
+	SETTINGS.onChange("general.enableContextMenus", updateContextMenus)
+	SETTINGS.load(updateContextMenus)
 }
