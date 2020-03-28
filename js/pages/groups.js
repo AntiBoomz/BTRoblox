@@ -69,6 +69,49 @@
 			})
 		}
 
+		if(settings.general.enableContextMenus) {
+			modifyTemplate("group-members-list", template => {
+				template.$find(".dropdown-menu li").dataset.btrRank = `{{ role.rank }}`
+			})
+
+			document.$watch("group-members-list .group-dropdown", dropdown => {
+				dropdown
+					.$watch(".input-dropdown-btn", btn => {
+						const link = html`<a style="position: absolute; opacity: 0; left: 0; top: 0; width: 100%; height: 100%;" onclick="return false">`
+						btn.append(link)
+
+						link.$on("contextmenu", () => {
+							const roleName = btn.$find(".rbx-selection-label").textContent.trim()
+							const target = dropdown.$find(`.dropdown-menu li>a[title="${roleName}"]`)
+
+							if(target) {
+								const elem = target.parentNode
+
+								const id = elem.id.replace(/^role-/, "")
+								const url = `/btr_context/?btr_roleId=${id}&btr_roleRank=${elem.dataset.btrRank}`
+
+								link.href = url
+								setTimeout(() => link.removeAttribute("href"), 100)
+							}
+						})
+					})
+					.$watch(".dropdown-menu", menu =>
+						menu.$watchAll("li", elem => {
+							const id = elem.id.replace(/^role-/, "")
+							const url = `/btr_context/?btr_roleId=${id}&btr_roleRank=${elem.dataset.btrRank}`
+
+							const link = elem.$find("a")
+		
+							link.$on("click", ev => ev.preventDefault())
+							link.$on("contextmenu", () => {
+								link.href = url
+								setTimeout(() => link.removeAttribute("href"), 100)
+							})
+						})
+					)
+			})
+		}
+
 		if(settings.groups.pagedGroupWall) {
 			modifyTemplate("group-wall", template => {
 				template.firstElementChild.setAttribute("infinite-scroll-disabled", "true")
