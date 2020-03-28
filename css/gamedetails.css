@@ -60,9 +60,10 @@ body .btr-game-main-container {
 }
 
 .btr-badges-container .badge-row .badge-image,
-.btr-badges-container .badge-row .badge-image img { /* Regular size is 150x150 */
-	width:100px;
-	height:100px;
+.btr-badges-container .badge-row .badge-image img,
+.btr-badges-container .badge-row .badge-image thumbnail-2d { /* Regular size is 150x150 */
+	width: 100px;
+	height: 100px;
 }
 
 .btr-badges-container .badge-row .badge-content {
