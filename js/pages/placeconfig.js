@@ -61,8 +61,8 @@ function CreateNewVersionHistory(assetId, assetType) {
 						</a>
 						<div data-toggle="btr-versiondrop-${item.versionNumber}">
 							<ul class="dropdown-menu btr-version-dropdown-menu">
-								<li><a class="btr-version-revert" data-versionid="${item.assetVersionId}">Revert</a></li>
-								<li><a class="btr-version-download" data-version="${item.versionNumber}">Download</a></li>
+								<li><a class="rbx-menu-item btr-version-revert" data-versionid="${item.assetVersionId}">Revert</a></li>
+								<li><a class="rbx-menu-item btr-version-download" data-version="${item.versionNumber}">Download</a></li>
 							</ul>
 						</div>
 					</div>
