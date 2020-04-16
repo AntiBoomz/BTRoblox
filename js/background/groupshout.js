@@ -80,7 +80,7 @@
 		const myGroups = await loadMyShouts()
 		const notifs = []
 
-		if(previousCheck !== checkTime || !shoutCache || !shoutFilters || !myGroups || !activeNotifs) { return }
+		if(previousCheck !== checkTime || !shoutCache || !shoutFilters || !myGroups) { return }
 
 		myGroups.forEach(({ id: groupId, name: groupName, shout }) => {
 			const lastNotif = shoutCache[groupId]
