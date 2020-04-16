@@ -855,10 +855,14 @@ pageInit.profile = function(userId) {
 		}
 
 		if(settings.profile.embedInventoryEnabled && +userId !== 1) {
-			const cont = html`
-			<div>
-				<iframe id="btr-injected-inventory" src="/users/${userId}/inventory" scrolling="no" sandbox="allow-same-origin allow-scripts allow-top-navigation-by-user-activation">
-			</div>`
+			const cont = html`<div></div>`
+			const iframe = html`<iframe id="btr-injected-inventory" src="/users/${userId}/inventory" scrolling="no" sandbox="allow-same-origin allow-scripts allow-top-navigation-by-user-activation">`
+
+			if(IS_FIREFOX) {
+				iframe.sandbox.add("allow-top-navigation")
+			}
+
+			cont.append(iframe)
 			newCont.$find(".placeholder-inventory").replaceWith(cont)
 		} else {
 			newCont.$find(".placeholder-inventory").remove()
