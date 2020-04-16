@@ -1,6 +1,8 @@
 "use strict"
 
 const pageInit = {}
+const cssFiles = ["main.css"]
+const themeStyles = []
 
 let areAllContentScriptsLoaded = false
 let isInitDeferred = false
@@ -41,6 +43,16 @@ const removeCSS = rules => {
 			mainStyleSheet.deleteRule(index)
 		}
 	})
+}
+
+const updateTheme = () => {
+	const theme = settings.general.theme
+	const oldStyles = themeStyles.splice(0, themeStyles.length)
+	removeCSS(oldStyles)
+
+	if(theme !== "default") {
+		themeStyles.push(...injectCSS(...cssFiles.map(file => `${theme}/${file}`)))
+	}
 }
 
 const InjectJS = {
@@ -182,6 +194,12 @@ function modifyTemplate(idList, callback) {
 
 
 function Init() {
+	// Inject theme
+	updateTheme()
+	SETTINGS.onChange("general.theme", updateTheme)
+
+	//
+
 	try { pageInit.common() }
 	catch(ex) { console.error(ex) }
 
@@ -206,23 +224,8 @@ function PreInit() {
 
 	//
 
-	const cssFiles = ["main.css"]
-	const themeStyles = []
-
-	const updateTheme = theme => {
-		const oldStyles = themeStyles.splice(0, themeStyles.length)
-		removeCSS(oldStyles)
-
-		if(theme !== "default") {
-			themeStyles.push(...injectCSS(...cssFiles.map(file => `${theme}/${file}`)))
-		}
-	}
-
 	if(currentPage) { cssFiles.push(...currentPage.css) }
-
 	injectCSS(...cssFiles)
-
-	//
 
 	const script = document.createElement("script")
 	script.setAttribute("name", "BTRoblox/inject.js")
@@ -230,10 +233,9 @@ function PreInit() {
 	
 	const scriptParent = document.head || document.documentElement
 	scriptParent.prepend(script)
-
+	
 	//
 
-	SETTINGS.onChange("general.theme", updateTheme)
 	SETTINGS.load(_settings => {
 		settings = JSON.parse(JSON.stringify(_settings))
 
@@ -243,9 +245,6 @@ function PreInit() {
 				group[name] = setting.value
 			})
 		})
-
-		// Inject theme
-		updateTheme(settings.general.theme)
 
 		InjectJS.send(
 			"INIT",
