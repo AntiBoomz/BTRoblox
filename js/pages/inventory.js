@@ -2,16 +2,15 @@
 
 
 pageInit.inventory_pre = function() {
-	if(window.top !== window) {
-		const topLoc = window.top.location
+	if(window.parent !== window) {
+		const iframe = window.top.document.querySelector("#btr-injected-inventory")
 
-		if(topLoc.host.match(/\.roblox\.com$/i) && topLoc.pathname.match(/^\/users\/\d+\/profile$/i)) {
+		if(iframe.contentWindow === window) {
 			document
 				.$watch("head", head => head.append(html`<base target="_top"></base>`))
 				.$watch("body", body => {
 					body.classList.add("btr-embed")
 
-					const iframe = window.parent.document.getElementById("btr-injected-inventory")
 					let requested = false
 					let lastHeight
 
