@@ -118,9 +118,9 @@ function CreateNewVersionHistory(assetId, assetType) {
 			const fileName = `${placeName}-${version}.${fileExt}`
 
 			const assetUrl = `https://assetdelivery.roblox.com/v1/asset/?id=${assetId}&version=${version}`
-			AssetCache.loadBlob(assetUrl, blob => {
+			AssetCache.loadBuffer(assetUrl, buffer => {
 				isBusy = false
-				const blobUrl = URL.createObjectURL(blob)
+				const blobUrl = URL.createObjectURL(new Blob([buffer], { type: "application/octet-stream" }))
 				startDownload(blobUrl, fileName)
 				URL.revokeObjectURL(blobUrl)
 			})

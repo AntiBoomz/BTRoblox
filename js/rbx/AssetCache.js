@@ -184,7 +184,6 @@ const AssetCache = (() => {
 		})),
 
 		loadBuffer: createMethod(buffer => buffer),
-		loadBlob: createMethod(buffer => new Blob([buffer], { type: "image/jpeg" })),
 		loadText: createMethod(buffer => $.bufferToStr(buffer)),
 
 		toAssetUrl(id) {
