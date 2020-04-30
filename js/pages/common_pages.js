@@ -270,13 +270,13 @@ const initAdBlock = () => {
 				if(
 					!cont.includes("ContentJS") && // is not inject.js
 					(
-						cont.includes("google-analytics.com") ||
 						cont.includes("scorecardresearch.com") ||
 						cont.includes("cedexis.com") ||
 						cont.includes("pingdom.net") ||
 						cont.includes("ns1p.net") ||
 						cont.includes("Roblox.Hashcash") ||
 						cont.includes("Roblox.VideoPreRollDFP") ||
+						cont.includes("Roblox.AdsHelper=") ||
 						cont.includes("googletag.enableServices()")
 					)
 				) {
