@@ -41,40 +41,13 @@ pageInit.inventory_pre = function() {
 							script.remove()
 						}
 					})
-			
-			if(IS_FIREFOX) {
-				const scripts = document.getElementsByTagName("script")
-				const done = new Set()
-
-				const observer = new MutationObserver(() => {
-					for(let i = scripts.length; i--;) {
-						const script = scripts[i]
-
-						if(done.has(script)) {
-							return
-						}
-
-						done.add(script)
-
-						if(script.textContent.includes("top.location=self.location")) {
-							script.textContent = ""
-							script.remove()
-
-							console.log("REMOVED!")
-							
-							observer.disconnect()
-							return
-						}
-					}
-
-					if(document.readyState === "complete") {
-						console.log("nofind")
-						observer.disconnect()
-					}
-				})
-
-				observer.observe(document.documentElement, { childList: true, subtree: true })
-			}
+					.$watch(".container-main").$then()
+						.$watchAll("script", script => {
+							if(script.innerHTML.includes("top.location=self.location")) {
+								script.textContent = ""
+								script.remove()
+							}
+						})
 		}
 	}
 }
