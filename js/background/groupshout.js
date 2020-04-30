@@ -83,39 +83,35 @@
 		if(previousCheck !== checkTime || !shoutCache || !shoutFilters || !myGroups) { return }
 
 		myGroups.forEach(({ id: groupId, name: groupName, shout }) => {
+			const validShout = shout && shout.body && shout.poster
+
 			const lastNotif = shoutCache[groupId]
+			const newNotif = {
+				id: `groupshout-${groupId}`,
+				title: groupName,
+				groupId,
 
-			const timeStamp = (!shout || !shout.body) ? 0 : Date.parse(shout.updated)
-			const isDifferent = !lastNotif || lastNotif.timeStamp !== timeStamp
+				timeStamp: validShout ? Date.parse(shout.updated) : 0,
+				poster: validShout ? shout.poster.username : null,
+				body: validShout ? shout.body : null
+			}
 
-			if(!isDifferent) {
+			// shout.updated can randomly fluctuate slightly for no reason, so add a 0.1 sec deadzone where timestamp changes are ignored if the body is the same
+			if(!lastNotif || newNotif.body === lastNotif.body && Math.abs(newNotif.timeStamp - lastNotif.timeStamp) < 100) {
 				return
 			}
 
-			let notif = lastNotif
+			shoutCache[groupId] = newNotif
+			saveShoutCache()
 
-			if(isDifferent) {
-				notif = shoutCache[groupId] = {
-					id: `groupshout-${groupId}`,
-					title: groupName,
-					body: shout ? shout.body : null,
-					poster: shout ? shout.poster.username : null,
-					timeStamp,
-					groupId
+			if(validShout) {
+				const blacklist = shoutFilters.mode === "blacklist"
+				const includes = shoutFilters[shoutFilters.mode].includes(+groupId)
+
+				if(blacklist !== includes) {
+					notifs.push(newNotif)
 				}
-				
-				saveShoutCache()
 			}
-
-			const blacklist = shoutFilters.mode === "blacklist"
-			const includes = shoutFilters[shoutFilters.mode].includes(+groupId)
-			const excluded = blacklist === includes
-
-			if(excluded || !shout || !lastNotif) {
-				return
-			}
-
-			notifs.push(notif)
 		})
 
 		if(!notifs.length) { return }
