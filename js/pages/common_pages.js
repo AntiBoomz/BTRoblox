@@ -259,6 +259,7 @@ const initAdBlock = () => {
 			if(script.src) {
 				if(
 					script.src.includes("imasdk.googleapis.com") ||
+					script.src.includes("googletagmanager.com") ||
 					script.src.includes("radar.cedexis.com") ||
 					script.src.includes("ns1p.net")
 				) {
@@ -277,7 +278,8 @@ const initAdBlock = () => {
 						cont.includes("Roblox.Hashcash") ||
 						cont.includes("Roblox.VideoPreRollDFP") ||
 						cont.includes("Roblox.AdsHelper=") ||
-						cont.includes("googletag.enableServices()")
+						cont.includes("googletag.enableServices()") ||
+						cont.includes("gtag('config'")
 					)
 				) {
 					script.textContent = ""
