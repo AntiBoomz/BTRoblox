@@ -502,8 +502,13 @@ pageInit.itemdetails = function(category, assetId) {
 
 			itemCont.$watch(".item-name-container a", creatorLink => {
 				const creatorId = +creatorLink.href.replace(/^.*roblox.com\/users\/(\d+)\/.*$/, "$1")
-				resolve(creatorId === 1 || creatorId === loggedInUser)
+				if(creatorId === 1 || creatorId === loggedInUser) {
+					resolve(true)
+				}
 			})
+
+			document.$watch("#configure-item", () => resolve(true))
+			$.ready(() => resolve(false))
 		})
 
 		canAccessPromise.then(canAccess => {
