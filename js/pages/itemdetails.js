@@ -690,9 +690,9 @@ pageInit.itemdetails = function(category, assetId) {
 			let fixingThumb = false
 			let newThumb
 
-			const fixThumb = () => {
-				if(newThumb) { img.src = newThumb }
-				if(fixingThumb || img.src !== emptyImg) { return }
+			const fixThumb = thumb => {
+				if(newThumb) { thumb.src = newThumb }
+				if(fixingThumb || thumb.src !== emptyImg) { return }
 
 				fixingThumb = true
 
