@@ -17,11 +17,9 @@ const AssetTypeIds = [
 	"EmoteAnimation"
 ]
 
-const StrictCheckAssetTypeIds = [2, 3, 10, 11, 12, 13, 18, 24, 39, 40]
 const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34, 35, 37]
-const AnimationPreviewAssetTypeIds = [24, 48, 49, 50, 51, 52, 53, 54, 55, 56, 61]
-const WearableAssetTypeIds = [2, 8, 11, 12, 17, 18, 27, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47]
-const InvalidDownloadableAssetTypeIds = [5, 6, 7, 16, 21, 32, 33, 34, 35, 37]
+const InvalidDownloadableAssetTypeIds = [21, 32, 34]
+
 const ContainerAssetTypeIds = {
 	2: { filter: x => x.ClassName === "ShirtGraphic", prop: "Graphic" },
 	11: { filter: x => x.ClassName === "Shirt", prop: "ShirtTemplate" },
@@ -31,6 +29,9 @@ const ContainerAssetTypeIds = {
 	40: { filter: x => x.ClassName === "MeshPart", prop: "MeshID" },
 	61: { filter: x => x.ClassName === "Animation", prop: "AnimationId" }
 }
+
+const WearableAssetTypeIds = [2, 8, 11, 12, 17, 18, 27, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47]
+const AnimationPreviewAssetTypeIds = [24, 48, 49, 50, 51, 52, 53, 54, 55, 56, 61]
 
 const ProhibitedReasons = {
 	UniverseDoesNotHaveARootPlace: "This game has no root place.",
@@ -222,7 +223,7 @@ const FormatNumber = num => String(num).replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/
 const GetRobuxRatio = () => DOLLARS_TO_ROBUX_RATIOS[settings.general.robuxToUSDRate]
 const RobuxToUSD = amt => FormatNumber((Math.ceil((amt * GetRobuxRatio()[0]) / GetRobuxRatio()[1] * 100) / 100).toFixed(2))
 
-const FormatUrlName = name => encodeURIComponent(name.replace(/[']/g, "").replace(/\W+/g, "-").replace(/^-*(.*)-*$/, "$1") || "Name")
+const FormatUrlName = (name, def = "Name") => encodeURIComponent(name.replace(/[']/g, "").replace(/\W+/g, "-").replace(/^-*(.*)-*$/, "$1") || def)
 
 const initAdBlock = () => {
 	const iframeSelector = `.ads-container iframe,.abp iframe,.abp-spacer iframe,.abp-container iframe,.top-abp-container iframe,
