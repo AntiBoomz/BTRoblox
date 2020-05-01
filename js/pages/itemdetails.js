@@ -273,7 +273,7 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 		const title = $("#item-container .item-name-container h2")
 		const fileName = `${title && FormatUrlName(title.textContent, "") || assetId.toString()}.${fileType || GetAssetFileType(assetTypeId, data)}`
 
-		const blobUrl = URL.createObjectURL(new Blob([data]))
+		const blobUrl = URL.createObjectURL(new Blob([data], { type: "binary/octet-stream"}))
 		startDownload(blobUrl, fileName)
 		URL.revokeObjectURL(blobUrl)
 	}
