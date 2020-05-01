@@ -36,9 +36,6 @@ const removeCSS = rules => {
 
 	rules.forEach(cssText => {
 		const index = Array.prototype.findIndex.call(mainStyleSheet.rules, x => x.cssText === cssText)
-
-		console.log(cssText, index)
-
 		if(index !== -1) {
 			mainStyleSheet.deleteRule(index)
 		}
