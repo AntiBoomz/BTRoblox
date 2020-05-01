@@ -257,7 +257,7 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 	}
 
 	btnCont.style.display = ""
-	parent.classList.add("btr-download-btn-shown")
+	parent.parentNode.classList.add("btr-download-btn-shown")
 
 	//
 
@@ -359,7 +359,7 @@ const initContentButton = async (assetId, assetTypeId) => {
 	}
 
 	btn.style.display = ""
-	parent.classList.add("btr-content-btn-shown")
+	parent.parentNode.classList.add("btr-content-btn-shown")
 
 	//
 
