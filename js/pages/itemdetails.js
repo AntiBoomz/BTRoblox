@@ -44,7 +44,6 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 
 									if(!playedAnim) {
 										playedAnim = true
-										console.log("Play", animId)
 										preview.playAnimation(animId)
 									}
 								}
@@ -68,8 +67,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 					preview.setVisible(true)
 	
 					if(isAnimation) {
-						preview.autoLoadPlayerType = false
-						preview.setPlayerTypeOnAnim = true
+						preview.autoLoadPlayerType = "Animation"
 					}
 	
 					if(!autoLoading && (previewerMode === "always" || previewerMode === "animations" && isAnimation)) {

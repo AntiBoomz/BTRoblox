@@ -45,10 +45,7 @@ const RBXAppearance = (() => {
 			this.clothing = []
 			this.loaders = []
 
-			this.loadPromise = new SyncPromise(resolve => {
-				this.once("success", resolve)
-				this.once("fail", resolve)
-			})
+			this.loadPromise = new SyncPromise()
 		}
 
 		isEmpty() {
@@ -59,96 +56,87 @@ const RBXAppearance = (() => {
 			if(this.loaded || this.loading) { return }
 			this.loading = true
 
+			const finish = success => {
+				this.loading = false
+				this.loaded = true
+
+				this.didLoadSucceed = success
+
+				this.trigger("update")
+				this.loadPromise.resolve()
+			}
+
 			AssetCache.loadModel(this.id, model => {
-				if(!model) { return this.fail() }
 				if(!this.active) { return }
+				if(!model) { return finish(false) }
 
 				let R15Folders
 
 				model.forEach(child => {
 					switch(child.ClassName) {
-					case "Folder": {
+					case "Folder":
 						switch(child.Name) {
-						case "R15ArtistIntent": case "R15Fixed": case "R15": {
+						case "R15ArtistIntent":
+						case "R15Fixed":
+						case "R15":
 							if(!R15Folders) { R15Folders = [] }
 							R15Folders.push(child)
-						} break
+							break
 
-						case "R6": {
+						case "R6":
 							this.loadBodyPartR6(child)
-						} break
+							break
 						}
-					} break
+						break
 
-					case "SpecialMesh": {
+					case "SpecialMesh":
 						this.loadHead(child)
-					} break
+						break
 
-					case "Accessory": case "Hat": {
+					case "Accessory":
+					case "Hat":
 						this.loadAccessory(child)
-					} break
+						break
 
-					case "Decal": {
+					case "Decal":
 						if(child.Name === "face") {
 							this.addClothing({
 								target: "face",
 								texId: child.Texture
 							})
 						}
-					} break
+						break
 
-					case "Shirt": {
+					case "Shirt":
 						this.addClothing({
 							target: "shirt",
 							texId: child.ShirtTemplate
 						})
-					} break
+						break
 
-					case "Pants": {
+					case "Pants":
 						this.addClothing({
 							target: "pants",
 							texId: child.PantsTemplate
 						})
-					} break
+						break
 
-					case "ShirtGraphic": {
+					case "ShirtGraphic":
 						this.addClothing({
 							target: "tshirt",
 							texId: child.Graphic
 						})
-					} break
+						break
 					}
 				})
 
+				// Load the R15 folder with highest priority
 				if(R15Folders) {
-					// Load the R15 folder with highest priority
-
 					R15Folders.sort((a, b) => R15FolderPriority.indexOf(a.Name) - R15FolderPriority.indexOf(b.Name))
 					this.loadBodyPartR15(R15Folders[0])
 				}
 
-				const fail = () => {
-					this.loaded = true
-					this.didLoadSucceed = false
-	
-					this.trigger("fail")
-					this.trigger("update")
-				}
-		
-				const success = () => {
-					this.loaded = true
-					this.didLoadSucceed = true
-	
-					this.trigger("success")
-					this.trigger("update")
-				}
-
-				if(!this.loaders.length) {
-					success()
-				} else {
-					SyncPromise.all(this.loaders).then(success, fail)
-				}
-
+				SyncPromise.all(this.loaders).then(() => finish(true), () => finish(false))
 				delete this.loaders
 			})
 		}
@@ -344,6 +332,7 @@ const RBXAppearance = (() => {
 			asset.once("remove", () => {
 				this.assets.delete(asset)
 				asset.off("update", onUpdate)
+				onUpdate()
 			})
 
 			onUpdate()
