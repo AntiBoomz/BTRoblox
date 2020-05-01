@@ -71,46 +71,56 @@
 	}
 
 	const executeCheck = async () => {
-		if(isSuspending || Date.now() - previousCheck < 5000) { return }
+		if(isSuspending || Date.now() - previousCheck < 10e3) { return }
 		const checkTime = Date.now()
 		previousCheck = checkTime
 
 		const shoutCache = await loadShoutCache()
 		const shoutFilters = await loadShoutFilters()
 		const myGroups = await loadMyShouts()
-		const notifs = []
 
 		if(previousCheck !== checkTime || !shoutCache || !shoutFilters || !myGroups) { return }
+
+		const notifs = []
 
 		myGroups.forEach(({ id: groupId, name: groupName, shout }) => {
 			const validShout = shout && shout.body && shout.poster
 
 			const lastNotif = shoutCache[groupId]
 			const newNotif = {
-				id: `groupshout-${groupId}`,
-				title: groupName,
 				groupId,
 
-				timeStamp: validShout ? Date.parse(shout.updated) : 0,
+				title: groupName,
 				poster: validShout ? shout.poster.username : null,
-				body: validShout ? shout.body : null
+				body: validShout ? shout.body : null,
+
+				timeStamp: validShout ? Date.parse(shout.updated) : 0,
+				lastChecked: checkTime
 			}
 
-			// shout.updated can randomly fluctuate slightly for no reason, so add a 0.1 sec deadzone where timestamp changes are ignored if the body is the same
-			if(!lastNotif || newNotif.body === lastNotif.body && Math.abs(newNotif.timeStamp - lastNotif.timeStamp) < 100) {
-				return
+			const blacklist = shoutFilters.mode === "blacklist"
+			const includes = shoutFilters[shoutFilters.mode].includes(+groupId)
+
+			// Notify if there's a shout, is not the first cached shout, matches white-/blacklist and the shout is different
+			// Checking for time difference of > 100 because the updated timestamp seems to fluctuate slightly randomly
+			if(validShout && lastNotif && blacklist === !includes && (newNotif.body !== lastNotif.body || Math.abs(newNotif.timeStamp - lastNotif.timeStamp) > 100)) {
+				notifs.push(newNotif)
+			} else {
+				shoutCache[groupId] = newNotif
+				saveShoutCache()
+			}
+		})
+		
+		// Delete shout entries more than a month old
+		// Just adding without ever removing makes me uncomfortable
+		Object.values(shoutCache).forEach(notif => {
+			if(!(notif instanceof Object)) {
+				return // skip version
 			}
 
-			shoutCache[groupId] = newNotif
-			saveShoutCache()
-
-			if(validShout) {
-				const blacklist = shoutFilters.mode === "blacklist"
-				const includes = shoutFilters[shoutFilters.mode].includes(+groupId)
-
-				if(blacklist !== includes) {
-					notifs.push(newNotif)
-				}
+			if(checkTime - (notif.lastChecked || 0) > 2592e6 && !myGroups.find(x => +x.id === +notif.groupId)) {
+				delete shoutCache[notif.groupId]
+				saveShoutCache()
 			}
 		})
 
@@ -137,8 +147,11 @@
 				}
 
 				if(IS_FIREFOX) { delete params.requireInteraction }
+
+				chrome.notifications.create(`groupshout-${notif.groupId}`, params)
 				
-				chrome.notifications.create(notif.id, params)
+				shoutCache[notif.groupId] = notif
+				saveShoutCache()
 			})
 		}
 
@@ -159,8 +172,6 @@
 						}
 					}
 				})
-
-				saveShoutCache()
 			}).finally(execNotifs)
 
 			setTimeout(execNotifs, 5e3)
@@ -171,7 +182,7 @@
 		if(notifId.startsWith("groupshout-")) {
 			const groupId = +notifId.slice(11)
 
-			chrome.tabs.create({ url: `https://www.roblox.com/groups/${groupId}/Redirect` })
+			chrome.tabs.create({ url: `https://www.roblox.com/groups/${groupId}/Group` })
 			chrome.notifications.clear(notifId)
 		}
 	})
