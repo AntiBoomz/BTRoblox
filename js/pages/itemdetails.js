@@ -184,8 +184,8 @@ const getCurrentValidAssetUrl = async (assetId, assetTypeId) => currentValidAsse
 	resolve(defaultAssetUrl)
 })
 
-const initExplorer = async (assetId, assetTypeId) => {
-	if(!settings.itemdetails.explorerButton || InvalidExplorableAssetTypeIds.includes(assetTypeId)) {
+const initExplorer = async (assetId, assetTypeId, isBundle) => {
+	if(!settings.itemdetails.explorerButton || !isBundle && InvalidExplorableAssetTypeIds.includes(assetTypeId)) {
 		return console.log("inv")
 	}
 	
@@ -202,10 +202,12 @@ const initExplorer = async (assetId, assetTypeId) => {
 	const parent = $("#item-container > .section-content")
 	parent.append(btnCont)
 
-	const assetUrl = await getCurrentValidAssetUrl(assetId, assetTypeId)
-	if(!assetUrl) {
-		btnCont.remove()
-		return
+	if(!isBundle) {
+		const assetUrl = await getCurrentValidAssetUrl(assetId, assetTypeId)
+		if(!assetUrl) {
+			btnCont.remove()
+			return
+		}
 	}
 
 	btnCont.style.display = ""
@@ -216,16 +218,24 @@ const initExplorer = async (assetId, assetTypeId) => {
 	await OptionalLoader.loadExplorer()
 	const explorer = new Explorer()
 	let explorerInitialized = false
-	
-	explorer.element.$on("click", ev => {
-		ev.stopPropagation()
-	})
 
 	btnCont.$watchAll(".popover", popover => {
 		if(!explorerInitialized) {
 			explorerInitialized = true
 
-			if(assetTypeId === 32) { // Package, I disabled package exploring elsewhere
+			if(isBundle) {
+				const url = `https://catalog.roblox.com/v1/bundles/${assetId}/details`
+
+				$.fetch(url).then(async resp => {
+					const data = await resp.json()
+	
+					data.items.forEach(item => {
+						if(item.type === "Asset") {
+							AssetCache.loadModel(item.id, model => explorer.addModel(item.name, model))
+						}
+					})
+				})
+			} else if(assetTypeId === 32) {
 				AssetCache.loadText(assetId, text => text.split(";").forEach(id => {
 					AssetCache.loadModel(id, model => explorer.addModel(id.toString(), model))
 				}))
@@ -697,7 +707,11 @@ pageInit.itemdetails = function(category, assetId) {
 	}
 
 	if(category === "bundles") {
-		document.$watch("body", () => initPreview(assetId, null, true)) // Gotta wait for body for previewer to not break
+		document.$watch("#item-container > .section-content", () => {
+			initPreview(assetId, null, true)
+			initExplorer(assetId, null, true)
+		})
+
 		return
 	}
 	
