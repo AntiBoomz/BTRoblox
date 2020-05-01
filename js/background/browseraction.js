@@ -15,5 +15,7 @@
 		} else {
 			chrome.tabs.create({ url: "https://www.roblox.com/home?btr_settings_open=true" })
 		}
+
+		PERMISSIONS.requestHostAccess()
 	})
 }
