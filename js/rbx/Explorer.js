@@ -77,8 +77,11 @@ const Explorer = (() => {
 			const dropdownBtn = element.$find(".input-dropdown-btn")
 			const dropdownMenu = element.$find(".dropdown-menu")
 
-			element.$on("click", ".btr-explorer", ev => {
+			element.$on("click", ".btr-explorer", () => {
 				this.select([])
+			})
+
+			element.$on("click", ev => {
 				ev.stopPropagation()
 			})
 
