@@ -163,7 +163,7 @@ const getCurrentValidAssetUrl = async (assetId, assetTypeId) => currentValidAsse
 		// These are the only types that can't be downloaded if they're private
 		// So we send a head request to see if we can access the asset, if yes, then return that
 		
-		fetch(`https://assetdelivery.roblox.com/v1/assetId/${assetId}`, { credentials: "include" }).then(async resp => {
+		$.fetch(`https://assetdelivery.roblox.com/v1/assetId/${assetId}`, { credentials: "include" }).then(async resp => {
 			if(!resp.ok) {
 				return resolve(null)
 			}
