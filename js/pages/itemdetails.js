@@ -184,7 +184,7 @@ const getCurrentValidAssetUrl = async (assetId, assetTypeId) => currentValidAsse
 
 const initExplorer = async (assetId, assetTypeId, isBundle) => {
 	if(!settings.itemdetails.explorerButton || !isBundle && InvalidExplorableAssetTypeIds.includes(assetTypeId)) {
-		return console.log("inv")
+		return
 	}
 	
 	const btnCont = html`
@@ -273,7 +273,7 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 		const title = $("#item-container .item-name-container h2")
 		const fileName = `${title && FormatUrlName(title.textContent, "") || assetId.toString()}.${fileType || GetAssetFileType(assetTypeId, data)}`
 
-		const blobUrl = URL.createObjectURL(new Blob([data], { type: "binary/octet-stream"}))
+		const blobUrl = URL.createObjectURL(new Blob([data], { type: "binary/octet-stream" }))
 		startDownload(blobUrl, fileName)
 		URL.revokeObjectURL(blobUrl)
 	}
@@ -657,6 +657,71 @@ pageInit.itemdetails = function(category, assetId) {
 		} else {
 			document.$watch(".recommendations-container, #resellers", parent => {
 				setupOwnersList(parent, parent.$find("h3").textContent)
+			})
+		}
+	}
+
+	if(settings.itemdetails.showCreatedAndUpdated && category !== "bundles") {
+		const created = html`
+		<div class="clearfix item-field-container">
+			<div class="text-label text-overflow field-label">Created</div>
+			<span class="field-content"></div>
+		</div>`
+
+		let updated
+		let data
+
+		const apply = () => {
+			const createdLabel = created.$find(".field-content")
+			const updatedLabel = updated.$find(".field-content")
+			updatedLabel.classList.remove("date-time-i18n")
+
+			const createdDate = new Date(data.Created)
+			const updatedDate = new Date(data.Updated)
+
+			createdLabel.textContent = createdDate.$format("MMM DD, YYYY h:mm:ss A")
+			updatedLabel.textContent = updatedDate.$format("MMM DD, YYYY h:mm:ss A")
+		}
+
+		document.$watch("#item-details", details => {
+			details.$watchAll(".item-field-container", field => {
+				if(updated) {
+					return
+				}
+
+				field.$watch(".field-label", label => {
+					if(updated) {
+						return
+					}
+					
+					if(label.textContent === "Updated") {
+						updated = field
+						updated.before(created)
+
+						if(data) {
+							apply()
+						}
+					}
+				})
+			})
+		})
+		
+
+		if(category === "game-pass") {
+			$.fetch(`https://api.roblox.com/marketplace/game-pass-product-info?gamePassId=${assetId}`).then(async resp => {
+				if(!resp.ok) { return }
+
+				data = await resp.json()
+				if(updated) {
+					apply()
+				}
+			})
+		} else {
+			getProductInfo(assetId).then(_data => {
+				data = _data
+				if(updated) {
+					apply()
+				}
 			})
 		}
 	}
