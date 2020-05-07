@@ -9,6 +9,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 
 		const previewerMode = settings.itemdetails.itemPreviewerMode
 		const preview = new ItemPreviewer()
+
 		let playedAnim = false
 		let autoLoading = false
 		let bundleOutfitId
@@ -65,9 +66,9 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 
 				if(assetPreview || isAnimation) {
 					preview.setVisible(true)
-	
+
 					if(isAnimation) {
-						preview.autoLoadPlayerType = "Animation"
+						preview.applyAnimationPlayerType = true
 					}
 	
 					if(!autoLoading && (previewerMode === "always" || previewerMode === "animations" && isAnimation)) {

@@ -99,6 +99,8 @@ const RBXPreview = (() => {
 
 	const R15Anims = [507766388, 507766951, 507766666]
 	const R6Anims = [180435792, 180435571]
+	
+	const R6AnimParts = ["Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
 
 	class AvatarPreviewer extends EventEmitter {
 		constructor(opts = {}) {
@@ -115,9 +117,10 @@ const RBXPreview = (() => {
 
 			this.outfitAssets = new Set()
 			this.previewAssets = new Set()
-
-			this.autoLoadPlayerType = opts.autoLoadPlayerType || "Outfit"
+			
+			this.autoLoadPlayerType = "autoLoadPlayerType" in opts ? !!opts.autoLoadPlayerType : true
 			this.defaultAnimationsDisabled = !!opts.defaultAnimationsDisabled
+			this.applyAnimationPlayerType = false
 			this.outfitAccessoriesVisible = true
 
 			this.outfitId = null
@@ -278,7 +281,7 @@ const RBXPreview = (() => {
 			this.avatar.setScales(data.scales)
 			this.avatar.setBodyColors(data.bodyColors)
 
-			if(!this.playerType && this.autoLoadPlayerType === "Outfit") {
+			if(!this.playerType && this.autoLoadPlayerType) {
 				this.setPlayerType(data.playerAvatarType)
 			}
 
@@ -376,11 +379,9 @@ const RBXPreview = (() => {
 					return
 				}
 
-				if(!this.playerType && this.autoLoadPlayerType === "Animation") {
-					const R6AnimParts = ["Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
-					const isR6 = R6AnimParts.some(x => x in data.keyframes)
-
-					this.setPlayerType(isR6 ? "R6" : "R15")
+				if(this.currentAnim && this.applyAnimationPlayerType) {
+					this.applyAnimationPlayerType = false
+					this.setPlayerType(R6AnimParts.some(x => x in data.keyframes) ? "R6" : "R15")
 				}
 
 				this.playingAnim = assetId
