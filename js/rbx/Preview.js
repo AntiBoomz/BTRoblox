@@ -930,10 +930,7 @@ const HoverPreview = (() => {
 	}
 
 	const initPreview = () => {
-		preview = this.preview = new RBXPreview.AvatarPreviewer({
-			simple: true,
-			defaultAnimationsDisabled: false
-		})
+		preview = this.preview = new RBXPreview.AvatarPreviewer()
 	
 		// preview.container.style.position = "absolute"
 		// preview.container.style.top = "0"
@@ -1104,7 +1101,8 @@ const HoverPreview = (() => {
 							})
 
 							if(!addedObjects.size) {
-								Object.values(avatarParts).forEach(obj => obj.rbxMesh && addedObjects.add(obj.rbxMesh))
+								addedObjects.add(preview.avatar.root)
+								// Object.values(avatarParts).forEach(obj => obj.rbxMesh && addedObjects.add(obj.rbxMesh))
 							}
 
 							//
@@ -1115,20 +1113,26 @@ const HoverPreview = (() => {
 							const expandBox = () => {
 								preview.avatar.root.updateWorldMatrix(true, true)
 
-								addedObjects.forEach(obj => {
-									if(!obj.geometry.getAttribute("position")) {
-										return
+								const apply = obj => {
+									if(obj.geometry instanceof THREE.BufferGeometry && obj.geometry.getAttribute("position")) {
+										if(!obj.geometry.boundingBox) {
+											obj.geometry.computeBoundingBox()
+										}
+	
+										box2.copy(obj.geometry.boundingBox)
+										box2.applyMatrix4(obj.matrixWorld)
+	
+										box.union(box2)
 									}
 
-									if(!obj.geometry.boundingBox) {
-										obj.geometry.computeBoundingBox()
-									}
+									obj.children.forEach(child => {
+										if(!addedObjects.has(child)) {
+											apply(child)
+										}
+									})
+								}
 
-									box2.copy(obj.geometry.boundingBox)
-									box2.applyMatrix4(obj.matrixWorld)
-
-									box.union(box2)
-								})
+								addedObjects.forEach(apply)
 							}
 
 							expandBox()
@@ -1141,9 +1145,9 @@ const HoverPreview = (() => {
 
 								animator.speed = 0
 
-								const step = Math.min(0.5, animator.anim.length / 3)
-								for(let i = 0; i <= animator.anim.length; i += step) {
-									animator.timePosition = i
+								const numSteps = Math.max(animator.anim.length / 0.1, 3)
+								for(let i = 0; i <= numSteps; i++) {
+									animator.timePosition = i / numSteps * animator.anim.length
 									animator.update()
 
 									expandBox()
@@ -1155,17 +1159,9 @@ const HoverPreview = (() => {
 								animator.update()
 							}
 
-							const center = box.max.clone().add(box.min).divideScalar(2)
-							const radius = box.max.clone().sub(center).length()
-
-							if(playingAnimId) {
-								center.set(0, center.y, 0)
-							}
-
-							center.y += 0.25
-
-							preview.scene.cameraFocus.copy(center)
-							preview.scene.cameraZoom = Math.max(3.5, radius * 1.7)
+							preview.scene.cameraFocus.copy(box.max).add(box.min).multiplyScalar(0.5)
+							preview.scene.cameraFocus.y += (box.max.y - box.min.y) * 0.01
+							preview.scene.cameraZoom = Math.max(2.5, box.max.clone().sub(box.min).length() * 0.8)
 
 							setCameraDir(cameraDir || "Front")
 
