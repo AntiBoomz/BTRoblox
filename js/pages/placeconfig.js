@@ -61,8 +61,8 @@ function CreateNewVersionHistory(assetId, assetType) {
 						</a>
 						<div data-toggle="btr-versiondrop-${item.versionNumber}">
 							<ul class="dropdown-menu btr-version-dropdown-menu">
-								<li><a class="btr-version-revert" data-versionid="${item.assetVersionId}">Revert</a></li>
-								<li><a class="btr-version-download" data-version="${item.versionNumber}">Download</a></li>
+								<li><a class="rbx-menu-item btr-version-revert" data-versionid="${item.assetVersionId}">Revert</a></li>
+								<li><a class="rbx-menu-item btr-version-download" data-version="${item.versionNumber}">Download</a></li>
 							</ul>
 						</div>
 					</div>
@@ -118,9 +118,9 @@ function CreateNewVersionHistory(assetId, assetType) {
 			const fileName = `${placeName}-${version}.${fileExt}`
 
 			const assetUrl = `https://assetdelivery.roblox.com/v1/asset/?id=${assetId}&version=${version}`
-			AssetCache.loadBlob(assetUrl, blob => {
+			AssetCache.loadBuffer(assetUrl, buffer => {
 				isBusy = false
-				const blobUrl = URL.createObjectURL(blob)
+				const blobUrl = URL.createObjectURL(new Blob([buffer], { type: "application/octet-stream" }))
 				startDownload(blobUrl, fileName)
 				URL.revokeObjectURL(blobUrl)
 			})

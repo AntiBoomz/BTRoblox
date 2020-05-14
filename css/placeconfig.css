@@ -70,6 +70,10 @@
 	font-weight: 400;
 }
 
+.dropdown-menu li:hover {
+	background-color: rgba(0, 0, 0, 0.1);
+}
+
 .btr-versionHistory .version-number,
 .btr-versionHistory .version-date {
 	padding: 1px 6px;

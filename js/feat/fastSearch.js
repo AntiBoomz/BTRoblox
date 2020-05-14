@@ -1,23 +1,28 @@
 "use strict"
 
 const initFastSearch = () => {
-	const requestCache = {}
 	const usernameRegex = /^\w+(?:[ _]?\w+)?$/
-	const promiseCache = {}
-	const fsResults = []
-	const friendsList = []
-	const presenceRequests = []
-	let lastPresenceRequest = 0
-	let fsUpdateCounter = 0
+	const exactSearching = {}
+	const userCache = {}
+	const searchResults = []
 	let friendsLoaded = false
-	let requestingPresences = false
-	let friendsPromise
-	let exactTimeout
+	let currentSearch = null
+	let exactTimeout = null
+	
+	const thumbnailsToRequest = []
+	const thumbnailCache = {}
+	let thumbnailPromise = null
 
+	const presencesToRequest = []
+	const presenceCache = {}
+	let lastPresenceRequest = 0
+	let presencePromise = null
+	
 	try {
 		const data = JSON.parse(localStorage.getItem("btr-fastsearch-cache"))
+
 		Object.entries(data.friends).forEach(([name, id]) => {
-			requestCache[name.toLowerCase()] = {
+			userCache[name.toLowerCase()] = {
 				Username: name,
 				UserId: id,
 				IsFriend: true
@@ -25,337 +30,303 @@ const initFastSearch = () => {
 		})
 	} catch(ex) {}
 
-	const updateCache = () => {
-		if(!friendsLoaded) { return }
-		const cache = { friends: {} }
-
-		Object.values(friendsList).forEach(friend => {
-			cache.friends[friend.Username] = friend.UserId
-		})
-
-		localStorage.setItem("btr-fastsearch-cache", JSON.stringify(cache))
-	}
-
-	const requestPresence = target => {
-		if(presenceRequests.includes(target)) {
-			return
-		}
-
-		target.presence = new SyncPromise()
-		presenceRequests.push(target)
-
-		if(!requestingPresences) {
-			requestingPresences = true
-
-			setTimeout(() => {
-				const requests = presenceRequests.splice(0, presenceRequests.length)
-				const userIds = requests.map(x => x.UserId)
-
-				lastPresenceRequest = Date.now()
-				requestingPresences = false
-
-				const url = `https://presence.roblox.com/v1/presence/users`
-				$.fetch(url, {
-					method: "POST",
-					credentials: "include",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ userIds })
-				}).then(async resp => {
-					const presences = await resp.json()
-
-					if(presences instanceof Object && "userPresences" in presences) {
-						presences.userPresences.forEach(presence => {
-							const index = requests.findIndex(x => x.UserId === presence.userId)
-
-							if(index !== -1) {
-								const request = requests.splice(index, 1)[0]
-								request.presence.resolve(presence)
-							}
-						})
-					}
-
-					requests.forEach(request => {
-						delete request.presence
-					})
-				})
-			}, Math.max(100, 1500 - (Date.now() - lastPresenceRequest)))
-		}
-	}
-
-	const thumbPromises = {}
-	const thumbRequests = []
-	let requestingThumbs
-
-	const sendThumbRequest = () => {
-		if(requestingThumbs) {
-			return
-		}
-
-		requestingThumbs = true
-
-		setTimeout(() => {
-			requestingThumbs = false
-			const thumbs = thumbRequests.splice(0, thumbRequests.length)
-			const url = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${thumbs.join(",")}&size=48x48&format=Png`
-
-			$.fetch(url).then(async resp => {
-				const json = await resp.json()
-
-				json.data.forEach(thumb => {
-					const thumbPromise = thumbPromises[thumb.targetId]
-
-					if(thumb.imageUrl) {
-						thumbPromise.resolve(thumb.imageUrl)
-					} else {
-						setTimeout(() => {
-							thumbRequests.push(thumb.targetId)
-							sendThumbRequest()
-						}, 500)
-					}
-				})
-			})
-		}, 10)
-	}
-
-	const requestThumb = userId => {
-		const cachedPromise = thumbPromises[userId]
-		if(cachedPromise) {
-			return cachedPromise
-		}
-
-		const promise = thumbPromises[userId] = new SyncPromise()
-		thumbRequests.push(userId)
-
-		sendThumbRequest()
-		return promise
-	}
-
-	const makeItem = (json, hlFrom, hlTo) => {
-		if(hlFrom == null || json.Alias) {
-			hlFrom = 0
-			hlTo = json.Username.length
-		}
-
-		const item = html`
-		<li class="rbx-navbar-search-option rbx-clickable-li btr-fastsearch" data-searchurl=/User.aspx?userId=${json.UserId}&searchTerm=>
-			<a class=btr-fastsearch-anchor href=/users/${json.UserId}/profile>
-				<div class=btr-fastsearch-avatar>
-					<img class=btr-fastsearch-thumbnail src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==">
-					<div class=btr-fastsearch-status></div>
-				</div>
-				<div class=btr-fastsearch-text>
-					<div class=btr-fastsearch-name>
-						${json.Username.slice(0, hlFrom)}
-						<b>${json.Username.slice(hlFrom, hlTo)}</b>
-						${json.Username.slice(hlTo)}
-					</div>
-					<div class="text-label">
-						${json.Alias ? `Formerly '${json.Alias}'` : json.IsFriend ? "You are friends" : ""}
-					</div>
-				</div>
-			</a>
-		</li>`
-
-		requestThumb(json.UserId).then(url => {
-			const img = item.$find("img")
-			if(img) {
-				img.src = url
-			}
-		})
-
-		// Presence
-
-		const updatePresence = presence => {
-			if(!item.parentNode) {
-				return
-			}
-
-			const status = item.$find(".btr-fastsearch-status")
-			status.classList.remove("game", "studio", "online")
-
-			const oldFollowBtn = item.$find(".btr-fastsearch-follow")
-			if(oldFollowBtn) {
-				oldFollowBtn.remove()
-			}
-
-			switch(presence.userPresenceType) {
-			case 0: break
-			case 2: {
-				status.classList.add("game")
-
-				const followBtn = html`<button class="btr-fastsearch-follow btn-primary-xs">Join Game</button>`
-
-				if(presence.placeId) {
-					followBtn.setAttribute("onclick", `return Roblox.GameLauncher.followPlayerIntoGame(${json.UserId}), false`)
-				} else {
-					followBtn.classList.add("disabled")
-				}
-
-				item.$find(".btr-fastsearch-anchor").append(followBtn)
-				break
-			}
-			case 3:
-				status.classList.add("studio")
-				break
-			default:
-				status.classList.add("online")
-			}
-		}
-
-		if(!json.presence) {
-			requestPresence(json)
-		}
-		
-		json.presence.then(updatePresence)
-
-		return item
-	}
-
+	//
 	
+	const requestThumbnail = userId => {
+		if(thumbnailCache[userId]) {
+			return thumbnailCache[userId]
+		}
+
+		thumbnailsToRequest.push(userId)
+
+		if(!thumbnailPromise) {
+			thumbnailPromise = new SyncPromise(resolve => {
+				setTimeout(() => {
+					const userIds = thumbnailsToRequest.splice(0, thumbnailsToRequest.length)
+					thumbnailPromise = null
+
+					const url = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userIds.join(",")}&size=48x48&format=Png`
+					$.fetch(url).then(async resp => {
+						const json = resp.ok && await resp.json()
+						const result = {}
+
+						if(json && json.data) {
+							json.data.forEach(info => {
+								if(info.imageUrl) {
+									result[info.targetId] = info.imageUrl
+								}
+							})
+						}
+
+						resolve(result)
+					})
+				}, 100)
+			})
+		}
+
+		return thumbnailCache[userId] = thumbnailPromise.then(thumbs => {
+			if(!thumbs[userId]) {
+				return new SyncPromise(resolve => {
+					setTimeout(() => resolve(requestThumbnail(userId)), 500)
+				})
+			}
+
+			return thumbs[userId]
+		})
+	}
+
+	const requestPresence = userId => {
+		if(presenceCache[userId]) {
+			return presenceCache[userId]
+		}
+
+		presencesToRequest.push(userId)
+
+		if(!presencePromise) {
+			presencePromise = new SyncPromise(resolve => {
+				setTimeout(() => {
+					const userIds = presencesToRequest.splice(0, presencesToRequest.length)
+					presencePromise = null
+
+					lastPresenceRequest = Date.now()
+
+					const url = `https://presence.roblox.com/v1/presence/users`
+					$.fetch(url, {
+						method: "POST",
+						credentials: "include",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ userIds })
+					}).then(async resp => {
+						const json = resp.ok && await resp.json()
+						const result = {}
+
+						if(json && json.userPresences) {
+							json.userPresences.forEach(info => {
+								result[info.userId] = info
+							})
+						}
+
+						resolve(result)
+					})
+				}, Math.max(200, 1000 - (Date.now() - lastPresenceRequest)))
+			})
+		}
+
+		return presenceCache[userId] = presencePromise.then(presences => presences[userId])
+	}
+
+	//
+
 	const clearResults = list => {
-		fsResults.splice(0, fsResults.length).forEach(x => x.remove())
+		searchResults.splice(0, searchResults.length).forEach(x => x.remove())
+
 		const sel = list.$find(">.selected")
 		if(!sel) {
 			list.children[0].classList.add("selected")
 		}
 	}
 
-	const updateResults = (search, list) => {
-		clearTimeout(exactTimeout)
+	const updateSearch = (search, list) => {
 		clearResults(list)
+
+		clearTimeout(exactTimeout)
+		exactTimeout = null
+
+		currentSearch = Date.now()
 
 		if(!usernameRegex.test(search)) { return }
 
-		const thisUpdate = ++fsUpdateCounter
+		const reloadSearchResults = () => {
+			const now = Date.now()
+			currentSearch = now
 
-		const update = () => {
-			if(fsUpdateCounter !== thisUpdate) { return }
-			clearResults(list)
-
-			const matches = Object.entries(requestCache)
-				.filter(x => x[1] && (x[0] === search || (x[1].IsFriend && !x[1].Alias) && (x.index = x[0].indexOf(search)) !== -1))
-			if(!matches.length) { return }
-
-			const sel = list.$find(">.selected")
-			if(sel) { sel.classList.remove("selected") }
-
-			matches.forEach(x => x.sort = x[0] === search ? 0 : Math.abs(x[0].length - search.length) / 3 + x.index + (!x[1].IsFriend ? 100 : 0))
-			matches.sort((a, b) => a.sort - b.sort)
-			const len = Math.min(4, matches.length)
-
-			// Show friends before exact match (if not friend)
-			const first = matches[0]
-			if(first[0] === search && !first[1].IsFriend) {
-				for(let i = 1; i < len; i++) {
-					const self = matches[i]
-					if(self[1].IsFriend) {
-						matches[i] = first
-						matches[i - 1] = self
-					} else {
-						break
-					}
+			$.setImmediate(() => {
+				if(currentSearch !== now) {
+					return
 				}
-			}
+				
+				clearResults(list)
 
-			for(let i = 0; i < len; i++) {
-				const x = matches[i]
+				const allMatches = Object.entries(userCache)
+					.map(([name, user]) => ({ name, user }))
+					.filter(x => x.user && (x.name === search || (x.user.IsFriend && !x.user.Alias) && (x.index = x.name.indexOf(search)) !== -1))
 
-				const json = x[1]
-				const item = makeItem(json, x.index, x.index + search.length)
+				if(!allMatches.length) { return }
 
-				if(fsResults.length) {
-					fsResults[fsResults.length - 1].after(item)
-				} else {
-					list.prepend(item)
+				allMatches.forEach(x => x.sort = x.name === search ? 0 : Math.abs(x.name.length - search.length) / 3 + x.index + (!x.user.IsFriend ? 1000 : 0))
+				const matches = allMatches.sort((a, b) => a.sort - b.sort).slice(0, 4)
+
+				// Move non-friend exacts to be last of the visible ones
+				if(matches[0].name === search && !matches[0].user.IsFriend) {
+					matches.push(matches.shift())
 				}
 
-				fsResults.push(item)
+				const first = list.firstElementChild
+				for(let i = 0; i < matches.length; i++) {
+					const { name, user, index } = matches[i]
 
-				if(i === 0) {
-					item.classList.add("selected")
+					const highlightStart = name === search ? 0 : index
+					const highlightEnd = name === search ? search.length : highlightStart + search.length
+
+					const item = html`
+					<li class="rbx-navbar-search-option rbx-clickable-li btr-fastsearch" data-searchurl=/User.aspx?userId=${user.UserId}&searchTerm=>
+						<a class=btr-fastsearch-anchor href=/users/${user.UserId}/profile>
+							<div class=btr-fastsearch-avatar>
+								<img class=btr-fastsearch-thumbnail src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==">
+								<div class=btr-fastsearch-status></div>
+							</div>
+							<div class=btr-fastsearch-text>
+								<div class=btr-fastsearch-name>
+									${user.Username.slice(0, highlightStart)}
+									<b>${user.Username.slice(highlightStart, highlightEnd)}</b>
+									${user.Username.slice(highlightEnd)}
+								</div>
+								<div class="text-label">
+									${user.Alias ? `Formerly '${name}'` : user.IsFriend ? "You are friends" : ""}
+								</div>
+							</div>
+						</a>
+					</li>`
+
+					first.before(item)
+					searchResults.push(item)
+
+					requestThumbnail(user.UserId).then(url => {
+						if(currentSearch !== now) {
+							return
+						}
+
+						item.$find(".btr-fastsearch-thumbnail").src = url
+					})
+
+					requestPresence(user.UserId).then(info => {
+						if(currentSearch !== now) {
+							return
+						}
+						
+						const status = item.$find(".btr-fastsearch-status")
+						status.classList.remove("game", "studio", "online")
+				
+						item.$findAll(".btr-fastsearch-placename, .btr-fastsearch-follow").forEach(x => x.remove())
+				
+						switch(info.userPresenceType) {
+						case 0: break
+						case 2: {
+							status.classList.add("game")
+							
+							const placeName = html`<div class=btr-fastsearch-placename style="font-size:80%;color:rgb(2,143,47);padding-right:8px">${info.lastLocation || ""}</div>`
+							const followBtn = html`<button class="btr-fastsearch-follow btn-primary-xs">Join Game</button>`
+				
+							if(info.placeId) {
+								followBtn.setAttribute("onclick", `return Roblox.GameLauncher.followPlayerIntoGame(${user.UserId}), false`)
+							} else {
+								followBtn.classList.add("disabled")
+							}
+				
+							item.$find(".btr-fastsearch-anchor").append(placeName, followBtn)
+							if(user.IsFriend) {
+								list.prepend(item) // Move to first if friend is ingame
+							}
+
+							break
+						}
+						case 3:
+							status.classList.add("studio")
+							break
+						default:
+							status.classList.add("online")
+						}
+					})
 				}
-			}
+
+				const sel = list.$find(">.selected")
+				if(sel) { sel.classList.remove("selected") }
+
+				searchResults[0].classList.add("selected")
+			})
 		}
-		
-		update()
+
+		if(search.length >= 3) {
+			exactTimeout = setTimeout(() => {
+				if(search in userCache || search in exactSearching) {
+					return
+				}
+
+				exactSearching[search] = true
+				$.fetch(`https://api.roblox.com/users/get-by-username?username=${search}`).then(async resp => {
+					delete exactSearching[search]
+
+					if(search in userCache) {
+						return
+					}
+
+					const json = resp.ok && await resp.json()
+					if(!json || !json.Username) {
+						userCache[search] = false
+						return
+					}
+
+					const user = userCache[search] = {
+						Username: json.Username,
+						UserId: json.Id
+					}
+
+					const name = json.Username.toLowerCase()
+					if(search !== name) {
+						user.Alias = true
+
+						if(userCache[name] && userCache[name].IsFriend) {
+							user.IsFriend = true
+						}
+
+						userCache[name] = {
+							Username: json.Username,
+							UserId: json.Id,
+							IsFriend: user.IsFriend
+						}
+					}
+
+					reloadSearchResults()
+				})
+			}, 250)
+		}
 
 		if(!friendsLoaded) {
-			if(!friendsPromise) {
-				friendsPromise = new SyncPromise(resolve => {
-					loggedInUserPromise.then(userId => {
-						const friendsUrl = `https://friends.roblox.com/v1/users/${userId}/friends`
-						$.fetch(friendsUrl, { credentials: "include" }).then(async resp => {
-							const json = await resp.json()
+			friendsLoaded = true
 
-							json.data.forEach(friend => {
-								const key = friend.name.toLowerCase()
-								const oldItem = requestCache[key]
-
-								const item = {
-									IsFriend: true,
-									UserId: friend.id,
-									Username: friend.name,
-
-									presence: oldItem && oldItem.presence
-								}
-								requestCache[key] = item
-								friendsList[friend.id] = item
-
-								if(!item.presence) {
-									requestPresence(item)
-								}
-							})
-
-							Object.entries(requestCache).forEach(([key, item]) => {
-								if(item.IsFriend && friendsList[item.UserId] !== item) {
-									delete requestCache[key]
-								}
-							})
-
-							friendsLoaded = true
-							updateCache()
-							resolve(friendsList)
-						})
-					})
-				})
-			}
-
-			friendsPromise.then(update)
-		}
-
-		if(search.length < 3) { return }
-
-		exactTimeout = setTimeout(() => {
-			if(!(search in requestCache)) {
-				let cached = promiseCache[search]
-				if(!cached) {
-					cached = promiseCache[search] = $.fetch(`https://api.roblox.com/users/get-by-username?username=${search}`)
-						.then(async resp => {
-							const json = await resp.json()
-
-							if("Id" in json) {
-								if(friendsLoaded) {
-									const friendItem = friendsList[json.Id]
-									if(friendItem) {
-										return Object.assign({ Alias: search }, friendItem)
-									}
-								}
-
-								return { UserId: json.Id, Username: json.Username }
-							}
-							return false
-						})
-				}
-
-				cached.then(json => {
-					if(!(search in requestCache)) {
-						requestCache[search] = json
+			loggedInUserPromise.then(userId => {
+				$.fetch(`https://friends.roblox.com/v1/users/${userId}/friends`, { credentials: "include" }).then(async resp => {
+					const json = resp.ok && await resp.json()
+					if(!json || !json.data) {
+						return
 					}
 
-					if(json) { update() }
+					Object.entries(userCache).filter(x => x[1].IsFriend).forEach(([name]) => {
+						delete userCache[name]
+					})
+
+					const friends = {}
+					
+					json.data.forEach(friend => {
+						friends[friend.name] = friend.id
+
+						userCache[friend.name.toLowerCase()] = {
+							Username: friend.name,
+							UserId: friend.id,
+							IsFriend: true
+						}
+
+						requestPresence(friend.id)
+					})
+
+					localStorage.setItem("btr-fastsearch-cache", JSON.stringify({ friends }))
+
+					reloadSearchResults()
 				})
-			}
-		}, 250)
+			})
+		}
+
+		reloadSearchResults()
 	}
 
 	document.$watch("#navbar-universal-search", async search => {
@@ -372,9 +343,7 @@ const initFastSearch = () => {
 		input.$on("keyup", () => {
 			if(input.value === lastValue) { return }
 			lastValue = input.value
-			updateResults(input.value.toLowerCase(), list)
+			updateSearch(input.value.toLowerCase(), list)
 		})
-
-		list.prepend(fsResults)
 	})
 }

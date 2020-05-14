@@ -100,7 +100,7 @@ const RBXParser = (() => {
 			const decomLength = this.UInt32LE()
 			this.Jump(4)
 
-			if(comLength === 0) {
+			if(comLength === 0) { // TOOD: This path is actually not supported by Roblox, may have to take a look at some point?
 				return this.Array(decomLength)
 			}
 
@@ -797,11 +797,14 @@ const RBXParser = (() => {
 				}
 				break
 			}
-			case "SharedString":
+			case "SharedString": {
+				const indices = chunk.RBXInterleavedUint32(instCount)
+
 				for(let i = 0; i < instCount; i++) {
-					values[i] = this.sharedStrings[chunk.UInt32LE()].value
+					values[i] = this.sharedStrings[indices[i]].value
 				}
 				break
+			}
 			default:
 				console.warn(`[ParseRBXBin] Unimplemented dataType '${typeName}' for ${group.ClassName}.${prop}`)
 			}

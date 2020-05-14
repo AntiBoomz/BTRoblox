@@ -63,11 +63,12 @@ API Docs
 | [presence.roblox.com](https://presence.roblox.com/docs) | All endpoints for managing presence. |
 | [privatemessages.roblox.com](https://privatemessages.roblox.com/docs) | All messages page endpoints. |
 | [publish.roblox.com](https://publish.roblox.com/docs) | All endpoints handling file uploads. |
+| [share.roblox.com](https://share.roblox.com/docs) | This Api is temporarily offline. |
 | [textfilter.roblox.com](https://textfilter.roblox.com/docs) | High volume text filtering. |
 | [thumbnails.roblox.com](https://thumbnails.roblox.com/docs) | Endpoints for requesting thumbnails. |
 | [trades.roblox.com](https://trades.roblox.com/docs) | Endpoints for trading collectible items. |
 | [translationroles.roblox.com](https://translationroles.roblox.com/docs) | Manages translation roles of developers in game localization. |
-| [translations.roblox.com](https://translations.roblox.com/docs) | This Api is temporarily offline. |
+| [translations.roblox.com](https://translations.roblox.com/docs) | Endpoints for requesting translations. |
 | [users.roblox.com](https://users.roblox.com/docs) | For direct Roblox user information. |
 | [voice.roblox.com](https://voice.roblox.com/docs) | APIs for Voice calls. |
 

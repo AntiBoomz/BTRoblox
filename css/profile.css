@@ -149,6 +149,10 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	padding-bottom: 8px;
 }
 
+.btr-profile .profile-about-content {
+	text-align: right; /* Align Read More to right */
+}
+
 .btr-profile .profile-about-content .profile-about-text {
 	text-align: center;
 	line-height: 1.5em;

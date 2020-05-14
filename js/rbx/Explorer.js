@@ -55,7 +55,16 @@ const Explorer = (() => {
 			const element = this.element = html`
 			<div class="btr-explorer-parent">
 				<div class="btr-explorer">
-					<div class="btr-explorer-header hidden"></div>
+					<div class="btr-explorer-header hidden" style="padding: 6px 6px 0 6px">
+						<div class="input-group-btn btr-dropdown-container">
+							<button type=button class=input-dropdown-btn>
+								<span class=rbx-selection-label style="font-size:14px;line-height:20px"></span>
+								<span class=icon-down-16x16 style="margin-left:8px"></span>
+							</button>
+							<ul class=dropdown-menu style="position:absolute;display:none">
+							</ul>
+						</div>
+					</div>
 					<div class="btr-explorer-loading" style="text-align:center;margin-top:12px;">Loading</div>
 				</div>
 				<div class="btr-properties">
@@ -64,8 +73,28 @@ const Explorer = (() => {
 					</div>
 				</div>
 			</div>"`
+			
+			const dropdownBtn = element.$find(".input-dropdown-btn")
+			const dropdownMenu = element.$find(".dropdown-menu")
 
-			element.$on("click", ".btr-explorer", () => this.select([]))
+			element.$on("click", ".btr-explorer", () => {
+				this.select([])
+			})
+
+			element.$on("click", ev => {
+				ev.stopPropagation()
+			})
+
+			dropdownBtn.$on("click", () => {
+				dropdownMenu.style.display = dropdownMenu.style.display ? "" : "none"
+			})
+
+			document.$on("click", ev => {
+				if(!dropdownMenu.style.display && !dropdownMenu.parentNode.contains(ev.target)) {
+					dropdownMenu.style.display = "none"
+				}
+			}, { capture: true })
+
 			this.select([])
 		}
 
@@ -252,22 +281,20 @@ const Explorer = (() => {
 		addModel(title, model) {
 			const lists = this.element.$find(".btr-explorer")
 			const header = this.element.$find(".btr-explorer-header")
-			const element = html`<ul class=btr-explorer-list></ul>`
-			const btn = html`<div class=btr-explorer-view-btn>${title}</div>`
 
-			if(this.models.length) {
-				header.classList.remove("hidden")
-				element.classList.add("hidden")
-			} else {
-				btn.classList.add("selected")
-				this.element.$find(".btr-explorer-loading").remove()
-			}
+			const element = html`<ul class="btr-explorer-list hidden"></ul>`
+			const btn = html`<li><a title="${title}" style="text-overflow:ellipsis;overflow:hidden;padding:8px 12px;">${title}</a></li>`
 
 			btn.$on("click", () => {
+				header.$find(".dropdown-menu").style.display = "none"
+				header.$find(".input-dropdown-btn .rbx-selection-label").textContent = title
+
 				lists.$findAll(">.btr-explorer-list").forEach(x => x.classList.add("hidden"))
 				element.classList.remove("hidden")
-				header.$findAll(">.btr-explorer-view-btn").forEach(x => x.classList.remove("selected"))
-				btn.classList.add("selected")
+
+				header.$findAll(".dropdown-menu > li a").forEach(x => x.classList.remove("selected"))
+				btn.$find("a").classList.add("selected")
+
 				this.select([])
 			})
 
@@ -325,9 +352,17 @@ const Explorer = (() => {
 
 			model.forEach(inst => create(inst, element))
 
-			header.append(btn)
+			header.$find(".dropdown-menu").append(btn)
 			lists.append(element)
+
 			this.models.push(model)
+
+			if(this.models.length === 1) {
+				this.element.$find(".btr-explorer-loading").remove()
+				btn.click()
+			} else {
+				header.classList.remove("hidden")
+			}
 		}
 	}
 

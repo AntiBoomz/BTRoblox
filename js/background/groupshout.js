@@ -60,42 +60,6 @@
 		})
 	}
 
-	const createNotif = notif => {
-		const params = {
-			type: "basic",
-			title: notif.title,
-			iconUrl: notif.thumbUrl || getURL("res/icon_128.png"),
-			message: notif.body,
-			contextMessage: notif.poster,
-
-			priority: 2,
-			requireInteraction: true,
-			eventTime: notif.timeStamp
-		}
-
-		if(IS_FIREFOX) { delete params.requireInteraction }
-		
-		chrome.notifications.create(notif.id, params)
-	}
-	
-	const clearNotif = (notifId, didClick) => {
-		const groupId = +notifId.slice(11)
-
-		if(didClick) {
-			chrome.tabs.create({ url: `https://www.roblox.com/groups/${groupId}/Redirect` })
-			chrome.notifications.clear(notifId)
-		}
-		
-		loadShoutCache().then(shoutCache => {
-			const notif = shoutCache[groupId]
-			
-			if(notif && !notif.finished) {
-				notif.finished = true
-				saveShoutCache()
-			}
-		})
-	}
-
 	const loadMyShouts = async () => {
 		const userId = await fetch("https://www.roblox.com/game/GetCurrentUser.ashx", { credentials: "include" }).then(resp => (resp.ok ? resp.text() : null))
 		if(!Number.isSafeInteger(+userId)) { return }
@@ -106,62 +70,57 @@
 		return json.data.map(x => x.group)
 	}
 
-	const loadActiveNotifications = () => new SyncPromise(resolve => chrome.notifications.getAll(resolve))
-
 	const executeCheck = async () => {
-		if(isSuspending || Date.now() - previousCheck < 5000) { return }
+		if(isSuspending || Date.now() - previousCheck < 10e3) { return }
 		const checkTime = Date.now()
 		previousCheck = checkTime
 
 		const shoutCache = await loadShoutCache()
 		const shoutFilters = await loadShoutFilters()
 		const myGroups = await loadMyShouts()
-		const activeNotifs = await loadActiveNotifications()
+
+		if(previousCheck !== checkTime || !shoutCache || !shoutFilters || !myGroups) { return }
+
 		const notifs = []
 
-		if(previousCheck !== checkTime || !shoutCache || !shoutFilters || !myGroups || !activeNotifs) { return }
-
 		myGroups.forEach(({ id: groupId, name: groupName, shout }) => {
+			const validShout = shout && shout.body && shout.poster
+
 			const lastNotif = shoutCache[groupId]
+			const newNotif = {
+				groupId,
 
-			const timeStamp = (!shout || !shout.body) ? 0 : Date.parse(shout.updated)
-			const isDifferent = !lastNotif || lastNotif.timeStamp !== timeStamp
+				title: groupName,
+				poster: validShout ? shout.poster.username : null,
+				body: validShout ? shout.body : null,
 
-			if(!isDifferent && lastNotif.finished) {
-				return
-			}
-
-			let notif = lastNotif
-
-			if(isDifferent) {
-				if(notif) {
-					notif.finished = true
-				}
-
-				notif = shoutCache[groupId] = {
-					id: `groupshout-${groupId}`,
-					title: groupName,
-					body: shout ? shout.body : null,
-					poster: shout ? shout.poster.username : null,
-					timeStamp,
-					groupId
-				}
-				
-				saveShoutCache()
+				timeStamp: validShout ? Date.parse(shout.updated) : 0,
+				lastChecked: checkTime
 			}
 
 			const blacklist = shoutFilters.mode === "blacklist"
 			const includes = shoutFilters[shoutFilters.mode].includes(+groupId)
-			const excluded = blacklist === includes
 
-			if(excluded || !shout || !lastNotif) {
-				notif.finished = true
+			// Notify if there's a shout, is not the first cached shout, matches white-/blacklist and the shout is different
+			// Checking for time difference of > 100 because the updated timestamp seems to fluctuate slightly randomly
+			if(validShout && lastNotif && blacklist === !includes && (newNotif.body !== lastNotif.body || Math.abs(newNotif.timeStamp - lastNotif.timeStamp) > 100)) {
+				notifs.push(newNotif)
+			} else {
+				shoutCache[groupId] = newNotif
 				saveShoutCache()
-				return
+			}
+		})
+		
+		// Delete shout entries more than a month old
+		// Just adding without ever removing makes me uncomfortable
+		Object.values(shoutCache).forEach(notif => {
+			if(!(notif instanceof Object)) {
+				return // skip version
 			}
 
-			if(!activeNotifs[notif.id]) {
-				notifs.push(notif)
+			if(checkTime - (notif.lastChecked || 0) > 2592e6 && !myGroups.find(x => +x.id === +notif.groupId)) {
+				delete shoutCache[notif.groupId]
+				saveShoutCache()
 			}
 		})
 
@@ -174,7 +133,26 @@
 			if(hasExecutedNotifs || previousCheck !== checkTime) { return }
 			hasExecutedNotifs = true
 
-			notifs.forEach(createNotif)
+			notifs.forEach(notif => {
+				const params = {
+					type: "basic",
+					title: notif.title,
+					iconUrl: notif.thumbUrl || getURL("res/icon_128.png"),
+					message: notif.body,
+					contextMessage: notif.poster,
+
+					priority: 2,
+					requireInteraction: true,
+					eventTime: notif.timeStamp
+				}
+
+				if(IS_FIREFOX) { delete params.requireInteraction }
+
+				chrome.notifications.create(`groupshout-${notif.groupId}`, params)
+				
+				shoutCache[notif.groupId] = notif
+				saveShoutCache()
+			})
 		}
 
 		if(!thumbsToGet.length) {
@@ -194,8 +172,6 @@
 						}
 					}
 				})
-
-				saveShoutCache()
 			}).finally(execNotifs)
 
 			setTimeout(execNotifs, 5e3)
@@ -204,13 +180,10 @@
 
 	chrome.notifications.onClicked.addListener(notifId => {
 		if(notifId.startsWith("groupshout-")) {
-			clearNotif(notifId, true)
-		}
-	})
+			const groupId = +notifId.slice(11)
 
-	chrome.notifications.onClosed.addListener(notifId => {
-		if(notifId.startsWith("groupshout-")) {
-			clearNotif(notifId, false)
+			chrome.tabs.create({ url: `https://www.roblox.com/groups/${groupId}/Group` })
+			chrome.notifications.clear(notifId)
 		}
 	})
 

@@ -312,6 +312,9 @@ const RBXAvatar = (() => {
 			const loaders = []
 
 			loaders.push(
+				RBXAvatarRigs.load().then(() => {
+					this.shouldRefreshRig = true
+				}),
 				AssetCache.loadImage(true, getURL("res/previewer/face.png"), img => {
 					sources.clothing.face.defaultImage = img
 					this.shouldRefreshBodyParts = true
@@ -320,10 +323,6 @@ const RBXAvatar = (() => {
 
 			Object.values(this.composites).forEach(comp => {
 				loaders.push(...comp.loaders)
-			})
-
-			RBXAvatarRigs.load(() => {
-				this.shouldRefreshRig = true
 			})
 			
 			if(this.bodyColors) {

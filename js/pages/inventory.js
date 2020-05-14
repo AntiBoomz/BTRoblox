@@ -1,49 +1,58 @@
 "use strict"
 
 
-pageInit.inventory = function() {
-	if(settings.profile.embedInventoryEnabled && window.top !== window) {
-		document.$watch("head", head => head.append(html`<base target="_top"></base>`))
-			.$watch("body", body => {
-				body.classList.add("btr-embed")
+pageInit.inventory_pre = function() {
+	if(window.parent !== window) {
+		const iframe = window.top.document.querySelector("#btr-injected-inventory")
 
-				const iframe = window.parent.document.getElementById("btr-injected-inventory")
-				let requested = false
-				let lastHeight
+		if(iframe.contentWindow === window) {
+			document
+				.$watch("head", head => head.append(html`<base target="_top"></base>`))
+				.$watch("body", body => {
+					body.classList.add("btr-embed")
 
-				const updateHeight = () => {
-					if(!requested) {
-						requested = true
+					let requested = false
+					let lastHeight
 
-						$.setImmediate(() => {
-							const height = `${body.clientHeight}px`
-							if(lastHeight !== height) {
-								lastHeight = iframe.style.height = height
-							}
+					const updateHeight = () => {
+						if(!requested) {
+							requested = true
 
-							requested = false
-						})
+							$.setImmediate(() => {
+								const height = `${body.clientHeight}px`
+								if(lastHeight !== height) {
+									lastHeight = iframe.style.height = height
+								}
+
+								requested = false
+							})
+						}
 					}
-				}
 
-				$.ready(() => {
-					updateHeight()
-					new MutationObserver(updateHeight).observe(body, { childList: true, subtree: true })
-				})
-			}).$then()
-			.$watch("#chat-container", chat => chat.remove())
-			.$watchAll("script", script => {
-				if(script.innerHTML.includes("Roblox.DeveloperConsoleWarning.showWarning()")) {
-					script.remove()
-				}
-			})
-			.$watch(".container-main").$then().$watchAll("script", script => {
-				if(script.innerHTML.includes("top.location=self.location")) {
-					script.remove()
-				}
-			})
+					$.ready(() => {
+						updateHeight()
+						new MutationObserver(updateHeight).observe(body, { childList: true, subtree: true })
+					})
+				}).$then()
+					.$watch("#chat-container", chat => chat.remove())
+					.$watchAll("script", script => {
+						if(script.innerHTML.includes("Roblox.DeveloperConsoleWarning.showWarning()")) {
+							script.textContent = ""
+							script.remove()
+						}
+					})
+					.$watch(".container-main").$then()
+						.$watchAll("script", script => {
+							if(script.innerHTML.includes("top.location=self.location")) {
+								script.textContent = ""
+								script.remove()
+							}
+						})
+		}
 	}
+}
 
+pageInit.inventory = function() {
 	if(settings.general.robuxToUSD) {
 		modifyTemplate("assets-explorer", template => {
 			const label = template.$find(".item-card-price")

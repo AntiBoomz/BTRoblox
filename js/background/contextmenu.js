@@ -1,36 +1,6 @@
 "use strict"
 
 {
-	function copyToClipboard(text) {
-		const onCopy = ev => {
-			ev.clipboardData.setData("text/plain", text)
-			ev.preventDefault()
-		}
-
-		document.addEventListener("copy", onCopy, { once: true })
-		document.execCommand("Copy", false, null)
-	}
-
-	function onContextMenuClick(info) {
-		const menuId = info.menuItemId
-		if(menuId === "assetLink" || menuId === "bundleLink" || menuId === "badgeLink" || menuId === "gamepassLink" || menuId === "pluginLink") {
-			const assetId = info.linkUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library|bundles|badges|game-pass|plugins)\/)(\d+).*$/i, "$1")
-			copyToClipboard(assetId)
-		} else if(menuId === "placeLink") {
-			const placeId = info.linkUrl.replace(/^.*(?:[&?]placeid=|\/games\/)(\d+).*$/i, "$1")
-			copyToClipboard(placeId)
-		} else if(menuId === "userLink") {
-			const userId = info.linkUrl.replace(/^.*(?:\/users\/)(\d+).*$/i, "$1")
-			copyToClipboard(userId)
-		} else if(menuId === "groupLink") {
-			const groupId = info.linkUrl.replace(/^.*(?:groups?.aspx.*[?&]gid=|\/groups\/)(\d+).*$/i, "$1")
-			copyToClipboard(groupId)
-		} else if(menuId === "universeLink") {
-			const universeId = info.linkUrl.replace(/^.*(?:[&?]id=)(\d+).*$/i, "$1")
-			copyToClipboard(universeId)
-		}
-	}
-
 	const contextMenus = [
 		{
 			id: "assetLink",
@@ -110,30 +80,109 @@
 			targetUrlPatterns: [
 				"*://*.roblox.com/users/*/*"
 			]
+		},
+		{
+			id: "roleParent",
+			title: "Copy role...",
+			contexts: ["link"],
+			targetUrlPatterns: [
+				"*://*.roblox.com/btr_context/*btr_roleRank=*"
+			]
+		},
+		{
+			id: "roleRank",
+			title: "Copy role rank",
+			contexts: ["link"],
+			parentId: "roleParent",
+			targetUrlPatterns: [
+				"*://*.roblox.com/btr_context/*btr_roleRank=*"
+			]
+		},
+		{
+			id: "roleId",
+			title: "Copy role id",
+			contexts: ["link"],
+			parentId: "roleParent",
+			targetUrlPatterns: [
+				"*://*.roblox.com/btr_context/*btr_roleId=*"
+			]
 		}
 	]
+	
+	function copyToClipboard(text) {
+		const onCopy = ev => {
+			ev.clipboardData.setData("text/plain", text)
+			ev.preventDefault()
+		}
 
-	function toggleContextMenus() {
-		if(SETTINGS.get("general.enableContextMenus")) {
-			contextMenus.forEach(menu => {
-				chrome.contextMenus.update(menu.id, { visible: true })
-			})
-		} else {
-			contextMenus.forEach(menu => {
-				chrome.contextMenus.update(menu.id, { visible: false })
-			})
+		document.addEventListener("copy", onCopy, { once: true })
+		document.execCommand("Copy", false, null)
+	}
+
+	function onContextMenuClick(info) {
+		const menuId = info.menuItemId
+
+		switch(menuId) {
+		case "assetLink": case "bundleLink": case "badgeLink": case "gamepassLink": case "pluginLink": {
+			const assetId = info.linkUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library|bundles|badges|game-pass|plugins)\/)(\d+).*$/i, "$1")
+			copyToClipboard(assetId)
+			break
+		}
+		case "placeLink": {
+			const placeId = info.linkUrl.replace(/^.*(?:[&?]placeid=|\/games\/)(\d+).*$/i, "$1")
+			copyToClipboard(placeId)
+			break
+		}
+		case "userLink": {
+			const userId = info.linkUrl.replace(/^.*(?:\/users\/)(\d+).*$/i, "$1")
+			copyToClipboard(userId)
+			break
+		}
+		case "groupLink": {
+			const groupId = info.linkUrl.replace(/^.*(?:groups?.aspx.*[?&]gid=|\/groups\/)(\d+).*$/i, "$1")
+			copyToClipboard(groupId)
+			break
+		}
+		case "universeLink": {
+			const universeId = info.linkUrl.replace(/^.*(?:[&?]id=)(\d+).*$/i, "$1")
+			copyToClipboard(universeId)
+			break
+		}
+		case "roleId": {
+			const roleId = info.linkUrl.replace(/^.*(?:[&?]btr_roleId=)(\d+).*$/i, "$1")
+			copyToClipboard(roleId)
+			break
+		}
+		case "roleRank": {
+			const rankId = info.linkUrl.replace(/^.*(?:[&?]btr_roleRank=)(\d+).*$/i, "$1")
+			copyToClipboard(rankId)
+			break
+		}
 		}
 	}
 
-	chrome.contextMenus.onClicked.addListener(onContextMenuClick)
-	chrome.runtime.onInstalled.addListener(() => {
+	function updateContextMenus() {
+		const enabled = SETTINGS.get("general.enableContextMenus")
+
 		contextMenus.forEach(menu => {
-			menu.visible = false
-			chrome.contextMenus.create(menu)
+			menu.visible = enabled
+
+			chrome.contextMenus.create(menu, () => {
+				if(chrome.runtime.lastError) {
+					chrome.contextMenus.update(menu.id, { visible: enabled }, () => {
+						const err = chrome.runtime.lastError
+						if(err) {
+							console.error(`Failed to update contextMenu item ${menu.id}: ${err.message}`)
+						}
+					})
+				}
+			})
 		})
+	}
 
-		SETTINGS.load(toggleContextMenus)
-	})
+	chrome.contextMenus.onClicked.addListener(onContextMenuClick)
+	chrome.runtime.onInstalled.addListener(() => SETTINGS.load(() => chrome.contextMenus.removeAll(updateContextMenus)))
 
-	SETTINGS.onChange("general.enableContextMenus", toggleContextMenus)
+	SETTINGS.onChange("general.enableContextMenus", updateContextMenus)
+	SETTINGS.load(updateContextMenus)
 }

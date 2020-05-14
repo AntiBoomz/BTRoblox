@@ -3,7 +3,6 @@
 "use strict"
 
 const AssetCache = (() => {
-	const resolveCache = {}
 	const fileCache = {}
 
 	const prefixUrl = getURL("")
@@ -27,15 +26,16 @@ const AssetCache = (() => {
 		return null
 	}
 
-	function resolveAssetUrl(url, finished) {
+	function resolveAssetUrl(url) {
+		try { new URL(url) }
+		catch(ex) { throw new TypeError(`Invalid URL: '${String(url)}'`) }
+
 		if(url.startsWith(prefixUrl)) {
-			finished(url)
-			return
+			return url
 		}
 
 		if(url.match(/https?:\/\/..\.rbxcdn\.com/)) {
-			finished(url.replace(/^http:/, "https:"))
-			return
+			return url.replace(/^http:/, "https:")
 		}
 
 		const params = resolveAssetUrlParams(url)
@@ -46,18 +46,7 @@ const AssetCache = (() => {
 		params.sort() // not sure if sorting will affect functionality, but meh
 
 		const paramString = params.toString()
-		const cached = resolveCache[paramString]
-		if(cached) {
-			if(cached instanceof SyncPromise) {
-				cached.then(finished)
-				return
-			}
-
-			finished(cached)
-			return
-		}
-
-		finished(resolveCache[paramString] = `https://assetdelivery.roblox.com/v1/asset/?${paramString.toString()}`)
+		return `https://assetdelivery.roblox.com/v1/asset/?${paramString.toString()}`
 	}
 
 	function createMethod(constructor) {
@@ -74,93 +63,22 @@ const AssetCache = (() => {
 				url = AssetCache.toAssetUrl(url)
 			}
 
-			try { new URL(url) }
-			catch(ex) { throw new TypeError(`Invalid URL: '${String(url)}'`) }
-
-			let cacheResult = cache[url]
-			if(!cacheResult) {
-				cacheResult = cache[url] = { finished: false }
-
-				cacheResult.defer = new SyncPromise(cacheResolve => {
-					resolveAssetUrl(url, resolvedUrl => {
-						if(!resolvedUrl) {
-							console.log("Failed to resolve", url)
-							return
-						}
-	
-						const resolvedCache = cache[resolvedUrl]
-						if(resolvedCache && resolvedCache !== cacheResult) {
-							if(resolvedCache.finished) {
-								cacheResult.finished = true
-								cacheResult.result = resolvedCache.result
-								cacheResolve(cacheResult.result)
-							} else {
-								resolvedCache.then(cacheResolve)
-							}
-
-							cacheResult = cache[url] = resolvedCache
-							return
-						}
-	
-						let fileResult = fileCache[resolvedUrl]
-						if(!fileResult) {
-							fileResult = fileCache[resolvedUrl] = { finished: false }
-							
-							fileResult.defer = $.fetch(resolvedUrl, { credentials: "include" }).then(async resp => {
-								fileResult.result = await resp.arrayBuffer()
-								fileResult.finished = true
-							})
-						}
-		
-						const onFileDone = () => {
-							try {
-								const methodResult = constructor(fileResult.result)
-			
-								if(methodResult instanceof SyncPromise) {
-									methodResult.then(result => {
-										cacheResult.finished = true
-										cacheResult.result = result
-										cacheResolve(result)
-									}, ex => {
-										console.error("MethodResult Error", ex)
-										cacheResult.finished = true
-										cacheResult.result = null
-										cacheResolve(null)
-									})
-								} else {
-									cacheResult.finished = true
-									cacheResult.result = methodResult
-									cacheResolve(methodResult)
-								}
-							} catch(ex) {
-								console.error(ex)
-								console.log("Failed to load", url, "=>", resolvedUrl)
-							}
-						}
-		
-						if(fileResult.finished) {
-							onFileDone()
-						} else {
-							fileResult.defer.then(onFileDone, ex => {
-								console.error("FileResult Error", ex)
-								cacheResult.finished = true
-								cacheResult.result = null
-								cacheResolve(null)
-							})
-						}
+			const resolvedUrl = resolveAssetUrl(url)
+			const cachePromise = cache[resolvedUrl] = cache[resolvedUrl] || new SyncPromise(cacheResolve => {
+				const filePromise = fileCache[resolvedUrl] = fileCache[resolvedUrl] || new SyncPromise(fileResolve => {
+					$.fetch(resolvedUrl, { credentials: "include" }).then(async resp => {
+						fileResolve(await resp.arrayBuffer())
 					})
 				})
-			}
+
+				cacheResolve(filePromise.then(constructor))
+			}).catch(() => null)
 
 			if(cb) {
-				if(cacheResult.finished) {
-					cb(cacheResult.result)
-				} else {
-					cacheResult.defer.then(cb)
-				}
+				cachePromise.then(cb)
 			}
 
-			return cacheResult.defer
+			return cachePromise
 		}
 	}
 
@@ -184,7 +102,6 @@ const AssetCache = (() => {
 		})),
 
 		loadBuffer: createMethod(buffer => buffer),
-		loadBlob: createMethod(buffer => new Blob([buffer], { type: "image/jpeg" })),
 		loadText: createMethod(buffer => $.bufferToStr(buffer)),
 
 		toAssetUrl(id) {
