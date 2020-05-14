@@ -89,6 +89,7 @@ const SettingsDiv = (() => {
 					<checkbox label="Show Download Button" path=downloadButton></checkbox>
 					<checkbox label="Show Content Button" path=contentButton></checkbox>
 					<checkbox label="Show Owners Button" path=addOwnersList></checkbox>
+					<checkbox label="Show Revenue Button" path=showRevenue></checkbox>
 				</group>
 				<group label=Inventory path=inventory toggleable>
 					<checkbox label="Inventory Tools" path=inventoryTools></checkbox>
@@ -102,8 +103,9 @@ const SettingsDiv = (() => {
 				<group label="WIP / Other" minimizable minimized>
 					<div id=btr-settings-wip>
 					</div>
-					<div style="margin-top: 12px; text-align: right;">
-						<button id=btr-reset-settings class=btn-control-xs>Reset settings to default</button>
+					<div style="margin-top: 12px; float:right; width: 100%; clear:both">
+						<button id=btr-fix-chat class=btn-control-xs style=float:left>Fix invis chat messages</button>
+						<button id=btr-reset-settings class=btn-control-xs style=float:right>Reset settings to default</button>
 					</div>
 				</group>
 			</div>
@@ -432,6 +434,25 @@ const SettingsDiv = (() => {
 		settingsDiv.$on("click", ".btr-close-subcontent", () => switchContent("main"))
 		settingsDiv.$on("click", "#btr-open-group-redesign", () => switchContent("groupRedesign"))
 
+		settingsDiv.$on("click", "#btr-fix-chat", () => {
+			$.fetch("https://chat.roblox.com/v2/get-user-conversations?pageNumber=1&pageSize=10", {
+				credentials: "include",
+				xsrf: true
+			}).then(async resp => {
+				const json = await resp.json()
+
+				json.forEach(({ id }) => {
+					$.fetch("https://chat.roblox.com/v2/mark-as-read", {
+						credentials: "include",
+						xsrf: true,
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ conversationId: id })
+					})
+				})
+			})
+		})
+
 		{
 			const resetButton = settingsDiv.$find("#btr-reset-settings")
 			const resetButtonDefaultText = resetButton.textContent
@@ -526,7 +547,7 @@ const SettingsDiv = (() => {
 					if(group.hasAttribute("minimized")) {
 						group.style.height = `${title.clientHeight}px`
 					} else {
-						group.style.height = `${group.scrollHeight}px`
+						group.style.height = `${group.scrollHeight + 12}px`
 					}
 				}
 
