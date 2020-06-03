@@ -422,6 +422,10 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	text-align: center;
 }
 
+.btr-profile .btr-games-list .btr-game-playbutton-container.btr-place-prohibited {
+	opacity: 0.75;
+}
+
 .btr-profile .btr-games-list .btr-game-playbutton {
 	width: 88%;
 }

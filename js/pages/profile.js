@@ -457,10 +457,9 @@ pageInit.profile = function(userId) {
 								descContent.textContent = data.description
 
 								if(!data.isPlayable) {
-									const btn = this.item.$find(".btr-game-playbutton")
-									btn.classList.remove("VisitPlayButton")
-									btn.setAttribute("disabled", "")
-									btn.title = ProhibitedReasons[data.reasonProhibited] || data.reasonProhibited
+									const cont = this.item.$find(".btr-game-playbutton-container")
+									cont.classList.add("btr-place-prohibited")
+									cont.textContent = ProhibitedReasons[data.reasonProhibited] || data.reasonProhibited
 								}
 							}
 
