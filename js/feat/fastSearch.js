@@ -122,7 +122,8 @@ const initFastSearch = () => {
 
 		const sel = list.$find(">.selected")
 		if(!sel) {
-			list.children[0].classList.add("selected")
+			const target = list.firstElementChild
+			target.classList.add("selected")
 		}
 	}
 
@@ -161,7 +162,8 @@ const initFastSearch = () => {
 					matches.push(matches.shift())
 				}
 
-				const first = list.firstElementChild
+				const target = list.firstElementChild
+
 				for(let i = 0; i < matches.length; i++) {
 					const { name, user, index } = matches[i]
 
@@ -188,7 +190,7 @@ const initFastSearch = () => {
 						</a>
 					</li>`
 
-					first.before(item)
+					target.before(item)
 					searchResults.push(item)
 
 					requestThumbnail(user.UserId).then(url => {
@@ -224,8 +226,13 @@ const initFastSearch = () => {
 							}
 				
 							item.$find(".btr-fastsearch-anchor").append(placeName, followBtn)
-							if(user.IsFriend) {
-								list.prepend(item) // Move to first if friend is ingame
+
+							if(user.IsFriend) { // Move to first if friend is ingame
+								searchResults.splice(searchResults.indexOf(item), 1)
+								const first = searchResults[0] || target
+
+								first.before(item)
+								searchResults.unshift(item)
 							}
 
 							break
@@ -239,10 +246,10 @@ const initFastSearch = () => {
 					})
 				}
 
-				const sel = list.$find(">.selected")
-				if(sel) { sel.classList.remove("selected") }
-
-				searchResults[0].classList.add("selected")
+				if(target.classList.contains("selected")) {
+					target.classList.remove("selected")
+					searchResults[0].classList.add("selected")
+				}
 			})
 		}
 
