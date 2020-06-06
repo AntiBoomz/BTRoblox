@@ -128,7 +128,7 @@ const getCurrentValidAssetUrl = async (assetId, assetTypeId) => currentValidAsse
 
 	const defaultAssetUrl = AssetCache.toAssetUrl(assetId)
 
-	if(assetTypeId === 2 /* T-Shirt */ || assetTypeId === 11 /* Shirt */ || assetTypeId === 12 /* Pants */) {
+	if((assetTypeId === 2 /* T-Shirt */ || assetTypeId === 11 /* Shirt */ || assetTypeId === 12 /* Pants */) && !IS_DEV_MODE) {
 		// Special case to stop people from using BTR to steal clothing
 		// Only be valid if owned by roblox or configure exists
 
