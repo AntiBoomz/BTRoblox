@@ -98,7 +98,19 @@ function GetAssetFileType(assetTypeId, buffer) {
 	if(buffer instanceof ArrayBuffer) { buffer = new Uint8Array(buffer) }
 
 	switch(assetTypeId) {
-	case 1: return "png"
+	case 1:
+		if(buffer) {
+			switch(buffer[0]) {
+			case 0xFF: return "jpg"
+			case 0x89: default: return "png"
+			case 0x4D: return "tif"
+			case 0x49: return "tif"
+			case 0x47: return "gif"
+			case 0x42: return "bmp"
+			}
+		}
+
+		return "png"
 	case 3:
 		if(buffer) {
 			const header = $.bufferToStr(buffer.subarray(0, 4))
