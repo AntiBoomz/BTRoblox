@@ -1,14 +1,11 @@
 "use strict"
 
 const MANIFEST = chrome.runtime.getManifest()
-const IS_FIREFOX = "applications" in MANIFEST && "gecko" in MANIFEST.applications
-const IS_CHROME = !IS_FIREFOX // Firefox apparently has "minimum_chrome_version" in MANIFEST
-
-const IS_DEV_MODE = IS_FIREFOX ? chrome.runtime.id.endsWith("@temporary-addon") :
-	IS_CHROME ? chrome.runtime.id !== "hbkpclpemjeibhioopcebchdmohaieln" : false
+const IS_FIREFOX = MANIFEST.browser_specific_settings && MANIFEST.browser_specific_settings.gecko
+const IS_CHROME = !IS_FIREFOX
 
 const IS_BACKGROUND_PAGE = !!(chrome && chrome.extension && chrome.extension.getBackgroundPage) && window.location.pathname !== "/sourceviewer.html"
-
+const IS_DEV_MODE = MANIFEST.short_name === "BTRoblox_DEV"
 
 const AssetShortcuts = {
 	"res/previewer/characterModels.rbxm": "rbxassetid://2957693598&version=3",

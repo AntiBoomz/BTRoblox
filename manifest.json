@@ -1,9 +1,9 @@
 {
 	"manifest_version": 2,
 
-	"name": "BTRoblox - Making Roblox Better",
-	"short_name": "BTRoblox",
-	"description": "Enhance your Roblox experience!",
+	"name": "BTRoblox (DEV)",
+	"short_name": "BTRoblox_DEV",
+	"description": "BTRoblox Development Edition!",
 	"version": "2.14.0",
 	"author": "AntiBoomz",
 
@@ -15,13 +15,8 @@
 		"128":"res/icon_128.png"
 	},
 
-	"applications": {
-		"gecko": {
-			"id": "btroblox@antiboomz.com"
-		}
-	},
-
 	"background": {
+		"persistent": false,
 		"scripts": [
 			"js/common.js",
 			"js/background/blogfeed.js",
