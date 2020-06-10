@@ -1,7 +1,7 @@
 "use strict"
 
 const MANIFEST = chrome.runtime.getManifest()
-const IS_FIREFOX = !!(window.chrome && window.browser && browser.runtime.getBrowserInfo)
+const IS_FIREFOX = typeof InstallTrigger !== "undefined"
 const IS_CHROME = !IS_FIREFOX
 
 const IS_BACKGROUND_PAGE = !!(chrome && chrome.extension && chrome.extension.getBackgroundPage) && window.location.pathname !== "/sourceviewer.html"
