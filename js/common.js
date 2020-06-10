@@ -548,7 +548,7 @@ const MESSAGING = (() => {
 const PERMISSIONS = {
 	hostParams: {
 		origins: [
-			...chrome.runtime.getManifest().permissions.filter(x => x.includes("://")),
+			...chrome.runtime.getManifest().permissions.filter(x => x.includes("://"))
 		]
 	},
 
