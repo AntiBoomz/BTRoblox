@@ -878,11 +878,11 @@ const RBXParser = (() => {
 			case "1.01":
 				return this.parseText($.bufferToStr(buffer))
 			case "2.00":
-				return this.parseBin(buffer, 2)
 			case "3.00":
-				return this.parseBin(buffer, 3)
+			case "3.01":
+				return this.parseBin(buffer, version)
 			default:
-				throw new Error("Unsupported mesh version")
+				throw new Error(`Unsupported mesh version '${version}'`)
 			}
 		}
 
@@ -926,9 +926,9 @@ const RBXParser = (() => {
 			return { vertices, normals, uvs, faces }
 		}
 
-		parseBin(buffer, version = 2) {
+		parseBin(buffer, version = "2.00") {
 			const reader = new ByteReader(buffer)
-			assert(reader.String(12) === `version ${version}.00`, "Bad header")
+			assert(reader.String(12) === `version ${version}`, "Bad header")
 
 			const newline = reader.Byte()
 			assert(newline === 0x0A || newline === 0x0D && reader.Byte() === 0x0A, "Bad newline")
@@ -944,7 +944,7 @@ const RBXParser = (() => {
 			let faceCount
 			let lodCount
 
-			if(version === 2) {
+			if(version === "2.00") {
 				headerSize = reader.UInt16LE()
 				assert(headerSize >= 12, `Invalid header size ${headerSize}`)
 
@@ -974,22 +974,22 @@ const RBXParser = (() => {
 			const headerEnd = begin + headerSize
 			const vertexEnd = headerEnd + vertexSize * vertexCount
 			const faceEnd = vertexEnd + faceSize * faceCount
-			const fileEnd = version === 3 ? faceEnd + lodSize * lodCount : faceEnd
+			const fileEnd = version === "2.00" ? faceEnd : faceEnd + lodSize * lodCount
 
 			assert(fileEnd === reader.GetLength(), `Invalid file size (expected ${fileEnd}, got ${reader.GetLength()})`)
 
 			const meshLods = []
 			let lodLevels
 
-			if(version === 3) {
+			if(version === "2.00") {
+				lodLevels = [0, faceCount]
+			} else {
 				reader.SetIndex(faceEnd)
 
 				lodLevels = []
 				for(let i = 0; i < lodCount; i++) {
 					lodLevels.push(reader.UInt32LE())
 				}
-			} else {
-				lodLevels = [0, faceCount]
 			}
 
 			for(let lod = 1; lod < lodCount; lod++) {

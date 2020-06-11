@@ -72,7 +72,7 @@ const AssetCache = (() => {
 				})
 
 				cacheResolve(filePromise.then(constructor))
-			}).catch(() => null)
+			}).catch(ex => console.error(ex))
 
 			if(cb) {
 				cachePromise.then(cb)
