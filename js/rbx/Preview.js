@@ -374,18 +374,14 @@ const RBXPreview = (() => {
 					return
 				}
 
-				if(this.playingAnim === assetId) {
-					this.loadingAnim = null
-					return
-				}
+				this.loadingAnim = null
+				this.playingAnim = assetId
+				this.scene.avatar.animator.play(data, fadeIn || 0)
 
 				if(this.currentAnim && this.applyAnimationPlayerType) {
 					this.applyAnimationPlayerType = false
 					this.setPlayerType(R6AnimParts.some(x => x in data.keyframes) ? "R6" : "R15")
 				}
-
-				this.playingAnim = assetId
-				this.scene.avatar.animator.play(data, fadeIn || 0)
 
 				this.trigger("animationLoaded", data, assetId)
 			})
@@ -931,7 +927,7 @@ const HoverPreview = (() => {
 
 	const initPreview = () => {
 		preview = this.preview = new RBXPreview.AvatarPreviewer()
-	
+
 		// preview.container.style.position = "absolute"
 		// preview.container.style.top = "0"
 		preview.container.style.pointerEvents = "none"
@@ -1034,6 +1030,11 @@ const HoverPreview = (() => {
 					}
 
 					preview.setOutfit(targetOutfitId, "Outfit")
+					preview.applyAnimationPlayerType = true
+
+					if(preview.appearance) {
+						preview.setPlayerType(preview.appearance.playerAvatarType)
+					}
 
 					if(playingAnimId) {
 						preview.playAnimation(playingAnimId)
