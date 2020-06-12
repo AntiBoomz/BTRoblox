@@ -6,9 +6,9 @@ const RBXAvatar = (() => {
 	function applyMesh(obj, mesh) {
 		const geom = obj.geometry
 
-		geom.addAttribute("position", new THREE.BufferAttribute(mesh.vertices, 3))
-		geom.addAttribute("normal", new THREE.BufferAttribute(mesh.normals, 3))
-		geom.addAttribute("uv", new THREE.BufferAttribute(mesh.uvs, 2))
+		geom.setAttribute("position", new THREE.BufferAttribute(mesh.vertices, 3))
+		geom.setAttribute("normal", new THREE.BufferAttribute(mesh.normals, 3))
+		geom.setAttribute("uv", new THREE.BufferAttribute(mesh.uvs, 2))
 		geom.setIndex(new THREE.BufferAttribute(mesh.faces, 1))
 
 		// geom.computeBoundingSphere()
@@ -25,9 +25,9 @@ const RBXAvatar = (() => {
 	function clearGeometry(obj) {
 		const geom = obj.geometry
 
-		geom.removeAttribute("position")
-		geom.removeAttribute("normal")
-		geom.removeAttribute("uv")
+		geom.deleteAttribute("position")
+		geom.deleteAttribute("normal")
+		geom.deleteAttribute("uv")
 		geom.setIndex(null)
 
 		// geom.computeBoundingSphere()
