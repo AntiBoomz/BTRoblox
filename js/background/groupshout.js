@@ -205,7 +205,7 @@
 
 	if(IS_CHROME) {
 		chrome.alarms.onAlarm.addListener(updateCheck)
-	} else if(window.chrome && window.chrome.alarms) {
+	} else if(chrome && chrome.alarms) {
 		chrome.alarms.clearAll()
 	}
 
@@ -235,7 +235,7 @@
 		}
 	}
 
-	chrome.runtime.onInstalled.addListener(() => SETTINGS.load(onUpdate))
+	SETTINGS.load(onUpdate)
 	SETTINGS.onChange("groups.shoutAlerts", onUpdate)
 
 	MESSAGING.listen({
