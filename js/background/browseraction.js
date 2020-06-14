@@ -16,6 +16,10 @@
 			chrome.tabs.create({ url: "https://www.roblox.com/home?btr_settings_open=true" })
 		}
 
-		PERMISSIONS.requestHostAccess()
+		PERMISSIONS.hasHostAccess().then(hasAccess => {
+			if(!hasAccess) {
+				PERMISSIONS.requestHostAccess()
+			}
+		})
 	})
 }
