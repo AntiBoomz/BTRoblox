@@ -2,12 +2,13 @@
 
 const initFastSearch = () => {
 	const usernameRegex = /^\w+(?:[ _]?\w+)?$/
-	const exactSearching = {}
 	const userCache = {}
 	const searchResults = []
+	let currentSearchStarted = 0
+	let currentSearchText = ""
+	let lastResultsLoaded = 0
 	let friendsLoaded = false
-	let currentSearch = null
-	let exactTimeout = null
+	let list
 	
 	const thumbnailsToRequest = []
 	const thumbnailCache = {}
@@ -117,7 +118,7 @@ const initFastSearch = () => {
 
 	//
 
-	const clearResults = list => {
+	const clearResults = () => {
 		searchResults.splice(0, searchResults.length).forEach(x => x.remove())
 
 		const sel = list.$find(">.selected")
@@ -127,50 +128,70 @@ const initFastSearch = () => {
 		}
 	}
 
-	const updateSearch = (search, list) => {
-		clearResults(list)
+	
+	const reloadSearchResults = () => {
+		const search = currentSearchText
+		const now = Date.now()
 
-		clearTimeout(exactTimeout)
-		exactTimeout = null
+		lastResultsLoaded = now
 
-		currentSearch = Date.now()
+		if(!usernameRegex.test(currentSearchText)) { return }
 
-		if(!usernameRegex.test(search)) { return }
+		$.setImmediate(() => {
+			if(lastResultsLoaded !== now) {
+				return
+			}
+			
+			clearResults()
 
-		const reloadSearchResults = () => {
-			const now = Date.now()
-			currentSearch = now
+			const allMatches = Object.entries(userCache)
+				.map(([name, user]) => ({ name, user }))
+				.filter(x => x.user && (x.name === search || (x.user.IsFriend && !x.user.Alias) && (x.index = x.name.indexOf(search)) !== -1))
 
-			$.setImmediate(() => {
-				if(currentSearch !== now) {
-					return
-				}
-				
-				clearResults(list)
+			if(!allMatches.length) {
+				return
+			}
 
-				const allMatches = Object.entries(userCache)
-					.map(([name, user]) => ({ name, user }))
-					.filter(x => x.user && (x.name === search || (x.user.IsFriend && !x.user.Alias) && (x.index = x.name.indexOf(search)) !== -1))
+			allMatches.forEach(x => x.sort = x.name === search ? 0 : Math.abs(x.name.length - search.length) / 3 + x.index + (!x.user.IsFriend ? 1000 : 0))
+			const matches = allMatches.sort((a, b) => a.sort - b.sort).slice(0, 4)
 
-				if(!allMatches.length) { return }
+			// Move non-friend exacts to be last of the visible ones
+			if(matches[0].name === search && !matches[0].user.IsFriend) {
+				matches.push(matches.shift())
+			}
 
-				allMatches.forEach(x => x.sort = x.name === search ? 0 : Math.abs(x.name.length - search.length) / 3 + x.index + (!x.user.IsFriend ? 1000 : 0))
-				const matches = allMatches.sort((a, b) => a.sort - b.sort).slice(0, 4)
+			const target = list.firstElementChild
 
-				// Move non-friend exacts to be last of the visible ones
-				if(matches[0].name === search && !matches[0].user.IsFriend) {
-					matches.push(matches.shift())
-				}
+			for(let i = 0; i < matches.length; i++) {
+				const { name, user, index } = matches[i]
 
-				const target = list.firstElementChild
+				const highlightStart = name === search ? 0 : index
+				const highlightEnd = name === search ? search.length : highlightStart + search.length
 
-				for(let i = 0; i < matches.length; i++) {
-					const { name, user, index } = matches[i]
+				let item
 
-					const highlightStart = name === search ? 0 : index
-					const highlightEnd = name === search ? search.length : highlightStart + search.length
-
-					const item = html`
+				if(user.Temporary) {
+					item = html`
+					<li class="rbx-navbar-search-option rbx-clickable-li btr-fastsearch" data-searchurl=/User.aspx?username=>
+						<a class=btr-fastsearch-anchor>
+							<div class=btr-fastsearch-avatar>
+								<img class=btr-fastsearch-thumbnail src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" style="visibility: hidden">
+								<div class=btr-fastsearch-status></div>
+							</div>
+							<div class=btr-fastsearch-text>
+								<div class=btr-fastsearch-name>
+									${user.Username.slice(0, highlightStart)}
+									<b>${user.Username.slice(highlightStart, highlightEnd)}</b>
+									${user.Username.slice(highlightEnd)}
+								</div>
+								<div class="text-label">
+									${user.NotFound ? "User not found" : "Loading..."}
+								</div>
+							</div>
+						</a>
+					</li>`
+				} else {
+					item = html`
 					<li class="rbx-navbar-search-option rbx-clickable-li btr-fastsearch" data-searchurl=/User.aspx?userId=${user.UserId}&searchTerm=>
 						<a class=btr-fastsearch-anchor href=/users/${user.UserId}/profile>
 							<div class=btr-fastsearch-avatar>
@@ -189,12 +210,14 @@ const initFastSearch = () => {
 							</div>
 						</a>
 					</li>`
+				}
 
-					target.before(item)
-					searchResults.push(item)
+				target.before(item)
+				searchResults.push(item)
 
+				if(!user.Temporary) {
 					requestThumbnail(user.UserId).then(url => {
-						if(currentSearch !== now) {
+						if(lastResultsLoaded !== now) {
 							return
 						}
 
@@ -202,7 +225,7 @@ const initFastSearch = () => {
 					})
 
 					requestPresence(user.UserId).then(info => {
-						if(currentSearch !== now) {
+						if(lastResultsLoaded !== now) {
 							return
 						}
 						
@@ -245,57 +268,70 @@ const initFastSearch = () => {
 						}
 					})
 				}
+			}
 
-				if(target.classList.contains("selected")) {
-					target.classList.remove("selected")
-					searchResults[0].classList.add("selected")
-				}
-			})
-		}
+			if(target.classList.contains("selected")) {
+				target.classList.remove("selected")
+				searchResults[0].classList.add("selected")
+			}
+		})
+	}
 
-		if(search.length >= 3) {
-			exactTimeout = setTimeout(() => {
-				if(search in userCache || search in exactSearching) {
+	const updateSearch = search => {
+		clearResults()
+
+		const searchStarted = Date.now()
+
+		currentSearchText = search
+		currentSearchStarted = searchStarted
+		lastResultsLoaded = -1
+
+		if(!usernameRegex.test(currentSearchText)) { return }
+
+		if(search.length >= 3 && !(search in userCache)) {
+			const temp = {
+				Temporary: true,
+				Username: search
+			}
+
+			userCache[search] = temp
+
+			$.fetch(`https://api.roblox.com/users/get-by-username?username=${search}`).then(async resp => {
+				if(userCache[search] !== temp) {
 					return
 				}
 
-				exactSearching[search] = true
-				$.fetch(`https://api.roblox.com/users/get-by-username?username=${search}`).then(async resp => {
-					delete exactSearching[search]
-
-					if(search in userCache) {
-						return
-					}
-
-					const json = resp.ok && await resp.json()
-					if(!json || !json.Username) {
-						userCache[search] = false
-						return
-					}
-
-					const user = userCache[search] = {
-						Username: json.Username,
-						UserId: json.Id
-					}
-
-					const name = json.Username.toLowerCase()
-					if(search !== name) {
-						user.Alias = true
-
-						if(userCache[name] && userCache[name].IsFriend) {
-							user.IsFriend = true
-						}
-
-						userCache[name] = {
-							Username: json.Username,
-							UserId: json.Id,
-							IsFriend: user.IsFriend
-						}
-					}
-
+				const json = resp.ok && await resp.json()
+				if(!json || !json.Username) {
+					temp.NotFound = true
 					reloadSearchResults()
-				})
-			}, 250)
+					return
+				}
+
+				const user = userCache[search] = {
+					Username: json.Username,
+					UserId: json.Id
+				}
+
+				const name = json.Username.toLowerCase()
+				if(search !== name) {
+					user.Alias = true
+
+					if(userCache[name] && userCache[name].IsFriend) {
+						user.IsFriend = true
+					}
+
+					userCache[name] = {
+						Username: json.Username,
+						UserId: json.Id,
+						IsFriend: user.IsFriend
+					}
+				}
+
+				if(currentSearchStarted === searchStarted) {
+					reloadSearchResults()
+				}
+			})
 		}
 
 		if(!friendsLoaded) {
@@ -328,7 +364,9 @@ const initFastSearch = () => {
 
 					localStorage.setItem("btr-fastsearch-cache", JSON.stringify({ friends }))
 
-					reloadSearchResults()
+					if(currentSearchStarted === searchStarted) {
+						reloadSearchResults()
+					}
 				})
 			})
 		}
@@ -338,7 +376,7 @@ const initFastSearch = () => {
 
 	document.$watch("#navbar-universal-search", async search => {
 		const input = await search.$watch("#navbar-search-input").$promise()
-		const list = await search.$watch(">ul").$promise()
+		list = await search.$watch(">ul").$promise()
 
 		list.$on("mouseover", ".rbx-navbar-search-option", ev => {
 			const last = list.$find(">.selected")
@@ -350,7 +388,7 @@ const initFastSearch = () => {
 		input.$on("keyup", () => {
 			if(input.value === lastValue) { return }
 			lastValue = input.value
-			updateSearch(input.value.toLowerCase(), list)
+			updateSearch(input.value.toLowerCase())
 		})
 	})
 }
