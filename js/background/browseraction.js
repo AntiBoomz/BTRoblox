@@ -2,19 +2,19 @@
 
 {
 	chrome.browserAction.onClicked.addListener(tab => {
-		if(tab.url) {
-			chrome.tabs.executeScript(
-				tab.id,
-				{ code: `(() => { if(typeof ToggleSettingsDiv === "function") { ToggleSettingsDiv(true); return true } })()`, runAt: "document_start" },
-				([result]) => {
-					if(!result) {
-						chrome.tabs.create({ url: "https://www.roblox.com/home?btr_settings_open=true" })
-					}
+		// Firefox doesn't seem to have any way to check if tab has host access
+		// So let's just call executeScript and open new tab if that fails /shrug
+
+		
+		chrome.tabs.executeScript(
+			tab.id,
+			{ code: `(() => { if(typeof ToggleSettingsDiv === "function") { ToggleSettingsDiv(true); return true } })()`, runAt: "document_start" },
+			result => {
+				if(chrome.runtime.lastError || !result || !result[0]) {
+					chrome.tabs.create({ url: "https://www.roblox.com/home?btr_settings_open=true" })
 				}
-			)
-		} else {
-			chrome.tabs.create({ url: "https://www.roblox.com/home?btr_settings_open=true" })
-		}
+			}
+		)
 
 		PERMISSIONS.hasHostAccess().then(hasAccess => {
 			if(!hasAccess) {
