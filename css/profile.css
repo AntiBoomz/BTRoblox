@@ -424,6 +424,9 @@ html .dark-theme.btr-profile .btr-section-content-off {
 
 .btr-profile .btr-games-list .btr-game-playbutton-container.btr-place-prohibited {
 	opacity: 0.75;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .btr-profile .btr-games-list .btr-game-playbutton {
