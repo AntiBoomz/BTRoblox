@@ -32,7 +32,6 @@ const getURL = path => AssetShortcuts[path] || chrome.runtime.getURL(path)
 // Separated for more accuracy when dealing with massive numbers
 const DOLLARS_TO_ROBUX_RATIOS = {
 	devex350: [350, 100e3],
-	devex250: [250, 100e3],
 
 	free5: [4.99, 400],
 	premium5: [4.99, 440],
@@ -65,7 +64,7 @@ const SETTINGS = {
 			fixAudioVolume: { default: true, value: true },
 
 			robuxToUSD: { default: true, value: false },
-			robuxToUSDRate: { default: true, value: "free10", validValues: ["devex350", "devex250", "free5", "premium5", "free10", "premium10", "free20", "premium20", "free50", "premium50", "free100", "premium100"] },
+			robuxToUSDRate: { default: true, value: "devex350", validValues: ["devex350", "free5", "premium5", "free10", "premium10", "free20", "premium20", "free50", "premium50", "free100", "premium100"] },
 	
 			hoverPreview: { default: true, value: true },
 			hoverPreviewMode: { default: true, value: "always", validValues: ["always", "never"] },

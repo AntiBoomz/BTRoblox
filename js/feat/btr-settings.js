@@ -40,8 +40,7 @@ const SettingsDiv = (() => {
 						<select path=robuxToUSDRate>
 							<option selected disabled>R$ to USD Rate: (%opt%)</option>
 							<optgroup label=DevEx>
-								<option value=devex350>DevEx $350</option>
-								<option value=devex250>DevEx $250</option>
+								<option value=devex350>DevEx</option>
 							</optgroup>
 							<optgroup label=Free>
 								<option value=free5>Free $5</option>
