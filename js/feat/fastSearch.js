@@ -191,6 +191,11 @@ const initFastSearch = () => {
 						</a>
 					</li>`
 				} else {
+					let label = user.IsFriend ? "You are friends" : ""
+					if(user.Alias) {
+						label += (label ? ". " : "") + `Formerly '${name}'`
+					}
+
 					item = html`
 					<li class="rbx-navbar-search-option rbx-clickable-li btr-fastsearch" data-searchurl=/User.aspx?userId=${user.UserId}&searchTerm=>
 						<a class=btr-fastsearch-anchor href=/users/${user.UserId}/profile>
@@ -205,7 +210,7 @@ const initFastSearch = () => {
 									${user.Username.slice(highlightEnd)}
 								</div>
 								<div class="text-label">
-									${user.Alias ? `Formerly '${name}'` : user.IsFriend ? "You are friends" : ""}
+									${label}
 								</div>
 							</div>
 						</a>
