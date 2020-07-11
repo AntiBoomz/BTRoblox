@@ -7,6 +7,14 @@ const IS_CHROME = !IS_FIREFOX
 const IS_BACKGROUND_PAGE = !!(chrome && chrome.extension && chrome.extension.getBackgroundPage) && window.location.pathname !== "/sourceviewer.html"
 const IS_DEV_MODE = MANIFEST.short_name === "BTRoblox_DEV"
 
+const THROW_DEV_WARNING = errorString => {
+	console.warn(errorString)
+
+	if(IS_DEV_MODE) {
+		alert(errorString)
+	}
+}
+
 const AssetShortcuts = {
 	"res/previewer/characterModels.rbxm": "rbxassetid://2957693598&version=3",
 	"res/previewer/face.png": "rbxassetid://2957705858",
