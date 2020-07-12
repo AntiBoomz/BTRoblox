@@ -425,7 +425,8 @@ const RBXParser = (() => {
 				case "numberrange":
 				case "numbersequence":
 					return
-				default: console.warn(`[ParseRBXXml] Unknown dataType ${propNode.nodeName} for ${inst.ClassName}.${name}`, propNode.innerHTML)
+				default:
+					THROW_DEV_WARNING(`[ParseRBXXml] Unknown dataType ${propNode.nodeName} for ${inst.ClassName}.${name}`, propNode.innerHTML)
 				}
 			})
 		}
@@ -440,7 +441,9 @@ const RBXParser = (() => {
 		// http://www.classy-studios.com/Downloads/RobloxFileSpec.pdf
 		parse(buffer) {
 			const reader = this.reader = new ByteReader(buffer)
-			if(!reader.Match(RBXBinParser.HeaderBytes)) { console.warn("[ParseRBXBin] Header bytes did not match (Did binary format change?)") }
+			if(!reader.Match(RBXBinParser.HeaderBytes)) {
+				THROW_DEV_WARNING("[ParseRBXBin] Header bytes did not match (Did binary format change?)")
+			}
 
 			const groupsCount = reader.UInt32LE()
 			const instancesCount = reader.UInt32LE()
@@ -476,13 +479,16 @@ const RBXParser = (() => {
 					break
 
 				case "META": break
+				case "SIGN": break
 
 				default:
-					throw new Error(`[ParseRBXBin] Unexpected chunk '${chunkType}'`)
+					THROW_DEV_WARNING(`[ParseRBXBin] Unknown chunk '${chunkType}'`)
 				}
 			}
 
-			if(reader.GetRemaining() > 0) { console.warn("[ParseRBXBin] Unexpected data after END") }
+			if(reader.GetRemaining() > 0) {
+				THROW_DEV_WARNING("[ParseRBXBin] Unexpected data after END")
+			}
 
 			return this.result
 		}
@@ -527,7 +533,7 @@ const RBXParser = (() => {
 			const instCount = group.Objects.length
 
 			if(!typeName) {
-				console.warn(`[ParseRBXBin] Unknown dataType 0x${dataType.toString(16).toUpperCase()} for ${group.ClassName}.${prop}`)
+				THROW_DEV_WARNING(`[ParseRBXBin] Unknown dataType 0x${dataType.toString(16).toUpperCase()} (${dataType}) for ${group.ClassName}.${prop}`)
 				return
 			}
 
@@ -639,7 +645,7 @@ const RBXParser = (() => {
 				}
 				break
 			}
-			// case "Vector2int16": break // Not used anywhere?
+			case "Vector2int16": break // Not used anywhere?
 			case "CFrame": {
 				for(let vi = 0; vi < instCount; vi++) {
 					const value = values[vi] = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
@@ -690,7 +696,8 @@ const RBXParser = (() => {
 				}
 				break
 			}
-			// case "Vector3int16": break // Not used anywhere?
+			case "Vector3int16":
+				break // Not used anywhere?
 			case "NumberSequence": {
 				for(let i = 0; i < instCount; i++) {
 					const seqLength = chunk.UInt32LE()
@@ -805,8 +812,13 @@ const RBXParser = (() => {
 				}
 				break
 			}
+			case "UnknownScriptFormat":
+				for(let i = 0; i < instCount; i++) {
+					values[i] = "<UnknownScriptFormat>"
+				}
+				break
 			default:
-				console.warn(`[ParseRBXBin] Unimplemented dataType '${typeName}' for ${group.ClassName}.${prop}`)
+				THROW_DEV_WARNING(`[ParseRBXBin] Unimplemented dataType '${typeName}' for ${group.ClassName}.${prop}`)
 			}
 
 			values.forEach((value, i) => {
@@ -838,10 +850,10 @@ const RBXParser = (() => {
 	RBXBinParser.HeaderBytes = [0x3C, 0x72, 0x6F, 0x62, 0x6C, 0x6F, 0x78, 0x21, 0x89, 0xFF, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00]
 	RBXBinParser.Faces = [[1, 0, 0], [0, 1, 0], [0, 0, 1], [-1, 0, 0], [0, -1, 0], [0, 0, -1]]
 	RBXBinParser.DataTypes = [
-		null, "string", "bool", "int", "float", "double", "UDim", "UDim2",
-		"Ray", "Faces", "Axes", "BrickColor", "Color3", "Vector2", "Vector3", "Vector2int16",
-		"CFrame", "Quaternion", "Enum", "Instance", "Vector3int16", "NumberSequence", "ColorSequence", "NumberRange",
-		"Rect2D", "PhysicalProperties", "Color3uint8", "int64", "SharedString"
+		null, "string", "bool", "int", "float", "double", "UDim", "UDim2", // 7
+		"Ray", "Faces", "Axes", "BrickColor", "Color3", "Vector2", "Vector3", "Vector2int16", // 15
+		"CFrame", "Quaternion", "Enum", "Instance", "Vector3int16", "NumberSequence", "ColorSequence", // 22
+		"NumberRange", "Rect2D", "PhysicalProperties", "Color3uint8", "int64", "SharedString", "UnknownScriptFormat" // 29
 	]
 
 	class ModelParser {
