@@ -107,7 +107,7 @@ function parseSource(source) {
 	}
 
 	const appendGroup = groupDepth => {
-		const searchString = `]${ "=".repeat(groupDepth) }]`
+		const searchString = `]${"=".repeat(groupDepth)}]`
 		const groupEndIndex = source.indexOf(searchString)
 
 		if(groupEndIndex === -1) {
