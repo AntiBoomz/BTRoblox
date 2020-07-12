@@ -128,43 +128,44 @@ const initFastSearch = () => {
 		}
 	}
 
-	
+	const getMatches = search => {
+		const allMatches = Object.entries(userCache)
+			.map(([name, user]) => ({ name, user }))
+			.filter(x => x.user && (x.name === search || (x.user.IsFriend && !x.user.Alias) && (x.index = x.name.indexOf(search)) !== -1))
+
+		allMatches.forEach(x => x.sort = x.name === search ? 0 : Math.abs(x.name.length - search.length) / 3 + x.index + (!x.user.IsFriend ? 1000 : 0))
+
+		const matches = allMatches.sort((a, b) => a.sort - b.sort).slice(0, 4)
+
+		// Move non-friend exacts to be last of the visible ones
+		if(matches.length && matches[0].name === search && !matches[0].user.IsFriend) {
+			matches.push(matches.shift())
+		}
+
+		return matches
+	}
+
 	const reloadSearchResults = () => {
 		const search = currentSearchText
 		const now = Date.now()
 
 		lastResultsLoaded = now
 
-		if(!usernameRegex.test(currentSearchText)) { return }
-
 		$.setImmediate(() => {
 			if(lastResultsLoaded !== now) {
 				return
 			}
-			
+
+			const lastSelected = list.$find(">.selected")
+			const selectFirst = !lastSelected || !searchResults.length && lastSelected === list.firstElementChild || searchResults.includes(lastSelected)
+
 			clearResults()
 
-			const allMatches = Object.entries(userCache)
-				.map(([name, user]) => ({ name, user }))
-				.filter(x => x.user && (x.name === search || (x.user.IsFriend && !x.user.Alias) && (x.index = x.name.indexOf(search)) !== -1))
-
-			if(!allMatches.length) {
-				return
-			}
-
-			allMatches.forEach(x => x.sort = x.name === search ? 0 : Math.abs(x.name.length - search.length) / 3 + x.index + (!x.user.IsFriend ? 1000 : 0))
-			const matches = allMatches.sort((a, b) => a.sort - b.sort).slice(0, 4)
-
-			// Move non-friend exacts to be last of the visible ones
-			if(matches[0].name === search && !matches[0].user.IsFriend) {
-				matches.push(matches.shift())
-			}
-
 			const target = list.firstElementChild
+			const matches = getMatches(search)
 
 			for(let i = 0; i < matches.length; i++) {
 				const { name, user, index } = matches[i]
-
 				const highlightStart = name === search ? 0 : index
 				const highlightEnd = name === search ? search.length : highlightStart + search.length
 
@@ -275,68 +276,70 @@ const initFastSearch = () => {
 				}
 			}
 
-			if(target.classList.contains("selected")) {
-				target.classList.remove("selected")
+			if(selectFirst && searchResults.length) {
+				const prev = list.$find(">.selected")
+				if(prev) {
+					prev.classList.remove("selected")
+				}
+
 				searchResults[0].classList.add("selected")
 			}
 		})
 	}
 
 	const updateSearch = search => {
-		clearResults()
-
 		const searchStarted = Date.now()
 
 		currentSearchText = search
 		currentSearchStarted = searchStarted
 		lastResultsLoaded = -1
 
-		if(!usernameRegex.test(currentSearchText)) { return }
-
-		if(search.length >= 3 && !(search in userCache)) {
-			const temp = {
-				Temporary: true,
-				Username: search
-			}
-
-			userCache[search] = temp
-
-			$.fetch(`https://api.roblox.com/users/get-by-username?username=${search}`).then(async resp => {
-				if(userCache[search] !== temp) {
-					return
+		if(search.length >= 3 && usernameRegex.test(search)) {
+			if(!userCache[search]) {
+				const temp = {
+					Temporary: true,
+					Username: search
 				}
 
-				const json = resp.ok && await resp.json()
-				if(!json || !json.Username) {
-					temp.NotFound = true
-					reloadSearchResults()
-					return
-				}
+				userCache[search] = temp
 
-				const user = userCache[search] = {
-					Username: json.Username,
-					UserId: json.Id
-				}
-
-				const name = json.Username.toLowerCase()
-				if(search !== name) {
-					user.Alias = true
-
-					if(userCache[name] && userCache[name].IsFriend) {
-						user.IsFriend = true
+				$.fetch(`https://api.roblox.com/users/get-by-username?username=${search}`).then(async resp => {
+					if(userCache[search] !== temp) {
+						return
 					}
 
-					userCache[name] = {
+					const json = resp.ok && await resp.json()
+					if(!json || !json.Username) {
+						temp.NotFound = true
+						reloadSearchResults()
+						return
+					}
+
+					const user = userCache[search] = {
 						Username: json.Username,
-						UserId: json.Id,
-						IsFriend: user.IsFriend
+						UserId: json.Id
 					}
-				}
 
-				if(currentSearchStarted === searchStarted) {
-					reloadSearchResults()
-				}
-			})
+					const name = json.Username.toLowerCase()
+					if(search !== name) {
+						user.Alias = true
+
+						if(userCache[name] && userCache[name].IsFriend) {
+							user.IsFriend = true
+						}
+
+						userCache[name] = {
+							Username: json.Username,
+							UserId: json.Id,
+							IsFriend: user.IsFriend
+						}
+					}
+
+					if(currentSearchStarted === searchStarted) {
+						reloadSearchResults()
+					}
+				})
+			}
 		}
 
 		if(!friendsLoaded) {
