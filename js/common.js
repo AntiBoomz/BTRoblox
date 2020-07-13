@@ -627,14 +627,26 @@ Object.assign(SETTINGS, {
 					(key, value) => (key === "validValues" ? undefined : value)
 				))
 
-				STORAGE.get(["settings"], data => {
-					if(data.settings) {
-						this._applySettings(data.settings)
-					}
+				const loadSettings = () => {
+					STORAGE.get(["settings"], data => {
+						const err = chrome.runtime.lastError
+						if(err) {
+							setTimeout(loadSettings, 2e3)
+							console.error(err)
+							return
+						}
 
-					this.loaded = true
-					resolve()
-				})
+						if(data && data.settings) {
+							try { this._applySettings(data.settings) }
+							catch(ex) { console.error(ex) }
+						}
+
+						this.loaded = true
+						resolve()
+					})
+				}
+
+				loadSettings()
 			})
 		}
 
