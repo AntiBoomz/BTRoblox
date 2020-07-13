@@ -205,7 +205,7 @@ pageInit.gamedetails = function(placeId) {
 					label.classList.remove("date-time-i18n") // Otherwise roblox rewrites the label
 					
 					label.title = new Date(data.Updated).$format("M/D/YYYY h:mm:ss A (T)")
-					label.textContent = `${$.dateSince(data.Updated, new Date())} ago`
+					label.textContent = `${$.dateSince(data.Updated, new Date(data.__btrDate))} ago`
 				}
 			)
 	})
