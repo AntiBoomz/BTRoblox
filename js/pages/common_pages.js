@@ -320,7 +320,8 @@ pageInit.common = () => {
 	} catch(ex) {}
 
 	if(sessionStorage.getItem("btr-settings-open")) {
-		ToggleSettingsDiv()
+		try { ToggleSettingsDiv() }
+		catch(ex) { console.error(ex) }
 	}
 
 	//
@@ -359,8 +360,14 @@ pageInit.common = () => {
 		}
 	})
 
-	if(settings.general.fastSearch) { initFastSearch() }
-	if(settings.general.hideAds) { initAdBlock() }
+	if(settings.general.fastSearch) {
+		try { initFastSearch() }
+		catch(ex) { console.error(ex) }
+	}
+	if(settings.general.hideAds) {
+		try { initAdBlock() }
+		catch(ex) { console.error(ex) }
+	}
 
 	{
 		const lists = [

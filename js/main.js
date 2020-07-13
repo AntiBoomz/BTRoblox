@@ -56,8 +56,12 @@ const InjectJS = {
 	queue: [],
 
 	send(action, ...detail) {
-		if(IS_FIREFOX) { detail = cloneInto(detail, window.wrappedJSObject) }
-		document.dispatchEvent(new CustomEvent(`inject.${action}`, { detail }))
+		try {
+			if(IS_FIREFOX) { detail = cloneInto(detail, window.wrappedJSObject) }
+			document.dispatchEvent(new CustomEvent(`inject.${action}`, { detail }))
+		} catch(ex) {
+			console.error(ex)
+		}
 	},
 
 	listen(actions, callback, props) {
@@ -192,6 +196,7 @@ function modifyTemplate(idList, callback) {
 
 function Init() {
 	// Inject theme
+	
 	updateTheme()
 	SETTINGS.onChange("general.theme", updateTheme)
 
