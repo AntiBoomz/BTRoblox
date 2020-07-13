@@ -694,22 +694,23 @@ Object.assign(SETTINGS, {
 		setting.value = value
 		setting.default = !!isDefault
 
-		if(shouldSave) {
-			if(IS_BACKGROUND_PAGE) {
-				STORAGE.set({ settings: this.loadedSettings })
-			} else {
-				MESSAGING.send("setSetting", { path: settingPath, value, default: !!isDefault })
+		if(this.loaded) {
+			if(shouldSave) {
+				if(IS_BACKGROUND_PAGE) {
+					STORAGE.set({ settings: this.loadedSettings })
+				} else {
+					MESSAGING.send("setSetting", { path: settingPath, value, default: !!isDefault })
+				}
+			}
+
+			const listeners = this._onChangeListeners[settingPath]
+			if(listeners) {
+				listeners.forEach(fn => {
+					try { fn(setting.value, setting.default) }
+					catch(ex) { console.error(ex) }
+				})
 			}
 		}
-
-		const listeners = this._onChangeListeners[settingPath]
-		if(listeners) {
-			listeners.forEach(fn => {
-				try { fn(setting.value, setting.default) }
-				catch(ex) { console.error(ex) }
-			})
-		}
-
 
 		return true
 	},
