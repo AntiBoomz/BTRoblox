@@ -8,7 +8,7 @@
 		
 		chrome.tabs.executeScript(
 			tab.id,
-			{ code: `(() => { if(typeof ToggleSettingsDiv === "function") { ToggleSettingsDiv(true); return true } })()`, runAt: "document_start" },
+			{ code: `(() => { if(typeof ToggleSettingsDiv === "function") { SETTINGS.load(() => ToggleSettingsDiv(true)); return true } })()`, runAt: "document_start" },
 			result => {
 				if(chrome.runtime.lastError || !result || !result[0]) {
 					chrome.tabs.create({ url: "https://www.roblox.com/home?btr_settings_open=true" })
