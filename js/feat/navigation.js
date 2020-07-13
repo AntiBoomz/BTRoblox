@@ -114,41 +114,50 @@ const Navigation = (() => {
 				const children = cont.elem.children
 				const indices = sortedItems.map(x => Array.prototype.indexOf.call(children, x.elem)).sort((a, b) => a - b)
 
-				sortedItems.forEach((x, i) => {
-					const target = children[indices[i]]
+				const useOrder = cont.type === "topleft"
 
-					if(target !== x.elem) {
-						const prevSib = x.elem.previousElementSibling
-						target.before(x.elem)
-						
-						if(prevSib) {
-							prevSib.after(target)
-						} else {
-							target.parentNode.prepend(target)
+				sortedItems.forEach((x, i) => {
+					if(useOrder) {
+						x.elem.style.order = i
+					} else {
+						const target = children[indices[i]]
+
+						if(target !== x.elem) {
+							const prevSib = x.elem.previousElementSibling
+							target.before(x.elem)
+							
+							if(prevSib) {
+								prevSib.after(target)
+							} else {
+								target.parentNode.prepend(target)
+							}
 						}
 					}
 
 					const savedItem = savedCont ? savedCont[x.name] : null
 					const isVisible = savedItem && "visible" in savedItem ? savedItem.visible : !x.defaultDisabled
 
-					if(x.visible !== isVisible) {
-						x.visible = isVisible
-
-						x.elem.classList.toggle("btr-nav-disabled", !x.visible)
-				
-						if(x.children) {
-							x.children.forEach(child => child.classList.toggle("btr-nav-disabled", !x.visible))
-						}
+					x.visible = isVisible
+					x.elem.classList.toggle("btr-nav-disabled", !x.visible)
+			
+					if(x.children) {
+						x.children.forEach(child => child.classList.toggle("btr-nav-disabled", !x.visible))
 					}
 				})
 
 				sortedItems.forEach(x => {
-					let prev = x.elem
+					if(useOrder) {
+						x.children.forEach((child, i) => {
+							child.style.order = (+x.elem.style.order) + (i + 1) / 100
+						})
+					} else {
+						let prev = x.elem
 
-					x.children.forEach(child => {
-						prev.after(child)
-						prev = child
-					})
+						x.children.forEach(child => {
+							prev.after(child)
+							prev = child
+						})
+					}
 				})
 			})
 		})
@@ -178,13 +187,7 @@ const Navigation = (() => {
 
 				if(parent) {
 					parent.children.push(child)
-					
-					const prev = parent.children[parent.children.length - 1] || parent.elem
-					prev.after(child)
-
-					if(!parent.visible) {
-						child.classList.toggle("btr-nav-disabled", !parent.visible)
-					}
+					requestNavUpdate(cont)
 				}
 
 				return
@@ -232,13 +235,14 @@ const Navigation = (() => {
 			requestNavUpdate(cont)
 		}
 
-		const addCustom = (name, after) => {
+		const addCustom = (name, after, defaultDisabled) => {
 			const btn = html(customElements[name])
 			set.add(btn)
 
 			const item = {
 				elem: btn,
 				children: [],
+				defaultDisabled: defaultDisabled === true,
 
 				name
 			}
@@ -287,10 +291,11 @@ const Navigation = (() => {
 				addCustom("btr_BlogFeed", blog)
 			})
 				.$watch("#nav-trade", trade => {
-					hideNavItem(trade.parentNode)
-					addCustom("btr_Money", trade.parentNode)
+					// hideNavItem(trade.parentNode)
+					addCustom("btr_Money", trade.parentNode, true)
 				})
 				.$watch(".rbx-upgrade-now", target => hideNavItem(target))
+				.$watch("#nav-home", target => hideNavItem(target.parentNode))
 				.$watch("#nav-message", target => hideNavItem(target.parentNode))
 				.$watch("#nav-friends", target => hideNavItem(target.parentNode))
 		}
