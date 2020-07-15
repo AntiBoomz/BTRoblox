@@ -75,7 +75,7 @@ const Navigation = (() => {
 					if(!(savedItem instanceof Object)) {
 						return
 					}
-					
+
 					loadedCont[name] = savedItem
 				})
 			})
@@ -541,23 +541,6 @@ const Navigation = (() => {
 			return
 		}
 
-		//
-
-		const wrapper = html`<div class=btr-header-flex></div>`
-
-		headerWatcher
-			.$then(header => {
-				header.classList.add("btr-custom-header")
-				header.prepend(wrapper)
-			})
-			.$watchAll("*", child => {
-				if(child === wrapper || child.matches(`.rbx-navbar.hidden-md`)) {
-					return
-				}
-
-				wrapper.append(child)
-			})
-		
 		//
 
 		loadSavedItems()

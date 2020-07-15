@@ -8,29 +8,6 @@ html:not(.btr-naveditor-open) .btr-nav-disabled {
 	opacity: 0.5;
 }
 
-.btr-custom-header .rbx-navbar {
-	white-space: nowrap;
-}
-
-.btr-custom-header .btr-header-flex {
-	display: flex;
-	align-items: start;
-}
-
-.btr-custom-header .btr-header-flex #navbar-universal-search {
-	flex: 0 1 auto;
-}
-
-.btr-custom-header .btr-header-flex .rbx-navbar-right {
-	flex: 1 0 auto;
-}
-
-@media (max-width: 543px) {
-	.btr-custom-header .btr-header-flex .rbx-navbar-right .rbx-navbar-icon-group > li {
-		width: 16.66%;
-	}
-}
-
 /* Fix weird stream button styling */
 
 #header .navbar-stream {
