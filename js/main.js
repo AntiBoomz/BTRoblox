@@ -11,6 +11,7 @@ let settings
 let currentPage
 
 let mainStyleSheet
+
 const injectCSS = (...paths) => {
 	if(!paths.length) { return [] }
 
@@ -42,13 +43,48 @@ const removeCSS = rules => {
 	})
 }
 
-const updateTheme = () => {
-	const theme = settings.general.theme
+const toggleRobloxThemes = () => {
+	const changeClasses = (from, to) => {
+		const list = document.getElementsByClassName(from)
+
+		for(let i = list.length; i--;) {
+			const item = list[i]
+			item.classList.remove(from)
+			item.classList.add(to)
+		}
+	}
+
+	if(themeCompatMode) {
+		changeClasses("light-theme", "btr-compat-light-theme")
+		changeClasses("dark-theme", "btr-compat-dark-theme")
+	} else {
+		changeClasses("btr-compat-light-theme", "light-theme")
+		changeClasses("btr-compat-dark-theme", "dark-theme")
+	}
+}
+
+const themeObserver = new MutationObserver(toggleRobloxThemes)
+let themeCompatMode = false
+let themeCompatLists
+
+const updateTheme = theme => {
 	const oldStyles = themeStyles.splice(0, themeStyles.length)
 	removeCSS(oldStyles)
 
 	if(theme !== "default") {
 		themeStyles.push(...injectCSS(...cssFiles.map(file => `${theme}/${file}`)))
+
+		if(!themeCompatMode) {
+			themeCompatMode = true
+			themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"], subtree: true })
+			toggleRobloxThemes()
+		}
+	} else {
+		if(themeCompatMode) {
+			themeCompatMode = false
+			themeObserver.disconnect()
+			toggleRobloxThemes()
+		}
 	}
 }
 
@@ -197,7 +233,7 @@ function modifyTemplate(idList, callback) {
 function Init() {
 	// Inject theme
 	
-	updateTheme()
+	updateTheme(settings.general.theme)
 	SETTINGS.onChange("general.theme", updateTheme)
 
 	//

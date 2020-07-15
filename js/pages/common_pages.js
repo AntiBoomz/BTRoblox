@@ -370,41 +370,10 @@ pageInit.common = () => {
 		try { initFastSearch() }
 		catch(ex) { console.error(ex) }
 	}
+	
 	if(settings.general.hideAds) {
 		try { initAdBlock() }
 		catch(ex) { console.error(ex) }
-	}
-
-	{
-		const lists = [
-			document.getElementsByClassName("light-theme"),
-			document.getElementsByClassName("dark-theme")
-		]
-
-		const removeThemes = () => {
-			for(let i = lists.length; i--;) {
-				const list = lists[i]
-				for(let j = list.length; j--;) {
-					const elem = list[j]
-					elem.classList.remove("light-theme", "dark-theme")
-				}
-			}
-		}
-
-		const params = [document.documentElement, { attributes: true, attributeFilter: ["class"], subtree: true }]
-		const observer = new MutationObserver(removeThemes)
-
-		const checkSetting = enabled => {
-			if(enabled) {
-				observer.observe(...params)
-				removeThemes()
-			} else {
-				observer.disconnect()
-			}
-		}
-
-		checkSetting(SETTINGS.get("general.disableRobloxThemes"))
-		SETTINGS.onChange("general.disableRobloxThemes", checkSetting)
 	}
 
 	if(!settings.general.chatEnabled) {
