@@ -26,18 +26,23 @@ const $ = function(selector) { return $.find(document, selector) }
 
 	const handleMutations = (mut, self) => {
 		const listeners = self.listeners
+		let index = 0
 
-		if(listeners.length) {
-			for(let i = listeners.length; i--;) {
-				const item = listeners[i]
+		while(index < listeners.length) {
+			const item = listeners[index]
+
+			if(!item.stopped) {
 				const elem = item.getter()
 
 				if(elem) {
-					const last = listeners.pop()
-					if(item !== last) { listeners[i] = last }
-
 					item.resolve(elem)
 				}
+			}
+
+			if(item.stopped) {
+				listeners.splice(index, 1)
+			} else {
+				index++
 			}
 		}
 
@@ -49,46 +54,34 @@ const $ = function(selector) { return $.find(document, selector) }
 
 	const handleDirectMutations = (mutations, self) => {
 		const listeners = self.listeners
+		let index = 0
 
-		if(listeners.length) {
-			for(let k = listeners.length; k--;) {
-				const item = listeners[k]
+		while(index < listeners.length) {
+			const item = listeners[index]
 
-				if(!item.stopped) {
-					for(let i = mutations.length; i--;) {
-						const addedNodes = mutations[i].addedNodes
-						for(let j = addedNodes.length; j--;) {
-							const node = addedNodes[j]
-							if(node.nodeType !== 1) { continue }
+			if(!item.stopped) {
+				for(let mutIndex = 0, mutLen = mutations.length; mutIndex < mutLen; mutIndex++) {
+					const addedNodes = mutations[mutIndex].addedNodes
+					for(let nodeIndex = 0, nodeLen = addedNodes.length; nodeIndex < nodeLen; nodeIndex++) {
+						const node = addedNodes[nodeIndex]
+						if(node.nodeType !== 1) { continue }
 
-							let matches = false
-							switch(item.type) {
-							case "any": matches = true; break
-							case "name": matches = node.nodeName.toLowerCase() === item.selector; break
-							case "class": matches = node.classList.contains(item.selector); break
-							case "id": matches = node.id === item.selector; break
-							}
-			
-							if(matches) {
-								if(item.callback) {
-									try { item.callback(node, () => item.stopped = true) }
-									catch(ex) { console.error(ex) }
-								}
-								
-								if(item.once || item.stopped) {
-									item.stopped = true
-									i = 0 // To break mutations loop
-									break
-								}
+						if(item.matches(node)) {
+							item.resolve(node)
+
+							if(item.stopped) {
+								mutIndex = mutations.length // break both loops
+								break
 							}
 						}
 					}
 				}
+			}
 
-				if(item.stopped) {
-					const last = listeners.pop()
-					if(item !== last) { listeners[k] = last }
-				}
+			if(item.stopped) {
+				listeners.splice(index, 1)
+			} else {
+				index++
 			}
 		}
 
@@ -246,68 +239,69 @@ const $ = function(selector) { return $.find(document, selector) }
 				selectors = [selectors]
 			}
 
-			let observer = Observers.get(target)
-
 			const promises = selectors.map(selector => new SyncPromise(resolve => {
-				const defGetter = filter ? () => Array.prototype.find.call(target.$findAll(selector), x => filter(x)) : () => target.$find(selector)
-				let getter = defGetter
+				const directMatch = selector.match(/^\s*>\s*((?:\.|#)?[\w-]+)\s*$/)
 
-				if(selector.indexOf(",") === -1) {
-					if(!filter && document.contains(target)) {
-						const idMatch = selector.match(/^\s*#([\w-]+)\s*$/)
-						if(idMatch) {
-							const id = idMatch[1]
-							getter = () => {
-								const elem = document.getElementById(id)
+				if(directMatch) {
+					const match = directMatch[1]
 
-								if(elem && elem !== target && !target.contains(elem)) {
-									return (getter = defGetter)()
-								}
-								
-								return elem
-							}
+					target.$watchAll(match, (node, disable) => {
+						if(filter && !filter(node)) { return }
+						disable()
+						resolve(node)
+					})
+					
+					return
+				}
+
+				const item = {
+					stopped: false,
+
+					resolve(node) {
+						this.stopped = true
+						resolve(node)
+					},
+
+					getter() {
+						const elem = target.$find(selector)
+						if(!elem) {
+							return
 						}
 
-						const classMatch = selector.match(/^\s*\.([\w-]+)\s*$/)
-						if(classMatch) {
-							const className = classMatch[1]
-							const collection = document.getElementsByClassName(className)
-							if(collection.length < 10) {
-								getter = () => {
-									if(collection.length >= 10) {
-										return (getter = defGetter)()
-									}
+						if(filter && !filter(elem)) {
+							const checked = new WeakSet()
 
-									for(let i = 0, len = collection.length; i < len; i++) {
-										const elem = collection[i]
-										if(elem !== target && target.contains(elem)) {
-											return elem
+							item.getter = () => {
+								const matches = target.$findAll(selector)
+
+								for(let index = 0, len = matches.length; index < len; index++) {
+									const match = matches[index]
+
+									if(!checked.has(match)) {
+										checked.add(match)
+
+										if(filter(match)) {
+											return match
 										}
 									}
-
-									return null
 								}
 							}
-						}
-					}
 
-					const directMatch = selector.match(/^\s*>\s*((?:\.|#)?[\w-]+)\s*$/)
-					if(directMatch) {
-						const match = directMatch[1]
-						target.$watchAll(match, (node, disable) => {
-							if(filter && !filter(node)) { return }
-							disable()
-							resolve(node)
-						})
-						return
+							return
+						}
+
+						return elem
 					}
 				}
 
-				const elem = getter()
-
+				const elem = item.getter()
 				if(elem) {
-					resolve(elem)
-				} else {
+					item.resolve(elem)
+				}
+
+				if(!item.stopped) {
+					let observer = Observers.get(target)
+
 					if(!observer) {
 						observer = new MutationObserver(handleMutations)
 						Observers.set(target, observer)
@@ -317,8 +311,8 @@ const $ = function(selector) { return $.find(document, selector) }
 	
 						observer.observe(target, { childList: true, subtree: true })
 					}
-
-					observer.listeners.push({ getter, resolve })
+	
+					observer.listeners.push(item)
 				}
 			}))
 
@@ -338,61 +332,67 @@ const $ = function(selector) { return $.find(document, selector) }
 			}
 		},
 
-		watchAll(target, selector, callback, argProps) {
+		watchAll(target, selector, callback, props = {}) {
 			selector = selector.trim()
+
 			if(!watchAllSelectorRegex.test(selector)) {
 				throw new Error(`Invalid selector '${selector}', only simple selectors allowed`)
 			}
 
-			const props = {}
-			if(argProps instanceof Object) { Object.assign(props, argProps) }
+			let matches
 
-			let item
 			if(selector === "*") {
-				item = { type: "any", callback, once: props.once }
+				matches = () => true
 			} else if(selector[0] === ".") {
-				item = { type: "class", selector: selector.slice(1), callback, once: props.once }
+				const match = selector.slice(1)
+				matches = node => node.classList.contains(match)
 			} else if(selector[0] === "#") {
-				item = { type: "id", selector: selector.slice(1), callback, once: props.once }
+				const match = selector.slice(1)
+				matches = node => node.id === match
 			} else {
-				item = { type: "name", selector, callback, once: props.once }
+				const match = selector.toLowerCase()
+				matches = node => node.nodeName.toLowerCase() === match
 			}
 
-			const spent = Array.from(target.children).some(node => {
-				let matches = false
+			const item = {
+				once: props.once || false,
+				stopped: false,
 
-				switch(item.type) {
-				case "any": matches = true; break
-				case "name": matches = node.nodeName.toLowerCase() === item.selector.toLowerCase(); break
-				case "class": matches = node.classList.contains(item.selector); break
-				case "id": matches = node.id === item.selector; break
-				}
-
-				if(matches) {
-					if(item.callback) {
-						try { item.callback(node, () => item.stopped = true) }
+				matches,
+				resolve(node) {
+					if(callback) {
+						try { callback(node, () => this.stopped = true) }
 						catch(ex) { console.error(ex) }
 					}
+	
+					if(this.once) {
+						this.stopped = true
+					}
+				}
+			}
 
-					if(item.once || item.stopped) { return true }
+			Array.from(target.children).some(node => {
+				if(item.matches(node)) {
+					item.resolve(node)
 				}
 
-				return false
+				return item.stopped
 			})
 
-			if(!spent) {
+			if(!item.stopped) {
 				let observer = DirectObservers.get(target)
+
 				if(!observer) {
 					observer = new MutationObserver(handleDirectMutations)
 					DirectObservers.set(target, observer)
 
-					observer.listeners = [item]
+					observer.listeners = []
 					observer.target = target
 
 					observer.observe(target, { childList: true, subtree: false })
-				} else {
-					observer.listeners.push(item)
 				}
+
+				observer.listeners.push(item)
 			}
 		},
 
