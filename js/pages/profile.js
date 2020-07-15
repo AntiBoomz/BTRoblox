@@ -79,40 +79,41 @@ pageInit.profile = function(userId) {
 		.$watch(".rbx-tabs-horizontal", cont => {
 			cont.before(newCont)
 			cont.setAttribute("ng-if", "false") // Let's make angular clean it up :)
-		})
-		.$watch(".profile-about", about => {
-			newCont.$find(".profile-about").setAttribute("ng-controller", about.getAttribute("ng-controller"))
 
-			about
-				.$watch(".profile-about-content", desc => {
-					newCont.$find(".placeholder-desc").replaceWith(desc)
-
-					const descContent = desc.$find(".profile-about-content-text")
-					descContent.classList.add("linkify")
-
-					if(!descContent.textContent.trim()) {
-						descContent.classList.add("text-label")
-						descContent.textContent = "This user has no description"
-					}
-				})
-				.$watch("#aliases-container", aliases => {
-					newCont.$find(".placeholder-aliases").replaceWith(aliases)
-
-					aliases.$watch(".border-top > div:first-child", header => {
-						header.classList.remove("font-header-2")
-						header.classList.add("text-label")
-						header.textContent = "Alias:"
-					}).$watch(".user-tag", tag => tag.classList.remove("font-header-2"))
-				})
-				.$watch(".profile-about-footer", footer => {
-					newCont.$find(".placeholder-footer").replaceWith(footer)
-		
-					const tooltip = footer.$find(".tooltip-pastnames")
-					if(tooltip) { tooltip.setAttribute("data-container", "body") } // Display tooltip over side panel
-				})
-				.$watch(".profile-social-networks", social => {
-					newCont.$find(".btr-profile-about .container-header").append(social)
-				})
+			cont.$watch(".profile-about", about => {
+				newCont.$find(".profile-about").setAttribute("ng-controller", about.getAttribute("ng-controller"))
+	
+				about
+					.$watch(".profile-about-content", desc => {
+						newCont.$find(".placeholder-desc").replaceWith(desc)
+	
+						const descContent = desc.$find(".profile-about-content-text")
+						descContent.classList.add("linkify")
+	
+						if(!descContent.textContent.trim()) {
+							descContent.classList.add("text-label")
+							descContent.textContent = "This user has no description"
+						}
+					})
+					.$watch("#aliases-container", aliases => {
+						newCont.$find(".placeholder-aliases").replaceWith(aliases)
+	
+						aliases.$watch(".border-top > div:first-child", header => {
+							header.classList.remove("font-header-2")
+							header.classList.add("text-label")
+							header.textContent = "Alias:"
+						}).$watch(".user-tag", tag => tag.classList.remove("font-header-2"))
+					})
+					.$watch(".profile-about-footer", footer => {
+						newCont.$find(".placeholder-footer").replaceWith(footer)
+			
+						const tooltip = footer.$find(".tooltip-pastnames")
+						if(tooltip) { tooltip.setAttribute("data-container", "body") } // Display tooltip over side panel
+					})
+					.$watch(".profile-social-networks", social => {
+						newCont.$find(".btr-profile-about .container-header").append(social)
+					})
+			})
 		})
 		.$watch(".profile-header-top .header-caption", () => { // Wait for the first element after status
 			const status = $(".profile-avatar-status")
@@ -457,9 +458,9 @@ pageInit.profile = function(userId) {
 								descContent.textContent = data.description
 
 								if(!data.isPlayable) {
-									const cont = this.item.$find(".btr-game-playbutton-container")
-									cont.classList.add("btr-place-prohibited")
-									cont.textContent = ProhibitedReasons[data.reasonProhibited] || data.reasonProhibited
+									const btnCont = this.item.$find(".btr-game-playbutton-container")
+									btnCont.classList.add("btr-place-prohibited")
+									btnCont.textContent = ProhibitedReasons[data.reasonProhibited] || data.reasonProhibited
 								}
 							}
 
