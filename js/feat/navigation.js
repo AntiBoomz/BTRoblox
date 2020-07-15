@@ -59,10 +59,25 @@ const Navigation = (() => {
 		
 		Object.keys(savedItems).forEach(key => delete savedItems[key])
 
-		const saveData = saveDataString ? JSON.parse(saveDataString) : null
+		let saveData
+		try { saveData = saveDataString ? JSON.parse(saveDataString) : null }
+		catch(ex) { }
+		
 		if(saveData) {
-			Object.entries(saveData).forEach(([key, value]) => {
-				savedItems[key] = value
+			Object.entries(saveData).forEach(([key, savedCont]) => {
+				if(!(savedCont instanceof Object) || !navElements[key]) {
+					return
+				}
+
+				const loadedCont = savedItems[key] = {}
+
+				Object.entries(savedCont).forEach(([name, savedItem]) => {
+					if(!(savedItem instanceof Object)) {
+						return
+					}
+					
+					loadedCont[name] = savedItem
+				})
 			})
 		}
 
