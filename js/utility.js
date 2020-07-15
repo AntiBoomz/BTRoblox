@@ -270,6 +270,7 @@ const $ = function(selector) { return $.find(document, selector) }
 
 						if(filter && !filter(elem)) {
 							const checked = new WeakSet()
+							checked.add(elem)
 
 							item.getter = () => {
 								const matches = target.$findAll(selector)
@@ -287,7 +288,7 @@ const $ = function(selector) { return $.find(document, selector) }
 								}
 							}
 
-							return
+							return item.getter()
 						}
 
 						return elem
