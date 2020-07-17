@@ -493,7 +493,7 @@ const Navigation = (() => {
 				<a class="btr-feed" href="${item.url}">
 					<div class="btr-feedtitle">
 						${item.title.trim() + " "}
-						<span class="btr-feeddate">(${$.dateSince(item.date)} ago)</span>
+						<span class="btr-feeddate">(${$.dateSince(item.date)})</span>
 					</div>
 					<div class="btr-feeddesc">${item.desc}</div>
 				</a>`)

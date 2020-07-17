@@ -43,13 +43,7 @@ const ProhibitedReasons = {
 
 async function getUncachedProductInfo(assetId) {
 	const response = await $.fetch(`https://api.roblox.com/marketplace/productinfo?assetId=${assetId}`)
-	const json = await response.json()
-
-	if(json) {
-		json.__btrDate = response.headers.get("Date")
-	}
-
-	return json
+	return response.json()
 }
 
 const productCache = {}

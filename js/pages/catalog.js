@@ -56,7 +56,7 @@ pageInit.catalog = function() {
 		if(assetType !== "bundles") {
 			getProductInfo(assetId).then(data => {
 				const ulabel = self.$find(".btr-updated-label")
-				ulabel.textContent = `${$.dateSince(data.Updated, startDate)} ago`
+				ulabel.textContent = `${$.dateSince(data.Updated)}`
 				ulabel.parentNode.title = ulabel.parentNode.textContent
 			})
 		}
