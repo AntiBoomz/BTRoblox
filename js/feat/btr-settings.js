@@ -24,6 +24,7 @@ const SettingsDiv = (() => {
 								<option value=night>Dark As Night</option>
 							</optgroup>
 						</select>
+						<checkbox label="Legacy Theme Compatibility Mode" path=disableRobloxThemes></checkbox>
 					</div>
 
 					<checkbox label="Hide Ads" path=hideAds></checkbox>
