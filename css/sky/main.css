@@ -4,10 +4,6 @@ html body.light-theme {
 	background: #9AE4E8 url(/res/skyBg.png) left 40px no-repeat fixed;
 }
 
-html body .rbx-header {
-	background-color: #0074BD;
-}
-
 html .container-main>.content,
 html #BodyWrapper {
 	position: relative;
