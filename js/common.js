@@ -35,27 +35,85 @@ const AssetShortcuts = {
 }
 
 const getURL = path => AssetShortcuts[path] || chrome.runtime.getURL(path)
+const FormatNumber = num => String(num).replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/yg, "$1,")
 
+const RobuxToCash = {
+	// cash is in cents
 
-// Separated for more accuracy when dealing with massive numbers
-const DOLLARS_TO_ROBUX_RATIOS = {
-	devex350: [350, 100e3],
+	RegularPurchaseAmounts: [400, 800, 1700, 4500, 10000],
+	PremiumPurchaseAmounts: [440, 880, 1870, 4950, 11000],
 
-	free5: [4.99, 400],
-	premium5: [4.99, 440],
+	Currencies: {
+		USD: { symbol: "$", rates: [499, 999, 1999, 4999, 9999] },
+		EUR: { symbol: "€", rates: [499, 999, 2099, 4999, 9999] },
+		GBP: { symbol: "£", rates: [459, 899, 1849, 4649, 9299] },
+		CAD: { symbol: "CAD", rates: [649, 1299, 2599, 6499, 12999] },
+		AUD: { symbol: "AU$", rates: [699, 1399, 2899, 7199, 14499] },
+		NZD: { symbol: "NZ$", rates: [799, 1599, 3199, 8999, 16999] },
+		MXN: { symbol: "MX$", rates: [8900, 18500, 36500, 91900, 184900] },
+		HKD: { symbol: "HKD", rates: [3800, 7800, 15800, 38900, 77900] },
+		TWD: { symbol: "NT$", rates: [15000, 30000, 59000, 161000, 321000] },
+		CLP: { symbol: "CLP", rates: [330000, 650000, 1290000, 3330000, 6700000] },
+		COP: { symbol: "COP", rates: [1490000, 2990000, 5790000, 15500000, 30900000] },
+	},
+	
+	OptionLists: {
+		USD: [
+			{ name: "devex", cash: 350, robux: 1000 }
+		]
+	},
 
-	free10: [9.99, 800],
-	premium10: [9.99, 880],
+	Options: {},
 
-	free20: [19.99, 1700],
-	premium20: [19.99, 1870],
+	init() {
+		Object.entries(this.Currencies).forEach(([name, currency]) => {
+			currency.name = name
 
-	free50: [49.99, 4500],
-	premium50: [49.99, 4950],
+			const list = this.OptionLists[name] = this.OptionLists[name] || []
+			currency.rates.forEach((cash, index) => {
+				list.push(
+					{ name: `${name.toLowerCase()}Regular${index}`, cash, robux: this.RegularPurchaseAmounts[index] },
+					{ name: `${name.toLowerCase()}Premium${index}`, cash, robux: this.PremiumPurchaseAmounts[index] },
+				)
+			})
+		})
 
-	free100: [99.99, 10000],
-	premium100: [99.99, 11000]
-}
+		Object.entries(this.OptionLists).forEach(([name, list]) => {
+			const currency = this.Currencies[name]
+
+			list.forEach(option => {
+				option.currency = currency
+				this.Options[option.name] = option
+			})
+		})
+
+		return this
+	},
+
+	getSelectedOption() {
+		if(!SETTINGS.loaded) {
+			return this.Options.devex
+		}
+
+		return this.Options[SETTINGS.get("general.robuxToUSDRate")]
+	},
+
+	convertAngular(expr) {
+		const option = this.getSelectedOption()
+
+		return `${option.currency.symbol}{{::(((${expr})*${option.cash})/${option.robux} + 0.4999)/100 | number: 2}}`
+	},
+
+	convert(robux) {
+		const option = this.getSelectedOption()
+
+		const cash = Math.round((robux * option.cash) / option.robux + 0.4999) / 100
+		const cashString = FormatNumber(cash.toFixed(2))
+
+		return `${option.currency.symbol}${cashString}`
+	}
+}.init()
+
 
 const SETTINGS = {
 	defaultSettings: {
@@ -72,7 +130,7 @@ const SETTINGS = {
 			fixAudioVolume: { default: true, value: true },
 
 			robuxToUSD: { default: true, value: false },
-			robuxToUSDRate: { default: true, value: "devex350", validValues: ["devex350", "free5", "premium5", "free10", "premium10", "free20", "premium20", "free50", "premium50", "free100", "premium100"] },
+			robuxToUSDRate: { default: true, value: "devex", validValues: Object.keys(RobuxToCash.Options) },
 	
 			hoverPreview: { default: true, value: true },
 			hoverPreviewMode: { default: true, value: "always", validValues: ["always", "never"] },

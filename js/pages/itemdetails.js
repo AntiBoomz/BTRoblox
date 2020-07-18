@@ -387,40 +387,47 @@ const initContentButton = async (assetId, assetTypeId) => {
 pageInit.itemdetails = function(category, assetId) {
 	if(SETTINGS.get("general.robuxToUSD")) {
 		document.$watch(".icon-robux-price-container .text-robux-lg", label => {
-			const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
+			const cash = RobuxToCash.convert(+label.textContent.replace(/,/g, ""))
 			label.after(
-				html`<span class=text-robux-lg>&nbsp;($${usd})</span>`
+				html`<span class=btr-robuxToCash-big>&nbsp;(${cash})</span>`
 			)
 		})
 			.$watch("#item-average-price", label => {
-				const observer = new MutationObserver(() => {
+				const update = () => {
+					const amt = +label.textContent.replace(/,/g, "")
+					if(!Number.isSafeInteger(amt)) {
+						return
+					}
+					
 					observer.disconnect()
-					const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
-					label.textContent += ` ($${usd})`
-				})
+					
+					const cash = RobuxToCash.convert(amt)
+					label.textContent += ` (${cash})`
+				}
 
-				observer.observe(label, { childList: true })
+				const observer = new MutationObserver(update)
+				observer.observe(label, { characterData: true })
+				update()
 			})
 			.$watch(".resellers .vlist").$then()
 				.$watchAll(".list-item", item => {
 					const label = item.$find(".reseller-price-container .text-robux")
 					const btn = item.$find(".PurchaseButton")
-					const usd = RobuxToUSD(btn ? btn.dataset.expectedPrice : "")
-					label.textContent += ` ($${usd})`
+
+					const cash = RobuxToCash.convert(+(btn ? btn.dataset.expectedPrice : ""))
+					label.textContent += ` (${cash})`
 				})
 		
 		modifyTemplate("recommendations", template => {
 			const label = template.$find(".item-card-price .text-robux-tile")
-
-			if(label) {
-				label.style.display = "inline"
-				label.textContent += ` ($\{{::((item.price*${GetRobuxRatio()[0]})/${GetRobuxRatio()[1]}) | number:2}})`
-				label.title = "R$ " + label.textContent
-			} else {
-				if(IS_DEV_MODE) {
-					alert("BTRoblox modifyTemplate('recommendations'): Missing label")
-				}
+			if(!label) {
+				THROW_DEV_WARNING("BTRoblox modifyTemplate('recommendations'): Missing label")
+				return
 			}
+
+			const cashText = ` (${RobuxToCash.convertAngular("item.price")})`
+			label.after(html`<span class=btr-robuxToCash-tile ng-show="${label.getAttribute("ng-show")}">${cashText}</span>`)
+			label.parentNode.setAttribute("title", `R$ {{::${label.getAttribute("ng-bind")}}}${cashText}`)
 		})
 	}
 

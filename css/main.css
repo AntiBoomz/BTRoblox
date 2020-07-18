@@ -846,6 +846,27 @@ body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
 }
 
 
+/* Robux to cash */
+
+.btr-robuxToCash-tile {
+	font-size: 12px;
+	opacity: 0.8;
+	vertical-align: top;
+	font-weight: 500;
+}
+
+.btr-robuxToCash-big {
+	font-size: 16px;
+	opacity: 0.8;
+	vertical-align: middle;
+	font-weight: 500;
+}
+
+.dark-theme #recommendations-container .btr-robuxToCash-tile {
+	opacity: 0.6;
+}
+
+
 /* Hover Preview? */
 
 .btr-preview-loading:after {

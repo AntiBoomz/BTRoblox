@@ -16,11 +16,9 @@ pageInit.gamedetails = function(placeId) {
 			.$watchAll(".list-item", item => {
 				const label = item.$find(".text-robux")
 				if(!label) { return }
-				const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
-				label.after(html`<span class=text-robux style="float:right;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis">&nbsp;($${usd})</span>`)
 
-				label.parentNode.style.display = "flex"
-				label.previousElementSibling.style.flex = "0 0 auto"
+				const cash = RobuxToCash.convert(+label.textContent.replace(/,/g, ""))
+				label.after(html`<span class=btr-robuxToCash-tile>&nbsp;(${cash})</span>`)
 				label.parentNode.setAttribute("title", `R$ ${label.parentNode.textContent.trim()}`)
 			})
 		
@@ -28,11 +26,9 @@ pageInit.gamedetails = function(placeId) {
 			.$watchAll(".list-item", item => {
 				const label = item.$find(".text-robux")
 				if(!label) { return }
-				const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
-				label.after(html`<span class=text-robux style="float:right;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis">&nbsp;($${usd})</span>`)
 
-				label.parentNode.style.display = "flex"
-				label.previousElementSibling.style.flex = "0 0 auto"
+				const cash = RobuxToCash.convert(+label.textContent.replace(/,/g, ""))
+				label.after(html`<span class=btr-robuxToCash-tile>&nbsp;(${cash})</span>`)
 				label.parentNode.setAttribute("title", `R$ ${label.parentNode.textContent.trim()}`)
 			})
 	}

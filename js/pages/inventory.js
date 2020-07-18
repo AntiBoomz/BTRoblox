@@ -55,19 +55,12 @@ pageInit.inventory_pre = function() {
 pageInit.inventory = function() {
 	if(SETTINGS.get("general.robuxToUSD")) {
 		modifyTemplate("assets-explorer", template => {
-			const label = template.$find(".item-card-price")
+			const label = template.$find(".item-card-price .text-robux-tile")
 			if(!label) { return }
-			label.style.display = "flex"
 
-			const div = html`<div style="flex:1 0 auto"></div>`
-			while(label.firstChild) { div.append(label.firstChild) }
-
-			label.append(div)
-			const text = `($\{{::(((item.Product.PriceInRobux)*${GetRobuxRatio()[0]})/${GetRobuxRatio()[1]})|number:2}})`
-			label.title = `{{::item.Product.IsFree && "Free " || "R$ "}}{{::(item.Product.PriceInRobux)|number:0}} ${text}`
-			label.append(html`
-			<div style="flex:0 1 auto;padding-left:4px;overflow:hidden;text-overflow:ellipsis;" ng-if=item.HasPrice class=text-robux ng-cloak> ${text}</div>
-			`)
+			const cashText = ` (${RobuxToCash.convertAngular("item.Product.PriceInRobux")})`
+			label.after(html`<span class=btr-robuxToCash-tile ng-show="${label.getAttribute("ng-show")}">${cashText}</span>`)
+			label.parentNode.setAttribute("title", `{{::${label.getAttribute("ng-bind")}}}${cashText}`)
 		})
 	}
 

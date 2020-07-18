@@ -35,28 +35,12 @@ const SettingsDiv = (() => {
 					</div>
 					<checkbox label="Show 'Copy Id' Context Items" path=enableContextMenus></checkbox>
 					<checkbox label="Lower Default Audio Volume" path=fixAudioVolume></checkbox>
-					<div style=margin-top:5px>
-						<checkbox label="Show Robux to USD" path=robuxToUSD></checkbox>
-						<select path=robuxToUSDRate>
-							<option selected disabled>R$ to USD Rate: (%opt%)</option>
-							<optgroup label=DevEx>
-								<option value=devex350>DevEx</option>
-							</optgroup>
-							<optgroup label=Free>
-								<option value=free5>Free $5</option>
-								<option value=free10>Free $10</option>
-								<option value=free20>Free $20</option>
-								<option value=free50>Free $50</option>
-								<option value=free100>Free $100</option>
-							</optgroup>
-							<optgroup label=Premium>
-								<option value=premium5>Premium $5</option>
-								<option value=premium10>Premium $10</option>
-								<option value=premium20>Premium $20</option>
-								<option value=premium50>Premium $50</option>
-								<option value=premium100>Premium $100</option>
-							</optgroup>
-						</select>
+					<div style="margin-top: 15px; display: flex;">
+						<checkbox label="Show Robux to Cash" path=robuxToUSD style="width: auto"></checkbox>
+						<div style="flex: 1 1 auto; text-align: right;">
+							<select id=btr-robuxToCash-currency></select>
+							<select id=btr-robuxToCash-rate style="margin-left: 8px"></select>
+						</div>
 					</div>
 				</group>
 				<group label=Navigation path=navigation toggleable>
@@ -450,6 +434,74 @@ const SettingsDiv = (() => {
 				})
 			})
 		})
+
+		{
+			const currencySelect = settingsDiv.$find("#btr-robuxToCash-currency")
+			const rateSelect = settingsDiv.$find("#btr-robuxToCash-rate")
+
+			currencySelect.$empty()
+			rateSelect.$empty()
+
+			const setRate = () => {
+				SETTINGS.set("general.robuxToUSDRate", rateSelect.value)
+			}
+
+			const loadRates = name => {
+				currencySelect.value = name
+
+				rateSelect.$empty()
+				let selected = false
+
+				RobuxToCash.OptionLists[name].forEach(option => {
+					const display = option.name.includes("devex") ? "DevEx"
+						: option.name.includes("Premium") ? "Premium"
+							: "Regular"
+					
+					const rateText = `${option.currency.symbol}${(option.cash / 100).toFixed(2)} = R$${option.robux}`
+					
+					rateSelect.append(html`<option value="${option.name}">${display} (${rateText})</option>`)
+
+					if(option.name === SETTINGS.get("general.robuxToUSDRate")) {
+						selected = true
+					}
+				})
+
+				if(selected) {
+					rateSelect.value = SETTINGS.get("general.robuxToUSDRate")
+				} else {
+					rateSelect.value = rateSelect.options[0].value
+					setRate()
+				}
+			}
+
+			Object.keys(RobuxToCash.Currencies).forEach(name => {
+				currencySelect.append(html`<option>${name}</option>`)
+			})
+
+			currencySelect.$on("change", () => {
+				loadRates(currencySelect.value)
+			})
+
+			rateSelect.$on("change", setRate)
+
+			loadRates(RobuxToCash.getSelectedOption().currency.name)
+
+			//
+			const updateDisabled = () => {
+				const value = SETTINGS.get("general.robuxToUSD")
+
+				if(value) {
+					currencySelect.removeAttribute("disabled")
+					rateSelect.removeAttribute("disabled")
+				} else {
+					currencySelect.setAttribute("disabled", "")
+					rateSelect.setAttribute("disabled", "")
+				}
+			}
+			
+			SETTINGS.onChange("general.robuxToUSD", updateDisabled)
+			updateDisabled()
+		}
 
 		{
 			const resetButton = settingsDiv.$find("#btr-reset-settings")

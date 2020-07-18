@@ -8,8 +8,8 @@ pageInit.money = function() {
 					const amt = label.textContent.replace(/,/g, "").replace(/^\((.+)\)$/, "$1").trim()
 
 					if(amt !== "0") {
-						const usd = RobuxToUSD(amt)
-						label.append(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
+						const cash = RobuxToCash.convert(+amt)
+						label.append(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;(${cash})</span>`)
 					}
 				})
 			})
@@ -20,10 +20,12 @@ pageInit.money = function() {
 					row.$watch(".Credit", label => {
 						const update = () => {
 							if(label.$find("span")) { return }
+
 							const text = label.textContent.replace(/,/g, "").replace(/^\((.+)\)$/, "$1").trim()
 							if(!text) { return }
-							const usd = RobuxToUSD(text)
-							label.append(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;($${usd})</span>`)
+
+							const cash = RobuxToCash.convert(+text)
+							label.append(html`<span style=color:#060;font-size:12px;font-weight:bold;>&nbsp;(${cash})</span>`)
 						}
 
 						new MutationObserver(update).observe(label, { childList: true })
@@ -35,8 +37,8 @@ pageInit.money = function() {
 						label.after(usdLabel)
 	
 						const update = () => {
-							const usd = RobuxToUSD(label.textContent.replace(/,/g, "").replace(/^\((.+)\)$/, "$1").trim())
-							usdLabel.textContent = ` ($${usd})`
+							const cash = RobuxToCash.convert(+label.textContent.replace(/,/g, "").replace(/^\((.+)\)$/, "$1").trim())
+							usdLabel.textContent = ` (${cash})`
 						}
 	
 						new MutationObserver(update).observe(label, { childList: true })

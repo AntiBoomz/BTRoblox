@@ -518,17 +518,17 @@ const Navigation = (() => {
 
 		if(SETTINGS.get("general.robuxToUSD")) {
 			headerWatcher.$watch("#nav-robux-balance", bal => {
-				const btn = html`
-				<li><a href=/develop/developer-exchange class=rbx-menu-item></a></li>`
+				const span = html`<span style="display:block;opacity:0.75;font-size:small;font-weight:500;"></span>`
 	
 				const update = () => {
 					const matches = bal.textContent.trim().match(/^([\d,]+)\sRobux$/)
 					if(!matches) { return }
+
 					const amt = parseInt(matches[0].replace(/,/g, ""), 10)
-	
 					if(!Number.isSafeInteger(amt)) { return }
-					btn.firstChild.textContent = `$${RobuxToUSD(amt)} USD`
-					bal.parentNode.after(btn)
+
+					span.textContent = RobuxToCash.convert(amt)
+					bal.append(span)
 				}
 	
 				const observer = new MutationObserver(update)

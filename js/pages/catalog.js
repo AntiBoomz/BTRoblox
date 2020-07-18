@@ -3,18 +3,11 @@
 pageInit.catalog = function() {
 	if(SETTINGS.get("general.robuxToUSD")) {
 		modifyTemplate("item-card", template => {
-			template.$findAll(".item-card-price").forEach(label => {
-				label.style.display = "flex"
-	
-				const div = html`<div style="flex:1 0 auto"></div>`
-				while(label.firstChild) { div.append(label.firstChild) }
-	
-				label.append(div)
-				const text = `($\{{::(((item.lowestPrice||item.price)*${GetRobuxRatio()[0]})/${GetRobuxRatio()[1]})|number:2}})`
-				label.title = `{{::item.IsFree && "Free " || "R$ "}}{{::(item.lowestPrice||item.price)|number:0}} ${text}`
-				label.append(html`
-				<div style="flex:0 1 auto;padding-left:4px;overflow:hidden;text-overflow:ellipsis;" ng-if=item.lowestPrice||item.price class=text-robux ng-cloak> ${text}</div>
-				`)
+			template.$findAll(".item-card-price .text-robux-tile").forEach(label => {
+				const cashText = ` (${RobuxToCash.convertAngular("(item.lowestPrice||item.price)")})`
+				label.after(html`<span class=btr-robuxToCash-tile ng-if="${label.getAttribute("ng-if")}">${cashText}</span>`)
+				console.log(label.getAttribute("ng-bind"))
+				label.parentNode.setAttribute("title", `R$ {{::getDisplayPrice() || item.lowestPrice | number}}${cashText}`)
 			})
 		})
 	}

@@ -231,12 +231,7 @@ function Linkify(elem) {
 	InjectJS.send("linkify", className)
 }
 
-const FormatNumber = num => String(num).replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/yg, "$1,")
-const GetRobuxRatio = () => DOLLARS_TO_ROBUX_RATIOS[SETTINGS.get("general.robuxToUSDRate")]
-const RobuxToUSD = amt => FormatNumber((Math.ceil((amt * GetRobuxRatio()[0]) / GetRobuxRatio()[1] * 100) / 100).toFixed(2))
-
 const FormatUrlName = (name, def = "Name") => encodeURIComponent(name.replace(/[']/g, "").replace(/\W+/g, "-").replace(/^-+|-+$/g, "") || def)
-
 const initAdBlock = () => {
 	const iframeSelector = `.ads-container iframe,.abp iframe,.abp-spacer iframe,.abp-container iframe,.top-abp-container iframe,
 	#AdvertisingLeaderboard iframe,#AdvertisementRight iframe,#MessagesAdSkyscraper iframe,.Ads_WideSkyscraper iframe,
