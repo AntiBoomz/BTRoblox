@@ -942,29 +942,6 @@ body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
 	100% { transform: scale(0) rotate(-10deg); }
 }
 
-/* Host access request */
-
-.btr-rha {
-	position: fixed;
-	width: 100%;
-	min-height: 40px;
-	background-color: red;
-	color: white;
-	font-size: 20px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 10px;
-	padding-left: 190px;
-	z-index: 1000;
-	cursor: pointer;
-	text-align: center;
-}
-
-.btr-rha:hover {
-	text-decoration: underline;
-}
-
 /* Ew */
 
 #downloadInstallerIFrame {
