@@ -242,7 +242,6 @@ $.setImmediate(() => {
 
 	currentPage = GET_PAGE(window.location.pathname)
 
-
 	if(currentPage) { cssFiles.push(...currentPage.css) }
 	injectCSS(...cssFiles)
 
@@ -253,13 +252,11 @@ $.setImmediate(() => {
 	const scriptParent = document.head || document.documentElement
 	scriptParent.prepend(script)
 
-
+	
 	if(currentPage && pageInit[`${currentPage.name}_pre`]) {
 		try { pageInit[`${currentPage.name}_pre`].apply(currentPage, currentPage.matches) }
 		catch(ex) { console.error(ex) }
 	}
-	
-	//
 
 	SETTINGS.load(Init)
 })
