@@ -93,7 +93,7 @@ const SettingsDiv = (() => {
 					<checkbox label="Inventory Tools" path=inventoryTools></checkbox>
 				</group>
 				<group label=Catalog path=catalog toggleable>
-					<checkbox label="Show Owned Items (WIP)" path=showOwnedAssets></checkbox>
+					<checkbox label="Show Owned Items" path=showOwnedAssets></checkbox>
 				</group>
 				<group label="Place Configure" path=placeConfigure>
 					<checkbox label="Version History" path=versionHistory></checkbox>
