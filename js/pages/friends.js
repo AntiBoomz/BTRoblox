@@ -1,7 +1,7 @@
 "use strict"
 
 const myFriends = () => {
-	if(settings.friends.alwaysShowUnfriend) {
+	if(SETTINGS.get("friends.alwaysShowUnfriend")) {
 		modifyTemplate("friends-page-base", template => {
 			const menu = template.$find(".avatar-card-menu")
 			if(!menu) { return }

@@ -981,7 +981,7 @@ const HoverPreview = (() => {
 
 	return {
 		register(selector, thumbContSelector) {
-			if(settings.general.hoverPreviewMode === "never") { return }
+			if(SETTINGS.get("general.hoverPreviewMode") === "never") { return }
 
 			document.$on("mouseover", `${selector} ${thumbContSelector}`, async ev => {
 				const thumbCont = ev.currentTarget

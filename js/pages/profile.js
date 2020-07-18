@@ -1,7 +1,7 @@
 "use strict"
 
 pageInit.profile = function(userId) {
-	if(!settings.profile.enabled) { return }
+	if(!SETTINGS.get("profile.enabled")) { return }
 
 	const newCont = html`
 	<div class=btr-profile-container>
@@ -72,7 +72,7 @@ pageInit.profile = function(userId) {
 		</div>
 	</div>`
 
-	const onlineStatus = settings.profile.lastOnline && $.fetch(`https://api.roblox.com/users/${userId}/onlinestatus/`)
+	const onlineStatus = SETTINGS.get("profile.lastOnline") && $.fetch(`https://api.roblox.com/users/${userId}/onlinestatus/`)
 	const bodyWatcher = document.$watch("body", body => body.classList.add("btr-profile")).$then()
 
 	bodyWatcher.$watch(".profile-container").$then()
@@ -199,7 +199,7 @@ pageInit.profile = function(userId) {
 			stats.closest(".profile-statistics").remove()
 			newCont.$find(".placeholder-stats").replaceWith(stats)
 
-			if(settings.profile.lastOnline) {
+			if(SETTINGS.get("profile.lastOnline")) {
 				stats.classList.add("btr-lastOnline")
 
 				const label = html`
@@ -854,7 +854,7 @@ pageInit.profile = function(userId) {
 			oldContainer.remove()
 		}
 
-		if(settings.profile.embedInventoryEnabled && +userId !== 1) {
+		if(SETTINGS.get("profile.embedInventoryEnabled") && +userId !== 1) {
 			const cont = html`<div></div>`
 			const iframe = html`<iframe id="btr-injected-inventory" src="/users/${userId}/inventory" scrolling="no" sandbox="allow-same-origin allow-scripts allow-top-navigation">`
 

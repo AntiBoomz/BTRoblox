@@ -516,7 +516,7 @@ const Navigation = (() => {
 				list.prepend(html`<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>`)
 			})
 
-		if(settings.general.robuxToUSD) {
+		if(SETTINGS.get("general.robuxToUSD")) {
 			headerWatcher.$watch("#nav-robux-balance", bal => {
 				const btn = html`
 				<li><a href=/develop/developer-exchange class=rbx-menu-item></a></li>`
@@ -537,7 +537,7 @@ const Navigation = (() => {
 			})
 		}
 
-		if(!settings.navigation.enabled) {
+		if(!SETTINGS.get("navigation.enabled")) {
 			return
 		}
 

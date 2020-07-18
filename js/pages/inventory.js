@@ -53,7 +53,7 @@ pageInit.inventory_pre = function() {
 }
 
 pageInit.inventory = function() {
-	if(settings.general.robuxToUSD) {
+	if(SETTINGS.get("general.robuxToUSD")) {
 		modifyTemplate("assets-explorer", template => {
 			const label = template.$find(".item-card-price")
 			if(!label) { return }
@@ -71,15 +71,15 @@ pageInit.inventory = function() {
 		})
 	}
 
-	if(settings.general.hoverPreview) {
+	if(SETTINGS.get("general.hoverPreview")) {
 		OptionalLoader.loadPreviewer().then(() => {
 			HoverPreview.register(".item-card", ".item-card-thumb-container")
 		})
 	}
 
-	if(!settings.inventory.enabled) { return }
+	if(!SETTINGS.get("inventory.enabled")) { return }
 
-	if(settings.inventory.inventoryTools) {
+	if(SETTINGS.get("inventory.inventoryTools")) {
 		const validAssetTypes = [
 			10, 13, 40, 3, 24,
 			2, 11, 12

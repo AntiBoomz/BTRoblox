@@ -232,7 +232,7 @@ function Linkify(elem) {
 }
 
 const FormatNumber = num => String(num).replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/yg, "$1,")
-const GetRobuxRatio = () => DOLLARS_TO_ROBUX_RATIOS[settings.general.robuxToUSDRate]
+const GetRobuxRatio = () => DOLLARS_TO_ROBUX_RATIOS[SETTINGS.get("general.robuxToUSDRate")]
 const RobuxToUSD = amt => FormatNumber((Math.ceil((amt * GetRobuxRatio()[0]) / GetRobuxRatio()[1] * 100) / 100).toFixed(2))
 
 const FormatUrlName = (name, def = "Name") => encodeURIComponent(name.replace(/[']/g, "").replace(/\W+/g, "-").replace(/^-+|-+$/g, "") || def)
@@ -328,9 +328,9 @@ pageInit.common = () => {
 
 	const headWatcher = document.$watch(">head").$then()
 	const bodyWatcher = document.$watch(">body", body => {
-		body.classList.toggle("btr-no-hamburger", settings.navigation.noHamburger)
-		body.classList.toggle("btr-hide-ads", settings.general.hideAds)
-		body.classList.toggle("btr-small-chat-button", settings.general.chatEnabled && settings.general.smallChatButton)
+		body.classList.toggle("btr-no-hamburger", SETTINGS.get("navigation.noHamburger"))
+		body.classList.toggle("btr-hide-ads", SETTINGS.get("general.hideAds"))
+		body.classList.toggle("btr-small-chat-button", SETTINGS.get("general.chatEnabled") && SETTINGS.get("general.smallChatButton"))
 
 		if(currentPage) {
 			body.dataset.btrPage = currentPage.name
@@ -360,12 +360,12 @@ pageInit.common = () => {
 		}
 	})
 
-	if(settings.general.fastSearch) {
+	if(SETTINGS.get("general.fastSearch")) {
 		try { initFastSearch() }
 		catch(ex) { console.error(ex) }
 	}
 	
-	if(settings.general.hideAds) {
+	if(SETTINGS.get("general.hideAds")) {
 		try { initAdBlock() }
 		catch(ex) { console.error(ex) }
 	}
@@ -407,11 +407,11 @@ pageInit.common = () => {
 		SETTINGS.onChange("general.disableRobloxThemes", updateThemes)
 	}
 
-	if(!settings.general.chatEnabled) {
+	if(!SETTINGS.get("general.chatEnabled")) {
 		bodyWatcher.$watch("#chat-container", cont => cont.remove())
 	}
 
-	if(settings.general.fixAudioPreview) {
+	if(SETTINGS.get("general.fixAudioPreview")) {
 		InjectJS.listen("fixAudioPreview", async url => {
 			if(!url.match(/^https?:\/\/c\d\.rbxcdn\.com\/[0-9a-f]{32}$/)) {
 				console.log("bad url")

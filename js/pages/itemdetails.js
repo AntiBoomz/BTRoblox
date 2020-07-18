@@ -4,10 +4,10 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 	const isPreviewable = AnimationPreviewAssetTypeIds.includes(assetTypeId) || WearableAssetTypeIds.includes(assetTypeId)
 	const isPackage = assetTypeId === 32
 
-	if(settings.itemdetails.itemPreviewer && (isPackage || isBundle || isPreviewable)) {
+	if(SETTINGS.get("itemdetails.itemPreviewer") && (isPackage || isBundle || isPreviewable)) {
 		await OptionalLoader.loadPreviewer()
 
-		const previewerMode = settings.itemdetails.itemPreviewerMode
+		const previewerMode = SETTINGS.get("itemdetails.itemPreviewerMode")
 		const preview = new ItemPreviewer()
 
 		let playedAnim = false
@@ -184,7 +184,7 @@ const getCurrentValidAssetUrl = async (assetId, assetTypeId) => currentValidAsse
 })
 
 const initExplorer = async (assetId, assetTypeId, isBundle) => {
-	if(!settings.itemdetails.explorerButton || !isBundle && InvalidExplorableAssetTypeIds.includes(assetTypeId)) {
+	if(!SETTINGS.get("itemdetails.explorerButton") || !isBundle && InvalidExplorableAssetTypeIds.includes(assetTypeId)) {
 		return
 	}
 	
@@ -251,7 +251,7 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 }
 
 const initDownloadButton = async (assetId, assetTypeId) => {
-	if(!settings.itemdetails.downloadButton || InvalidDownloadableAssetTypeIds.includes(assetTypeId)) {
+	if(!SETTINGS.get("itemdetails.downloadButton") || InvalidDownloadableAssetTypeIds.includes(assetTypeId)) {
 		return
 	}
 
@@ -353,7 +353,7 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 const initContentButton = async (assetId, assetTypeId) => {
 	const assetTypeContainer = ContainerAssetTypeIds[assetTypeId]
 	
-	if(!settings.itemdetails.contentButton || !assetTypeContainer) {
+	if(!SETTINGS.get("itemdetails.contentButton") || !assetTypeContainer) {
 		return
 	}
 
@@ -385,7 +385,7 @@ const initContentButton = async (assetId, assetTypeId) => {
 }
 
 pageInit.itemdetails = function(category, assetId) {
-	if(settings.general.robuxToUSD) {
+	if(SETTINGS.get("general.robuxToUSD")) {
 		document.$watch(".icon-robux-price-container .text-robux-lg", label => {
 			const usd = RobuxToUSD(label.textContent.replace(/,/g, ""))
 			label.after(
@@ -424,13 +424,13 @@ pageInit.itemdetails = function(category, assetId) {
 		})
 	}
 
-	if(settings.general.hoverPreview) {
+	if(SETTINGS.get("general.hoverPreview")) {
 		OptionalLoader.loadPreviewer().then(() => {
 			HoverPreview.register(".item-card", ".item-card-thumb-container")
 		})
 	}
 
-	if(!settings.itemdetails.enabled) { return }
+	if(!SETTINGS.get("itemdetails.enabled")) { return }
 
 	document.$watch("#AjaxCommentsContainer").$then().$watch(".comments").$then()
 		.$watchAll(".comment-item", comment => {
@@ -443,7 +443,7 @@ pageInit.itemdetails = function(category, assetId) {
 		})
 	
 
-	if(settings.itemdetails.addOwnersList) {
+	if(SETTINGS.get("itemdetails.addOwnersList")) {
 		let wasOwnersListSetup = false
 		
 		const setupOwnersList = (parent, name, ownerAssetId = assetId) => {
@@ -662,7 +662,7 @@ pageInit.itemdetails = function(category, assetId) {
 		}
 	}
 
-	if(settings.itemdetails.showCreatedAndUpdated && category !== "bundles") {
+	if(SETTINGS.get("itemdetails.showCreatedAndUpdated") && category !== "bundles") {
 		const created = html`
 		<div class="clearfix item-field-container">
 			<div class="text-label text-overflow field-label">Created</div>
@@ -727,7 +727,7 @@ pageInit.itemdetails = function(category, assetId) {
 		}
 	}
 	
-	if(settings.itemdetails.showSales) {
+	if(SETTINGS.get("itemdetails.showSales")) {
 		const elem = html`
 		<div class="clearfix item-field-container">
 			<div class="text-label text-overflow field-label">Sales</div>
@@ -795,7 +795,7 @@ pageInit.itemdetails = function(category, assetId) {
 			initContentButton(assetId, assetTypeId)
 		})
 
-		if(settings.itemdetails.imageBackgrounds && (assetTypeId === 1 || assetTypeId === 13)) {
+		if(SETTINGS.get("itemdetails.imageBackgrounds") && (assetTypeId === 1 || assetTypeId === 13)) {
 			itemCont.$watch("#AssetThumbnail", thumb => {
 				const btns = html`
 				<div class="btr-bg-btn-cont">
@@ -829,7 +829,7 @@ pageInit.itemdetails = function(category, assetId) {
 			})
 		}
 
-		if(settings.itemdetails.whiteDecalThumbnailFix && assetTypeId === 13) {
+		if(SETTINGS.get("itemdetails.whiteDecalThumbnailFix") && assetTypeId === 13) {
 			const emptyImg = "https://t3.rbxcdn.com/a95654871aa1ffd3c6fc38e1ac3bf369"
 			let fixingThumb = false
 			let newThumb

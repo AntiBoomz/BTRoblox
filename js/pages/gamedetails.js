@@ -1,7 +1,7 @@
 "use strict"
 
 pageInit.gamedetails = function(placeId) {
-	if(!settings.gamedetails.enabled) { return }
+	if(!SETTINGS.get("gamedetails.enabled")) { return }
 
 	const newContainer = html`
 	<div class="col-xs-12 btr-game-main-container section-content">
@@ -11,7 +11,7 @@ pageInit.gamedetails = function(placeId) {
 	const midContainer = html`
 	<div class="col-xs-12 btr-mid-container"></div>`
 
-	if(settings.general.robuxToUSD) {
+	if(SETTINGS.get("general.robuxToUSD")) {
 		document.$watch("#rbx-passes-container").$then()
 			.$watchAll(".list-item", item => {
 				const label = item.$find(".text-robux")
@@ -126,7 +126,7 @@ pageInit.gamedetails = function(placeId) {
 				label.innerHTML = htmlstring`<a href="${url}">${label.textContent}</a>`
 				row.$find("p.para-overflow").classList.remove("para-overflow")
 
-				if(settings.gamedetails.showBadgeOwned) {
+				if(SETTINGS.get("gamedetails.showBadgeOwned")) {
 					const match = url.match(/(?:catalog|badges)\/(\d+)\//)
 					if(!match) { return }
 

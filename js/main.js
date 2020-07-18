@@ -1,12 +1,12 @@
 "use strict"
 
 const pageInit = {}
-const cssFiles = ["main.css"]
-const themeStyles = []
-
-let settings
 let currentPage
 
+//
+
+const cssFiles = ["main.css"]
+const themeStyles = []
 let mainStyleSheet
 
 const injectCSS = (...paths) => {
@@ -48,6 +48,8 @@ const updateTheme = theme => {
 		themeStyles.push(...injectCSS(...cssFiles.map(file => `${theme}/${file}`)))
 	}
 }
+
+//
 
 const InjectJS = {
 	queue: [],
@@ -143,6 +145,8 @@ const OptionalLoader = {
 	loadSettings() { return this._loadLib("settings") }
 }
 
+//
+
 const templatePromises = {}
 const domParser = new DOMParser()
 
@@ -190,18 +194,27 @@ function modifyTemplate(idList, callback) {
 	})
 }
 
+//
 
 function Init() {
-	// Inject theme
+	InjectJS.send(
+		"INIT",
+		SETTINGS.serialize(),
+		currentPage ? currentPage.name : null,
+		currentPage ? currentPage.matches : null,
+		IS_DEV_MODE
+	)
 	
-	updateTheme(settings.general.theme)
+	//
+	
+	updateTheme(SETTINGS.get("general.theme"))
 	SETTINGS.onChange("general.theme", updateTheme)
 
 	//
 
 	try { pageInit.common() }
 	catch(ex) { console.error(ex) }
-
+	
 	if(currentPage && pageInit[currentPage.name]) {
 		try { pageInit[currentPage.name].apply(currentPage, currentPage.matches) }
 		catch(ex) { console.error(ex) }
@@ -219,8 +232,6 @@ $.setImmediate(() => {
 		return
 	}
 
-	//
-
 	if(document.documentElement.dataset.btrLoaded) {
 		return
 	}
@@ -230,6 +241,7 @@ $.setImmediate(() => {
 	//
 
 	currentPage = GET_PAGE(window.location.pathname)
+
 
 	if(currentPage) { cssFiles.push(...currentPage.css) }
 	injectCSS(...cssFiles)
@@ -241,6 +253,7 @@ $.setImmediate(() => {
 	const scriptParent = document.head || document.documentElement
 	scriptParent.prepend(script)
 
+
 	if(currentPage && pageInit[`${currentPage.name}_pre`]) {
 		try { pageInit[`${currentPage.name}_pre`].apply(currentPage, currentPage.matches) }
 		catch(ex) { console.error(ex) }
@@ -248,28 +261,7 @@ $.setImmediate(() => {
 	
 	//
 
-	SETTINGS.load(_settings => {
-		settings = JSON.parse(JSON.stringify(_settings))
-
-		// Change settings to be name: value
-		Object.values(settings).forEach(group => {
-			Object.entries(group).forEach(([name, setting]) => {
-				group[name] = setting.value
-			})
-		})
-
-		InjectJS.send(
-			"INIT",
-			settings,
-			currentPage ? currentPage.name : null,
-			currentPage ? currentPage.matches : null,
-			IS_DEV_MODE
-		)
-		
-		Init()
-	})
-
-	//
+	SETTINGS.load(Init)
 
 	PERMISSIONS.hasHostAccess().then(hasAccess => {
 		if(hasAccess) {

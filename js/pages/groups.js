@@ -3,19 +3,19 @@
 {
 	function enableRedesign() {
 		document.$watch("body", body => {
-			body.classList.toggle("btr-redesign", settings.groups.modifyLayout)
-			body.classList.toggle("btr-hidePayout", settings.groups.hidePayout)
-			body.classList.toggle("btr-hideBigSocial", settings.groups.hideBigSocial)
+			body.classList.toggle("btr-redesign", SETTINGS.get("groups.modifyLayout"))
+			body.classList.toggle("btr-hidePayout", SETTINGS.get("groups.hidePayout"))
+			body.classList.toggle("btr-hideBigSocial", SETTINGS.get("groups.hideBigSocial"))
 		})
 
-		if(settings.groups.modifySmallSocialLinksTitle) {
+		if(SETTINGS.get("groups.modifySmallSocialLinksTitle")) {
 			modifyTemplate(["social-link-icon-list", "social-link-icon"], (listTemplate, iconTemplate) => {
 				iconTemplate.$find("a").title = `{{ $ctrl.title || $ctrl.type }}`
 				listTemplate.$find("social-link-icon").title = "socialLink.title"
 			})
 		}
 
-		if(settings.groups.modifyLayout) {
+		if(SETTINGS.get("groups.modifyLayout")) {
 			modifyTemplate(["group-base", "group-games", "group-about"], (baseTemplate, gamesTemplate, aboutTemplate) => {
 				const list = baseTemplate.$find("#horizontal-tabs")
 
@@ -62,14 +62,14 @@
 			})
 		}
 
-		if(settings.groups.selectedRoleCount) {
+		if(SETTINGS.get("groups.selectedRoleCount")) {
 			modifyTemplate("group-members-list", template => {
 				const label = template.$find(".group-dropdown > button .rbx-selection-label")
 				label.after(html`<span class=btr-role-member-count title="{{ $ctrl.data.currentRoleMemberCount | number }}" ng-if="$ctrl.data.currentRoleMemberCount>0">({{ $ctrl.data.currentRoleMemberCount | abbreviate }})</span>`)
 			})
 		}
 
-		if(settings.general.enableContextMenus) {
+		if(SETTINGS.get("general.enableContextMenus")) {
 			modifyTemplate("group-members-list", template => {
 				template.$find(".dropdown-menu li").dataset.btrRank = `{{ role.rank }}`
 			})
@@ -112,7 +112,7 @@
 			})
 		}
 
-		if(settings.groups.pagedGroupWall) {
+		if(SETTINGS.get("groups.pagedGroupWall")) {
 			modifyTemplate("group-wall", template => {
 				template.firstElementChild.setAttribute("infinite-scroll-disabled", "true")
 
@@ -131,7 +131,7 @@
 			})
 		}
 
-		if(settings.groups.groupWallRanks) {
+		if(SETTINGS.get("groups.groupWallRanks")) {
 			modifyTemplate("group-comments", template => {
 				const labels = template.$findAll(".list-body > .text-name")
 				labels[labels.length - 1].after(html`<span class="btr-grouprank text-label">({{post.poster.role.name}})</span>`)
@@ -140,13 +140,13 @@
 	}
 
 	pageInit.groups = function() {
-		if(settings.general.hoverPreview) {
+		if(SETTINGS.get("general.hoverPreview")) {
 			OptionalLoader.loadPreviewer().then(() => {
 				HoverPreview.register(".item-card", ".item-card-thumb-container")
 			})
 		}
 
-		if(settings.groups.redesign) {
+		if(SETTINGS.get("groups.redesign")) {
 			enableRedesign()
 		}
 	}

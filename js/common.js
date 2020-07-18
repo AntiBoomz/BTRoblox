@@ -63,7 +63,7 @@ const SETTINGS = {
 		general: {
 			theme: { default: true, value: "default", validValues: ["default", "simblk", "sky", "red", "night"] },
 			disableRobloxThemes: { default: true, value: false },
-			
+
 			hideAds: { default: true, value: true },
 			chatEnabled: { default: true, value: true },
 			smallChatButton: { default: true, value: true },
@@ -650,7 +650,7 @@ Object.assign(SETTINGS, {
 			})
 		}
 
-		this._loadPromise.then(() => fn(this.loadedSettings))
+		this._loadPromise.then(() => fn())
 	},
 	
 	_getSetting(path, root) {
@@ -729,6 +729,21 @@ Object.assign(SETTINGS, {
 
 	hasSetting(settingPath) {
 		return !!this._getSetting(settingPath, this.loadedSettings)
+	},
+	
+	serialize() {
+		if(!this.loaded) { throw new Error("Settings are not loaded") }
+		
+		const settings = JSON.parse(JSON.stringify(this.loadedSettings))
+
+		// Change settings to be name: value
+		Object.values(settings).forEach(group => {
+			Object.entries(group).forEach(([name, setting]) => {
+				group[name] = setting.value
+			})
+		})
+
+		return settings
 	},
 
 	get(settingPath) {

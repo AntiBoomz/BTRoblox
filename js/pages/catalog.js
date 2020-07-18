@@ -1,7 +1,7 @@
 "use strict"
 
 pageInit.catalog = function() {
-	if(settings.general.robuxToUSD) {
+	if(SETTINGS.get("general.robuxToUSD")) {
 		modifyTemplate("item-card", template => {
 			template.$findAll(".item-card-price").forEach(label => {
 				label.style.display = "flex"
@@ -19,13 +19,13 @@ pageInit.catalog = function() {
 		})
 	}
 
-	if(settings.general.hoverPreview) {
+	if(SETTINGS.get("general.hoverPreview")) {
 		OptionalLoader.loadPreviewer().then(() => {
 			HoverPreview.register(".item-card", ".item-card-thumb-container")
 		})
 	}
 
-	if(!settings.catalog.enabled) { return }
+	if(!SETTINGS.get("catalog.enabled")) { return }
 	document.$watch("body", body => body.classList.add("btr-catalog"))
 
 	modifyTemplate("item-card", template => {
@@ -62,7 +62,7 @@ pageInit.catalog = function() {
 		}
 	})
 
-	if(settings.catalog.showOwnedAssets) {
+	if(SETTINGS.get("catalog.showOwnedAssets")) {
 		const updateOwnedAssets = ownedAssets => {
 			Object.entries(ownedAssets).forEach(([key, isOwned]) => {
 				const elems = document.$findAll(`.item-card-thumb-container[data-btr-owned-id="${key}"]`)
