@@ -25,6 +25,12 @@
 			"js/background/messaging.js"
 		]
 	},
+	
+	"browser_specific_settings": {
+		"gecko": {
+			"id": "btroblox@antiboomz.com"
+		}
+	},
 
 	"permissions": [
 		"*://*.roblox.com/",
