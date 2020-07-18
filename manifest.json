@@ -73,9 +73,7 @@
 				"js/pages/messages.js",
 				"js/pages/money.js",
 				"js/pages/placeconfig.js",
-				"js/pages/profile.js",
-				
-				"js/final.js"
+				"js/pages/profile.js"
 			],
 			"run_at": "document_start",
 			"all_frames": true

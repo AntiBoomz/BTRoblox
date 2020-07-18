@@ -4,9 +4,6 @@ const pageInit = {}
 const cssFiles = ["main.css"]
 const themeStyles = []
 
-let areAllContentScriptsLoaded = false
-let isInitDeferred = false
-
 let settings
 let currentPage
 
@@ -212,19 +209,27 @@ function Init() {
 }
 
 
-function PreInit() {
-	if(document.contentType !== "text/html") { return }
-	if(window.location.protocol.search(/^https?:$/) === -1) { return }
-	
-	if(IS_FIREFOX && document.readyState === "complete") { return } // Stop reloading extension
+$.setImmediate(() => {
+	if(document.contentType !== "text/html" || !window.location.protocol.startsWith("http")) {
+		return
+	}
 
-	const pathname = window.location.pathname
-	const exclude = EXCLUDED_PAGES.some(patt => new RegExp(patt, "i").test(pathname))
-	if(exclude) { return }
-
-	currentPage = GET_PAGE(pathname)
+	const exclude = EXCLUDED_PAGES.some(patt => new RegExp(patt, "i").test(window.location.pathname))
+	if(exclude) {
+		return
+	}
 
 	//
+
+	if(document.documentElement.dataset.btrLoaded) {
+		return
+	}
+
+	document.documentElement.dataset.btrLoaded = true
+
+	//
+
+	currentPage = GET_PAGE(window.location.pathname)
 
 	if(currentPage) { cssFiles.push(...currentPage.css) }
 	injectCSS(...cssFiles)
@@ -235,6 +240,11 @@ function PreInit() {
 	
 	const scriptParent = document.head || document.documentElement
 	scriptParent.prepend(script)
+
+	if(currentPage && pageInit[`${currentPage.name}_pre`]) {
+		try { pageInit[`${currentPage.name}_pre`].apply(currentPage, currentPage.matches) }
+		catch(ex) { console.error(ex) }
+	}
 	
 	//
 
@@ -256,11 +266,7 @@ function PreInit() {
 			IS_DEV_MODE
 		)
 		
-		if(areAllContentScriptsLoaded) {
-			Init()
-		} else {
-			isInitDeferred = true
-		}
+		Init()
 	})
 
 	//
@@ -299,6 +305,4 @@ function PreInit() {
 			header.after(btn)
 		})
 	})
-}
-
-PreInit()
+})
