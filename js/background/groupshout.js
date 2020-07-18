@@ -185,10 +185,6 @@
 			executeCheck()
 		}
 	}
-	
-	if(chrome && chrome.alarms) {
-		chrome.alarms.clearAll()
-	}
 
 	SETTINGS.load(onUpdate)
 	SETTINGS.onChange("groups.shoutAlerts", onUpdate)
