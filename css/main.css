@@ -897,7 +897,7 @@ body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
 	overflow: hidden;
 }
 
-.btr-preview-container-parent > :not(.btr-preview-container) {
+.btr-preview-container-parent > :not(.btr-preview-container):not(.btr-item-owned) {
 	opacity: 0 !important;
 	transition: none !important;
 }
