@@ -771,6 +771,11 @@ Object.assign(SETTINGS, {
 				this._localSet(`${groupName}.${settingName}`, setting.value, true, true)
 			})
 		})
+
+		if(IS_BACKGROUND_PAGE) {
+			this.loadError = false
+			this._save()
+		}
 	},
 
 	onChange(settingPath, fn) {
