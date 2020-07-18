@@ -4,7 +4,6 @@
 	chrome.browserAction.onClicked.addListener(tab => {
 		// Firefox doesn't seem to have any way to check if tab has host access
 		// So let's just call executeScript and open new tab if that fails /shrug
-
 		
 		chrome.tabs.executeScript(
 			tab.id,
@@ -15,11 +14,5 @@
 				}
 			}
 		)
-
-		PERMISSIONS.hasHostAccess().then(hasAccess => {
-			if(!hasAccess) {
-				PERMISSIONS.requestHostAccess()
-			}
-		})
 	})
 }

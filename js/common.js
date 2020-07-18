@@ -552,45 +552,6 @@ const MESSAGING = (() => {
 	}
 })()
 
-const PERMISSIONS = {
-	hostParams: {
-		origins: [
-			...MANIFEST.permissions.filter(x => x.includes("://")),
-			...MANIFEST.content_scripts.map(x => x.matches).reduce((a, b) => [...a, ...b])
-		]
-	},
-
-	init() {
-		if(IS_BACKGROUND_PAGE) {
-			MESSAGING.listen("hasHostAccess", (_, respond) => {
-				this.hasHostAccess().then(respond)
-			})
-
-			MESSAGING.listen("requestHostAccess", (_, respond) => {
-				this.requestHostAccess().then(respond)
-			})
-		}
-
-		return this
-	},
-
-	async hasHostAccess() {
-		if(IS_BACKGROUND_PAGE) {
-			return new Promise(resolve => chrome.permissions.contains(this.hostParams, bool => resolve(bool)))
-		}
-
-		return new Promise(resolve => MESSAGING.send("hasHostAccess", bool => resolve(bool)))
-	},
-
-	async requestHostAccess() {
-		if(IS_BACKGROUND_PAGE) {
-			return new Promise(resolve => chrome.permissions.request(this.hostParams, bool => resolve(bool)))
-		}
-
-		return new Promise(resolve => MESSAGING.send("requestHostAccess", bool => resolve(bool)))
-	}
-}.init()
-
 
 Object.assign(SETTINGS, {
 	_onChangeListeners: [],

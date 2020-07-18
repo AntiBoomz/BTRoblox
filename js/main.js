@@ -262,39 +262,4 @@ $.setImmediate(() => {
 	//
 
 	SETTINGS.load(Init)
-
-	PERMISSIONS.hasHostAccess().then(hasAccess => {
-		if(hasAccess) {
-			return
-		}
-
-		document.$watch("#header", header => {
-			const btn = html`<div class=btr-rha>Some permissions required for BTRoblox to function have been disabled. Click here to fix the issue.</div>`
-			let busy = false
-
-			btn.$on("click", () => {
-				if(btn.classList.contains("finished")) {
-					return window.location.reload()
-				}
-
-				if(busy) {
-					return
-				}
-
-				busy = true
-				PERMISSIONS.requestHostAccess().then(granted => {
-					if(!granted) {
-						busy = false
-						return
-					}
-					
-					btn.classList.add("finished")
-					
-					setTimeout(() => window.location.reload(), 500)
-				})
-			})
-
-			header.after(btn)
-		})
-	})
 })
