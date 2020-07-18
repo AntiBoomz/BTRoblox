@@ -645,7 +645,7 @@ a:not(.disabled) > .btr-icon-content:hover {
 
 .btr-owner-item .btr-owner-date {
 	font-size: 12px;
-	font-weight: bold;
+	font-weight: 500;
 	opacity: 0.5;
 
 	white-space: nowrap;
@@ -654,7 +654,7 @@ a:not(.disabled) > .btr-icon-content:hover {
 .btr-owner-item .btr-serial {
 	margin-right: 5px;
 	font-size: 16px;
-	font-weight: bold;
+	font-weight: 500;
 }
 
 .btr-owners-container .btr-see-more-owners {
