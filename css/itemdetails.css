@@ -661,3 +661,10 @@ a:not(.disabled) > .btr-icon-content:hover {
 	width: 100%;
 	margin-bottom: 12px;
 }
+
+/* Tweak recommendations */
+
+#recommendations-container .current-items > .layer {
+	padding: 0;
+	background: none;
+}

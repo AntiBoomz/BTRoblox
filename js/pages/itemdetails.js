@@ -451,7 +451,7 @@ pageInit.itemdetails = function(category, assetId) {
 			wasOwnersListSetup = true
 
 			const owners = html`
-			<div class=btr-owners-container>
+			<div class=btr-owners-container style=display:none>
 				<div class=container-header>
 					<h3>Owners</h3>
 				</div>
@@ -461,42 +461,49 @@ pageInit.itemdetails = function(category, assetId) {
 			</div>`
 
 			const ownersList = owners.$find(".section-content")
+			parent.before(owners)
 
-			parent.classList.add("btr-owners-parent")
-			parent.append(owners)
+			//
 
 			let firstLoaded = false
 			let isLoading = false
 			let cursor = ""
-			
-			parent.$watch(".container-header", header => {
-				const rBtn = html`<button class=btn-secondary-xs style=float:right;margin:2px;>${name}</button>`
-				const oBtn = html`<button class=btn-control-xs style=float:right;margin:2px;>Owners</button>`
-				header.append(rBtn, oBtn)
-				
-				oBtn.$on("click", () => {
-					parent.classList.add("btr-owners-active")
 
-					rBtn.classList.replace("btn-secondary-xs", "btn-control-xs")
-					oBtn.classList.replace("btn-control-xs", "btn-secondary-xs")
+			const btns = html`<div style="position: relative; float: right; height: 20px; margin-bottom: -20px;"></div>`
+			const parBtn = html`<button class="btn-secondary-xs active" style=float:right;margin:2px;>${name}</button>`
+			const ownBtn = html`<button class=btn-control-xs style=float:right;margin:2px;>Owners</button>`
 
-					owners.$find(".container-header").append(rBtn, oBtn)
+			btns.append(parBtn, ownBtn)
+			owners.before(btns)
 
-					if(!firstLoaded) {
-						loadOwners()
-					}
-				})
+			ownBtn.$on("click", () => {
+				parBtn.classList.replace("btn-secondary-xs", "btn-control-xs")
+				ownBtn.classList.replace("btn-control-xs", "btn-secondary-xs")
 
-				rBtn.$on("click", () => {
-					parent.classList.remove("btr-owners-active")
+				parBtn.classList.remove("active")
+				ownBtn.classList.add("active")
 
-					oBtn.classList.replace("btn-secondary-xs", "btn-control-xs")
-					rBtn.classList.replace("btn-control-xs", "btn-secondary-xs")
+				parent.style.display = "none"
+				owners.style.display = ""
 
-					header.append(rBtn, oBtn)
-				})
+				if(!firstLoaded) {
+					loadOwners()
+				}
 			})
 
+			parBtn.$on("click", () => {
+				ownBtn.classList.replace("btn-secondary-xs", "btn-control-xs")
+				parBtn.classList.replace("btn-control-xs", "btn-secondary-xs")
+
+				ownBtn.classList.remove("active")
+				parBtn.classList.add("active")
+
+				owners.style.display = "none"
+				parent.style.display = ""
+			})
+
+			//
+			
 			const seeMore = owners.$find(".btr-see-more-owners")
 
 			const createElement = ({ userId, userName, item }) => {
@@ -656,9 +663,11 @@ pageInit.itemdetails = function(category, assetId) {
 				}
 			)
 		} else {
-			document.$watch(".recommendations-container, #resellers", parent => {
-				setupOwnersList(parent, parent.$find("h3").textContent)
-			})
+			document.$watch("#item-container").$then()
+				.$watch(">asset-resale-pane, >#recommendations-container", parent => {
+					const title = parent.id === "recommendations-container" ? "Recommendations" : "Resellers"
+					setupOwnersList(parent, title)
+				})
 		}
 	}
 
