@@ -225,7 +225,7 @@ pageInit.profile = function(userId) {
 					const lastOnline = new Date(presence.LastOnline)
 
 					if(presence.PresenceType === 0) {
-						label.$find(".text-lead").textContent = `${lastOnline.$since()} ago`
+						label.$find(".text-lead").textContent = `${lastOnline.$since()}`
 					} else {
 						label.$find(".text-lead").textContent = "Now"
 					}
