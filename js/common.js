@@ -763,7 +763,11 @@ Object.assign(SETTINGS, {
 		if(!this.loaded) { throw new Error("Settings are not loaded") }
 
 		Object.entries(this.defaultSettings).forEach(([groupName, group]) => {
+			if(!(typeof groupName === "string" && group instanceof Object)) { return }
+
 			Object.entries(group).forEach(([settingName, setting]) => {
+				if(!(typeof settingName === "string" && setting instanceof Object)) { return }
+
 				this._localSet(`${groupName}.${settingName}`, setting.value, true, true)
 			})
 		})
