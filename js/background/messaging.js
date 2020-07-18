@@ -268,6 +268,10 @@ MESSAGING.listen({
 			.then(() => respond({}))
 	},
 
+	getSettings(_, respond) {
+		respond()
+	},
+
 	openSourceViewer(source) {
 		const id = Math.random().toString(16).slice(2).toUpperCase()
 		const key = `sourceViewerData_${id}`

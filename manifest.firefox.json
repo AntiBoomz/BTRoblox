@@ -28,7 +28,7 @@
 			"js/background/groupshout.js",
 			"js/background/contextmenu.js",
 			"js/background/browseraction.js",
-			"js/background/fetch.js"
+			"js/background/messaging.js"
 		]
 	},
 
