@@ -643,9 +643,14 @@ const SettingsDiv = (() => {
 				SETTINGS.onChange(settingPath, update)
 				update()
 
-				const requirePath = joinPaths(groupPath, select.getAttribute("require") || "enabled")
+				const requireAttr = select.getAttribute("require") || "enabled"
+				const requirePath = joinPaths(groupPath, requireAttr.replace(/^!/, ""))
+
 				if(SETTINGS.hasSetting(requirePath)) {
-					const requireUpdate = value => {
+					const requireUpdate = () => {
+						let value = SETTINGS.get(requirePath)
+						if(requireAttr.startsWith("!")) { value = !value }
+
 						if(value) {
 							select.removeAttribute("disabled")
 						} else {
@@ -654,12 +659,13 @@ const SettingsDiv = (() => {
 					}
 					
 					SETTINGS.onChange(requirePath, requireUpdate)
-					requireUpdate(SETTINGS.get(requirePath))
+					requireUpdate()
 				}
 			})
 
 			group.$findAll("checkbox").forEach(checkbox => {
-				const settingPath = joinPaths(groupPath, checkbox.getAttribute("path"))
+				const settingAttr = checkbox.getAttribute("path")
+				const settingPath = joinPaths(groupPath, settingAttr.replace(/^!/, ""))
 				settingsDone[settingPath] = true
 
 				checkbox.classList.add("btr-settings-checkbox")
@@ -676,7 +682,10 @@ const SettingsDiv = (() => {
 
 				if(SETTINGS.hasSetting(settingPath)) {
 					input.$on("change", () => {
-						SETTINGS.set(settingPath, input.checked)
+						let value = input.checked
+						if(settingAttr.startsWith("!")) { value = !value }
+
+						SETTINGS.set(settingPath, value)
 					})
 
 					const resetButton = html`<span class=btr-setting-reset-button>🗙</span>`
@@ -687,17 +696,23 @@ const SettingsDiv = (() => {
 					})
 
 					const update = () => {
-						input.checked = !!SETTINGS.get(settingPath)
+						let value = !!SETTINGS.get(settingPath)
+						if(settingAttr.startsWith("!")) { value = !value }
+
+						input.checked = value
 						resetButton.classList.toggle("disabled", SETTINGS.getIsDefault(settingPath))
 					}
 	
 					SETTINGS.onChange(settingPath, update)
 					update()
 	
-					const requirePath = joinPaths(groupPath, checkbox.getAttribute("require") || "enabled")
+					const requireAttr = checkbox.getAttribute("require") || "enabled"
+					const requirePath = joinPaths(groupPath, requireAttr.replace(/^!/, ""))
+	
 					if(SETTINGS.hasSetting(requirePath)) {
 						const requireUpdate = () => {
-							const value = SETTINGS.get(requirePath)
+							let value = SETTINGS.get(requirePath)
+							if(requireAttr.startsWith("!")) { value = !value }
 
 							if(value) {
 								input.removeAttribute("disabled")
