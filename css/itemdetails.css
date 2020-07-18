@@ -646,7 +646,7 @@ a:not(.disabled) > .btr-icon-content:hover {
 .btr-owner-item .btr-owner-date {
 	font-size: 12px;
 	font-weight: bold;
-	color: #b8b8b8;
+	opacity: 0.5;
 
 	white-space: nowrap;
 }
