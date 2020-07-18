@@ -576,6 +576,12 @@ Object.assign(SETTINGS, {
 		})
 
 		if(IS_BACKGROUND_PAGE) {
+			this._save()
+		}
+	},
+
+	_save() {
+		if(!this.loadError) {
 			STORAGE.set({ settings: this.loadedSettings })
 		}
 	},
@@ -588,30 +594,28 @@ Object.assign(SETTINGS, {
 					(key, value) => (key === "validValues" ? undefined : value)
 				))
 
-				const loadSettings = () => {
-					STORAGE.get(["settings"], data => {
-						const err = chrome.runtime.lastError
-						if(err) {
-							setTimeout(loadSettings, 2e3)
-							console.error(err)
-							return
+				STORAGE.get(["settings"], data => {
+					const err = chrome.runtime.lastError
+					if(err) {
+						this.loadError = err
+						console.error(err)
+					}
+
+					try {
+						if(data.settings) {
+							this._applySettings(data.settings)
 						}
+					} catch(ex) {
+						console.error(ex)
+					}
 
-						if(data && data.settings) {
-							try { this._applySettings(data.settings) }
-							catch(ex) { console.error(ex) }
-						}
-
-						this.loaded = true
-						resolve()
-					})
-				}
-
-				loadSettings()
+					this.loaded = true
+					resolve()
+				})
 			})
 		}
 
-		this._loadPromise.then(() => fn())
+		this._loadPromise.then(fn)
 	},
 	
 	_getSetting(path, root) {
@@ -670,7 +674,7 @@ Object.assign(SETTINGS, {
 		if(this.loaded) {
 			if(shouldSave) {
 				if(IS_BACKGROUND_PAGE) {
-					STORAGE.set({ settings: this.loadedSettings })
+					this._save()
 				} else {
 					MESSAGING.send("setSetting", { path: settingPath, value, default: !!isDefault })
 				}
