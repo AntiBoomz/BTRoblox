@@ -16,7 +16,7 @@ const Explorer = (() => {
 	}
 
 	const HiddenProperties = $.toDict(null,
-		"Tags", // Instance
+		"Tags", "AttributesSerialize", // Instance
 		"FormFactor", "Elasticity", "Friction", // Parts
 		"PhysicsData", "MeshData", "ChildData", "InitialSize", "PhysicalConfigData", // Meshparts / Unions
 		"ModelInPrimary", // Model
