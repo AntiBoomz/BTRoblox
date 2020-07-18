@@ -1,10 +1,6 @@
 "use strict"
 
 const INJECT_SCRIPT = () => {
-	const templates = {}
-	let settingsAreLoaded = false
-	let gtsNode
-
 	let settings
 	let currentPage
 	let matches
@@ -98,6 +94,58 @@ const INJECT_SCRIPT = () => {
 			}
 		}
 	}
+
+	const modifyTemplate = {
+		cachedResults: {},
+		templates: {},
+		caches: new Set(),
+
+		addTemplate(key) {
+			this.templates[key] = true
+
+			this.caches.forEach(cache => {
+				const oldValue = cache.get(key)
+				if(oldValue) {
+					this.putTemplate(cache, key, oldValue)
+				}
+			})
+		},
+
+		putTemplate($templateCache, key, value) {
+			let result
+
+			if(this.templates[key]) {
+				delete this.templates[key]
+
+				ContentJS.listen(`TEMPLATE_${key}`, changedValue => {
+					this.cachedResults[key] = changedValue
+					result = $templateCache.real_put(key, changedValue)
+				})
+
+				ContentJS.send(`TEMPLATE_${key}`, value)
+			} else {
+				if(key in this.cachedResults) {
+					value = this.cachedResults[key]
+				}
+
+				result = $templateCache.real_put(key, value)
+			}
+			
+			return result
+		},
+
+		addCache($templateCache) {
+			if(this.caches.has($templateCache)) {
+				return
+			}
+
+			this.caches.add($templateCache)
+
+			$templateCache.real_put = $templateCache.put
+			$templateCache.put = (key, value) => this.putTemplate($templateCache, key, value)
+		}
+	}
+	
 	
 	function PreInit() {
 		const onSet = (a, b, c) => {
@@ -114,51 +162,10 @@ const INJECT_SCRIPT = () => {
 			})
 		}
 
-		if(window.googletag) {
-			if(IS_DEV_MODE) {
-				console.warn("[BTRoblox] Failed to load inject before googletag")
-			}
-		} else {
-			onSet(window, "googletag", gtag => onSet(gtag, "cmd", () => {
-				let didIt = false
-
-				const proto = Node.prototype
-				const insertBefore = proto.insertBefore
-				proto.insertBefore = function(...args) {
-					const node = args[0]
-					if(node instanceof Node && node.nodeName === "SCRIPT" && node.src.includes("googletagservices.com")) {
-						didIt = true
-
-						if(!settingsAreLoaded) {
-							gtsNode = { this: this, args }
-							return
-						} else if(settings.general.hideAds) {
-							return
-						}
-					}
-
-					return insertBefore.apply(this, args)
-				}
-
-				setTimeout(() => {
-					proto.insertBefore = insertBefore
-
-					if(!didIt && IS_DEV_MODE) {
-						alert("Failed to rek googletag")
-					}
-				}, 0)
-			}))
-		}
-	}
-
-	function PostInit() {
-		if(gtsNode) {
-			if(!settings.general.hideAds) {
-				gtsNode.this.insertBefore(...gtsNode.args)
-			}
-
-			gtsNode = null
-		}
+		onSet(window, "angular", async angular => {
+			await Promise.resolve() // Wait for angular to load
+			angular.module("ng").run($templateCache => modifyTemplate.addCache($templateCache))
+		})
 	}
 
 	function DocumentReady() {
@@ -168,50 +175,6 @@ const INJECT_SCRIPT = () => {
 		}
 
 		if(window.angular) {
-			const templateCache = {}
-
-			angular.module("ng").run($templateCache => {
-				const put = $templateCache.put
-				const get = $templateCache.get
-
-				const inProcess = {}
-
-				$templateCache.put = (key, value) => {
-					let result
-
-					if(templates[key]) {
-						delete templates[key]
-
-						inProcess[key] = true
-
-						ContentJS.listen(`TEMPLATE_${key}`, changedValue => {
-							templateCache[key] = changedValue
-
-							result = put.call($templateCache, key, changedValue)
-							delete inProcess[key]
-						})
-
-						ContentJS.send(`TEMPLATE_${key}`, value)
-					} else {
-						if(key in templateCache) {
-							value = templateCache[key]
-						}
-
-						result = put.call($templateCache, key, value)
-					}
-					
-					return result
-				}
-
-				$templateCache.get = key => {
-					if(inProcess[key]) {
-						console.error(`Template modified (${key}) did not return in time`)
-					}
-
-					return get.call($templateCache, key)
-				}
-			})
-
 			if(settings.general.smallChatButton) {
 				HijackAngular("chat", {
 					chatController(func, args, argMap) {
@@ -665,7 +628,10 @@ const INJECT_SCRIPT = () => {
 		}
 	}
 
-	ContentJS.listen("TEMPLATE_INIT", key => templates[key] = true)
+	//
+
+	ContentJS.listen("TEMPLATE_INIT", key => modifyTemplate.addTemplate(key))
+
 	ContentJS.listen("linkify", cl => {
 		const target = $(`.${cl}`)
 		target.removeClass(cl)
@@ -675,9 +641,6 @@ const INJECT_SCRIPT = () => {
 
 	ContentJS.listen("INIT", (...initData) => {
 		[settings, currentPage, matches, IS_DEV_MODE] = initData
-		settingsAreLoaded = true
-
-		PostInit()
 
 		if(document.readyState === "loading") {
 			document.addEventListener("DOMContentLoaded", DocumentReady)
@@ -685,6 +648,8 @@ const INJECT_SCRIPT = () => {
 			DocumentReady()
 		}
 	})
+
+	//
 
 	PreInit()
 }
