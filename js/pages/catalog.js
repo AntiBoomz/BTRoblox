@@ -6,7 +6,6 @@ pageInit.catalog = function() {
 			template.$findAll(".item-card-price .text-robux-tile").forEach(label => {
 				const cashText = ` (${RobuxToCash.convertAngular("(item.lowestPrice||item.price)")})`
 				label.after(html`<span class=btr-robuxToCash-tile ng-if="${label.getAttribute("ng-if")}">${cashText}</span>`)
-				console.log(label.getAttribute("ng-bind"))
 				label.parentNode.setAttribute("title", `R$ {{::getDisplayPrice() || item.lowestPrice | number}}${cashText}`)
 			})
 		})
