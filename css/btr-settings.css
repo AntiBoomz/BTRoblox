@@ -452,13 +452,25 @@
 	padding: 1px 4px;
 	font-weight: 400;
 
-	max-width: 100%;
+	padding-right: 20px;
+	max-width: calc(100% - 20px);
 
 	color: #191919;
 	border: 1px solid rgb(169, 169, 169);
 
 	-webkit-appearance: none;
 	-moz-appearance: none;
+	
+	background-image:
+		linear-gradient(45deg, transparent 50%, gray 50%),
+		linear-gradient(135deg, gray 50%, transparent 50%);
+	background-position:
+		calc(100% - 10px) 11px,
+		calc(100% - 7px) 11px;
+	background-size:
+		3px 5px,
+		3px 5px;
+	background-repeat: no-repeat;
 }
 
 .btr-settings-content select option {

@@ -595,21 +595,19 @@ const SettingsDiv = (() => {
 				update()
 			}
 
-			group.$findAll("select").forEach(select => {
+			group.$findAll("select[path]").forEach(select => {
 				const settingPath = joinPaths(groupPath, select.getAttribute("path"))
 				settingsDone[settingPath] = true
 
 				const wrapper = html`<div class=btr-select></div>`
+				const resetButton = html`<span class=btr-setting-reset-button>🗙</span>`
 
 				if(select.hasAttribute("label")) {
 					wrapper.append(html`<label>${select.getAttribute("label") || ""}</label>`)
 				}
 
 				select.before(wrapper)
-				wrapper.append(select)
-
-				const resetButton = html`<span class=btr-setting-reset-button>🗙</span>`
-				wrapper.append(resetButton)
+				wrapper.append(select, resetButton)
 
 				resetButton.$on("click", () => {
 					SETTINGS.reset(settingPath)
@@ -628,7 +626,7 @@ const SettingsDiv = (() => {
 
 					const selected = select.selectedOptions[0]
 					if(selected && titleOption && titleOption !== selected) {
-						titleOption.textContent = titleOptionFormat.replace(/%opt%/g, () => selected.textContent) + " ▾"
+						titleOption.textContent = titleOptionFormat.replace(/%opt%/g, () => selected.textContent)
 						select.value = titleOption.value
 					}
 				}
