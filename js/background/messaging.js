@@ -5,8 +5,10 @@ let cachedXsrfToken
 
 const OwnerAssetCache = {
 	assetTypes: ["17", "18", "19", "41", "42", "43", "44", "45", "46", "47", "11", "12", "bundles", "8", "61"],
-	data: null,
 	assetMap: {},
+	data: null,
+
+	initialized: false,
 
 	resetData() {
 		this.data = {
@@ -210,6 +212,11 @@ const OwnerAssetCache = {
 	},
 
 	init() {
+		if(this.initialized) {
+			return
+		}
+		
+		this.initialized = true
 		this.resetData()
 
 		const savedCache = localStorage.getItem("OwnerAssetCache")
@@ -240,7 +247,7 @@ const OwnerAssetCache = {
 
 		return this
 	}
-}.init()
+}
 
 for (let i = localStorage.length; i--;) {
 	const key = localStorage.key(i)
@@ -252,6 +259,8 @@ for (let i = localStorage.length; i--;) {
 
 MESSAGING.listen({
 	filterOwnedAssets(assetIds, respond) {
+		OwnerAssetCache.init()
+
 		const map = {}
 
 		assetIds.forEach(x => {
