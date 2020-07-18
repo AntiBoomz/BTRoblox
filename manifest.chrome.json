@@ -18,7 +18,6 @@
 	},
 
 	"background": {
-		"persistent": false,
 		"scripts": [
 			"js/common.js",
 			"js/background/blogfeed.js",

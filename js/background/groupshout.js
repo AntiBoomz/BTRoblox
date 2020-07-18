@@ -6,8 +6,6 @@
 	let savingShoutCache = false
 	let previousCheck = 0
 	let checkInterval
-	let isSuspending = false
-	let wasEnabled
 
 	const loadShoutCache = () => {
 		if(shoutCachePromise) { return shoutCachePromise }
@@ -71,7 +69,7 @@
 	}
 
 	const executeCheck = async () => {
-		if(isSuspending || Date.now() - previousCheck < 10e3) { return }
+		if(Date.now() - previousCheck < 5e3) { return }
 		const checkTime = Date.now()
 		previousCheck = checkTime
 
@@ -98,6 +96,9 @@
 				lastChecked: checkTime
 			}
 
+			shoutCache[groupId] = newNotif
+			saveShoutCache()
+
 			const blacklist = shoutFilters.mode === "blacklist"
 			const includes = shoutFilters[shoutFilters.mode].includes(+groupId)
 
@@ -105,20 +106,13 @@
 			// Checking for time difference of > 100 because the updated timestamp seems to fluctuate slightly randomly
 			if(validShout && lastNotif && blacklist === !includes && (newNotif.body !== lastNotif.body || Math.abs(newNotif.timeStamp - lastNotif.timeStamp) > 100)) {
 				notifs.push(newNotif)
-			} else {
-				shoutCache[groupId] = newNotif
-				saveShoutCache()
 			}
 		})
 		
-		// Delete shout entries more than a month old
+		// Delete shout entries that haven't been checked in a week
 		// Just adding without ever removing makes me uncomfortable
 		Object.values(shoutCache).forEach(notif => {
-			if(!(notif instanceof Object)) {
-				return // skip version
-			}
-
-			if(checkTime - (notif.lastChecked || 0) > 2592e6 && !myGroups.find(x => +x.id === +notif.groupId)) {
+			if(notif instanceof Object && checkTime - (notif.lastChecked || 0) > 6048e5) {
 				delete shoutCache[notif.groupId]
 				saveShoutCache()
 			}
@@ -130,7 +124,7 @@
 		let hasExecutedNotifs = false
 
 		const execNotifs = async () => {
-			if(hasExecutedNotifs || previousCheck !== checkTime) { return }
+			if(hasExecutedNotifs) { return }
 			hasExecutedNotifs = true
 
 			notifs.forEach(notif => {
@@ -147,11 +141,7 @@
 				}
 
 				if(IS_FIREFOX) { delete params.requireInteraction }
-
 				chrome.notifications.create(`groupshout-${notif.groupId}`, params)
-				
-				shoutCache[notif.groupId] = notif
-				saveShoutCache()
 			})
 		}
 
@@ -187,52 +177,17 @@
 		}
 	})
 
-	if("onSuspend" in chrome.runtime) {
-		chrome.runtime.onSuspend.addListener(() => {
-			isSuspending = true
-		})
-	
-		chrome.runtime.onSuspendCanceled.addListener(() => {
-			isSuspending = false
-		})
-	}
-
-	const updateCheck = () => {
-		clearInterval(checkInterval)
-		checkInterval = setInterval(executeCheck, 10.1e3)
-		executeCheck()
-	}
-
-	if(IS_CHROME) {
-		chrome.alarms.onAlarm.addListener(updateCheck)
-	} else if(chrome && chrome.alarms) {
-		chrome.alarms.clearAll()
-	}
-
 	const onUpdate = () => {
-		const isEnabled = SETTINGS.get("groups.shoutAlerts")
-		
-		if(wasEnabled !== isEnabled) {
-			wasEnabled = isEnabled
+		clearInterval(checkInterval)
 
-			if(isEnabled) {
-				if(IS_CHROME) {
-					chrome.alarms.clearAll(() => {
-						for(let i = 0; i < 3; i++) {
-							chrome.alarms.create(`ShoutCheck${i}`, { periodInMinutes: 1, when: Date.now() + i * 20e3 })
-						}
-					})
-				}
-				
-				updateCheck()
-			} else {
-				if(IS_CHROME) {
-					chrome.alarms.clearAll()
-				}
-				
-				clearInterval(checkInterval)
-			}
+		if(SETTINGS.get("groups.shoutAlerts")) {
+			checkInterval = setInterval(executeCheck, 10e3)
+			executeCheck()
 		}
+	}
+	
+	if(chrome && chrome.alarms) {
+		chrome.alarms.clearAll()
 	}
 
 	SETTINGS.load(onUpdate)
