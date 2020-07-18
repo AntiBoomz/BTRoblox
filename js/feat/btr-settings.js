@@ -39,7 +39,7 @@ const SettingsDiv = (() => {
 						<checkbox label="Show Robux to Cash" path=robuxToUSD style="width: auto"></checkbox>
 						<div style="flex: 1 1 auto; text-align: right;">
 							<select id=btr-robuxToCash-currency></select>
-							<select id=btr-robuxToCash-rate style="margin-left: 8px"></select>
+							<select id=btr-robuxToCash-rate style="margin-left: 4px"></select>
 						</div>
 					</div>
 				</group>
