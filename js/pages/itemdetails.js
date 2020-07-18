@@ -469,7 +469,7 @@ pageInit.itemdetails = function(category, assetId) {
 			let isLoading = false
 			let cursor = ""
 
-			const btns = html`<div style="position: relative; float: right; height: 20px; margin-bottom: -20px;"></div>`
+			const btns = html`<div style="position: relative; float: right; height: 28px; margin-bottom: -28px; margin-top: 5px;"></div>`
 			const parBtn = html`<button class="btn-secondary-xs active" style=float:right;margin:2px;>${name}</button>`
 			const ownBtn = html`<button class=btn-control-xs style=float:right;margin:2px;>Owners</button>`
 
@@ -647,28 +647,31 @@ pageInit.itemdetails = function(category, assetId) {
 			seeMore.$on("click", loadOwners)
 		}
 
+		const itemIdPromise = new SyncPromise()
+
 		if(category === "bundles") {
 			document.$watch(
 				".bundle-items .item-card-link[href]",
 				x => !x.textContent.trim().startsWith("Rthro"),
 				firstItem => {
 					const itemId = firstItem.href.replace(/^.*roblox\.com\/[^/]+\/(\d+).*$/, "$1")
-
-					const h3 = $(".bundle-items > h3")
-					const header = html`<div class=container-header></div>`
-					h3.before(header)
-					header.append(h3)
-	
-					setupOwnersList(header.parentNode, "Included Items", itemId)
+					itemIdPromise.resolve(itemId)
 				}
 			)
 		} else {
-			document.$watch("#item-container").$then()
-				.$watch(">asset-resale-pane, >#recommendations-container", parent => {
-					const title = parent.id === "recommendations-container" ? "Recommendations" : "Resellers"
-					setupOwnersList(parent, title)
-				})
+			itemIdPromise.resolve(null)
 		}
+
+		itemIdPromise.then(itemId => {
+			document.$watch("#item-container").$then()
+				.$watch(">asset-resale-pane, >#recommendations-container,>.bundle-items", parent => {
+					const title = parent.id === "recommendations-container" ? "Recommended"
+						: parent.classList.contains("bundle-items") ? "Included Items"
+							: "Resellers"
+					
+					setupOwnersList(parent, title, itemId)
+				})
+		})
 	}
 
 	if(SETTINGS.get("itemdetails.showCreatedAndUpdated") && category !== "bundles") {
