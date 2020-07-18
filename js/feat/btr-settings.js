@@ -27,11 +27,11 @@ const SettingsDiv = (() => {
 						<checkbox label="Legacy Theme Compatibility Mode" path=disableRobloxThemes></checkbox>
 					</div>
 
-					<checkbox label="Hide Ads" path=hideAds></checkbox>
+					<checkbox label="Show Ads" path=!hideAds></checkbox>
 					<checkbox label="Fast User Search" path=general.fastSearch></checkbox>
 					<div>
-						<checkbox label="Show Chat" path=chatEnabled></checkbox>
-						<checkbox label="Minimize Chat" path=smallChatButton require=chatEnabled></checkbox>
+						<checkbox label="Show Chat" path=!hideChat></checkbox>
+						<checkbox label="Minimize Chat" path=smallChatButton require=!hideChat></checkbox>
 					</div>
 					<checkbox label="Show 'Copy Id' Context Items" path=enableContextMenus></checkbox>
 					<checkbox label="Lower Default Audio Volume" path=fixAudioVolume></checkbox>

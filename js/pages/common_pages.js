@@ -330,7 +330,7 @@ pageInit.common = () => {
 	const bodyWatcher = document.$watch(">body", body => {
 		body.classList.toggle("btr-no-hamburger", SETTINGS.get("navigation.noHamburger"))
 		body.classList.toggle("btr-hide-ads", SETTINGS.get("general.hideAds"))
-		body.classList.toggle("btr-small-chat-button", SETTINGS.get("general.chatEnabled") && SETTINGS.get("general.smallChatButton"))
+		body.classList.toggle("btr-small-chat-button", !SETTINGS.get("general.hideChat") && SETTINGS.get("general.smallChatButton"))
 
 		if(currentPage) {
 			body.dataset.btrPage = currentPage.name
@@ -407,7 +407,7 @@ pageInit.common = () => {
 		SETTINGS.onChange("general.disableRobloxThemes", updateThemes)
 	}
 
-	if(!SETTINGS.get("general.chatEnabled")) {
+	if(SETTINGS.get("general.hideChat")) {
 		bodyWatcher.$watch("#chat-container", cont => cont.remove())
 	}
 
