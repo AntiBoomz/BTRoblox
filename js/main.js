@@ -214,7 +214,7 @@ function Init() {
 
 	try { pageInit.common() }
 	catch(ex) { console.error(ex) }
-	
+
 	if(currentPage && pageInit[currentPage.name]) {
 		try { pageInit[currentPage.name].apply(currentPage, currentPage.matches) }
 		catch(ex) { console.error(ex) }
@@ -223,7 +223,7 @@ function Init() {
 
 
 $.setImmediate(() => {
-	if(document.contentType !== "text/html" || !window.location.protocol.startsWith("http")) {
+	if(document.contentType !== "text/html" || window.location.protocol === "blob") {
 		return
 	}
 
