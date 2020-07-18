@@ -453,7 +453,7 @@ pageInit.itemdetails = function(category, assetId) {
 	if(SETTINGS.get("itemdetails.addOwnersList")) {
 		let wasOwnersListSetup = false
 		
-		const setupOwnersList = (parent, name, ownerAssetId = assetId) => {
+		const setupOwnersList = (parent, name, ownerAssetId) => {
 			if(wasOwnersListSetup) { return }
 			wasOwnersListSetup = true
 
@@ -666,7 +666,7 @@ pageInit.itemdetails = function(category, assetId) {
 				}
 			)
 		} else {
-			itemIdPromise.resolve(null)
+			itemIdPromise.resolve(assetId)
 		}
 
 		itemIdPromise.then(itemId => {
