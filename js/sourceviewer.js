@@ -152,7 +152,6 @@ function parseSource(source) {
 	
 	while(true) {
 		const match = ParseRegex.exec(source)
-		console.log(match)
 		if(!match) {
 			break
 		}
