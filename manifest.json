@@ -4,7 +4,7 @@
 	"name": "BTRoblox (DEV)",
 	"short_name": "BTRoblox_DEV",
 	"description": "BTRoblox Development Edition!",
-	"version": "2.14.0",
+	"version": "1.0.0",
 	"author": "AntiBoomz",
 
 	"browser_action": {
@@ -28,7 +28,7 @@
 
 	"browser_specific_settings": {
 		"gecko": {
-			"id": "btroblox@antiboomz.com",
+			"id": "btroblox_dev@antiboomz.com",
 			"strict_min_version": "72.0"
 		}
 	},
