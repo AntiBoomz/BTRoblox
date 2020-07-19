@@ -35,22 +35,38 @@ pageInit.catalog = function() {
 
 	document.$on("mouseover", ".btr-item-card-container", ev => {
 		const self = ev.currentTarget
+
 		if(self.dataset.hoverStats) { return }
 		self.dataset.hoverStats = true
 
-		const matches = self.closest("a").href.match(/\/(catalog|bundles)\/(\d+)\//, "$1")
-		if(!matches) { return }
+		const anchor = self.closest("a")
+		const update = () => {
+			const matches = anchor.href.match(/\/(catalog|bundles)\/(\d+)\//, "$1")
+			if(!matches) { return }
+	
+			const assetType = matches[1]
+			const assetId = matches[2]
+			if(!Number.isSafeInteger(+assetId)) { return }
+	
+			if(assetType !== "bundles") {
+				getProductInfo(assetId).then(data => {
+					const ulabel = self.$find(".btr-updated-label")
+					ulabel.textContent = `${$.dateSince(data.Updated)}`
+					ulabel.parentNode.title = ulabel.parentNode.textContent
+				})
+			}
 
-		const assetType = matches[1]
-		const assetId = matches[2]
-		if(!Number.isSafeInteger(+assetId)) { return }
+			return true
+		}
 
-		if(assetType !== "bundles") {
-			getProductInfo(assetId).then(data => {
-				const ulabel = self.$find(".btr-updated-label")
-				ulabel.textContent = `${$.dateSince(data.Updated)}`
-				ulabel.parentNode.title = ulabel.parentNode.textContent
+		if(!update()) {
+			const observer = new MutationObserver(() => {
+				if(update()) {
+					observer.disconnect()
+				}
 			})
+
+			observer.observe(anchor, { attributes: true, attributeFilter: ["href"] })
 		}
 	})
 
