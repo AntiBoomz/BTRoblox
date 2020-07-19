@@ -125,20 +125,21 @@ function parseSource(source) {
 			let nextIndex = ParseRegex.lastIndex
 
 			while(true) {
-				nextIndex = source.indexOf(stringChar, nextIndex)
+				const index = source.indexOf(stringChar, nextIndex)
+				nextIndex = index + 1
 
-				if(nextIndex === -1 || nextIndex > newLine) {
+				if(index === -1 || index > newLine) {
 					appendUntil(newLine)
 					return
 				}
 
-				let pointer = nextIndex
+				let pointer = index
 				while(source[--pointer] === "\\") {
 					// do nothing
 				}
 
-				if((nextIndex - pointer) % 2 === 1) {
-					appendUntil(nextIndex + 1)
+				if((index - pointer) % 2 === 1) {
+					appendUntil(index + 1)
 					return
 				}
 			}
