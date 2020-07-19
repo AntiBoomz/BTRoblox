@@ -6,7 +6,7 @@
 	"description": "Enhance your Roblox experience!",
 	"version": "2.15.0",
 	"author": "AntiBoomz",
-	"minimum_chrome_version": "69",
+	"minimum_chrome_version": "80",
 	"incognito": "split",
 
 	"browser_action": {
