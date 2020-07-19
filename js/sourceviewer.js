@@ -61,7 +61,7 @@ const ScopeIn = new Set(["then", "do", "repeat", "function", "(", "{", "["])
 const ScopeOut = new Set(["end", "elseif", "until", ")", "}", "]"])
 const ScopeInOut = new Set(["else"])
 
-function parseSource(source) {
+async function parseSource(source, parent) {
 	const lines = []
 	let tableSelector = null
 	let tableSelectorState = false
@@ -73,6 +73,7 @@ function parseSource(source) {
 	const content = html`
 	<div class=content>
 	</div>`
+	parent.append(content)
 
 	const createLine = () => {
 		const elem = html`
@@ -150,8 +151,15 @@ function parseSource(source) {
 
 	current = createLine()
 	ParseRegex.lastIndex = 0
+
+	let lastYield = performance.now()
 	
 	while(true) {
+		if(performance.now() >= lastYield + 500) {
+			await new Promise(resolve => setTimeout(resolve, 100))
+			lastYield = performance.now()
+		}
+
 		const match = ParseRegex.exec(source)
 		if(!match) {
 			break
@@ -267,10 +275,9 @@ function parseSource(source) {
 	return content
 }
 
-const Init = source => {
-	const content = parseSource(source)
-	document.body.append(content)
-
+const Init = async source => {
+	await parseSource(source, document.body)
+	
 	$.all(".line-container.open,.line-container.closed").forEach(elem => {
 		elem.$find(".scope").$on("click", () => {
 			if(elem.classList.contains("open")) {
