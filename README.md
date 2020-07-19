@@ -40,6 +40,7 @@ API Docs
 | [clientsettings.roblox.com](https://clientsettings.roblox.com/docs) | Used by various Roblox clients to retrieve configuration information. |
 | [clientsettingscdn.roblox.com](https://clientsettingscdn.roblox.com/docs) | Used by various Roblox clients to retrieve configuration information. |
 | [contacts.roblox.com](https://contacts.roblox.com/docs) | Contacts and userTag management. |
+| [contentstore.roblox.com](https://contentstore.roblox.com/docs) | ApiSite to front the TemporaryStore for files before uploading to S3 |
 | [develop.roblox.com](https://develop.roblox.com/docs) | Game development configuration endpoints. |
 | [discussions.roblox.com](https://discussions.roblox.com/docs) | This Api is temporarily offline. |
 | [economy.roblox.com](https://economy.roblox.com/docs) | Endpoints related to transactions and currency. |
