@@ -54,7 +54,7 @@ const RobuxToCash = {
 		HKD: { symbol: "HK$", rates: [3800, 7800, 15800, 38900, 77900] },
 		TWD: { symbol: "NT$", rates: [15000, 30000, 59000, 161000, 321000] },
 		CLP: { symbol: "CLP", rates: [330000, 650000, 1290000, 3330000, 6700000] },
-		COP: { symbol: "COP", rates: [1490000, 2990000, 5790000, 15500000, 30900000] },
+		COP: { symbol: "COP", rates: [1490000, 2990000, 5790000, 15500000, 30900000] }
 	},
 	
 	OptionLists: {

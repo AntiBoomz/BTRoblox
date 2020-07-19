@@ -29,7 +29,7 @@ const Explorer = (() => {
 
 		// Super legacy stuff
 		"Model.Controller", "Part.Controller",
-		"ControllerFlagShown", "DraggingV1",
+		"ControllerFlagShown", "DraggingV1"
 	)
 
 	function fixNum(v) { return Math.round(v * 1e3) / 1e3 }
