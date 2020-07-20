@@ -221,8 +221,7 @@ function Init() {
 	}
 }
 
-
-$.setImmediate(() => {
+function PreInit() {
 	if(document.contentType !== "text/html" || window.location.protocol === "blob") {
 		return
 	}
@@ -252,6 +251,8 @@ $.setImmediate(() => {
 	const scriptParent = document.head || document.documentElement
 	scriptParent.prepend(script)
 
+	console.log(currentPage)
+	console.log(Object.keys(pageInit))
 	
 	if(currentPage && pageInit[`${currentPage.name}_pre`]) {
 		try { pageInit[`${currentPage.name}_pre`].apply(currentPage, currentPage.matches) }
@@ -259,4 +260,4 @@ $.setImmediate(() => {
 	}
 
 	SETTINGS.load(Init)
-})
+}
