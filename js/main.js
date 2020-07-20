@@ -250,9 +250,6 @@ function PreInit() {
 	
 	const scriptParent = document.head || document.documentElement
 	scriptParent.prepend(script)
-
-	console.log(currentPage)
-	console.log(Object.keys(pageInit))
 	
 	if(currentPage && pageInit[`${currentPage.name}_pre`]) {
 		try { pageInit[`${currentPage.name}_pre`].apply(currentPage, currentPage.matches) }
