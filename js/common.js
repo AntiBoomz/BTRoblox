@@ -119,83 +119,86 @@ const SETTINGS = {
 	defaultSettings: {
 		_version: 2,
 		general: {
-			theme: { default: true, value: "default", validValues: ["default", "simblk", "sky", "red", "night"] },
-			disableRobloxThemes: { default: true, value: false },
+			theme: { value: "default", validValues: ["default", "simblk", "sky", "red", "night"] },
+			disableRobloxThemes: { value: false },
 
-			hideAds: { default: true, value: false },
-			hideChat: { default: true, value: false },
-			smallChatButton: { default: true, value: true },
-			fastSearch: { default: true, value: true },
-			fixAudioPreview: { default: true, value: true },
-			fixAudioVolume: { default: true, value: true },
+			hideAds: { value: false },
+			hideChat: { value: false },
+			smallChatButton: { value: true },
+			fastSearch: { value: true },
+			fixAudioPreview: { value: true },
+			fixAudioVolume: { value: true },
 
-			robuxToUSD: { default: true, value: false },
-			robuxToUSDRate: { default: true, value: "devex", validValues: Object.keys(RobuxToCash.Options) },
+			robuxToUSD: { value: false },
+			robuxToUSDRate: { value: "devex", validValues: Object.keys(RobuxToCash.Options), hidden: true },
 	
-			hoverPreview: { default: true, value: true },
-			hoverPreviewMode: { default: true, value: "always", validValues: ["always", "never"] },
+			hoverPreview: { value: true },
+			hoverPreviewMode: { value: "always", validValues: ["always", "never"] },
 		
-			enableContextMenus: { default: true, value: true }
+			enableContextMenus: { value: true }
 		},
 		navigation: {
-			enabled: { default: true, value: true },
-			itemsV2: { default: true, value: "", hidden: true },
-			noHamburger: { default: true, value: true }
+			enabled: { value: true },
+			itemsV2: { value: "", hidden: true },
+			itemsReact: { value: [], hidden: true },
+			noHamburger: { value: true }
 		},
 		catalog: {
-			enabled: { default: true, value: true },
-			showOwnedAssets: { default: true, value: false }
+			enabled: { value: true },
+			showOwnedAssets: { value: false }
 		},
 		itemdetails: {
-			enabled: { default: true, value: true },
-			itemPreviewer: { default: true, value: true },
-			itemPreviewerMode: { default: true, value: "always", validValues: ["always", "animations", "never"] },
+			enabled: { value: true },
+			itemPreviewer: { value: true },
+			itemPreviewerMode: { value: "always", validValues: ["always", "animations", "never"] },
 
-			explorerButton: { default: true, value: true },
-			downloadButton: { default: true, value: true },
-			contentButton: { default: true, value: true },
+			explorerButton: { value: true },
+			downloadButton: { value: true },
+			contentButton: { value: true },
 
-			showSales: { default: true, value: true },
-			showCreatedAndUpdated: { default: true, value: true },
+			showSales: { value: true },
+			showCreatedAndUpdated: { value: true },
 
-			imageBackgrounds: { default: true, value: true },
-			whiteDecalThumbnailFix: { default: true, value: true },
+			imageBackgrounds: { value: true },
+			whiteDecalThumbnailFix: { value: true },
 
-			addOwnersList: { default: true, value: true }
+			addOwnersList: { value: true }
 		},
 		gamedetails: {
-			enabled: { default: true, value: true },
-			showBadgeOwned: { default: true, value: true },
-			addServerPager: { default: true, value: true }
+			enabled: { value: true },
+			showBadgeOwned: { value: true },
+			addServerPager: { value: true }
 		},
 		groups: {
-			shoutAlerts: { default: true, value: true },
-			redesign: { default: true, value: true },
-			modifyLayout: { default: true, value: true },
-			selectedRoleCount: { default: true, value: true },
-			pagedGroupWall: { default: true, value: true },
-			groupWallRanks: { default: true, value: true },
-			hidePayout: { default: true, value: true },
-			hideBigSocial: { default: true, value: true },
-			modifySmallSocialLinksTitle: { default: true, value: true }
+			shoutAlerts: { value: true },
+			redesign: { value: true },
+			modifyLayout: { value: true },
+			selectedRoleCount: { value: true },
+			pagedGroupWall: { value: true },
+			groupWallRanks: { value: true },
+			hidePayout: { value: true },
+			hideBigSocial: { value: true },
+			modifySmallSocialLinksTitle: { value: true }
 		},
 		inventory: {
-			enabled: { default: true, value: true },
-			inventoryTools: { default: true, value: true }
+			enabled: { value: true },
+			inventoryTools: { value: true }
 		},
 		profile: {
-			enabled: { default: true, value: true },
-			embedInventoryEnabled: { default: true, value: true },
-			lastOnline: { default: true, value: true }
+			enabled: { value: true },
+			embedInventoryEnabled: { value: true },
+			lastOnline: { value: true }
 		},
 		friends: {
-			alwaysShowUnfriend: { default: true, value: true }
+			alwaysShowUnfriend: { value: true }
 		},
 		placeConfigure: {
-			versionHistory: { default: true, value: true }
+			versionHistory: { value: true }
 		}
 	}
 }
+
+Object.values(SETTINGS.defaultSettings).forEach(list => list instanceof Object && Object.values(list).forEach(x => x.default = true))
 
 const EXCLUDED_PAGES = [
 	"^/userads/",
