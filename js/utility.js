@@ -32,11 +32,7 @@ const $ = function(selector) { return $.find(document, selector) }
 			const item = listeners[index]
 
 			if(!item.stopped) {
-				const elem = item.getter()
-
-				if(elem) {
-					item.resolve(elem)
-				}
+				item.execute()
 			}
 
 			if(item.stopped) {
@@ -149,6 +145,80 @@ const $ = function(selector) { return $.find(document, selector) }
 	let cachedXsrfToken
 	let DTF
 
+	const addWatch = (target, selector, filter, props, resolve) => {
+		const item = {
+			checked: new WeakSet(),
+			foundFirst: false,
+			stopped: false,
+
+			resolve(node) {
+				if(props && props.continuous) {
+					resolve(node, () => this.stopped = true)
+				} else {
+					this.stopped = true
+					resolve(node)
+				}
+			},
+
+			execute() {
+				if(!this.foundFirst) {
+					const elem = target.$find(selector)
+
+					if(!elem) {
+						return
+					}
+
+					this.foundFirst = true
+					this.checked.add(elem)
+
+					if(!filter || filter(elem)) {
+						item.resolve(elem)
+	
+						if(item.stopped) {
+							return
+						}
+					}
+				}
+
+				const matches = target.$findAll(selector)
+
+				for(let index = 0, len = matches.length; index < len; index++) {
+					const match = matches[index]
+
+					if(!this.checked.has(match)) {
+						this.checked.add(match)
+
+						if(!filter || filter(match)) {
+							this.resolve(match)
+
+							if(this.stopped) {
+								return
+							}
+						}
+					}
+				}
+			}
+		}
+
+		item.execute()
+
+		if(!item.stopped) {
+			let observer = Observers.get(target)
+
+			if(!observer) {
+				observer = new MutationObserver(handleMutations)
+				Observers.set(target, observer)
+
+				observer.listeners = []
+				observer.target = target
+
+				observer.observe(target, { childList: true, subtree: true })
+			}
+
+			observer.listeners.push(item)
+		}
+	}
+
 	Object.assign($, {
 		ready(fn) {
 			if(document.readyState !== "loading") {
@@ -225,8 +295,9 @@ const $ = function(selector) { return $.find(document, selector) }
 			wrap.append(self)
 		},
 
-		watch(target, selectors, filter, callback) {
-			if(!callback) {
+		watch(target, selectors, filter, callback, props) {
+			if(typeof callback !== "function") {
+				props = callback
 				callback = filter
 				filter = null
 			}
@@ -239,92 +310,29 @@ const $ = function(selector) { return $.find(document, selector) }
 				selectors = [selectors]
 			}
 
-			const promises = selectors.map(selector => new SyncPromise(resolve => {
-				const directMatch = selector.match(/^\s*>\s*((?:\.|#)?[\w-]+)\s*$/)
+			let finishPromise
 
-				if(directMatch) {
-					const match = directMatch[1]
-
-					target.$watchAll(match, (node, disable) => {
-						if(filter && !filter(node)) { return }
-						disable()
-						resolve(node)
-					})
-					
-					return
+			if(props && props.continuous) {
+				if(selectors.length !== 1) {
+					throw new TypeError("Multiple selectors with continuous watch")
 				}
 
-				const item = {
-					stopped: false,
-
-					resolve(node) {
-						this.stopped = true
-						resolve(node)
-					},
-
-					getter() {
-						const elem = target.$find(selector)
-						if(!elem) {
-							return
-						}
-
-						if(filter && !filter(elem)) {
-							const checked = new WeakSet()
-							checked.add(elem)
-
-							item.getter = () => {
-								const matches = target.$findAll(selector)
-
-								for(let index = 0, len = matches.length; index < len; index++) {
-									const match = matches[index]
-
-									if(!checked.has(match)) {
-										checked.add(match)
-
-										if(filter(match)) {
-											return match
-										}
-									}
-								}
-							}
-
-							return item.getter()
-						}
-
-						return elem
-					}
-				}
-
-				const elem = item.getter()
-				if(elem) {
-					item.resolve(elem)
-				}
-
-				if(!item.stopped) {
-					let observer = Observers.get(target)
-
-					if(!observer) {
-						observer = new MutationObserver(handleMutations)
-						Observers.set(target, observer)
-	
-						observer.listeners = []
-						observer.target = target
-	
-						observer.observe(target, { childList: true, subtree: true })
-					}
-	
-					observer.listeners.push(item)
-				}
-			}))
-
-			const finishPromise = SyncPromise.all(promises).then(elems => {
-				if(callback) {
-					try { callback(...elems) }
+				addWatch(target, selectors[0], filter, props, node => {
+					try { callback(node) }
 					catch(ex) { console.error(ex) }
-				}
+				})
+			} else {
+				const promises = selectors.map(selector => new SyncPromise(resolve => addWatch(target, selector, filter, props, resolve)))
 
-				return elems[0]
-			})
+				finishPromise = SyncPromise.all(promises).then(elems => {
+					if(callback) {
+						try { callback(...elems) }
+						catch(ex) { console.error(ex) }
+					}
+	
+					return elems[0]
+				})
+			}
 
 			return {
 				targetPromise: SyncPromise.resolve(target),
