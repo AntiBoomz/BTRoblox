@@ -1260,7 +1260,7 @@ const HoverPreview = (() => {
 							const folder = model.find(x => x.Name === "R15Anim" && x.ClassName === "Folder")
 							const group = folder && (folder.Children.find(x => x.Name.toLowerCase().includes("idle")) || folder.Children[0])
 							const anim = group && group.Children
-								.map(x => ({ id: AssetCache.resolveAssetId(x.AnimationId), weight: x.Children[0].Value || 0 }))
+								.map(x => ({ id: AssetCache.resolveAssetId(x.AnimationId), weight: x.Children.length && x.Children[0].Value || 0 }))
 								.filter(x => x.id)
 								.reduce((prev, cur) => ((!prev || cur.weight > prev.weight) ? cur : prev))
 							
