@@ -534,7 +534,7 @@ const Navigation = (() => {
 		const script = document.createElement("script")
 		script.async = true
 		script.type = "text/javascript"
-		script.textContent = `(${(fn).toString().replace(/%settings%/g, JSON.stringify(SETTINGS.serialize()))})();`
+		script.textContent = `(${(fn).toString().replace(/SETTINGS_SERIALIZED/g, JSON.stringify(SETTINGS.serialize()))})();`
 		document.documentElement.prepend(script)
 	}
 
@@ -542,7 +542,7 @@ const Navigation = (() => {
 		document.body.classList.add("btr-react-nav")
 
 		injectScript(() => {
-			const settings = JSON.parse(`%settings%`)
+			const settings = SETTINGS_SERIALIZED
 
 			const onSet = (a, b, c) => {
 				if(a[b]) { return c(a[b]) }
