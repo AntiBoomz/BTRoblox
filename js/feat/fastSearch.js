@@ -8,6 +8,7 @@ const initFastSearch = () => {
 	let currentSearchText = ""
 	let lastResultsLoaded = 0
 	let friendsLoaded = false
+	let container
 	let list
 	
 	const thumbnailsToRequest = []
@@ -123,7 +124,7 @@ const initFastSearch = () => {
 
 		const sel = list.$find(">.selected")
 		if(!sel) {
-			const target = list.firstElementChild
+			const target = list.$find(">li")
 			target.classList.add("selected")
 		}
 	}
@@ -157,13 +158,11 @@ const initFastSearch = () => {
 			}
 
 			const lastSelected = list.$find(">.selected")
-			const selectFirst = !lastSelected || !searchResults.length && lastSelected === list.firstElementChild || searchResults.includes(lastSelected)
+			const selectFirst = !lastSelected || !searchResults.length && lastSelected === list.$find(">li") || searchResults.includes(lastSelected)
 
 			clearResults()
 
-			const target = list.firstElementChild
 			const matches = getMatches(search)
-
 			for(let i = 0; i < matches.length; i++) {
 				const { name, user, index } = matches[i]
 				const highlightStart = name === search ? 0 : index
@@ -173,7 +172,7 @@ const initFastSearch = () => {
 
 				if(user.Temporary) {
 					item = html`
-					<li class="rbx-navbar-search-option rbx-clickable-li btr-fastsearch" data-searchurl=/User.aspx?username=>
+					<li class="navbar-search-option rbx-clickable-li btr-fastsearch" data-searchurl=/User.aspx?username=>
 						<a class=btr-fastsearch-anchor>
 							<div class=btr-fastsearch-avatar>
 								<img class=btr-fastsearch-thumbnail src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" style="visibility: hidden">
@@ -198,7 +197,7 @@ const initFastSearch = () => {
 					}
 
 					item = html`
-					<li class="rbx-navbar-search-option rbx-clickable-li btr-fastsearch" data-searchurl=/User.aspx?userId=${user.UserId}&searchTerm=>
+					<li class="navbar-search-option rbx-clickable-li btr-fastsearch" data-searchurl=/User.aspx?userId=${user.UserId}&searchTerm=>
 						<a class=btr-fastsearch-anchor href=/users/${user.UserId}/profile>
 							<div class=btr-fastsearch-avatar>
 								<img class=btr-fastsearch-thumbnail src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==">
@@ -218,7 +217,12 @@ const initFastSearch = () => {
 					</li>`
 				}
 
-				target.before(item)
+				if(searchResults.length) {
+					searchResults[searchResults.length - 1].after(item)
+				} else {
+					container.prepend(item)
+				}
+
 				searchResults.push(item)
 
 				if(!user.Temporary) {
@@ -258,9 +262,7 @@ const initFastSearch = () => {
 
 							if(user.IsFriend) { // Move to first if friend is ingame
 								searchResults.splice(searchResults.indexOf(item), 1)
-								const first = searchResults[0] || target
-
-								first.before(item)
+								container.prepend(item)
 								searchResults.unshift(item)
 							}
 
@@ -382,21 +384,107 @@ const initFastSearch = () => {
 		reloadSearchResults()
 	}
 
-	document.$watch("#navbar-universal-search", async search => {
-		const input = await search.$watch("#navbar-search-input").$promise()
-		list = await search.$watch(">ul").$promise()
-
-		list.$on("mouseover", ".rbx-navbar-search-option", ev => {
-			const last = list.$find(">.selected")
-			if(last) { last.classList.remove("selected") }
-			ev.currentTarget.classList.add("selected")
-		})
+	document.$watch("#header", header => {
+		if(header.matches("#navigation-container #header")) {
+			document.$watch("#btr-fastsearch-container", _cont => {
+				container = _cont
 		
-		let lastValue
-		input.$on("keyup", () => {
-			if(input.value === lastValue) { return }
-			lastValue = input.value
-			updateSearch(input.value.toLowerCase())
-		})
+				const search = container.closest("#navbar-universal-search")
+				const input = search.$find("#navbar-search-input")
+				list = search.$find(">ul")
+		
+				input.$on("keydown", ev => {
+					if(ev.keyCode === 38 || ev.keyCode === 40 || ev.keyCode === 9) {
+						const selected = list.$find(".selected")
+						if(!selected || !searchResults.length) {
+							return
+						}
+		
+						const index = searchResults.indexOf(selected)
+						let prevent = true
+						let next
+		
+						if(index !== -1) {
+							if(ev.keyCode === 38) {
+								if(index === 0) {
+									next = list.lastElementChild
+									prevent = false
+								} else {
+									next = searchResults[index - 1]
+								}
+							} else {
+								if(index < searchResults.length - 1) {
+									next = searchResults[index + 1]
+								} else {
+									next = container.nextElementSibling
+								}
+							}
+						} else {
+							if(ev.keyCode === 38) {
+								if(selected.previousElementSibling === container) {
+									next = searchResults[searchResults.length - 1]
+								}
+							} else {
+								if(!selected.nextElementSibling) {
+									next = searchResults[0]
+									prevent = false
+								}
+							}
+						}
+		
+						if(next) {
+							selected.classList.remove("selected")
+							next.classList.add("selected")
+		
+							requestAnimationFrame(() => {
+								const newSel = list.$findAll(".selected")
+								newSel.forEach(x => x !== next && x.classList.remove("selected"))
+							})
+		
+							if(prevent) {
+								ev.stopImmediatePropagation()
+								ev.stopPropagation()
+								ev.preventDefault()
+							}
+						}
+					}
+				})
+		
+				input.$on("keyup", ev => {
+					if(ev.keyCode === 13) {
+						const selected = list.$find(".selected")
+						if(!selected || !searchResults.includes(selected)) {
+							return
+						}
+		
+						window.location = selected.$find("a").href
+		
+						ev.stopImmediatePropagation()
+						ev.stopPropagation()
+						ev.preventDefault()
+					}
+				}, { capture: true })
+		
+				let lastValue
+				input.$on("input", () => {
+					if(input.value === lastValue) { return }
+					lastValue = input.value
+					updateSearch(input.value.toLowerCase())
+				})
+			})
+		} else {
+			document.$watch("#navbar-universal-search", async search => {
+				const input = await search.$watch("#navbar-search-input").$promise()
+				list = await search.$watch(">ul").$promise()
+				container = list
+				
+				let lastValue
+				input.$on("keyup", () => {
+					if(input.value === lastValue) { return }
+					lastValue = input.value
+					updateSearch(input.value.toLowerCase())
+				})
+			})
+		}
 	})
 }

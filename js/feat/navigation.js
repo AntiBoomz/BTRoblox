@@ -2,7 +2,7 @@
 
 const Navigation = (() => {
 	const customElements = {
-		btr_Home: `<li class=cursor-pointer><a class="font-header-2 nav-menu-title text-header" href=/home>Home</a></li>`,
+		btr_Home: `<li class=cursor-pointer style="order:-1"><a class="font-header-2 nav-menu-title text-header" href=/home>Home</a></li>`,
 
 		btr_Friends: `
 		<li id="btr-navbar-friends" class="navbar-icon-item">
@@ -474,19 +474,48 @@ const Navigation = (() => {
 		})
 	}
 
-	let isBlogFeedInitialized = false
-	const initBlogFeed = () => {
-		if(isBlogFeedInitialized) { return }
+	const blogFeedCallbacks = []
+	let blogFeedStartedLoading = false
+	let blogFeedData
 
+	const loadBlogFeed = cb => {
+		if(blogFeedData) {
+			return cb(blogFeedData)
+		}
+		
+		blogFeedCallbacks.push(cb)
+		
+		if(!blogFeedStartedLoading) {
+			blogFeedStartedLoading = true
+			
+			MESSAGING.send("requestBlogFeed", data => {
+				blogFeedData = data
+				blogFeedCallbacks.splice(0, blogFeedCallbacks.length).forEach(fn => fn(blogFeedData))
+			})
+
+			STORAGE.get(["cachedBlogFeedV2"], data => {
+				if(data.cachedBlogFeedV2 && !blogFeedData) {
+					blogFeedCallbacks.forEach(fn => fn(data.cachedBlogFeedV2))
+				}
+			})
+		}
+	}
+
+	const initBlogFeed = () => {
 		const blogfeed = $("#btr-blogfeed")
-		if(!blogfeed || (blogfeed.classList.contains("btr-nav-disabled") && editablesLocked)) {
+
+		if(!blogfeed || (blogfeed.classList.contains("btr-nav-disabled") && editablesLocked) || blogfeed.dataset.btrFeedLoaded) {
 			return
 		}
 
-		isBlogFeedInitialized = true
+		blogfeed.dataset.btrFeedLoaded = true
 
-		const update = data => {
-			blogfeed.$findAll(">.btr-feed").forEach(x => x.remove())
+		loadBlogFeed(data => {
+			if(!document.contains(blogfeed)) {
+				return
+			}
+
+			blogfeed.$empty()
 
 			data.forEach(item => {
 				blogfeed.append(html`
@@ -498,18 +527,227 @@ const Navigation = (() => {
 					<div class="btr-feeddesc">${item.desc}</div>
 				</a>`)
 			})
-		}
-
-		MESSAGING.send("requestBlogFeed", update)
-		STORAGE.get(["cachedBlogFeedV2"], data => {
-			if(data.cachedBlogFeedV2) {
-				update(data.cachedBlogFeedV2)
-			}
 		})
 	}
 
-	const initNavigation = () => {
-		const headerWatcher = document.$watch("#header").$then().$watch(">div").$then()
+	const injectScript = fn => {
+		const script = document.createElement("script")
+		script.async = true
+		script.type = "text/javascript"
+		script.textContent = `(${(fn).toString().replace(/%settings%/g, JSON.stringify(SETTINGS.serialize()))})();`
+		document.documentElement.prepend(script)
+	}
+
+	const initReactNavigation = () => {
+		document.body.classList.add("btr-react-nav")
+
+		injectScript(() => {
+			const settings = JSON.parse(`%settings%`)
+
+			const onSet = (a, b, c) => {
+				if(a[b]) { return c(a[b]) }
+		
+				Object.defineProperty(a, b, {
+					enumerable: false,
+					configurable: true,
+					set(v) {
+						delete a[b]
+						a[b] = v
+						c(v)
+					}
+				})
+			}
+		
+			onSet(window, "React", React => {
+				React.createElement = new Proxy(React.createElement, {
+					apply(target, thisArg, args) {
+						try {
+							const type = args[0]
+							const props = args[1]
+							const className = props && props.className || ""
+
+							if(settings.navigation.enabled && props) {
+								if(type === "ul" && className.split(" ").includes("rbx-navbar")) {
+									const list = args.slice(2).find(x => Array.isArray(x))
+	
+									if(list) {
+										list.push(
+											React.createElement("li", { dangerouslySetInnerHTML: { __html: " " } })
+										)
+									}
+								} else if(type === "ul" && className.split(" ").includes("navbar-right")) {
+									const robuxIndex = args.findIndex((x, i) => i >= 2 && x instanceof Object && x.props && "robuxAmount" in x.props)
+
+									if(robuxIndex !== -1) {
+										args.splice(robuxIndex + 1, 0,
+											React.createElement("li", { dangerouslySetInnerHTML: { __html: " " } }),
+											React.createElement("li", { dangerouslySetInnerHTML: { __html: " " } })
+										)
+									}
+								} else if(type === "ul" && className.split(" ").includes("left-col-list")) {
+									const list = args.slice(2).find(x => Array.isArray(x))
+
+									if(list) {
+										const blogIndex = list.findIndex(x => x.key === "blog")
+
+										if(blogIndex !== -1) {
+											list.splice(blogIndex + 1, 0,
+												React.createElement("div", { id: "btr-blogfeed-container", dangerouslySetInnerHTML: { __html: " " } }),
+											)
+										}
+									}
+								}
+							}
+
+							if(props && props.id === "navbar-universal-search") {
+								const ul = args.slice(2).find(x => x.type === "ul")
+
+								if(ul) {
+									if(!Array.isArray(ul.props.children)) {
+										ul.props.children = [ul.props.children]
+									}
+
+									ul.props.children.unshift(
+										React.createElement("div", { id: "btr-fastsearch-container", dangerouslySetInnerHTML: { __html: " " } })
+									)
+								}
+							}
+							
+							if(type === "ul" && props && props.id === "settings-popover-menu") {
+								args.splice(2, 0,
+									React.createElement(
+										"li",
+										{
+											key: "btrSettings"
+										},
+										React.createElement("a", {
+											className: "rbx-menu-item btr-settings-toggle"
+										}, "BTR Settings")
+									)
+								)
+							}
+						} catch(ex) {
+							console.error(ex)
+						}
+		
+						return target.apply(thisArg, args)
+					}
+				})
+			})
+		})
+
+		if(!SETTINGS.get("navigation.enabled")) {
+			return
+		}
+
+		document.body.classList.add("btr-react-nav-enabled")
+
+		const navContWatcher = document.$watch("#navigation-container").$then()
+
+		const updateFriends = () => {
+			const btrFriends = $("#btr-navbar-friends")
+			const navFriends = $("#nav-friends")
+
+			if(!btrFriends || !navFriends) {
+				return
+			}
+
+			const btrNotif = btrFriends.$find(".btr-nav-notif")
+			const origNotif = navFriends.$find(".notification")
+
+			btrFriends.$find("a").href = navFriends.href
+			btrNotif.textContent = origNotif ? origNotif.textContent.trim() : ""
+			btrNotif.style.display = origNotif ? "" : "none"
+		}
+
+		const updateMessages = () => {
+			const btrMessages = $("#btr-navbar-messages")
+			const navMessages = $("#nav-message")
+
+			if(!btrMessages || !navMessages) {
+				return
+			}
+
+			const btrNotif = btrMessages.$find(".btr-nav-notif")
+			const origNotif = navMessages.$find(".notification")
+
+			btrMessages.$find("a").href = navMessages.href
+			btrNotif.textContent = origNotif ? origNotif.textContent.trim() : ""
+			btrNotif.style.display = origNotif ? "" : "none"
+		}
+
+		navContWatcher
+			.$watch("#nav-friends", navFriends => {
+				new MutationObserver(updateFriends).observe(navFriends, { childList: true, subtree: true, attributeFilter: ["href"] })
+				updateFriends()
+			}, { continuous: true })
+			.$watch("#nav-message", navMessages => {
+				new MutationObserver(updateMessages).observe(navMessages, { childList: true, subtree: true, attributeFilter: ["href"] })
+				updateMessages()
+			}, { continuous: true })
+			.$watch("#header .age-bracket-label", x => x.style.display = "none")
+			.$watch("#header .rbx-navbar a[href^=\"/robux\"]", x => x.parentNode.style.display = "none")
+			.$watch("#navigation #nav-home", x => x.parentNode.style.display = "none", { continuous: true })
+			.$watch("#navigation #nav-friends", x => x.parentNode.style.display = "none", { continuous: true })
+			.$watch("#navigation #nav-message", x => x.parentNode.style.display = "none", { continuous: true })
+			.$watch("#navigation .rbx-upgrade-now", x => x.style.display = "none", { continuous: true })
+			.$watch("#nav-blog", blog => {
+				blog.parentNode.after(html`<div id=btr-blogfeed-container><li id=btr-blogfeed></li></div>`)
+				initBlogFeed()
+			}, { continuous: true })
+
+		navContWatcher.$watch("#header").$then().$watch(">div").$then()
+			.$watch("#navbar-robux", robux => {
+				robux.after(
+					html(customElements.btr_Friends),
+					html(customElements.btr_Messages)
+				)
+
+				updateMessages()
+				updateFriends()
+			})
+			.$watchAll(".rbx-navbar", nav => {
+				nav.append(html(customElements.btr_Home))
+			})
+		
+			
+		if(SETTINGS.get("general.robuxToUSD")) {
+			document.body.$watchAll("#buy-robux-popover", popover => {
+				const bal = popover.$find("#nav-robux-balance")
+				if(!bal) {
+					return
+				}
+
+				const span = html`<span style="display:block;opacity:0.75;font-size:small;font-weight:500;"></span>`
+	
+				const update = () => {
+					const matches = bal.textContent.trim().match(/^([\d,]+)\sRobux$/)
+					if(!matches) { return }
+
+					const amt = parseInt(matches[0].replace(/,/g, ""), 10)
+					if(!Number.isSafeInteger(amt)) { return }
+
+					span.textContent = RobuxToCash.convert(amt)
+					bal.append(span)
+				}
+	
+				const observer = new MutationObserver(update)
+				observer.observe(bal, { childList: true })
+				update()
+			})
+		}
+	}
+	
+	const initNavigation = async () => {
+		const header = await document.$watch("#header").$promise()
+
+		if(header.matches("#navigation-container #header")) {
+			// Yay for react
+			initReactNavigation()
+			return
+		}
+
+		const headerWatcher = header.$watch(">div").$then()
 		
 		headerWatcher.$watch("#navbar-setting").$then()
 			.$watch(".rbx-popover-content > ul", list => {

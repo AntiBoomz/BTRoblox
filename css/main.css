@@ -10,19 +10,19 @@ html:not(.btr-naveditor-open) .btr-nav-disabled {
 
 /* Fix weird stream button styling */
 
-#header .navbar-stream {
+body:not(.btr-react-nav) #header .navbar-stream {
 	padding: 0;
 }
 
-#header .navbar-stream .notification-stream-icon {
+body:not(.btr-react-nav) #header .navbar-stream .notification-stream-icon {
 	display: block;
 }
 
-#header .navbar-stream .notification-stream-icon .icon-nav-notification-stream {
+body:not(.btr-react-nav) #header .navbar-stream .notification-stream-icon .icon-nav-notification-stream {
 	margin: 0;
 }
 
-#header .navbar-stream .notification-stream-icon .notification-red {
+body:not(.btr-react-nav) #header .navbar-stream .notification-stream-icon .notification-red {
 	top: 3px;
 	right: 1px;
 }
@@ -95,13 +95,13 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	border: 2px solid #0074bd;
 }
 
-#header.light-theme .btr-nav-notif {
+.light-theme #header .btr-nav-notif {
 	background-color: #393b3d;
 	border: 1px solid #393b3d;
 	color: #fff;
 }
 
-#header.dark-theme .btr-nav-notif {
+.dark-theme #header .btr-nav-notif {
 	border-color: #232527;
 }
 
@@ -173,6 +173,10 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 
 
 /* Sidebar Blog Feed */
+
+#btr-blogfeed-container {
+	display: contents;
+}
 
 #btr-blogfeed {
 	margin-top: -3px;
@@ -752,7 +756,11 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 
 /* FastSearch */
 
-body .rbx-header .rbx-navbar-search .btr-fastsearch-anchor {
+#header #btr-fastsearch-container {
+	display: contents;
+}
+
+#header .btr-fastsearch-anchor {
 	position: relative;
 	display: flex;
 	align-items: center;
