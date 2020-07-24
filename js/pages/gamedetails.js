@@ -59,7 +59,7 @@ pageInit.gamedetails = function(placeId) {
 			)
 			
 			about.$watchAll("*", x => {
-				if(!x.matches("#rbx-vip-servers, #my-recommended-games, .btr-compat-rtrack")) {
+				if(!x.matches("#rbx-private-servers, #my-recommended-games, .btr-compat-rtrack")) {
 					midContainer.append(x)
 				}
 			})

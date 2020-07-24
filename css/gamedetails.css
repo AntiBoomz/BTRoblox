@@ -156,11 +156,11 @@ body .btr-game-main-container {
 
 /* VIP Servers */
 
-.btr-gamedetails .rbx-vip-server-details {
+.btr-gamedetails .rbx-private-server-details {
 	padding-top: 8px;
 }
 
-.btr-gamedetails .rbx-vip-server-details .owner-avatar {
+.btr-gamedetails .rbx-private-server-details .owner-avatar {
 	display: none !important;
 }
 
@@ -187,7 +187,7 @@ body .btr-game-main-container {
 	background: transparent !important;
 }
 
-.btr-gamedetails #about #rbx-vip-servers {
+.btr-gamedetails #about #rbx-private-servers {
 	display: none !important;
 }
 
