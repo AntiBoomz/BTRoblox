@@ -67,10 +67,10 @@ const OwnerAssetCache = {
 		}
 
 		try {
-			const resp = await fetch(`https://www.roblox.com/game/GetCurrentUser.ashx`, { credentials: "include" })
-			const userId = await resp.text()
+			const resp = await fetch(`https://users.roblox.com/v1/users/authenticated`, { credentials: "include" })
+			const userId = (await resp.json()).id
 
-			if(!userId) {
+			if(!Number.isSafeInteger(userId)) {
 				return false
 			}
 	

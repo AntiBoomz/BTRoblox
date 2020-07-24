@@ -59,8 +59,8 @@
 	}
 
 	const loadMyShouts = async () => {
-		const userId = await fetch("https://www.roblox.com/game/GetCurrentUser.ashx", { credentials: "include" }).then(resp => (resp.ok ? resp.text() : null))
-		if(!Number.isSafeInteger(+userId)) { return }
+		const userId = await fetch("https://users.roblox.com/v1/users/authenticated", { credentials: "include" }).then(resp => (resp.ok ? resp.json() : null)).then(json => json && json.id)
+		if(!Number.isSafeInteger(userId)) { return }
 
 		const json = await fetch(`https://groups.roblox.com/v1/users/${userId}/groups/roles`).then(resp => (resp.ok ? resp.json() : null))
 		if(!json) { return }

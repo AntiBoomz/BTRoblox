@@ -90,11 +90,6 @@ Undocumented APIs
 User APIs
 ---------
 #### Get info about currently logged in user
-* https://www.roblox.com/game/GetCurrentUser.ashx
-    ```json
-    261
-    ```
-
 * https://www.roblox.com/my/account/json
     ```json
     {
