@@ -1,11 +1,11 @@
 "use strict"
 
 {
-	let shoutFilterPromise
-	let shoutCachePromise
+	let shoutFilterPromise = null
+	let shoutCachePromise = null
 	let savingShoutCache = false
+	let checkInterval = null
 	let previousCheck = 0
-	let checkInterval
 
 	const loadShoutCache = () => {
 		if(shoutCachePromise) { return shoutCachePromise }
@@ -70,6 +70,7 @@
 
 	const executeCheck = async () => {
 		if(Date.now() - previousCheck < 5e3) { return }
+
 		const checkTime = Date.now()
 		previousCheck = checkTime
 
@@ -178,12 +179,32 @@
 	})
 
 	const onUpdate = () => {
-		clearInterval(checkInterval)
+		const shouldCheck = !!SETTINGS.get("groups.shoutAlerts")
 
-		if(SETTINGS.get("groups.shoutAlerts")) {
+		if(shouldCheck) {
+			if(IS_CHROME) {
+				chrome.alarms.create("ShoutCheck", { periodInMinutes: 1 })
+			}
+
+			clearInterval(checkInterval)
 			checkInterval = setInterval(executeCheck, 10e3)
+
 			executeCheck()
+		} else {
+			if(IS_CHROME) {
+				chrome.alarms.clearAll()
+			}
+
+			clearInterval(checkInterval)
 		}
+	}
+
+	if(IS_CHROME) {
+		chrome.alarms.onAlarm.addListener(() => {})
+		chrome.runtime.onInstalled.addListener(() => {
+			chrome.alarms.clearAll()
+			SETTINGS.load(onUpdate)
+		})
 	}
 
 	SETTINGS.load(onUpdate)

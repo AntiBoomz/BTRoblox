@@ -18,6 +18,7 @@
 	},
 
 	"background": {
+		"persistent": false,
 		"scripts": [
 			"js/common.js",
 			"js/background/blogfeed.js",
@@ -33,7 +34,8 @@
 		"*://*.rbxcdn.com/",
 		"contextMenus",
 		"notifications",
-		"storage"
+		"storage",
+		"alarms"
 	],
 
 	"web_accessible_resources": [
