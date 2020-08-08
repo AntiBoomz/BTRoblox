@@ -7,6 +7,7 @@ let currentPage
 
 const cssFiles = ["main.css"]
 const themeStyles = []
+const liveReloadCSS = {}
 let mainStyleSheet
 
 const injectCSS = (...paths) => {
@@ -24,18 +25,75 @@ const injectCSS = (...paths) => {
 	}
 
 	return paths.map(file => {
-		const index = mainStyleSheet.insertRule(`@import url("${getURL("css/" + file)}")`)
-		return mainStyleSheet.rules[index].cssText
+		const url = getURL("css/" + file)
+		const rule = `@import url("${url}")`
+
+		const index = mainStyleSheet.insertRule(rule)
+		const cssText = mainStyleSheet.rules[index].cssText
+
+		const doLiveReload = false
+		if(doLiveReload) {
+			// live reload
+
+			const now = Date.now()
+			let requesting = false
+			let oldData
+
+			liveReloadCSS[cssText] = now
+
+			const interval = setInterval(() => {
+				if(liveReloadCSS[cssText] !== now) {
+					clearInterval(interval)
+					return
+				}
+
+				if(requesting) {
+					return
+				}
+
+				requesting = true
+				fetch(url).then(async resp => {
+					const newData = await resp.text()
+
+					if(liveReloadCSS[cssText] !== now) {
+						return
+					}
+
+					requesting = false
+
+					if(newData !== oldData) {
+						if(oldData) {
+							console.log("Reloaded", url)
+
+							removeCSS([cssText])
+							liveReloadCSS[cssText] = now
+
+							mainStyleSheet.insertRule(rule)
+						}
+
+						oldData = newData
+					}
+				})
+			}, 1e3)
+		}
+
+		return cssText
 	})
 }
 
 const removeCSS = rules => {
-	if(!mainStyleSheet) { return }
+	if(!mainStyleSheet) {
+		return
+	}
 
 	rules.forEach(cssText => {
 		const index = Array.prototype.findIndex.call(mainStyleSheet.rules, x => x.cssText === cssText)
 		if(index !== -1) {
 			mainStyleSheet.deleteRule(index)
+
+			if(liveReloadCSS[cssText]) {
+				delete liveReloadCSS[cssText]
+			}
 		}
 	})
 }
