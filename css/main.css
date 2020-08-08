@@ -590,9 +590,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 
 	border-color: #979797;
 	border-style: solid;
-	border-width: 0 1.5px 1.5px 0;
-
-	opacity: 0.9;
+	border-width: 0 1px 1px 0;
 }
 
 .btr-properties .btr-property-group .btr-property-group-more::before {
