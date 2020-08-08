@@ -30,7 +30,7 @@
 	overflow: hidden;
 
 	grid-template-rows: 25px minmax(0, auto);
-	grid-template-columns: auto 540px;
+	grid-template-columns: auto 560px;
 
 	grid-template-areas:
 		"header explorer"
