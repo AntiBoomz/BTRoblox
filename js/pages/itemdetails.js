@@ -243,6 +243,8 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 			}
 		}
 
+		explorer.select([])
+
 		popover.$find(".btr-explorer-parent").replaceWith(explorer.element)
 
 		const popLeft = explorer.element.getBoundingClientRect().right + 276 >= document.documentElement.clientWidth

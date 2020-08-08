@@ -249,6 +249,7 @@ const OwnerAssetCache = {
 	}
 }
 
+// Legacy source viewer thing
 for (let i = localStorage.length; i--;) {
 	const key = localStorage.key(i)
 
@@ -275,17 +276,6 @@ MESSAGING.listen({
 		OwnerAssetCache
 			.update(changes => respond(changes, true))
 			.then(() => respond({}))
-	},
-
-	openSourceViewer(source) {
-		const id = Math.random().toString(16).slice(2).toUpperCase()
-		const key = `sourceViewerData_${id}`
-
-		localStorage.setItem(key, source)
-		setTimeout(() => localStorage.removeItem(key), 10e3)
-
-		const url = getURL(`sourceviewer.html?id=${id}`)
-		chrome.tabs.create({ url })
 	},
 
 	loadOptAssets(assets, respond, port) {

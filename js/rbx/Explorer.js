@@ -47,23 +47,26 @@ const Explorer = (() => {
 		return ao !== bo ? ao - bo : (a.Name < b.Name ? -1 : 1)
 	}
 
-	class Explorer {
+	return class {
 		constructor() {
 			this.models = []
 			this.selection = []
 
+			this.sourceViewerTabs = []
+			this.selectedSourceViewerTab = null
+			this.sourceViewerModal = null
+
 			const element = this.element = html`
 			<div class="btr-explorer-parent">
 				<div class="btr-explorer">
-					<div class="btr-explorer-header hidden" style="padding: 6px 6px 0 6px">
-						<div class="input-group-btn btr-dropdown-container">
-							<button type=button class=input-dropdown-btn>
-								<span class=rbx-selection-label style="font-size:14px;line-height:20px"></span>
-								<span class=icon-down-16x16 style="margin-left:8px"></span>
-							</button>
-							<ul class=dropdown-menu style="position:absolute;display:none">
-							</ul>
-						</div>
+					<div class="btr-explorer-header">Explorer</div>
+					<div class="input-group-btn btr-dropdown-container" style="display: none">
+						<button type=button class=input-dropdown-btn>
+							<span class=rbx-selection-label style="font-size:14px;line-height:20px"></span>
+							<span class=icon-down-16x16 style="margin-left:8px"></span>
+						</button>
+						<ul class=dropdown-menu style="position:absolute;display:none">
+						</ul>
 					</div>
 					<div class="btr-explorer-loading" style="text-align:center;margin-top:12px;">Loading</div>
 				</div>
@@ -98,8 +101,114 @@ const Explorer = (() => {
 			this.select([])
 		}
 
-		openSourceViewer(source) {
-			MESSAGING.send("openSourceViewer", source)
+		closeSourceViewer() {
+			if(this.originalParent && document.body.contains(this.originalParent)) {
+				this.originalParent.append(this.element)
+			} else {
+				this.element.remove()
+			}
+
+			this.originalParent = null
+			this.selectedSourceViewerTab = null
+
+			this.sourceViewerTabs.splice(0, this.sourceViewerTabs.length)
+
+			this.sourceViewerModal.remove()
+			this.sourceViewerModal = null
+
+			document.body.style.overflow = ""
+		}
+
+		async openSourceViewer(inst, propName) {
+			await OptionalLoader.loadSourceViewer()
+
+			if(!this.sourceViewerModal) {
+				this.sourceViewerModal = html`
+				<div class=btr-sourceviewer-modal>
+					<div class=btr-sourceviewer-container>
+						<div class=btr-sourceviewer-header>
+						</div>
+						<div class=btr-sourceviewer-content>
+						</div>
+						<div class=btr-sourceviewer-explorer>
+						</div>
+					</div>
+				</div>`
+
+				this.sourceViewerModal.$on("click", ev => {
+					ev.preventDefault()
+					ev.stopPropagation()
+					ev.stopImmediatePropagation()
+
+					this.closeSourceViewer()
+				})
+
+				this.sourceViewerModal.$find(".btr-sourceviewer-container").$on("click", ev => {
+					ev.preventDefault()
+					ev.stopPropagation()
+					ev.stopImmediatePropagation()
+				})
+
+				document.body.append(this.sourceViewerModal)
+				document.body.style.overflow = "hidden"
+
+				this.originalParent = this.element.parentNode
+				this.sourceViewerModal.$find(".btr-sourceviewer-explorer").append(this.element)
+			}
+
+			let tab = this.sourceViewerTabs.find(x => x.inst === inst && x.propName === propName)
+
+			if(!tab) {
+				const btn = html`<div class=btr-sourceviewer-tab>${inst.Name}<div class=btr-sourceviewer-tab-close>×</div></div>`
+				this.sourceViewerModal.$find(".btr-sourceviewer-header").append(btn)
+
+				btn.$on("click", ev => {
+					ev.stopPropagation()
+					ev.preventDefault()
+
+					if(this.selectedSourceViewerTab !== tab) {
+						this.openSourceViewer(inst, propName)
+					}
+				})
+
+				btn.$find(".btr-sourceviewer-tab-close").$on("click", ev => {
+					ev.stopPropagation()
+					ev.preventDefault()
+
+					const index = this.sourceViewerTabs.indexOf(tab)
+					this.sourceViewerTabs.splice(index, 1)
+
+					tab.btn.remove()
+
+					if(this.selectedSourceViewerTab === tab) {
+						const nextTab = this.sourceViewerTabs[index] || this.sourceViewerTabs[index - 1]
+
+						if(nextTab) {
+							this.openSourceViewer(nextTab.inst, nextTab.propName)
+						} else {
+							this.closeSourceViewer()
+						}
+					}
+				})
+
+				tab = { inst, propName, btn }
+				this.sourceViewerTabs.push(tab)
+			}
+
+			if(this.selectedSourceViewerTab) {
+				this.selectedSourceViewerTab.btn.classList.remove("active")
+			}
+
+			tab.btn.classList.add("active")
+			this.selectedSourceViewerTab = tab
+
+
+			const source = inst.Properties[propName].value
+
+			const content = this.sourceViewerModal.$find(".btr-sourceviewer-content")
+			content.$empty()
+
+			SourceViewer.init(content, source)
 		}
 
 		select(items) {
@@ -116,11 +225,8 @@ const Explorer = (() => {
 
 			if(!items.length) {
 				header.textContent = "Properties"
-				properties.style.display = "none"
 				return
 			}
-
-			properties.style.display = ""
 
 			const target = items[0]
 			header.textContent = `Properties - ${target.ClassName} "${target.Name}"`
@@ -150,22 +256,45 @@ const Explorer = (() => {
 			})
 
 			groups.sort(sortPropertyGroups).forEach(group => {
-				const titleButton = html`<div class=btr-property-group>${group.Name}</div>`
+				const titleButton = html`<div class=btr-property-group><div class=btr-property-group-more></div>${group.Name}</div>`
 				const propertiesList = html`<div class=btr-properties-list></div>`
 				propertyContainer.append(titleButton, propertiesList)
 
-				titleButton.$on("click", () => {
+				let lastClick
+
+				titleButton.$find(".btr-property-group-more").$on("click", ev => {
 					titleButton.classList.toggle("closed")
+
+					ev.stopPropagation()
 				})
 
-				group.Properties.sort(sortProperties).forEach(([name, prop]) => {
-					const nameItem = html`<div class=btr-property-name title=${name}>${name}</div>`
-					const valueItem = html`<div class=btr-property-value></div>`
+				titleButton.$on("click", () => {
+					if(lastClick && Date.now() - lastClick < 500) {
+						lastClick = null
+						titleButton.classList.toggle("closed")
+					} else {
+						lastClick = Date.now()
+					}
+				})
 
+
+				group.Properties.sort(sortProperties).forEach(([name, prop]) => {
 					const value = prop.value
 					let type = prop.type
 
-					if(name === "BrickColor" && type === "int") { type = "BrickColor" }
+					if(name === "LinkedSource" && !value) {
+						return
+					} else if(name === "BrickColor" && type === "int") {
+						type = "BrickColor"
+					}
+
+					const nameItem = html`<div class=btr-property-name title=${name}>${name}</div>`
+					const valueItem = html`<div class=btr-property-value></div>`
+
+					if(name === "ClassName") {
+						nameItem.classList.add("btr-property-readonly")
+						valueItem.classList.add("btr-property-readonly")
+					}
 
 					switch(type) {
 					case "int64": {
@@ -187,7 +316,7 @@ const Explorer = (() => {
 							input.value = input.title = (tooLong ? value.slice(0, 117) + "..." : value)
 
 							const more = html`<a class=more>...</a>`
-							more.$on("click", () => this.openSourceViewer(value))
+							more.$on("click", () => this.openSourceViewer(target, name))
 							
 							valueItem.append(more)
 						} else {
@@ -205,9 +334,11 @@ const Explorer = (() => {
 						break
 					}
 					case "bool": {
-						const input = html`<input type=checkbox disabled>`
+						const input = html`<input type=checkbox>`
 						input.checked = value
 						valueItem.append(input)
+						
+						input.$on("change", () => input.checked = value)
 						break
 					}
 					case "Instance":
@@ -229,7 +360,7 @@ const Explorer = (() => {
 						valueItem.textContent = ApiDump.getBrickColorName(value) || String(value) + " (Unknown BrickColor)"
 						break
 					case "Enum":
-						valueItem.textContent = ApiDump.getPropertyEnumName(target.ClassName, name, value) || `Enum ${value}`
+						valueItem.textContent = `${ApiDump.getPropertyEnumName(target.ClassName, name, value) || value}`
 						break
 					case "Rect2D":
 						valueItem.textContent = `${fixNums(value).join(", ")}`
@@ -270,9 +401,8 @@ const Explorer = (() => {
 					const cont = html`
 					<div class=btr-property>
 						<div class=btr-property-more></div>
-						<div class=btr-property-inner></div>
 					</div>`
-					cont.$find(".btr-property-inner").append(nameItem, valueItem)
+					cont.append(nameItem, valueItem)
 					propertiesList.append(cont)
 				})
 			})
@@ -280,19 +410,19 @@ const Explorer = (() => {
 
 		addModel(title, model) {
 			const lists = this.element.$find(".btr-explorer")
-			const header = this.element.$find(".btr-explorer-header")
+			const dropdown = this.element.$find(".btr-dropdown-container")
 
 			const element = html`<ul class="btr-explorer-list hidden"></ul>`
 			const btn = html`<li><a title="${title}" style="text-overflow:ellipsis;overflow:hidden;padding:8px 12px;">${title}</a></li>`
 
 			btn.$on("click", () => {
-				header.$find(".dropdown-menu").style.display = "none"
-				header.$find(".input-dropdown-btn .rbx-selection-label").textContent = title
+				dropdown.$find(".dropdown-menu").style.display = "none"
+				dropdown.$find(".input-dropdown-btn .rbx-selection-label").textContent = title
 
 				lists.$findAll(">.btr-explorer-list").forEach(x => x.classList.add("hidden"))
 				element.classList.remove("hidden")
 
-				header.$findAll(".dropdown-menu > li a").forEach(x => x.classList.remove("selected"))
+				dropdown.$findAll(".dropdown-menu > li a").forEach(x => x.classList.remove("selected"))
 				btn.$find("a").classList.add("selected")
 
 				this.select([])
@@ -323,7 +453,7 @@ const Explorer = (() => {
 						case "Script":
 						case "LocalScript":
 						case "ModuleScript":
-							this.openSourceViewer(inst.Source || "")
+							this.openSourceViewer(inst, "Source")
 							break
 						default:
 							item.classList.toggle("closed")
@@ -331,11 +461,6 @@ const Explorer = (() => {
 					} else {
 						lastClick = Date.now()
 					}
-				})
-
-				item.$find(".btr-explorer-more").$on("click", ev => {
-					item.classList.toggle("closed")
-					ev.stopPropagation()
 				})
 
 				parent.append(item)
@@ -347,12 +472,17 @@ const Explorer = (() => {
 					const children = [...inst.Children]
 					children.sort(sortChildren).forEach(child => create(child, childList))
 					item.after(childList)
+
+					item.$find(".btr-explorer-more").$on("click", ev => {
+						item.classList.toggle("closed")
+						ev.stopPropagation()
+					})
 				}
 			}
 
 			model.forEach(inst => create(inst, element))
 
-			header.$find(".dropdown-menu").append(btn)
+			dropdown.$find(".dropdown-menu").append(btn)
 			lists.append(element)
 
 			this.models.push(model)
@@ -361,10 +491,8 @@ const Explorer = (() => {
 				this.element.$find(".btr-explorer-loading").remove()
 				btn.click()
 			} else {
-				header.classList.remove("hidden")
+				dropdown.style.display = ""
 			}
 		}
 	}
-
-	return Explorer
 })()

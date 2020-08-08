@@ -168,6 +168,13 @@ const OptionalLoader = {
 				"js/rbx/Explorer.js"
 			]
 		},
+		sourceviewer: {
+			promise: null,
+			assets: [
+				"js/feat/sourceviewer.js",
+				"sourceviewer.css"
+			]
+		},
 		settings: {
 			promise: null,
 			assets: [
@@ -200,7 +207,8 @@ const OptionalLoader = {
 
 	loadPreviewer() { return this._loadLib("previewer") },
 	loadExplorer() { return this._loadLib("explorer") },
-	loadSettings() { return this._loadLib("settings") }
+	loadSettings() { return this._loadLib("settings") },
+	loadSourceViewer() { return this._loadLib("sourceviewer") }
 }
 
 //

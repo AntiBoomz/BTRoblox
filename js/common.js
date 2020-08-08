@@ -4,7 +4,7 @@ const MANIFEST = chrome.runtime.getManifest()
 const IS_FIREFOX = typeof InstallTrigger !== "undefined"
 const IS_CHROME = !IS_FIREFOX
 
-const IS_BACKGROUND_PAGE = !!(chrome && chrome.extension && chrome.extension.getBackgroundPage) && window.location.pathname !== "/sourceviewer.html"
+const IS_BACKGROUND_PAGE = !!(chrome && chrome.extension && chrome.extension.getBackgroundPage)
 const IS_DEV_MODE = MANIFEST.short_name === "BTRoblox_DEV"
 
 const THROW_DEV_WARNING = errorString => {

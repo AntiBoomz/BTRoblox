@@ -47,11 +47,13 @@ const ApiDump = (() => {
 							Group: value === -1 ? "HIDDEN" : Data.Categories[value]
 						}
 					} else {
-						const [cat, enumType] = value
+						const [cat, enumIndex] = value
+						const [enumType, enumItems] = enums[enumIndex || 0]
 	
 						members[prop] = {
 							Group: cat === -1 ? "HIDDEN" : Data.Categories[cat || 0],
-							Enum: enums[enumType || 0][1]
+							EnumType: enumType,
+							EnumItems: enumItems
 						}
 					}
 				})
@@ -95,7 +97,7 @@ const ApiDump = (() => {
 		getPropertyEnumName(className, prop, value) {
 			prepare()
 			const propInfo = getPropInfo(className, prop)
-			return (propInfo && propInfo.Enum) ? propInfo.Enum[value] : null
+			return (propInfo && propInfo.EnumItems) ? propInfo.EnumItems[value] : null
 		},
 		getBrickColorName(value) {
 			return BrickColors[value]
