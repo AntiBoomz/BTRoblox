@@ -2,18 +2,19 @@
 "use strict"
 
 const SourceViewer = (() => {
-	const NumberRegex = /^-?(?:\d*\.?\d+|0x[0-9a-fA-F]+)(?:[eE]-?\d+)?$/
+	const NumberRegex = /^-?(?:0_*(?:x_*[0-9a-f][0-9a-f_]*|[bB]_*[01][01_]*)|(\d[\d_]*)?\.?\d[\d_]*(?:e[+-]?_*\d[\d_]*)?)$/i
+
 	const ParseRegex = new RegExp(
 		[
-			/-?(?:\d*\.?\d+|0x[0-9a-fA-F]+)(?:[eE]-?\d+)?/.source, // number
-			/[+\-*/^%~=><]=/.source, // multi-char ops
+			/-?(?:0_*(?:x_*[0-9a-f][0-9a-f_]*|[bB]_*[01][01_]*)|(\d[\d_]*)?\.?\d[\d_]*(?:e[+-]?_*\d[\d_]*)?)/.source, // number
+			/[+\-*/^%~=><]=|\.\.=?/.source, // multi-char ops
 			/\[=*\[/.source, // groups
 			/--(?:\[=*\[)?/.source, // comments
 			/\w+/.source, // words
 			/[^\n\S]+/.source, // whitespace
 			/[^]/.source // any character
 		].join("|"),
-		"yg"
+		"ygi"
 	)
 
 	const Keywords = new Set([
@@ -53,9 +54,9 @@ const SourceViewer = (() => {
 	}
 
 	const Operators = new Set([
-		"+", "-", "*", "/", "%", ">", "<", "=",
-		"+=", "-=", "*=", "/=", "%=", ">=", "<=", "==", "~=",
-		":", "{", "}", "(", ")", "[", "]", "#"
+		"+", "-", "*", "/", "%", "^", ">", "<", "=",
+		"+=", "-=", "*=", "/=", "%=", "^=", ">=", "<=", "==", "~=",
+		":", "{", "}", "(", ")", "[", "]", "#", "..", "..="
 	])
 
 	const ScopeIn = new Set(["then", "do", "repeat", "function", "(", "{", "["])
