@@ -589,7 +589,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	transform-origin: center center;
 
 	border-color: #979797;
-	border-style: dashed;
+	border-style: solid;
 	border-width: 0 1.5px 1.5px 0;
 
 	opacity: 0.9;
