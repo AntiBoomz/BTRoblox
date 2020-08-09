@@ -209,6 +209,8 @@ const Explorer = (() => {
 			content.$empty()
 
 			SourceViewer.init(content, source)
+
+			this.sourceViewerModal.$find(".btr-sourceviewer-content").scrollTop = 0
 		}
 
 		select(items) {
