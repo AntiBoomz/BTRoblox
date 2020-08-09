@@ -111,7 +111,7 @@ const SourceViewer = (() => {
 
 		const appendGroup = groupDepth => {
 			const searchString = `]${"=".repeat(groupDepth)}]`
-			const groupEndIndex = source.indexOf(searchString)
+			const groupEndIndex = source.indexOf(searchString, ParseRegex.lastIndex)
 
 			if(groupEndIndex === -1) {
 				appendUntil(source.length)
@@ -328,7 +328,7 @@ const SourceViewer = (() => {
 
 	return {
 		init(parent, source) {
-			parseSource(source, parent)
+			return parseSource(source, parent)
 		}
 	}
 })()
