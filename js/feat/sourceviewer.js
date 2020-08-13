@@ -73,9 +73,23 @@ const SourceViewer = (() => {
 		let text
 
 		const content = html`
-		<div class=btr-sourceviewer-source-container>
+		<div class=btr-sourceviewer-source-container style=display:none>
+			<div class=line-container><div class=linenumber></div><div class=line style=height:5px;><span class=scope></span><span class=linetext></span></div></div>
 		</div>`
-		parent.append(content)
+		const loadingContent = html`
+		<div class=btr-sourceviewer-source-container>
+			<div class=line-container><div class=linenumber></div><div class=line style=height:5px;><span class=scope></span><span class=linetext></span></div></div>
+			<div class=line-container>
+				<div class=linenumber style="color:transparent">${source.split("\n").length}</div>
+				<div class=line>
+					<span class=scope></span>
+					<span class=linetext><span class=btr-sourceviewer-text><span></span>
+				</div>
+			</div>
+		</div>`
+
+		loadingContent.$find(".btr-sourceviewer-text").textContent = source
+		parent.append(content, loadingContent)
 
 		const createLine = () => {
 			const elem = html`
@@ -96,9 +110,6 @@ const SourceViewer = (() => {
 			lines.push(line)
 			return line
 		}
-
-		// Add an empty line to the beginning
-		content.append(html`<div class=line-container><div class=linenumber></div><div class=line style=height:5px;><span class=scope></span><span class=linetext></span></div></div>`)
 
 		const appendUntil = final => {
 			const len = final - ParseRegex.lastIndex
@@ -154,12 +165,12 @@ const SourceViewer = (() => {
 		current = createLine()
 		ParseRegex.lastIndex = 0
 
-		let lastYield = performance.now()
+		let nextYield = performance.now() + 500
 		
 		while(true) {
-			if(performance.now() >= lastYield + 500) {
+			if(performance.now() >= nextYield) {
 				await new Promise(resolve => setTimeout(resolve, 100))
-				lastYield = performance.now()
+				nextYield = performance.now() + 500
 			}
 
 			const match = ParseRegex.exec(source)
@@ -271,8 +282,11 @@ const SourceViewer = (() => {
 			lastLine = line
 		})
 
-		// Add an empty line to the beginning
+		// Add an empty line to the end
 		content.append(html`<div class=line-container><div class=linenumber></div><div class=line style=height:5px;><span class=scope></span><span class=linetext></span></div></div>`)
+	
+		loadingContent.remove()
+		content.style.display = ""
 
 		content.$findAll(".line-container.open,.line-container.closed").forEach(elem => {
 			elem.$find(".scope").$on("click", () => {

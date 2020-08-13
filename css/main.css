@@ -447,9 +447,14 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 
 	background: #D0D0D0;
 	border: 1px solid #C8C8C8;
-
+	
 	color: #000;
 	cursor: default;
+
+	overflow: hidden;
+	text-overflow: ellipsis;
+
+	white-space: nowrap;
 }
 
 .btr-explorer .btr-dropdown-container.input-group-btn {
@@ -558,6 +563,8 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 }
 
 .btr-explorer-more {
+	flex: 0 0 auto;
+
 	position: relative;
 	display: inline-block;
 	width: 15px;
@@ -642,6 +649,10 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 
 .btr-properties * {
 	font: inherit;
+}
+
+.btr-properties.closed:not(.keepopen) {
+	display: none;
 }
 
 .btr-properties-container {

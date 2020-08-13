@@ -117,6 +117,8 @@ const Explorer = (() => {
 			this.sourceViewerModal = null
 
 			document.body.style.overflow = ""
+
+			this.element.$find(".btr-properties").classList.remove("keepopen")
 		}
 
 		async openSourceViewer(inst, propName) {
@@ -154,6 +156,8 @@ const Explorer = (() => {
 
 				this.originalParent = this.element.parentNode
 				this.sourceViewerModal.$find(".btr-sourceviewer-explorer").append(this.element)
+
+				this.element.$find(".btr-properties").classList.add("keepopen")
 			}
 
 			let tab = this.sourceViewerTabs.find(x => x.inst === inst && x.propName === propName)
@@ -227,8 +231,11 @@ const Explorer = (() => {
 
 			if(!items.length) {
 				header.textContent = "Properties"
+				properties.classList.add("closed")
 				return
 			}
+
+			properties.classList.remove("closed")
 
 			const target = items[0]
 			header.textContent = `Properties - ${target.ClassName} "${target.Name}"`
