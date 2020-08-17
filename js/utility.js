@@ -452,10 +452,12 @@ const $ = function(selector) { return $.find(document, selector) }
 						return callback.call(self, event, self)
 					}
 
+					const fn = event.stopImmediatePropagation
 					let immediateStop = false
+
 					event.stopImmediatePropagation = function() {
 						immediateStop = true
-						return this.prototype.stopImmediatePropagation.call(this)
+						return fn.call(this)
 					}
 
 					const path = event.composedPath()
