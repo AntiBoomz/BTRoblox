@@ -483,6 +483,11 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	padding: 2px;
 }
 
+.btr-explorer-inner-list {
+	display: inline-block;
+	padding-right: 4px;
+}
+
 .btr-explorer-parent,
 .btr-explorer-parent input {
 	font-family: "Source Sans Pro",Arial,Helvetica,sans-serif !important;

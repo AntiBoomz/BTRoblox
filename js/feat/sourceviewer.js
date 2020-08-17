@@ -64,51 +64,69 @@ const SourceViewer = (() => {
 	const ScopeInOut = new Set(["else"])
 
 	async function parseSource(source, parent) {
-		const lines = []
 		let tableSelector = null
 		let tableSelectorState = false
+		let textBuffer = ""
 		let lineN = 0
 		let depth = 0
-		let current
 		let text
 
+		const allLines = source.split("\n")
+
 		const content = html`
-		<div class=btr-sourceviewer-source-container style=display:none>
-			<div class=line-container><div class=linenumber></div><div class=line style=height:5px;><span class=scope></span><span class=linetext></span></div></div>
-		</div>`
-		const loadingContent = html`
 		<div class=btr-sourceviewer-source-container>
-			<div class=line-container><div class=linenumber></div><div class=line style=height:5px;><span class=scope></span><span class=linetext></span></div></div>
-			<div class=line-container>
-				<div class=linenumber style="color:transparent">${source.split("\n").length}</div>
-				<div class=line>
-					<span class=scope></span>
-					<span class=linetext><span class=btr-sourceviewer-text><span></span>
-				</div>
+			<div class=btr-sourceviewer-linenumbers>
+				<div class=btr-linenumber style="visibility:hidden;">${allLines.length}</div>
+			</div>
+			<div class=btr-sourceviewer-scopes>
+			</div>
+			<div class=btr-sourceviewer-lines>
 			</div>
 		</div>`
 
-		loadingContent.$find(".btr-sourceviewer-text").textContent = source
-		parent.append(content, loadingContent)
+
+		const linesParent = content.$find(".btr-sourceviewer-lines")
+		let loadingLinesParent
+
+		let lastLine
+		let current
+
+		const finishLine = () => {
+			if(!current) {
+				return
+			}
+
+			current.elem.dataset.depth = current.depth
+			
+			if(lastLine && current.depth > lastLine.depth) {
+				lastLine.elem.classList.add("open")
+				lastLine.elem.$find(".btr-linenumber").after(html`<div class=btr-scope contenteditable=false>`)
+			}
+
+			lastLine = current
+			current = null
+		}
 
 		const createLine = () => {
 			const elem = html`
-			<div class=line-container>
-				<div class=linenumber>${++lineN}</div>
-				<div class=line><span class=scope></span><span class=linetext></span></div>
+			<div class=btr-line-container>
+				<div class=btr-linenumber contenteditable=false>${++lineN}</div>
+				<span class=btr-linetext></span>
 			</div>`
 
-			content.append(elem)
+			linesParent.append(elem)
 
 			const line = {
-				elem,
-				list: elem.$find(".linetext"),
-				scope: elem.$find(".scope"),
-				depth
+				elem, depth,
+				list: elem.$find(".btr-linetext")
 			}
 
-			lines.push(line)
-			return line
+			if(lineN === 1) { // small hack to fix selection for first line
+				elem.prepend(line.list)
+			}
+
+			finishLine()
+			current = line
 		}
 
 		const appendUntil = final => {
@@ -162,15 +180,46 @@ const SourceViewer = (() => {
 			}
 		}
 
-		current = createLine()
+		const appendText = textInput => {
+			if(textInput === true) {
+				if(textBuffer.length) {
+					current.list.append(textBuffer)
+					textBuffer = ""
+				}
+
+				return
+			}
+
+			textBuffer += textInput
+		}
+
+		createLine()
 		ParseRegex.lastIndex = 0
 
-		let nextYield = performance.now() + 500
+		let nextYield = performance.now() + 10
 		
+		if(!loadingLinesParent) {
+			loadingLinesParent = linesParent.cloneNode()
+			linesParent.after(loadingLinesParent)
+			linesParent.style.display = "none"
+
+			parent.append(content)
+
+			let loadingLineN = 0
+
+			allLines.forEach(lineText => {
+				loadingLinesParent.append(html`
+				<div class=btr-line-container>
+					<div class=btr-linenumber contenteditable=false>${++loadingLineN}</div>
+					<span class=btr-linetext>${lineText + "\n"}</span>
+				</div>`)
+			})
+		}
+
 		while(true) {
 			if(performance.now() >= nextYield) {
-				await new Promise(resolve => setTimeout(resolve, 100))
-				nextYield = performance.now() + 500
+				await new Promise(resolve => requestAnimationFrame(resolve))
+				nextYield = performance.now() + 10
 			}
 
 			const match = ParseRegex.exec(source)
@@ -180,7 +229,9 @@ const SourceViewer = (() => {
 
 			text = match[0]
 			if(text === "\n") {
-				current = createLine()
+				appendText("\n")
+				appendText(true)
+				createLine()
 				continue
 			}
 
@@ -251,7 +302,9 @@ const SourceViewer = (() => {
 
 			textLines.forEach((line, index) => {
 				if(index > 0) {
-					current = createLine()
+					appendText("\n")
+					appendText(true)
+					createLine()
 				}
 
 				if(multiline) {
@@ -263,78 +316,155 @@ const SourceViewer = (() => {
 					}
 				}
 
-				const span = html`<span></span>`
-				span.className = "btr-sourceviewer-" + textType
-				span.textContent = line
+				if(textType === "text") {
+					appendText(line)
+				} else {
+					appendText(true)
 
-				current.list.append(span)
+					const span = html`<span></span>`
+					span.className = "btr-sourceviewer-" + textType
+					span.textContent = line
+	
+					current.list.append(span)
+				}
 			})
 		}
 
-		let lastLine
-		lines.forEach(line => {
-			line.elem.dataset.depth = line.depth
+		finishLine()
 
-			if(lastLine && line.depth > lastLine.depth) {
-				lastLine.elem.classList.add("open")
+		if(loadingLinesParent) {
+			loadingLinesParent.remove()
+			linesParent.style.display = ""
+		} else {
+			parent.append(content)
+		}
+		
+		//
+
+		linesParent.contentEditable = true
+
+		let savedContent = linesParent.innerHTML
+		let savedSelection
+
+		linesParent.$on("input", () => {
+			if(linesParent.innerHTML !== savedContent) {
+				const savedScroll = parent.scrollTop
+
+				linesParent.innerHTML = savedContent
+
+				if(savedSelection) {
+					const { anchor, focus } = savedSelection
+
+					const sel = document.getSelection()
+					const anchorElem = linesParent.children[anchor.lineIndex].$find(".btr-linetext").childNodes[anchor.childIndex]
+					const focusElem = linesParent.children[focus.lineIndex].$find(".btr-linetext").childNodes[focus.childIndex]
+
+					sel.setBaseAndExtent(
+						anchorElem.nodeType !== 3 ? anchorElem.childNodes[0] : anchorElem,
+						anchor.offset,
+						focusElem.nodeType !== 3 ? focusElem.childNodes[0] : focusElem,
+						focus.offset
+					)
+				}
+
+				parent.scrollTop = savedScroll
+				requestAnimationFrame(() => parent.scrollTop = savedScroll)
 			}
-
-			lastLine = line
 		})
 
-		// Add an empty line to the end
-		content.append(html`<div class=line-container><div class=linenumber></div><div class=line style=height:5px;><span class=scope></span><span class=linetext></span></div></div>`)
-	
-		loadingContent.remove()
-		content.style.display = ""
+		const getElemPath = (node, offset) => {
+			if(!node.parentNode.classList.contains("btr-linetext")) {
+				node = node.parentNode
+			}
 
-		content.$findAll(".line-container.open,.line-container.closed").forEach(elem => {
-			elem.$find(".scope").$on("click", () => {
-				if(elem.classList.contains("open")) {
-					elem.classList.remove("open")
-					elem.classList.add("closed")
+			if(node.parentNode.classList.contains("btr-linetext")) {
+				const lineIndex = Array.prototype.indexOf.call(linesParent.children, node.parentNode.parentNode)
+				const childIndex = Array.prototype.indexOf.call(node.parentNode.childNodes, node)
+
+				if(lineIndex !== -1 && childIndex !== -1) {
+					return { lineIndex, childIndex, offset }
+				}
+			}
+		}
+
+		const onSelectChange = () => {
+			if(!document.contains(linesParent)) {
+				document.$off("selectionchange", onSelectChange)
+				return
+			}
+
+			savedSelection = null
+
+			const sel = document.getSelection()
+
+			if(linesParent.contains(sel.anchorNode)) {
+				const anchor = getElemPath(sel.anchorNode, sel.anchorOffset)
+				const focus = getElemPath(sel.focusNode, sel.focusOffset)
+
+				if(anchor && focus) {
+					savedSelection = { anchor, focus }
+				}
+			}
+		}
+
+		document.$on("selectionchange", onSelectChange)
 		
-					const myDepth = +elem.dataset.depth
-					let target = elem
-		
-					while(target.nextElementSibling) {
-						target = target.nextElementSibling
-		
-						if(!target.dataset.depth || +target.dataset.depth <= myDepth) {
-							break
-						}
-		
-						target.style.display = "none"
+		//
+
+		content.$on("click", ".btr-scope", ev => {
+			ev.preventDefault()
+			ev.stopPropagation()
+			ev.stopImmediatePropagation()
+
+			const scope = ev.currentTarget
+			const elem = scope.closest(".btr-line-container")
+
+			if(elem.classList.contains("open")) {
+				elem.classList.remove("open")
+				elem.classList.add("closed")
+	
+				const myDepth = +elem.dataset.depth
+				let target = elem
+	
+				while(target.nextElementSibling) {
+					target = target.nextElementSibling
+	
+					if(!target.dataset.depth || +target.dataset.depth <= myDepth) {
+						break
 					}
-				} else {
-					elem.classList.remove("closed")
-					elem.classList.add("open")
-		
-					const myDepth = +elem.dataset.depth
-					let subDepth = null
-					let target = elem
-		
-					while(target.nextElementSibling) {
-						target = target.nextElementSibling
-		
-						if(!target.dataset.depth || +target.dataset.depth <= myDepth) {
-							break
-						}
-		
-						if(subDepth !== null && +target.dataset.depth > subDepth) {
-							// Keep hidden
-						} else {
-							subDepth = null
-		
-							target.style.display = ""
-		
-							if(target.classList.contains("closed")) {
-								subDepth = +target.dataset.depth
-							}
+	
+					target.classList.add("btr-collapsed")
+				}
+			} else {
+				elem.classList.remove("closed")
+				elem.classList.add("open")
+	
+				const myDepth = +elem.dataset.depth
+				let subDepth = null
+				let target = elem
+	
+				while(target.nextElementSibling) {
+					target = target.nextElementSibling
+	
+					if(!target.dataset.depth || +target.dataset.depth <= myDepth) {
+						break
+					}
+	
+					if(subDepth !== null && +target.dataset.depth > subDepth) {
+						// Keep hidden
+					} else {
+						subDepth = null
+	
+						target.classList.remove("btr-collapsed")
+	
+						if(target.classList.contains("closed")) {
+							subDepth = +target.dataset.depth
 						}
 					}
 				}
-			})
+			}
+
+			savedContent = linesParent.innerHTML
 		})
 
 		return content

@@ -141,7 +141,7 @@
 	font-size: 14px !important;
 	font-weight: 300;
 
-	line-height: 17px;
+	line-height: 18px;
 
 	tab-size: 4;
 	-moz-tab-size: 4;
@@ -152,46 +152,109 @@
 .btr-sourceviewer-source-container {
 	white-space: break-spaces;
 	word-break: break-word;
+
+	position: relative;
+	min-height: 100%;
+
+	display: flex;
+	flex-direction: row;
+
+	user-select: none;
+	-moz-user-select: none;
 }
 
-.btr-sourceviewer-source-container .line-container {
-	display: table-row;
+.btr-sourceviewer-source-container > * {
+	padding-top: 4px;
+	padding-bottom: 12px;
 }
 
-.btr-sourceviewer-source-container .linenumber {
-	display: table-cell;
-
+.btr-sourceviewer-source-container > .btr-sourceviewer-linenumbers {
 	background: #DDDDDD;
 	padding-left: 12px;
 	padding-right: 4px;
-
+	
 	text-align: right;
 	white-space: nowrap;
 
 	user-select: none;
 	-moz-user-select: none;
+
+	pointer-events: none;
 }
 
-.btr-sourceviewer-source-container .line {
-	display: contents;
+.btr-sourceviewer-source-container > .btr-sourceviewer-scopes {
+	background: #FAFAFA;
+	width: 14px;
+
+	user-select: none;
+	-moz-user-select: none;
+
+	pointer-events: none;
 }
 
-.btr-sourceviewer-source-container .line .scope {
-	display: table-cell;
+.btr-sourceviewer-source-container > .btr-sourceviewer-lines {
+	position: relative;
+	flex: 1 1 auto;
+
+	cursor: text;
+
+	user-select: default;
+	-moz-user-select: default;
+}
+
+.btr-sourceviewer-source-container .btr-linenumber {
+	text-align: right;
+	white-space: nowrap;
+
+	user-select: none;
+	-moz-user-select: none;
+
+	pointer-events: none;
+}
+
+.btr-sourceviewer-source-container .btr-linenumber::selection {
+	display: none !important;
+}
+
+.btr-sourceviewer-source-container .btr-line-container {
+	display: inline;
+	position: relative;
+}
+
+.btr-sourceviewer-source-container .btr-line-container.btr-collapsed {
+	display: block;
+	max-height: 0px;
+	max-width: 0;
+	overflow: hidden;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.btr-sourceviewer-source-container .btr-line-container .btr-linenumber {
+	position: absolute;
+	top: 0;
+	left: -68px;
+
+	width: 50px;
+}
+
+.btr-sourceviewer-source-container .btr-line-container .btr-scope {
+	position: absolute;
+	top: -1px;
+	left: -14px;
 
 	background: #FAFAFA;
 	width: 14px;
-	min-width: 14px;
-	max-width: 14px;
+	height: 18px;
 
-	position: relative;
+	cursor: default;
 
 	user-select: none;
 	-moz-user-select: none;
 }
 
-.btr-sourceviewer-source-container .line-container.open .scope::before,
-.btr-sourceviewer-source-container .line-container.closed .scope::before {
+.btr-sourceviewer-source-container .btr-line-container.open .btr-scope::before,
+.btr-sourceviewer-source-container .btr-line-container.closed .btr-scope::before {
 	content: "";
 	position: absolute;
 
@@ -206,16 +269,18 @@
 
 	left: 4px;
 	top: 5px;
+
+	user-select: none;
+	-moz-user-select: none;
 }
 
-.btr-sourceviewer-source-container .line-container.closed .scope::before {
+.btr-sourceviewer-source-container .btr-line-container.closed .btr-scope::before {
 	transform: rotate(-45deg);
 	margin-top: 1px;
 	margin-left: -1px;
 }
 
-.btr-sourceviewer-source-container .linetext {
-	display: table-cell;
+.btr-sourceviewer-source-container .btr-linetext {
 	padding: 1px 6px;
 }
 
