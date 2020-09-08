@@ -183,6 +183,8 @@
 }
 
 .btr-sourceviewer-source-container > .btr-sourceviewer-scopes {
+	flex: 0 0 auto;
+	
 	background: #FAFAFA;
 	width: 14px;
 
@@ -243,7 +245,6 @@
 	top: -1px;
 	left: -14px;
 
-	background: #FAFAFA;
 	width: 14px;
 	height: 18px;
 
