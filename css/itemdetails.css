@@ -600,6 +600,15 @@ a:not(.disabled) > .btr-icon-content:hover {
 	padding: 8px;
 }
 
+.btr-owner-item:last-child:nth-child(3n + 1) {
+	width: 100%;
+}
+
+.btr-owner-item:last-child:nth-child(3n + 2),
+.btr-owner-item:nth-last-child(2):nth-child(3n + 1) {
+	width: 50%;
+}
+
 .btr-owner-item:nth-child(3n + 1):not(:nth-last-child(-n + 3))::before,
 .btr-owner-item:nth-child(3n + 2):not(:nth-last-child(-n + 2))::before,
 .btr-owner-item:nth-child(3n + 3):not(:nth-last-child(-n + 1))::before {
