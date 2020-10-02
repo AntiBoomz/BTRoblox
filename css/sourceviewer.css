@@ -198,10 +198,15 @@
 	position: relative;
 	flex: 1 1 auto;
 
+	padding-left: 6px;
+	padding-right: 6px;
+
 	cursor: text;
 
-	user-select: default;
-	-moz-user-select: default;
+	user-select: text;
+	-moz-user-select: text;
+	
+	outline: none !important; /* Weird chrome outline */
 }
 
 .btr-sourceviewer-source-container .btr-linenumber {
@@ -235,7 +240,7 @@
 .btr-sourceviewer-source-container .btr-line-container .btr-linenumber {
 	position: absolute;
 	top: 0;
-	left: -68px;
+	left: -75px;
 
 	width: 50px;
 }
@@ -243,7 +248,7 @@
 .btr-sourceviewer-source-container .btr-line-container .btr-scope {
 	position: absolute;
 	top: -1px;
-	left: -14px;
+	left: -20px;
 
 	width: 14px;
 	height: 18px;
@@ -282,7 +287,7 @@
 }
 
 .btr-sourceviewer-source-container .btr-linetext {
-	padding: 1px 6px;
+	padding: 1px 0;
 }
 
 .btr-sourceviewer-source-container .btr-sourceviewer-string { color: rgb(127, 0, 127); }

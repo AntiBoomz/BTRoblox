@@ -342,6 +342,7 @@ const SourceViewer = (() => {
 		//
 
 		linesParent.contentEditable = true
+		linesParent.spellcheck = false
 
 		let savedContent = linesParent.innerHTML
 		let savedSelection

@@ -663,7 +663,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 .btr-properties-container {
 	position: relative;
 	display: grid;
-	grid-template-columns: max-content minmax(0, max-content) minmax(min-content, auto);
+	grid-template-columns: max-content minmax(50px, min-content) 1fr;
 	grid-auto-rows: min-content;
 	height: 100%;
 
@@ -733,6 +733,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 .btr-property-value {
 	position: relative;
 	padding: 0 5px;
+	min-width: 110px;
 }
 
 .btr-property-value .more {
@@ -778,7 +779,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 }
 
 .btr-property-value .more + input[type="text"] {
-	padding-right: 26px;
+	padding-right: 24px;
 }
 
 /* FastSearch */
