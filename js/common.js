@@ -140,8 +140,15 @@ const SETTINGS = {
 		navigation: {
 			enabled: { value: true },
 			itemsV2: { value: "", hidden: true },
-			itemsReact: { value: [], hidden: true },
-			noHamburger: { value: true }
+			noHamburger: { value: true },
+
+			moveHomeToTop: { value: true },
+			moveFriendsToTop: { value: true },
+			moveMessagesToTop: { value: true },
+
+			switchTradeForMoney: { value: true },
+			showPremium: { value: true },
+			showBlogFeed: { value: true }
 		},
 		catalog: {
 			enabled: { value: true },

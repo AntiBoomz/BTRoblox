@@ -45,7 +45,13 @@ const SettingsDiv = (() => {
 				</group>
 				<group label=Navigation path=navigation toggleable>
 					<checkbox label="Keep Sidebar Open" path=noHamburger require=false></checkbox>
-					<button id=btr-open-navigation-editor class=btn-control-xs>Modify Navigation Buttons</button>
+					<checkbox label="Show Premium" path=showPremium></checkbox>
+					<checkbox label="Show Blog Feed" path=showBlogFeed></checkbox>
+					<checkbox label="Switch Trade for Money" path=switchTradeForMoney></checkbox>
+					<checkbox label="Move Friends to Header" path=moveFriendsToTop></checkbox>
+					<checkbox label="Move Messages to Header" path=moveMessagesToTop></checkbox>
+					<checkbox label="Move Home to Header" path=moveHomeToTop></checkbox>
+					<button id=btr-open-navigation-editor class=btn-control-xs style=display:none>Modify Navigation Buttons</button>
 				</group>
 				<group label=Profile path=profile toggleable>
 					<checkbox label="Embed Inventory" path=embedInventoryEnabled></checkbox>

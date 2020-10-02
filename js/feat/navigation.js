@@ -21,7 +21,7 @@ const Navigation = (() => {
 
 		btr_Money: `
 		<li>
-			<a href="https://www.roblox.com/my/money.aspx" class="dynamic-overflow-container text-nav">
+			<a href="https://www.roblox.com/my/money.aspx" id=nav-money class="dynamic-overflow-container text-nav">
 				<div><span class="icon-nav-trade"></span></div>
 				<span class="font-header-2 dynamic-ellipsis-item">Money</span>
 			</a>
@@ -677,37 +677,66 @@ const Navigation = (() => {
 		}
 
 		navContWatcher
-			.$watch("#nav-friends", navFriends => {
+			.$watch("#navigation #nav-friends", navFriends => {
+				if(!SETTINGS.get("navigation.moveFriendsToTop")) {
+					return
+				}
 				new MutationObserver(updateFriends).observe(navFriends, { childList: true, subtree: true, attributeFilter: ["href"] })
 				updateFriends()
+
+				navFriends.parentNode.style.display = "none"
 			}, { continuous: true })
-			.$watch("#nav-message", navMessages => {
+			.$watch("#navigation #nav-message", navMessages => {
+				if(!SETTINGS.get("navigation.moveMessagesToTop")) {
+					return
+				}
 				new MutationObserver(updateMessages).observe(navMessages, { childList: true, subtree: true, attributeFilter: ["href"] })
 				updateMessages()
+
+				navMessages.parentNode.style.display = "none"
+			}, { continuous: true })
+			.$watch("#navigation #nav-home", x => {
+				if(!SETTINGS.get("navigation.moveHomeToTop")) {
+					return
+				}
+				x.parentNode.style.display = "none"
 			}, { continuous: true })
 			.$watch("#header .age-bracket-label", x => x.style.display = "none")
 			.$watch("#header .rbx-navbar a[href^=\"/robux\"]", x => x.parentNode.style.display = "none")
-			.$watch("#navigation #nav-home", x => x.parentNode.style.display = "none", { continuous: true })
-			.$watch("#navigation #nav-friends", x => x.parentNode.style.display = "none", { continuous: true })
-			.$watch("#navigation #nav-message", x => x.parentNode.style.display = "none", { continuous: true })
 			.$watch("#navigation .rbx-upgrade-now", x => x.style.display = "none", { continuous: true })
-			.$watch("#nav-blog", blog => {
-				blog.parentNode.after(html`<div id=btr-blogfeed-container><li id=btr-blogfeed></li></div>`)
-				initBlogFeed()
+			.$watch("#navigation #nav-trade", trade => {
+				if(SETTINGS.get("navigation.switchTradeForMoney")) {
+					trade.parentNode.after(html(customElements.btr_Money))
+					trade.parentNode.style.display = "none"
+				}
+			}, { continuous: true })
+			.$watch("#navigation #nav-blog", blog => {
+				if(SETTINGS.get("navigation.showPremium")) {
+					blog.parentNode.before(html(customElements.btr_Premium))
+				}
+
+				if(SETTINGS.get("navigation.showBlogFeed")) {
+					blog.parentNode.after(html`<div id=btr-blogfeed-container><li id=btr-blogfeed></li></div>`)
+					initBlogFeed()
+				}
 			}, { continuous: true })
 
 		navContWatcher.$watch("#header").$then().$watch(">div").$then()
 			.$watch("#navbar-robux", robux => {
-				robux.after(
-					html(customElements.btr_Friends),
-					html(customElements.btr_Messages)
-				)
+				if(SETTINGS.get("navigation.moveMessagesToTop")) {
+					robux.after(html(customElements.btr_Messages))
+					updateMessages()
+				}
 
-				updateMessages()
-				updateFriends()
+				if(SETTINGS.get("navigation.moveFriendsToTop")) {
+					robux.after(html(customElements.btr_Friends))
+					updateFriends()
+				}
 			})
 			.$watchAll(".rbx-navbar", nav => {
-				nav.append(html(customElements.btr_Home))
+				if(SETTINGS.get("navigation.moveHomeToTop")) {
+					nav.append(html(customElements.btr_Home))
+				}
 			})
 		
 			
