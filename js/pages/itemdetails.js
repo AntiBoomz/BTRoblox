@@ -455,7 +455,7 @@ pageInit.itemdetails = function(category, assetId) {
 	if(SETTINGS.get("itemdetails.addOwnersList")) {
 		let wasOwnersListSetup = false
 		
-		const setupOwnersList = (parent, name, ownerAssetId) => {
+		const setupOwnersList = (parent, name, ownerAssetId, initData) => {
 			if(wasOwnersListSetup) { return }
 			wasOwnersListSetup = true
 
@@ -495,7 +495,7 @@ pageInit.itemdetails = function(category, assetId) {
 				parent.style.display = "none"
 				owners.style.display = ""
 
-				if(!firstLoaded) {
+				if(!firstLoaded && !initData) {
 					loadOwners()
 				}
 			})
@@ -569,13 +569,51 @@ pageInit.itemdetails = function(category, assetId) {
 				})
 			}
 
+			const createElements = data => {
+				const request = {}
+				const elems = []
+
+				data.forEach(item => {
+					if(item.owner && (item.owner.type !== "User" || item.owner.id === 1)) { return }
+					if(!item.owner && !item.serialNumber) { return }
+
+					if(item.owner) {
+						const userId = item.owner.id
+
+						const self = {
+							item,
+							userId,
+							userName: `User#${userId}`
+						}
+
+						const list = request[userId] = request[userId] || []
+						list.push(self)
+						elems.push(self)
+					} else {
+						const self = {
+							item,
+							userId: 0,
+							userName: `Unknown User`
+						}
+
+						elems.push(self)
+					}
+				})
+
+				getNames(request).finally(() => {
+					isLoading = false
+					seeMore.textContent = "See More"
+					seeMore.removeAttribute("disabled")
+
+					elems.forEach(
+						x => ownersList.append(createElement(x))
+					)
+				})
+			}
+
 			const loadOwners = () => {
 				if(isLoading) { return }
 				isLoading = true
-
-				if(!firstLoaded) {
-					firstLoaded = true
-				}
 
 				seeMore.textContent = "Loading..."
 				seeMore.setAttribute("disabled", "")
@@ -601,6 +639,11 @@ pageInit.itemdetails = function(category, assetId) {
 						return
 					}
 
+					if(!firstLoaded) {
+						firstLoaded = true
+						ownersList.$empty()
+					}
+
 					const json = await resp.json()
 
 					if(json.nextPageCursor) {
@@ -609,48 +652,18 @@ pageInit.itemdetails = function(category, assetId) {
 						seeMore.remove()
 					}
 
-					const request = {}
-					const elems = []
-
-					json.data.forEach(item => {
-						if(item.owner && (item.owner.type !== "User" || item.owner.id === 1)) { return }
-						if(!item.owner && !item.serialNumber) { return }
-
-						if(item.owner) {
-							const userId = item.owner.id
-
-							const self = {
-								item,
-								userId,
-								userName: `User#${userId}`
-							}
-	
-							const list = request[userId] = request[userId] || []
-							list.push(self)
-							elems.push(self)
-						} else {
-							const self = {
-								item,
-								userId: 0,
-								userName: `Unknown User`
-							}
-	
-							elems.push(self)
-						}
-					})
-
-					getNames(request).finally(() => {
-						isLoading = false
-						seeMore.textContent = "See More"
-						seeMore.removeAttribute("disabled")
-
-						elems.forEach(
-							x => ownersList.append(createElement(x))
-						)
-					})
+					createElements(json.data)
 				}
 
 				$.fetch(url, { credentials: "include" }).then(handler)
+			}
+
+			if(initData) {
+				createElements(initData.data)
+
+				if(!initData.nextPageCursor) {
+					seeMore.remove()
+				}
 			}
 
 			seeMore.$on("click", loadOwners)
@@ -672,14 +685,25 @@ pageInit.itemdetails = function(category, assetId) {
 		}
 
 		itemIdPromise.then(itemId => {
-			document.$watch("#item-container").$then()
-				.$watch(">asset-resale-pane, >#recommendations-container,>.bundle-items", parent => {
-					const title = parent.id === "recommendations-container" ? "Recommended"
-						: parent.classList.contains("bundle-items") ? "Included Items"
-							: "Resellers"
-					
-					setupOwnersList(parent, title, itemId)
-				})
+			const checkUrl = `https://inventory.roblox.com/v2/assets/${itemId}/owners?limit=10`
+
+			fetch(checkUrl, { credentials: "include" }).then(async resp => {
+				if(resp.status === 403) {
+					return
+				}
+
+				const initData = resp.ok && (await resp.json())
+
+				document.$watch("#item-container").$then()
+					.$watch(">asset-resale-pane, >#recommendations-container,>.bundle-items", parent => {
+						const title = parent.id === "recommendations-container" ? "Recommended"
+							: parent.classList.contains("bundle-items") ? "Included Items"
+								: "Resellers"
+						
+						setupOwnersList(parent, title, itemId, initData)
+					})
+			})
+
 		})
 	}
 
