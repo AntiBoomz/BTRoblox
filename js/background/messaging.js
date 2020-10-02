@@ -4,7 +4,12 @@ const invalidXsrfTokens = {}
 let cachedXsrfToken
 
 const OwnerAssetCache = {
-	assetTypes: ["17", "18", "19", "41", "42", "43", "44", "45", "46", "47", "11", "12", "bundles", "8", "61"],
+	assetTypes: ["bundles", "assets"],
+	requestedAssetTypes: [
+		"Hat", "Shirt", "Pants", "Head", "Face", "Gear",
+		"HairAccessory", "FaceAccessory", "NeckAccessory", "ShoulderAccessory", "FrontAccessory", "BackAccessory",
+		"WaistAccessory", "EmoteAnimation"
+	],
 	assetMap: {},
 	data: null,
 
@@ -36,7 +41,7 @@ const OwnerAssetCache = {
 	
 	markAsset(next, id, owned, copyTo) {
 		if(next.type === "bundles") {
-			id = "bundle_" + id
+			id = "b" + id
 		}
 
 		if(owned) {
@@ -95,7 +100,7 @@ const OwnerAssetCache = {
 		const cursorParam = populate ? `&cursor=${cursor}` : ""
 		const url = next.type === "bundles"
 			? `https://catalog.roblox.com/v1/users/${this.data.lastUserId}/bundles?sortOrder=Desc&limit=${populate ? 100 : 10}${cursorParam}`
-			: `https://inventory.roblox.com/v2/users/${this.data.lastUserId}/inventory/${next.type}?sortOrder=Desc&limit=${populate ? 100 : 10}${cursorParam}`
+			: `https://inventory.roblox.com/v2/users/${this.data.lastUserId}/inventory?assetTypes=${this.requestedAssetTypes.join(",")}&sortOrder=Desc&limit=${populate ? 100 : 10}${cursorParam}`
 
 		const resp = await fetch(url)
 		if(!resp.ok) { throw new Error("Response not ok") }

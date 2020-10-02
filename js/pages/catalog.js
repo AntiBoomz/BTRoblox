@@ -100,7 +100,7 @@ pageInit.catalog = function() {
 				return
 			}
 
-			const id = match[1] === "bundles" ? "bundle_" + match[2] : match[2]
+			const id = match[1] === "bundles" ? "b" + match[2] : match[2]
 
 			if(!currentRequest) {
 				currentRequest = []
