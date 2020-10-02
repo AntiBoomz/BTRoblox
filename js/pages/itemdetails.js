@@ -768,7 +768,7 @@ pageInit.itemdetails = function(category, assetId) {
 				if(!resp.ok) { return }
 				apply((await resp.json()).Sales)
 			})
-		} else if(category === "bundles") {
+		} else {
 			const url = "https://catalog.roblox.com/v1/catalog/items/details"
 			
 			const request = $.fetch(url, {
@@ -776,7 +776,7 @@ pageInit.itemdetails = function(category, assetId) {
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					items: [
-						{ id: assetId, itemType: "Bundle", key: `Bundle_${assetId}` }
+						{ id: assetId, itemType: category === "bundles" ? "Bundle" : "Asset", key: `${assetId}` }
 					]
 				}),
 				xsrf: true
@@ -786,8 +786,6 @@ pageInit.itemdetails = function(category, assetId) {
 				const json = await resp.json()
 				apply(json.data[0].purchaseCount)
 			})
-		} else {
-			getProductInfo(assetId).then(data => apply(data.Sales))
 		}
 	}
 
