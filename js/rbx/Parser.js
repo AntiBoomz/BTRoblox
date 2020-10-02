@@ -80,6 +80,13 @@ const RBXParser = (() => {
 		UInt16BE() { return (this[this.index++] * 256) + this[this.index++] }
 		UInt32LE() { return this[this.index++] + (this[this.index++] * 256) + (this[this.index++] * 65536) + (this[this.index++] * 16777216) }
 		UInt32BE() { return (this[this.index++] * 16777216) + (this[this.index++] * 65536) + (this[this.index++] * 256) + this[this.index++] }
+
+		Int8() { return (this[this.index++]) << 24 >> 24 }
+		Int16LE() { return (this[this.index++] + (this[this.index++] * 256)) << 16 >> 16 }
+		Int16BE() { return ((this[this.index++] * 256) + this[this.index++]) << 16 >> 16 }
+		Int32LE() { return (this[this.index++] + (this[this.index++] * 256) + (this[this.index++] * 65536) + (this[this.index++] * 16777216)) >> 0 }
+		Int32BE() { return ((this[this.index++] * 16777216) + (this[this.index++] * 65536) + (this[this.index++] * 256) + this[this.index++]) >> 0 }
+
 		FloatLE() { return ByteReader.ParseFloat(this.UInt32LE()) }
 		FloatBE() { return ByteReader.ParseFloat(this.UInt32BE()) }
 		DoubleLE() {
@@ -892,6 +899,7 @@ const RBXParser = (() => {
 			case "2.00":
 			case "3.00":
 			case "3.01":
+			case "4.00":
 				return this.parseBin(buffer, version)
 			default:
 				throw new Error(`Unsupported mesh version '${version}'`)
@@ -951,10 +959,15 @@ const RBXParser = (() => {
 			let vertexSize
 			let faceSize
 			let lodSize
+			let nameTableSize
 
+			let meshCount
+			let lodCount
 			let vertexCount
 			let faceCount
-			let lodCount
+			let boneCount
+			let envelopeCount
+			let skinDataCount
 
 			if(version === "2.00") {
 				headerSize = reader.UInt16LE()
@@ -962,107 +975,163 @@ const RBXParser = (() => {
 
 				vertexSize = reader.Byte()
 				faceSize = reader.Byte()
+				lodSize = 0
+				nameTableSize = 0
 
-				lodCount = 2
-				vertexCount = reader.UInt32LE()
-				faceCount = reader.UInt32LE()
-			} else {
+				meshCount = 1
+				lodCount = 0
+				vertexCount = reader.Int32LE()
+				faceCount = reader.Int32LE()
+				envelopeCount = 0
+				skinDataCount = 0
+				boneCount = 0
+			} else if(version.startsWith("3.")) {
 				headerSize = reader.UInt16LE()
 				assert(headerSize >= 16, `Invalid header size ${headerSize}`)
 
+				meshCount = 1
 				vertexSize = reader.Byte()
 				faceSize = reader.Byte()
 				lodSize = reader.UInt16LE()
-				assert(lodSize === 4, `Invalid lod size ${lodSize}`)
+				nameTableSize = 0
 
 				lodCount = reader.UInt16LE()
-				vertexCount = reader.UInt32LE()
-				faceCount = reader.UInt32LE()
+				vertexCount = reader.Int32LE()
+				faceCount = reader.Int32LE()
+				envelopeCount = 0
+				skinDataCount = 0
+				boneCount = 0
+			} else {
+				headerSize = reader.UInt16LE()
+				assert(headerSize >= 24, `Invalid header size ${headerSize}`)
+
+				vertexSize = 40
+				faceSize = 12
+				lodSize = 4
+
+				meshCount = reader.UInt16LE()
+				vertexCount = reader.Int32LE()
+				faceCount = reader.Int32LE()
+
+				lodCount = reader.UInt16LE()
+				boneCount = reader.UInt16LE()
+
+				nameTableSize = reader.Int32LE()
+				skinDataCount = reader.UInt16LE()
+				reader.Jump(2) // Unknown
+
+				if(boneCount > 0) {
+					envelopeCount = vertexCount
+				} else {
+					envelopeCount = 0
+				}
 			}
 
 			assert(vertexSize >= 32, `Invalid vertex size ${vertexSize}`)
 			assert(faceSize >= 12, `Invalid face size ${faceSize}`)
+			assert(lodCount === 0 || lodSize === 4, `Invalid lod size ${lodSize}`)
 
-			const headerEnd = begin + headerSize
-			const vertexEnd = headerEnd + vertexSize * vertexCount
-			const faceEnd = vertexEnd + faceSize * faceCount
-			const fileEnd = version === "2.00" ? faceEnd : faceEnd + lodSize * lodCount
+			const fileEnd = begin
+				+ headerSize
+				+ (vertexCount * vertexSize)
+				+ (envelopeCount * 8)
+				+ (faceCount * faceSize)
+				+ (lodCount * 4)
+				+ (boneCount * 60)
+				+ (nameTableSize)
+				+ (skinDataCount * 72)
+			
+			assert(fileEnd === reader.GetLength(), `Invalid file size (expected ${reader.GetLength()}, got ${fileEnd})`)
+			
+			const faces = new Uint32Array(faceCount * 3)
+			const vertices = new Float32Array(vertexCount * 3)
+			const normals = new Float32Array(vertexCount * 3)
+			const uvs = new Float32Array(vertexCount * 2)
+			const lodLevels = []
 
-			assert(fileEnd === reader.GetLength(), `Invalid file size (expected ${fileEnd}, got ${reader.GetLength()})`)
+			reader.SetIndex(begin + headerSize)
 
-			const meshLods = []
-			let lodLevels
+			for(let i = 0; i < vertexCount; i++) {
+				vertices[i * 3] = reader.FloatLE()
+				vertices[i * 3 + 1] = reader.FloatLE()
+				vertices[i * 3 + 2] = reader.FloatLE()
 
-			if(version === "2.00") {
-				lodLevels = [0, faceCount]
+				normals[i * 3] = reader.FloatLE()
+				normals[i * 3 + 1] = reader.FloatLE()
+				normals[i * 3 + 2] = reader.FloatLE()
+
+				uvs[i * 2] = reader.FloatLE()
+				uvs[i * 2 + 1] = 1 - reader.FloatLE()
+
+				reader.Jump(vertexSize - 32)
+			}
+
+			if(envelopeCount > 0) {
+				reader.Jump(vertexCount * 8)
+			}
+
+			for(let i = 0; i < faceCount; i++) {
+				faces[i * 3] = reader.Int32LE()
+				faces[i * 3 + 1] = reader.Int32LE()
+				faces[i * 3 + 2] = reader.Int32LE()
+
+				reader.Jump(faceSize - 12)
+			}
+
+			if(lodCount === 0) {
+				lodLevels.push(0, faceCount)
 			} else {
-				reader.SetIndex(faceEnd)
-
-				lodLevels = []
 				for(let i = 0; i < lodCount; i++) {
-					lodLevels.push(reader.UInt32LE())
+					lodLevels.push(reader.Int32LE())
 				}
 			}
 
-			for(let lod = 1; lod < lodCount; lod++) {
-				const faceOffset = lodLevels[lod - 1]
-				const realFaceCount = lodLevels[lod] - faceOffset
-				
-				const faces = new Uint32Array(realFaceCount * 3)
-				let vertexMin = Infinity
-				let vertexMax = -Infinity
-
-				reader.SetIndex(vertexEnd + faceOffset * faceSize)
-				for(let i = 0; i < realFaceCount; i++) {
-					const i0 = faces[i * 3] = reader.UInt32LE()
-					const i1 = faces[i * 3 + 1] = reader.UInt32LE()
-					const i2 = faces[i * 3 + 2] = reader.UInt32LE()
-
-					if(i2 > vertexMax) { vertexMax = i2 }
-					if(i1 > vertexMax) { vertexMax = i1 }
-					if(i0 > vertexMax) { vertexMax = i0 }
-					if(i0 < vertexMin) { vertexMin = i0 }
-					if(i1 < vertexMin) { vertexMin = i1 }
-					if(i2 < vertexMin) { vertexMin = i2 }
-
-					if(faceSize !== 12) {
-						reader.Jump(faceSize - 12)
-					}
-				}
-
-				for(let i = 0; i < realFaceCount; i++) {
-					faces[i] -= vertexMin
-				}
-
-				const realVertexCount = (vertexMax - vertexMin) + 1
-
-				const vertices = new Float32Array(realVertexCount * 3)
-				const normals = new Float32Array(realVertexCount * 3)
-				const uvs = new Float32Array(realVertexCount * 2)
-
-				reader.SetIndex(headerEnd + vertexMin * vertexSize)
-				for(let i = 0; i < realVertexCount; i++) {
-					vertices[i * 3] = reader.FloatLE()
-					vertices[i * 3 + 1] = reader.FloatLE()
-					vertices[i * 3 + 2] = reader.FloatLE()
-
-					normals[i * 3] = reader.FloatLE()
-					normals[i * 3 + 1] = reader.FloatLE()
-					normals[i * 3 + 2] = reader.FloatLE()
-
-					uvs[i * 2] = reader.FloatLE()
-					uvs[i * 2 + 1] = 1 - reader.FloatLE()
-
-					if(vertexSize !== 32) {
-						reader.Jump(vertexSize - 32)
-					}
-				}
-
-				meshLods.push({ vertices, normals, uvs, faces })
-				break // We only need the first lod level
+			if(boneCount > 0) {
+				reader.Jump(boneCount * 60)
 			}
 
-			return meshLods[0]
+			if(nameTableSize > 0) {
+				reader.Jump(nameTableSize)
+			}
+
+			if(skinDataCount > 0) {
+				reader.Jump(skinDataCount * 72)
+			}
+
+			const newFaces = faces.slice(lodLevels[0] * 3, lodLevels[1] * 3)
+			let minFaceIndex = faceCount
+			let maxFaceIndex = 0
+
+			for(let i = 0; i < newFaces.length; i++) {
+				const index = newFaces[i]
+
+				if(index < minFaceIndex) {
+					minFaceIndex = index
+				}
+
+				if(index >= maxFaceIndex) {
+					maxFaceIndex = index + 1
+				}
+			}
+
+			if(minFaceIndex > 0) {
+				for(let i = 0; i < newFaces.length; i++) {
+					newFaces[i] -= minFaceIndex
+				}
+			}
+
+			const newVertices = vertices.slice(minFaceIndex * 3, maxFaceIndex * 3)
+			const newNormals = normals.slice(minFaceIndex * 3, maxFaceIndex * 3)
+			const newUVs = uvs.slice(minFaceIndex * 2, maxFaceIndex * 2)
+
+			const mesh = {
+				vertices: newVertices,
+				normals: newNormals,
+				uvs: newUVs,
+				faces: newFaces
+			}
+
+			return mesh
 		}
 	}
 
