@@ -1221,7 +1221,7 @@ const HoverPreview = (() => {
 							return details.data
 						})
 				} else {
-					assetDetailsPromise = assetCache[assetId] = assetCache[assetId] ||$.fetch(`https://catalog.roblox.com/v1/catalog/items/details`, {
+					assetDetailsPromise = assetCache[assetId] = assetCache[assetId] || $.fetch(`https://catalog.roblox.com/v1/catalog/items/details`, {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify({
