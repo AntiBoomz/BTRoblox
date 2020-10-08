@@ -1200,30 +1200,38 @@ const HoverPreview = (() => {
 
 				if(isBundle) {
 					assetDetailsPromise = bundleCache[assetId] = bundleCache[assetId] ||
-						$.fetch(`https://catalog.roblox.com/v1/bundles/${assetId}/details`)
-							.then(resp => resp.json())
-							.then(json => $.fetch(`https://catalog.roblox.com/v1/catalog/items/details`, {
+						$.fetch(`https://catalog.roblox.com/v1/bundles/${assetId}/details`).then(async resp => {
+							const json = await resp.json()
+							const outfit = json.items.find(x => x.type === "UserOutfit")
+
+							if(outfit) {
+								targetOutfitId = outfit.id
+							}
+
+							const detailsResp = await $.fetch(`https://catalog.roblox.com/v1/catalog/items/details`, {
 								method: "POST",
 								headers: { "Content-Type": "application/json" },
 								body: JSON.stringify({
 									items: json.items.filter(x => x.type === "Asset").map(x => ({ id: x.id, itemType: "Asset" }))
 								}),
 								xsrf: true
-							}))
-							.then(x => x.json())
-							.then(details => Object.values(details.data))
-				} else {
-					assetDetailsPromise = assetCache[assetId] = assetCache[assetId] ||
-						$.fetch(`https://catalog.roblox.com/v1/catalog/items/details`, {
-							method: "POST",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify({
-								items: [{ id: assetId, itemType: "Asset" }]
-							}),
-							xsrf: true
+							})
+
+							const details = await detailsResp.json()
+							return details.data
 						})
-							.then(x => x.json())
-							.then(details => Object.values(details.data))
+				} else {
+					assetDetailsPromise = assetCache[assetId] = assetCache[assetId] ||$.fetch(`https://catalog.roblox.com/v1/catalog/items/details`, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							items: [{ id: assetId, itemType: "Asset" }]
+						}),
+						xsrf: true
+					}).then(async resp => {
+						const json = await resp.json()
+						return json.data
+					})
 				}
 
 				assetDetailsPromise.then(async items => {
