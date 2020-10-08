@@ -677,7 +677,7 @@ const Navigation = (() => {
 		}
 
 		navContWatcher
-			.$watch("#navigation #nav-friends", navFriends => {
+			.$watch("#nav-friends", navFriends => {
 				if(!SETTINGS.get("navigation.moveFriendsToTop")) {
 					return
 				}
@@ -686,7 +686,7 @@ const Navigation = (() => {
 
 				navFriends.parentNode.style.display = "none"
 			}, { continuous: true })
-			.$watch("#navigation #nav-message", navMessages => {
+			.$watch("#nav-message", navMessages => {
 				if(!SETTINGS.get("navigation.moveMessagesToTop")) {
 					return
 				}
@@ -695,22 +695,19 @@ const Navigation = (() => {
 
 				navMessages.parentNode.style.display = "none"
 			}, { continuous: true })
-			.$watch("#navigation #nav-home", x => {
+			.$watch("#nav-home", x => {
 				if(!SETTINGS.get("navigation.moveHomeToTop")) {
 					return
 				}
 				x.parentNode.style.display = "none"
 			}, { continuous: true })
-			.$watch("#header .age-bracket-label", x => x.style.display = "none")
-			.$watch("#header .rbx-navbar a[href^=\"/robux\"]", x => x.parentNode.style.display = "none")
-			.$watch("#navigation .rbx-upgrade-now", x => x.style.display = "none", { continuous: true })
-			.$watch("#navigation #nav-trade", trade => {
+			.$watch("#nav-trade", trade => {
 				if(SETTINGS.get("navigation.switchTradeForMoney")) {
 					trade.parentNode.after(html(customElements.btr_Money))
 					trade.parentNode.style.display = "none"
 				}
 			}, { continuous: true })
-			.$watch("#navigation #nav-blog", blog => {
+			.$watch("#nav-blog", blog => {
 				if(SETTINGS.get("navigation.showPremium")) {
 					blog.parentNode.before(html(customElements.btr_Premium))
 				}
@@ -720,6 +717,7 @@ const Navigation = (() => {
 					initBlogFeed()
 				}
 			}, { continuous: true })
+			.$watch("#navigation .rbx-upgrade-now", x => x.style.display = "none", { continuous: true })
 
 		navContWatcher.$watch("#header").$then().$watch(">div").$then()
 			.$watch("#navbar-robux", robux => {
@@ -732,11 +730,14 @@ const Navigation = (() => {
 					robux.after(html(customElements.btr_Friends))
 					updateFriends()
 				}
-			})
+			}, { continuous: true })
+			.$watch(".age-bracket-label", x => x.style.display = "none", { continuous: true })
 			.$watchAll(".rbx-navbar", nav => {
 				if(SETTINGS.get("navigation.moveHomeToTop")) {
 					nav.append(html(customElements.btr_Home))
 				}
+
+				nav.$watch("#header .rbx-navbar a[href^=\"/robux\"]", x => x.parentNode.style.display = "none")
 			})
 		
 			
