@@ -509,6 +509,7 @@ html .btr-profile .btr-profile-favorites .game-card {
 
 .btr-profile-favorites .btr-creator-link-container {
 	line-height: 14px;
+	padding-left: 0;
 }
 
 .btr-profile-favorites .card-item .btr-creator-link:any-link {
