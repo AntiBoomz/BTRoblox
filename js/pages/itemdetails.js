@@ -774,7 +774,7 @@ pageInit.itemdetails = function(category, assetId) {
 	
 	if(SETTINGS.get("itemdetails.showSales")) {
 		const elem = html`
-		<div class="clearfix item-field-container">
+		<div class="clearfix item-field-container" style="display:none">
 			<div class="text-label text-overflow field-label">Sales</div>
 			<span class=field-content></div>
 		</div>`
@@ -784,6 +784,7 @@ pageInit.itemdetails = function(category, assetId) {
 		})
 
 		const apply = sales => {
+			elem.style.display = ""
 			elem.$find(".field-content").textContent = FormatNumber(sales)
 		}
 
@@ -808,7 +809,11 @@ pageInit.itemdetails = function(category, assetId) {
 
 			request.then(async resp => {
 				const json = await resp.json()
-				apply(json.data[0].purchaseCount)
+				const sales = json.data[0].purchaseCount
+
+				if(Number.isSafeInteger(sales)) {
+					apply(sales)
+				}
 			})
 		}
 	}
