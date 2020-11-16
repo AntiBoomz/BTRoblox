@@ -195,42 +195,44 @@ pageInit.profile = function(userId) {
 			avatarRight.$on("click", ev => ev.stopPropagation())
 			document.$on("click", () => visible && toggleVisible())
 		})
-		.$watch(".profile-stats-container", stats => {
-			stats.closest(".profile-statistics").remove()
-			newCont.$find(".placeholder-stats").replaceWith(stats)
+		.$watch("#profile-statistics-container", outerStats => {
+			newCont.$find(".placeholder-stats").replaceWith(outerStats)
+			outerStats.classList.add("btr-profileStats")
 
 			if(SETTINGS.get("profile.lastOnline")) {
-				stats.classList.add("btr-lastOnline")
+				outerStats.$watch(".profile-stats-container", stats => {
+					stats.classList.add("btr-lastOnline")
 
-				const label = html`
-				<li class=profile-stat>
-					<p class=text-label>Last Online</p>
-					<p class=text-lead>Loading</p>
-				</li>`
+					const label = html`
+					<li class=profile-stat>
+						<p class=text-label>Last Online</p>
+						<p class=text-lead>Loading</p>
+					</li>`
 
-				if(stats.firstElementChild) {
-					stats.firstElementChild.after(label)
-				} else {
-					stats.prepend(label)
-				}
-
-				
-				onlineStatus.then(async resp => {
-					if(!resp.ok) {
-						label.$find(".text-lead").textContent = "Failed"
-						return
-					}
-
-					const presence = await resp.json()
-					const lastOnline = new Date(presence.LastOnline)
-
-					if(presence.PresenceType === 0) {
-						label.$find(".text-lead").textContent = `${lastOnline.$since()}`
+					if(stats.firstElementChild) {
+						stats.firstElementChild.after(label)
 					} else {
-						label.$find(".text-lead").textContent = "Now"
+						stats.prepend(label)
 					}
 
-					label.$find(".text-lead").title = lastOnline.$format("MMM D, YYYY | hh:mm A (T)")
+					
+					onlineStatus.then(async resp => {
+						if(!resp.ok) {
+							label.$find(".text-lead").textContent = "Failed"
+							return
+						}
+
+						const presence = await resp.json()
+						const lastOnline = new Date(presence.LastOnline)
+
+						if(presence.PresenceType === 0) {
+							label.$find(".text-lead").textContent = `${lastOnline.$since()}`
+						} else {
+							label.$find(".text-lead").textContent = "Now"
+						}
+
+						label.$find(".text-lead").title = lastOnline.$format("MMM D, YYYY | hh:mm A (T)")
+					})
 				})
 			}
 		})
