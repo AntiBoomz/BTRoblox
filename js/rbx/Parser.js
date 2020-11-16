@@ -1018,7 +1018,7 @@ const RBXParser = (() => {
 
 				nameTableSize = reader.Int32LE()
 				skinDataCount = reader.UInt16LE()
-				reader.Jump(2) // Unknown
+				reader.Jump(2) // Unknown (Clone's documentation claims skinDataCount to be 32bit, this is false)
 
 				if(boneCount > 0) {
 					envelopeCount = vertexCount
@@ -1067,13 +1067,13 @@ const RBXParser = (() => {
 			}
 
 			if(envelopeCount > 0) {
-				reader.Jump(vertexCount * 8)
+				reader.Jump(envelopeCount * 8)
 			}
 
 			for(let i = 0; i < faceCount; i++) {
-				faces[i * 3] = reader.Int32LE()
-				faces[i * 3 + 1] = reader.Int32LE()
-				faces[i * 3 + 2] = reader.Int32LE()
+				faces[i * 3] = reader.UInt32LE()
+				faces[i * 3 + 1] = reader.UInt32LE()
+				faces[i * 3 + 2] = reader.UInt32LE()
 
 				reader.Jump(faceSize - 12)
 			}
@@ -1083,6 +1083,7 @@ const RBXParser = (() => {
 			} else {
 				for(let i = 0; i < lodCount; i++) {
 					lodLevels.push(reader.Int32LE())
+					reader.Jump(lodSize - 4)
 				}
 			}
 
@@ -1097,6 +1098,15 @@ const RBXParser = (() => {
 			if(skinDataCount > 0) {
 				reader.Jump(skinDataCount * 72)
 			}
+
+			// Okay, idk what's happening here, but some v4 meshes don't have valid lodLevels?
+			// Possibly related to skinned meshes as I've only seen this happen with the skinned
+			// LNX bundles.
+			if(version === "4.00" && meshCount === 0 && lodCount === 2 && lodLevels[1] === 0) {
+				lodLevels[0] = 0
+				lodLevels[1] = faceCount
+			}
+			//
 
 			const newFaces = faces.slice(lodLevels[0] * 3, lodLevels[1] * 3)
 			let minFaceIndex = faceCount
