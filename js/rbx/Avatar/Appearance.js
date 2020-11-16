@@ -193,7 +193,7 @@ const RBXAppearance = (() => {
 			this.addBodyPart({
 				target: "Head",
 				meshId: HeadMeshes[mesh.MeshId] || mesh.MeshId,
-				baseTexId: mesh.TextureId,
+				overrideFaceTexId: mesh.TextureId,
 				scale: [...mesh.Scale],
 				scaleType
 			})

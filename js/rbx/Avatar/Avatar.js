@@ -660,7 +660,11 @@ const RBXAvatar = (() => {
 			})
 
 			Object.entries(this.sources.clothing).forEach(([name, source]) => {
-				const texId = clothing[name]
+				let texId = clothing[name]
+
+				if(name === "face" && parts.Head && parts.Head.overrideFaceTexId) {
+					texId = parts.Head.overrideFaceTexId
+				}
 
 				if(!texId) {
 					delete source.rbxTexId
