@@ -195,7 +195,7 @@ pageInit.profile = function(userId) {
 			avatarRight.$on("click", ev => ev.stopPropagation())
 			document.$on("click", () => visible && toggleVisible())
 		})
-		.$watch("#profile-statistics-container", outerStats => {
+		.$watch(".profile-statistics", outerStats => {
 			newCont.$find(".placeholder-stats").replaceWith(outerStats)
 			outerStats.classList.add("btr-profileStats")
 
