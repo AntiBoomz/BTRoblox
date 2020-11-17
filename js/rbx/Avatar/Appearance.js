@@ -163,6 +163,7 @@ const RBXAppearance = (() => {
 			if(data.meshId) { this.addLoader(AssetCache.loadMesh(true, data.meshId)) }
 			if(data.baseTexId) { this.addLoader(AssetCache.loadImage(true, data.baseTexId)) }
 			if(data.overTexId) { this.addLoader(AssetCache.loadImage(true, data.overTexId)) }
+			if(data.overrideFaceTexId) { this.addLoader(AssetCache.loadImage(true, data.overrideFaceTexId)) }
 		}
 		addClothing(data) {
 			this.clothing.push(data)
