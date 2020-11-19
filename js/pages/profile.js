@@ -243,7 +243,7 @@ pageInit.profile = function(userId) {
 				content.classList.remove("remove-panel")
 			})
 		})
-		.$watch(".see-more-roblox-badges-button", btn => { // Legacy player badges
+		.$watch(".see-more-roblox-badges-button", btn => { // Legacy roblox badges
 			const badges = btn.parentElement.parentElement
 			newCont.$find(".placeholder-robloxbadges").replaceWith(badges)
 
