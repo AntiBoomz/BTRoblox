@@ -228,7 +228,40 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	border: none;
 }
 
-/* Roblox Badges */
+/* Roblox Badges (new) */
+
+.btr-profile #roblox-badges-container .badge-list {
+	max-height: 256px;
+}
+
+.btr-profile #roblox-badges-container .badge-list.badge-list-more {
+	max-height: none;
+	overflow-x: hidden;
+}
+
+.btr-profile #roblox-badges-container .badge-list > .list-item {
+	width: 20%;
+	text-align: center;
+	overflow: hidden;
+}
+
+.btr-profile #roblox-badges-container .badge-list > .list-item .asset-thumb-container {
+	margin-left: 5px;
+	transform: scale(calc(90 / 140));
+	transform-origin: 0 0;
+
+	margin-bottom: -50px;
+}
+
+.btr-profile #roblox-badges-container .badge-list > .list-item .item-name {
+	width: 100%;
+	font-size: 14px;
+
+	text-align: center;
+	text-overflow: ellipsis;
+}
+
+/* Roblox Badges (Legacy) */
 
 .btr-profile .btr-profile-robloxbadges .badge-list:not(.badge-list-more) {
 	max-height: 246px;
@@ -244,7 +277,7 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	width: 90px;
 	height: 90px;
 
-	border-radius: 3px;
+	border-radius: 8px;
 }
 
 .btr-profile .btr-profile-robloxbadges .asset-item .asset-thumb-container span {
@@ -254,10 +287,10 @@ html .dark-theme.btr-profile .btr-section-content-off {
 }
 
 .btr-profile .btr-profile-robloxbadges .asset-item .item-name {
-	width:100%;
-	text-align: center;
+	width: 100%;
 	font-size: 14px;
 
+	text-align: center;
 	padding: 0 1px;
 }
 
@@ -271,7 +304,7 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	display: inline-block;
 	width: 90px;
 	height: 90x;
-	border-radius: 3px;
+	border-radius: 8px;
 }
 
 .btr-profile .btr-profile-playerbadges .asset-item .asset-thumb-container img {
@@ -281,10 +314,9 @@ html .dark-theme.btr-profile .btr-section-content-off {
 
 .btr-profile .btr-profile-playerbadges .hlist .list-item .item-name {
 	width: 100%;
-	text-align: center;
 	font-size: 14px;
-	font-weight: 500;
 
+	text-align: center;
 	padding: 0 1px;
 }
 
@@ -582,8 +614,13 @@ html .btr-profile .btr-profile-favorites .game-card {
 	margin-bottom: 100%;
 }
 
-.btr-profile-groups .game-card .game-card-name {
+.btr-profile-groups .game-card .game-card-container .game-card-name {
 	font-size: 14px;
+}
+
+.btr-profile-groups .game-card .game-card-name-secondary {
+	padding: 0;
+	margin: 0;
 }
 
 /* Inventory */

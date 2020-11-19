@@ -236,7 +236,14 @@ pageInit.profile = function(userId) {
 				})
 			}
 		})
-		.$watch(".see-more-roblox-badges-button", btn => {
+		.$watch("#roblox-badges-container", badges => {
+			newCont.$find(".placeholder-robloxbadges").replaceWith(badges)
+
+			badges.$watch(">.section-content", content => {
+				content.classList.remove("remove-panel")
+			})
+		})
+		.$watch(".see-more-roblox-badges-button", btn => { // Legacy player badges
 			const badges = btn.parentElement.parentElement
 			newCont.$find(".placeholder-robloxbadges").replaceWith(badges)
 
@@ -595,7 +602,7 @@ pageInit.profile = function(userId) {
 					<li class="list-item badge-item asset-item" ng-non-bindable>
 						<a href="${badgeUrl}" class="badge-link" title="${data.name}">
 							<span class=asset-thumb-container>
-								<img class="border ${thumbClass}" src="${thumbUrl}" data-badgeId="${data.id}">
+								<img class="${thumbClass}" src="${thumbUrl}" data-badgeId="${data.id}">
 							</span>
 							<span class="font-header-2 text-overflow item-name">${data.name}</span>
 						</a>
