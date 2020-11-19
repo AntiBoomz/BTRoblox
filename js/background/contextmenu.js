@@ -124,7 +124,7 @@
 
 		switch(menuId) {
 		case "assetLink": case "bundleLink": case "badgeLink": case "gamepassLink": case "pluginLink": {
-			const assetId = info.linkUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library|bundles|badges|game-pass|plugins)\/)(\d+).*$/i, "$1")
+			const assetId = info.linkUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library|bundles|badges|game-pass|plugins)\/(?:refer\/)?)(\d+).*$/i, "$1")
 			copyToClipboard(assetId)
 			break
 		}
