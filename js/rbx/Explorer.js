@@ -325,7 +325,7 @@ const Explorer = (() => {
 						if(tooLong || value.includes("\n")) {
 							input.value = input.title = (tooLong ? value.slice(0, 117) + "..." : value)
 
-							const more = html`<a class=more>...</a>`
+							const more = html`<a class=more title="View Source">...</a>`
 							more.$on("click", () => this.openSourceViewer(target, name))
 							
 							valueItem.append(more)
