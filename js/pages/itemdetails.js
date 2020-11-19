@@ -703,7 +703,6 @@ pageInit.itemdetails = function(category, assetId) {
 						setupOwnersList(parent, title, itemId, initData)
 					})
 			})
-
 		})
 	}
 
