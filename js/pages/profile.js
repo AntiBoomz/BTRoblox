@@ -702,7 +702,7 @@ pageInit.profile = function(userId) {
 								<div class="text-overflow game-card-name">${group.name}</div>
 							</a>
 							<div class="text-overflow game-card-name-secondary text-secondary small">
-								${group.memberCount} ${group.memberCount === 1 ? "Member" : "Members"}
+								${FormatNumber(group.memberCount)} ${group.memberCount === 1 ? "Member" : "Members"}
 							</div>
 							<div class="text-overflow game-card-name-secondary text-secondary small">${role.name}</div>
 						</div>
