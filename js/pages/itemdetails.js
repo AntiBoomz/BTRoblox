@@ -707,66 +707,56 @@ pageInit.itemdetails = function(category, assetId) {
 	}
 
 	if(SETTINGS.get("itemdetails.showCreatedAndUpdated") && category !== "bundles") {
-		const created = html`
+		const createdLabel = html`
 		<div class="clearfix item-field-container">
-			<div class="text-label text-overflow field-label">Created</div>
+			<div class="font-header-1 text-subheader text-label text-overflow field-label">Created</div>
 			<span class="field-content"></div>
 		</div>`
 
-		let updated
-		let data
+		let updatedLabel
+
+		let createdTS
+		let updatedTS
 
 		const apply = () => {
-			const createdLabel = created.$find(".field-content")
-			const updatedLabel = updated.$find(".field-content")
-			updatedLabel.classList.remove("date-time-i18n")
+			if(!updatedLabel || !createdTS) {
+				return
+			}
 
-			const createdDate = new Date(data.Created)
-			const updatedDate = new Date(data.Updated)
-
-			createdLabel.textContent = createdDate.$format("MMM DD, YYYY h:mm:ss A")
-			updatedLabel.textContent = updatedDate.$format("MMM DD, YYYY h:mm:ss A")
+			createdLabel.$find(".field-content").textContent = new Date(createdTS).$format("MMM DD, YYYY h:mm:ss A")
+			updatedLabel.$find(".field-content").textContent = new Date(updatedTS).$format("MMM DD, YYYY h:mm:ss A")
 		}
 
-		document.$watch("#item-details", details => {
-			details.$watchAll(".item-field-container", field => {
-				if(updated) {
-					return
-				}
+		document.$watch(
+			"#item-details .item-field-container .field-label",
+			label => label.textContent === "Updated",
+			label => {
+				updatedLabel = label.parentNode
+				updatedLabel.before(createdLabel)
+				apply()
 
-				field.$watch(".field-label", label => {
-					if(updated) {
-						return
-					}
-					
-					if(label.textContent === "Updated") {
-						updated = field
-						updated.before(created)
-
-						if(data) {
-							apply()
-						}
-					}
-				})
-			})
-		})
-		
+				updatedLabel.$find(".field-content").classList.remove("date-time-i18n")
+			}
+		)
 
 		if(category === "game-pass") {
 			$.fetch(`https://api.roblox.com/marketplace/game-pass-product-info?gamePassId=${assetId}`).then(async resp => {
 				if(!resp.ok) { return }
 
-				data = await resp.json()
-				if(updated) {
-					apply()
-				}
+				({ Created: createdTS, Updated: updatedTS } = await resp.json())
+				apply()
+			})
+		} else if(category === "badges") {
+			$.fetch(`https://badges.roblox.com/v1/badges/${assetId}`).then(async resp => {
+				if(!resp.ok) { return }
+
+				({ created: createdTS, updated: updatedTS } = await resp.json())
+				apply()
 			})
 		} else {
-			getProductInfo(assetId).then(_data => {
-				data = _data
-				if(updated) {
-					apply()
-				}
+			getProductInfo(assetId).then(data => {
+				({ Created: createdTS, Updated: updatedTS } = data)
+				apply()
 			})
 		}
 	}
