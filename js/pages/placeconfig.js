@@ -41,7 +41,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 		const results = (await Promise.all(innerPromises)).flat()
 		const pageEnd = Math.min(results.length - innerPageOffset, pageSize)
 
-		const maxVersion = +results[0].versionNumber + innerPageStart * 10
+		const maxVersion = +results[0].versionNumber + (innerPageStart - 1) * 10
 		const maxPage = Math.max(1, Math.floor((maxVersion - 1) / pageSize) + 1)
 
 		pager.setMaxPage(maxPage)
