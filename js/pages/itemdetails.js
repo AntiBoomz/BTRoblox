@@ -790,7 +790,11 @@ pageInit.itemdetails = function(category, assetId) {
 		if(category === "game-pass") {
 			$.fetch(`https://api.roblox.com/marketplace/game-pass-product-info?gamePassId=${assetId}`).then(async resp => {
 				if(!resp.ok) { return }
-				apply((await resp.json()).Sales)
+
+				const sales = (await resp.json()).Sales
+				if(sales) {
+					apply(sales)
+				}
 			})
 		} else {
 			const url = "https://catalog.roblox.com/v1/catalog/items/details"
