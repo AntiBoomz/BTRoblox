@@ -239,6 +239,35 @@ const INJECT_SCRIPT = () => {
 				})
 			}
 
+			if(currentPage === "avatar" && settings.avatar.enabled) {
+				HijackAngular("avatar", {
+					avatarTypeService(handler, handlerArgs) {
+						const avatarTypeService = handler.apply(this, handlerArgs)
+
+						try {
+							const setMaxNumbers = () => {
+								try { Object.values(avatarTypeService.assetTypeNameLookup).forEach(assetType => assetType.maxNumber = 10) }
+								catch(ex) { console.error(ex) }
+							}
+
+							setMaxNumbers()
+							
+							avatarTypeService.setAssetTypeLookups = new Proxy(avatarTypeService.setAssetTypeLookups, {
+								apply(target, thisArg, args) {
+									const result = target.apply(thisArg, args)
+									setMaxNumbers()
+									return result
+								}
+							})
+						} catch(ex) {
+							console.error(ex)
+						}
+
+						return avatarTypeService
+					}
+				})
+			}
+
 			if(currentPage === "messages") {
 				HijackAngular("messages", {
 					messagesNav(handler, args, argMap) {
