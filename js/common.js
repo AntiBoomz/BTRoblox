@@ -150,6 +150,9 @@ const SETTINGS = {
 			showPremium: { value: true },
 			showBlogFeed: { value: true }
 		},
+		avatar: {
+			enabled: { value: true }
+		},
 		catalog: {
 			enabled: { value: true },
 			showOwnedAssets: { value: false }
