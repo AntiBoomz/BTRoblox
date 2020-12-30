@@ -255,6 +255,12 @@ function modifyTemplate(idList, callback) {
 			}
 		})
 	})
+
+	$.ready(() => setTimeout(() => {
+		if(templatesLeft > 0) {
+			THROW_DEV_WARNING(`Missing templates in modifyTemplate ${JSON.stringify(idList)}`)
+		}
+	}, 1e3))
 }
 
 //
