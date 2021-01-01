@@ -199,9 +199,6 @@ const SETTINGS = {
 			embedInventoryEnabled: { value: true },
 			lastOnline: { value: true }
 		},
-		friends: {
-			alwaysShowUnfriend: { value: true }
-		},
 		placeConfigure: {
 			versionHistory: { value: true }
 		}
