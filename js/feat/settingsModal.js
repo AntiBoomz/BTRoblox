@@ -1,6 +1,6 @@
 "use strict"
 
-const SettingsDiv = (() => {
+const btrSettingsModal = (() => {
 	const settingsDiv = html`
 	<div class=btr-settings-modal style=opacity:0>
 		<div class=btr-settings>
@@ -51,7 +51,6 @@ const SettingsDiv = (() => {
 					<checkbox label="Move Friends to Header" path=moveFriendsToTop></checkbox>
 					<checkbox label="Move Messages to Header" path=moveMessagesToTop></checkbox>
 					<checkbox label="Move Home to Header" path=moveHomeToTop></checkbox>
-					<button id=btr-open-navigation-editor class=btn-control-xs style=display:none>Modify Navigation Buttons</button>
 				</group>
 				<group label=Profile path=profile toggleable>
 					<checkbox label="Embed Inventory" path=embedInventoryEnabled></checkbox>
@@ -159,18 +158,6 @@ const SettingsDiv = (() => {
 					<checkbox label="Show Title On Social Icon Hover" path=modifySmallSocialLinksTitle require=redesign></checkbox>
 				</group>
 			</div>
-			<div class=btr-settings-content data-name=navEditor>
-				<div class=btr-settings-content-header>
-					<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
-					<h4>Modify Navigation Buttons</h4>
-				</div>
-				<group>
-					<div class=btr-react-warning>A roblox update broke this functionality. Sorry for the inconvenience.</div>
-					<div>Drag buttons to move them</div>
-					<div>Double click buttons to toggle visibility</div>
-					<div style=width:100%;text-align:right><button id=btr-reset-naveditor class=btn-control-xs>Reset buttons to default</button></div>
-				</group>
-			</div>
 			<div class=btr-settings-footer>
 				<div class=btr-settings-footer-version>v${chrome.runtime.getManifest().version}</div>
 				<div class=btr-settings-footer-text>Refresh the page to apply settings</div>
@@ -193,10 +180,6 @@ const SettingsDiv = (() => {
 		const lastElem = currentContent && contentDivs[currentContent]
 		if(lastElem) {
 			lastElem.classList.remove("selected")
-
-			if(currentContent === "navEditor") {
-				Navigation.lock()
-			}
 		}
 
 		const newElem = name && contentDivs[name]
@@ -212,8 +195,6 @@ const SettingsDiv = (() => {
 				areFiltersInit = true
 				initShoutFilters()
 			}
-		} else if(name === "navEditor") {
-			Navigation.unlock()
 		}
 	}
 
@@ -418,7 +399,6 @@ const SettingsDiv = (() => {
 
 	const initSettingsDiv = async () => {
 		settingsDiv.$on("click", "#btr-open-shout-filter", () => switchContent("shoutFilters"))
-		settingsDiv.$on("click", "#btr-open-navigation-editor", () => switchContent("navEditor"))
 		settingsDiv.$on("click", "#btr-open-item-previewer-settings", () => switchContent("itemPreviewerSettings"))
 		settingsDiv.$on("click", ".btr-close-subcontent", () => switchContent("main"))
 		settingsDiv.$on("click", "#btr-open-group-redesign", () => switchContent("groupRedesign"))
@@ -544,43 +524,6 @@ const SettingsDiv = (() => {
 				isResetting = false
 
 				SETTINGS.resetToDefault()
-			})
-		}
-
-		{
-			const resetButton = settingsDiv.$find("#btr-reset-naveditor")
-			const resetButtonDefaultText = resetButton.textContent
-			let isResetting = false
-			let resetInterval
-			let resetTimer
-
-			resetButton.$on("click", () => {
-				if(!isResetting) {
-					isResetting = true
-
-					resetTimer = 3
-					resetButton.textContent = `Are you sure? (${resetTimer})`
-
-					resetInterval = setInterval(() => {
-						if(--resetTimer > 0) {
-							resetButton.textContent = `Are you sure? (${resetTimer})`
-							return
-						}
-
-						clearInterval(resetInterval)
-						resetInterval = null
-						resetButton.textContent = resetButtonDefaultText
-						isResetting = false
-					}, 1e3)
-					return
-				}
-
-				clearInterval(resetInterval)
-				resetInterval = null
-				resetButton.textContent = resetButtonDefaultText
-				isResetting = false
-
-				SETTINGS.set("navigation.itemsV2", "")
 			})
 		}
 

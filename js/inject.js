@@ -1,5 +1,57 @@
 "use strict"
 
+const InjectJS = {
+	queue: [],
+
+	send(action, ...detail) {
+		try {
+			if(IS_FIREFOX) { detail = cloneInto(detail, window.wrappedJSObject) }
+			document.dispatchEvent(new CustomEvent(`inject.${action}`, { detail }))
+		} catch(ex) {
+			console.error(ex)
+		}
+	},
+
+	listen(actions, callback, props) {
+		const actionList = actions.split(" ")
+		const once = props && props.once
+
+		const cb = ev => {
+			if(once) {
+				actionList.forEach(action => {
+					document.removeEventListener(`content.${action}`, cb)
+				})
+			}
+
+			if(!ev.detail) {
+				console.warn("[BTRoblox] Didn't get event detail from InjectJS", actions)
+				return
+			}
+
+			return callback(...ev.detail)
+		}
+
+		actionList.forEach(action => {
+			document.addEventListener(`content.${action}`, cb)
+		})
+	},
+
+	init() {
+		pageInject.injectFunction(INJECT_SCRIPT)
+	},
+
+	onSettingsLoaded() {
+		this.send(
+			"INIT",
+			SETTINGS.serialize(),
+			currentPage ? currentPage.name : null,
+			currentPage ? currentPage.matches : null,
+			IS_DEV_MODE
+		)
+	}
+}
+
+
 const INJECT_SCRIPT = () => {
 	let settings
 	let currentPage
@@ -145,7 +197,96 @@ const INJECT_SCRIPT = () => {
 			$templateCache.put = (key, value) => this.putTemplate($templateCache, key, value)
 		}
 	}
-	
+
+	const reactHook = {
+		args: null,
+
+		onCreateElement(args) {
+			if(!settings || this.args || !args[1]) {
+				return
+			}
+
+			try { this.handler(args) }
+			catch(ex) { console.error(ex) }
+		},
+
+		handler(args) {
+			const type = args[0]
+			const props = args[1]
+
+			switch(props.id) {
+			case "navbar-universal-search": {
+				const ul = args.find(x => typeof x === "object" && x.type === "ul")
+
+				if(ul) {
+					if(!Array.isArray(ul.props.children)) {
+						ul.props.children = [ul.props.children]
+					}
+
+					ul.props.children.unshift(
+						React.createElement("div", { key: "btrFastSearch", id: "btr-fastsearch-container", dangerouslySetInnerHTML: { __html: " " } })
+					)
+				}
+
+				break
+			}
+			case "settings-popover-menu": {
+				args.splice(2, 0,
+					React.createElement("li", { key: "btrSettings" },
+						React.createElement("a", {
+							className: "rbx-menu-item btr-settings-toggle"
+						}, "BTR Settings")
+					)
+				)
+				break
+			}
+			}
+
+			switch(type) {
+			case "ul": {
+				if(props.className) {
+					const classes = props.className.split(/\s+/g)
+					const hasClass = name => classes.includes(name)
+					
+					if(settings.navigation.enabled) {
+						if(hasClass("rbx-navbar")) {
+							const list = args.find(x => Array.isArray(x))
+							console.log("Found", list)
+
+							if(list) {
+								list.splice(0, 0,
+									React.createElement("li", { id: "btr-home", dangerouslySetInnerHTML: { __html: " " } })
+								)
+							}
+						} else if(hasClass("navbar-right")) {
+							const robuxIndex = args.findIndex((x, i) => i >= 2 && x instanceof Object && x.props && "robuxAmount" in x.props)
+
+							if(robuxIndex !== -1) {
+								args.splice(robuxIndex + 1, 0,
+									React.createElement("li", { key: "btrFriends", id: "btr-friends-container", dangerouslySetInnerHTML: { __html: " " } }),
+									React.createElement("li", { key: "btrMessages", id: "btr-messages-container", dangerouslySetInnerHTML: { __html: " " } }),
+								)
+							}
+						} else if(hasClass("left-col-list")) {
+							const list = args.slice(2).find(x => Array.isArray(x))
+
+							if(list) {
+								const blogIndex = list.findIndex(x => x.key === "blog")
+
+								if(blogIndex !== -1) {
+									list.splice(blogIndex + 1, 0,
+										React.createElement("div", { id: "btr-blogfeed-container", dangerouslySetInnerHTML: { __html: " " } }),
+									)
+								}
+							}
+						}
+					}
+				}
+				break
+			}
+			}
+		}
+	}
 	
 	function PreInit() {
 		const onSet = (a, b, c) => {
@@ -165,6 +306,16 @@ const INJECT_SCRIPT = () => {
 		onSet(window, "angular", async angular => {
 			await Promise.resolve() // Wait for angular to load
 			angular.module("ng").run($templateCache => modifyTemplate.addCache($templateCache))
+		})
+
+		onSet(window, "React", React => {
+			React.createElement = new Proxy(React.createElement, {
+				apply(target, thisArg, args) {
+					reactHook.onCreateElement(args)
+
+					return target.apply(thisArg, args)
+				}
+			})
 		})
 	}
 
@@ -661,11 +812,13 @@ const INJECT_SCRIPT = () => {
 
 	ContentJS.listen("TEMPLATE_INIT", key => modifyTemplate.addTemplate(key))
 
-	ContentJS.listen("linkify", cl => {
-		const target = $(`.${cl}`)
-		target.removeClass(cl)
-		if(window.Roblox && Roblox.Linkify) { target.linkify() }
-		else { target.addClass("linkify") }
+	ContentJS.listen("linkify", target => {
+		if(window.Roblox && Roblox.Linkify) { $(target).linkify() }
+		else { target.classList.add("linkify") }
+	})
+
+	ContentJS.listen("TEST", target => {
+		target.classList.add("TEST")
 	})
 
 	ContentJS.listen("INIT", (...initData) => {

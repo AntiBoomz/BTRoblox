@@ -145,7 +145,7 @@ pageInit.gamedetails = function(placeId) {
 				const box = html`
 				<div class="btr-universe-box">
 					This place is part of 
-					<a class="btr-universe-name text-link" href="/games/${rootPlaceId}/${FormatUrlName(rootPlaceName)}">${rootPlaceName || "..."}</a>
+					<a class="btr-universe-name text-link" href="/games/${rootPlaceId}/${formatUrlName(rootPlaceName)}">${rootPlaceName || "..."}</a>
 					<div class="VisitButton VisitButtonPlayGLI btr-universe-visit-button" placeid="${rootPlaceId}" data-action=play data-is-membership-level-ok=true>
 						<a class="btn-secondary-md">Play</a>
 					</div>
@@ -157,7 +157,7 @@ pageInit.gamedetails = function(placeId) {
 					const anchor = box.$find(".btr-universe-name")
 					getProductInfo(rootPlaceId).then(data => {
 						anchor.textContent = data.Name
-						anchor.href = `/games/${rootPlaceId}/${FormatUrlName(data.Name)}`
+						anchor.href = `/games/${rootPlaceId}/${formatUrlName(data.Name)}`
 					})
 				}
 			}
@@ -218,7 +218,7 @@ pageInit.gamedetails = function(placeId) {
 					const blobUrl = URL.createObjectURL(new Blob([ab]))
 
 					const splitPath = window.location.pathname.split("/")
-					const type = GetAssetFileType(9, ab)
+					const type = getAssetFileType(9, ab)
 
 					startDownload(blobUrl, `${splitPath[splitPath.length - 1]}.${type}`)
 					URL.revokeObjectURL(blobUrl)

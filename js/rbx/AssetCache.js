@@ -5,7 +5,25 @@
 const AssetCache = (() => {
 	const fileCache = {}
 
-	const prefixUrl = getURL("")
+	const resourcePrefixUrl = getURL("")
+	const resourceToAsset = {
+		"res/previewer/characterModels.rbxm": "rbxassetid://2957693598&version=3",
+		"res/previewer/face.png": "rbxassetid://2957705858",
+		
+		"res/previewer/meshes/leftarm.mesh": "rbxassetid://2957740508",
+		"res/previewer/meshes/leftleg.mesh": "rbxassetid://2957740624",
+		"res/previewer/meshes/rightarm.mesh": "rbxassetid://2957740703",
+		"res/previewer/meshes/rightleg.mesh": "rbxassetid://2957740776",
+		"res/previewer/meshes/torso.mesh": "rbxassetid://2957740857",
+		"res/previewer/heads/head.mesh": "rbxassetid://2957715294",
+	
+		"res/previewer/compositing/CompositPantsTemplate.mesh": "rbxassetid://2957742558",
+		"res/previewer/compositing/CompositShirtTemplate.mesh": "rbxassetid://2957742631",
+		"res/previewer/compositing/CompositTShirt.mesh": "rbxassetid://2957742706",
+		"res/previewer/compositing/R15CompositLeftArmBase.mesh": "rbxassetid://2957742791",
+		"res/previewer/compositing/R15CompositRightArmBase.mesh": "rbxassetid://2957742881",
+		"res/previewer/compositing/R15CompositTorsoBase.mesh": "rbxassetid://2957742957"
+	}
 
 	function resolveAssetUrlParams(url) {
 		if(url.startsWith("rbxassetid://")) {
@@ -27,12 +45,19 @@ const AssetCache = (() => {
 	}
 
 	function resolveAssetUrl(url) {
+		if(url.startsWith(resourcePrefixUrl)) {
+			const resourcePath = url.slice(resourcePrefixUrl.length)
+			const mappedAssetUrl = resourceToAsset[resourcePath]
+
+			if(!mappedAssetUrl) {
+				throw new Error(`Invalid Asset Url: '${url}'`)
+			}
+
+			url = mappedAssetUrl
+		}
+
 		try { new URL(url) }
 		catch(ex) { throw new TypeError(`Invalid URL: '${String(url)}'`) }
-
-		if(url.startsWith(prefixUrl)) {
-			return url
-		}
 
 		if(url.match(/https?:\/\/..\.rbxcdn\.com/)) {
 			return url.replace(/^http:/, "https:")

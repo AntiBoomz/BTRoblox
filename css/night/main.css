@@ -221,21 +221,13 @@ html .icon-nav-search:not(:hover) {
 	filter: invert(100%);
 }
 
-html .btr-settings-header,
-html .btr-fake-header,
-html #btr-naveditor-topright-container li,
-html .btr-naveditor-item > a, html .btr-naveditor-item > a:active, html .btr-naveditor-item > a:visited, html .btr-naveditor-item > a:focus, html .btr-naveditor-item > a:link {
+html .btr-settings-header {
 	background-color: var(--btr-theme-header);
 }
 
 html .btr-settings {
 	background-color: var(--btr-theme-background);
 	color: var(--btr-theme-text-secondary);
-}
-
-html .btr-naveditor-container {
-	background-color: var(--btr-theme-item);
-	border-color: var(--btr-theme-border-lighter);
 }
 
 html .btr-filter-enabled, html .btr-filter-disabled {

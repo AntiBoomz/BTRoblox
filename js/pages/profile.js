@@ -473,7 +473,7 @@ pageInit.profile = function(userId) {
 								}
 							}
 
-							Linkify(descContent)
+							robloxLinkify(descContent)
 							updateDesc()
 						})
 					}
@@ -594,7 +594,7 @@ pageInit.profile = function(userId) {
 				}
 
 				badges.forEach(data => {
-					const badgeUrl = `/badges/${data.id}/${FormatUrlName(data.name)}`
+					const badgeUrl = `/badges/${data.id}/${formatUrlName(data.name)}`
 					const thumbUrl = data.thumb && data.thumb.imageUrl || "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
 					const thumbClass = data.thumb && thumbClasses[data.thumb.state] || ""
 
@@ -702,14 +702,14 @@ pageInit.profile = function(userId) {
 					const parent = html`
 					<li class="list-item game-card ${index < pageSize ? "visible" : ""}">
 						<div class="card-item game-card-container">
-							<a href="/groups/${group.id}/${FormatUrlName(group.name)}" title="${group.name}">
+							<a href="/groups/${group.id}/${formatUrlName(group.name)}" title="${group.name}">
 								<div class=game-card-thumb-container>
 									<img class="game-card-thumb card-thumb unloaded">
 								</div>
 								<div class="text-overflow game-card-name">${group.name}</div>
 							</a>
 							<div class="text-overflow game-card-name-secondary text-secondary small">
-								${FormatNumber(group.memberCount)} ${group.memberCount === 1 ? "Member" : "Members"}
+								${formatNumber(group.memberCount)} ${group.memberCount === 1 ? "Member" : "Members"}
 							</div>
 							<div class="text-overflow game-card-name-secondary text-secondary small">${role.name}</div>
 						</div>

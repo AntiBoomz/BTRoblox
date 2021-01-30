@@ -123,7 +123,7 @@ const Explorer = (() => {
 		}
 
 		async openSourceViewer(inst, propName) {
-			await OptionalLoader.loadSourceViewer()
+			await loadOptionalLibrary("sourceViewer")
 
 			if(!this.sourceViewerModal) {
 				this.sourceViewerModal = html`
@@ -213,7 +213,7 @@ const Explorer = (() => {
 			const content = this.sourceViewerModal.$find(".btr-sourceviewer-content")
 			content.$empty()
 
-			SourceViewer.init(content, source)
+			btrSourceViewer.init(content, source)
 
 			this.sourceViewerModal.$find(".btr-sourceviewer-content").scrollTop = 0
 		}

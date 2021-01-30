@@ -5,7 +5,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 	const isPackage = assetTypeId === 32
 
 	if(SETTINGS.get("itemdetails.itemPreviewer") && (isPackage || isBundle || isPreviewable)) {
-		await OptionalLoader.loadPreviewer()
+		await loadOptionalLibrary("previewer")
 
 		const previewerMode = SETTINGS.get("itemdetails.itemPreviewerMode")
 		const preview = new ItemPreviewer()
@@ -214,7 +214,7 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 
 	//
 
-	await OptionalLoader.loadExplorer()
+	await loadOptionalLibrary("explorer")
 	const explorer = new Explorer()
 	let explorerInitialized = false
 
@@ -274,7 +274,7 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 
 	const download = (data, fileType) => {
 		const title = $("#item-container .item-name-container h2")
-		const fileName = `${title && FormatUrlName(title.textContent, "") || assetId.toString()}.${fileType || GetAssetFileType(assetTypeId, data)}`
+		const fileName = `${title && formatUrlName(title.textContent, "") || assetId.toString()}.${fileType || getAssetFileType(assetTypeId, data)}`
 
 		const blobUrl = URL.createObjectURL(new Blob([data], { type: "binary/octet-stream" }))
 		startDownload(blobUrl, fileName)
@@ -434,7 +434,7 @@ pageInit.itemdetails = function(category, assetId) {
 	}
 
 	if(SETTINGS.get("general.hoverPreview")) {
-		OptionalLoader.loadPreviewer().then(() => {
+		loadOptionalLibrary("previewer").then(() => {
 			HoverPreview.register(".item-card", ".item-card-thumb-container")
 		})
 	}
@@ -444,7 +444,8 @@ pageInit.itemdetails = function(category, assetId) {
 	document.$watch("#AjaxCommentsContainer").$then().$watch(".comments").$then()
 		.$watchAll(".comment-item", comment => {
 			const span = comment.$find(".text-date-hint")
-			const fixedDate = RobloxTime(span.textContent.replace("|", ""))
+			const fixedDate = robloxTimeToDate(span.textContent.replace("|", ""))
+
 			if(fixedDate) {
 				span.setAttribute("btr-timestamp", "")
 				span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
@@ -774,7 +775,7 @@ pageInit.itemdetails = function(category, assetId) {
 
 		const apply = sales => {
 			elem.style.display = ""
-			elem.$find(".field-content").textContent = FormatNumber(sales)
+			elem.$find(".field-content").textContent = formatNumber(sales)
 		}
 
 		if(category === "game-pass") {

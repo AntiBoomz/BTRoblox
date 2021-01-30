@@ -2,3 +2,5 @@
 res_dev
 bin
 switch.bat
+deprecated
+.gitignore

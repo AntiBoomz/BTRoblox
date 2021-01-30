@@ -56,15 +56,21 @@
 				"js/common.js",
 				"js/utility.js",
 				"js/inject.js",
-				"js/main.js",
+				"js/pages.js",
+
+				"js/util/pageInject.js",
+				"js/util/modifyTemplate.js",
+				"js/util/loadOptionalLibrary.js",
 				
+				"js/feat/themes.js",
+				"js/feat/adblock.js",
 				"js/feat/fastSearch.js",
 				"js/feat/navigation.js",
 				
 				"js/rbx/Parser.js",
 				"js/rbx/AssetCache.js",
 
-				"js/pages/common_pages.js",
+				"js/pages/common.js",
 				"js/pages/avatar.js",
 				"js/pages/catalog.js",
 				"js/pages/develop.js",
@@ -79,7 +85,7 @@
 				"js/pages/placeconfig.js",
 				"js/pages/profile.js",
 				
-				"js/final.js"
+				"js/main.js"
 			],
 			"run_at": "document_start",
 			"all_frames": true

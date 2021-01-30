@@ -1,11 +1,15 @@
 "use strict"
 
+const getURL = chrome.runtime.getURL
+
 const MANIFEST = chrome.runtime.getManifest()
 const IS_FIREFOX = typeof InstallTrigger !== "undefined"
 const IS_CHROME = !IS_FIREFOX
 
 const IS_BACKGROUND_PAGE = !!(chrome && chrome.extension && chrome.extension.getBackgroundPage)
 const IS_DEV_MODE = MANIFEST.short_name === "BTRoblox_DEV"
+
+const STORAGE = chrome.storage.local
 
 const THROW_DEV_WARNING = errorString => {
 	console.warn(errorString)
@@ -15,27 +19,7 @@ const THROW_DEV_WARNING = errorString => {
 	}
 }
 
-const AssetShortcuts = {
-	"res/previewer/characterModels.rbxm": "rbxassetid://2957693598&version=3",
-	"res/previewer/face.png": "rbxassetid://2957705858",
-	
-	"res/previewer/meshes/leftarm.mesh": "rbxassetid://2957740508",
-	"res/previewer/meshes/leftleg.mesh": "rbxassetid://2957740624",
-	"res/previewer/meshes/rightarm.mesh": "rbxassetid://2957740703",
-	"res/previewer/meshes/rightleg.mesh": "rbxassetid://2957740776",
-	"res/previewer/meshes/torso.mesh": "rbxassetid://2957740857",
-	"res/previewer/heads/head.mesh": "rbxassetid://2957715294",
-
-	"res/previewer/compositing/CompositPantsTemplate.mesh": "rbxassetid://2957742558",
-	"res/previewer/compositing/CompositShirtTemplate.mesh": "rbxassetid://2957742631",
-	"res/previewer/compositing/CompositTShirt.mesh": "rbxassetid://2957742706",
-	"res/previewer/compositing/R15CompositLeftArmBase.mesh": "rbxassetid://2957742791",
-	"res/previewer/compositing/R15CompositRightArmBase.mesh": "rbxassetid://2957742881",
-	"res/previewer/compositing/R15CompositTorsoBase.mesh": "rbxassetid://2957742957"
-}
-
-const getURL = path => AssetShortcuts[path] || chrome.runtime.getURL(path)
-const FormatNumber = num => String(num).replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/yg, "$1,")
+//
 
 const RobuxToCash = {
 	// cash is in cents
@@ -65,6 +49,29 @@ const RobuxToCash = {
 
 	Options: {},
 
+	getSelectedOption() {
+		if(!SETTINGS.loaded) {
+			return this.Options.devex
+		}
+
+		return this.Options[SETTINGS.get("general.robuxToUSDRate")]
+	},
+
+	convertAngular(expr) {
+		const option = this.getSelectedOption()
+
+		return `${option.currency.symbol}{{::(((${expr})*${option.cash})/${option.robux} + 0.4999)/100 | number: 2}}`
+	},
+
+	convert(robux) {
+		const option = this.getSelectedOption()
+
+		const cash = Math.round((robux * option.cash) / option.robux + 0.4999) / 100
+		const cashString = formatNumber(cash.toFixed(2))
+
+		return `${option.currency.symbol}${cashString}`
+	},
+
 	init() {
 		Object.entries(this.Currencies).forEach(([name, currency]) => {
 			currency.name = name
@@ -86,222 +93,10 @@ const RobuxToCash = {
 				this.Options[option.name] = option
 			})
 		})
-
-		return this
-	},
-
-	getSelectedOption() {
-		if(!SETTINGS.loaded) {
-			return this.Options.devex
-		}
-
-		return this.Options[SETTINGS.get("general.robuxToUSDRate")]
-	},
-
-	convertAngular(expr) {
-		const option = this.getSelectedOption()
-
-		return `${option.currency.symbol}{{::(((${expr})*${option.cash})/${option.robux} + 0.4999)/100 | number: 2}}`
-	},
-
-	convert(robux) {
-		const option = this.getSelectedOption()
-
-		const cash = Math.round((robux * option.cash) / option.robux + 0.4999) / 100
-		const cashString = FormatNumber(cash.toFixed(2))
-
-		return `${option.currency.symbol}${cashString}`
-	}
-}.init()
-
-
-const SETTINGS = {
-	defaultSettings: {
-		_version: 2,
-		general: {
-			theme: { value: "default", validValues: ["default", "simblk", "sky", "red", "night"] },
-			disableRobloxThemes: { value: false },
-
-			hideAds: { value: false },
-			hideChat: { value: false },
-			smallChatButton: { value: true },
-			fastSearch: { value: true },
-			fixAudioPreview: { value: true },
-			fixAudioVolume: { value: true },
-
-			robuxToUSD: { value: false },
-			robuxToUSDRate: { value: "devex", validValues: Object.keys(RobuxToCash.Options), hidden: true },
-	
-			hoverPreview: { value: true },
-			hoverPreviewMode: { value: "always", validValues: ["always", "never"] },
-		
-			enableContextMenus: { value: true }
-		},
-		navigation: {
-			enabled: { value: true },
-			itemsV2: { value: "", hidden: true },
-			noHamburger: { value: true },
-
-			moveHomeToTop: { value: true },
-			moveFriendsToTop: { value: true },
-			moveMessagesToTop: { value: true },
-
-			switchTradeForMoney: { value: true },
-			showPremium: { value: true },
-			showBlogFeed: { value: true }
-		},
-		avatar: {
-			enabled: { value: true }
-		},
-		catalog: {
-			enabled: { value: true },
-			showOwnedAssets: { value: false }
-		},
-		itemdetails: {
-			enabled: { value: true },
-			itemPreviewer: { value: true },
-			itemPreviewerMode: { value: "always", validValues: ["always", "animations", "never"] },
-
-			explorerButton: { value: true },
-			downloadButton: { value: true },
-			contentButton: { value: true },
-
-			showSales: { value: true },
-			showCreatedAndUpdated: { value: true },
-
-			imageBackgrounds: { value: true },
-			whiteDecalThumbnailFix: { value: true },
-
-			addOwnersList: { value: true }
-		},
-		gamedetails: {
-			enabled: { value: true },
-			showBadgeOwned: { value: true },
-			addServerPager: { value: true }
-		},
-		groups: {
-			shoutAlerts: { value: true },
-			redesign: { value: true },
-			modifyLayout: { value: true },
-			selectedRoleCount: { value: true },
-			pagedGroupWall: { value: true },
-			groupWallRanks: { value: true },
-			hidePayout: { value: true },
-			hideBigSocial: { value: true },
-			modifySmallSocialLinksTitle: { value: true }
-		},
-		inventory: {
-			enabled: { value: true },
-			inventoryTools: { value: true }
-		},
-		profile: {
-			enabled: { value: true },
-			embedInventoryEnabled: { value: true },
-			lastOnline: { value: true }
-		},
-		placeConfigure: {
-			versionHistory: { value: true }
-		}
 	}
 }
 
-Object.values(SETTINGS.defaultSettings).forEach(list => list instanceof Object && Object.values(list).forEach(x => x.default = true))
-
-const EXCLUDED_PAGES = [
-	"^/userads/",
-	"^/user-sponsorship/",
-	"^/build/upload",
-	"^/Feeds/GetUserFeed"
-]
-
-const PAGE_INFO = {
-	avatar: {
-		matches: ["^/my/avatar"],
-		css: ["avatar.css"]
-	},
-	catalog: {
-		matches: ["^/catalog/?$"],
-		css: ["catalog.css"]
-	},
-	develop: {
-		matches: ["^/develop"],
-		css: ["develop.css"]
-	},
-	friends: {
-		matches: ["^/users/(\\d+)/friends", "^/users/friends"],
-		css: []
-	},
-	gamedetails: {
-		matches: ["^/games/(\\d+)/"],
-		css: ["gamedetails.css"]
-	},
-	games: {
-		matches: ["^/games/?$"],
-		css: ["games.css"]
-	},
-	groups: {
-		matches: ["^/groups/(\\d+)/*"],
-		css: ["groups.css"]
-	},
-	groupadmin: {
-		matches: ["^/my/groupadmin.aspx"],
-		css: []
-	},
-	groupaudit: {
-		matches: ["^/groups/audit\\.aspx"],
-		css: []
-	},
-	home: {
-		matches: ["^/home"],
-		css: ["home.css"]
-	},
-	inventory: {
-		matches: ["^/users/(\\d+)/inventory"],
-		css: ["inventory.css"]
-	},
-	itemdetails: {
-		matches: ["^/(catalog|library|game-pass|badges|bundles)/(\\d+)/"],
-		css: ["itemdetails.css"]
-	},
-	membership: {
-		matches: ["^/premium/membership"],
-		css: []
-	},
-	messages: {
-		matches: ["^/my/messages"],
-		css: ["messages.css"]
-	},
-	money: {
-		matches: ["^/my/money\\.aspx"],
-		css: ["money.css"]
-	},
-	placeconfig: {
-		matches: ["^/places/(\\d+)/update"],
-		css: ["placeconfig.css"]
-	},
-	profile: {
-		matches: ["^/users/(\\d+)/profile"],
-		css: ["profile.css"]
-	},
-	universeconfig: {
-		matches: ["^/universes/configure"],
-		css: ["universeconfig.css"]
-	}
-}
-
-const GET_PAGE = path => {
-	for(const [name, page] of Object.entries(PAGE_INFO)) {
-		for(const pattern of page.matches) {
-			const matches = path.match(new RegExp(pattern, "i"))
-			if(matches) {
-				return Object.assign({}, page, { name, matches: matches.slice(1) })
-			}
-		}
-	}
-
-	return null
-}
-
+RobuxToCash.init()
 
 class SyncPromise extends Promise {
 	static resolve(value) {
@@ -501,7 +296,7 @@ class SyncPromise extends Promise {
 	}
 }
 
-const STORAGE = chrome.storage.local
+//
 
 const MESSAGING = (() => {
 	if(IS_BACKGROUND_PAGE) {
@@ -621,7 +416,95 @@ const MESSAGING = (() => {
 })()
 
 
-Object.assign(SETTINGS, {
+const SETTINGS = {
+	defaultSettings: {
+		_version: 2,
+		general: {
+			theme: { value: "default", validValues: ["default", "simblk", "sky", "red", "night"] },
+			disableRobloxThemes: { value: false },
+
+			hideAds: { value: false },
+			hideChat: { value: false },
+			smallChatButton: { value: true },
+			fastSearch: { value: true },
+			fixAudioPreview: { value: true },
+			fixAudioVolume: { value: true },
+
+			robuxToUSD: { value: false },
+			robuxToUSDRate: { value: "devex", validValues: Object.keys(RobuxToCash.Options), hidden: true },
+	
+			hoverPreview: { value: true },
+			hoverPreviewMode: { value: "always", validValues: ["always", "never"] },
+		
+			enableContextMenus: { value: true }
+		},
+		navigation: {
+			enabled: { value: true },
+			itemsV2: { value: "", hidden: true },
+			noHamburger: { value: true },
+
+			moveHomeToTop: { value: true },
+			moveFriendsToTop: { value: true },
+			moveMessagesToTop: { value: true },
+
+			switchTradeForMoney: { value: true },
+			showPremium: { value: true },
+			showBlogFeed: { value: true }
+		},
+		avatar: {
+			enabled: { value: true }
+		},
+		catalog: {
+			enabled: { value: true },
+			showOwnedAssets: { value: false }
+		},
+		itemdetails: {
+			enabled: { value: true },
+			itemPreviewer: { value: true },
+			itemPreviewerMode: { value: "always", validValues: ["always", "animations", "never"] },
+
+			explorerButton: { value: true },
+			downloadButton: { value: true },
+			contentButton: { value: true },
+
+			showSales: { value: true },
+			showCreatedAndUpdated: { value: true },
+
+			imageBackgrounds: { value: true },
+			whiteDecalThumbnailFix: { value: true },
+
+			addOwnersList: { value: true }
+		},
+		gamedetails: {
+			enabled: { value: true },
+			showBadgeOwned: { value: true },
+			addServerPager: { value: true }
+		},
+		groups: {
+			shoutAlerts: { value: true },
+			redesign: { value: true },
+			modifyLayout: { value: true },
+			selectedRoleCount: { value: true },
+			pagedGroupWall: { value: true },
+			groupWallRanks: { value: true },
+			hidePayout: { value: true },
+			hideBigSocial: { value: true },
+			modifySmallSocialLinksTitle: { value: true }
+		},
+		inventory: {
+			enabled: { value: true },
+			inventoryTools: { value: true }
+		},
+		profile: {
+			enabled: { value: true },
+			embedInventoryEnabled: { value: true },
+			lastOnline: { value: true }
+		},
+		placeConfigure: {
+			versionHistory: { value: true }
+		}
+	},
+	
 	_onChangeListeners: [],
 	_loadPromise: null,
 
@@ -768,6 +651,7 @@ Object.assign(SETTINGS, {
 		if(!this.loaded) { throw new Error("Settings are not loaded") }
 		
 		const settings = JSON.parse(JSON.stringify(this.loadedSettings))
+		delete settings._version
 
 		// Change settings to be name: value
 		Object.values(settings).forEach(group => {
@@ -852,17 +736,28 @@ Object.assign(SETTINGS, {
 		}
 
 		this._onChangeListeners[settingPath].push(fn)
-	}
-})
+	},
 
-if(IS_BACKGROUND_PAGE) {
-	MESSAGING.listen({
-		setSetting(data, respond) {
-			SETTINGS.load(() => {
-				SETTINGS._localSet(data.path, data.value, data.default, true)
+
+	init() {
+		Object.values(this.defaultSettings).forEach(list => {
+			if(list instanceof Object) {
+				Object.values(list).forEach(x => x.default = true)
+			}
+		})
+
+		if(IS_BACKGROUND_PAGE) {
+			MESSAGING.listen({
+				setSetting(data, respond) {
+					SETTINGS.load(() => {
+						SETTINGS._localSet(data.path, data.value, data.default, true)
+					})
+		
+					respond()
+				}
 			})
-
-			respond()
 		}
-	})
+	}
 }
+
+SETTINGS.init()

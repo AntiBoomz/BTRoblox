@@ -65,7 +65,7 @@ pageInit.inventory = function() {
 	}
 
 	if(SETTINGS.get("general.hoverPreview")) {
-		OptionalLoader.loadPreviewer().then(() => {
+		loadOptionalLibrary("previewer").then(() => {
 			HoverPreview.register(".item-card", ".item-card-thumb-container")
 		})
 	}

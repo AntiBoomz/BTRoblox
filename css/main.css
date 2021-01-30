@@ -1,32 +1,3 @@
-/* Naveditor stuff */
-
-html:not(.btr-naveditor-open) .btr-nav-disabled {
-	display: none;
-}
-
-.btr-naveditor-open .btr-nav-disabled {
-	opacity: 0.5;
-}
-
-/* Fix weird stream button styling */
-
-body:not(.btr-react-nav) #header .navbar-stream {
-	padding: 0;
-}
-
-body:not(.btr-react-nav) #header .navbar-stream .notification-stream-icon {
-	display: block;
-}
-
-body:not(.btr-react-nav) #header .navbar-stream .notification-stream-icon .icon-nav-notification-stream {
-	margin: 0;
-}
-
-body:not(.btr-react-nav) #header .navbar-stream .notification-stream-icon .notification-red {
-	top: 3px;
-	right: 1px;
-}
-
 /* Navigation */
 
 .icon-nav-friend-btr, .icon-nav-message-btr {
