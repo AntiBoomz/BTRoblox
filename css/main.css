@@ -199,10 +199,6 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	font-size: 11px;
 }
 
-.dark-theme #btr-blogfeed .btr-feeddesc {
-
-}
-
 #btr-blogfeed .btr-feed:hover > .btr-feeddesc {
 	max-height: 180px;
 	margin-bottom: 4px;

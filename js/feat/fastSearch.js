@@ -386,7 +386,7 @@ const btrFastSearch = {
 		}
 
 		document.$watch("#header", header => {
-			document.$watch("#btr-fastsearch-container", _cont => {
+			header.$watch("#btr-fastsearch-container", _cont => {
 				container = _cont
 		
 				const search = container.closest("#navbar-universal-search")
