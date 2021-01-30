@@ -6,7 +6,7 @@ const btrSourceViewer = (() => {
 	const ParseRegex = new RegExp(
 		[
 			/-?(?:0_*(?:x_*[0-9a-f][0-9a-f_]*|[bB]_*[01][01_]*)|(\d[\d_]*)?\.?\d[\d_]*(?:e[+-]?_*\d[\d_]*)?)/.source, // number
-			/[+\-*/^%~=><]=|\.\.=?/.source, // multi-char ops
+			/[+\-*/^%~=><]=|\.\.[.=]?/.source, // multi-char ops
 			/\[=*\[/.source, // groups
 			/--(?:\[=*\[)?/.source, // comments
 			/\w+/.source, // words
