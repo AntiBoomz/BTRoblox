@@ -33,7 +33,6 @@ API Docs
 | [avatar.roblox.com](https://avatar.roblox.com/docs) | Endpoints relating to the customization of player avatars. |
 | [badges.roblox.com](https://badges.roblox.com/docs) | Endpoints for badges and badge awards management. |
 | [billing.roblox.com](https://billing.roblox.com/docs) | Real money transactions and interaction. |
-| [captcha.roblox.com](https://captcha.roblox.com/docs) | Captcha Api Site |
 | [catalog.roblox.com](https://catalog.roblox.com/docs) | Catalog items browsing and searching. Content and user based catalog items recommendations. |
 | [cdnproviders.roblox.com](https://cdnproviders.roblox.com/docs) | Purpose of Api here. |
 | [chat.roblox.com](https://chat.roblox.com/docs) | All chat and party related endpoints. |
@@ -47,7 +46,7 @@ API Docs
 | [economycreatorstats.roblox.com](https://economycreatorstats.roblox.com/docs) | Roblox.EconomyCreatorStats.Api endpoints. |
 | [engagementpayouts.roblox.com](https://engagementpayouts.roblox.com/docs) | For engagement-based payout information |
 | [followings.roblox.com](https://followings.roblox.com/docs) | Establishes follow relationship between subscriber entities (users, groups, etc) and source entities (games, groups, assets, etc.) |
-| [friends.roblox.com](https://friends.roblox.com/docs) | Friends, followers, and contacts management. |
+| [friends.roblox.com](https://friends.roblox.com/docs) | Friends and followers management. |
 | [gameinternationalization.roblox.com](https://gameinternationalization.roblox.com/docs) | Manages internationalization of games such as translating in game content. |
 | [gamejoin.roblox.com](https://gamejoin.roblox.com/docs) | All endpoints around launching a game. |
 | [gamepersistence.roblox.com](https://gamepersistence.roblox.com/docs) | Endpoints for the in-game datastore system for storing data for games. |
@@ -68,6 +67,7 @@ API Docs
 | [share.roblox.com](https://share.roblox.com/docs) | Purpose of Api here. |
 | [textfilter.roblox.com](https://textfilter.roblox.com/docs) | High volume text filtering. |
 | [thumbnails.roblox.com](https://thumbnails.roblox.com/docs) | Endpoints for requesting thumbnails. |
+| [thumbnailsresizer.roblox.com](https://thumbnailsresizer.roblox.com/docs) | Validate and resize thumbnails to requested dimensions |
 | [trades.roblox.com](https://trades.roblox.com/docs) | Endpoints for trading collectible items. |
 | [translationroles.roblox.com](https://translationroles.roblox.com/docs) | Manages translation roles of developers in game localization. |
 | [translations.roblox.com](https://translations.roblox.com/docs) | Endpoints for requesting translations. |
