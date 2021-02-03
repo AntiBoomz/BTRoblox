@@ -427,7 +427,6 @@ const SETTINGS = {
 			hideChat: { value: false },
 			smallChatButton: { value: true },
 			fastSearch: { value: true },
-			fixAudioPreview: { value: true },
 			fixAudioVolume: { value: true },
 
 			robuxToUSD: { value: false },

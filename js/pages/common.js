@@ -118,16 +118,4 @@ pageInit.common = () => {
 	if(SETTINGS.get("general.hideChat")) {
 		bodyWatcher.$watch("#chat-container", cont => cont.remove())
 	}
-
-	if(SETTINGS.get("general.fixAudioPreview")) {
-		InjectJS.listen("fixAudioPreview", async url => {
-			if(!url.match(/^https?:\/\/c\d\.rbxcdn\.com\/[0-9a-f]{32}$/)) {
-				console.log("bad url")
-				return
-			}
-			
-			const resp = await $.fetch(url)
-			InjectJS.send("fixAudioPreview", url, URL.createObjectURL(await resp.blob()))
-		})
-	}
 }
