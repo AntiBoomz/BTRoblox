@@ -608,21 +608,32 @@ const INJECT_SCRIPT = () => {
 			console.warn("[BTR] window.angular not set")
 		}
 
-		if(settings.general.fixAudioVolume) {
-			$(document).on("jPlayer_ready", "#MediaPlayerSingleton", ev => {
-				const audio = ev.currentTarget.querySelector("audio")
-				if(audio) {
-					audio.volume = 0.3
-				}
-			})
-		}
-
-
-
-						}
-				}
-
 		if(typeof Roblox !== "undefined") {
+			if(settings.general.fixAudioVolume) {
+				const audioService = Roblox.Audio && Roblox.Audio.AudioService
+
+				if(audioService && audioService.getAudioPlayer) {
+					audioService.getAudioPlayer = new Proxy(audioService.getAudioPlayer, {
+						apply(target, thisArg, args) {
+							const origAudio = window.Audio
+
+							const audioProxy = new Proxy(origAudio, {
+								construct(target, args) {
+									const audio = new target(...args)
+									audio.volume = 0.3
+									return audio
+								}
+							})
+
+							window.Audio = audioProxy
+							const result = target.apply(thisArg, args)
+							window.Audio = origAudio
+							return result
+						}
+					})
+				}
+			}
+
 			if(settings.general.hideAds) {
 				if(Roblox.PrerollPlayer) {
 					Roblox.PrerollPlayer.waitForPreroll = x => $.Deferred().resolve(x)
