@@ -148,7 +148,8 @@ const getCurrentValidAssetUrl = async (assetId, assetTypeId) => currentValidAsse
 		// Audio is a bit special, as you can only download audio that was created by you or Roblox
 		// So we're going to get rbxcdn url from the previewer
 
-		itemCont.$watch(".MediaPlayerIcon", icon => {
+		// Gotta specify #AssetThumbnail as recommendations are also in itemCont
+		itemCont.$watch("#AssetThumbnail .MediaPlayerIcon", icon => {
 			resolve(icon.dataset.mediathumbUrl)
 		})
 
