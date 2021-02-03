@@ -100,10 +100,6 @@ const btrSettingsModal = (() => {
 				<div class=btr-settings-content-header>
 					<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
 					<h4>Group Shout Filters</h4>
-					<div class=btr-settings-header-list>
-						<button id=btr-filter-blacklist title="Blacklist: Select groups to hide notifications from"></button>
-						<button id=btr-filter-whitelist title="Whitelist: Select groups to get notifications from"></button>
-					</div>
 				</div>
 				<div class=btr-filter-lists>
 					<div class=btr-filter-list>
@@ -248,161 +244,143 @@ const btrSettingsModal = (() => {
 		const filterContent = settingsDiv.$find("#btr-settings-shout-filters")
 		const enabledList = filterContent.$find(".btr-filter-enabled")
 		const disabledList = filterContent.$find(".btr-filter-disabled")
+		const enabledLabel = enabledList.previousElementSibling
+		const disabledLabel = disabledList.previousElementSibling
+
 		const groups = []
 		const shoutFilters = {}
-		let currentList
+
 		let areGroupsLoaded = false
 		let isDataLoaded = false
 
 		const updateLists = () => {
 			if(!areGroupsLoaded || !isDataLoaded) { return }
-			let lastGroup
-			let lastChosen
+			const currentList = shoutFilters[shoutFilters.mode]
 
 			const list0 = shoutFilters.mode === "blacklist" ? enabledList : disabledList
-			const list1 = shoutFilters.mode === "blacklist" ? disabledList : enabledList
+			const list1 = list0 === disabledList ? enabledList : disabledList
 
 			groups.forEach(group => {
 				const tile = group.tile
-				const isChosen = currentList.indexOf(group.Id) !== -1
 
-				if(isChosen) {
-					if(!lastChosen && (tile.parentNode !== list1 || tile.previousElementSibling)) {
-						list1.prepend(tile)
-					} else if(lastChosen && tile.previousElementSibling !== lastChosen) {
-						lastChosen.after(tile)
-					}
-					lastChosen = tile
+				if(currentList.includes(group.id)) {
+					list1.append(tile)
 				} else {
-					if(!lastGroup && (tile.parentNode !== list0 || tile.previousElementSibling)) {
-						list0.prepend(tile)
-					} else if(lastGroup && tile.previousElementSibling !== lastGroup) {
-						lastGroup.after(tile)
-					}
-					lastGroup = tile
+					list0.append(tile)
 				}
 			})
 		}
 
-		const validDrag = ev => {
+		const setGroupEnabled = (id, state) => {
 			if(!isDataLoaded) { return }
-			if(ev.dataTransfer.types.indexOf("btr-group") !== -1) {
+
+			const list = shoutFilters[shoutFilters.mode]
+			const index = list.indexOf(id)
+
+			if((shoutFilters.mode === "blacklist") !== !state) { // if blacklist and state or !blacklist and !state
+				if(index === -1) { return }
+				list.splice(index, 1)
+				MESSAGING.send("setShoutFilter", { id: id, mode: shoutFilters.mode, state: false })
+			} else {
+				if(index !== -1) { return }
+				list.push(id)
+				MESSAGING.send("setShoutFilter", { id: id, mode: shoutFilters.mode, state: true })
+			}
+			
+			updateLists()
+		}
+
+		const isGroupEnabled = id => {
+			if(!isDataLoaded) { return }
+
+			const list = shoutFilters[shoutFilters.mode]
+			const index = list.indexOf(id)
+
+			return shoutFilters.mode === "blacklist" ? index === -1 : index !== -1
+		}
+
+		const onDrop = (state, ev) => {
+			const id = +ev.dataTransfer.getData("btr-group")
+
+			if(Number.isSafeInteger(id)) {
+				setGroupEnabled(id, state)
+			}
+
+			ev.preventDefault()
+			ev.dataTransfer.clearData()
+		}
+
+		const validDrag = ev => {
+			if(ev.dataTransfer.getData("btr-group")) {
 				ev.preventDefault()
 			}
 		}
 
-		const dropEnable = ev => {
-			if(!isDataLoaded) { return }
-			if(ev.dataTransfer.types.indexOf("btr-group") === -1) { return }
-
-			const id = +ev.dataTransfer.getData("btr-group")
-			const index = currentList.indexOf(id)
-			if(index !== -1) {
-				currentList.splice(index, 1)
-				updateLists()
-
-				const key = shoutFilters.mode === "blacklist" ? "shoutFilterBlacklist" : "shoutFilterWhitelist"
-				MESSAGING.send(key, { id, state: false })
-			}
-			ev.preventDefault()
-			ev.dataTransfer.clearData()
-		}
-
-		const dropDisable = ev => {
-			if(!isDataLoaded) { return }
-			if(ev.dataTransfer.types.indexOf("btr-group") === -1) { return }
-
-			const id = +ev.dataTransfer.getData("btr-group")
-			if(currentList.indexOf(id) === -1) {
-				currentList.push(id)
-				updateLists()
-
-				const key = shoutFilters.mode === "blacklist" ? "shoutFilterBlacklist" : "shoutFilterWhitelist"
-				MESSAGING.send(key, { id, state: true })
-			}
-			ev.preventDefault()
-			ev.dataTransfer.clearData()
-		}
-
 		enabledList.$on("dragover", validDrag)
 		disabledList.$on("dragover", validDrag)
+		enabledList.$on("drop", onDrop.bind(null, true))
+		disabledList.$on("drop", onDrop.bind(null, false))
 
-		enabledList.$on("drop", ev => {
-			if(shoutFilters.mode === "blacklist") { dropEnable(ev) }
-			else { dropDisable(ev) }
-		})
-
-		disabledList.$on("drop", ev => {
-			if(shoutFilters.mode === "blacklist") { dropDisable(ev) }
-			else { dropEnable(ev) }
-		})
-
-		const blBtn = filterContent.$find("#btr-filter-blacklist")
-		const wlBtn = filterContent.$find("#btr-filter-whitelist")
+		//
 
 		const updateFilterMode = () => {
-			const isBl = shoutFilters.mode === "blacklist"
-
-			blBtn.classList.toggle("btn-secondary-xs", isBl)
-			blBtn.classList.toggle("btn-control-xs", !isBl)
-			wlBtn.classList.toggle("btn-secondary-xs", !isBl)
-			wlBtn.classList.toggle("btn-control-xs", isBl)
+			if(shoutFilters.mode === "blacklist") {
+				enabledLabel.textContent = "Enabled (Default)"
+				disabledLabel.textContent = "Disabled"
+			} else {
+				enabledLabel.textContent = "Enabled"
+				disabledLabel.textContent = "Disabled (Default)"
+			}
 
 			updateLists()
 		}
 
-		blBtn.$on("click", () => {
-			if(!isDataLoaded) { return }
-			shoutFilters.mode = "blacklist"
-			currentList = shoutFilters[shoutFilters.mode]
+		const setFilterMode = mode => {
+			shoutFilters.mode = mode
 			MESSAGING.send("setShoutFilterMode", shoutFilters.mode)
-
 			updateFilterMode()
-		})
+		}
 
-		wlBtn.$on("click", () => {
-			if(!isDataLoaded) { return }
-			shoutFilters.mode = "whitelist"
-			currentList = shoutFilters[shoutFilters.mode]
-			MESSAGING.send("setShoutFilterMode", shoutFilters.mode)
-
-			updateFilterMode()
-		})
+		enabledLabel.$on("click", () => setFilterMode("blacklist"))
+		disabledLabel.$on("click", () => setFilterMode("whitelist"))
 
 		loggedInUserPromise.then(async userId => {
-			const resp = await $.fetch(`https://api.roblox.com/users/${userId}/groups`)
+			const resp = await $.fetch(`https://groups.roblox.com/v1/users/${userId}/groups/roles`)
 			const json = await resp.json()
 
-			json.sort((a, b) => (a.Name < b.Name ? -1 : 1)).forEach(group => {
+			json.data.map(x => x.group).sort((a, b) => (a.name < b.name ? -1 : 1)).forEach(group => {
 				const tile = group.tile = html`
-				<li class=btr-filter-group title="${group.Name}" draggable=true>
+				<li class=btr-filter-group title="${group.name}" draggable=true>
 					<div class=btr-filter-group-icon>
-						<img src="https://assetgame.roblox.com/asset-thumbnail/image?assetId=${group.EmblemId}&width=150&height=150&format=png" draggable=false>
+						<img draggable=false>
 					</div>
 					<div class=btr-filter-group-title>
-						${group.Name}
+						${group.name}
 					</div>
 				</li>`
 
 				tile.$on("dragstart", ev => {
 					ev.dataTransfer.clearData()
-					ev.dataTransfer.setData("btr-group", group.Id)
+					ev.dataTransfer.setData("btr-group", group.id)
 				})
 
 				tile.$on("click", () => {
-					if(!isDataLoaded) { return }
-					const index = currentList.indexOf(group.Id)
-
-					if(index !== -1) { currentList.splice(index, 1) }
-					else { currentList.push(group.Id) }
-					updateLists()
-
-					const key = shoutFilters.mode === "blacklist" ? "shoutFilterBlacklist" : "shoutFilterWhitelist"
-					MESSAGING.send(key, { id: group.Id, state: index === -1 })
+					setGroupEnabled(group.id, !isGroupEnabled(group.id))
 				})
 
 				groups.push(group)
 			})
+
+			fetch(`https://thumbnails.roblox.com/v1/groups/icons?groupIds=${groups.map(x => x.id).join(",")}&size=150x150&format=Png&isCircular=false`)
+				.then(async resp => {
+					const json = await resp.json()
+
+					json.data.forEach(iconData => {
+						if(iconData.state === "Completed" && iconData.imageUrl) {
+							groups.find(x => x.id === iconData.targetId).tile.$find("img").src = iconData.imageUrl
+						}
+					})
+				})
 
 			areGroupsLoaded = true
 			updateLists()
@@ -410,8 +388,8 @@ const btrSettingsModal = (() => {
 
 		MESSAGING.send("getShoutFilters", data => {
 			Object.assign(shoutFilters, data)
-			currentList = shoutFilters[shoutFilters.mode]
 			isDataLoaded = true
+
 			updateFilterMode()
 			updateLists()
 		})
@@ -563,11 +541,18 @@ const btrSettingsModal = (() => {
 			group.prepend(titleContainer)
 
 			if(group.hasAttribute("minimizable")) {
+				const contentContainer = html`<div class=btr-setting-group-content></div>`
+				titleContainer.after(contentContainer)
+
+				while(contentContainer.nextSibling) {
+					contentContainer.append(contentContainer.nextSibling)
+				}
+
 				const updateGroup = () => {
 					if(group.hasAttribute("minimized")) {
-						group.style.height = `${title.clientHeight}px`
+						contentContainer.style.height = `0px`
 					} else {
-						group.style.height = `${group.scrollHeight + 12}px`
+						contentContainer.style.height = `${contentContainer.scrollHeight}px`
 					}
 				}
 
@@ -577,6 +562,7 @@ const btrSettingsModal = (() => {
 					} else {
 						group.setAttribute("minimized", "")
 					}
+
 					updateGroup()
 				})
 

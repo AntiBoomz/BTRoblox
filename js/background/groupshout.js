@@ -228,43 +228,32 @@
 			respond(true)
 		},
 
-		shoutFilterBlacklist(data, respond) {
+		setShoutFilter(data, respond) {
 			const id = data.id
 			const state = !!data.state
-
-			if(!Number.isSafeInteger(id)) { return respond(false) }
-
-			shoutFilterPromise.then(shoutFilters => {
-				const index = shoutFilters.blacklist.indexOf(id)
-				if(state && index === -1) {
-					shoutFilters.blacklist.push(id)
-					STORAGE.set({ shoutFilters })
-				} else if(!state && index !== -1) {
-					shoutFilters.blacklist.splice(index, 1)
-					STORAGE.set({ shoutFilters })
-				}
-			})
-
-			respond(true)
-		},
-		
-		shoutFilterWhitelist(data, respond) {
-			const id = data.id
-			const state = !!data.state
-
-			if(!Number.isSafeInteger(id)) { return respond(false) }
-
-			shoutFilterPromise.then(shoutFilters => {
-				const index = shoutFilters.whitelist.indexOf(id)
-				if(state && index === -1) {
-					shoutFilters.whitelist.push(id)
-					STORAGE.set({ shoutFilters })
-				} else if(!state && index !== -1) {
-					shoutFilters.whitelist.splice(index, 1)
-					STORAGE.set({ shoutFilters })
-				}
-			})
+			const mode = data.mode
 			
+			if(!Number.isSafeInteger(id)) {
+				return respond(false)
+			}
+
+			if(mode !== "blacklist" && mode !== "whitelist") {
+				return respond(false)
+			}
+
+			shoutFilterPromise.then(shoutFilters => {
+				const list = shoutFilters[data.mode]
+				const index = list.indexOf(id)
+
+				if(state && index === -1) {
+					list.push(id)
+					STORAGE.set({ shoutFilters })
+				} else if(!state && index !== -1) {
+					list.splice(index, 1)
+					STORAGE.set({ shoutFilters })
+				}
+			})
+
 			respond(true)
 		}
 	})
