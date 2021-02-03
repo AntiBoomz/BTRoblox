@@ -199,6 +199,13 @@ const btrSettingsModal = (() => {
 	}
 
 	let settingsLoadPromise
+	let themeObserver
+
+	const copyThemeFromElement = target => {
+		settingsDiv.classList.toggle("btr-light-theme", target.classList.contains("light-theme"))
+		settingsDiv.classList.toggle("btr-dark-theme", target.classList.contains("dark-theme"))
+	}
+
 	const toggleSettingsDiv = force => {
 		const visible = typeof force === "boolean" ? force : settingsDiv.parentNode !== document.body
 
@@ -211,6 +218,14 @@ const btrSettingsModal = (() => {
 		if(visible) {
 			document.body.appendChild(settingsDiv)
 
+			document.$watch(".light-theme:not(.btr-settings-modal), .dark-theme:not(.btr-settings-modal)", target => {
+				if(themeObserver || !settingsDiv.parentNode) { return }
+
+				themeObserver = new MutationObserver(() => copyThemeFromElement(target))
+				themeObserver.observe(target, { attributeFilter: ["class"], attributes: true })
+				copyThemeFromElement(target)
+			})
+
 			const lastContentOpen = sessionStorage.getItem("btr-settings-open")
 			if(lastContentOpen && contentDivs[lastContentOpen]) {
 				switchContent(lastContentOpen)
@@ -221,6 +236,11 @@ const btrSettingsModal = (() => {
 			switchContent("main")
 			sessionStorage.removeItem("btr-settings-open")
 			settingsDiv.remove()
+
+			if(themeObserver) {
+				themeObserver.disconnect()
+				themeObserver = null
+			}
 		}
 	}
 

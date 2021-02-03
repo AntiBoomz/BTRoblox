@@ -36,15 +36,16 @@
 	box-shadow: 0 -5px 20px rgba(25,25,25,0.15);
 
 	color: #191919;
-
 	border-radius: 3px;
+
 	overflow: hidden;
+	overscroll-behavior: contain;
 
 	pointer-events: all;
 	position: relative;
 }
 
-.dark-theme .btr-settings {
+.btr-dark-theme .btr-settings {
 	background: #232527;
 	box-shadow: 0 0 8px 0 rgba(0,0,0,0.3);
 	color: white;
@@ -55,13 +56,17 @@
 	display: flex;
 	height: 30px;
 	align-items: center;
-
-	background: #0074BD;
-	color: #fff;
 }
 
-.dark-theme .btr-settings-header {
-	background: #232527;
+.btr-light-theme .btr-settings-header {
+	background: #dee1e3;
+	color: #393b3d;
+}
+
+.btr-dark-theme .btr-settings-header {
+	background: #191b1d;
+	color: #fff;
+
 	border-bottom: 1px solid #18191B;
 }
 
@@ -191,6 +196,10 @@
 
 	padding-right: 4px;
 	border-top: 1px solid #E8E8E8;
+}
+
+.btr-dark-theme .btr-settings-footer {
+	border-top-color: #191b1d;
 }
 
 .btr-settings-footer-version {
