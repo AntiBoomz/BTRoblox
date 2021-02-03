@@ -90,9 +90,13 @@ const AssetCache = (() => {
 
 			const resolvedUrl = resolveAssetUrl(url)
 			const cachePromise = cache[resolvedUrl] = cache[resolvedUrl] || new SyncPromise(cacheResolve => {
-				const filePromise = fileCache[resolvedUrl] = fileCache[resolvedUrl] || new SyncPromise(fileResolve => {
+				const filePromise = fileCache[resolvedUrl] = fileCache[resolvedUrl] || new SyncPromise((fileResolve, fileReject) => {
 					$.fetch(resolvedUrl, { credentials: "include" }).then(async resp => {
-						fileResolve(await resp.arrayBuffer())
+						if(resp.ok) {
+							fileResolve(await resp.arrayBuffer())
+						} else {
+							fileReject(new Error(`Failed to download asset (${resp.status} ${resp.statusText})`))
+						}
 					})
 				})
 
@@ -100,7 +104,7 @@ const AssetCache = (() => {
 			}).catch(ex => console.error(ex))
 
 			if(cb) {
-				cachePromise.then(cb)
+				cachePromise.then(cb, () => cb(null))
 			}
 
 			return cachePromise
