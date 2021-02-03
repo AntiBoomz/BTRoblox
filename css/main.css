@@ -851,6 +851,13 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 
 /* Robux to cash */
 
+.btr-robuxToCash {
+	font-size: 12px;
+	opacity: 0.85;
+	vertical-align: top;
+	font-weight: 500;
+}
+
 .btr-robuxToCash-tile {
 	font-size: 12px;
 	opacity: 0.85;

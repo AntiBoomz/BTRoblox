@@ -80,6 +80,7 @@
 				"js/pages/friends.js",
 				"js/pages/gamedetails.js",
 				"js/pages/groups.js",
+				"js/pages/groupadmin.js",
 				"js/pages/home.js",
 				"js/pages/inventory.js",
 				"js/pages/itemdetails.js",

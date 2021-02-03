@@ -37,11 +37,7 @@ const PAGE_INFO = {
 		css: ["groups.css"]
 	},
 	groupadmin: {
-		matches: ["^/my/groupadmin.aspx"],
-		css: []
-	},
-	groupaudit: {
-		matches: ["^/groups/audit\\.aspx"],
+		matches: ["^/groups/configure$"],
 		css: []
 	},
 	home: {
