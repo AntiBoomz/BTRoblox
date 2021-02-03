@@ -144,20 +144,20 @@ const getCurrentValidAssetUrl = async (assetId, assetTypeId) => currentValidAsse
 		return
 	}
 
-	if(itemCont.dataset.userassetId) {
-		return resolve(defaultAssetUrl) // We have this asset in our inventory
-	}
-
 	if(assetTypeId === 3 /* Audio */) {
-		// Audio is a bit special, as you can only download audio you own or was made by Roblox
+		// Audio is a bit special, as you can only download audio that was created by you or Roblox
 		// So we're going to get rbxcdn url from the previewer
 
-		itemCont.$watch("#AssetThumbnail").$then().$watch("> .MediaPlayerControls .MediaPlayerIcon", icon => {
+		itemCont.$watch(".MediaPlayerIcon", icon => {
 			resolve(icon.dataset.mediathumbUrl)
 		})
 
 		$.ready(() => resolve(null)) // Failure case
 		return
+	}
+
+	if(itemCont.dataset.userassetId) {
+		return resolve(defaultAssetUrl) // We have this asset in our inventory
 	}
 
 	if(assetTypeId === 10 /* Model */ || assetTypeId === 38 /* Plugin */) {
@@ -386,7 +386,9 @@ const initContentButton = async (assetId, assetTypeId) => {
 	})
 }
 
-pageInit.itemdetails = function(category, assetId) {
+pageInit.itemdetails = function(category, assetIdString) {
+	const assetId = Number.parseInt(assetIdString, 10)
+
 	if(SETTINGS.get("general.robuxToUSD")) {
 		document.$watch(".icon-robux-price-container .text-robux-lg", label => {
 			const cash = RobuxToCash.convert(+label.textContent.replace(/,/g, ""))
