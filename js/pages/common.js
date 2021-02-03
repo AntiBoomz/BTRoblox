@@ -38,7 +38,6 @@ pageInit.common = () => {
 	const bodyWatcher = document.$watch(">body", body => {
 		body.classList.toggle("btr-no-hamburger", SETTINGS.get("navigation.noHamburger"))
 		body.classList.toggle("btr-hide-ads", SETTINGS.get("general.hideAds"))
-		body.classList.toggle("btr-small-chat-button", !SETTINGS.get("general.hideChat") && SETTINGS.get("general.smallChatButton"))
 
 		if(currentPage) {
 			body.dataset.btrPage = currentPage.name
@@ -77,6 +76,14 @@ pageInit.common = () => {
 		try { btrAdblock.init() }
 		catch(ex) { console.error(ex) }
 	}
+	
+	if(SETTINGS.get("general.hideChat")) {
+		bodyWatcher.$watch("#chat-container", cont => cont.remove())
+	} else {
+		if(SETTINGS.get("general.smallChatButton")) {
+			bodyWatcher.$watch("#chat-container", cont => cont.classList.add("btr-small-chat-button"))
+		}
+	}
 
 	{
 		const switchClasses = (from, to) => {
@@ -113,9 +120,5 @@ pageInit.common = () => {
 
 		updateThemes()
 		SETTINGS.onChange("general.disableRobloxThemes", updateThemes)
-	}
-
-	if(SETTINGS.get("general.hideChat")) {
-		bodyWatcher.$watch("#chat-container", cont => cont.remove())
 	}
 }

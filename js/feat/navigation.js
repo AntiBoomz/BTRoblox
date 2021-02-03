@@ -101,13 +101,9 @@ const btrNavigation = {
 	async init() {
 		await document.$watch(">body").$promise()
 
-		document.body.classList.add("btr-react-nav")
-
 		if(!SETTINGS.get("navigation.enabled")) {
 			return
 		}
-
-		document.body.classList.add("btr-react-nav-enabled")
 
 		const navContWatcher = document.$watch("#navigation-container").$then()
 
