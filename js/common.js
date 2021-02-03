@@ -60,7 +60,7 @@ const RobuxToCash = {
 	convertAngular(expr) {
 		const option = this.getSelectedOption()
 
-		return `${option.currency.symbol}{{::(((${expr})*${option.cash})/${option.robux} + 0.4999)/100 | number: 2}}`
+		return `${option.currency.symbol}{{((${expr})*${option.cash}/${option.robux} + 0.4999)/100 | number: 2}}`
 	},
 
 	convert(robux) {
