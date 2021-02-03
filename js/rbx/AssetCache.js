@@ -108,9 +108,9 @@ const AssetCache = (() => {
 	}
 
 	return {
-		loadAnimation: createMethod(buffer => new RBXParser.AnimationParser().parse(new RBXParser.ModelParser().parse(buffer))),
-		loadModel: createMethod(buffer => new RBXParser.ModelParser().parse(buffer)),
-		loadMesh: createMethod(buffer => new RBXParser.MeshParser().parse(buffer)),
+		loadAnimation: createMethod(buffer => RBXParser.parseAnimation(RBXParser.parseModel(buffer))),
+		loadModel: createMethod(buffer => RBXParser.parseModel(buffer)),
+		loadMesh: createMethod(buffer => RBXParser.parseMesh(buffer)),
 		loadImage: createMethod(buffer => new SyncPromise(resolve => {
 			const src = URL.createObjectURL(new Blob([new Uint8Array(buffer)], { type: "image/png" }))
 
@@ -127,7 +127,7 @@ const AssetCache = (() => {
 		})),
 
 		loadBuffer: createMethod(buffer => buffer),
-		loadText: createMethod(buffer => $.bufferToStr(buffer)),
+		loadText: createMethod(buffer => bufferToString(buffer)),
 
 		toAssetUrl(id) {
 			return `https://assetdelivery.roblox.com/v1/asset/?id=${+id}`

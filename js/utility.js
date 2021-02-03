@@ -602,28 +602,6 @@ const $ = function(selector) { return $.find(document, selector) }
 			}
 
 			return (hash >>> 0).toString(16).toUpperCase()
-		},
-
-		strToBuffer(str) {
-			const buff = new ArrayBuffer(str.length)
-			const view = new Uint8Array(buff)
-
-			for(let i = str.length; i--;) {
-				view[i] = str.charCodeAt(i)
-			}
-
-			return buff
-		},
-
-		bufferToStr(buff) {
-			if(buff instanceof ArrayBuffer) { buff = new Uint8Array(buff) }
-			const result = []
-
-			for(let i = 0; i < buff.length; i += 0x8000) {
-				result.push(String.fromCharCode.apply(null, buff.subarray(i, i + 0x8000)))
-			}
-
-			return result.join("")
 		}
 	})
 
@@ -698,4 +676,30 @@ const html = function(...args) {
 	}
 
 	return elem
+}
+
+const assert = (bool, ...msg) => {
+	if(!bool) { throw new Error(...msg) }
+}
+
+const stringToBuffer = str => {
+	const buff = new ArrayBuffer(str.length)
+	const view = new Uint8Array(buff)
+
+	for(let i = str.length; i--;) {
+		view[i] = str.charCodeAt(i)
+	}
+
+	return buff
+}
+
+const bufferToString = buffer => {
+	if(buffer instanceof ArrayBuffer) { buffer = new Uint8Array(buffer) }
+	const result = []
+
+	for(let i = 0; i < buffer.length; i += 0x8000) {
+		result.push(String.fromCharCode.apply(null, buffer.subarray(i, i + 0x8000)))
+	}
+
+	return result.join("")
 }

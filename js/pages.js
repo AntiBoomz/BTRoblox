@@ -223,7 +223,7 @@ function getAssetFileType(assetTypeId, buffer) {
 		return "png"
 	case 3:
 		if(buffer) {
-			const header = $.bufferToStr(buffer.subarray(0, 4))
+			const header = bufferToString(buffer.subarray(0, 4))
 			switch(header) {
 			case "RIFF": return "wav"
 			case "OggS": return "ogg"
