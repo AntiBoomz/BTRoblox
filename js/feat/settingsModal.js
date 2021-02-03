@@ -611,7 +611,7 @@ const btrSettingsModal = (() => {
 				const resetButton = html`<span class=btr-setting-reset-button>🗙</span>`
 
 				if(select.hasAttribute("label")) {
-					wrapper.append(html`<label>${select.getAttribute("label") || ""}</label>`)
+					wrapper.append(html`<label>${select.getAttribute("label") || ""}</label>`, html`<br>`)
 				}
 
 				select.before(wrapper)
