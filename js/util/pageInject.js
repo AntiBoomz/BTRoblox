@@ -38,8 +38,8 @@ const pageInject = {
 
 					if(cssText !== lastCSSText) {
 						if(lastCSSText !== null) {
-							this.intClearStyleSheet(target)
-							target.cssRule = this.intAddCSS(newUrl)
+							this.intClearStyleSheet(styleSheet)
+							styleSheet.cssRule = this.intAddCSS(newUrl)
 						}
 
 						lastCSSText = cssText
