@@ -14,6 +14,7 @@ const RBXMeshParser = {
 		case "3.00":
 		case "3.01":
 		case "4.00":
+		case "4.01":
 			return this.parseBin(buffer, version)
 		default:
 			throw new Error(`Unsupported mesh version '${version}'`)
@@ -115,7 +116,7 @@ const RBXMeshParser = {
 			envelopeCount = 0
 			skinDataCount = 0
 			boneCount = 0
-		} else {
+		} else if(version.startsWith("4.")) {
 			headerSize = reader.UInt16LE()
 			assert(headerSize >= 24, `Invalid header size ${headerSize}`)
 
