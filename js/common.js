@@ -216,7 +216,11 @@ class SyncPromise extends Promise {
 			if(this._intState === "resolved") {
 				promise.resolve(onresolve ? onresolve(this._intValue) : this._intValue)
 			} else {
-				promise.reject(onreject ? onreject(this._intReason) : this._intReason)
+				if(onreject) {
+					promise.resolve(onreject(this._intReason))
+				} else {
+					promise.reject(this._intReason)
+				}
 			}
 		}
 		catch(ex) {
