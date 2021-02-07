@@ -1204,10 +1204,6 @@ const HoverPreview = (() => {
 							const json = await resp.json()
 							const outfit = json.items.find(x => x.type === "UserOutfit")
 
-							if(outfit) {
-								targetOutfitId = outfit.id
-							}
-
 							const detailsResp = await $.fetch(`https://catalog.roblox.com/v1/catalog/items/details`, {
 								method: "POST",
 								headers: { "Content-Type": "application/json" },
@@ -1218,7 +1214,7 @@ const HoverPreview = (() => {
 							})
 
 							const details = await detailsResp.json()
-							return details.data
+							return { items: details.data, outfitId: outfit ? outfit.id : null }
 						})
 				} else {
 					assetDetailsPromise = assetCache[assetId] = assetCache[assetId] || $.fetch(`https://catalog.roblox.com/v1/catalog/items/details`, {
@@ -1230,15 +1226,19 @@ const HoverPreview = (() => {
 						xsrf: true
 					}).then(async resp => {
 						const json = await resp.json()
-						return json.data
+						return { items: json.data }
 					})
 				}
 
-				assetDetailsPromise.then(async items => {
+				assetDetailsPromise.then(async details => {
 					if(debounceCounter !== debounce) { return }
 
+					if(details.outfitId) {
+						targetOutfitId = details.outfitId
+					}
+
 					let curAnim
-					items.forEach(item => {
+					details.items.forEach(item => {
 						if(WearableAssetTypeIds.includes(item.assetType)) {
 							addAssetPreview(item.id)
 						} else if(AnimationPreviewAssetTypeIds.includes(item.assetType)) {
