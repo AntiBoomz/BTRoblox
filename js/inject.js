@@ -425,7 +425,13 @@ const INJECT_SCRIPT = () => {
 									const item = args[0]
 
 									if(item instanceof Object && item.type === "Asset" && !item.selected && accessoryAssetTypeIds.includes(item.assetType.id)) {
+										const origName = item.assetType.name
 										item.assetType.name = "Accessory"
+
+										const result = target.apply(thisArg, args)
+										item.assetType.name = origName
+
+										return result
 									}
 
 									return target.apply(thisArg, args)
