@@ -73,6 +73,7 @@ const RBXAvatar = (() => {
 			onUpdateListeners: [],
 
 			setImage(img) {
+				if(!img) { return }
 				this.image = img
 				this.onUpdateListeners.forEach(fn => fn())
 			},
