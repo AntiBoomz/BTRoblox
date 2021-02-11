@@ -13,7 +13,7 @@ const pageInject = {
 			const parent = document.head || document.documentElement
 			parent.append(style)
 	
-			this.mainStyleSheet = document.styleSheets[document.styleSheets.length - 1]
+			this.mainStyleSheet = style.sheet
 		}
 
 		paths.forEach(path => {
