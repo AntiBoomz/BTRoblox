@@ -391,14 +391,21 @@ const INJECT_SCRIPT = () => {
 			}
 
 			if(currentPage === "avatar" && settings.avatar.enabled) {
+				const accessoryAssetTypeIds = [8, 41, 42, 43, 44, 45, 46, 47]
+				
 				HijackAngular("avatar", {
 					avatarTypeService(handler, handlerArgs) {
 						const avatarTypeService = handler.apply(this, handlerArgs)
 
 						try {
 							const setMaxNumbers = () => {
-								try { Object.values(avatarTypeService.assetTypeNameLookup).forEach(assetType => assetType.maxNumber = 10) }
-								catch(ex) { console.error(ex) }
+								try {
+									Object.values(avatarTypeService.assetTypeNameLookup).forEach(assetType => {
+										if(accessoryAssetTypeIds.includes(asset.id)) {
+											assetType.maxNumber = 10
+										}
+									})
+								} catch(ex) { console.error(ex) }
 							}
 
 							setMaxNumbers()
