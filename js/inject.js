@@ -392,16 +392,18 @@ const INJECT_SCRIPT = () => {
 
 			if(currentPage === "avatar" && settings.avatar.enabled) {
 				const accessoryAssetTypeIds = [8, 41, 42, 43, 44, 45, 46, 47]
-				
+
 				HijackAngular("avatar", {
-					avatarTypeService(handler, handlerArgs) {
-						const avatarTypeService = handler.apply(this, handlerArgs)
+					avatarController(handler, args, argsMap) {
+						const result = handler.apply(this, args)
 
 						try {
+							const { $scope, avatarTypeService } = argsMap
+
 							const setMaxNumbers = () => {
 								try {
 									Object.values(avatarTypeService.assetTypeNameLookup).forEach(assetType => {
-										if(accessoryAssetTypeIds.includes(asset.id)) {
+										if(accessoryAssetTypeIds.includes(assetType.id)) {
 											assetType.maxNumber = 10
 										}
 									})
@@ -417,11 +419,21 @@ const INJECT_SCRIPT = () => {
 									return result
 								}
 							})
-						} catch(ex) {
-							console.error(ex)
-						}
 
-						return avatarTypeService
+							$scope.onItemClicked = new Proxy($scope.onItemClicked, {
+								apply(target, thisArg, args) {
+									const item = args[0]
+
+									if(item instanceof Object && item.type === "Asset" && !item.selected && accessoryAssetTypeIds.includes(item.assetType.id)) {
+										item.assetType.name = "Accessory"
+									}
+
+									return target.apply(thisArg, args)
+								}
+							})
+						} catch(ex) { console.error(ex) }
+
+						return result
 					}
 				})
 			}
