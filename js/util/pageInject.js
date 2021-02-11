@@ -75,7 +75,7 @@ const pageInject = {
 		const script = document.createElement("script")
 		script.async = true
 		script.type = "text/javascript"
-		script.textContent = `"use strict";\n(${fn.toString()})(${args.map(x => JSON.stringify(x)).join(",")});`
+		script.textContent = `(${fn.toString()})(${args.map(x => JSON.stringify(x)).join(",")});`
 
 		document.documentElement.prepend(script)
 	},
