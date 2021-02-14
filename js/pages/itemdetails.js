@@ -423,17 +423,19 @@ pageInit.itemdetails = function(category, assetIdString) {
 					label.textContent += ` (${cash})`
 				})
 		
-		modifyTemplate("recommendations", template => {
-			const label = template.$find(".item-card-price .text-robux-tile")
-			if(!label) {
-				THROW_DEV_WARNING("BTRoblox modifyTemplate('recommendations'): Missing label")
-				return
-			}
-
-			const cashText = ` (${RobuxToCash.convertAngular("item.price")})`
-			label.after(html`<span class=btr-robuxToCash-tile ng-show="${label.getAttribute("ng-show")}">${cashText}</span>`)
-			label.parentNode.setAttribute("title", `R$ {{::${label.getAttribute("ng-bind")}}}${cashText}`)
-		})
+		if(category !== "game-pass") {
+			modifyTemplate("recommendations", template => {
+				const label = template.$find(".item-card-price .text-robux-tile")
+				if(!label) {
+					THROW_DEV_WARNING("BTRoblox modifyTemplate('recommendations'): Missing label")
+					return
+				}
+	
+				const cashText = ` (${RobuxToCash.convertAngular("item.price")})`
+				label.after(html`<span class=btr-robuxToCash-tile ng-show="${label.getAttribute("ng-show")}">${cashText}</span>`)
+				label.parentNode.setAttribute("title", `R$ {{::${label.getAttribute("ng-bind")}}}${cashText}`)
+			})
+		}
 	}
 
 	if(SETTINGS.get("general.hoverPreview")) {
