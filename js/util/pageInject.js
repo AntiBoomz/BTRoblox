@@ -7,7 +7,6 @@ const pageInject = {
 	injectCSS(...paths) {
 		if(!this.mainStyleSheet) {
 			const style = document.createElement("style")
-			style.setAttribute("name", "BTRoblox/inject.css")
 			style.type = "text/css"
 	
 			const parent = document.head || document.documentElement
@@ -84,8 +83,8 @@ const pageInject = {
 
 	intAddCSS(url) {
 		const cssRule = `@import url("${url}")`
-		const ruleIndex = this.mainStyleSheet.insertRule(cssRule)
-
+		const ruleIndex = this.mainStyleSheet.insertRule(cssRule, this.mainStyleSheet.cssRules.length)
+		
 		return this.mainStyleSheet.cssRules[ruleIndex]
 	},
 
