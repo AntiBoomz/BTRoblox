@@ -119,7 +119,10 @@ pageInit.gamedetails = function(placeId) {
 			badges.$watch(">.stack-list").$then().$watchAll(".badge-row", row => {
 				const url = row.$find(".badge-image>a").href
 				const label = row.$find(".badge-name")
-				label.innerHTML = htmlstring`<a href="${url}">${label.textContent}</a>`
+				
+				label.$empty()
+				label.append(html`<a href="${url}">${label.textContent}</a>`)
+
 				row.$find("p.para-overflow").classList.remove("para-overflow")
 
 				if(SETTINGS.get("gamedetails.showBadgeOwned")) {
