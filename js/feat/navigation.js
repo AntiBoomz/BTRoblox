@@ -21,7 +21,7 @@ const btrNavigation = {
 
 		btr_Money: `
 		<li>
-			<a href="https://www.roblox.com/my/money.aspx" id=nav-money class="dynamic-overflow-container text-nav">
+			<a href="https://www.roblox.com/transactions" id=nav-money class="dynamic-overflow-container text-nav">
 				<div><span class="icon-nav-trade"></span></div>
 				<span class="font-header-2 dynamic-ellipsis-item">Money</span>
 			</a>
