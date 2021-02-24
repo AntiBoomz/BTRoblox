@@ -84,9 +84,17 @@ pageInit.profile = function(userId) {
 				newCont.$find(".profile-about").setAttribute("ng-controller", about.getAttribute("ng-controller"))
 	
 				about
-					.$watch("profile-description", desc => {
+					.$watch("profile-description,.profile-about-content", desc => {
+						if(desc.classList.contains("profile-about-content") && desc.closest("profile-description")) {
+							// in case it selected profile-about-content in the new profile-description
+							desc = desc.closest("profile-description")
+						}
+
 						newCont.$find(".placeholder-desc").replaceWith(desc)
-						newCont.$find(".btr-profile-about > .container-header").style.visibility = "hidden"
+
+						if(desc.matches("profile-description")) {
+							newCont.$find(".btr-profile-about > .container-header").style.visibility = "hidden"
+						}
 					})
 					.$watch("#aliases-container", aliases => {
 						newCont.$find(".placeholder-aliases").replaceWith(aliases)
