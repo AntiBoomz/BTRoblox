@@ -5,6 +5,7 @@ const btrFastSearch = {
 		const usernameRegex = /^\w+(?:[ _]?\w+)?$/
 		const userCache = {}
 		const searchResults = []
+		let selectedClass = "selected"
 		let currentSearchStarted = 0
 		let currentSearchText = ""
 		let lastResultsLoaded = 0
@@ -123,10 +124,10 @@ const btrFastSearch = {
 		const clearResults = () => {
 			searchResults.splice(0, searchResults.length).forEach(x => x.remove())
 
-			const sel = list.$find(">.selected")
+			const sel = list.$find(`>.${selectedClass}`)
 			if(!sel) {
 				const target = list.$find(">li")
-				target.classList.add("selected")
+				target.classList.add(selectedClass)
 			}
 		}
 
@@ -152,13 +153,12 @@ const btrFastSearch = {
 			const now = Date.now()
 
 			lastResultsLoaded = now
-
 			$.setImmediate(() => {
 				if(lastResultsLoaded !== now) {
 					return
 				}
 
-				const lastSelected = list.$find(">.selected")
+				const lastSelected = list.$find(`>.${selectedClass}`)
 				const selectFirst = !lastSelected || !searchResults.length && lastSelected === list.$find(">li") || searchResults.includes(lastSelected)
 
 				clearResults()
@@ -280,12 +280,12 @@ const btrFastSearch = {
 				}
 
 				if(selectFirst && searchResults.length) {
-					const prev = list.$find(">.selected")
+					const prev = list.$find(`>.${selectedClass}`)
 					if(prev) {
-						prev.classList.remove("selected")
+						prev.classList.remove(selectedClass)
 					}
 
-					searchResults[0].classList.add("selected")
+					searchResults[0].classList.add(selectedClass)
 				}
 			})
 		}
@@ -388,6 +388,11 @@ const btrFastSearch = {
 		document.$watch("#header", header => {
 			header.$watch("#btr-fastsearch-container", _cont => {
 				container = _cont
+				container.append(html`<div style=display:none></div>`) // just to make results not count as last-child
+
+				if(container.closest(".new-dropdown-menu")) {
+					selectedClass = "new-selected"
+				}
 		
 				const search = container.closest("#navbar-universal-search")
 				const input = search.$find("#navbar-search-input")
@@ -395,7 +400,7 @@ const btrFastSearch = {
 		
 				input.$on("keydown", ev => {
 					if(ev.keyCode === 38 || ev.keyCode === 40 || ev.keyCode === 9) {
-						const selected = list.$find(".selected")
+						const selected = list.$find(`.${selectedClass}`)
 						if(!selected || !searchResults.length) {
 							return
 						}
@@ -433,12 +438,12 @@ const btrFastSearch = {
 						}
 		
 						if(next) {
-							selected.classList.remove("selected")
-							next.classList.add("selected")
+							selected.classList.remove(selectedClass)
+							next.classList.add(selectedClass)
 		
 							requestAnimationFrame(() => {
-								const newSel = list.$findAll(".selected")
-								newSel.forEach(x => x !== next && x.classList.remove("selected"))
+								const newSel = list.$findAll(`.${selectedClass}`)
+								newSel.forEach(x => x !== next && x.classList.remove(selectedClass))
 							})
 		
 							if(prevent) {
@@ -452,7 +457,7 @@ const btrFastSearch = {
 		
 				input.$on("keyup", ev => {
 					if(ev.keyCode === 13) {
-						const selected = list.$find(".selected")
+						const selected = list.$find(`.${selectedClass}`)
 						if(!selected || !searchResults.includes(selected)) {
 							return
 						}
@@ -465,12 +470,18 @@ const btrFastSearch = {
 					}
 				}, { capture: true })
 		
-				let lastValue
-				input.$on("input", () => {
+				let lastValue = ""
+
+				const update = () => {
 					if(input.value === lastValue) { return }
 					lastValue = input.value
+
 					updateSearch(input.value.toLowerCase())
-				})
+				}
+
+				input.$on("input", update)
+				update()
+				
 			})
 		})
 	}
