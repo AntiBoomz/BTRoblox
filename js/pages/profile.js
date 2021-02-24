@@ -84,16 +84,9 @@ pageInit.profile = function(userId) {
 				newCont.$find(".profile-about").setAttribute("ng-controller", about.getAttribute("ng-controller"))
 	
 				about
-					.$watch(".profile-about-content", desc => {
+					.$watch("profile-description", desc => {
 						newCont.$find(".placeholder-desc").replaceWith(desc)
-	
-						const descContent = desc.$find(".profile-about-content-text")
-						descContent.classList.add("linkify")
-	
-						if(!descContent.textContent.trim()) {
-							descContent.classList.add("text-label")
-							descContent.textContent = "This user has no description"
-						}
+						newCont.$find(".btr-profile-about > .container-header").style.visibility = "hidden"
 					})
 					.$watch("#aliases-container", aliases => {
 						newCont.$find(".placeholder-aliases").replaceWith(aliases)

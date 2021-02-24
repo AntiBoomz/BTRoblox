@@ -149,6 +149,20 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	padding-bottom: 8px;
 }
 
+.btr-profile profile-description,
+.btr-profile profile-description > .profile-about,
+.btr-profile profile-description > .profile-about > .section-content,
+.btr-profile profile-description profile-description-view {
+	display: contents;
+}
+
+.btr-profile profile-description .container-header {
+	position: absolute;
+	bottom: 100%;
+	left: 0;
+	width: 100%;
+}
+
 .btr-profile .profile-about-content {
 	text-align: right; /* Align Read More to right */
 }
