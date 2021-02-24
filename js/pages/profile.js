@@ -243,25 +243,6 @@ pageInit.profile = function(userId) {
 				content.classList.remove("remove-panel")
 			})
 		})
-		.$watch(".see-more-roblox-badges-button", btn => { // Legacy roblox badges
-			const badges = btn.parentElement.parentElement
-			newCont.$find(".placeholder-robloxbadges").replaceWith(badges)
-
-			badges.$find(".section-content").classList.remove("remove-panel")
-
-			badges.classList.add("btr-profile-robloxbadges")
-			badges.$find(".btn-more").setAttribute("ng-show", badges.$find(".badge-list").children.length > 10)
-
-			badges.$watch(".badge-list").$then().$watchAll(".badge-item", badge => {
-				badge.$watch(".asset-thumb-container", thumb => {
-					const newThumb = html`<span class=asset-thumb-container></span>`
-					thumb.before(newThumb)
-					newThumb.append(thumb)
-
-					thumb.classList.remove("asset-thumb-container")
-				})
-			})
-		})
 		.$watch("#games-switcher", switcher => {
 			const games = switcher.parentNode
 			newCont.$find(".placeholder-games").replaceWith(games)
