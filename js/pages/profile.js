@@ -11,7 +11,15 @@ pageInit.profile = function(userId) {
 				<div class=section-content>
 					<div class=placeholder-status style=display:none></div>
 					<div class=placeholder-avatar style=display:none></div>
-					<div class=placeholder-desc style=display:none></div>
+					<div class=placeholder-desc>
+						<div class=profile-about-content>
+							<pre id=profile-about-text class=profile-about-text>
+								<span class="profile-about-content-text text-label">
+									This user has no description
+								</span>
+							</pre>
+						</div>
+					</div>
 					<div class=placeholder-aliases style=display:none></div>
 					<div class=placeholder-stats style=display:none></div>
 					<div class=placeholder-footer style=display:none></div>
