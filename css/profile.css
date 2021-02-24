@@ -200,6 +200,8 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	display: flex;
 	flex-direction: row;
 	padding-top: 8px;
+	margin-top: 8px;
+	border-color: #E3E3E3;
 }
 
 .btr-profile #aliases-container .border-top > div:first-child {

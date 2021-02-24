@@ -90,12 +90,6 @@ pageInit.profile = function(userId) {
 					})
 					.$watch("#aliases-container", aliases => {
 						newCont.$find(".placeholder-aliases").replaceWith(aliases)
-	
-						aliases.$watch(".border-top > div:first-child", header => {
-							header.classList.remove("font-header-2")
-							header.classList.add("text-label")
-							header.textContent = "Alias:"
-						}).$watch(".user-tag", tag => tag.classList.remove("font-header-2"))
 					})
 					.$watch(".profile-about-footer", footer => {
 						newCont.$find(".placeholder-footer").replaceWith(footer)
