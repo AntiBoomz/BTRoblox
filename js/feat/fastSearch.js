@@ -481,7 +481,6 @@ const btrFastSearch = {
 
 				input.$on("input", update)
 				update()
-				
 			})
 		})
 	}
