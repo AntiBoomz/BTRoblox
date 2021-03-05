@@ -334,27 +334,25 @@ pageInit.profile = function(userId) {
 					this.iconRetryUrl = slideImage.dataset.retry
 
 					const item = this.item = html`
-					<li class="btr-game">
-						<div class="btr-game-button">
-							<span class="btr-game-title">${title}</span>
+					<li class=btr-game>
+						<div class=btr-game-button>
+							<span class=btr-game-title>${title}</span>
 						</div>
-						<div class="btr-game-content">
-							<div class="btr-game-thumb-container">
-								<a href="${url}">
-									<img class="btr-game-thumb">
-									<img class="btr-game-icon" src="${iconThumb}">
-								</a>
+						<div class=btr-game-content>
+							<a class=btr-game-thumb-container href="${url}">
+								<img class=btr-game-thumb>
+								<img class=btr-game-icon src="${iconThumb}">
+							</a>
+							<div class=btr-game-desc>
+								<span class=btr-game-desc-content>${desc}</span>
 							</div>
-							<div class="btr-game-desc">
-								<span class="btr-game-desc-content">${desc}</span>
-							</div>
-							<div class="btr-game-info">
-								<div class="btr-game-playbutton-container">
+							<div class=btr-game-info>
+								<div class=btr-game-playbutton-container>
 									<div class="btr-game-playbutton btn-primary-lg VisitButtonPlay VisitButtonPlayGLI" placeid="${placeId}"  data-action=play data-is-membership-level-ok=true>
 										Play
 									</div>
 								</div>
-								<div class="btr-game-stats"></div>
+								<div class=btr-game-stats></div>
 							</div>
 						</div>
 					</li>`
