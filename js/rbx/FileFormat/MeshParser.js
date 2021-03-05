@@ -133,7 +133,7 @@ const RBXMeshParser = {
 
 			nameTableSize = reader.Int32LE()
 			skinDataCount = reader.UInt16LE()
-			reader.Jump(2) // Unknown (Clone's documentation claims skinDataCount to be 32bit, this is false)
+			reader.Jump(2)
 
 			if(boneCount > 0) {
 				envelopeCount = vertexCount
@@ -217,7 +217,7 @@ const RBXMeshParser = {
 		// Okay, idk what's happening here, but some v4 meshes don't have valid lodLevels?
 		// Possibly related to skinned meshes as I've only seen this happen with the skinned
 		// LNX bundles.
-		if(version === "4.00" && meshCount === 0 && lodCount === 2 && lodLevels[1] === 0) {
+		if(version.startsWith("4.") && meshCount === 0 && lodCount === 2 && lodLevels[1] === 0) {
 			lodLevels[0] = 0
 			lodLevels[1] = faceCount
 		}
