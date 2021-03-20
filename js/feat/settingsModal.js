@@ -36,10 +36,13 @@ const btrSettingsModal = (() => {
 					<checkbox label="Show 'Copy Id' Context Items" path=enableContextMenus></checkbox>
 					<checkbox label="Lower Default Audio Volume" path=fixAudioVolume></checkbox>
 					<div style="margin-top: 15px; display: flex;">
-						<checkbox label="Show Robux to Cash" path=robuxToUSD style="width: auto"></checkbox>
-						<div style="flex: 1 1 auto; text-align: right;">
-							<select id=btr-robuxToCash-currency></select>
-							<select id=btr-robuxToCash-rate style="margin-left: 4px"></select>
+						<checkbox label="Show Robux to Cash" path=robuxToUSD style="width: 50%"></checkbox>
+						<div style=width:50%>
+							<span style="width: calc(100% - 14px); display: inline-flex;">
+								<select id=btr-robuxToCash-currency style="flex: 0 1 auto"></select>
+								<select id=btr-robuxToCash-rate style="flex: 1 1 auto; min-width: 0; margin-left: 4px"></select>
+							</span>
+							<span class=btr-setting-reset-button path=general.robuxToUSDRate></span>
 						</div>
 					</div>
 				</group>
@@ -427,11 +430,22 @@ const btrSettingsModal = (() => {
 			currencySelect.$empty()
 			rateSelect.$empty()
 
+			Object.keys(RobuxToCash.Currencies).forEach(name => {
+				currencySelect.append(html`<option>${name}</option>`)
+			})
+
 			const setRate = () => {
 				SETTINGS.set("general.robuxToUSDRate", rateSelect.value)
 			}
 
-			const loadRates = name => {
+			currencySelect.$on("change", () => {
+				SETTINGS.set("general.robuxToUSDRate", RobuxToCash.OptionLists[currencySelect.value][0].name)
+			})
+
+			rateSelect.$on("change", setRate)
+
+			const updateRate = () => {
+				const name = RobuxToCash.getSelectedOption().currency.name
 				currencySelect.value = name
 
 				rateSelect.$empty()
@@ -459,19 +473,11 @@ const btrSettingsModal = (() => {
 				}
 			}
 
-			Object.keys(RobuxToCash.Currencies).forEach(name => {
-				currencySelect.append(html`<option>${name}</option>`)
-			})
-
-			currencySelect.$on("change", () => {
-				loadRates(currencySelect.value)
-			})
-
-			rateSelect.$on("change", setRate)
-
-			loadRates(RobuxToCash.getSelectedOption().currency.name)
+			SETTINGS.onChange("general.robuxToUSDRate", updateRate)
+			updateRate()
 
 			//
+
 			const updateDisabled = () => {
 				const value = SETTINGS.get("general.robuxToUSD")
 
@@ -577,20 +583,12 @@ const btrSettingsModal = (() => {
 				const toggle = html`<div class=btr-settings-enabled-toggle>`
 				title.after(toggle)
 
-				const resetButton = html`<span class=btr-setting-reset-button>🗙</span>`
+				const resetButton = html`<span class=btr-setting-reset-button path=${settingPath}></span>`
 				toggle.append(resetButton)
-
-				resetButton.$on("click", ev => {
-					SETTINGS.reset(settingPath)
-					ev.preventDefault()
-					ev.stopPropagation()
-				})
 
 				const update = () => {
 					const enabled = SETTINGS.get(settingPath)
 					toggle.classList.toggle("checked", enabled)
-
-					resetButton.classList.toggle("disabled", SETTINGS.getIsDefault(settingPath))
 
 					group.classList.toggle("btr-group-disabled", !enabled)
 				}
@@ -608,7 +606,7 @@ const btrSettingsModal = (() => {
 				settingsDone[settingPath] = true
 
 				const wrapper = html`<div class=btr-select></div>`
-				const resetButton = html`<span class=btr-setting-reset-button>🗙</span>`
+				const resetButton = html`<span class=btr-setting-reset-button path=${settingPath}></span>`
 
 				if(select.hasAttribute("label")) {
 					wrapper.append(html`<label>${select.getAttribute("label") || ""}</label>`, html`<br>`)
@@ -616,10 +614,6 @@ const btrSettingsModal = (() => {
 
 				select.before(wrapper)
 				wrapper.append(select, resetButton)
-
-				resetButton.$on("click", () => {
-					SETTINGS.reset(settingPath)
-				})
 
 				const titleOption = select.options[0] && select.options[0].hasAttribute("disabled") ? select.options[0] : null
 				const titleOptionFormat = titleOption ? titleOption.textContent : null
@@ -630,7 +624,6 @@ const btrSettingsModal = (() => {
 
 				const update = () => {
 					select.value = SETTINGS.get(settingPath)
-					resetButton.classList.toggle("disabled", SETTINGS.getIsDefault(settingPath))
 
 					const selected = select.selectedOptions[0]
 					if(selected && titleOption && titleOption !== selected) {
@@ -694,19 +687,14 @@ const btrSettingsModal = (() => {
 						SETTINGS.set(settingPath, value)
 					})
 
-					const resetButton = html`<span class=btr-setting-reset-button>🗙</span>`
+					const resetButton = html`<span class=btr-setting-reset-button path=${settingPath}></span>`
 					label.after(resetButton)
-
-					resetButton.$on("click", () => {
-						SETTINGS.reset(settingPath)
-					})
 
 					const update = () => {
 						let value = !!SETTINGS.get(settingPath)
 						if(settingAttr.startsWith("!")) { value = !value }
 
 						input.checked = value
-						resetButton.classList.toggle("disabled", SETTINGS.getIsDefault(settingPath))
 					}
 	
 					SETTINGS.onChange(settingPath, update)
@@ -753,18 +741,13 @@ const btrSettingsModal = (() => {
 					checkbox.append(input)
 					checkbox.append(label)
 
-					const resetButton = html`<span class=btr-setting-reset-button>🗙</span>`
+					const resetButton = html`<span class=btr-setting-reset-button path=${settingPath}></span>`
 					checkbox.append(resetButton)
-	
-					resetButton.$on("click", () => {
-						SETTINGS.reset(settingPath)
-					})
 
 					wipGroup.append(checkbox)
 
 					const update = () => {
 						input.checked = !!SETTINGS.get(settingPath)
-						resetButton.classList.toggle("disabled", SETTINGS.getIsDefault(settingPath))
 					}
 
 					input.$on("change", () => {
@@ -777,6 +760,24 @@ const btrSettingsModal = (() => {
 					wipGroup.append(html`<div>${settingPath} (${typeof settingValue})`)
 				}
 			})
+		})
+
+		settingsDiv.$findAll(".btr-setting-reset-button").forEach(btn => {
+			const settingPath = btn.getAttribute("path")
+			btn.textContent = "🗙"
+
+			const update = () => {
+				btn.classList.toggle("disabled", SETTINGS.getIsDefault(settingPath))
+			}
+
+			btn.$on("click", ev => {
+				SETTINGS.reset(settingPath)
+				ev.preventDefault()
+				ev.stopPropagation()
+			})
+
+			SETTINGS.onChange(settingPath, update)
+			update()
 		})
 	}
 
