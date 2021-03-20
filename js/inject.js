@@ -369,6 +369,40 @@ const INJECT_SCRIPT = () => {
 		}
 
 		if(window.angular) {
+			if(settings.general.higherRobuxPrecision) {
+				let hijackTruncValue = false
+
+				onSet(window, "CoreUtilities", CoreUtilities => {
+					hijackFunction(CoreUtilities.abbreviateNumber, "getTruncValue", (target, thisArg, args) => {
+						if(hijackTruncValue && args.length === 1) {
+							const result = target.apply(thisArg, args)
+	
+							if(result.endsWith("+") && result.length < 5) {
+								try {
+									return target.apply(thisArg, [args[0], null, null, result.length - 1])
+								} catch(ex) {
+									console.error(ex)
+								}
+							}
+	
+							return result
+						}
+	
+						return target.apply(thisArg, args)
+					})
+				})
+
+				reactHook.replaceConstructor(
+					([fn, props]) => "robuxAmount" in props && fn.toString().includes("nav-robux-amount"),
+					(target, thisArg, args) => {
+						hijackTruncValue = true
+						const result = target.apply(thisArg, args)
+						hijackTruncValue = false
+						return result
+					}
+				)
+			}
+			
 			if(settings.general.smallChatButton) {
 				HijackAngular("chat", {
 					chatController(func, args, argMap) {

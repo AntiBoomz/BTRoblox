@@ -438,7 +438,8 @@ const SETTINGS = {
 	
 			hoverPreview: { value: true },
 			hoverPreviewMode: { value: "always", validValues: ["always", "never"] },
-		
+			
+			higherRobuxPrecision: { value: true },
 			enableContextMenus: { value: true }
 		},
 		navigation: {
