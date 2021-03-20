@@ -200,14 +200,52 @@ const INJECT_SCRIPT = () => {
 
 	const reactHook = {
 		args: null,
+		replacements: [],
+		cachedReplacements: new WeakMap(),
 
 		onCreateElement(args) {
 			if(!settings || !(args[1] instanceof Object)) {
 				return
 			}
 
+			if(typeof args[0] === "function") {
+				const fn = args[0]
+				let replace = this.cachedReplacements.get(fn)
+
+				if(!this.cachedReplacements.has(fn)) {
+					for(const info of this.replacements) {
+						if(!info.found && !info.fnMap.has(fn)) {
+							try {
+								if(info.filter(args)) {
+									info.found = true
+									info.fnMap.set(fn, new Proxy(fn, { apply: info.handler }))
+								} else {
+									info.fnMap.set(fn, false)
+								}
+							} catch(ex) {
+								console.error(ex)
+							}
+						}
+
+						replace = info.fnMap.get(fn)
+						if(replace) { break }
+					}
+
+					this.cachedReplacements.set(fn, replace || false)
+				}
+
+				if(replace) {
+					args[0] = replace
+				}
+			}
+
 			try { this.handler(args) }
 			catch(ex) { console.error(ex) }
+		},
+
+		replaceConstructor(filter, handler) {
+			this.cachedReplacements = new WeakMap()
+			this.replacements.push({ filter, handler, fnMap: new WeakMap() })
 		},
 
 		handler(args) {
