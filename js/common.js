@@ -93,10 +93,12 @@ const RobuxToCash = {
 				this.Options[option.name] = option
 			})
 		})
-	}
-}
 
-RobuxToCash.init()
+		return this
+	}
+}.init()
+
+//
 
 class SyncPromise extends Promise {
 	static resolve(value) {
@@ -419,6 +421,7 @@ const MESSAGING = (() => {
 	}
 })()
 
+//
 
 const SETTINGS = {
 	defaultSettings: {
@@ -761,7 +764,7 @@ const SETTINGS = {
 				}
 			})
 		}
-	}
-}
 
-SETTINGS.init()
+		return this
+	}
+}.init()
