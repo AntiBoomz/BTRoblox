@@ -53,10 +53,10 @@ const InjectJS = {
 
 
 const INJECT_SCRIPT = () => {
+	let IS_DEV_MODE
 	let settings
 	let currentPage
 	let matches
-	let IS_DEV_MODE
 
 	const ContentJS = {
 		send(action, ...args) {
@@ -202,7 +202,7 @@ const INJECT_SCRIPT = () => {
 		args: null,
 
 		onCreateElement(args) {
-			if(!settings || this.args || !args[1]) {
+			if(!settings || !(args[1] instanceof Object)) {
 				return
 			}
 
@@ -287,34 +287,39 @@ const INJECT_SCRIPT = () => {
 			}
 		}
 	}
-	
-	function PreInit() {
-		const onSet = (a, b, c) => {
-			if(a[b]) { return c(a[b]) }
 
-			Object.defineProperty(a, b, {
-				enumerable: false,
-				configurable: true,
-				set(v) {
-					delete a[b]
-					a[b] = v
-					c(v)
-				}
-			})
+	const onSet = (a, b, c) => {
+		if(a[b]) { return c(a[b]) }
+
+		Object.defineProperty(a, b, {
+			enumerable: false,
+			configurable: true,
+			set(v) {
+				delete a[b]
+				a[b] = v
+				c(v)
+			}
+		})
+	}
+
+	function hijackFunction(a, b, c) {
+		if(arguments.length === 2) {
+			return new Proxy(a, { apply: b })
 		}
 
+		a[b] = new Proxy(a[b], { apply: c })
+	}
+	
+	function PreInit() {
 		onSet(window, "angular", async angular => {
 			await Promise.resolve() // Wait for angular to load
 			angular.module("ng").run($templateCache => modifyTemplate.addCache($templateCache))
 		})
 
 		onSet(window, "React", React => {
-			React.createElement = new Proxy(React.createElement, {
-				apply(target, thisArg, args) {
-					reactHook.onCreateElement(args)
-
-					return target.apply(thisArg, args)
-				}
+			hijackFunction(React, "createElement", (target, thisArg, args) => {
+				reactHook.onCreateElement(args)
+				return target.apply(thisArg, args)
 			})
 		})
 	}
@@ -412,30 +417,26 @@ const INJECT_SCRIPT = () => {
 
 							setMaxNumbers()
 							
-							avatarTypeService.setAssetTypeLookups = new Proxy(avatarTypeService.setAssetTypeLookups, {
-								apply(target, thisArg, args) {
-									const result = target.apply(thisArg, args)
-									setMaxNumbers()
-									return result
-								}
+							hijackFunction(avatarTypeService, "setAssetTypeLookups", (target, thisArg, args) => {
+								const result = target.apply(thisArg, args)
+								setMaxNumbers()
+								return result
 							})
 
-							$scope.onItemClicked = new Proxy($scope.onItemClicked, {
-								apply(target, thisArg, args) {
-									const item = args[0]
+							hijackFunction($scope, "onItemClicked", (target, thisArg, args) => {
+								const item = args[0]
 
-									if(item instanceof Object && item.type === "Asset" && !item.selected && accessoryAssetTypeIds.includes(item.assetType.id)) {
-										const origName = item.assetType.name
-										item.assetType.name = "Accessory"
+								if(item instanceof Object && item.type === "Asset" && !item.selected && accessoryAssetTypeIds.includes(item.assetType.id)) {
+									const origName = item.assetType.name
+									item.assetType.name = "Accessory"
 
-										const result = target.apply(thisArg, args)
-										item.assetType.name = origName
+									const result = target.apply(thisArg, args)
+									item.assetType.name = origName
 
-										return result
-									}
-
-									return target.apply(thisArg, args)
+									return result
 								}
+
+								return target.apply(thisArg, args)
 							})
 						} catch(ex) { console.error(ex) }
 
@@ -638,23 +639,21 @@ const INJECT_SCRIPT = () => {
 				const audioService = Roblox.Audio && Roblox.Audio.AudioService
 
 				if(audioService && audioService.getAudioPlayer) {
-					audioService.getAudioPlayer = new Proxy(audioService.getAudioPlayer, {
-						apply(target, thisArg, args) {
-							const origAudio = window.Audio
+					hijackFunction(audioService, "getAudioPlayer", (target, thisArg, args) => {
+						const origAudio = window.Audio
 
-							const audioProxy = new Proxy(origAudio, {
-								construct(target, args) {
-									const audio = new target(...args)
-									audio.volume = 0.3
-									return audio
-								}
-							})
+						const audioProxy = new Proxy(origAudio, {
+							construct(target, args) {
+								const audio = new target(...args)
+								audio.volume = 0.3
+								return audio
+							}
+						})
 
-							window.Audio = audioProxy
-							const result = target.apply(thisArg, args)
-							window.Audio = origAudio
-							return result
-						}
+						window.Audio = audioProxy
+						const result = target.apply(thisArg, args)
+						window.Audio = origAudio
+						return result
 					})
 				}
 			}
@@ -787,15 +786,7 @@ const INJECT_SCRIPT = () => {
 				}
 			}
 		} else {
-			if(IS_DEV_MODE) {
-				alert("[BTR] window.Roblox not set")
-			}
-		}
-
-		if(typeof Sys !== "undefined" && Sys.WebForms != null) {
-			const prm = Sys.WebForms.PageRequestManager.getInstance()
-
-			prm.add_pageLoaded(() => ContentJS.send("ajaxUpdate"))
+			console.warn("[BTR] window.Roblox not set")
 		}
 	}
 
