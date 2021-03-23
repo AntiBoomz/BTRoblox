@@ -150,7 +150,6 @@ const btrSettingsModal = (() => {
 				<group label="Redesign" toggleable=redesign path=groups>
 					<checkbox label="Modify Layout" path=modifyLayout require=redesign></checkbox>
 					<checkbox label="Make Group Wall Paged" path=pagedGroupWall require=redesign></checkbox>
-					<checkbox label="Show User Rank On Group Wall" path=groupWallRanks require=redesign></checkbox>
 					<checkbox label="Show Selected Role Member Count" path=selectedRoleCount require=redesign></checkbox>
 					<checkbox label="Hide Payout Container" path=hidePayout require=redesign></checkbox>
 					<checkbox label="Hide Large Social Container" path=hideBigSocial require=redesign></checkbox>

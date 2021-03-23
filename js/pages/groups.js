@@ -130,13 +130,6 @@
 				</div>`)
 			})
 		}
-
-		if(SETTINGS.get("groups.groupWallRanks")) {
-			modifyTemplate("group-comments", template => {
-				const labels = template.$findAll(".list-body > .text-name")
-				labels[labels.length - 1].after(html`<span class="btr-grouprank text-label">({{post.poster.role.name}})</span>`)
-			})
-		}
 	}
 
 	pageInit.groups = function() {
