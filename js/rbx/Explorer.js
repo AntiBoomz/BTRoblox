@@ -17,7 +17,7 @@ const Explorer = (() => {
 
 	const HiddenProperties = $.toDict(null,
 		"Tags", "AttributesSerialize", "SourceAssetId", // Instance
-		"FormFactor", "Elasticity", "Friction", // Parts
+		"FormFactor", "Elasticity", "Friction", "Velocity", "RotVelocity", // Parts
 		"PhysicsData", "MeshData", "ChildData", "InitialSize", "PhysicalConfigData", // Meshparts / Unions
 		"HasJointOffset", "HasSkinnedMesh", "JointOffset", "LODData", // Meshparts
 		"ModelInPrimary", // Model
@@ -27,6 +27,7 @@ const Explorer = (() => {
 		"PlayCount", // Sound
 		"UnionOperation.AssetId", "UnionOperation.InitialSize", // Unions
 		"Terrain.PhysicsGrid", "Terrain.SmoothGrid", "Terrain.MaterialColors", // Terrain
+		"IsAutoJoint", // Joints
 
 		// Super legacy stuff
 		"Model.Controller", "Part.Controller",
