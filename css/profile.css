@@ -402,15 +402,16 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	position: relative;
 	display: block;
 	width: 100%;
-	height: 277px;
 	text-align: center;
 }
 
 .btr-profile .btr-games-list .btr-game-thumb {
 	border: none;
-	height: 100%;
 	border-bottom-left-radius: 5px;
 	border-bottom-right-radius: 5px;
+	width: 100%;
+	height: 277px;
+	object-fit: contain;
 }
 
 .btr-profile .btr-games-list .btr-game-thumb:not([src]) {
@@ -532,21 +533,30 @@ html .btr-profile .btr-profile-favorites .game-card {
 
 .btr-profile-favorites .game-card-thumb-container {
 	border-bottom: 1px solid #E3E3E3;
+	width: 100%;
+	padding-top: 100%;
+	height: 0;
+}
+
+.btr-profile-favorites .game-card-thumb-container::before {
+	z-index: 2;
 }
 
 .dark-theme .btr-profile-favorites .game-card-thumb-container {
 	border-bottom-color: #656668;
 }
 
-.btr-profile-favorites .game-card-thumb-container,
 .btr-profile-favorites .game-card-thumb-container .game-card-thumb {
+	position: absolute;
+	left: 0;
+	top: 0;
 	width: 100%;
-	height: auto;
+	height: 100%;
+	/* object-fit: contain; */
 }
 
-.btr-profile-favorites .game-card-thumb-container .game-card-thumb.unloaded {
-	height: 0;
-	margin-bottom: 100%;
+.btr-profile-favorites .game-card-thumb-container .game-card-thumb[src=""] {
+	opacity: 0;
 }
 
 .btr-profile-favorites .game-card .game-card-name {
@@ -615,21 +625,30 @@ html .btr-profile .btr-profile-favorites .game-card {
 
 .btr-profile-groups .game-card-thumb-container {
 	border-bottom: 1px solid #E3E3E3;
+	width: 100%;
+	padding-top: 100%;
+	height: 0;
+}
+
+.btr-profile-groups .game-card-thumb-container::before {
+	z-index: 2;
 }
 
 .dark-theme .btr-profile-groups .game-card-thumb-container {
 	border-bottom-color: #656668;
 }
 
-.btr-profile-groups .game-card-thumb-container,
 .btr-profile-groups .game-card-thumb-container .game-card-thumb {
+	position: absolute;
+	left: 0;
+	top: 0;
 	width: 100%;
-	height: auto;
+	height: 100%;
+	/* object-fit: contain; */
 }
 
-.btr-profile-groups .game-card-thumb-container .game-card-thumb.unloaded {
-	height: 0;
-	margin-bottom: 100%;
+.btr-profile-groups .game-card-thumb-container .game-card-thumb[src=""] {
+	opacity: 0;
 }
 
 .btr-profile-groups .game-card .game-card-container .game-card-name {

@@ -378,7 +378,8 @@ pageInit.profile = function(userId) {
 					if(visible && !this.firstVisible) {
 						this.firstVisible = true
 						
-						this.item.$find(".btr-game-thumb").src = `https://www.roblox.com/asset-thumbnail/image?assetId=${this.placeId}&width=768&height=432`
+						const thumb = this.item.$find(".btr-game-thumb")
+						thumb.src = `https://www.roblox.com/asset-thumbnail/image?assetId=${this.placeId}&width=768&height=432`
 
 						lastRequest = (lastRequest && lastRequest.canJoin()) ? lastRequest : new GameDetailsRequest()
 						lastRequest.append(this.placeId)
@@ -686,7 +687,7 @@ pageInit.profile = function(userId) {
 						<div class="card-item game-card-container">
 							<a href="/groups/${group.id}/${formatUrlName(group.name)}" title="${group.name}">
 								<div class=game-card-thumb-container>
-									<img class="game-card-thumb card-thumb unloaded">
+									<img class="game-card-thumb card-thumb" src="">
 								</div>
 								<div class="text-overflow game-card-name">${group.name}</div>
 							</a>
@@ -700,8 +701,6 @@ pageInit.profile = function(userId) {
 					const thumb = parent.$find(".card-thumb")
 					thumbs[group.id] = thumb
 
-					thumb.$once("load", () => thumb.classList.remove("unloaded"))
-
 					hlist.append(parent)
 				})
 
@@ -711,7 +710,11 @@ pageInit.profile = function(userId) {
 				const thumbData = await $.fetch(thumbUrl).then(resp => resp.json())
 
 				thumbData.data.forEach(thumbInfo => {
-					thumbs[thumbInfo.targetId].src = thumbInfo.imageUrl
+					if(thumbInfo.imageUrl) {
+						thumbs[thumbInfo.targetId].src = thumbInfo.imageUrl
+					} else {
+						thumbs[thumbInfo.targetId].parentNode.classList.add("icon-blocked")
+					}
 				})
 			})
 		})
@@ -794,7 +797,7 @@ pageInit.profile = function(userId) {
 								<div class="card-item game-card-container">
 									<a href="${data.Item.AbsoluteUrl}" title="${data.Item.Name}">
 										<div class="game-card-thumb-container">
-											<img class="game-card-thumb card-thumb unloaded" alt="${data.Item.Name}" src="${data.Thumbnail.Url}">
+											<img class="game-card-thumb card-thumb" alt="${data.Item.Name}" src="${data.Thumbnail.Url || ""}">
 										</div>
 										<div class="text-overflow game-card-name" title="${data.Item.Name}" ng-non-bindable>${data.Item.Name}</div>
 									</a>
@@ -808,7 +811,6 @@ pageInit.profile = function(userId) {
 							</li>`
 
 							hlist.append(item)
-							item.$find(".unloaded").$once("load", e => e.currentTarget.classList.remove("unloaded"))
 						})
 					}
 				}
