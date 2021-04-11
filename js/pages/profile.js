@@ -101,7 +101,7 @@ pageInit.profile = function(userId) {
 						newCont.$find(".placeholder-desc").replaceWith(desc)
 
 						if(desc.matches("profile-description")) {
-							newCont.$find(".btr-profile-about > .container-header").style.visibility = "hidden"
+							newCont.$find(".btr-profile-about > .container-header h3").style.visibility = "hidden"
 						}
 					})
 					.$watch("#aliases-container", aliases => {
