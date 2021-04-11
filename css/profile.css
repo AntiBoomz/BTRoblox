@@ -145,6 +145,10 @@ html .dark-theme.btr-profile .btr-section-content-off {
 
 /* Description */
 
+.btr-profile-about {
+	position: relative;
+}
+
 .btr-profile-about > .section-content {
 	padding-bottom: 8px;
 }

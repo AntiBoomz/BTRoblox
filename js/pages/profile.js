@@ -101,7 +101,7 @@ pageInit.profile = function(userId) {
 						newCont.$find(".placeholder-desc").replaceWith(desc)
 
 						if(desc.matches("profile-description")) {
-							newCont.$find(".btr-profile-about > .container-header h3").style.visibility = "hidden"
+							newCont.$find(".btr-profile-about > .container-header").style.visibility = "hidden"
 						}
 					})
 					.$watch("#aliases-container", aliases => {
@@ -113,8 +113,8 @@ pageInit.profile = function(userId) {
 						const tooltip = footer.$find(".tooltip-pastnames")
 						if(tooltip) { tooltip.setAttribute("data-container", "body") } // Display tooltip over side panel
 					})
-					.$watch(".profile-social-networks", social => {
-						newCont.$find(".btr-profile-about .container-header").append(social)
+					.$watch(".social-links,.profile-social-networks", social => {
+						newCont.$find(".btr-profile-about").prepend(social)
 					})
 			})
 		})
