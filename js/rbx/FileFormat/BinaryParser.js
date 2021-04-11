@@ -104,6 +104,11 @@ const RBXBinaryParser = {
 	parsePROP(parser, chunk) {
 		const group = parser.groups[chunk.UInt32LE()]
 		const prop = chunk.String(chunk.UInt32LE())
+
+		if(chunk.GetRemaining() <= 0) {
+			return // empty chunk?
+		}
+
 		const dataType = chunk.Byte()
 		const typeName = this.DataTypes[dataType]
 		const instCount = group.Objects.length
