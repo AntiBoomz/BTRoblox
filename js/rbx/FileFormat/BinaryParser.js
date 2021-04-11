@@ -140,7 +140,7 @@ const RBXBinaryParser = {
 			break
 		case "double":
 			for(let i = 0; i < instCount; i++) {
-				values[i] = ByteReader.ParseDouble(chunk.UInt32LE(), chunk.UInt32LE())
+				values[i] = chunk.DoubleLE()
 			}
 			break
 		case "UDim": {
