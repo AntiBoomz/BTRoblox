@@ -323,7 +323,7 @@ const Explorer = (() => {
 						const input = html`<input type=text readonly>`
 
 						const tooLong = value.length > 120
-						if(tooLong || value.includes("\n")) {
+						if(tooLong || value.includes("\n") || name.includes("Source")) {
 							input.value = input.title = (tooLong ? value.slice(0, 117) + "..." : value)
 
 							const more = html`<a class=more title="View Source">...</a>`
