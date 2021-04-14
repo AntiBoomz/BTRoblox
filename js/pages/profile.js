@@ -25,12 +25,6 @@ pageInit.profile = function(userId) {
 					<div class=placeholder-footer style=display:none></div>
 				</div>
 			</div>
-			<div class=placeholder-robloxbadges>
-				<div class=container-header><h3>Roblox Badges</h3></div>
-				<div class=section-content>
-					<div class="section-content-off btr-section-content-off">This user has no Roblox Badges</div>
-				</div>
-			</div>
 			<div class=btr-profile-playerbadges>
 				<div class=container-header><h3>Player Badges</h3></div>
 				<div class=section-content>
@@ -238,13 +232,6 @@ pageInit.profile = function(userId) {
 					})
 				})
 			}
-		})
-		.$watch("#roblox-badges-container", badges => {
-			newCont.$find(".placeholder-robloxbadges").replaceWith(badges)
-
-			badges.$watch(">.section-content", content => {
-				content.classList.remove("remove-panel")
-			})
 		})
 		.$watch("#games-switcher", switcher => {
 			const games = switcher.parentNode
@@ -843,9 +830,7 @@ pageInit.profile = function(userId) {
 
 	$.ready(() => {
 		const oldContainer = $(".profile-container > .rbx-tabs-horizontal")
-		if(oldContainer) {
-			oldContainer.remove()
-		}
+		if(oldContainer) { oldContainer.remove() }
 
 		if(SETTINGS.get("profile.embedInventoryEnabled") && +userId !== 1) {
 			const cont = html`<div></div>`
