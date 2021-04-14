@@ -540,7 +540,7 @@ pageInit.profile = function(userId) {
 
 		const playerBadges = []
 		const pageSize = 10
-
+		
 		let currentPage = 1
 		let isLoading = false
 		let hasMorePages = true
@@ -553,7 +553,7 @@ pageInit.profile = function(userId) {
 			currentPage = page
 			pager.setPage(currentPage)
 			pager.togglePrev(currentPage > 1)
-			pager.toggleNext(hasMorePages)
+			pager.toggleNext(hasMorePages || pageStart < playerBadges.length - pageSize)
 			hlist.$empty()
 
 			if(!badges.length) {
@@ -617,7 +617,7 @@ pageInit.profile = function(userId) {
 
 			const lastIndex = page * pageSize
 			while(playerBadges.length < lastIndex && hasMorePages) {
-				const url = `https://badges.roblox.com/v1/users/${userId}/badges?sortOrder=Desc&limit=10&cursor=${nextPageCursor || ""}`
+				const url = `https://badges.roblox.com/v1/users/${userId}/badges?sortOrder=Desc&limit=100&cursor=${nextPageCursor || ""}`
 				const badges = await $.fetch(url).then(resp => resp.json())
 
 				nextPageCursor = badges.nextPageCursor
@@ -626,7 +626,7 @@ pageInit.profile = function(userId) {
 				playerBadges.push(...badges.data)
 			}
 
-			page = Math.min(Math.ceil(playerBadges.length / pageSize), page)
+			page = Math.max(1, Math.min(Math.ceil(playerBadges.length / pageSize), page))
 
 			await openPage(page)
 			isLoading = false
