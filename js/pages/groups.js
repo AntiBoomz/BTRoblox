@@ -16,21 +16,20 @@
 		}
 
 		if(SETTINGS.get("groups.modifyLayout")) {
-			modifyTemplate(["group-base", "group-games", "group-about"], (baseTemplate, gamesTemplate, aboutTemplate) => {
+			document.$watch(["#about", "#btr-games"], (about, games) => {
+				about.after(games)
+			})
+			
+			modifyTemplate(["group-base", "group-games", "group-about", "group-tab"], (baseTemplate, gamesTemplate, aboutTemplate, tabTemplate) => {
 				const list = baseTemplate.$find("#horizontal-tabs")
-
 				list.setAttribute("ng-class", `{'btr-four-wide': library.currentGroup.areGroupGamesVisible}`)
 				
-				const about = list.$find("#about")
-				about.setAttribute("ng-click", "Data.btrGamesTabSelected=false")
-				about.setAttribute("ng-class", about.getAttribute("ng-class").replace(/Data.activeTab === /, "!Data.btrGamesTabSelected && Data.activeTab === "))
-
-				const games = html`<li class="rbx-tab group-tab" ng-if="library.currentGroup.areGroupGamesVisible" ng-click="Data.btrGamesTabSelected=true" ui-sref=about><a class=rbx-tab-heading><span class=text-lead>Games</span></a>`
-				games.setAttribute("ng-class", about.getAttribute("ng-class").replace(/!(?=Data.btrGamesTabSelected)/, ""))
-				about.after(games)
-
-				gamesTemplate.$find(">*").setAttribute("ng-class", "{'ng-hide': library.currentGroup.areGroupGamesVisible && !Data.btrGamesTabSelected}")
-				aboutTemplate.$find("group-members-list").setAttribute("ng-class", "{'ng-hide': library.currentGroup.areGroupGamesVisible && Data.btrGamesTabSelected}")
+				const tab = tabTemplate.$find(".rbx-tab")
+				tab.setAttribute("ng-class", tab.getAttribute("ng-class").replace(/activeTab === tab/, "activeTab === tab && !tab.btrShowGames"))
+				tab.setAttribute("ng-click", "tab.btrShowGames=false")
+				
+				const games = html`<li id="btr-games" ng-class="{'active': layout.activeTab.state === 'about' && layout.activeTab.btrShowGames}" class="rbx-tab group-tab" ng-show="library.currentGroup.areGroupGamesVisible" ng-click="groupDetailsConstants.tabs.about.btrShowGames=true" ui-sref="about"><a class=rbx-tab-heading><span class=text-lead ng-bind="'Heading.Games' | translate"></span></a>`
+				list.append(games)
 				
 				const groupHeader = baseTemplate.$find(".group-header")
 				const groupAbout = groupHeader.parentNode
@@ -54,6 +53,10 @@
 				)
 
 				origDesc.remove()
+				
+				for(const child of aboutTemplate.$find(".tab-content").children) {
+					child.setAttribute("ng-show", child.matches("[group-games]") ? "groupDetailsConstants.tabs.about.btrShowGames" : "!groupDetailsConstants.tabs.about.btrShowGames")
+				}
 			})
 
 			modifyTemplate("group-members-list", template => {
