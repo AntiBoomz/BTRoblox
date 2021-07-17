@@ -137,6 +137,8 @@ User APIs
     ```
 
 * https://www.roblox.com/my/settings/json
+  <details><summary>Response</summary>
+  
     ```json
     {
         "ChangeUsernameEnabled": true,
@@ -241,6 +243,7 @@ User APIs
         "Twitch": null
     }
     ```
+  </details>
 
 #### Get online status of an user
 * https://api.roblox.com/users/261/onlinestatus/
@@ -262,7 +265,6 @@ Place APIs
 #### Get place details
 * https://www.roblox.com/places/api-get-details?assetId=606849621
   <details><summary>Response</summary>
-  <p>
   
   ```json
   {
@@ -306,7 +308,6 @@ Place APIs
       "Price": 0
   }
   ```
-  </p>
   </details>
 
 #### Get place settings
