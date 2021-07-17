@@ -545,7 +545,7 @@ Place APIs
 
 #### Toggle game visibility in profile
 ```http
-POST https://www.roblox.com/game/toggle-profile HTTP/1.1
+POST https://www.roblox.com/game/toggle-profile
 Cookie: .ROBLOSECURITY=*
 X-CSRF-TOKEN: *
 Content-Type: application/json
