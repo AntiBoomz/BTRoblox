@@ -488,7 +488,7 @@ const SETTINGS = {
 			addServerPager: { value: true }
 		},
 		groups: {
-			shoutAlerts: { value: true },
+			shoutAlerts: { value: false },
 			redesign: { value: true },
 			modifyLayout: { value: true },
 			selectedRoleCount: { value: true },
