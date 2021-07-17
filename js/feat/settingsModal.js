@@ -421,6 +421,10 @@ const btrSettingsModal = (() => {
 				})
 			})
 		})
+		
+		if(SETTINGS.loadError) {
+			settingsDiv.$find(".btr-settings-header").after(html`<div style="position:absolute; width: 100%; height: 20px; text-align: center; background: red; top: 30px; z-index:1000; font-size: 16px; color: white; font-weight: bold;">Settings failed to load, changes may not save</div>`)
+		}
 
 		{
 			const currencySelect = settingsDiv.$find("#btr-robuxToCash-currency")
