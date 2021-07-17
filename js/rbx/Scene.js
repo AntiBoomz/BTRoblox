@@ -1,62 +1,6 @@
 "use strict"
 
 const RBXScene = (() => {
-	THREE.ShaderChunk.shadowmap_pars_fragment = THREE.ShaderChunk.shadowmap_pars_fragment
-		.replace(
-			`#ifdef USE_SHADOWMAP`,
-			`$&
-			#define NUM_SAMPLES 17
-			#define NUM_RINGS 11
-	
-			vec2 poissonDisk[NUM_SAMPLES];
-			void initPoissonSamples( const in vec2 randomSeed ) {
-				float ANGLE_STEP = PI2 * float( NUM_RINGS ) / float( NUM_SAMPLES );
-				float INV_NUM_SAMPLES = 1.0 / float( NUM_SAMPLES );
-				// jsfiddle that shows sample pattern: https://jsfiddle.net/a16ff1p7/
-				float angle = rand( randomSeed ) * PI2;
-				float radius = INV_NUM_SAMPLES;
-				float radiusStep = radius;
-				for( int i = 0; i < NUM_SAMPLES; i ++ ) {
-					poissonDisk[i] = vec2( cos( angle ), sin( angle ) ) * pow( radius, 0.75 );
-					radius += radiusStep;
-					angle += ANGLE_STEP;
-				}
-			}
-	
-			float PCSS ( sampler2D shadowMap, vec4 coords ) {
-				vec2 uv = coords.xy;
-				float zReceiver = coords.z; // Assumed to be eye-space z in this code
-				initPoissonSamples( uv );
-	
-				float filterRadius = .075 / zReceiver;
-				int sum = 0;
-				vec2 from;
-				vec2 to = poissonDisk[0];
-				vec2 diff;
-				for(int i = 1; i < NUM_SAMPLES; i++) {
-					from = to;
-					to = poissonDisk[i];
-					for(int j = 0; j < 5; j++) {
-						vec2 step = (from + (to-from) * (float(j) / 5.0)) * filterRadius;
-						float depth = unpackRGBAToDepth( texture2D( shadowMap, uv + step ) );
-						if(zReceiver > depth) sum++;
-			
-						float depth2 = unpackRGBAToDepth( texture2D( shadowMap, uv + -step.yx ) );
-						if(zReceiver > depth2) sum++;
-					}
-				}
-	
-				if(sum == 0) return 1.0;
-				return 1.0 - float(sum) / (2.0 * float(NUM_SAMPLES * 5));
-			}
-		`)
-		.replace(
-			`#if defined( SHADOWMAP_TYPE_PCF )`,
-			`$&
-			return PCSS( shadowMap, shadowCoord );
-			`
-		)
-	
 	THREE.ShaderLib.shadow.fragmentShader = THREE.ShaderLib.shadow.fragmentShader
 		.replace(
 			`gl_FragColor = vec4( color, opacity * ( 1.0 - getShadowMask() ) );`,
@@ -90,6 +34,7 @@ const RBXScene = (() => {
 
 			renderer.setClearAlpha(0)
 			renderer.shadowMap.enabled = true
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
 			const canvas = this.canvas = renderer.domElement
 			canvas.style = `
@@ -113,8 +58,8 @@ const RBXScene = (() => {
 			const sunLight = new THREE.DirectionalLight(0xACACAC)
 			sunLight.position.set(-0.474891931, 0.822536945, 0.312906593).multiplyScalar(15)
 			sunLight.castShadow = true
-			sunLight.shadow.mapSize.width = 128
-			sunLight.shadow.mapSize.height = 128
+			sunLight.shadow.mapSize.width = 256
+			sunLight.shadow.mapSize.height = 256
 			sunLight.shadow.camera.left = -8
 			sunLight.shadow.camera.right = 8
 			sunLight.shadow.camera.bottom = -8
