@@ -45,6 +45,13 @@ function loadOptionalLibrary(name) {
 		const jsAssets = lib.assets.filter(file => file.endsWith(".js"))
 		const cssAssets = lib.assets.filter(file => file.endsWith(".css"))
 		
+		if(IS_DEV_MODE) {
+			const index = jsAssets.indexOf("lib/three.min.js")
+			if(index !== -1) {
+				jsAssets[index] = "lib/three.js"
+			}
+		}
+		
 		if(cssAssets.length) {
 			pageInject.injectCSS(...cssAssets)
 		}

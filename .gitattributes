@@ -1,5 +1,6 @@
 .gitignore export-ignore
 .gitattributes export-ignore
+lib/three.js export-ignore
 bin export-ignore
 img export-ignore
 res -diff -merge
