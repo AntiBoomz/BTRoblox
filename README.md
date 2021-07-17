@@ -541,18 +541,18 @@ Place APIs
     ```
 
 #### Toggle game visibility in profile
-    ```http
-    POST https://www.roblox.com/game/toggle-profile
-    Cookie: .ROBLOSECURITY=*
-    X-CSRF-TOKEN: *
-    Content-Type: application/json
-    Content-Length: 42
+```http
+POST https://www.roblox.com/game/toggle-profile
+Cookie: .ROBLOSECURITY=*
+X-CSRF-TOKEN: *
+Content-Type: application/json
+Content-Length: 42
 
-    {"placeId":1818,"addToProfile":true}
-    ```
-    ```json
-    {"isValid":true,"data":{"inShowcase":true},"error":""}
-    ```
+{"placeId":1818,"addToProfile":true}
+```
+```json
+{"isValid":true,"data":{"inShowcase":true},"error":""}
+```
 
 Universe APIs
 -------------
@@ -629,124 +629,124 @@ DataStore APIs
 --------------
 ### V1
 
-#### G:GetAsync("Key")
-    ```http
-    GET https://gamepersistence.roblox.com/v1/persistence/standard?key=DSName&scope=DSScope&target=Key
-    GET https://gamepersistence.roblox.com/v1/persistence/sorted?key=DSName&scope=DSScope&target=Key
-    Cookie: .ROBLOSECURITY=*
-    Content-Type: application/octet-stream
-    Roblox-Place-Id: 1818
-    ```
-    ```http
-    200 OK
-    content-length: 7
-    content-type: application/octet-stream
-    roblox-usn: 08D94934165492FF.0000000002.08D94934E28101F9.01
+#### GetAsync("Key")
+```http
+GET https://gamepersistence.roblox.com/v1/persistence/standard?key=DSName&scope=DSScope&target=Key
+GET https://gamepersistence.roblox.com/v1/persistence/sorted?key=DSName&scope=DSScope&target=Key
+Cookie: .ROBLOSECURITY=*
+Content-Type: application/octet-stream
+Roblox-Place-Id: 1818
+```
+```http
+200 OK
+content-length: 7
+content-type: application/octet-stream
+roblox-usn: 08D94934165492FF.0000000002.08D94934E28101F9.01
 
-    "value"
-    ```
+"value"
+```
 
 #### SetAsync("Key", "value")
-    ```http
-    POST https://gamepersistence.roblox.com/v1/persistence/standard?key=DSName&scope=DSScope&target=Key
-    POST https://gamepersistence.roblox.com/v1/persistence/sorted?key=DSName&scope=DSScope&target=Key
-    Cookie: .ROBLOSECURITY=*
-    Content-Type: application/octet-stream
-    Roblox-Place-Id: 1818
-    Content-Length: 7
+```http
+POST https://gamepersistence.roblox.com/v1/persistence/standard?key=DSName&scope=DSScope&target=Key
+POST https://gamepersistence.roblox.com/v1/persistence/sorted?key=DSName&scope=DSScope&target=Key
+Cookie: .ROBLOSECURITY=*
+Content-Type: application/octet-stream
+Roblox-Place-Id: 1818
+Content-Length: 7
 
-    "value"
-    ```
-    ```http
-    200 OK
-    content-length: 57
-    content-type: application/json; charset=utf-8
+"value"
+```
+```http
+200 OK
+content-length: 57
+content-type: application/json; charset=utf-8
 
-    {"usn":"08D94934165492FF.0000000002.08D94934E28101F9.01"}
-    ```
+{"usn":"08D94934165492FF.0000000002.08D94934E28101F9.01"}
+```
 
 #### RemoveAsync("Key")
-    ```http
-    POST https://gamepersistence.roblox.com/v1/persistence/standard/remove?key=DSName&scope=DSScope&target=Key
-    POST https://gamepersistence.roblox.com/v1/persistence/sorted/remove?key=DSName&scope=DSScope&target=Key
-    Cookie: .ROBLOSECURITY=*
-    Content-Type: application/octet-stream
-    Roblox-Place-Id: 1818
-    ```
-    ```http
-    200 OK
-    content-length: 7
-    content-type: application/octet-stream
-    roblox-usn: 08D94934165492FF.0000000002.08D94934E28101F9.01
+```http
+POST https://gamepersistence.roblox.com/v1/persistence/standard/remove?key=DSName&scope=DSScope&target=Key
+POST https://gamepersistence.roblox.com/v1/persistence/sorted/remove?key=DSName&scope=DSScope&target=Key
+Cookie: .ROBLOSECURITY=*
+Content-Type: application/octet-stream
+Roblox-Place-Id: 1818
+```
+```http
+200 OK
+content-length: 7
+content-type: application/octet-stream
+roblox-usn: 08D94934165492FF.0000000002.08D94934E28101F9.01
 
-    "value"
-    ```
+"value"
+```
 
 #### IncrementAsync("Key", 10)
-    ```http
-    POST https://gamepersistence.roblox.com/v1/persistence/standard/increment?key=DSName&scope=DSScope&target=Key&by=10
-    POST https://gamepersistence.roblox.com/v1/persistence/sorted/increment?key=DSName&scope=DSScope&target=Key&by=10
-    Cookie: .ROBLOSECURITY=*
-    Content-Type: application/octet-stream
-    Roblox-Place-Id: 1818
-    ```
-    ```http
-    200 OK
-    content-type: application/json; charset=utf-8
-    content-length: 70
+```http
+POST https://gamepersistence.roblox.com/v1/persistence/standard/increment?key=DSName&scope=DSScope&target=Key&by=10
+POST https://gamepersistence.roblox.com/v1/persistence/sorted/increment?key=DSName&scope=DSScope&target=Key&by=10
+Cookie: .ROBLOSECURITY=*
+Content-Type: application/octet-stream
+Roblox-Place-Id: 1818
+```
+```http
+200 OK
+content-type: application/json; charset=utf-8
+content-length: 70
 
-    {"value":"10","usn":"08D94934165492FF.0000000004.08D9493603433C74.01"}
-    ```
+{"value":"10","usn":"08D94934165492FF.0000000004.08D9493603433C74.01"}
+```
 
 #### GetSortedAsync(true, 1, 1, 100):AdvanceToNextPageAsync()
-    ```http
-    GET https://gamepersistence.roblox.com/v1/persistence/sorted/list?scope=DSScope&key=DSName&pageSize=10&direction=asc&minValue=1&maxValue=100&exclusiveStartKey=AQEBAQRLZXkx
-    Cookie: .ROBLOSECURITY=*
-    Content-Type: application/octet-stream
-    Roblox-Place-Id: 1818
-    ```
-    ```http
-    200 OK
-    content-type: application/json; charset=utf-8
-    content-length: 102
+```http
+GET https://gamepersistence.roblox.com/v1/persistence/sorted/list?scope=DSScope&key=DSName&pageSize=10&direction=asc&minValue=1&maxValue=100&exclusiveStartKey=AQEBAQRLZXkx
+Cookie: .ROBLOSECURITY=*
+Content-Type: application/octet-stream
+Roblox-Place-Id: 1818
+```
+```http
+200 OK
+content-type: application/json; charset=utf-8
+content-length: 102
 
-    {"entries":[{"target":"Key2","value":2,"usn":"2"}],"lastEvaluatedKey":"AQEBAgRLZXky"}
-    ```
+{"entries":[{"target":"Key2","value":2,"usn":"2"}],"lastEvaluatedKey":"AQEBAgRLZXky"}
+```
 
 ### V2
 
 #### GetAsync with multiple keys
-    ```http
-    POST https://gamepersistence.roblox.com/persistence/getV2?type=standard
-    POST https://gamepersistence.roblox.com/persistence/getV2?type=sorted
-    Roblox-Place-Id: 1818
-    Content-Type: application/x-www-form-urlencoded
-    Cookie: .ROBLOSECURITY=*
-    Content-Length: 128
+```http
+POST https://gamepersistence.roblox.com/persistence/getV2?type=standard
+POST https://gamepersistence.roblox.com/persistence/getV2?type=sorted
+Roblox-Place-Id: 1818
+Content-Type: application/x-www-form-urlencoded
+Cookie: .ROBLOSECURITY=*
+Content-Length: 128
 
-    &qkeys[0].scope=DSScope&qkeys[0].key=DSName&qkeys[0].target=Key1&qkeys[1].scope=DSScope&qkeys[1].key=DSName&qkeys[1].target=Key2
-    ```
-    ```http
-    200 OK
-    content-type: application/json; charset=utf-8
-    content-length: 152
+&qkeys[0].scope=DSScope&qkeys[0].key=DSName&qkeys[0].target=Key1&qkeys[1].scope=DSScope&qkeys[1].key=DSName&qkeys[1].target=Key2
+```
+```http
+200 OK
+content-type: application/json; charset=utf-8
+content-length: 152
 
-    {"data":[{"Key":{"Scope":"DSScope","Target":"Key1","Key":"DSName"},"Value":"1"},{"Key":{"Scope":"DSScope","Target":"Key2","Key":"DSName"},"Value":"2"}]}
-    ```
+{"data":[{"Key":{"Scope":"DSScope","Target":"Key1","Key":"DSName"},"Value":"1"},{"Key":{"Scope":"DSScope","Target":"Key2","Key":"DSName"},"Value":"2"}]}
+```
 
 #### GetSortedAsync(true, 1, 1, 100):AdvanceToNextPageAsync()
-    ```http
-    POST https://gamepersistence.roblox.com/persistence/getSortedValues?scope=DSScope&key=DSName&pageSize=1&ascending=true&inclusiveMinValue=1&inclusiveMaxValue=100&exclusiveStartKey=AQEBAQRLZXkx
-    Roblox-Place-Id: 1818
-    Cookie: .ROBLOSECURITY=*
-    ```
-    ```http
-    HTTP/1.1 200 OK
-    content-type: application/json; charset=utf-8
-    content-length: 85
+```http
+POST https://gamepersistence.roblox.com/persistence/getSortedValues?scope=DSScope&key=DSName&pageSize=1&ascending=true&inclusiveMinValue=1&inclusiveMaxValue=100&exclusiveStartKey=AQEBAQRLZXkx
+Roblox-Place-Id: 1818
+Cookie: .ROBLOSECURITY=*
+```
+```http
+HTTP/1.1 200 OK
+content-type: application/json; charset=utf-8
+content-length: 85
 
-    {"data":{"Entries":[{"Target":"Key2","Value":2}],"ExclusiveStartKey":"AQEBAgRLZXky"}}
-    ```
+{"data":{"Entries":[{"Target":"Key2","Value":2}],"ExclusiveStartKey":"AQEBAgRLZXky"}}
+```
 
 -------------------------------------------------
 
