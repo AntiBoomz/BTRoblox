@@ -538,7 +538,7 @@ const SETTINGS = {
 	},
 
 	_save() {
-		if(!this.loadError) {
+		if(IS_BACKGROUND_PAGE && this.loaded && !this.loadError) {
 			STORAGE.set({ settings: this.loadedSettings })
 		}
 	},
@@ -550,25 +550,39 @@ const SETTINGS = {
 					this.defaultSettings,
 					(key, value) => (key === "validValues" ? undefined : value)
 				))
-
-				STORAGE.get(["settings"], data => {
-					const err = chrome.runtime.lastError
-					if(err) {
-						this.loadError = err
-						console.error(err)
-					}
-
-					try {
-						if(data.settings) {
-							this._applySettings(data.settings)
+				
+				const tryGetSettings = () => {
+					STORAGE.get(["settings"], data => {
+						if(data && data.settings) {
+							try {
+								this._applySettings(data.settings)
+							} catch(ex) {
+								console.error(ex)
+							}
 						}
-					} catch(ex) {
-						console.error(ex)
-					}
+						
+						const err = chrome.runtime.lastError
+						
+						if(err) {
+							console.error(err)
+							
+							if(IS_BACKGROUND_PAGE) {
+								setTimeout(tryGetSettings, 20e3)
+							}
+							
+							this.loadError = true // Stops settings from being overwritten
+						} else {
+							this.loadError = false
+						}
+						
+						if(!this.loaded) {
+							this.loaded = true
+							resolve()
+						}
+					})
+				}
 
-					this.loaded = true
-					resolve()
-				})
+				tryGetSettings()
 			})
 		}
 
