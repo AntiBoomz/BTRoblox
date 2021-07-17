@@ -306,9 +306,8 @@ Place APIs
 
 #### Get place settings
 * https://www.roblox.com/places/47324/settings
-  <details>
-  <summary>Response</summary>
-
+  <details><summary>Response</summary>
+  
   ```json
   {
       "DefaultFormatNameString": "{0}\\u0027s Place Number: {1}",
