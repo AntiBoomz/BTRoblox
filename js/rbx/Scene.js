@@ -91,7 +91,17 @@ const RBXScene = (() => {
 			renderer.shadowMap.enabled = true
 
 			const canvas = this.canvas = renderer.domElement
-			canvas.classList.add("btr-preview-canvas")
+			canvas.style = `
+			user-select: none !important;
+			-moz-user-select: none !important;
+		
+			position: absolute !important;
+			left: 0 !important;
+			right: 0 !important;
+			top: 0 !important;
+			bottom: 0 !important;
+			width: 100% !important;
+			height: 100% !important;`
 
 			const scene = this.scene = new THREE.Scene()
 			this.camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 1000)
