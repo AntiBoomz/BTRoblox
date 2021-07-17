@@ -1,16 +1,6 @@
 "use strict"
 
 const RBXScene = (() => {
-	THREE.ShaderLib.shadow.fragmentShader = THREE.ShaderLib.shadow.fragmentShader
-		.replace(
-			`gl_FragColor = vec4( color, opacity * ( 1.0 - getShadowMask() ) );`,
-			`#ifndef CUSTOM_SHADOW
-				$&
-			#else
-				gl_FragColor = vec4( 0.0, 0.0, 0.0, (0.5 - getShadowMask() * 0.5) );
-			#endif`
-		)
-
 	class Scene {
 		constructor() {
 			this._prevRes = { width: -1, height: -1 }
@@ -237,18 +227,20 @@ const RBXScene = (() => {
 			stand.position.y = .05
 			stand.receiveShadow = true
 			this.scene.add(stand)
+			
+			const groundMat = new THREE.ShadowMaterial()
+			groundMat.opacity = 0.5
 
 			const ground = new THREE.Mesh(
 				new THREE.PlaneGeometry(200, 200),
-				new THREE.ShadowMaterial()
+				groundMat
 			)
 
 			ground.rotation.x = -Math.PI / 2
 			ground.position.y = .001
 			ground.receiveShadow = true
 			this.scene.add(ground)
-
-			ground.material.defines = { CUSTOM_SHADOW: "" }
+			
 			this.renderer.clippingPlanes.push(new THREE.Plane(new THREE.Vector3(0, 1, 0)))
 		}
 
