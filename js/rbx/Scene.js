@@ -79,6 +79,7 @@ const RBXScene = (() => {
 			this.cameraFocus = new THREE.Vector3(0, 4.5, 0)
 			this.cameraOffset = new THREE.Vector3(0, 0, 0)
 			this.cameraRotation = new THREE.Euler(.05, 0, 0, "YXZ")
+			this.cameraDir = new THREE.Vector3(0, 0, 1)
 			this.prevDragEvent = null
 			this.isDragging = false
 
@@ -104,8 +105,8 @@ const RBXScene = (() => {
 			height: 100% !important;`
 
 			const scene = this.scene = new THREE.Scene()
-			this.camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 1000)
-
+			const camera = this.camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 100)
+			
 			const ambientLight = new THREE.AmbientLight(0x7F7F7F)
 			scene.add(ambientLight)
 
@@ -227,15 +228,15 @@ const RBXScene = (() => {
 					}
 				}
 			}
-
-			const cameraDir = new THREE.Vector3(0, 0, 1).applyEuler(this.cameraRotation)
-			this.camera.position.copy(this.cameraFocus).addScaledVector(cameraDir, -this.cameraZoom)
+				
+			this.cameraDir.set(0, 0, 1).applyEuler(this.cameraRotation)
+			this.camera.position.copy(this.cameraFocus).addScaledVector(this.cameraDir, -this.cameraZoom)
 			this.camera.lookAt(this.cameraFocus)
 			this.camera.position.add(this.cameraOffset)
 
 			const groundDiff = .05 - this.camera.position.y
-			if(cameraDir.y > 0 && groundDiff > 0) {
-				this.camera.position.addScaledVector(cameraDir, groundDiff / cameraDir.y)
+			if(this.cameraDir.y > 0 && groundDiff > 0) {
+				this.camera.position.addScaledVector(this.cameraDir, groundDiff / this.cameraDir.y)
 			}
 		}
 
