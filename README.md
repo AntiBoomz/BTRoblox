@@ -262,6 +262,8 @@ Place APIs
 #### Get place details
 * https://www.roblox.com/places/api-get-details?assetId=606849621
   <details><summary>Response</summary>
+  <p>
+  
   ```json
   {
       "AssetId": 606849621,
@@ -304,6 +306,7 @@ Place APIs
       "Price": 0
   }
   ```
+  </p>
   </details>
 
 #### Get place settings
