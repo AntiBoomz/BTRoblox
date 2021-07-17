@@ -475,7 +475,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 
 					<div class="btr-body-outfit-btn selected" data-outfit=current>
 						<div class=btr-body-outfit-icon>
-							<img src="https://www.roblox.com/avatar-thumbnail/image?userId=4719353&width=150&height=150&format=png">
+							<img src="https://www.roblox.com/avatar-thumbnail/image?userId=${loggedInUser}&width=150&height=150&format=png">
 						</div>
 						<span class=btr-body-outfit-title>Current</span>
 					</div>
@@ -487,7 +487,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 					</div>
 					<div class=btr-body-outfit-btn data-outfit=default>
 						<div class=btr-body-outfit-icon>
-							<img src="https://www.roblox.com/outfit-thumbnail/image?width=150&height=150&format=png&userOutfitId=1116516198">
+							<img src="https://tr.rbxcdn.com/e8df9019b5f1b064128d7797ceaaf759/150/150/Avatar/Png">
 						</div>
 						<span class=btr-body-outfit-title>Default</span>
 					</div>
@@ -746,7 +746,16 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 
 		if(outfitId) {
 			this.bundleOutfitBtn.style.display = ""
-			this.bundleOutfitBtn.$find("img").src = `https://www.roblox.com/outfit-thumbnail/image?width=150&height=150&format=png&userOutfitId=${outfitId}`
+			this.bundleOutfitBtn.$find("img").src = ``
+			
+			const url = `https://thumbnails.roblox.com/v1/users/outfits?userOutfitIds=${outfitId}&size=150x150&format=Png&isCircular=false`
+			fetch(url).then(async resp => {
+				const result = (await resp.json()).data[0]
+				
+				if(result && result.imageUrl) {
+					this.bundleOutfitBtn.$find("img").src = result.imageUrl
+				}
+			})
 		} else {
 			this.bundleOutfitBtn.style.display = "none"
 		}
