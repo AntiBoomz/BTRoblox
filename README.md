@@ -306,7 +306,7 @@ Place APIs
 
 #### Get place settings
 * https://www.roblox.com/places/47324/settings
-<details>
+  <details>
 <summary>See response</summary>
 
 ```json
