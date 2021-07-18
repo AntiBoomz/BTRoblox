@@ -28,6 +28,7 @@ const Explorer = (() => {
 		"UnionOperation.AssetId", "UnionOperation.InitialSize", // Unions
 		"Terrain.PhysicsGrid", "Terrain.SmoothGrid", "Terrain.MaterialColors", // Terrain
 		"IsAutoJoint", // Joints
+		"WrapTarget.HSRData", // WrapTarget
 
 		// Super legacy stuff
 		"Model.Controller", "Part.Controller",
