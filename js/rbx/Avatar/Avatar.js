@@ -537,8 +537,10 @@ const RBXAvatar = (() => {
 				tar.children.forEach(recDispose)
 			}
 			
-			for(const part of Object.values(this.parts)) {
-				recDispose(part)
+			for(let i = this.root.children.length; i--;) {
+				const child = this.root.children[i]
+				recDispose(child)
+				this.root.remove(child)
 			}
 			
 			//
