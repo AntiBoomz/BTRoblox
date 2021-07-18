@@ -671,11 +671,11 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 			const anim = this.getAnimation(assetId)
 
 			if(anim && anim.animType === "swim") {
-				this.scene.avatar.offsetPos.set(0, 0, .5)
-				this.scene.avatar.offsetRot.set(-Math.PI / 2, 0, 0)
+				this.scene.avatarOffset.position.set(0, 0, .5)
+				this.scene.avatarOffset.rotation.set(-Math.PI / 2, 0, 0)
 			} else {
-				this.scene.avatar.offsetPos.set(0, 0, 0)
-				this.scene.avatar.offsetRot.set(0, 0, 0)
+				this.scene.avatarOffset.position.set(0, 0, 0)
+				this.scene.avatarOffset.rotation.set(0, 0, 0)
 			}
 		})
 		
@@ -1105,14 +1105,13 @@ const HoverPreview = (() => {
 								asset.clothing.forEach(clothing => {
 									const parts = ClothingParts[clothing.target]
 									if(parts) {
-										parts.forEach(name => (avatarParts[name] && addedObjects.add(avatarParts[name].rbxMesh)))
+										parts.forEach(name => (avatarParts[name] && avatarParts[name].rbxMesh && addedObjects.add(avatarParts[name].rbxMesh)))
 									}
 								})
 							})
 
 							if(!addedObjects.size) {
 								addedObjects.add(preview.avatar.root)
-								// Object.values(avatarParts).forEach(obj => obj.rbxMesh && addedObjects.add(obj.rbxMesh))
 							}
 
 							//

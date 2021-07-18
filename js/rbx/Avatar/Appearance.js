@@ -200,12 +200,14 @@ const RBXAppearance = (() => {
 			})
 
 			mesh.Children.filter(x => x.ClassName === "Vector3Value" && x.Name.endsWith("Attachment")).forEach(inst => {
+				const cframe = new THREE.Matrix4().setPosition(...inst.Value)
+				
 				if(inst.Name.endsWith("RigAttachment")) {
 					const jointName = inst.Name.substring(0, inst.Name.length - 13)
 
 					this.addJoint({
 						target: jointName,
-						pos: new Vector3(...inst.Value),
+						cframe: cframe,
 
 						part: "Head",
 						scaleType
@@ -214,7 +216,7 @@ const RBXAppearance = (() => {
 
 				this.addAttachment({
 					target: inst.Name,
-					pos: new Vector3(...inst.Value),
+					cframe: cframe,
 
 					part: "Head",
 					scaleType
@@ -256,11 +258,14 @@ const RBXAppearance = (() => {
 				})
 
 				part.Children.filter(x => x.ClassName === "Attachment").forEach(inst => {
+					const cframe = CFrame(...inst.CFrame)
+					
 					if(inst.Name.endsWith("RigAttachment")) {
 						const jointName = inst.Name.substring(0, inst.Name.length - 13)
+						
 						this.addJoint({
 							target: jointName,
-							cframe: CFrame(...inst.CFrame),
+							cframe: cframe,
 
 							part: part.Name,
 							scaleType
@@ -269,7 +274,7 @@ const RBXAppearance = (() => {
 
 					this.addAttachment({
 						target: inst.Name,
-						cframe: CFrame(...inst.CFrame),
+						cframe: cframe,
 
 						part: part.Name,
 						scaleType
@@ -298,14 +303,14 @@ const RBXAppearance = (() => {
 				texId,
 				color: meshInst.VertexColor ? [...meshInst.VertexColor] : null,
 				opacity: 1 - (meshInst.Transparency || 0),
-
-				cframe: accInst.AttachmentPoint ? InvertCFrame(...accInst.AttachmentPoint) : new THREE.Matrix4(),
-
+				
 				scale: meshInst.Scale ? [...meshInst.Scale] : null,
 				offset: meshInst.Offset ? [...meshInst.Offset] : null,
 
 				attName: attInst ? attInst.Name : null,
 				attCFrame: attInst ? (attInst.CFrame ? InvertCFrame(...attInst.CFrame) : new THREE.Matrix4()) : null,
+				
+				legacyHatCFrame: accInst.AttachmentPoint ? InvertCFrame(...accInst.AttachmentPoint) : new THREE.Matrix4(),
 
 				scaleType
 			})

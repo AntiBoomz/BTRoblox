@@ -52,9 +52,9 @@ const RBXAnimator = (() => {
 			this.joints = joints
 
 			if(this.fadeIn) {
-				Object.values(this.joints).forEach(jointData => {
-					jointData.joint.pfadeIn = jointData.joint.position.clone()
-					jointData.joint.qfadeIn = jointData.joint.quaternion.clone()
+				Object.values(this.joints).forEach(joint => {
+					joint.pfadeIn = joint.position.clone()
+					joint.qfadeIn = joint.quaternion.clone()
 				})
 			}
 		}
@@ -74,9 +74,9 @@ const RBXAnimator = (() => {
 			this.previousUpdate = performance.now()
 
 			if(this.fadeIn) {
-				Object.values(this.joints).forEach(jointData => {
-					jointData.joint.pfadeIn = jointData.joint.position.clone()
-					jointData.joint.qfadeIn = jointData.joint.quaternion.clone()
+				Object.values(this.joints).forEach(joint => {
+					joint.pfadeIn = joint.position.clone()
+					joint.qfadeIn = joint.quaternion.clone()
 				})
 			}
 		}
@@ -92,8 +92,8 @@ const RBXAnimator = (() => {
 
 		reset() {
 			Object.values(this.joints).forEach(joint => {
-				joint.joint.position.set(0, 0, 0)
-				joint.joint.rotation.set(0, 0, 0)
+				joint.position.set(0, 0, 0)
+				joint.quaternion.set(0, 0, 0, 1)
 			})
 		}
 
@@ -136,9 +136,9 @@ const RBXAnimator = (() => {
 
 			const nextQuat = new THREE.Quaternion()
 			Object.entries(this.anim.keyframes).forEach(([name, keyframes]) => {
-				if(!this.joints[name]) { return }
+				const joint = this.joints[name]
+				if(!joint) { return }
 
-				const joint = this.joints[name].joint
 				const next = keyframes.find(x => x.time >= currentTime)
 
 				if(!next) {

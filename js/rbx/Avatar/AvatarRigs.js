@@ -24,7 +24,7 @@ const RBXAvatarRigs = (() => {
 
 					part1Data.JointName = item.Name
 					part1Data.C0 = RBXAvatar.CFrame(...item.C0)
-					part1Data.C1 = RBXAvatar.InvertCFrame(...item.C1)
+					part1Data.C1 = RBXAvatar.CFrame(...item.C1)
 
 					part0Data.children.push(part1Data)
 

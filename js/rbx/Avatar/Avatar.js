@@ -54,6 +54,14 @@ const RBXAvatar = (() => {
 		return new THREE.Matrix4().getInverse(args[0] instanceof THREE.Matrix4 ? args[0] : CFrame(...args))
 	}
 	
+	const scalePosition = (matrix, scale) => {
+		const elements = matrix.elements
+		elements[12] *= scale.x
+		elements[13] *= scale.y
+		elements[14] *= scale.z
+		return matrix
+	}
+	
 	function solidColorDataURL(r, g, b) {
 		return `data:image/gif;base64,R0lGODlhAQABAPAA${btoa(String.fromCharCode(0, r, g, b, 255, 255))}/yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==`
 	}
@@ -219,36 +227,30 @@ const RBXAvatar = (() => {
 		updateFinal()
 		return texture
 	}
+	
+	
+	const tempMatrix = new THREE.Matrix4()
+	const oneVector = new THREE.Vector3(1, 1, 1)
 
 	class Avatar {
 		constructor() {
-			this.model = new THREE.Group()
+			this.root = new THREE.Group()
 			this.animator = new RBXAnimator()
 			this.appearance = new RBXAppearance()
 
 			this.baseLoadedPromise = new SyncPromise()
-
+			
+			this.jointsArray = []
 			this.accessories = []
 			this.attachments = {}
 			this.joints = {}
 			this.parts = {}
 
 			this.playerType = null
-
-			this.hipOffset = new THREE.Group()
-			this.model.add(this.hipOffset)
-
-			this.hipOffsetPos = this.hipOffset.position
-
-			this.offset = new THREE.Group()
-			this.hipOffset.add(this.offset)
-
-			this.offsetPos = this.offset.position
-			this.offsetRot = this.offset.rotation
-
-			const att = new THREE.Group()
-			att.position.set(0, 0.5, 0)
-			this.defaultHatAttachment = { obj: att }
+			
+			this.hipOffset = new THREE.Vector3()
+			this.offset = new THREE.Vector3()
+			this.offsetRot = new THREE.Euler()
 
 			this.scales = {
 				width: 1,
@@ -353,8 +355,29 @@ const RBXAvatar = (() => {
 			if(this.shouldRefreshBodyParts) {
 				this._refreshBodyParts()
 			}
-
+			
 			this.animator.update()
+			
+			//
+			
+			this.root.position.copy(this.hipOffset).add(this.offset)
+			this.root.rotation.copy(this.offsetRot)
+			
+			for(const joint of this.jointsArray) {
+				tempMatrix.compose(joint.position, joint.quaternion, oneVector)
+				joint.part1.matrixNoScale.multiplyMatrices(joint.part0.matrixNoScale, joint.bakedC0).multiply(tempMatrix).multiply(joint.bakedC1)
+				joint.part1.matrix.copy(joint.part1.matrixNoScale).scale(joint.part1.scale)
+				joint.part1.matrixWorldNeedsUpdate = true
+			}
+			
+			for(const acc of this.accessories) {
+				if(acc.parent) {
+					acc.obj.matrix.multiplyMatrices(acc.parent.matrixNoScale, acc.bakedCFrame)
+					acc.obj.matrixWorldNeedsUpdate = true
+				}
+			}
+
+			//
 
 			const activeComposites = this.playerType === "R6"
 				? [this.composites.head, this.composites.r6]
@@ -502,91 +525,100 @@ const RBXAvatar = (() => {
 		_refreshRig() {
 			if(!RBXAvatarRigs.loaded) { return }
 			this.shouldRefreshRig = false
-		
-			if(this.root) {
-				this.offset.remove(this.root)
-
-				const recDispose = tar => {
-					if(tar.isMesh) {
-						if(tar.geometry) { tar.geometry.dispose() }
-						if(tar.material) { tar.material.dispose() }
-					}
-
-					tar.children.forEach(recDispose)
+			
+			//
+			
+			const recDispose = tar => {
+				if(tar.isMesh) {
+					if(tar.geometry) { tar.geometry.dispose() }
+					if(tar.material) { tar.material.dispose() }
 				}
-				recDispose(this.root)
-			}
 
-			const parts = this.parts = {}
+				tar.children.forEach(recDispose)
+			}
+			
+			for(const part of Object.values(this.parts)) {
+				recDispose(part)
+			}
+			
+			//
+			
+			this.jointsArray = []
+			
 			const attachments = this.attachments = {}
 			const joints = this.joints = {}
+			const parts = this.parts = {}
 			const animJoints = {}
 
 			const CreateModel = tree => {
-				const obj = new THREE.Group()
+				let obj
+				
+				if(tree.name !== "HumanoidRootPart") {
+					const mat = new THREE.MeshLambertMaterial({ map: this.textures[tree.name], transparent: false })
+					obj = new THREE.Mesh(undefined, mat)
+					obj.frustumCulled = false
+					obj.castShadow = true
+					
+					obj.rbxDefaultMesh = tree.meshid
+					obj.rbxMesh = obj
+				} else {
+					obj = new THREE.Group()
+				}
+				
+				obj.matrixAutoUpdate = false
 				obj.name = tree.name
+				
+				// Custom stuff
 				obj.rbxOrigSize = tree.origSize
 				obj.rbxScaleMod = new Vector3(1, 1, 1)
 				obj.rbxScaleModPure = new Vector3(1, 1, 1)
+				obj.matrixNoScale = new THREE.Matrix4()
+				//
+				
+				this.root.add(obj)
 				parts[tree.name] = obj
 
-				if(tree.name !== "HumanoidRootPart") {
-					const mat = new THREE.MeshLambertMaterial({ map: this.textures[tree.name], transparent: true })
-					const mesh = new THREE.Mesh(undefined, mat)
-					mesh.castShadow = true
-					mesh.visible = false
-
-					obj.rbxMesh = mesh
-					obj.rbxDefaultMesh = tree.meshid
-					obj.add(mesh)
-				}
-
 				Object.entries(tree.attachments).forEach(([name, cframe]) => {
-					const att = new THREE.Group()
-					obj.add(att)
-					attachments[name] = { cframe, obj: att, parent: obj }
+					attachments[name] = {
+						origCFrame: cframe.clone(),
+						bakedCFrame: cframe,
+						parent: obj
+					}
 				})
 
 				tree.children.forEach(child => {
 					const childObj = CreateModel(child)
-					const c0 = new THREE.Group()
-					const c1 = new THREE.Group()
-					const joint = new THREE.Group()
 
-					obj.add(c0)
-					c0.add(joint)
-					joint.add(c1)
-					c1.add(childObj)
-
-					joints[child.JointName] = animJoints[child.name] = {
-						c0,
-						c1,
-						joint,
-						part0: obj,
-						part1: childObj,
+					const joint = joints[child.JointName] = animJoints[child.name] = {
+						position: new THREE.Vector3(),
+						quaternion: new THREE.Quaternion(),
+						
 						origC0: child.C0,
-						origC1: child.C1
+						origC1: child.C1,
+						bakedC0: child.C0.clone(),
+						bakedC1: child.C1.clone(),
+						
+						part0: obj,
+						part1: childObj
 					}
+					
+					this.jointsArray.push(joint)
 				})
 
 				return obj
 			}
 
 			if(this.playerType === "R6") {
-				this.root = CreateModel(RBXAvatarRigs.R6Tree)
-				this.hipOffsetPos.set(0, 3, 0)
+				CreateModel(RBXAvatarRigs.R6Tree)
+				this.hipOffset.set(0, 3, 0)
 			} else if(this.playerType === "R15") {
-				this.root = CreateModel(RBXAvatarRigs.R15Tree)
-				this.hipOffsetPos.set(0, 2.35, 0)
-			} else {
-				return
+				CreateModel(RBXAvatarRigs.R15Tree)
+				this.hipOffset.set(0, 2.35, 0)
 			}
-
-			parts.Head.add(this.defaultHatAttachment.obj)
-
-			this.offset.add(this.root)
+			
+			this.jointsArray.reverse()
+			
 			this.animator.setJoints(animJoints)
-
 			this._refreshBodyParts()
 		}
 
@@ -610,11 +642,11 @@ const RBXAvatar = (() => {
 
 			assets.sort((a, b) => (a.priority === b.priority ? a.lastIndex - b.lastIndex : a.priority - b.priority))
 
-			const parts = {}
-			const joints = {}
-			const attachments = {}
-			const clothing = {}
+			const attachmentOverride = {}
+			const jointOverride = {}
 			const accessories = []
+			const clothing = {}
+			const parts = {}
 			
 			assets.forEach(asset => {
 				asset.bodyparts.forEach(bp => {
@@ -627,11 +659,9 @@ const RBXAvatar = (() => {
 				asset.attachments.forEach(att => {
 					const realAtt = this.attachments[att.target]
 					if(!realAtt || att.part !== realAtt.parent.name) { return }
-
-					if(att.cframe) {
-						attachments[att.target] = att.cframe
-					} else {
-						attachments[att.target] = realAtt.cframe.clone().setPosition(att.pos)
+					
+					if(att.part === realAtt.parent.name) {
+						attachmentOverride[att.target] = att.cframe
 					}
 				})
 
@@ -647,14 +677,13 @@ const RBXAvatar = (() => {
 					asset.joints.forEach(joint => {
 						const realJoint = this.joints[joint.target]
 						if(!realJoint) { return }
-						if(!joints[joint.target]) { joints[joint.target] = {} }
-
-						const isPart0 = joint.part === realJoint.part0.name
-						if(joint.cframe) {
-							joints[joint.target][joint.part] = isPart0 ? joint.cframe : InvertCFrame(joint.cframe)
-						} else {
-							const orig = isPart0 ? realJoint.origC0 : realJoint.origC1
-							joints[joint.target][joint.part] = orig.clone().setPosition(isPart0 ? joint.pos : joint.pos.clone().negate())
+						
+						const data = jointOverride[joint.target] || (jointOverride[joint.target] = {})
+						
+						if(joint.part === realJoint.part0.name) {
+							data.c0 = joint.cframe
+						} else if(joint.part === realJoint.part1.name) {
+							data.c1 = joint.cframe
 						}
 					})
 				}
@@ -696,24 +725,29 @@ const RBXAvatar = (() => {
 				}
 
 				if(part.rbxMesh) {
-					const opacity = changes && "opacity" in changes ? changes.opacity : 1
-					if(part.rbxMeshOpacity !== opacity) {
-						part.rbxMeshOpacity = opacity
-						part.rbxMesh.material.opacity = opacity
-						part.rbxMesh.material.needsUpdate = true
-					}
-
 					if(changes && changes.source) {
 						changes.source.obj = part.rbxMesh
 					}
-
+					
+					// Update opacity
+					const opacity = (changes && "opacity" in changes) ? changes.opacity : 1
+					
+					if(part.rbxMeshOpacity !== opacity) {
+						part.rbxMeshOpacity = opacity
+						part.rbxMesh.material.opacity = opacity
+						part.rbxMesh.material.transparent = opacity < 1
+						part.rbxMesh.material.needsUpdate = true
+					}
+					
+					// Update mesh
 					const meshId = changes && changes.meshId || part.rbxDefaultMesh
 					if(part.rbxMeshId !== meshId) {
 						part.rbxMeshId = meshId
 						clearGeometry(part.rbxMesh)
 						AssetCache.loadMesh(true, meshId, mesh => part.rbxMeshId === meshId && applyMesh(part.rbxMesh, mesh))
 					}
-
+					
+					// Update textures
 					const baseSource = this.sources.base[partName]
 					const baseTexId = changes && changes.baseTexId || ""
 					if(baseSource && baseSource.rbxTexId !== baseTexId) {
@@ -775,67 +809,52 @@ const RBXAvatar = (() => {
 					}
 	
 					part.rbxSize = scale.map((x, i) => x * size[i])
-
+					
 					if(part.rbxMesh) {
 						part.rbxMesh.scale.set(...scale)
 					}
 				})
 				
 				Object.entries(this.joints).forEach(([jointName, joint]) => {
-					const changes = joints[jointName]
-					const C0 = changes && changes[joint.part0.name] || joint.origC0
-					const C1 = changes && changes[joint.part1.name] || joint.origC1
-
-					const scale0 = joint.part0.rbxScaleMod
-					const scale1 = joint.part1.rbxScaleMod
+					if(jointName !== "Root") {
+						const override = jointOverride[jointName]
+						const C0 = override && override.c0 || joint.origC0
+						const C1 = override && override.c1 || joint.origC1
 	
-					joint.c0.position.setFromMatrixPosition(C0).multiply(scale0)
-					joint.c0.rotation.setFromRotationMatrix(C0)
-	
-					joint.c1.position.setFromMatrixPosition(C1).multiply(scale1)
-					joint.c1.rotation.setFromRotationMatrix(C1)
+						const scale0 = joint.part0.rbxScaleMod
+						const scale1 = joint.part1.rbxScaleMod
+						
+						scalePosition(joint.bakedC0.copy(C0), scale0)
+						scalePosition(joint.bakedC1.getInverse(C1), scale1)
+					}
 				})
-
-				// Weird RootRigAttachment.C0.Y recalculation...
-				// God damnit Roblox, try to follow your own scaling rules
-				// instead of hardcoding stuff like this q.q
-				const rootJoint = this.joints.Root
-				const leftHip = this.joints.LeftHip
-				const rightHip = this.joints.RightHip
-
-				if(rootJoint && (leftHip || rightHip)) {
+				
+				if(this.playerType === "R15") {
+					const rootJoint = this.joints.Root
+					const rightHip = this.joints.RightHip
+					const leftHip = this.joints.LeftHip
+					
 					const rootHeight = rootJoint.part0.rbxSize[1]
-					const minHipHeight = Math.min(leftHip.c0.position.y, rightHip.c0.position.y)
-					const newY = -rootHeight / 2 - minHipHeight - rootJoint.c1.position.y
-
-					rootJoint.c0.position.setY(newY)
+					const lowerTorsoHeight = rootJoint.part1.rbxSize[1]
+					const minHipOffset = Math.min(rightHip.bakedC0.elements[13], leftHip.bakedC0.elements[13])
+					
+					rootJoint.bakedC0.makeTranslation(0, -rootHeight / 2 - lowerTorsoHeight / 2 - minHipOffset, 0)
+					rootJoint.bakedC1.makeTranslation(0, lowerTorsoHeight / 2, 0)
 				}
 			}
 
 			updateSizes()
 
-			// Attachments must be updated before leg stretching
-			Object.entries(this.attachments).forEach(([attName, att]) => {
-				const cframe = attachments[attName] || att.cframe
-
-				att.obj.position.setFromMatrixPosition(cframe).multiply(att.parent.rbxScaleMod)
-				att.obj.rotation.setFromRotationMatrix(cframe)
-			})
-
 			// HipHeight and leg stretching
 			if(this.playerType === "R15") {
-				const calcRootY = (off, name) => {
+				const calcHeight = name => {
 					const joint = this.joints[name]
-					return off - joint.c1.position.y - joint.c0.position.y
+					return -joint.bakedC1.elements[13] - joint.bakedC0.elements[13]
 				}
 
-				let leftHeight = ["Root", "LeftHip", "LeftKnee", "LeftAnkle"].reduce(calcRootY, 0) + this.parts.LeftFoot.rbxSize[1] / 2
-				let rightHeight = ["Root", "RightHip", "RightKnee", "RightAnkle"].reduce(calcRootY, 0) + this.parts.LeftFoot.rbxSize[1] / 2
-
 				// Stretch legs to same level
-
-				const leftLegHeight = leftHeight - calcRootY(0, "Root") + this.joints.LeftHip.c0.position.y
-				const rightLegHeight = rightHeight - calcRootY(0, "Root") + this.joints.RightHip.c0.position.y
+				let leftLegHeight = -this.joints.LeftHip.bakedC1.elements[13] + calcHeight("LeftKnee") + calcHeight("LeftAnkle") + this.parts.LeftFoot.rbxSize[1] / 2
+				let rightLegHeight = -this.joints.RightHip.bakedC1.elements[13] + calcHeight("RightKnee") + calcHeight("RightAnkle") + this.parts.RightFoot.rbxSize[1] / 2
 
 				if(leftLegHeight >= 0.1 && rightLegHeight >= 0.1) {
 					const scale = rightLegHeight / leftLegHeight
@@ -844,36 +863,45 @@ const RBXAvatar = (() => {
 						this.parts.LeftUpperLeg.rbxScaleMod.multiplyScalar(scale)
 						this.parts.LeftLowerLeg.rbxScaleMod.multiplyScalar(scale)
 						this.parts.LeftFoot.rbxScaleMod.multiplyScalar(scale)
-						leftHeight = rightHeight
+						leftLegHeight = rightLegHeight
 					} else {
 						this.parts.RightUpperLeg.rbxScaleMod.divideScalar(scale)
 						this.parts.RightLowerLeg.rbxScaleMod.divideScalar(scale)
 						this.parts.RightFoot.rbxScaleMod.divideScalar(scale)
-						rightHeight = leftHeight
+						rightLegHeight = leftLegHeight
 					}
 
 					updateSizes()
 				}
 
 				// Calculate hip height
-
-				const rootHeight = this.parts.HumanoidRootPart.rbxSize[1] / 2
-
-				let min = leftHeight - rootHeight
-				let max = rightHeight - rootHeight
+				const rootHeight = this.parts.HumanoidRootPart.rbxSize[1]
+				
+				let min = leftLegHeight
+				let max = rightLegHeight
 				if(max < min) { [max, min] = [min, max] }
 
 				const hipHeight = min >= max * 0.95 ? min : max
 
-				this.hipOffsetPos.setY(hipHeight + rootHeight)
+				this.hipOffset.setY(hipHeight + rootHeight / 2)
 				this.animator.setRootScale(hipHeight / 2)
 			}
+			
+			// Update attachments
+			Object.entries(this.attachments).forEach(([attName, att]) => {
+				const origCFrame = attachmentOverride[attName] || att.origCFrame
+				scalePosition(att.bakedCFrame.copy(origCFrame), att.parent.rbxScaleMod)
+			})
 
 			// Remove old accessories
 			for(let i = this.accessories.length; i--;) {
 				const acc = this.accessories.pop()
+				
 				if(!accessories.includes(acc)) {
-					acc.obj.parent.remove(acc.obj)
+					if(acc.obj && acc.obj.parent) {
+						acc.obj.parent.remove(acc.obj)
+					}
+					
 					acc.att = null
 				}
 			}
@@ -883,13 +911,23 @@ const RBXAvatar = (() => {
 				if(!acc.obj) {
 					const source = createSource(grayImage)
 					const texture = mergeTexture(256, 256, source)
-					texture.needsUpdate = true
 
-					const mat = new THREE.MeshLambertMaterial({ map: texture, transparent: true })
+					const mat = new THREE.MeshLambertMaterial({ map: texture, transparent: false })
 					const obj = acc.obj = new THREE.Mesh(undefined, mat)
+					obj.matrixAutoUpdate = false
+					obj.frustumCulled = false
 					obj.visible = false
 					obj.castShadow = true
-
+					
+					if("opacity" in acc && acc.opacity < 1) {
+						mat.opacity = acc.opacity
+						mat.transparency = acc.opacity < 1
+					}
+					
+					if(acc.color) {
+						mat.color.setRGB(acc.color[0], acc.color[1], acc.color[2])
+					}
+					
 					if(acc.meshId) {
 						AssetCache.loadMesh(true, acc.meshId, mesh => applyMesh(obj, mesh))
 					}
@@ -899,40 +937,62 @@ const RBXAvatar = (() => {
 							source.setImage(img)
 						})
 					}
+					
+					acc.bakedCFrame = new THREE.Matrix4()
 				}
-
-				// Update color
-				if(acc.color) { acc.obj.material.color.setRGB(acc.color[0], acc.color[1], acc.color[2]) }
-				if("opacity" in acc) { acc.obj.material.opacity = acc.opacity }
 
 				// Attach to correct attachment
-				const att = this.attachments[acc.attName] || this.defaultHatAttachment
-				if(acc.att !== att) {
-					acc.att = att
-					att.obj.add(acc.obj)
-				}
 				
-				// Scale and Position
-				const parent = att.parent
-				const scale = parent ? this.getScaleMod(parent.name, acc.scaleType, parent.rbxScaleType) : new Vector3(1, 1, 1)
-				acc.obj.scale.set(...acc.scale).multiply(scale)
-
-				// Roblox Weirdness: Attachmentless accessories (defaultHatAttachment) do not get position-scaled
-				if(acc.attCFrame) {
-					acc.obj.position.setFromMatrixPosition(acc.attCFrame).multiply(scale)
-					acc.obj.rotation.setFromRotationMatrix(acc.attCFrame)
+				const attachment = this.attachments[acc.attName]
+				const parent = attachment ? attachment.parent : this.parts.Head
+				
+				if(parent) {
+					// Scale
+					
+					const scale = this.getScaleMod(parent.name, acc.scaleType, parent.rbxScaleType)
+					acc.obj.scale.set(...acc.scale).multiply(scale)
+					
+					// Position
+					
+					if(attachment) {
+						acc.bakedCFrame.copy(attachment.bakedCFrame).multiply(
+							scalePosition(tempMatrix.copy(acc.attCFrame), scale)
+						)
+					} else {
+						// Legacy hats, position is not scaled
+						acc.bakedCFrame.makeTranslation(0, 0.5, 0)
+						
+						if(acc.legacyHatCFrame) {
+							acc.bakedCFrame.multiply(acc.legacyHatCFrame)
+						}
+					}
+					
+					// Mesh offset (not scaled)
+					
+					if(acc.offset) {
+						acc.bakedCFrame.multiply(tempMatrix.makeTranslation(...acc.offset))
+					}
+					
+					// Apply scale to bakedCFrame
+					
+					acc.bakedCFrame.scale(acc.obj.scale)
+					
+					//
+					
+					acc.parent = parent
+					
+					if(!acc.obj.parent) {
+						this.root.add(acc.obj)
+					}
+					
+					this.accessories.push(acc)
 				} else {
-					acc.obj.position.setFromMatrixPosition(acc.cframe)
-					acc.obj.rotation.setFromRotationMatrix(acc.cframe)
+					acc.parent = null
+					
+					if(acc.obj.parent) {
+						acc.obj.parent.remove(acc.obj)
+					}
 				}
-
-				// Roblox Weirdness: Mesh.Offset doesn't get position-scaled
-				if(acc.offset) {
-					acc.obj.position.add(new Vector3(...acc.offset).applyQuaternion(acc.obj.quaternion))
-				}
-
-				acc.obj.matrixWorldNeedsUpdate = true
-				this.accessories.push(acc)
 			})
 		}
 	}

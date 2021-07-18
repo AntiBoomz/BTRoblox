@@ -209,15 +209,20 @@ const RBXScene = (() => {
 	class AvatarScene extends Scene {
 		constructor() {
 			super()
+			
 			const avatar = this.avatar = new RBXAvatar.Avatar()
-			this.scene.add(avatar.model)
-
-			avatar.model.position.y = 0.1
-
+			this.scene.add(avatar.root)
+			
+			this.avatarOffset = {
+				position: new THREE.Vector3(),
+				rotation: new THREE.Euler()
+			}
+			
 			const stand = new THREE.Mesh(
 				new THREE.CylinderGeometry(2.5, 2.5, .1, 48),
 				new THREE.MeshLambertMaterial({ color: 0xB7A760 })
 			)
+			stand.frustumCulled = false
 			stand.position.y = .05
 			stand.receiveShadow = true
 			this.scene.add(stand)
@@ -229,7 +234,7 @@ const RBXScene = (() => {
 				new THREE.PlaneGeometry(200, 200),
 				groundMat
 			)
-
+			ground.frustumCulled = false
 			ground.rotation.x = -Math.PI / 2
 			ground.position.y = .001
 			ground.receiveShadow = true
@@ -240,6 +245,10 @@ const RBXScene = (() => {
 
 		update() {
 			super.update()
+			
+			this.avatar.offset.set(0, 0.1, 0).add(this.avatarOffset.position)
+			this.avatar.offsetRot.copy(this.avatarOffset.rotation)
+			
 			this.avatar.update()
 		}
 
