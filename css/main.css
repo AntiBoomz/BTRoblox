@@ -906,19 +906,6 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	transition: none !important;
 }
 
-.btr-preview-canvas {
-	user-select: none;
-	-moz-user-select: none;
-
-	position: absolute;
-	left: 0;
-	right: 0;
-	top: 0;
-	bottom: 0;
-	width: 100%;
-	height: 100%;
-}
-
 .btr-hover-preview-camera-rotate {
 	background-image: url(https://images.rbxcdn.com/db9908040c0b7dfd0ce0d81e287f4664-generic_01312019.svg);
 	background-repeat: no-repeat;
