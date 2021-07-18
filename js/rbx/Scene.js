@@ -142,25 +142,19 @@ const RBXScene = (() => {
 		}
 
 		update() {
-			this.n = (this.n || 0) + 1
-			
-			if(this.n % 60 === 0) {
-				this.n = 0
-				
-				const parent = this.canvas.parentNode
-				if(parent) {
-					const width = parent.clientWidth
-					const height = parent.clientHeight
-					const res = this._prevRes
+			const parent = this.canvas.parentNode
+			if(parent) {
+				const width = parent.clientWidth
+				const height = parent.clientHeight
+				const res = this._prevRes
 
-					if(width !== res.width || height !== res.height) {
-						res.width = width
-						res.height = height
+				if(width !== res.width || height !== res.height) {
+					res.width = width
+					res.height = height
 
-						this.renderer.setSize(width, height, false)
-						this.camera.aspect = height === 0 ? 0 : width / height
-						this.camera.updateProjectionMatrix()
-					}
+					this.renderer.setSize(width, height, false)
+					this.camera.aspect = height === 0 ? 0 : width / height
+					this.camera.updateProjectionMatrix()
 				}
 			}
 				
