@@ -179,6 +179,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	font-size: 10px;
 	font-weight: normal;
 	margin: 0 !important;
+	white-space: nowrap;
 }
 
 #btr-blogfeed .btr-feedtitle {
