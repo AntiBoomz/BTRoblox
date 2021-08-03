@@ -433,8 +433,14 @@ const btrSettingsModal = (() => {
 			currencySelect.$empty()
 			rateSelect.$empty()
 
-			Object.keys(RobuxToCash.Currencies).forEach(name => {
-				currencySelect.append(html`<option>${name}</option>`)
+			const currencies = Object.values(RobuxToCash.Currencies)
+			
+			currencies.filter(x => !x.usdRate).forEach(currency => {
+				currencySelect.append(html`<option>${currency.name}</option>`)
+			})
+			
+			currencies.filter(x => x.usdRate).sort((a, b) => (a.name < b.name ? -1 : 1)).forEach(currency => {
+				currencySelect.append(html`<option title="Rates are estimations based on USD-${currency.name} exchange rate on August 3rd 2021" value="${currency.name}">${currency.name}*</option>`)
 			})
 
 			const setRate = () => {
@@ -459,7 +465,9 @@ const btrSettingsModal = (() => {
 						: option.name.includes("Premium") ? "Premium"
 							: "Regular"
 					
-					const rateText = `${option.currency.symbol}${(option.cash / 100).toFixed(2)} = R$${option.robux}`
+					const rateText = option.currency.usdRate ?
+						`${option.currency.symbol}${(option.cash / 100).toFixed(2)} ≈ US$${(option.usdCash / 100).toFixed(2)} = R$${option.robux}`
+						: `${option.currency.symbol}${(option.cash / 100).toFixed(2)} = R$${option.robux}`
 					
 					rateSelect.append(html`<option value="${option.name}">${display} (${rateText})</option>`)
 
