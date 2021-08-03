@@ -131,10 +131,12 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	pointer-events: none;
 	transition: opacity 0.3s;
 	z-index: 10000;
+	
+	box-shadow: 0 0 8px 0 rgba(0, 0, 0, .1);
 }
 
 .dark-theme.btr-profile .profile-avatar-right {
-	outline: 1px solid #232527;
+	box-shadow: 0 0 8px 0 rgba(0, 0, 0, .3);
 }
 
 .btr-profile .profile-avatar-right.visible {

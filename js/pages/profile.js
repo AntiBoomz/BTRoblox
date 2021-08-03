@@ -164,8 +164,11 @@ pageInit.profile = function(userId) {
 				}
 			}
 		})
-		.$watch(".profile-avatar", avatar => {
+		.$watch(".profile-avatar", async avatar => {
 			newCont.$find(".placeholder-avatar").replaceWith(avatar)
+			
+			await avatar.$watch(">.container-header").$promise()
+			
 			avatar.$find(".container-header").remove()
 
 			const avatarLeft = avatar.$find(".profile-avatar-left")
@@ -179,24 +182,30 @@ pageInit.profile = function(userId) {
 			setTimeout(() => avatarRight.style.transition = "", 1e3)
 
 			const toggleItems = html`<span class="btr-toggle-items btn-control btn-control-sm">Show Items</span>`
-			avatar.$find("#UserAvatar").append(toggleItems)
-
+			avatarLeft.$find(".thumbnail-holder").append(toggleItems)
+			
+			//
+			
 			let visible = false
-
-			function toggleVisible() {
-				visible = !visible
+			
+			const setVisible = bool => {
+				visible = bool
 				avatarRight.classList.toggle("visible", visible)
-
 				toggleItems.textContent = visible ? "Hide Items" : "Show Items"
 			}
-
+			
 			toggleItems.$on("click", ev => {
-				toggleVisible()
+				setVisible(!visible)
 				ev.stopPropagation()
+				ev.stopImmediatePropagation()
+				ev.preventDefault()
 			})
-
-			avatarRight.$on("click", ev => ev.stopPropagation())
-			document.$on("click", () => visible && toggleVisible())
+			
+			document.$on("click", ev => {
+				if(visible && !avatarRight.contains(ev.target)) {
+					setVisible(false)
+				}
+			})
 		})
 		.$watch(".profile-statistics", outerStats => {
 			newCont.$find(".placeholder-stats").replaceWith(outerStats)
