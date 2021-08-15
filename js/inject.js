@@ -576,6 +576,7 @@ const INJECT_SCRIPT = () => {
 						let requestCounter = 0
 						let lastPageNum = 0
 						let isLoadingPosts = false
+						let activeLoadMore = 0
 
 						const btrPagerStatus = {
 							prev: false,
@@ -603,21 +604,35 @@ const INJECT_SCRIPT = () => {
 							if(loadMorePromise) {
 								return loadMorePromise
 							}
-
-							return loadMorePromise = new Promise(async resolve => {
+							
+							const currentLoadMore = activeLoadMore += 1
+							
+							return loadMorePromise = Promise.resolve().then(async () => {
 								const groupId = $scope.library.currentGroup.id
-								const baseUrl = `https://groups.roblox.com/v2/groups/${groupId}/wall/posts?sortOrder=Desc&limit=100&cursor=`
+								const url = `https://groups.roblox.com/v2/groups/${groupId}/wall/posts?sortOrder=Desc&limit=100&cursor=${nextPageCursor}`
 								
-								const resp = await fetch(baseUrl + nextPageCursor, { credentials: "include" })
+								let resp
+								
+								while(true) {
+									resp = await fetch(url, { credentials: "include" })
+									if(activeLoadMore !== currentLoadMore) { return }
+									
+									if(resp.status === 429) {
+										await new Promise(resolve => setTimeout(resolve, 5e3))
+										if(activeLoadMore !== currentLoadMore) { return }
+										continue
+									}
+									
+									break
+								}
+								
 								const json = await resp.json()
-
-								if(!loadMorePromise) { return }
-
+								if(activeLoadMore !== currentLoadMore) { return }
+								
 								nextPageCursor = json.nextPageCursor || null
 								wallPosts.push(...json.data.filter(x => x.poster))
 
 								loadMorePromise = null
-								resolve()
 							})
 						}
 
@@ -658,6 +673,7 @@ const INJECT_SCRIPT = () => {
 							wallPosts.splice(0, wallPosts.length)
 							nextPageCursor = ""
 							loadMorePromise = null
+							activeLoadMore += 1
 							requestWallPosts(0)
 						}
 

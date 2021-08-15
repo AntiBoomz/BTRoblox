@@ -4,9 +4,21 @@ body.btr-hide-ads .content {
 
 /* Groups redesign */
 
-.btr-redesign .btr-description-label {
-	padding-top: 16px;
-	padding-bottom: 4px;
+.btr-redesign group-description .section,
+.btr-redesign group-description .section-content,
+.btr-redesign group-description .group-description-footer {
+	display: contents;
+}
+
+.btr-redesign group-description .container-header h3 {
+	font-size: 16px;
+	padding: 4px 0 16px 0;
+}
+
+/* Social icons */
+
+.btr-redesign group-description .container-header {
+	position: static;
 }
 
 .btr-redesign social-link-icon-list {
@@ -14,6 +26,8 @@ body.btr-hide-ads .content {
 	top: 6px;
 	right: 44px;
 }
+
+/* Other */
 
 .btr-redesign .btr-group-about {
 	margin-bottom: 18px;
@@ -32,8 +46,8 @@ body.btr-hide-ads .content {
 	width: 25%
 }
 
-.btr-redesign .group-wall ~ .loading .spinner {
-	margin: 0;
+.btr-redesign .tab-content {
+	float: none;
 }
 
 .btr-redesign group-members-list .dropdown-menu li a:defined {
@@ -88,4 +102,12 @@ body.btr-hide-ads .content {
 
 .btr-comment-pager .pager-mid {
 	line-height: 32px;
+}
+
+.btr-redesign .group-wall ~ .loading {
+	margin-top: -12px;
+}
+
+.btr-redesign .group-wall ~ .loading .spinner {
+	height: 72px;
 }
