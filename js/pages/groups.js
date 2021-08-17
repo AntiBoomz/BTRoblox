@@ -22,7 +22,8 @@ function enableRedesign() {
 		modifyTemplate(["group-base", "group-games", "group-about", "group-tab"], (baseTemplate, gamesTemplate, aboutTemplate, tabTemplate) => {
 			const groupHeader = baseTemplate.$find(".group-header")
 			const groupAbout = groupHeader.parentNode
-			groupAbout.parentNode.classList.add("btr-group-container")
+			const groupContainer = groupAbout.parentNode
+			groupContainer.classList.add("btr-group-container")
 			groupAbout.classList.add("btr-group-about")
 
 			const desc = aboutTemplate.$find("group-description")
@@ -37,7 +38,7 @@ function enableRedesign() {
 			
 			// Show group wall on all tabs
 			
-			groupAbout.parentNode.append(aboutTemplate.$find("[group-wall]"))
+			groupContainer.append(aboutTemplate.$find("group-wall,[group-wall]"))
 			
 			// Separate experiences into it's own tab
 			

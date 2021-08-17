@@ -568,7 +568,7 @@ const INJECT_SCRIPT = () => {
 				}
 
 				if(settings.groups.pagedGroupWall) {
-					const createCustomPager = ({ $scope }) => {
+					const createCustomPager = (ctrl, { $scope }) => {
 						const wallPosts = []
 						const pageSize = 10
 						let loadMorePromise = null
@@ -608,7 +608,7 @@ const INJECT_SCRIPT = () => {
 							const currentLoadMore = activeLoadMore += 1
 							
 							return loadMorePromise = Promise.resolve().then(async () => {
-								const groupId = $scope.library.currentGroup.id
+								const groupId = ctrl.groupId || $scope.library.currentGroup.id
 								const url = `https://groups.roblox.com/v2/groups/${groupId}/wall/posts?sortOrder=Desc&limit=100&cursor=${nextPageCursor}`
 								
 								let resp
@@ -707,7 +707,7 @@ const INJECT_SCRIPT = () => {
 							const result = func.apply(this, args)
 
 							try {
-								createCustomPager(argMap)
+								createCustomPager(this, argMap)
 							} catch(ex) {
 								console.error(ex)
 								if(IS_DEV_MODE) { alert("HijackAngular Error") }
