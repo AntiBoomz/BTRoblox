@@ -1,5 +1,5 @@
 body.btr-hide-ads .content {
-	max-width: 1146px;
+	max-width: calc(1478px - 166px);
 }
 
 /* Groups redesign */
