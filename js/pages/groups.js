@@ -3,7 +3,6 @@
 function enableRedesign() {
 	document.$watch("body", body => {
 		body.classList.toggle("btr-redesign", SETTINGS.get("groups.modifyLayout"))
-		body.classList.toggle("btr-hidePayout", SETTINGS.get("groups.hidePayout"))
 		body.classList.toggle("btr-hideBigSocial", SETTINGS.get("groups.hideBigSocial"))
 	})
 
@@ -17,6 +16,15 @@ function enableRedesign() {
 	if(SETTINGS.get("groups.modifyLayout")) {
 		document.$watch(["#about", "#btr-games"], (about, games) => {
 			about.after(games)
+		})
+		
+		document.$watch("group-payouts", payouts => {
+			const update = () => {
+				payouts.closest(".btr-group-container").classList.toggle("btr-hasPayouts", !!payouts.$find(">div"))
+			}
+			
+			new MutationObserver(update).observe(payouts, { childList: true })
+			update()
 		})
 		
 		modifyTemplate(["group-base", "group-games", "group-about", "group-tab"], (baseTemplate, gamesTemplate, aboutTemplate, tabTemplate) => {
@@ -40,25 +48,26 @@ function enableRedesign() {
 			
 			groupContainer.append(aboutTemplate.$find("group-wall,[group-wall]"))
 			
-			// Separate experiences into it's own tab
+			// Give games and payouts their own tabs
+			
+			groupContainer.setAttribute("ng-class", "{'btr-hasGames': library.currentGroup.areGroupGamesVisible, 'btr-showPayouts': groupDetailsConstants.tabs.about.btrCustomTab === 'payouts'}")
 			
 			const list = baseTemplate.$find("#horizontal-tabs")
-			list.setAttribute("ng-class", `{'btr-four-wide': library.currentGroup.areGroupGamesVisible}`)
-			
-			const games = html`<li id="btr-games" ng-class="{'active': layout.activeTab.state === 'about' && layout.activeTab.btrShowGames}" class="rbx-tab group-tab" ng-show="library.currentGroup.areGroupGamesVisible" ng-click="groupDetailsConstants.tabs.about.btrShowGames=true" ui-sref="about"><a class=rbx-tab-heading><span class=text-lead ng-bind="'Heading.Games' | translate"></span></a>`
-			list.append(games)
+			const games = html`<li id="btr-games" ng-class="{'active': layout.activeTab.state === 'about' && layout.activeTab.btrCustomTab === 'games'}" ng-click="groupDetailsConstants.tabs.about.btrCustomTab='games'" class="rbx-tab group-tab" ui-sref="about"><a class=rbx-tab-heading><span class=text-lead ng-bind="'Heading.Games' | translate"></span></a>`
+			const payouts = html`<li id="btr-payouts" ng-class="{'active': layout.activeTab.state === 'about' && layout.activeTab.btrCustomTab === 'payouts'}" ng-click="groupDetailsConstants.tabs.about.btrCustomTab='payouts'" class="rbx-tab group-tab" ui-sref="about"><a class=rbx-tab-heading><span class=text-lead ng-bind="'Heading.Payouts' | translate"></span></a>`
+			list.append(games, payouts)
 			
 			const tab = tabTemplate.$find(".rbx-tab")
-			tab.setAttribute("ng-class", tab.getAttribute("ng-class").replace(/activeTab === tab/, "activeTab === tab && !tab.btrShowGames"))
-			tab.setAttribute("ng-click", "tab.btrShowGames=false")
+			tab.setAttribute("ng-class", tab.getAttribute("ng-class").replace(/activeTab === tab/, "activeTab === tab && !tab.btrCustomTab"))
+			tab.setAttribute("ng-click", "tab.btrCustomTab=null")
 			
 			const binding = tab.$find(".text-lead")
 			if(binding?.getAttribute("ng-bind")) {
 				binding.setAttribute("ng-bind", binding.getAttribute("ng-bind").replace(/^\s*(.*)?(\s*\|\s*translate\s*)$/i, "($1 === 'Heading.About' ? 'Heading.Members' : $1)$2"))
 			}
 			
-			aboutTemplate.$find("[group-games]")?.setAttribute("ng-show", "groupDetailsConstants.tabs.about.btrShowGames")
-			aboutTemplate.$find("group-members-list")?.setAttribute("ng-show", "!groupDetailsConstants.tabs.about.btrShowGames")
+			aboutTemplate.$find("[group-games]")?.setAttribute("ng-show", "groupDetailsConstants.tabs.about.btrCustomTab === 'games'")
+			aboutTemplate.$find("group-members-list")?.setAttribute("ng-show", "!groupDetailsConstants.tabs.about.btrCustomTab")
 		})
 
 		modifyTemplate("group-members-list", template => {

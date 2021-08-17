@@ -42,10 +42,6 @@ body.btr-hide-ads .content {
 	margin-bottom: 8px;
 }
 
-.btr-redesign .btr-four-wide > .group-tab {
-	width: 25%
-}
-
 .btr-redesign .tab-content {
 	float: none;
 }
@@ -89,7 +85,19 @@ body.btr-hide-ads .content {
 	padding-right: 2px;
 }
 
-.btr-hidePayout group-payouts,
+
+.btr-redesign .btr-hasGames .rbx-tabs-horizontal .group-tab,
+.btr-redesign .btr-hasPayouts .rbx-tabs-horizontal .group-tab {
+	width: 25%;
+}
+
+.btr-redesign .btr-hasGames.btr-hasPayouts .rbx-tabs-horizontal .group-tab {
+	width: 20%;
+}
+
+.btr-redesign .btr-group-container:not(.btr-hasGames) #btr-games,
+.btr-redesign .btr-group-container:not(.btr-hasPayouts) #btr-payouts,
+.btr-redesign .btr-group-container.btr-hasPayouts:not(.btr-showPayouts) group-payouts,
 .btr-hideBigSocial social-links-container {
 	display: none;
 }

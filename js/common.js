@@ -653,7 +653,6 @@ const SETTINGS = {
 			modifyLayout: { value: true },
 			selectedRoleCount: { value: true },
 			pagedGroupWall: { value: true },
-			hidePayout: { value: true },
 			hideBigSocial: { value: true },
 			modifySmallSocialLinksTitle: { value: true }
 		},
