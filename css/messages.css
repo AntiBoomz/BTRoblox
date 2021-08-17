@@ -1,6 +1,8 @@
 .btr-hide-ads .content {
-	width: 970px;
+	max-width: 970px;
 }
+
+/* */
 
 body .content .btr-currentPage {
 	display: contents;

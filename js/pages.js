@@ -83,7 +83,7 @@ const GET_PAGE = path => {
 		for(const pattern of page.matches) {
 			const matches = path.match(new RegExp(pattern, "i"))
 			if(matches) {
-				return Object.assign({}, page, { name, matches: matches.slice(1) })
+				return { ...page, name, matches: matches.slice(1) }
 			}
 		}
 	}
