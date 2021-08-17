@@ -61,7 +61,7 @@ const PAGE_INFO = {
 		css: ["messages.css"]
 	},
 	money: {
-		matches: ["^/my/money\\.aspx"],
+		matches: ["^/transactions"],
 		css: ["money.css"]
 	},
 	placeconfig: {
