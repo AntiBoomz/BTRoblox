@@ -29,7 +29,7 @@ const PAGE_INFO = {
 		css: ["gamedetails.css"]
 	},
 	games: {
-		matches: ["^/games/?$"],
+		matches: ["^/(games|discover)/?$"],
 		css: ["games.css"]
 	},
 	groups: {
