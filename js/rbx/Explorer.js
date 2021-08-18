@@ -2,17 +2,18 @@
 
 const Explorer = (() => {
 	const GroupOrders = [
-		"Appearance", "Data", "Shape", "Goals", "Thrust", "Turn", "Camera", "Behavior", "Image", "Compliance",
+		"Appearance", "Data", "Shape", "Goals", "Thrust", "Turn", "Camera", "Transform", "Pivot", "Behavior", "Collision", "Image", "Compliance",
 		"AlignOrientation", "AlignPosition", "BallSocket", "Limits", "TwistLimits", "Hinge", "Servo",
 		"Motor", "LineForce", "Rod", "Rope", "Cylinder", "AngularLimits", "AngularServo", "AngularMotor", "Slider",
 		"Spring", "Torque", "VectorForce", "Attachments", "Input", "Text", "Scrolling", "Localization", "State",
-		"Control", "Game", "Teams", "Forcefield", "Part ", "Surface Inputs", "Surface", "Motion", "Particles",
+		"Control", "Game", "Teams", "Forcefield", "Part", "Surface Inputs", "Surface", "Motion", "Particles",
 		"Emission", "Parts"
 	]
 	
 	const RenamedProperties = {
 		Color3uint8: "Color", formFactorRaw: "FormFactor", Health_XML: "Health", xmlRead_MaxDistance_3: "MaxDistance",
-		shape: "Shape", size: "Size", formFactor: "FormFactor", archivable: "Archivable", style: "Style"
+		shape: "Shape", size: "Size", formFactor: "FormFactor", archivable: "Archivable", style: "Style",
+		MeshID: "MeshId"
 	}
 
 	const HiddenProperties = $.toDict(null,
@@ -246,6 +247,8 @@ const Explorer = (() => {
 			const groups = []
 			const groupMap = {}
 			Object.entries(target.Properties).forEach(([name, prop]) => {
+				if(RenamedProperties[name] && RenamedProperties[name] in target.Properties) { return }
+				
 				name = RenamedProperties[name] || name
 				if(HiddenProperties[name] || HiddenProperties[`${target.ClassName}.${name}`]) { return }
 
