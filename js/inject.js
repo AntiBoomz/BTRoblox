@@ -300,9 +300,9 @@ const INJECT_SCRIPT = () => {
 							const robuxIndex = args.findIndex((x, i) => i >= 2 && x instanceof Object && x.props && "robuxAmount" in x.props)
 
 							if(robuxIndex !== -1) {
-								args.splice(robuxIndex + 1, 0,
-									React.createElement("li", { key: "btrFriends", id: "btr-friends-container", dangerouslySetInnerHTML: { __html: " " } }),
+								args.splice(robuxIndex, 0,
 									React.createElement("li", { key: "btrMessages", id: "btr-messages-container", dangerouslySetInnerHTML: { __html: " " } }),
+									React.createElement("li", { key: "btrFriends", id: "btr-friends-container", dangerouslySetInnerHTML: { __html: " " } })
 								)
 							}
 						} else if(hasClass("left-col-list")) {
