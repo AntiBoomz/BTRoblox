@@ -76,26 +76,23 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	border-color: #232527;
 }
 
-/* btr-no-hamburger TODO: Make sure this stuff is right */
+/* btr-no-hamburger */
 
-.btr-no-hamburger #header .rbx-navbar-header {
-	max-width: 120px;
-}
-.btr-no-hamburger #header .icon-logo-r {
-	display: none;
-}
-.btr-no-hamburger #header .icon-logo {
-	display: block;
-}
-.btr-no-hamburger #header .logo-transitional {
-	background-image: url("/images/Logo/roblox_logo.svg");
-	background-repeat: no-repeat;
-	background-size: auto auto;
-	width: 118px;
-	height: 30px;
-	display: inline-block;
-	vertical-align: middle;
-	background-size: 118px 30px;
+@media (min-width: 1200px) {
+	.btr-no-hamburger #header .rbx-navbar-header {
+		max-width: 175px;
+		width: 175px;
+		margin: 0;
+		padding: 0 12px;
+	}
+	
+	.btr-no-hamburger #header .icon-logo {
+		display: block;
+	}
+	
+	.btr-no-hamburger #header .icon-logo-r {
+		display: none;
+	}
 }
 
 .btr-no-hamburger #header .rbx-nav-collapse {
@@ -104,14 +101,15 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 
 .btr-no-hamburger .rbx-left-col {
 	width: 175px;
-	box-shadow: 0 0 3px rgba(25,25,25,0.3);
+	display: block;
+	visibility: visible;
 }
 
 .btr-no-hamburger .rbx-left-col .rbx-scrollbar {
 	width: 175px;
 }
 
-@media (max-width:1688px) {
+@media (max-width: 1688px) {
 	body.btr-no-hamburger .container-main,
 	body.btr-no-hamburger .nav-container .nav-content {
 		margin-left: 175px;
