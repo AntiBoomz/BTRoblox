@@ -56,6 +56,7 @@
 				"js/common.js",
 				"js/utility.js",
 				"js/inject.js",
+				"js/rbx/RobloxApi.js",
 				"js/pages.js",
 
 				"js/util/pageInject.js",
