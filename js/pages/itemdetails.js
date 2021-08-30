@@ -1,10 +1,12 @@
 "use strict"
 
 const initPreview = async (assetId, assetTypeId, isBundle) => {
+	if(!SETTINGS.get("itemdetails.itemPreviewer")) { return }
+	
 	const isPreviewable = AnimationPreviewAssetTypeIds.includes(assetTypeId) || WearableAssetTypeIds.includes(assetTypeId)
 	const isPackage = assetTypeId === 32
 
-	if(SETTINGS.get("itemdetails.itemPreviewer") && (isPackage || isBundle || isPreviewable)) {
+	if(isPackage || isBundle || isPreviewable) {
 		await loadOptionalLibrary("previewer")
 
 		const previewerMode = SETTINGS.get("itemdetails.itemPreviewerMode")
@@ -14,95 +16,91 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 		let autoLoading = false
 		let bundleOutfitId
 
-		const addAssetPreview = (itemId, itemName = "Unknown") => {
+		const addAssetPreview = async (itemId, itemName = "Unknown") => {
 			const assetPreview = preview.addAssetPreview(itemId)
+			const model = await AssetCache.loadModel(itemId)
+			
+			let isAnimation = false
+			
+			for(const child of model) {
+				if(child.ClassName === "Folder" && child.Name === "R15Anim") {
+					for(const value of child.Children) {
+						if(value.ClassName !== "StringValue") { continue }
+						
+						for(const anim of value.Children) {
+							if(anim.ClassName !== "Animation") { continue }
 
-			AssetCache.loadModel(itemId, model => {
-				let isAnimation = false
+							const animId = AssetCache.resolveAssetId(anim.AnimationId)
+							if(!animId) { continue }
 
-				model.forEach(child => {
-					if(child.ClassName === "Folder" && child.Name === "R15Anim") {
-						child.Children.forEach(value => {
-							if(value.ClassName !== "StringValue") { return }
+							isAnimation = true
 
-							value.Children.forEach(anim => {
-								if(anim.ClassName !== "Animation") { return }
+							if(isBundle) {
+								preview.addBundleAnimation(animId, value.Name, itemName)
 
-								const animId = AssetCache.resolveAssetId(anim.AnimationId)
-								if(!animId) { return }
-
-								isAnimation = true
-
-								if(isBundle) {
-									preview.addBundleAnimation(animId, value.Name, itemName)
-
-									if(!playedAnim && value.Name === "run") {
-										playedAnim = true
-										preview.playAnimation(animId)
-									}
-								} else {
-									preview.addAnimation(animId, value.Name)
-
-									if(!playedAnim) {
-										playedAnim = true
-										preview.playAnimation(animId)
-									}
+								if(!playedAnim && value.Name === "run") {
+									playedAnim = true
+									preview.playAnimation(animId)
 								}
-							})
-						})
-					} else if(child.ClassName === "KeyframeSequence") {
-						isAnimation = true
+							} else {
+								preview.addAnimation(animId, value.Name)
 
-						preview.addAnimation(itemId, String(itemId))
-						preview.playAnimation(itemId)
-					} else if(child.ClassName === "Animation") {
-						isAnimation = true
-
-						const animId = child.AnimationId
-						preview.addAnimation(animId, child.Name)
-						preview.playAnimation(animId)
+								if(!playedAnim) {
+									playedAnim = true
+									preview.playAnimation(animId)
+								}
+							}
+						}
 					}
-				})
+				} else if(child.ClassName === "KeyframeSequence") {
+					isAnimation = true
 
-				if(assetPreview || isAnimation) {
-					preview.setVisible(true)
+					preview.addAnimation(itemId, String(itemId))
+					preview.playAnimation(itemId)
+				} else if(child.ClassName === "Animation") {
+					isAnimation = true
 
-					if(isAnimation) {
-						preview.applyAnimationPlayerType = true
-					}
-	
-					if(!autoLoading && (previewerMode === "always" || previewerMode === "animations" && isAnimation)) {
-						autoLoading = true
-						$.ready(() => preview.setEnabled(true))
-					}
+					const animId = child.AnimationId
+					preview.addAnimation(animId, child.Name)
+					preview.playAnimation(animId)
 				}
-			})
+			}
+
+			if(assetPreview || isAnimation) {
+				preview.setVisible(true)
+
+				if(isAnimation) {
+					preview.applyAnimationPlayerType = true
+				}
+
+				if(!autoLoading && (previewerMode === "always" || previewerMode === "animations" && isAnimation)) {
+					autoLoading = true
+					$.ready(() => preview.setEnabled(true))
+				}
+			}
 		}
 
 		if(isBundle) {
-			const url = `https://catalog.roblox.com/v1/bundles/${assetId}/details`
-			$.fetch(url).then(async resp => {
-				const data = await resp.json()
-
-				data.items.forEach(item => {
-					if(item.type === "Asset") {
-						addAssetPreview(item.id, item.name)
-					} else if(item.type === "UserOutfit") {
-						bundleOutfitId = item.id
-						preview.setBundleOutfit(bundleOutfitId)
-						
-						if(data.bundleType !== "AvatarAnimations") {
-							preview.selectOutfit("bundle")
-						}
+			const details = await RobloxApi.catalog.getBundleDetails(assetId)
+			
+			for(const item of details.items) {
+				if(item.type === "Asset") {
+					addAssetPreview(item.id, item.name)
+				} else if(item.type === "UserOutfit") {
+					bundleOutfitId = item.id
+					preview.setBundleOutfit(bundleOutfitId)
+					
+					if(data.bundleType !== "AvatarAnimations") {
+						preview.selectOutfit("bundle")
 					}
-				})
-			})
+				}
+			}
 		} else if(isPackage) {
-			AssetCache.loadText(assetId, text => {
-				text.split(";").forEach(itemId => {
-					addAssetPreview(itemId)
-				})
-			})
+			const text = await AssetCache.loadText(assetId)
+			
+			for(const itemId of text.split(";")) {
+				addAssetPreview(itemId)
+			}
 		} else {
 			const isAnim = AnimationPreviewAssetTypeIds.includes(assetTypeId)
 			const isAsset = WearableAssetTypeIds.includes(assetTypeId)
@@ -760,7 +758,7 @@ pageInit.itemdetails = function(category, assetIdString) {
 				apply()
 			})
 		} else {
-			getProductInfo(assetId).then(data => {
+			RobloxApi.api.getProductInfo(assetId).then(data => {
 				({ Created: createdTS, Updated: updatedTS } = data)
 				apply()
 			})

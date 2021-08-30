@@ -133,17 +133,6 @@ const ProhibitedReasons = {
 	UnderReview: "This game is under moderation review."
 }
 
-
-async function getUncachedProductInfo(assetId) {
-	const response = await $.fetch(`https://api.roblox.com/marketplace/productinfo?assetId=${assetId}`)
-	return response.json()
-}
-
-const productCache = {}
-function getProductInfo(assetId) {
-	return productCache[assetId] = productCache[assetId] || getUncachedProductInfo(assetId)
-}
-
 function getRobloxTimeZoneString() {
 	const month = startDate.getUTCMonth() + 1
 	const date = startDate.getUTCDate()

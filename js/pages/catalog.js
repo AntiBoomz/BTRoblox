@@ -49,7 +49,7 @@ pageInit.catalog = function() {
 			if(!Number.isSafeInteger(+assetId)) { return }
 	
 			if(assetType !== "bundles") {
-				getProductInfo(assetId).then(data => {
+				RobloxApi.api.getProductInfo(assetId).then(data => {
 					const ulabel = self.$find(".btr-updated-label")
 					ulabel.textContent = `${$.dateSince(data.Updated)}`
 					ulabel.parentNode.title = ulabel.parentNode.textContent

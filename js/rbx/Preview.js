@@ -918,8 +918,6 @@ const HoverPreview = (() => {
 	const frontCameraRotation = [0.15, 0.25, 0]
 	const backCameraRotation = [0.15, 2.89, 0]
 
-	const bundleCache = {}
-	const assetCache = {}
 	const lastPreviewedAssets = []
 	const invalidAssets = {}
 	let preview
@@ -1201,66 +1199,31 @@ const HoverPreview = (() => {
 					}
 
 					preview.setEnabled(true)
-					thumbCont.classList.add("btr-preview-loading")
 				}
 				
-				let assetDetailsPromise
-
-				if(isBundle) {
-					assetDetailsPromise = bundleCache[assetId] = bundleCache[assetId] ||
-						$.fetch(`https://catalog.roblox.com/v1/bundles/${assetId}/details`).then(async resp => {
-							const json = await resp.json()
-							const outfit = json.items.find(x => x.type === "UserOutfit")
-
-							const detailsResp = await $.fetch(`https://catalog.roblox.com/v1/catalog/items/details`, {
-								method: "POST",
-								headers: { "Content-Type": "application/json" },
-								body: JSON.stringify({
-									items: json.items.filter(x => x.type === "Asset").map(x => ({ id: x.id, itemType: "Asset" }))
-								}),
-								xsrf: true
-							})
-
-							const details = await detailsResp.json()
-							return { items: details.data, outfitId: outfit ? outfit.id : null }
-						})
-				} else {
-					assetDetailsPromise = assetCache[assetId] = assetCache[assetId] || $.fetch(`https://catalog.roblox.com/v1/catalog/items/details`, {
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({
-							items: [{ id: assetId, itemType: "Asset" }]
-						}),
-						xsrf: true
-					}).then(async resp => {
-						const json = await resp.json()
-						return { items: json.data }
-					})
-				}
-
-				assetDetailsPromise.then(async details => {
+				const addItems = async (items, outfitId) => {
 					if(debounceCounter !== debounce) { return }
-
-					if(details.outfitId) {
-						targetOutfitId = details.outfitId
+					
+					if(outfitId) {
+						targetOutfitId = outfitId
 					}
 
 					let curAnim
-					details.items.forEach(item => {
-						if(WearableAssetTypeIds.includes(item.assetType)) {
-							addAssetPreview(item.id)
-						} else if(AnimationPreviewAssetTypeIds.includes(item.assetType)) {
-							if(!curAnim || item.assetType === 61 || item.assetType === 51 && curAnim.assetType !== 61) {
+					items.forEach(item => {
+						if(WearableAssetTypeIds.includes(item.AssetTypeId)) {
+							addAssetPreview(item.AssetId)
+						} else if(AnimationPreviewAssetTypeIds.includes(item.AssetTypeId)) {
+							if(!curAnim || item.AssetTypeId === 61 || item.AssetTypeId === 51 && curAnim.AssetTypeId !== 61) {
 								curAnim = item
 							}
 						}
 					})
 
 					if(curAnim) {
-						if(curAnim.assetType === 24) {
-							addAssetPreview(curAnim.id, true)
-						} else if(curAnim.assetType === 61) {
-							const model = await AssetCache.loadModel(curAnim.id)
+						if(curAnim.AssetTypeId === 24) {
+							addAssetPreview(curAnim.AssetId, true)
+						} else if(curAnim.AssetTypeId === 61) {
+							const model = await AssetCache.loadModel(curAnim.AssetId)
 							if(debounceCounter !== debounce) { return }
 
 							const anim = model.find(x => x.ClassName === "Animation")
@@ -1270,7 +1233,7 @@ const HoverPreview = (() => {
 								addAssetPreview(animId, true)
 							}
 						} else {
-							const model = await AssetCache.loadModel(curAnim.id)
+							const model = await AssetCache.loadModel(curAnim.AssetId)
 							if(debounceCounter !== debounce) { return }
 
 							const folder = model.find(x => x.Name === "R15Anim" && x.ClassName === "Folder")
@@ -1285,9 +1248,28 @@ const HoverPreview = (() => {
 							}
 						}
 					}
-
+					
 					finalizeLoad()
-				})
+				}
+				
+				thumbCont.classList.add("btr-preview-loading")
+				
+				if(isBundle) {
+					const details = await RobloxApi.catalog.getBundleDetails(assetId)
+					
+					const outfit = details.items.find(x => x.type === "UserOutfit")
+					const assets = details.items.filter(x => x.type === "Asset")
+					
+					const items = await Promise.all(
+						assets.map(x => RobloxApi.api.getProductInfo(x.id))
+					)
+					
+					addItems(items, outfit ? outfit.id : null)
+				} else {
+					const info = await RobloxApi.api.getProductInfo(assetId)
+					
+					addItems([info])
+				}
 			})
 		}
 	}

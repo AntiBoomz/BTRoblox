@@ -159,7 +159,7 @@ pageInit.gamedetails = function(placeId) {
 
 				if(!rootPlaceName) {
 					const anchor = box.$find(".btr-universe-name")
-					getProductInfo(rootPlaceId).then(data => {
+					RobloxApi.api.getProductInfo(rootPlaceId).then(data => {
 						anchor.textContent = data.Name
 						anchor.href = `/games/${rootPlaceId}/${formatUrlName(data.Name)}`
 					})
@@ -189,7 +189,7 @@ pageInit.gamedetails = function(placeId) {
 			})
 		})
 	
-	getProductInfo(placeId).then(data => {
+	RobloxApi.api.getProductInfo(placeId).then(data => {
 		watcher.$watch(".game-stats-container").$then()
 			.$watch(
 				".game-stat .text-lead",
