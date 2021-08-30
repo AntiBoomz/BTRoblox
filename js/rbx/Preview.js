@@ -217,7 +217,7 @@ const RBXPreview = (() => {
 
 		setOutfitAccessoriesVisible(bool) {
 			this.outfitAccessoriesVisible = !!bool
-
+			
 			this.outfitAssets.forEach(asset => {
 				if(asset.accessories.length) {
 					asset.setEnabled(this.outfitAccessoriesVisible)
@@ -466,12 +466,12 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		const buttons = this.buttons = html`
 		<div class=btr-thumb-btn-container>
 			<div class="btr-thumb-btn btn-control-xs btr-hats-btn"><span class=btr-icon-hat></span></div>
-			<div class="btr-thumb-btn btn-control-xs btr-body-btn"><span class=btr-icon-body></span></div>
+			<div class="btr-thumb-btn btn-control-xs btr-body-btn checked"><span class=btr-icon-body></span></div>
 			<div class="btr-thumb-btn btn-control-xs btr-preview-btn"><span class=btr-icon-preview></span></div>
 			<div class="btr-thumb-popup btr-body-popup">
 
 				<div class=btr-body-outfits>
-					<label>Outfits</label>
+					<label class=btr-outfit-header>Outfits</label>
 
 					<div class="btr-body-outfit-btn selected" data-outfit=current>
 						<div class=btr-body-outfit-icon>
@@ -605,24 +605,6 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 			this.setPlayerType(typeInput.checked ? "R15" : "R6")
 		})
 
-		buttons.$on("click", ".btr-hats-btn", ev => {
-			const self = ev.currentTarget
-			const disabled = !self.classList.contains("checked")
-			self.classList.toggle("checked", disabled)
-
-			this.setOutfitAccessoriesVisible(!disabled)
-		})
-
-		/*
-		buttons.$on("click", ".btr-body-btn", ev => {
-			const self = ev.currentTarget
-			const disabled = !self.classList.contains("checked")
-			self.classList.toggle("checked", disabled)
-
-			this.setPackagesVisible(!disabled)
-		})
-		*/
-
 		buttons.$on("click", ".btr-body-outfit-btn", ev => {
 			const self = ev.currentTarget
 			const target = self.dataset.outfit
@@ -644,7 +626,13 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		}
 
 		$.ready(disableOrigThumbs)
-
+		
+		const hatsBtn = this.hatsBtn = buttons.$find(".btr-hats-btn")
+		hatsBtn.classList.toggle("checked", this.outfitAccessoriesVisible)
+		hatsBtn.$on("click", () => {
+			this.setOutfitAccessoriesVisible(!this.outfitAccessoriesVisible)
+		})
+		
 		const previewBtn = buttons.$find(".btr-preview-btn")
 		
 		this.on("enabled", () => {
@@ -720,6 +708,11 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 
 		this.buttons.$findAll(".btr-body-outfit-btn.selected").forEach(x => x.classList.remove("selected"))
 		this.buttons.$find(`.btr-body-outfit-btn[data-outfit="${target}"]`).classList.add("selected")
+	}
+	
+	setOutfitAccessoriesVisible(bool) {
+		super.setOutfitAccessoriesVisible(bool)
+		this.hatsBtn.classList.toggle("checked", this.outfitAccessoriesVisible)
 	}
 
 	setVisible(bool) {
