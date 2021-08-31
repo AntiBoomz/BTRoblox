@@ -1,0 +1,101 @@
+{
+	"manifest_version": 2,
+
+	"name": "BTRoblox - Making Roblox Better",
+	"short_name": "BTRoblox",
+	"description": "Enhance your Roblox experience!",
+	"version": "2.18.7",
+	"author": "AntiBoomz",
+
+	"browser_action": {
+		"default_title": "Open BTRoblox Settings"
+	},
+
+	"icons": {
+		"128": "res/icon_128.png"
+	},
+
+	"browser_specific_settings": {
+		"gecko": {
+			"id": "btroblox@antiboomz.com",
+			"strict_min_version": "74.0"
+		}
+	},
+	
+	"background": {
+		"scripts": [
+			"js/common.js",
+			"js/utility.js",
+			"js/background/blogfeed.js",
+			"js/background/groupshout.js",
+			"js/background/contextmenu.js",
+			"js/background/browseraction.js",
+			"js/background/messaging.js"
+		]
+	},
+
+	"permissions": [
+		"*://*.roblox.com/",
+		"*://*.rbxcdn.com/",
+		"clipboardWrite",
+		"contextMenus",
+		"notifications",
+		"storage"
+	],
+
+	"web_accessible_resources": [
+		"res/*", "css/*"
+	],
+
+	"content_scripts": [
+		{
+			"matches": ["*://www.roblox.com/*", "*://web.roblox.com/*"],
+			"js": [
+				"js/pages.js",
+				"js/inject.js",
+				"js/common.js",
+				"js/utility.js",
+
+				"js/util/modifyTemplate.js",
+				"js/util/loadOptionalLibrary.js",
+				
+				"js/feat/themes.js",
+				"js/feat/adblock.js",
+				"js/feat/fastSearch.js",
+				"js/feat/navigation.js",
+				"js/feat/robuxToCash.js",
+
+				"js/rbx/FileFormat/ByteReader.js",
+				"js/rbx/FileFormat/Instance.js",
+				"js/rbx/FileFormat/XmlParser.js",
+				"js/rbx/FileFormat/BinaryParser.js",
+				"js/rbx/FileFormat/MeshParser.js",
+				
+				"js/rbx/AnimationParser.js",
+				"js/rbx/Parser.js",
+				"js/rbx/AssetCache.js",
+				"js/rbx/RobloxApi.js",
+
+				"js/pages/common.js",
+				"js/pages/avatar.js",
+				"js/pages/catalog.js",
+				"js/pages/develop.js",
+				"js/pages/friends.js",
+				"js/pages/gamedetails.js",
+				"js/pages/groups.js",
+				"js/pages/groupadmin.js",
+				"js/pages/home.js",
+				"js/pages/inventory.js",
+				"js/pages/itemdetails.js",
+				"js/pages/messages.js",
+				"js/pages/money.js",
+				"js/pages/placeconfig.js",
+				"js/pages/profile.js",
+				
+				"js/main.js"
+			],
+			"run_at": "document_start",
+			"all_frames": true
+		}
+	]
+}

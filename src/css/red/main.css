@@ -1,0 +1,124 @@
+
+body .rbx-header {
+	background:rgb(190,0,0);
+}
+
+body .btr-nav-notif {
+	border-color: rgb(190,0,0);
+}
+
+
+html body .forum-table-header,
+html body .forum-table-header th,
+html body .forum-table-footer {
+	background:rgb(170,0,0);
+}
+
+body .btn-secondary:active, 
+body .btn-secondary-lg:active, 
+body .btn-secondary-md:active, 
+body .btn-secondary-sm:active, 
+body .btn-secondary-xs:active, 
+body .btn-secondary:visited, 
+body .btn-secondary-lg:visited, 
+body .btn-secondary-md:visited, 
+body .btn-secondary-sm:visited, 
+body .btn-secondary-xs:visited, 
+body .btn-secondary.active, 
+body .active.btn-secondary-lg, 
+body .active.btn-secondary-md, 
+body .active.btn-secondary-sm, 
+body .active.btn-secondary-xs {
+	background:rgb(255,90,90);
+}
+
+body .btn-secondary, 
+body .btn-secondary-lg, 
+body .btn-secondary-md, 
+body .btn-secondary-sm, 
+body .btn-secondary-xs {
+	background:rgb(255,0,0);
+	border-color:rgb(255,0,0);
+}
+
+body .btn-secondary:hover, 
+body .btn-secondary-lg:hover, 
+body .btn-secondary-md:hover, 
+body .btn-secondary-sm:hover, 
+body .btn-secondary-xs:hover, 
+body .btn-secondary:focus, 
+body .btn-secondary-lg:focus, 
+body .btn-secondary-md:focus, 
+body .btn-secondary-sm:focus, 
+body .btn-secondary-xs:focus {
+	background:rgb(255,90,90);
+	border-color:rgb(255,90,90);
+}
+
+body .rbx-dropdown-menu li:hover,
+body .rbx-header .rbx-navbar-search .rbx-navbar-search-option.selected {
+	box-shadow:4px 0 0 0 rgb(255,0,0) inset
+}
+
+body .rbx-tabs-horizontal .rbx-tab.active .rbx-tab-heading,
+body .rbx-tabs-horizontal .rbx-tab-heading:hover, 
+body .rbx-tabs-horizontal .rbx-tab-heading:focus, 
+body .rbx-tabs-horizontal .rbx-tab-heading:active {
+	box-shadow:0 -4px 0 0 rgb(255,0,0) inset;
+}
+
+body .btn-neutral, 
+body .btn-neutral:link, 
+body .btn-neutral:active, 
+body .btn-neutral:visited {
+	-webkit-filter: hue-rotate(150deg);
+}
+
+
+/* Now links. Switch blue and red hex values */
+
+body a:link, 
+body a:visited, 
+body a:active {
+	color:#C34500;
+}
+
+body a.linkSmallBold:visited, 
+body a.linkMenuSink:visited {
+	color:#C30000;
+}
+
+body .BadAdButton:link,
+body .rbx-link, 
+body .rbx-link-sm, 
+body .rbx-link-xs, 
+body .rbx-link:link, 
+body .rbx-link-sm:link, 
+body .rbx-link-xs:link, 
+body .rbx-link:visited, 
+body .rbx-link-sm:visited, 
+body .rbx-link-xs:visited, 
+body .rbx-link:active, 
+body .rbx-link-sm:active, 
+body .rbx-link-xs:active,
+body .vlist .list-item .list-body .list-content a, 
+body .vlist .list-item .list-body .list-content a:link, 
+body .vlist .list-item .list-body .list-content a:visited, 
+body .vlist .list-item .list-body .list-content a:active {
+	color:rgb(255,90,90)
+}
+
+body #Footer.footer-container .Legalese {
+	color:#c19f89;
+}
+
+body #Footer.footer-container a, 
+body #Footer.footer-container a, 
+body #Footer.footer-container a, 
+body #Footer.footer-container .FooterNav {
+	color:#8F522D;
+}
+
+body #Footer.footer-container .legal {
+	border-top-color:#955C35;
+}

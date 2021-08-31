@@ -1,6 +1,5 @@
-.vscode
-res_dev
-bin
-switch.bat
-deprecated
 .gitignore
+.vscode
+.out
+dev
+bin

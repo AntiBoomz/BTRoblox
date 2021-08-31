@@ -1,10 +1,9 @@
 .gitignore export-ignore
 .gitattributes export-ignore
-lib/three.js export-ignore
+src/dev export-ignore
+src/res -diff -merge
 bin export-ignore
 img export-ignore
-res -diff -merge
-*.svg -diff
 README.md export-ignore
 PRIVACY.md export-ignore
 manifest.firefox.json export-ignore

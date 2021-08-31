@@ -1,0 +1,97 @@
+html {
+	--btr-theme-color: #212121;
+	background: var(--btr-theme-color) url(/res/bgTexture.png) left top repeat fixed !important;
+	min-height: 100%;
+}
+
+html body,
+html body.light-theme {
+	background: none;
+}
+
+/* Header */
+
+#header,
+.btr-settings-header {
+	background: #0a0a0a;
+}
+
+#header .btr-nav-notif {
+	border-color: #0a0a0a;
+}
+
+#header .rbx-navbar li .nav-menu-title:hover {
+	background-color: rgba(230, 230, 230, 0.1);
+}
+
+
+/* Sidebar */
+
+#navigation {
+	background: #121212;
+	color: #FFF;
+}
+
+#navigation li a {
+	color: #FFF;
+}
+
+#navigation .rbx-scrollbar li a:not(:hover) span[class^="icon"] {
+	filter: invert(100%);
+}
+
+
+/* Body */
+
+html .container-main > .content,
+html #BodyWrapper {
+	position: relative;
+	margin-top: 40px;
+	margin-bottom: 40px;
+	padding-top: 0;
+	padding-bottom: 0;
+}
+
+html .container-main > .content::before,
+html #BodyWrapper::before {
+	content: " ";
+	display: block;
+
+	position: absolute;
+	left: -12px;
+	top: -12px;
+	right: -12px;
+	bottom: -12px;
+
+	background: inherit;
+	border-radius: 2px;
+	z-index: -1;
+}
+
+
+/* Footer */
+
+html .container-footer {
+	background: #0a0a0a;
+}
+
+.container-footer .footer-links li a:not(.privacy):hover {
+	color: rgba(255, 255, 255, 1);
+}
+
+.container-footer .footer-links li a {
+	color: rgba(255, 255, 255, .7);
+}
+
+
+/* Feed */
+
+#navigation .btr-feedtitle,
+#navigation .btr-feeddesc {
+	color: rgba(255, 255, 255, .7);
+}
+
+#navigation .btr-feeddate, 
+#navigation .btr-feedcreator {
+	color: rgba(255, 255, 255, .5);
+}

@@ -1,0 +1,200 @@
+div.content {
+	padding-left: 12px;
+	padding-right: 12px;
+}
+
+div.content {
+	max-width: 1208px;
+}
+
+.btr-hide-ads div.content {
+	max-width: 1024px;
+}
+
+div.page-content {
+	max-width: 1000px;
+}
+
+/* Main container */
+
+body .btr-game-main-container {
+	padding: 0 12px 12px;
+}
+
+.light-theme .btr-game-main-container {
+	padding: 12px;
+}
+
+.btr-game-main-container .game-main-content {
+	background: none;
+	padding-left: 0;
+	padding-right: 0;
+}
+
+.btr-game-main-container .game-calls-to-action .game-title-container {
+	padding-right: 30px;
+}
+
+.btr-description {
+	float: left;
+	width: 100%;
+	padding: 0;
+}
+
+.btr-description .game-description {
+	padding: 6px 12px;
+	margin-bottom: 10px;
+}
+
+
+/* Badges */
+
+.btr-badges-container {
+	margin-bottom: 18px;
+}
+
+.btr-badges-container .badge-row { /* Badge height + 10px */
+	min-height:110px;
+	max-height:160px; /* Regular height */
+	height:auto;
+}
+
+.btr-badges-container .badge-row .badge-image,
+.btr-badges-container .badge-row .badge-image img,
+.btr-badges-container .badge-row .badge-image thumbnail-2d { /* Regular size is 150x150 */
+	width: 100px;
+	height: 100px;
+}
+
+.btr-badges-container .badge-row .badge-content {
+	width: calc(100% - 100px);
+}
+
+.btr-badges-container .badge-row .badge-data-container {
+	width: 60%;
+}
+
+.btr-badges-container .badge-row .badge-data-container>p {
+	height: 72px;
+	margin: 4px 4px;
+
+	overflow: hidden;
+}
+
+.btr-badges-container .badge-row .badge-stats-container {
+	width: 40%;
+	margin-top: 18px;
+}
+
+.btr-badges-container .badge-row {
+	transition: opacity 1s;
+}
+
+.btr-badges-container .badge-row.btr-notowned {
+	opacity: .5;
+}
+
+.btr-badges-container .badge-row.btr-badgeownedloading:before {
+	position: absolute;
+	content: "";
+	width: 16px;
+	height: 16px;
+	background: url(/res/loading1.gif) transparent no-repeat;
+	opacity: 0.5;
+}
+
+/* Universe Box */
+
+.btr-universe-box {
+	height: 50px;
+	padding: 12px 20px;
+	margin: 0 0 12px;
+
+	background-color: #EFFAFF;
+
+	color: #555;
+	font-size: 18px;
+	font-weight: 400;
+	line-height: 26px;
+
+	box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.btr-universe-visit-button {
+	display: inline-block;
+	float: right;
+	margin-top: -5px;
+}
+
+/* Servers */
+
+.btr-gamedetails #game-instances .stack-list .stack-row {
+	border: 1px solid #E3E3E3;
+}
+
+.dark-theme.btr-gamedetails #game-instances .stack-list .stack-row {
+	border-color: #656668;
+}
+
+/* Pager */
+
+.rbx-running-games-footer .pager.btr-server-pager {
+	display: flex;
+	justify-content: center;
+	align-items: center
+}
+
+.btr-server-pager .pager-cur input {
+	width: 44px;
+	height: 26px;
+	padding: 2px 5px;
+
+	margin-right: 6px;
+
+	text-align: center;
+}
+
+/* VIP Servers */
+
+.btr-gamedetails .rbx-private-server-details {
+	padding-top: 8px;
+}
+
+.btr-gamedetails .rbx-private-server-details .owner-avatar {
+	display: none !important;
+}
+
+/* Developer Store */
+
+#rbx-passes-container .store-card,
+#rbx-gear-container .store-card {
+	border: 1px solid #E3E3E3;
+}
+
+
+.dark-theme.btr-gamedetails #rbx-passes-container .store-card,
+.dark-theme.btr-gamedetails #rbx-gear-container .store-card {
+	border-color: #656668;
+}
+
+.dark-theme.btr-gamedetails .store-card .store-card-caption {
+	border-top-color: #656668;
+}
+
+/* Other */
+
+.btr-gamedetails .section-content-off {
+	background: transparent !important;
+}
+
+.btr-gamedetails #about #rbx-private-servers {
+	display: none !important;
+}
+
+.btr-gamedetails #my-recommended-games .hlist {
+	text-align: center;
+}
+
+.btr-gamedetails #about .btr-compat-rtrack {
+	display: none;
+}
