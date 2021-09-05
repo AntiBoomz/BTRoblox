@@ -139,8 +139,7 @@ const SETTINGS = {
 	defaultSettings: {
 		_version: 2,
 		general: {
-			theme: { value: "default", validValues: ["default", "simblk", "sky", "red", "night"] },
-			disableRobloxThemes: { value: false },
+			theme: { value: "default", validValues: ["default", "simblk", "sky", "red"] },
 
 			hideAds: { value: false },
 			hideChat: { value: false },

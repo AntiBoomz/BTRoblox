@@ -21,7 +21,6 @@ const btrSettingsModal = (() => {
 								<option value=simblk>Simply Black</option>
 								<option value=sky>Sky</option>
 								<option value=red>Red</option>
-								<option value=night>Dark As Night</option>
 							</optgroup>
 						</select>
 						<checkbox label="Legacy Theme Compatibility Mode" path=disableRobloxThemes></checkbox>
