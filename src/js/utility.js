@@ -206,12 +206,9 @@ class SyncPromise extends Promise {
 
 //
 
-const $ = function(selector) { return $.find(document, selector) }
-
-{
-	$.all = function(selector) { return $.findAll(document, selector) }
-		
-
+const $ = (() => {
+	let $
+	
 	const Months = [
 		"January", "February", "March", "April", "May", "June",
 		"July", "August", "September", "October", "November", "December"
@@ -226,122 +223,11 @@ const $ = function(selector) { return $.find(document, selector) }
 		const amt = len - str.length
 		return amt > 0 ? "0".repeat(amt) + str : str
 	}
-
-	const Observers = new WeakMap()
-	const DirectObservers = new WeakMap()
-
-	const handleMutations = (mut, self) => {
-		const listeners = self.listeners
-		let index = 0
-
-		while(index < listeners.length) {
-			const item = listeners[index]
-
-			if(!item.stopped) {
-				item.execute()
-			}
-
-			if(item.stopped) {
-				listeners.splice(index, 1)
-			} else {
-				index++
-			}
-		}
-
-		if(!listeners.length) {
-			self.disconnect()
-			Observers.delete(self.target)
-		}
-	}
-
-	const handleDirectMutations = (mutations, self) => {
-		const listeners = self.listeners
-		let index = 0
-
-		while(index < listeners.length) {
-			const item = listeners[index]
-
-			if(!item.stopped) {
-				for(let mutIndex = 0, mutLen = mutations.length; mutIndex < mutLen; mutIndex++) {
-					const addedNodes = mutations[mutIndex].addedNodes
-					for(let nodeIndex = 0, nodeLen = addedNodes.length; nodeIndex < nodeLen; nodeIndex++) {
-						const node = addedNodes[nodeIndex]
-						if(node.nodeType !== 1) { continue }
-
-						if(item.matches(node)) {
-							item.resolve(node)
-
-							if(item.stopped) {
-								mutIndex = mutations.length // break both loops
-								break
-							}
-						}
-					}
-				}
-			}
-
-			if(item.stopped) {
-				listeners.splice(index, 1)
-			} else {
-				index++
-			}
-		}
-
-		if(!listeners.length) {
-			self.disconnect()
-			DirectObservers.delete(self.target)
-		}
-	}
-
-	const watchAllSelectorRegex = /^((?:#|\.)?[\w-]+|\*)$/
-	const watcherProto = {
-		$watch(...args) {
-			const finishPromise = this.targetPromise.then(target => target.$watch(...args).finishPromise)
-
-			return {
-				targetPromise: this.targetPromise,
-				finishPromise,
-
-				parent: this.parent,
-				__proto__: watcherProto
-			}
-		},
-
-		$watchAll(...args) {
-			this.targetPromise.then(target => {
-				target.$watchAll(...args)
-			})
-
-			return this
-		},
-
-		$then(cb) {
-			const nxt = {
-				targetPromise: this.finishPromise || this.targetPromise,
-				finishPromise: null,
-				
-				parent: this,
-				__proto__: watcherProto
-			}
-
-			if(cb) {
-				nxt.targetPromise.then(cb)
-			}
-
-			return nxt
-		},
-
-		$back() {
-			if(!this.parent) {
-				throw new Error("Cannot call $back on a top level watcher")
-			}
-
-			return this.parent
-		},
-
-		$promise() {
-			return this.finishPromise || this.targetPromise
-		}
+	
+	const Assign = (stuff, data) => {
+		stuff.forEach(constructor => {
+			Object.assign(constructor.prototype, data)
+		})
 	}
 
 	const defaultToDict = (x, v) => x[v] = true
@@ -350,89 +236,450 @@ const $ = function(selector) { return $.find(document, selector) }
 	const immediatePromise = Promise.resolve()
 	let cachedXsrfToken
 	let DTF
-
-	const addWatch = (target, selector, filter, props, resolve) => {
-		const item = {
-			checked: new WeakSet(),
-			foundFirst: false,
-			stopped: false,
-
-			resolve(node) {
-				if(props && props.continuous) {
-					resolve(node, () => this.stopped = true)
-				} else {
-					this.stopped = true
-					resolve(node)
-				}
-			},
-
-			execute() {
-				if(!this.foundFirst) {
-					const elem = target.$find(selector)
-
-					if(!elem) {
-						return
-					}
-
-					this.foundFirst = true
-					this.checked.add(elem)
-
-					if(!filter || filter(elem)) {
-						item.resolve(elem)
 	
-						if(item.stopped) {
-							return
+	if(self.document) {
+		$ = function(selector) { return $.find(document, selector) }
+		$.all = function(selector) { return $.findAll(document, selector) }
+		
+		const Observers = new WeakMap()
+		const DirectObservers = new WeakMap()
+	
+		const handleMutations = (mut, self) => {
+			const listeners = self.listeners
+			let index = 0
+	
+			while(index < listeners.length) {
+				const item = listeners[index]
+	
+				if(!item.stopped) {
+					item.execute()
+				}
+	
+				if(item.stopped) {
+					listeners.splice(index, 1)
+				} else {
+					index++
+				}
+			}
+	
+			if(!listeners.length) {
+				self.disconnect()
+				Observers.delete(self.target)
+			}
+		}
+	
+		const handleDirectMutations = (mutations, self) => {
+			const listeners = self.listeners
+			let index = 0
+	
+			while(index < listeners.length) {
+				const item = listeners[index]
+	
+				if(!item.stopped) {
+					for(let mutIndex = 0, mutLen = mutations.length; mutIndex < mutLen; mutIndex++) {
+						const addedNodes = mutations[mutIndex].addedNodes
+						for(let nodeIndex = 0, nodeLen = addedNodes.length; nodeIndex < nodeLen; nodeIndex++) {
+							const node = addedNodes[nodeIndex]
+							if(node.nodeType !== 1) { continue }
+	
+							if(item.matches(node)) {
+								item.resolve(node)
+	
+								if(item.stopped) {
+									mutIndex = mutations.length // break both loops
+									break
+								}
+							}
 						}
 					}
 				}
+	
+				if(item.stopped) {
+					listeners.splice(index, 1)
+				} else {
+					index++
+				}
+			}
+	
+			if(!listeners.length) {
+				self.disconnect()
+				DirectObservers.delete(self.target)
+			}
+		}
+	
+		const watchAllSelectorRegex = /^((?:#|\.)?[\w-]+|\*)$/
+		const watcherProto = {
+			$watch(...args) {
+				const finishPromise = this.targetPromise.then(target => target.$watch(...args).finishPromise)
+	
+				return {
+					targetPromise: this.targetPromise,
+					finishPromise,
+	
+					parent: this.parent,
+					__proto__: watcherProto
+				}
+			},
+	
+			$watchAll(...args) {
+				this.targetPromise.then(target => {
+					target.$watchAll(...args)
+				})
+	
+				return this
+			},
+	
+			$then(cb) {
+				const nxt = {
+					targetPromise: this.finishPromise || this.targetPromise,
+					finishPromise: null,
+					
+					parent: this,
+					__proto__: watcherProto
+				}
+	
+				if(cb) {
+					nxt.targetPromise.then(cb)
+				}
+	
+				return nxt
+			},
+	
+			$back() {
+				if(!this.parent) {
+					throw new Error("Cannot call $back on a top level watcher")
+				}
+	
+				return this.parent
+			},
+	
+			$promise() {
+				return this.finishPromise || this.targetPromise
+			}
+		}
+			
+		const addWatch = (target, selector, filter, props, resolve) => {
+			const item = {
+				checked: new WeakSet(),
+				foundFirst: false,
+				stopped: false,
 
-				const matches = target.$findAll(selector)
+				resolve(node) {
+					if(props && props.continuous) {
+						resolve(node, () => this.stopped = true)
+					} else {
+						this.stopped = true
+						resolve(node)
+					}
+				},
 
-				for(let index = 0, len = matches.length; index < len; index++) {
-					const match = matches[index]
+				execute() {
+					if(!this.foundFirst) {
+						const elem = target.$find(selector)
 
-					if(!this.checked.has(match)) {
-						this.checked.add(match)
+						if(!elem) {
+							return
+						}
 
-						if(!filter || filter(match)) {
-							this.resolve(match)
+						this.foundFirst = true
+						this.checked.add(elem)
 
-							if(this.stopped) {
+						if(!filter || filter(elem)) {
+							item.resolve(elem)
+		
+							if(item.stopped) {
 								return
+							}
+						}
+					}
+
+					const matches = target.$findAll(selector)
+
+					for(let index = 0, len = matches.length; index < len; index++) {
+						const match = matches[index]
+
+						if(!this.checked.has(match)) {
+							this.checked.add(match)
+
+							if(!filter || filter(match)) {
+								this.resolve(match)
+
+								if(this.stopped) {
+									return
+								}
 							}
 						}
 					}
 				}
 			}
-		}
 
-		item.execute()
+			item.execute()
 
-		if(!item.stopped) {
-			let observer = Observers.get(target)
+			if(!item.stopped) {
+				let observer = Observers.get(target)
 
-			if(!observer) {
-				observer = new MutationObserver(handleMutations)
-				Observers.set(target, observer)
+				if(!observer) {
+					observer = new MutationObserver(handleMutations)
+					Observers.set(target, observer)
 
-				observer.listeners = []
-				observer.target = target
+					observer.listeners = []
+					observer.target = target
 
-				observer.observe(target, { childList: true, subtree: true })
+					observer.observe(target, { childList: true, subtree: true })
+				}
+
+				observer.listeners.push(item)
 			}
-
-			observer.listeners.push(item)
 		}
+		
+		Object.assign($, {
+			ready(fn) {
+				if(document.readyState !== "loading") {
+					fn()
+				} else {
+					document.addEventListener("DOMContentLoaded", fn, { once: true })
+				}
+			},
+
+			wrapWith(self, wrap) {
+				self.before(wrap)
+				wrap.append(self)
+			},
+
+			watch(target, selectors, filter, callback, props) {
+				if(typeof callback !== "function") {
+					props = callback
+					callback = filter
+					filter = null
+				}
+
+				if((target instanceof Document) || (target instanceof DocumentFragment)) {
+					target = target.documentElement
+				}
+
+				if(!Array.isArray(selectors)) {
+					selectors = [selectors]
+				}
+
+				let finishPromise
+
+				if(props && props.continuous) {
+					if(selectors.length !== 1) {
+						throw new TypeError("Multiple selectors with continuous watch")
+					}
+
+					addWatch(target, selectors[0], filter, props, node => {
+						try { callback(node) }
+						catch(ex) { console.error(ex) }
+					})
+				} else {
+					const promises = selectors.map(selector => new SyncPromise(resolve => addWatch(target, selector, filter, props, resolve)))
+
+					finishPromise = Promise.all(promises).then(elems => {
+						if(callback) {
+							try { callback(...elems) }
+							catch(ex) { console.error(ex) }
+						}
+		
+						return elems[0]
+					})
+				}
+
+				return {
+					targetPromise: Promise.resolve(target),
+					finishPromise,
+					__proto__: watcherProto
+				}
+			},
+
+			watchAll(target, selector, callback, props = {}) {
+				selector = selector.trim()
+
+				if(!watchAllSelectorRegex.test(selector)) {
+					throw new Error(`Invalid selector '${selector}', only simple selectors allowed`)
+				}
+
+				let matches
+
+				if(selector === "*") {
+					matches = () => true
+				} else if(selector[0] === ".") {
+					const match = selector.slice(1)
+					matches = node => node.classList.contains(match)
+				} else if(selector[0] === "#") {
+					const match = selector.slice(1)
+					matches = node => node.id === match
+				} else {
+					const match = selector.toLowerCase()
+					matches = node => node.nodeName.toLowerCase() === match
+				}
+
+				const item = {
+					once: props.once || false,
+					stopped: false,
+
+					matches,
+					resolve(node) {
+						if(callback) {
+							try { callback(node, () => this.stopped = true) }
+							catch(ex) { console.error(ex) }
+						}
+		
+						if(this.once) {
+							this.stopped = true
+						}
+					}
+				}
+
+				Array.from(target.children).some(node => {
+					if(item.matches(node)) {
+						item.resolve(node)
+					}
+
+					return item.stopped
+				})
+
+				if(!item.stopped) {
+					let observer = DirectObservers.get(target)
+
+					if(!observer) {
+						observer = new MutationObserver(handleDirectMutations)
+						DirectObservers.set(target, observer)
+
+						observer.listeners = []
+						observer.target = target
+
+						observer.observe(target, { childList: true, subtree: false })
+					}
+
+					observer.listeners.push(item)
+				}
+			},
+
+			find(self, selector) {
+				return self.querySelector(selector.replace(/(^|,)\s*(?=>)/g, "$&:scope"))
+			},
+			findAll(self, selector) {
+				return self.querySelectorAll(selector.replace(/(^|,)\s*(?=>)/g, "$&:scope"))
+			},
+
+			empty(self) {
+				while(self.lastChild) { self.removeChild(self.lastChild) }
+			},
+
+			on(self, events, selector, callback, config) {
+				if(typeof selector === "function") { [selector, callback, config] = [null, selector, callback] }
+				if(!self.$events) { Object.defineProperty(self, "$events", { value: {} }) }
+
+				events.split(" ").forEach(eventType => {
+					eventType = eventType.trim()
+
+					const eventName = eventType.replace(/^([^.]+).*$/, "$1")
+					if(!eventName) { return }
+
+					let listeners = self.$events[eventType]
+					if(!listeners) { listeners = self.$events[eventType] = [] }
+
+					const handler = event => {
+						if(!selector) {
+							return callback.call(self, event, self)
+						}
+
+						const fn = event.stopImmediatePropagation
+						let immediateStop = false
+
+						event.stopImmediatePropagation = function() {
+							immediateStop = true
+							return fn.call(this)
+						}
+
+						const path = event.composedPath()
+						const maxIndex = path.indexOf(self)
+						for(let i = 0; i < maxIndex; i++) {
+							const node = path[i]
+
+							if(node.matches(selector)) {
+								Object.defineProperty(event, "currentTarget", { value: node, configurable: true })
+								callback.call(self, event, self)
+								delete event.currentTarget
+
+								if(immediateStop) { break }
+							}
+						}
+
+						delete event.stopImmediatePropagation
+					}
+
+					const listener = {
+						selector, callback,
+						params: [eventName, handler, config]
+					}
+
+					listeners.push(listener)
+					self.addEventListener(...listener.params)
+				})
+
+				return self
+			},
+			once(self, events, selector, callback, config) {
+				if(typeof selector === "function") { [selector, callback, config] = [null, selector, callback] }
+				return this.on(self, events, selector, callback, { ...config, once: true })
+			},
+			off(self, events, selector, callback) {
+				if(!self.$events) { return self }
+				if(typeof selector !== "string") { [selector, callback] = [null, selector] }
+
+				events.split(" ").forEach(eventType => {
+					eventType = eventType.trim()
+
+					const listeners = self.$events[eventType]
+					if(!listeners) { return }
+
+					for(let i = listeners.length; i--;) {
+						const x = listeners[i]
+						if((!selector || x.selector === selector) && (!callback || x.callback === callback)) {
+							self.removeEventListener(...x.params)
+							listeners.splice(i, 1)
+						}
+					}
+
+					if(!listeners.length) {
+						delete self.$events[eventType]
+					}
+				})
+
+				return self
+			},
+			trigger(self, type, init) {
+				self.dispatchEvent(new Event(type, init))
+				return self
+			}
+		})
+		
+		Assign([self.EventTarget, EventTarget], {
+			$on(...args) { return $.on(this, ...args) },
+			$off(...args) { return $.off(this, ...args) },
+			$once(...args) { return $.once(this, ...args) },
+			$trigger(...args) { return $.trigger(this, ...args) }
+		})
+
+		Assign([self.Element, Element, self.Document, Document, self.DocumentFragment, DocumentFragment], {
+			$find(...args) { return $.find(this, ...args) },
+			$findAll(...args) { return $.findAll(this, ...args) },
+			$watch(...args) { return $.watch(this, ...args) },
+			$watchAll(...args) { return $.watchAll(this, ...args) }
+		})
+
+		Assign([self.Node, Node], {
+			$empty() { return $.empty(this) },
+			$wrapWith(...args) { return $.wrapWith(this, ...args) }
+		})
+	} else {
+		$ = {}
 	}
 
 	Object.assign($, {
-		ready(fn) {
-			if(document.readyState !== "loading") {
-				fn()
-			} else {
-				document.addEventListener("DOMContentLoaded", fn, { once: true })
-			}
-		},
+		each(self, cb) { Array.prototype.forEach.call(self, cb) },
 		
 		fetch(url, init = {}) {
 			if(init.body) {
@@ -485,6 +732,17 @@ const $ = function(selector) { return $.find(document, selector) }
 			})
 		},
 		
+		onceFn(fn) {
+			let result
+			return function(...args) {
+				if(fn) {
+					result = fn.apply(this, args)
+					fn = null
+				}
+				return result
+			}
+		},
+		
 		toDict(fn, ...args) {
 			if(typeof fn !== "function" && fn !== null) {
 				throw new TypeError("No function given to toDict")
@@ -495,122 +753,7 @@ const $ = function(selector) { return $.find(document, selector) }
 			args.forEach((val, index) => fn(obj, val, index))
 			return obj
 		},
-
-		wrapWith(self, wrap) {
-			self.before(wrap)
-			wrap.append(self)
-		},
-
-		watch(target, selectors, filter, callback, props) {
-			if(typeof callback !== "function") {
-				props = callback
-				callback = filter
-				filter = null
-			}
-
-			if((target instanceof Document) || (target instanceof DocumentFragment)) {
-				target = target.documentElement
-			}
-
-			if(!Array.isArray(selectors)) {
-				selectors = [selectors]
-			}
-
-			let finishPromise
-
-			if(props && props.continuous) {
-				if(selectors.length !== 1) {
-					throw new TypeError("Multiple selectors with continuous watch")
-				}
-
-				addWatch(target, selectors[0], filter, props, node => {
-					try { callback(node) }
-					catch(ex) { console.error(ex) }
-				})
-			} else {
-				const promises = selectors.map(selector => new SyncPromise(resolve => addWatch(target, selector, filter, props, resolve)))
-
-				finishPromise = Promise.all(promises).then(elems => {
-					if(callback) {
-						try { callback(...elems) }
-						catch(ex) { console.error(ex) }
-					}
-	
-					return elems[0]
-				})
-			}
-
-			return {
-				targetPromise: Promise.resolve(target),
-				finishPromise,
-				__proto__: watcherProto
-			}
-		},
-
-		watchAll(target, selector, callback, props = {}) {
-			selector = selector.trim()
-
-			if(!watchAllSelectorRegex.test(selector)) {
-				throw new Error(`Invalid selector '${selector}', only simple selectors allowed`)
-			}
-
-			let matches
-
-			if(selector === "*") {
-				matches = () => true
-			} else if(selector[0] === ".") {
-				const match = selector.slice(1)
-				matches = node => node.classList.contains(match)
-			} else if(selector[0] === "#") {
-				const match = selector.slice(1)
-				matches = node => node.id === match
-			} else {
-				const match = selector.toLowerCase()
-				matches = node => node.nodeName.toLowerCase() === match
-			}
-
-			const item = {
-				once: props.once || false,
-				stopped: false,
-
-				matches,
-				resolve(node) {
-					if(callback) {
-						try { callback(node, () => this.stopped = true) }
-						catch(ex) { console.error(ex) }
-					}
-	
-					if(this.once) {
-						this.stopped = true
-					}
-				}
-			}
-
-			Array.from(target.children).some(node => {
-				if(item.matches(node)) {
-					item.resolve(node)
-				}
-
-				return item.stopped
-			})
-
-			if(!item.stopped) {
-				let observer = DirectObservers.get(target)
-
-				if(!observer) {
-					observer = new MutationObserver(handleDirectMutations)
-					DirectObservers.set(target, observer)
-
-					observer.listeners = []
-					observer.target = target
-
-					observer.observe(target, { childList: true, subtree: false })
-				}
-
-				observer.listeners.push(item)
-			}
-		},
-
+		
 		setImmediate(cb, ...args) {
 			const key = immediateStatus.counter++
 			immediateStatus[key] = true
@@ -628,108 +771,7 @@ const $ = function(selector) { return $.find(document, selector) }
 		clearImmediate(key) {
 			delete immediateStatus[key]
 		},
-
-		find(self, selector) {
-			return self.querySelector(selector.replace(/(^|,)\s*(?=>)/g, "$&:scope"))
-		},
-		findAll(self, selector) {
-			return self.querySelectorAll(selector.replace(/(^|,)\s*(?=>)/g, "$&:scope"))
-		},
-
-		empty(self) {
-			while(self.lastChild) { self.removeChild(self.lastChild) }
-		},
-
-		on(self, events, selector, callback, config) {
-			if(typeof selector === "function") { [selector, callback, config] = [null, selector, callback] }
-			if(!self.$events) { Object.defineProperty(self, "$events", { value: {} }) }
-
-			events.split(" ").forEach(eventType => {
-				eventType = eventType.trim()
-
-				const eventName = eventType.replace(/^([^.]+).*$/, "$1")
-				if(!eventName) { return }
-
-				let listeners = self.$events[eventType]
-				if(!listeners) { listeners = self.$events[eventType] = [] }
-
-				const handler = event => {
-					if(!selector) {
-						return callback.call(self, event, self)
-					}
-
-					const fn = event.stopImmediatePropagation
-					let immediateStop = false
-
-					event.stopImmediatePropagation = function() {
-						immediateStop = true
-						return fn.call(this)
-					}
-
-					const path = event.composedPath()
-					const maxIndex = path.indexOf(self)
-					for(let i = 0; i < maxIndex; i++) {
-						const node = path[i]
-
-						if(node.matches(selector)) {
-							Object.defineProperty(event, "currentTarget", { value: node, configurable: true })
-							callback.call(self, event, self)
-							delete event.currentTarget
-
-							if(immediateStop) { break }
-						}
-					}
-
-					delete event.stopImmediatePropagation
-				}
-
-				const listener = {
-					selector, callback,
-					params: [eventName, handler, config]
-				}
-
-				listeners.push(listener)
-				self.addEventListener(...listener.params)
-			})
-
-			return self
-		},
-		once(self, events, selector, callback, config) {
-			if(typeof selector === "function") { [selector, callback, config] = [null, selector, callback] }
-			return this.on(self, events, selector, callback, { ...config, once: true })
-		},
-		off(self, events, selector, callback) {
-			if(!self.$events) { return self }
-			if(typeof selector !== "string") { [selector, callback] = [null, selector] }
-
-			events.split(" ").forEach(eventType => {
-				eventType = eventType.trim()
-
-				const listeners = self.$events[eventType]
-				if(!listeners) { return }
-
-				for(let i = listeners.length; i--;) {
-					const x = listeners[i]
-					if((!selector || x.selector === selector) && (!callback || x.callback === callback)) {
-						self.removeEventListener(...x.params)
-						listeners.splice(i, 1)
-					}
-				}
-
-				if(!listeners.length) {
-					delete self.$events[eventType]
-				}
-			})
-
-			return self
-		},
-		trigger(self, type, init) {
-			self.dispatchEvent(new Event(type, init))
-			return self
-		},
-
-		each(self, cb) { Array.prototype.forEach.call(self, cb) },
-
+		
 		dateFormat(date, format) {
 			if(typeof date === "string") {
 				date = new Date(date)
@@ -811,38 +853,13 @@ const $ = function(selector) { return $.find(document, selector) }
 		}
 	})
 
-	const Assign = (stuff, data) => {
-		stuff.forEach(constructor => {
-			Object.assign(constructor.prototype, data)
-		})
-	}
-
-	// Firefox xray stuff, custom constructors ._.'
-
-	Assign([window.EventTarget, EventTarget], {
-		$on(...args) { return $.on(this, ...args) },
-		$off(...args) { return $.off(this, ...args) },
-		$once(...args) { return $.once(this, ...args) },
-		$trigger(...args) { return $.trigger(this, ...args) }
-	})
-
-	Assign([window.Date, Date], {
+	Assign([self.Date, Date], {
 		$format(...args) { return $.dateFormat(this, ...args) },
 		$since(...args) { return $.dateSince(this, ...args) }
 	})
-
-	Assign([window.Element, Element, window.Document, Document, window.DocumentFragment, DocumentFragment], {
-		$find(...args) { return $.find(this, ...args) },
-		$findAll(...args) { return $.findAll(this, ...args) },
-		$watch(...args) { return $.watch(this, ...args) },
-		$watchAll(...args) { return $.watchAll(this, ...args) }
-	})
-
-	Assign([window.Node, Node], {
-		$empty() { return $.empty(this) },
-		$wrapWith(...args) { return $.wrapWith(this, ...args) }
-	})
-}
+	
+	return $
+})()
 
 //
 
