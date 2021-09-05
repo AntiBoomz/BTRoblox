@@ -433,7 +433,7 @@ const btrSettingsModal = (() => {
 			})
 			
 			currencies.filter(x => x.usdRate).sort((a, b) => (a.name < b.name ? -1 : 1)).forEach(currency => {
-				currencySelect.append(html`<option title="Rates are estimations based on USD-${currency.name} exchange rate on August 3rd 2021" value="${currency.name}">${currency.name}*</option>`)
+				currencySelect.append(html`<option title="Rates are estimations based on USD-${currency.name} exchange rate on ${RobuxToCash.UpdateDate}" value="${currency.name}">${currency.name}*</option>`)
 			})
 
 			const setRate = () => {
