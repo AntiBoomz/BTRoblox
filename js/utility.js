@@ -897,38 +897,38 @@ const injectCSS = (...paths) => {
 	
 	for(const path of paths) {
 		const url = getURL(path)
-		const cssRule = addStyleSheet(url)
+		const cssRule = addStyleSheet(IS_DEV_MODE ? `${url}?_=${Date.now()}` : url)
 
 		const styleSheet = { path, cssRule }
 		activeStyleSheets.push(styleSheet)
 
-		// if(IS_DEV_MODE) {
-		// 	let lastCSSText = null
+		if(IS_DEV_MODE) {
+			let lastCSSText = null
 
-		// 	const tryReload = async () => {
-		// 		if(!activeStyleSheets.includes(styleSheet)) {
-		// 			return
-		// 		}
+			const tryReload = async () => {
+				if(!activeStyleSheets.includes(styleSheet)) {
+					return
+				}
 
-		// 		const newUrl = `${url}?_=${Date.now()}`
+				const newUrl = `${url}?_=${Date.now()}`
 
-		// 		const resp = await fetch(newUrl)
-		// 		const cssText = await resp.text()
+				const resp = await fetch(newUrl)
+				const cssText = await resp.text()
 
-		// 		if(cssText !== lastCSSText) {
-		// 			if(lastCSSText !== null) {
-		// 				clearStyleSheet(styleSheet)
-		// 				styleSheet.cssRule = addStyleSheet(newUrl)
-		// 			}
+				if(cssText !== lastCSSText) {
+					if(lastCSSText !== null) {
+						clearStyleSheet(styleSheet)
+						styleSheet.cssRule = addStyleSheet(newUrl)
+					}
 
-		// 			lastCSSText = cssText
-		// 		}
+					lastCSSText = cssText
+				}
 				
-		// 		setTimeout(tryReload, 1.5e3)
-		// 	}
+				setTimeout(tryReload, 1.5e3)
+			}
 
-		// 	setTimeout(tryReload, 1.5e3)
-		// }
+			setTimeout(tryReload, 1.5e3)
+		}
 	}
 }
 
