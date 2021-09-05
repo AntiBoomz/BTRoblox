@@ -1,66 +1,56 @@
 "use strict"
 
 {
-	let shoutFilterPromise = null
-	let shoutCachePromise = null
-	let savingShoutCache = false
-	let savingShoutFilters = false
+	const shoutCheckerQueue = []
+	let numAvailableShoutCheckers = 3
+	let checkingForGroupShouts = false
+	let lastCheckedForGroups = 0
+	
+	const getShoutCache = $.onceFn(() => new SyncPromise(resolve => {
+		const result = { version: 9, groups: {} }
 
-	const getShoutCache = () => {
-		if(shoutCachePromise) { return shoutCachePromise }
+		STORAGE.get("shoutCache", data => {
+			const saved = data.shoutCache
 
-		return shoutCachePromise = new SyncPromise(resolve => {
-			const cache = { version: 5 }
+			if(saved && saved.version === result.version) {
+				Object.assign(result, saved)
+			}
 
-			STORAGE.get("shoutCache", data => {
-				const saved = data.shoutCache
-
-				if(saved && saved.version === cache.version) {
-					Object.assign(cache, saved)
-				}
-
-				resolve(cache)
-			})
+			resolve(result)
 		})
-	}
-
+	}))
+	
+	let savingShoutCache = false
 	const saveShoutCache = () => {
-		if(savingShoutCache) {
-			return
-		}
+		if(savingShoutCache) { return }
 
 		savingShoutCache = true
 		setTimeout(async () => {
-			const cache = await getShoutCache()
-			STORAGE.set({ shoutCache: cache })
+			const shoutCache = await getShoutCache()
+			STORAGE.set({ shoutCache: shoutCache })
 
 			savingShoutCache = false
-		}, 100)
+		}, 1000)
 	}
 	
-	const getShoutFilters = () => {
-		if(shoutFilterPromise) { return shoutFilterPromise }
+	const getShoutFilters = $.onceFn(() => new SyncPromise(resolve => {
+		STORAGE.get("shoutFilters", data => {
+			if("shoutFilters" in data) {
+				resolve(data.shoutFilters)
+				return
+			}
 
-		return shoutFilterPromise = new SyncPromise(resolve => {
-			STORAGE.get("shoutFilters", data => {
-				if("shoutFilters" in data) {
-					resolve(data.shoutFilters)
-					return
-				}
-
-				resolve({
-					mode: "blacklist",
-					blacklist: [],
-					whitelist: []
-				})
+			resolve({
+				mode: "blacklist",
+				blacklist: [],
+				whitelist: []
 			})
 		})
-	}
+	}))
 	
+	let savingShoutFilters
 	const saveShoutFilters = () => {
-		if(savingShoutFilters) {
-			return
-		}
+		if(savingShoutFilters) { return }
 
 		savingShoutFilters = true
 		setTimeout(async () => {
@@ -71,95 +61,68 @@
 		}, 100)
 	}
 	
-	//
-	
-	const notifQueue = []
-	const shoutQueue = []
-	let numAvailableShoutCheckers = 5
-	let pushingNotifs = false
-	let checkInterval = null
-	let previousCheck = 0
-	
-	const fetchMyGroups = async () => {
-		const userId = await fetch("https://users.roblox.com/v1/users/authenticated", { credentials: "include" }).then(resp => (resp.ok ? resp.json() : null)).then(json => json && json.id)
-		if(!Number.isSafeInteger(userId)) { return }
-
-		const json = await fetch(`https://groups.roblox.com/v1/users/${userId}/groups/roles`).then(resp => (resp.ok ? resp.json() : null))
-		if(!json) { return }
-
-		return json.data.map(x => x.group)
+	let getAllNotifsPromise
+	let gettingNotifs = false
+	const isNotifVisible = async notifId => {
+		if(!gettingNotifs) {
+			gettingNotifs = true
+			getAllNotifsPromise = new Promise(resolve => {
+				chrome.notifications.getAll(notifs => {
+					gettingNotifs = false
+					resolve(notifs)
+				})
+			})
+		}
+		
+		const notifs = await getAllNotifsPromise
+		return notifId in notifs
 	}
 	
-	const pushNotif = notif => {
-		notifQueue.push(notif)
-		if(pushingNotifs) { return }
+	let gettingGroupThumbs = false
+	let groupThumbQueue = {}
+	const getGroupThumbUrl = groupId => {
+		const result = groupThumbQueue[groupId] = groupThumbQueue[groupId] ?? new SyncPromise()
 		
-		pushingNotifs = true
-		
-		setTimeout(() => {
-			const notifs = notifQueue.splice(0, notifQueue.length)
-			const thumbsToGet = notifs.filter(notif => !notif.thumbUrl)
+		if(!gettingGroupThumbs) {
+			gettingGroupThumbs = true
 			
-			pushingNotifs = false
-			
-			if(!thumbsToGet.length) {
-				execNotifs()
-				return
-			}
-			
-			let didExecNotifs = false
-			
-			const execNotifs = async () => {
-				if(didExecNotifs) { return }
-				didExecNotifs = true
-
-				notifs.forEach(notif => {
-					const params = {
-						type: "basic",
-						title: notif.title,
-						iconUrl: notif.thumbUrl || getURL("res/icon_128.png"),
-						message: notif.body,
-						contextMessage: notif.poster,
-
-						priority: 2,
-						requireInteraction: true,
-						eventTime: notif.timeStamp
-					}
-
-					if(IS_FIREFOX) { delete params.requireInteraction }
-					chrome.notifications.create(`groupshout-${notif.groupId}`, params)
-				})
-			}
-			
-			const url = `https://thumbnails.roblox.com/v1/groups/icons?groupIds=${thumbsToGet.map(x => x.groupId).join(",")}&size=150x150&format=png`
-
-			fetch(url).then(async resp => {
-				const json = await resp.json()
-
-				json.data.forEach(item => {
-					if(item.state === "Completed" && item.imageUrl) {
-						const notif = notifs.find(x => +x.groupId === +item.targetId)
-	
-						if(notif) {
-							notif.thumbUrl = item.imageUrl
+			setTimeout(() => {
+				const queue = groupThumbQueue
+				
+				groupThumbQueue = {}
+				gettingGroupThumbs = false
+				
+				const url = `https://thumbnails.roblox.com/v1/groups/icons?groupIds=${Object.keys(queue).join(",")}&size=150x150&format=png`
+				
+				const finish = json => {
+					if(json) {
+						for(const item of json.data) {
+							if(item.state === "Completed" && item.imageUrl) {
+								queue[item.targetId]?.resolve(item.imageUrl)
+							}
 						}
 					}
-				})
-			}).finally(execNotifs)
+					
+					for(const promise of Object.values(queue)) {
+						promise.resolve(null)
+					}
+				}
 
-			setTimeout(execNotifs, 5e3)
-		}, 1000)
+				fetch(url).then(async resp => finish(await resp.json())).finally(() => finish())
+				setTimeout(finish, 5e3)
+			}, 500)
+		}
+		
+		return result
 	}
 	
-	const checkNextShout = async () => {
-		if(shoutQueue.length === 0 || numAvailableShoutCheckers <= 0) {
+	const checkNextShout = () => {
+		if(!numAvailableShoutCheckers || !shoutCheckerQueue.length) {
 			return
 		}
 		
+		const groupId = shoutCheckerQueue.shift()
 		numAvailableShoutCheckers--
-		
-		const shoutCache = await getShoutCache()
-		const groupId = shoutQueue.shift()
 		
 		fetch(`https://groups.roblox.com/v1/groups/${groupId}/`).then(async resp => {
 			if(!resp.ok) {
@@ -167,83 +130,118 @@
 				return
 			}
 			
-			const json = await resp.json()
-			if(!json) {
+			const data = await resp.json()
+			if(!data) {
 				console.log("Bad response (not json)", resp.status, resp.statusText, await resp.text())
 				return
 			}
 			
-			const { shout, name: groupName } = json
-			const validShout = shout && shout.body && shout.poster
+			const shoutCache = await getShoutCache()
+			let shoutEntry = shoutCache.groups[groupId]
 			
-			const lastNotif = shoutCache[groupId]
-			const newNotif = {
-				groupId: groupId,
-
-				title: groupName,
-				poster: validShout ? shout.poster.username : null,
-				body: validShout ? shout.body : null,
-
-				timeStamp: validShout ? Date.parse(shout.updated) : 0,
-				lastChecked: Date.now()
+			const hasShout = data.shout && data.shout.body && data.shout.poster?.username
+			const hadShout = shoutEntry
+			let hash
+			let ts = -1
+			
+			if(hasShout) {
+				hash = $.hashString(`${data.shout.poster.username}-${data.shout.body}`)
+				ts = Date.parse(data.shout.updated)
 			}
 			
-			shoutCache[newNotif.groupId] = newNotif
-			saveShoutCache()
-			
-			// Notify if there's a shout, is not the first cached shout, matches white-/blacklist and the shout is different
 			// Checking for time difference of > 100 because the updated timestamp seems to fluctuate slightly randomly
-			if(validShout && lastNotif && (newNotif.body !== lastNotif.body || Math.abs(newNotif.timeStamp - lastNotif.timeStamp) > 100)) {
-				pushNotif(newNotif)
+			if(!hadShout || shoutEntry.hash !== hash || Math.abs((shoutEntry.ts ?? -1) - ts) > 100) {
+				let canShowNotif = true
+				
+				if(!shoutEntry) {
+					shoutEntry = shoutCache.groups[groupId] = {}
+					canShowNotif = false // do not show a notification the first time we get a shout
+				}
+				
+				if(hasShout) {
+					shoutEntry.hash = hash
+					shoutEntry.ts = ts
+				} else {
+					delete shoutEntry.hash
+					delete shoutEntry.ts
+				}
+				
+				if(hasShout && canShowNotif) {
+					shoutEntry.visible = true
+				} else {
+					delete shoutEntry.visible
+				}
+				
+				saveShoutCache()
+			}
+			
+			if(shoutEntry.visible) {
+				const notifId = `groupshout-${groupId}-${shoutEntry.hash}`
+				
+				isNotifVisible(notifId).then(async isVisible => {
+					if(isVisible) {
+						if(IS_CHROME) { chrome.notifications.update(notifId, {}) } // Re-push on chrome if broken
+						return
+					}
+					
+					const thumbUrl = await getGroupThumbUrl(groupId)
+					if(await isNotifVisible(notifId)) { return }
+					
+					const params = {
+						type: "basic",
+						title: data.name,
+						iconUrl: thumbUrl || getURL("res/icon_128.png"),
+						message: data.shout.body,
+						contextMessage: data.shout.poster.username,
+
+						priority: 2,
+						requireInteraction: true,
+						eventTime: shoutEntry.ts
+					}
+
+					if(IS_FIREFOX) { delete params.requireInteraction }
+					chrome.notifications.create(notifId, params)
+				})
 			}
 		}).finally(() => {
 			numAvailableShoutCheckers++
 			checkNextShout()
 		})
 	}
-
-	const executeCheck = async () => {
-		if(Date.now() - previousCheck < 10e3) { return }
-
-		const checkTime = Date.now()
-		previousCheck = checkTime
+	
+	const getCurrentGroups = async () => {
+		const userId = await fetch("https://users.roblox.com/v1/users/authenticated", { credentials: "include" }).then(resp => (resp.ok ? resp.json() : null)).then(json => json && json.id)
+		if(!Number.isSafeInteger(userId)) { return [] }
 		
-		const myGroups = await fetchMyGroups()
-		if(!myGroups || previousCheck !== checkTime) { return }
-
-		const shoutCache = await getShoutCache()
-		const shoutFilters = await getShoutFilters()
+		const json = await fetch(`https://groups.roblox.com/v1/users/${userId}/groups/roles`).then(resp => (resp.ok ? resp.json() : null))
+		if(!json) { return [] }
 		
-		for(const { id: groupId } of myGroups) {
-			const blacklist = shoutFilters.mode === "blacklist"
-			const includes = shoutFilters[shoutFilters.mode].includes(+groupId)
-			
-			if((blacklist && includes) || (!blacklist && !includes)) {
-				if(groupId in shoutCache) {
-					delete shoutCache[groupId]
-					saveShoutCache()
-				}
-				continue
-			}
-			
-			if(!shoutQueue.includes(groupId)) {
-				shoutQueue.push(groupId)
-				checkNextShout()
-			}
-		}
-		
-		// Only keep 200 groups saved, I guess?
-		const notifs = Object.values(shoutCache)
-		if(notifs.length > 200) {
-			notifs.sort((a, b) => b.lastChecked - a.lastChecked)
-			
-			for(let i = 200; i < notifs.length; i++) {
-				delete shoutCache[notifs[i].groupId]
-				saveShoutCache()
-			}
-		}
+		return json.data.map(x => +x.group.id)
 	}
-
+	
+	const checkForGroupShouts = async () => {
+		if(checkingForGroupShouts || Date.now() < lastCheckedForGroups + 10e3) { return }
+		checkingForGroupShouts = true
+		
+		const shoutFilters = await getShoutFilters()
+		const currentGroups = await getCurrentGroups()
+		
+		for(const groupId of currentGroups) {
+			if(shoutCheckerQueue.includes(groupId)) { continue }
+			
+			const blacklist = shoutFilters.mode === "blacklist"
+			const includes = shoutFilters[shoutFilters.mode].includes(groupId)
+			if((blacklist && includes) || (!blacklist && !includes)) { continue }
+			
+			shoutCheckerQueue.push(groupId)
+			checkNextShout()
+		}
+		
+		checkingForGroupShouts = false
+		lastCheckedForGroups = Date.now()
+	}
+	
+	let checkInterval
 	const onUpdate = () => {
 		const shouldCheck = !!SETTINGS.get("groups.shoutAlerts")
 
@@ -253,9 +251,9 @@
 			}
 
 			clearInterval(checkInterval)
-			checkInterval = setInterval(executeCheck, 20e3)
+			checkInterval = setInterval(checkForGroupShouts, 30e3)
 
-			executeCheck()
+			checkForGroupShouts()
 		} else {
 			if(IS_CHROME) {
 				chrome.alarms.clearAll()
@@ -270,11 +268,25 @@
 		chrome.runtime.onInstalled.addListener(() => chrome.alarms.clearAll())
 	}
 	
-	chrome.notifications.onClicked.addListener(notifId => {
+	chrome.notifications.onClosed.addListener(async (notifId, byUser) => {
+		if(notifId.startsWith("groupshout-") && (byUser || IS_FIREFOX)) {
+			const [, id, hash] = notifId.split("-")
+			
+			const shoutCache = await getShoutCache()
+			const shoutEntry = shoutCache.groups[+id]
+			
+			if(shoutEntry && shoutEntry.hash === hash && shoutEntry.visible) {
+				delete shoutEntry.visible
+				saveShoutCache()
+			}
+		}
+	})
+	
+	chrome.notifications.onClicked.addListener(async notifId => {
 		if(notifId.startsWith("groupshout-")) {
-			const groupId = +notifId.slice(11)
-
-			chrome.tabs.create({ url: `https://www.roblox.com/groups/${groupId}/Group` })
+			const [, id, hash] = notifId.split("-")
+			
+			chrome.tabs.create({ url: `https://www.roblox.com/groups/${id}/group` })
 			chrome.notifications.clear(notifId)
 		}
 	})
