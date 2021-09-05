@@ -1,27 +1,31 @@
-html body,
-html body#rbx-body,
-html body.light-theme {
-	background: #9AE4E8 url(/res/bg_sky.png) left 40px no-repeat fixed;
+html {
+	--btr-body-padding: -24px;
 }
 
-html .container-main>.content,
-html #BodyWrapper {
+html body {
+	background: #9AE4E8 url(/res/bg_sky.png) left 40px no-repeat fixed !important;
+}
+
+html body.btr-no-hamburger {
+	background-position-x: 175px !important;
+}
+
+#container-main > .content,
+#MasterContainer #BodyWrapper {
 	position: relative;
 	margin-top: 40px;
 	margin-bottom: 40px;
-	padding-top: 0;
-	padding-bottom: 0;
 }
 
-html .container-main>.content::before,
-html #BodyWrapper::before {
+#container-main > .content::before,
+#MasterContainer #BodyWrapper::before {
 	content: " ";
 	display: block;
 
 	position: absolute;
-	left: -12px;
+	left: var(--btr-body-padding);
 	top: -12px;
-	right: -12px;
+	right: var(--btr-body-padding);
 	bottom: -12px;
 
 	background: inherit;

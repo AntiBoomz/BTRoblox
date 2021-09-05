@@ -14,16 +14,11 @@ const btrSettingsModal = (() => {
 					<div>
 						<select path=theme>
 							<option selected disabled>Select Theme: (%opt%)</option>
-							<optgroup label="Themes">
-								<option value=default>Default</option>
-							</optgroup>
-							<optgroup label="Legacy Themes">
-								<option value=simblk>Simply Black</option>
-								<option value=sky>Sky</option>
-								<option value=red>Red</option>
-							</optgroup>
+							<option value=default>Default</option>
+							<option value=simblk>Simply Black</option>
+							<option value=sky>Sky</option>
+							<option value=red>Red</option>
 						</select>
-						<checkbox label="Legacy Theme Compatibility Mode" path=disableRobloxThemes></checkbox>
 					</div>
 
 					<checkbox label="Show Ads" path=!hideAds></checkbox>

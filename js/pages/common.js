@@ -301,41 +301,4 @@ pageInit.common = () => {
 			bodyWatcher.$watch("#chat-container", cont => cont.classList.add("btr-small-chat-button"))
 		}
 	}
-
-	{
-		const switchClasses = (from, to) => {
-			const list = document.getElementsByClassName(from)
-			for(let i = list.length; i--;) {
-				const elem = list[i]
-				elem.classList.remove(from, "btr-compat-light-theme", "btr-compat-dark-theme")
-				elem.classList.add(to)
-			}
-		}
-
-		const updateThemes = () => {
-			if(SETTINGS.get("general.disableRobloxThemes")) {
-				switchClasses("light-theme", "btr-compat-light-theme")
-				switchClasses("dark-theme", "btr-compat-dark-theme")
-
-				if(!observing) {
-					observing = true
-					observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"], subtree: true })
-				}
-			} else {
-				switchClasses("btr-compat-light-theme", "light-theme")
-				switchClasses("btr-compat-dark-theme", "dark-theme")
-
-				if(observing) {
-					observing = false
-					observer.disconnect()
-				}
-			}
-		}
-
-		const observer = new MutationObserver(updateThemes)
-		let observing = false
-
-		updateThemes()
-		SETTINGS.onChange("general.disableRobloxThemes", updateThemes)
-	}
 }
