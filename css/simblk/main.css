@@ -1,6 +1,6 @@
 html {
 	--btr-theme-color: #212121;
-	background: var(--btr-theme-color) url(/res/bgTexture.png) left top repeat fixed !important;
+	background: var(--btr-theme-color) url(/res/bg_simblk.png) left top repeat fixed !important;
 	min-height: 100%;
 }
 

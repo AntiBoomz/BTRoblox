@@ -451,7 +451,7 @@
 }
 
 .btr-settings-checkbox input[type="checkbox"]:checked + label:before {
-	background-image: url(/res/checkbox.svg);
+	background-image: url(/res/icon_checkbox.svg);
 	background-color: #00A2FF;
 }
 

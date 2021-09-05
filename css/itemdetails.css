@@ -95,7 +95,7 @@
 .btr-icon-download,
 .btr-icon-content {
 	display: inline-block;
-	background-image: url(/res/icons.svg);
+	background-image: url(/res/icon_itemdetails.svg);
 	background-repeat: no-repeat;
 	background-size: auto auto;
 	width: 28px;
@@ -228,7 +228,7 @@ html body .btr-thumb-btn-container .btr-thumb-btn {
 .btr-thumb-btn [class^="btr-icon"] {
 	flex: 0 0 auto;
 	display: inline-block;
-	background-image: url(/res/previewerIcons.svg);
+	background-image: url(/res/icon_previewer.svg);
 	background-repeat: no-repeat;
 	background-size: auto auto;
 	width: 28px;

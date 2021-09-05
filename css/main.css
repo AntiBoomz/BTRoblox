@@ -1,7 +1,7 @@
 /* Navigation */
 
 .icon-nav-friend-btr, .icon-nav-message-btr {
-	background-image: url(/res/nav2.svg);
+	background-image: url(/res/icon_nav.svg);
 	background-repeat: no-repeat;
 	background-size: auto auto;
 	width: 28px;
@@ -583,7 +583,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	height: 16px;
 	margin: 0 6px 0 3px;
 
-	background-image: url(/res/icon-explorer.png);
+	background-image: url(/res/icon_explorer.png);
 	background-repeat: no-repeat;
 	background-size: auto 16px;
 }
@@ -874,7 +874,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 
 .btr-preview-loading:after {
 	content: "";
-	background-image: url(/res/loading1.gif);
+	background-image: url(/res/icon_loading.gif);
 	background-size: 100%;
 	display: block;
 	position: absolute;
