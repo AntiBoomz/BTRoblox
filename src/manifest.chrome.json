@@ -19,6 +19,7 @@
 	},
 
 	"background": {
+		"persistent": false,
 		"scripts": [
 			"js/common.js",
 			"js/utility.js",
