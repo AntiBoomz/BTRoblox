@@ -123,10 +123,8 @@ const RBXPreview = (() => {
 			this.applyAnimationPlayerType = false
 			this.outfitAccessoriesVisible = true
 
-			this.outfitId = null
-			this.outfitType = null
-			this.outfitPromise = null
 			this.outfitLoaded = false
+			this.shouldLoadOutfit = null
 
 			this.appearance = null
 			this.avatarRules = null
@@ -179,8 +177,10 @@ const RBXPreview = (() => {
 					this.initialized = true
 					this.trigger("init")
 				}
-
-				this.loadOutfit()
+				
+				if(!this.outfitLoaded) {
+					this._loadOutfit(...(this.shouldLoadOutfit ?? []))
+				}
 
 				if(!this.playingAnim) {
 					if(this.currentAnim) {
@@ -228,37 +228,29 @@ const RBXPreview = (() => {
 		//
 
 		setOutfit(outfitId, outfitType) {
-			if(this.outfitId === outfitId && this.outfitType === outfitType) {
-				return
-			}
-
-			this.outfitId = outfitId
-			this.outfitType = outfitType
-			this.outfitPromise = null
 			this.outfitLoaded = false
 
 			if(this.enabled) {
-				this.loadOutfit()
+				this._loadOutfit(outfitId, outfitType)
+			} else {
+				this.shouldLoadOutfit = [outfitId, outfitType]
 			}
 		}
 
-		loadOutfit() {
-			if(this.outfitPromise) {
-				return
-			}
-
+		_loadOutfit(outfitId, outfitType) {
+			const debounce = performance.now()
 			let outfitPromise
+			
+			this.outfitDebounce = debounce
+			delete this.shouldLoadOutfit
 
-			if(this.outfitType === "Outfit" && this.outfitId) {
-				outfitPromise = getOutfitData(this.outfitId)
-			} else if(this.outfitType === "Player" && this.outfitId) {
-				outfitPromise = getPlayerAppearance(this.outfitId)
+			if(outfitType === "Outfit" && outfitId) {
+				outfitPromise = getOutfitData(outfitId)
+			} else if(outfitType === "Player" && outfitId) {
+				outfitPromise = getPlayerAppearance(outfitId)
 			} else {
 				outfitPromise = getDefaultAppearance()
 			}
-
-			const debounce = performance.now()
-			this.outfitDebounce = debounce
 			
 			outfitPromise.then(result => {
 				if(this.outfitDebounce !== debounce) {
@@ -271,7 +263,7 @@ const RBXPreview = (() => {
 		}
 
 		onOutfitLoaded([rules, data]) {
-			this.appearance = data
+			this.appearance = JSON.parse(JSON.stringify(data))
 	
 			if(!this.avatarRules) {
 				this.avatarRules = rules
@@ -422,6 +414,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		super()
 
 		window.scene = this.scene
+		this.currentOutfit = "current"
 		this.isShown = false
 		this.animMap = {}
 
@@ -535,9 +528,6 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		// const bodyBtn = buttons.$find(".btr-body-btn")
 
 		const inputSliders = []
-		const customOutfitBtn = buttons.$find(`.btr-body-outfit-btn[data-outfit="custom"]`)
-
-		this.bundleOutfitBtn = buttons.$find(`.btr-body-outfit-btn[data-outfit="bundle"]`)
 
 		const loadSliders = () => {
 			bodyPopup.$findAll("input").forEach(input => {
@@ -556,14 +546,11 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 					targetScales[scaleName] = +input.value
 
 					if(scaleName === "width") {
-						targetScales.depth = 0.5 + targetScales.width / 2 // What a surprise, undefined scaling behavior.,,
+						targetScales.depth = 0.5 + targetScales.width / 2 // What a surprise, undefined scaling behavior...
 					}
 
 					this.scene.avatar.setScales(targetScales)
-
-					if(!customOutfitBtn.classList.contains("selected")) {
-						this.selectOutfit("custom")
-					}
+					this.selectOutfit("custom")
 				})
 
 				input.min = rule.min
@@ -688,6 +675,9 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 	}
 
 	selectOutfit(target) {
+		if(this.currentOutfit === target) { return }
+		this.currentOutfit = target
+		
 		switch(target) {
 		case "custom":
 			break
@@ -736,21 +726,23 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 
 	setBundleOutfit(outfitId) {
 		this.bundleOutfitId = outfitId
+		
+		const bundleOutfitBtn = this.buttons.$find(`.btr-body-outfit-btn[data-outfit="bundle"]`)
 
 		if(outfitId) {
-			this.bundleOutfitBtn.style.display = ""
-			this.bundleOutfitBtn.$find("img").src = ``
+			bundleOutfitBtn.style.display = ""
+			bundleOutfitBtn.$find("img").src = ``
 			
 			const url = `https://thumbnails.roblox.com/v1/users/outfits?userOutfitIds=${outfitId}&size=150x150&format=Png&isCircular=false`
 			fetch(url).then(async resp => {
 				const result = (await resp.json()).data[0]
 				
 				if(result && result.imageUrl) {
-					this.bundleOutfitBtn.$find("img").src = result.imageUrl
+					bundleOutfitBtn.$find("img").src = result.imageUrl
 				}
 			})
 		} else {
-			this.bundleOutfitBtn.style.display = "none"
+			bundleOutfitBtn.style.display = "none"
 		}
 	}
 
