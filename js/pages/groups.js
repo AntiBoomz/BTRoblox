@@ -66,7 +66,7 @@ function enableRedesign() {
 				binding.setAttribute("ng-bind", binding.getAttribute("ng-bind").replace(/^\s*(.*)?(\s*\|\s*translate\s*)$/i, "($1 === 'Heading.About' ? 'Heading.Members' : $1)$2"))
 			}
 			
-			aboutTemplate.$find("[group-games]")?.setAttribute("ng-show", "groupDetailsConstants.tabs.about.btrCustomTab === 'games'")
+			aboutTemplate.$find("group-games,[group-games]")?.setAttribute("ng-show", "groupDetailsConstants.tabs.about.btrCustomTab === 'games'")
 			aboutTemplate.$find("group-members-list")?.setAttribute("ng-show", "!groupDetailsConstants.tabs.about.btrCustomTab")
 		})
 
