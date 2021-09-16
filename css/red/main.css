@@ -1,5 +1,6 @@
 html {
 	--btr-header-color: rgb(190, 0, 0);
+	--btr-header-text-color: #fff;
 }
 
 /* Header */
@@ -11,10 +12,6 @@ html {
 }
 
 /* Flip header text color */
-
-#header {
-	--btr-header-text-color: #fff;
-}
 
 #header,
 .btr-settings .btr-settings-header {
