@@ -177,6 +177,12 @@ const RBXMeshParser = {
 
 			uvs[i * 2] = reader.FloatLE()
 			uvs[i * 2 + 1] = 1 - reader.FloatLE()
+			
+			// next 4 bytes determine tangent
+			// source: https://twitter.com/zeuxcg/status/1435019076611444740
+			// 4 bytes [...] store tangent as 1 byte per XYZ component,
+			// remapped from -1..1 to 0..254, with the fourth component
+			// storing +1/-1 (254/0) to indicate CW/CCW.
 
 			reader.Jump(vertexSize - 32)
 		}
