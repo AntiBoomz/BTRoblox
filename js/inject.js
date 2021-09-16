@@ -185,11 +185,10 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 		handler(args) {
 			const type = args[0]
 			const props = args[1]
-
-			switch(props.id) {
-			case "navbar-universal-search": {
+			
+			if(props.id === "navbar-universal-search" || props.className?.includes(" navbar-search ")) {
 				const ul = args.find(x => typeof x === "object" && x.type === "ul")
-
+				
 				if(ul) {
 					if(!Array.isArray(ul.props.children)) {
 						ul.props.children = [ul.props.children]
@@ -199,9 +198,9 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 						React.createElement("div", { key: "btrFastSearch", id: "btr-fastsearch-container", dangerouslySetInnerHTML: { __html: " " } })
 					)
 				}
-
-				break
 			}
+
+			switch(props.id) {
 			case "settings-popover-menu": {
 				args.splice(2, 0,
 					React.createElement("li", { key: "btrSettings" },

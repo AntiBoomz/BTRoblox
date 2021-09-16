@@ -394,7 +394,7 @@ const btrFastSearch = {
 					selectedClass = "new-selected"
 				}
 		
-				const search = container.closest("#navbar-universal-search")
+				const search = container.closest("#navbar-universal-search, .navbar-search")
 				const input = search.$find("#navbar-search-input")
 				list = search.$find(">ul")
 		
