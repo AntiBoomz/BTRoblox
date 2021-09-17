@@ -395,7 +395,7 @@ const btrFastSearch = {
 				}
 		
 				const search = container.closest("#navbar-universal-search, .navbar-search")
-				const input = search.$find("#navbar-search-input")
+				const input = search.$find("input")
 				list = search.$find(">ul")
 		
 				input.$on("keydown", ev => {

@@ -183,10 +183,12 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 		},
 
 		handler(args) {
-			const type = args[0]
 			const props = args[1]
 			
-			if(props.id === "navbar-universal-search" || props.className?.includes(" navbar-search ")) {
+			const classes = props.className?.split(/\s+/g) ?? []
+			const hasClass = name => classes.includes(name)
+			
+			if(props.id === "navbar-universal-search" || hasClass("navbar-search")) {
 				const ul = args.find(x => typeof x === "object" && x.type === "ul")
 				
 				if(ul) {
@@ -198,10 +200,7 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 						React.createElement("div", { key: "btrFastSearch", id: "btr-fastsearch-container", dangerouslySetInnerHTML: { __html: " " } })
 					)
 				}
-			}
-
-			switch(props.id) {
-			case "settings-popover-menu": {
+			} else if(props.id === "settings-popover-menu") {
 				args.splice(2, 0,
 					React.createElement("li", { key: "btrSettings" },
 						React.createElement("a", {
@@ -209,51 +208,39 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 						}, "BTR Settings")
 					)
 				)
-				break
 			}
-			}
-
-			switch(type) {
-			case "ul": {
-				if(props.className) {
-					const classes = props.className.split(/\s+/g)
-					const hasClass = name => classes.includes(name)
+			
+			if(settings.navigation.enabled) {
+				if(hasClass("rbx-navbar")) {
+					const list = args.find(x => Array.isArray(x))
 					
-					if(settings.navigation.enabled) {
-						if(hasClass("rbx-navbar")) {
-							const list = args.find(x => Array.isArray(x))
-							
-							if(list) {
-								list.splice(0, 0,
-									React.createElement("li", { id: "btr-home", dangerouslySetInnerHTML: { __html: " " } })
-								)
-							}
-						} else if(hasClass("navbar-right")) {
-							const robuxIndex = args.findIndex((x, i) => i >= 2 && x instanceof Object && x.props && "robuxAmount" in x.props)
+					if(list) {
+						list.splice(0, 0,
+							React.createElement("li", { id: "btr-home", dangerouslySetInnerHTML: { __html: " " } })
+						)
+					}
+				} else if(hasClass("navbar-right")) {
+					const robuxIndex = args.findIndex((x, i) => i >= 2 && x instanceof Object && x.props && "robuxAmount" in x.props)
 
-							if(robuxIndex !== -1) {
-								args.splice(robuxIndex, 0,
-									React.createElement("li", { key: "btrMessages", id: "btr-messages-container", dangerouslySetInnerHTML: { __html: " " } }),
-									React.createElement("li", { key: "btrFriends", id: "btr-friends-container", dangerouslySetInnerHTML: { __html: " " } })
-								)
-							}
-						} else if(hasClass("left-col-list")) {
-							const list = args.slice(2).find(x => Array.isArray(x))
+					if(robuxIndex !== -1) {
+						args.splice(robuxIndex, 0,
+							React.createElement("li", { key: "btrMessages", id: "btr-messages-container", dangerouslySetInnerHTML: { __html: " " } }),
+							React.createElement("li", { key: "btrFriends", id: "btr-friends-container", dangerouslySetInnerHTML: { __html: " " } })
+						)
+					}
+				} else if(hasClass("left-col-list")) {
+					const list = args.slice(2).find(x => Array.isArray(x))
 
-							if(list) {
-								const blogIndex = list.findIndex(x => x.key === "blog")
+					if(list) {
+						const blogIndex = list.findIndex(x => x.key === "blog")
 
-								if(blogIndex !== -1) {
-									list.splice(blogIndex + 1, 0,
-										React.createElement("div", { id: "btr-blogfeed-container", dangerouslySetInnerHTML: { __html: " " } }),
-									)
-								}
-							}
+						if(blogIndex !== -1) {
+							list.splice(blogIndex + 1, 0,
+								React.createElement("div", { id: "btr-blogfeed-container", dangerouslySetInnerHTML: { __html: " " } }),
+							)
 						}
 					}
 				}
-				break
-			}
 			}
 		}
 	}
