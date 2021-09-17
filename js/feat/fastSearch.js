@@ -396,7 +396,6 @@ const btrFastSearch = {
 		
 				const search = container.closest("div[data-testid='navigation-search-input']")
 				const input = search.$find("[data-testid='navigation-search-input-field']")
-				if (input === null) return console.log('could not find navbar search input!')
 				list = search.$find(">ul")
 		
 				input.$on("keydown", ev => {
