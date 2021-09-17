@@ -186,7 +186,8 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 			const type = args[0]
 			const props = args[1]
 			
-			if(props.id === "navbar-universal-search" || props.className?.includes(" navbar-search ")) {
+			//if(props.id === "navbar-universal-search" || props.className?.includes(" navbar-search ")) {
+			if(props['data-testid'] === "navigation-search-input" || props.className?.includes(" navbar-search ")) {
 				const ul = args.find(x => typeof x === "object" && x.type === "ul")
 				
 				if(ul) {
