@@ -394,8 +394,9 @@ const btrFastSearch = {
 					selectedClass = "new-selected"
 				}
 		
-				const search = container.closest("#navbar-universal-search, .navbar-search")
-				const input = search.$find("#navbar-search-input")
+				const search = container.closest("div[data-testid='navigation-search-input']")
+				const input = search.$find("[data-testid='navigation-search-input-field']")
+				if (input === null) return console.log('could not find navbar search input!')
 				list = search.$find(">ul")
 		
 				input.$on("keydown", ev => {
@@ -474,6 +475,7 @@ const btrFastSearch = {
 
 				const update = () => {
 					if(input.value === lastValue) { return }
+					if(input.value === undefined) { return }
 					lastValue = input.value
 
 					updateSearch(input.value.toLowerCase())
