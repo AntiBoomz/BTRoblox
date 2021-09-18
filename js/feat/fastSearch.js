@@ -154,7 +154,7 @@ const btrFastSearch = {
 
 			lastResultsLoaded = now
 			
-			const selectedIndex = searchResults.indexOf(searchResults.$find(`.${selectedClass}`))
+			const selectedIndex = searchResults.indexOf(container.$find(`.${selectedClass}`))
 
 			clearResults()
 
