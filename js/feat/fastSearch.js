@@ -277,22 +277,19 @@ const btrFastSearch = {
 					})
 				}
 			}
-			
+		
 			const lastSelected = list.$find(`.${selectedClass}`)
-			const firstNonResult = list.$find(`>li`)
 			
-			if(preserveSelection && searchResults[selectedIndex]) {
-				lastSelected?.classList.remove(selectedClass)
-				searchResults[selectedIndex].classList.add(selectedClass)
-			} else {
-				const selectFirst = !lastSelected || !preserveSelection && lastSelected === firstNonResult
-				
-				if(selectFirst) {
-					const first = searchResults[0] || firstNonResult
-					
+			if(preserveSelection) {
+				if(searchResults[selectedIndex]) {
 					lastSelected?.classList.remove(selectedClass)
-					first?.classList.add(selectedClass)
+					searchResults[selectedIndex].classList.add(selectedClass)
 				}
+			} else {
+				const first = searchResults[0] || list.$find(`>li`)
+				
+				lastSelected?.classList.remove(selectedClass)
+				first?.classList.add(selectedClass)
 			}
 		}
 
@@ -452,11 +449,6 @@ const btrFastSearch = {
 							selected.classList.remove(selectedClass)
 							next.classList.add(selectedClass)
 		
-							requestAnimationFrame(() => {
-								const newSel = list.$findAll(`.${selectedClass}`)
-								newSel.forEach(x => x !== next && x.classList.remove(selectedClass))
-							})
-		
 							if(prevent) {
 								ev.stopImmediatePropagation()
 								ev.stopPropagation()
@@ -487,12 +479,20 @@ const btrFastSearch = {
 				const update = () => {
 					if(input.value === lastValue) { return }
 					lastValue = input.value
-
-					$.setImmediate(updateSearch, input.value.toLowerCase())
+					
+					updateSearch(input.value.toLowerCase())
 				}
 
 				input.$on("input", update)
 				update()
+				
+				list.$watchAll("li", li => {
+					new MutationObserver(() => {
+						if(li.classList.contains(selectedClass) && searchResults.find(x => x.classList.contains(selectedClass))) {
+							li.classList.remove(selectedClass)
+						}
+					}).observe(li, { attributeFilter: ["class"] })
+				})
 			}
 		})
 	}
