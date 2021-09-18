@@ -386,15 +386,14 @@ const btrFastSearch = {
 		}
 		
 		reactInject({
-			selector: "#navbar-universal-search, .navbar-search",
-			querySelector: "ul",
+			selector: "#navbar-universal-search ul, .navbar-search ul",
 			index: 0,
-			html: `<div id="btr-fastsearch-container"></div>`
-		})
-		
-		document.$watch("#header", header => {
-			header.$watch("#btr-fastsearch-container", _cont => {
+			html: `<div id="btr-fastsearch-container"></div>`,
+			
+			callback(_cont) {
 				container = _cont
+				list = container.parentNode
+				
 				container.append(html`<div style=display:none></div>`) // just to make results not count as last-child
 
 				if(container.closest(".new-dropdown-menu")) {
@@ -403,7 +402,6 @@ const btrFastSearch = {
 		
 				const search = container.closest("#navbar-universal-search, .navbar-search")
 				const input = search.$find("input")
-				list = search.$find(">ul")
 		
 				input.$on("keydown", ev => {
 					if(ev.keyCode === 38 || ev.keyCode === 40 || ev.keyCode === 9) {
@@ -488,7 +486,7 @@ const btrFastSearch = {
 
 				input.$on("input", update)
 				update()
-			})
+			}
 		})
 	}
 }

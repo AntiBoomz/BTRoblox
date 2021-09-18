@@ -232,67 +232,106 @@ const toggleSettingsModal = async force => {
 }
 
 let reactListenerIndex = 0
-const reactInject = data => {
-	const parseSelector = selector => {
-		if(typeof selector === "string") {
-			const result = []
+
+const parseReactStringSelector = selector => {
+	assert(!/[[>+~]/.exec(selector), "complex selectors not supported")
+	const result = []
+	
+	for(const option of selector.split(/,/)) {
+		let previous
+		
+		for(let piece of option.split(/\s+/)) {
+			piece = piece.trim()
+			if(!piece.length) { continue }
 			
-			for(let part of selector.split(/,/)) {
-				part = part.trim()
-				
-				if(part.length > 0) {
-					assert(!part.includes(" "), "Selector has a space")
-					const pieces = part.split(/(?=[#.])/)
-					const obj = {}
-					
-					for(const piece of pieces) {
-						if(piece[0] === ".") {
-							obj.classList = obj.classList ?? []
-							obj.classList.push(piece.slice(1))
-						} else if(piece[0] === "#") {
-							obj.id = piece.slice(1)
-						} else {
-							obj.type = piece.toLowerCase()
-						}
+			const attributes = piece.split(/(?=[#.])/)
+			const obj = {}
+			
+			for(const attr of attributes) {
+				if(attr[0] === ".") {
+					obj.classList = obj.classList ?? []
+					obj.classList.push(attr.slice(1))
+				} else if(attr[0] === "#") {
+					obj.props = obj.props ?? {}
+					obj.props.id = attr.slice(1)
+				} else {
+					if(attr !== "*") { // unset obj.type acts as universal selector
+						obj.type = attr.toLowerCase()
+					}
+				}
+			}
+			
+			if(previous) {
+				previous.next = obj
+			} else {
+				result.push(obj) // Add first selector to result
+			}
+			
+			previous = obj
+		}
+	}
+	
+	return result
+}
+
+const parseReactSelector = selectors => {
+	selectors = Array.isArray(selectors) ? selectors : [selectors]
+	const result = []
+	
+	for(let i = 0, len = selectors.length; i < len; i++) {
+		const selector = selectors[i]
+		
+		if(typeof selector === "string") {
+			result.push(...parseReactStringSelector(selector))
+			continue
+		}
+		
+		if(selector.selector) {
+			assert(!selector.next)
+			const selectors = parseReactStringSelector(selector)
+			
+			const fillMissingData = targets => {
+				for(const target of targets) {
+					if(target.next) {
+						fillMissingData(target.next)
+						continue
 					}
 					
-					result.push(obj)
+					for(const key of selector) {
+						if(key === "selector") { continue }
+						const value = selector[key]
+						
+						if(Array.isArray(value)) {
+							target[key] = target[key] ?? []
+							target[key].push(...value)
+						} else if(typeof value === "object") {
+							target[key] = target[key] ?? {}
+							for(const i in value) { target[key][i] = value[i] }
+						} else {
+							target[key] = value
+						}
+					}
 				}
 			}
 			
-			selector = result
+			fillMissingData(selectors)
+			result.push(...selectors)
+			continue
 		}
 		
-		selector = Array.isArray(selector) ? selector : [selector]
-		
-		for(const obj of selector) {
-			for(const name of Object.keys(obj)) {
-				if(name !== "classList" && name !== "type" && name !== "key" && name !== "hasProps") {
-					obj.props = obj.props ?? {}
-					obj.props[name] = obj[name]
-					delete obj[name]
-				}
-			}
-			
-			if(obj.props?.key) {
-				obj.key = obj.props.key
-				delete obj.props.key
-			}
-		}
-		
-		return selector
+		result.push(selector)
 	}
 	
+	return result
+}
+
+const reactInject = data => {
 	data = { ...data }
-	data.selector = parseSelector(data.selector)
-	
-	if(data.querySelector) {
-		data.querySelector = parseSelector(data.querySelector)
-	}
+	data.selector = parseReactSelector(data.selector)
 	
 	if(typeof data.index === "object") {
 		data.index = { ...data.index }
-		data.index.selector = parseSelector(data.index.selector)
+		data.index.selector = parseReactSelector(data.index.selector)
 	}
 	
 	const callback = data.callback
@@ -301,7 +340,7 @@ const reactInject = data => {
 	delete data.callback
 	delete data.html
 	
-	data.elemType = html(resultHtml).nodeName
+	data.elemType = html(resultHtml).nodeName.toLowerCase()
 	data.elemId = `btr-react-${reactListenerIndex++}`
 	
 	document.$watch(`#${data.elemId}`, node => {

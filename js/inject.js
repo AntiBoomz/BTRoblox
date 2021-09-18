@@ -133,8 +133,6 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 	}
 
 	const reactHook = {
-		args: null,
-		
 		constructorReplaces: [],
 		injectedContent: [],
 		
@@ -148,58 +146,104 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 			})
 		},
 		
+		flattenChildren(children) {
+			return (Array.isArray(children) ? children : [children]).flat(16)
+		},
+		
+		selectorMatches(selector, elem) {
+			if(!elem.props) {
+				return false
+			}
+			
+			if(selector.type && (typeof elem.type !== "string" || selector.type.toLowerCase() !== elem.type.toLowerCase())) {
+				return false
+			}
+			
+			if(selector.key && selector.key !== elem.key) {
+				return false
+			}
+			
+			if(selector.hasProps) {
+				for(const key of selector.hasProps) {
+					if(!(key in elem.props)) {
+						return false
+					}
+				}
+			}
+			
+			if(selector.props) {
+				for(const key in selector.props) {
+					if(selector.props[key] !== elem.props[key]) {
+						return false
+					}
+				}
+			}
+			
+			if(selector.classList) {
+				const classes = elem.props.className?.split(/\s+/g) ?? []
+				
+				for(const className of selector.classList) {
+					if(!classes.includes(className)) {
+						return false
+					}
+				}
+			}
+		
+			return true
+		},
+		
 		selectorsMatch(selectors, elem) {
-			const props = elem?.props
-			if(!props) { return false }
-			
-			outer:
 			for(const selector of selectors) {
-				if(selector.type && (typeof elem.type !== "string" || selector.type !== elem.type.toLowerCase())) {
-					continue outer
+				if(this.selectorMatches(selector, elem)) {
+					return true
 				}
-				
-				if(selector.key && selector.key !== elem.key) {
-					continue outer
-				}
-				
-				if(selector.hasProps) {
-					for(const key of selector.hasProps) {
-						if(!(key in props)) {
-							continue outer
-						}
-					}
-				}
-				
-				if(selector.props) {
-					for(const key in selector.props) {
-						if(selector.props[key] !== props[key]) {
-							continue outer
-						}
-					}
-				}
-				
-				if(selector.classList) {
-					const classes = props.className?.split(/\s+/g) ?? []
-					
-					for(const className of selector.classList) {
-						if(!classes.includes(className)) {
-							continue outer
-						}
-					}
-				}
-			
-				return true
 			}
 			
 			return false
 		},
 		
-		flattenChildren(children) {
-			return (Array.isArray(children) ? children : [children]).flat(16)
+		querySelector(selectors, elem) {
+			for(const selector of selectors) {
+				if(!this.selectorMatches(selector, elem)) { continue }
+				
+				if(selector.next) {
+					let current = [elem.props.children]
+					let next = []
+					
+					let depth = 0
+					while(current.length && depth < 4) {
+						for(const list of current) {
+							for(const child of this.flattenChildren(list)) {
+								if(!child?.props) { continue }
+								
+								if(this.selectorMatches(selector.next, child)) {
+									return child
+								}
+								
+								if(child.props.children) {
+									next.push(child.props.children)
+								}
+							}
+						}
+						
+						current = next
+						next = []
+						depth++
+					}
+					
+					return null
+				} else {
+					return elem
+				}
+			}
+			
+			return null
 		},
 
 		onCreateElement(args) {
-			if(!settings || !(args[1] instanceof Object)) {
+			const props = args[1]
+			
+			if(!settings || !(props instanceof Object)) {
 				return
 			}
 
@@ -209,82 +253,59 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 						args[0] = new Proxy(args[0], { apply: info.handler })
 					}
 				}
-			} else {
-				const props = args[1]
+			}
+			
+			if(props?.dangerouslySetInnerHTML?.__html !== " ") { // Skip our own elems
+				const rootElem = {
+					type: args[0],
+					key: props.key,
+					props: {
+						...props,
+						key: null,
+						children: args.slice(2)
+					}
+				}
 				
-				if(props?.dangerouslySetInnerHTML?.__html !== " ") { // Skip our own elems
-					const rootElem = {
-						type: args[0],
-						key: props.key,
-						props: { ...props }
+				const childrenModified = new WeakSet()
+				
+				for(const content of this.injectedContent) {
+					const target = this.querySelector(content.selector, rootElem)
+					if(!target) { continue }
+					
+					if(!childrenModified.has(target)) {
+						childrenModified.add(target)
+						target.props.children = this.flattenChildren(target.props.children)
+						
+						if(target === rootElem) {
+							args.splice(2, args.length - 2, target.props.children)
+						}
 					}
 					
-					const childrenModified = new WeakSet()
+					const children = target.props.children
+					let index = 0
 					
-					for(const content of this.injectedContent) {
-						if(!this.selectorsMatch(content.selector, rootElem)) { continue }
-						
-						if(!childrenModified.has(rootElem)) {
-							childrenModified.add(rootElem)
-							rootElem.props.children = args[2] = this.flattenChildren(args.splice(2, args.length - 2))
-						}
-						
-						let target
-						
-						if(content.querySelector) {
-							const stack = [rootElem]
+					if(typeof content.index === "number") {
+						index = content.index
+					} else if (typeof content.index === "object") {
+						for(let i = 0; i < children.length; i++) {
+							const child = children[i]
 							
-							outer:
-							while(stack.length) {
-								const current = stack.pop()
-								const childArray = this.flattenChildren(current.props.children).filter(x => x?.props)
-													
-								for(const child of childArray) {
-									if(this.selectorsMatch(content.querySelector, child)) {
-										target = child
-										break outer
-									}
-								}
-								
-								stack.push(...childArray)
-							}
-						} else {
-							target = rootElem
-						}
-						
-						if(!target) { continue }
-						
-						if(!childrenModified.has(target)) {
-							childrenModified.add(target)
-							target.props.children = this.flattenChildren(target.props.children)
-						}
-						
-						const children = target.props.children
-						let index = 0
-						
-						if(typeof content.index === "number") {
-							index = content.index
-						} else if (typeof content.index === "object") {
-							for(let i = 0; i < children.length; i++) {
-								const child = children[i]
-								
-								if(child.props && this.selectorsMatch(content.index.selector, child)) {
-									index = i + (content.index.offset || 0) + 1
-									break
-								}
+							if(child.props && this.selectorsMatch(content.index.selector, child)) {
+								index = i + (content.index.offset || 0) + 1
+								break
 							}
 						}
-						
-						children.splice(
-							index,
-							0,
-							React.createElement(content.elemType, {
-								key: content.elemId,
-								id: content.elemId,
-								dangerouslySetInnerHTML: { __html: " " }
-							})
-						)
 					}
+					
+					children.splice(
+						index,
+						0,
+						React.createElement(content.elemType, {
+							key: content.elemId,
+							id: content.elemId,
+							dangerouslySetInnerHTML: { __html: " " }
+						})
+					)
 				}
 			}
 		}
