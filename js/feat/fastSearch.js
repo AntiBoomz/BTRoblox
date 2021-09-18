@@ -76,6 +76,7 @@ const btrFastSearch = {
 			const checkForThumb = thumbs => {
 				if(!thumbs[userId]) {
 					if(numRetries++ >= 10) {
+						delete thumbnailCache[userId]
 						return null
 					}
 					
@@ -233,11 +234,11 @@ const btrFastSearch = {
 
 				if(!user.Temporary) {
 					requestThumbnail(user.UserId).then(url => {
-						if(lastResultsLoaded !== now) {
-							return
+						if(lastResultsLoaded !== now) { return }
+						
+						if(url) {
+							item.$find(".btr-fastsearch-thumbnail").src = url
 						}
-
-						item.$find(".btr-fastsearch-thumbnail").src = url
 					})
 
 					requestPresence(user.UserId).then(info => {
