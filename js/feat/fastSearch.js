@@ -256,12 +256,6 @@ const btrFastSearch = {
 				
 							item.$find(".btr-fastsearch-anchor").append(placeName, followBtn)
 
-							if(user.IsFriend) { // Move to first if friend is ingame
-								searchResults.splice(searchResults.indexOf(item), 1)
-								container.prepend(item)
-								searchResults.unshift(item)
-							}
-
 							break
 						}
 						case 3:
