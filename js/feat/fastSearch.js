@@ -387,6 +387,7 @@ const btrFastSearch = {
 		
 		reactInject({
 			selector: "#navbar-universal-search, .navbar-search",
+			querySelector: "ul",
 			index: 0,
 			html: `<div id="btr-fastsearch-container"></div>`
 		})
