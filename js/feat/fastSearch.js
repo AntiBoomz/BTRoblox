@@ -148,146 +148,148 @@ const btrFastSearch = {
 			return matches
 		}
 
-		const reloadSearchResults = () => {
+		const reloadSearchResults = preserveSelection => {
 			const search = currentSearchText
 			const now = Date.now()
 
 			lastResultsLoaded = now
-			$.setImmediate(() => {
-				if(lastResultsLoaded !== now) {
-					return
+			
+			const selectedIndex = searchResults.indexOf(searchResults.$find(`.${selectedClass}`))
+
+			clearResults()
+
+			const matches = getMatches(search)
+			for(let i = 0; i < matches.length; i++) {
+				const { name, user, index } = matches[i]
+				const highlightStart = name === search ? 0 : index
+				const highlightEnd = name === search ? search.length : highlightStart + search.length
+
+				let item
+
+				if(user.Temporary) {
+					item = html`
+					<li class="navbar-search-option rbx-clickable-li btr-fastsearch" data-searchurl=/User.aspx?username=>
+						<a class=btr-fastsearch-anchor>
+							<div class=btr-fastsearch-avatar>
+								<img class=btr-fastsearch-thumbnail src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" style="visibility: hidden">
+								<div class=btr-fastsearch-status></div>
+							</div>
+							<div class=btr-fastsearch-text>
+								<div class=btr-fastsearch-name>
+									${user.Username.slice(0, highlightStart)}
+									<b>${user.Username.slice(highlightStart, highlightEnd)}</b>
+									${user.Username.slice(highlightEnd)}
+								</div>
+								<div class="text-label">
+									${user.NotFound ? "User not found" : "Loading..."}
+								</div>
+							</div>
+						</a>
+					</li>`
+				} else {
+					let label = user.IsFriend ? "You are friends" : ""
+					if(user.Alias) {
+						label += (label ? ". " : "") + `Formerly '${name}'`
+					}
+
+					item = html`
+					<li class="navbar-search-option rbx-clickable-li btr-fastsearch" data-searchurl=/User.aspx?userId=${user.UserId}&searchTerm=>
+						<a class=btr-fastsearch-anchor href=/users/${user.UserId}/profile>
+							<div class=btr-fastsearch-avatar>
+								<img class=btr-fastsearch-thumbnail src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==">
+								<div class=btr-fastsearch-status></div>
+							</div>
+							<div class=btr-fastsearch-text>
+								<div class=btr-fastsearch-name>
+									${user.Username.slice(0, highlightStart)}
+									<b>${user.Username.slice(highlightStart, highlightEnd)}</b>
+									${user.Username.slice(highlightEnd)}
+								</div>
+								<div class="text-label">
+									${label}
+								</div>
+							</div>
+						</a>
+					</li>`
 				}
 
-				const lastSelected = list.$find(`>.${selectedClass}`)
-				const selectFirst = !lastSelected || !searchResults.length && lastSelected === list.$find(">li") || searchResults.includes(lastSelected)
+				if(searchResults.length) {
+					searchResults[searchResults.length - 1].after(item)
+				} else {
+					container.prepend(item)
+				}
 
-				clearResults()
+				searchResults.push(item)
 
-				const matches = getMatches(search)
-				for(let i = 0; i < matches.length; i++) {
-					const { name, user, index } = matches[i]
-					const highlightStart = name === search ? 0 : index
-					const highlightEnd = name === search ? search.length : highlightStart + search.length
-
-					let item
-
-					if(user.Temporary) {
-						item = html`
-						<li class="navbar-search-option rbx-clickable-li btr-fastsearch" data-searchurl=/User.aspx?username=>
-							<a class=btr-fastsearch-anchor>
-								<div class=btr-fastsearch-avatar>
-									<img class=btr-fastsearch-thumbnail src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" style="visibility: hidden">
-									<div class=btr-fastsearch-status></div>
-								</div>
-								<div class=btr-fastsearch-text>
-									<div class=btr-fastsearch-name>
-										${user.Username.slice(0, highlightStart)}
-										<b>${user.Username.slice(highlightStart, highlightEnd)}</b>
-										${user.Username.slice(highlightEnd)}
-									</div>
-									<div class="text-label">
-										${user.NotFound ? "User not found" : "Loading..."}
-									</div>
-								</div>
-							</a>
-						</li>`
-					} else {
-						let label = user.IsFriend ? "You are friends" : ""
-						if(user.Alias) {
-							label += (label ? ". " : "") + `Formerly '${name}'`
+				if(!user.Temporary) {
+					requestThumbnail(user.UserId).then(url => {
+						if(lastResultsLoaded !== now) {
+							return
 						}
 
-						item = html`
-						<li class="navbar-search-option rbx-clickable-li btr-fastsearch" data-searchurl=/User.aspx?userId=${user.UserId}&searchTerm=>
-							<a class=btr-fastsearch-anchor href=/users/${user.UserId}/profile>
-								<div class=btr-fastsearch-avatar>
-									<img class=btr-fastsearch-thumbnail src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==">
-									<div class=btr-fastsearch-status></div>
-								</div>
-								<div class=btr-fastsearch-text>
-									<div class=btr-fastsearch-name>
-										${user.Username.slice(0, highlightStart)}
-										<b>${user.Username.slice(highlightStart, highlightEnd)}</b>
-										${user.Username.slice(highlightEnd)}
-									</div>
-									<div class="text-label">
-										${label}
-									</div>
-								</div>
-							</a>
-						</li>`
-					}
+						item.$find(".btr-fastsearch-thumbnail").src = url
+					})
 
-					if(searchResults.length) {
-						searchResults[searchResults.length - 1].after(item)
-					} else {
-						container.prepend(item)
-					}
-
-					searchResults.push(item)
-
-					if(!user.Temporary) {
-						requestThumbnail(user.UserId).then(url => {
-							if(lastResultsLoaded !== now) {
-								return
-							}
-
-							item.$find(".btr-fastsearch-thumbnail").src = url
-						})
-
-						requestPresence(user.UserId).then(info => {
-							if(lastResultsLoaded !== now) {
-								return
-							}
+					requestPresence(user.UserId).then(info => {
+						if(lastResultsLoaded !== now) {
+							return
+						}
+						
+						const status = item.$find(".btr-fastsearch-status")
+						status.classList.remove("game", "studio", "online")
+				
+						item.$findAll(".btr-fastsearch-placename, .btr-fastsearch-follow").forEach(x => x.remove())
+				
+						switch(info.userPresenceType) {
+						case 0: break
+						case 2: {
+							status.classList.add("game")
 							
-							const status = item.$find(".btr-fastsearch-status")
-							status.classList.remove("game", "studio", "online")
-					
-							item.$findAll(".btr-fastsearch-placename, .btr-fastsearch-follow").forEach(x => x.remove())
-					
-							switch(info.userPresenceType) {
-							case 0: break
-							case 2: {
-								status.classList.add("game")
-								
-								const placeName = html`<div class=btr-fastsearch-placename style="font-size:80%;color:rgb(2,143,47);padding-right:8px">${info.lastLocation || ""}</div>`
-								const followBtn = html`<button class="btr-fastsearch-follow btn-primary-xs">Join Game</button>`
-					
-								if(info.placeId) {
-									followBtn.setAttribute("onclick", `return Roblox.GameLauncher.followPlayerIntoGame(${user.UserId}), false`)
-								} else {
-									followBtn.classList.add("disabled")
-								}
-					
-								item.$find(".btr-fastsearch-anchor").append(placeName, followBtn)
-
-								if(user.IsFriend) { // Move to first if friend is ingame
-									searchResults.splice(searchResults.indexOf(item), 1)
-									container.prepend(item)
-									searchResults.unshift(item)
-								}
-
-								break
+							const placeName = html`<div class=btr-fastsearch-placename style="font-size:80%;color:rgb(2,143,47);padding-right:8px">${info.lastLocation || ""}</div>`
+							const followBtn = html`<button class="btr-fastsearch-follow btn-primary-xs">Join Game</button>`
+				
+							if(info.placeId) {
+								followBtn.setAttribute("onclick", `return Roblox.GameLauncher.followPlayerIntoGame(${user.UserId}), false`)
+							} else {
+								followBtn.classList.add("disabled")
 							}
-							case 3:
-								status.classList.add("studio")
-								break
-							default:
-								status.classList.add("online")
+				
+							item.$find(".btr-fastsearch-anchor").append(placeName, followBtn)
+
+							if(user.IsFriend) { // Move to first if friend is ingame
+								searchResults.splice(searchResults.indexOf(item), 1)
+								container.prepend(item)
+								searchResults.unshift(item)
 							}
-						})
-					}
-				}
 
-				if(selectFirst && searchResults.length) {
-					const prev = list.$find(`>.${selectedClass}`)
-					if(prev) {
-						prev.classList.remove(selectedClass)
-					}
-
-					searchResults[0].classList.add(selectedClass)
+							break
+						}
+						case 3:
+							status.classList.add("studio")
+							break
+						default:
+							status.classList.add("online")
+						}
+					})
 				}
-			})
+			}
+			
+			const lastSelected = list.$find(`.${selectedClass}`)
+			const firstNonResult = list.$find(`>li`)
+			
+			if(preserveSelection && searchResults[selectedIndex]) {
+				lastSelected?.classList.remove(selectedClass)
+				searchResults[selectedIndex].classList.add(selectedClass)
+			} else {
+				const selectFirst = !lastSelected || !preserveSelection && lastSelected === firstNonResult
+				
+				if(selectFirst) {
+					const first = searchResults[0] || firstNonResult
+					
+					lastSelected?.classList.remove(selectedClass)
+					first?.classList.add(selectedClass)
+				}
+			}
 		}
 
 		const updateSearch = search => {
@@ -314,7 +316,7 @@ const btrFastSearch = {
 						const json = resp.ok && await resp.json()
 						if(!json || !json.Username) {
 							temp.NotFound = true
-							reloadSearchResults()
+							reloadSearchResults(true)
 							return
 						}
 
@@ -339,7 +341,7 @@ const btrFastSearch = {
 						}
 
 						if(currentSearchStarted === searchStarted) {
-							reloadSearchResults()
+							reloadSearchResults(true)
 						}
 					})
 				}
@@ -376,13 +378,13 @@ const btrFastSearch = {
 						localStorage.setItem("btr-fastsearch-cache", JSON.stringify({ friends }))
 
 						if(currentSearchStarted === searchStarted) {
-							reloadSearchResults()
+							reloadSearchResults(true)
 						}
 					})
 				})
 			}
 
-			reloadSearchResults()
+			reloadSearchResults(false)
 		}
 		
 		reactInject({
@@ -481,7 +483,7 @@ const btrFastSearch = {
 					if(input.value === lastValue) { return }
 					lastValue = input.value
 
-					updateSearch(input.value.toLowerCase())
+					$.setImmediate(updateSearch, input.value.toLowerCase())
 				}
 
 				input.$on("input", update)
