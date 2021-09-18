@@ -40,43 +40,53 @@ const btrFastSearch = {
 			if(thumbnailCache[userId]) {
 				return thumbnailCache[userId]
 			}
-
-			thumbnailsToRequest.push(userId)
-
-			if(!thumbnailPromise) {
-				thumbnailPromise = new SyncPromise(resolve => {
-					setTimeout(() => {
-						const userIds = thumbnailsToRequest.splice(0, thumbnailsToRequest.length)
-						thumbnailPromise = null
-
-						const url = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userIds.join(",")}&size=48x48&format=Png`
-						$.fetch(url).then(async resp => {
-							const json = resp.ok && await resp.json()
-							const result = {}
-
-							if(json && json.data) {
-								json.data.forEach(info => {
-									if(info.imageUrl) {
-										result[info.targetId] = info.imageUrl
-									}
-								})
-							}
-
-							resolve(result)
-						})
-					}, 100)
-				})
-			}
-
-			return thumbnailCache[userId] = thumbnailPromise.then(thumbs => {
-				if(!thumbs[userId]) {
-					return new SyncPromise(resolve => {
-						setTimeout(() => resolve(requestThumbnail(userId)), 500)
+			
+			const request = userId => {
+				thumbnailsToRequest.push(userId)
+	
+				if(!thumbnailPromise) {
+					thumbnailPromise = new SyncPromise(resolve => {
+						setTimeout(() => {
+							const userIds = thumbnailsToRequest.splice(0, thumbnailsToRequest.length)
+							thumbnailPromise = null
+	
+							const url = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userIds.join(",")}&size=48x48&format=Png`
+							$.fetch(url).then(async resp => {
+								const json = resp.ok && await resp.json()
+								const result = {}
+	
+								if(json && json.data) {
+									json.data.forEach(info => {
+										if(info.imageUrl) {
+											result[info.targetId] = info.imageUrl
+										}
+									})
+								}
+	
+								resolve(result)
+							})
+						}, 100)
 					})
+				}
+				
+				return thumbnailPromise
+			}
+			
+			let numRetries = 0
+			const checkForThumb = thumbs => {
+				if(!thumbs[userId]) {
+					if(numRetries++ >= 10) {
+						return null
+					}
+					
+					return new SyncPromise(resolve => setTimeout(resolve, 500))
+						.then(() => request(userId).then(checkForThumb))
 				}
 
 				return thumbs[userId]
-			})
+			}
+			
+			return thumbnailCache[userId] = request(userId).then(checkForThumb)
 		}
 
 		const requestPresence = userId => {
