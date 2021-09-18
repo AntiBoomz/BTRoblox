@@ -753,6 +753,11 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	display: contents;
 }
 
+#header #btr-fastsearch-container,
+#header #btr-fastsearch-container * {
+	box-sizing: border-box;
+}
+
 #header .btr-fastsearch-anchor {
 	position: relative;
 	display: flex;
