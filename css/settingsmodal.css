@@ -85,12 +85,49 @@
 	padding: 0 4px;
 	margin: 0;
 	margin-left: 4px;
+	
+	height: 20px;
+	width: 20px;
 
 	position: absolute;
 
 	font-size: 11px;
 	text-align: center;
 	cursor: pointer;
+	
+	--btr-text-color: #000;
+	--btr-bg-color: #fff;
+}
+
+.dark-theme .btr-setting-reset-button {
+	--btr-text-color: #fff;
+	--btr-bg-color: #393b3d;
+}
+
+.btr-setting-reset-button .btr-cross {
+	position: absolute;
+	display: block;
+	left: 0;
+	right: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.btr-setting-reset-button .btr-cross::before,
+.btr-setting-reset-button .btr-cross::after {
+	content: "";
+	display: block;
+	position: absolute;
+	width: 1.8px;
+	height: 10px;
+	left: 9px;
+	top: 8px;
+	background: var(--btr-text-color);
+	transform: rotate(45deg);
+}
+
+.btr-setting-reset-button .btr-cross::after {
+	transform: rotate(-45deg);
 }
 
 .btr-setting-reset-button.disabled {
@@ -111,7 +148,8 @@
 .btr-setting-reset-button:after {
 	position: absolute;
 	display: block;
-	background: white;
+	background: var(--btr-bg-color);
+	color: var(--btr-text-color);
 	border: 1px solid #888;
 
 	right: 50%;
@@ -136,7 +174,8 @@
 .btr-setting-reset-button:before {
 	position: absolute;
 	display: block;
-	background: white;
+	background: var(--btr-bg-color);
+	color: var(--btr-text-color);
 	border: 1px solid #888;
 	border-right: none;
 	border-bottom: none;

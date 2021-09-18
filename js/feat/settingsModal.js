@@ -454,7 +454,7 @@ const btrSettingsModal = (() => {
 					element.setEnabled(input.checked)
 				})
 
-				const resetButton = html`<span class=btr-setting-reset-button>🗙</span>`
+				const resetButton = html`<span class=btr-setting-reset-button></span>`
 				label.after(resetButton)
 				
 				resetButton.$on("click", () => {
@@ -820,9 +820,12 @@ const btrSettingsModal = (() => {
 			})
 		})
 
+		settingsDiv.$findAll(".btr-setting-reset-button").forEach(btn => {
+			btn.append(html`<span class=btr-cross></span>`)
+		})
+		
 		settingsDiv.$findAll(".btr-setting-reset-button[path]").forEach(btn => {
 			const settingPath = btn.getAttribute("path")
-			btn.textContent = "🗙"
 
 			const update = () => {
 				btn.classList.toggle("disabled", SETTINGS.getIsDefault(settingPath))
