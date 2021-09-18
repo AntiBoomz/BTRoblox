@@ -134,8 +134,65 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 
 	const reactHook = {
 		args: null,
-		replacements: [],
-		cachedReplacements: new WeakMap(),
+		
+		constructorReplaces: [],
+		injectedContent: [],
+		
+		contentInject(data) {
+			this.injectedContent.push(data)
+		},
+		
+		replaceConstructor(filter, handler) {
+			this.constructorReplaces.push({
+				filter, handler
+			})
+		},
+		
+		selectorsMatch(selectors, elem) {
+			const props = elem?.props
+			if(!props) { return false }
+			
+			outer:
+			for(const selector of selectors) {
+				if(selector.type && (typeof elem.type !== "string" || selector.type !== elem.type.toLowerCase())) {
+					continue outer
+				}
+				
+				if(selector.key && selector.key !== elem.key) {
+					continue outer
+				}
+				
+				if(selector.hasProps) {
+					for(const key of selector.hasProps) {
+						if(!(key in props)) {
+							continue outer
+						}
+					}
+				}
+				
+				if(selector.props) {
+					for(const key in selector.props) {
+						if(selector.props[key] !== props[key]) {
+							continue outer
+						}
+					}
+				}
+				
+				if(selector.classList) {
+					const classes = props.className?.split(/\s+/g) ?? []
+					
+					for(const className of selector.classList) {
+						if(!classes.includes(className)) {
+							continue outer
+						}
+					}
+				}
+			
+				return true
+			}
+			
+			return false
+		},
 
 		onCreateElement(args) {
 			if(!settings || !(args[1] instanceof Object)) {
@@ -143,100 +200,45 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 			}
 
 			if(typeof args[0] === "function") {
-				const fn = args[0]
-				let replace = this.cachedReplacements.get(fn)
-
-				if(!this.cachedReplacements.has(fn)) {
-					for(const info of this.replacements) {
-						if(!info.found && !info.fnMap.has(fn)) {
-							try {
-								if(info.filter(args)) {
-									info.found = true
-									info.fnMap.set(fn, new Proxy(fn, { apply: info.handler }))
-								} else {
-									info.fnMap.set(fn, false)
-								}
-							} catch(ex) {
-								console.error(ex)
-							}
-						}
-
-						replace = info.fnMap.get(fn)
-						if(replace) { break }
+				for(const info of this.constructorReplaces) {
+					if(info.filter(args)) {
+						args[0] = new Proxy(args[0], { apply: info.handler })
 					}
-
-					this.cachedReplacements.set(fn, replace || false)
 				}
-
-				if(replace) {
-					args[0] = replace
-				}
-			}
-
-			try { this.handler(args) }
-			catch(ex) { console.error(ex) }
-		},
-
-		replaceConstructor(filter, handler) {
-			this.cachedReplacements = new WeakMap()
-			this.replacements.push({ filter, handler, fnMap: new WeakMap() })
-		},
-
-		handler(args) {
-			const props = args[1]
-			
-			const classes = props.className?.split(/\s+/g) ?? []
-			const hasClass = name => classes.includes(name)
-			
-			if(props.id === "navbar-universal-search" || hasClass("navbar-search")) {
-				const ul = args.find(x => typeof x === "object" && x.type === "ul")
+			} else {
+				const props = args[1]
+				let children
 				
-				if(ul) {
-					if(!Array.isArray(ul.props.children)) {
-						ul.props.children = [ul.props.children]
-					}
-
-					ul.props.children.unshift(
-						React.createElement("div", { key: "btrFastSearch", id: "btr-fastsearch-container", dangerouslySetInnerHTML: { __html: " " } })
-					)
-				}
-			} else if(props.id === "settings-popover-menu") {
-				args.splice(2, 0,
-					React.createElement("li", { key: "btrSettings" },
-						React.createElement("a", {
-							className: "rbx-menu-item btr-settings-toggle"
-						}, "BTR Settings")
-					)
-				)
-			}
-			
-			if(settings.navigation.enabled) {
-				if(hasClass("rbx-navbar")) {
-					const list = args.find(x => Array.isArray(x))
+				if(props?.dangerouslySetInnerHTML?.__html !== " ") { // Skip our own elems
+					const rootElem = { type: args[0], key: props.key, props }
 					
-					if(list) {
-						list.splice(0, 0,
-							React.createElement("li", { id: "btr-home", dangerouslySetInnerHTML: { __html: " " } })
-						)
-					}
-				} else if(hasClass("navbar-right")) {
-					const robuxIndex = args.findIndex((x, i) => i >= 2 && x instanceof Object && x.props && "robuxAmount" in x.props)
-
-					if(robuxIndex !== -1) {
-						args.splice(robuxIndex, 0,
-							React.createElement("li", { key: "btrMessages", id: "btr-messages-container", dangerouslySetInnerHTML: { __html: " " } }),
-							React.createElement("li", { key: "btrFriends", id: "btr-friends-container", dangerouslySetInnerHTML: { __html: " " } })
-						)
-					}
-				} else if(hasClass("left-col-list")) {
-					const list = args.slice(2).find(x => Array.isArray(x))
-
-					if(list) {
-						const blogIndex = list.findIndex(x => x.key === "blog")
-
-						if(blogIndex !== -1) {
-							list.splice(blogIndex + 1, 0,
-								React.createElement("div", { id: "btr-blogfeed-container", dangerouslySetInnerHTML: { __html: " " } }),
+					for(const content of this.injectedContent) {
+						if(this.selectorsMatch(content.selector, rootElem)) {
+							let index = 0
+							
+							if(!children) {
+								children = args[2] = args.splice(2, args.length - 2).flat(16)
+							}
+							
+							if(typeof content.index === "number") {
+								index = content.index
+							} else if (typeof content.index === "object") {
+								for(let i = 0; i < children.length; i++) {
+									if(this.selectorsMatch(content.index.selector, children[i])) {
+										index = i + (content.index.offset || 0) + 1
+										break
+									}
+								}
+							}
+							
+							children.splice(
+								index,
+								0,
+								React.createElement(content.elemType, {
+									key: content.elemId,
+									id: content.elemId,
+									dangerouslySetInnerHTML: { __html: " " }
+								})
 							)
 						}
 					}
@@ -346,7 +348,8 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 
 		onSet(window, "React", React => {
 			hijackFunction(React, "createElement", (target, thisArg, args) => {
-				reactHook.onCreateElement(args)
+				try { reactHook.onCreateElement(args) }
+				catch(ex) { console.error(ex) }
 				return target.apply(thisArg, args)
 			})
 		})
@@ -874,7 +877,8 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 		if(window.Roblox?.Linkify) { $(target).linkify() }
 		else { target.classList.add("linkify") }
 	})
-	
+
+	ContentJS.listen("reactInject", (...args) => reactHook.contentInject(...args))
 	//
 
 	ContentJS.listen("TEMPLATE_INIT", key => modifyTemplate.listenForTemplate(key))

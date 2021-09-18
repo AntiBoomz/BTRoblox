@@ -42,12 +42,7 @@ const btrSettingsModal = (() => {
 				</group>
 				<group label=Navigation path=navigation toggleable>
 					<checkbox label="Keep Sidebar Open" path=noHamburger require=false></checkbox>
-					<checkbox label="Show Premium" path=showPremium></checkbox>
-					<checkbox label="Show Blog Feed" path=showBlogFeed></checkbox>
-					<checkbox label="Switch Trade for Money" path=switchTradeForMoney></checkbox>
-					<checkbox label="Move Friends to Header" path=moveFriendsToTop></checkbox>
-					<checkbox label="Move Messages to Header" path=moveMessagesToTop></checkbox>
-					<checkbox label="Move Home to Header" path=moveHomeToTop></checkbox>
+					<button btr-tab=navigation class=btn-control-xs>Modify Buttons</button>
 				</group>
 				<group label=Profile path=profile toggleable>
 					<checkbox label="Embed Inventory" path=embedInventoryEnabled></checkbox>
@@ -56,11 +51,11 @@ const btrSettingsModal = (() => {
 				<group label=Groups path=groups toggleable=redesign>
 					<div>
 						<checkbox label="Group Shout Notifications" path=shoutAlerts require=false></checkbox>
-						<button id=btr-open-shout-filter class=btn-control-xs>Modify Shout Filters</button>
+						<button btr-tab=shoutFilters class=btn-control-xs>Modify Shout Filters</button>
 					</div>
 					<div>
 						<empty></empty>
-						<button id=btr-open-group-redesign class=btn-control-xs>Modify Redesign Options</button>
+						<button btr-tab=groupRedesign class=btn-control-xs>Modify Redesign Options</button>
 					</div>
 				</group>
 				<group label="Game Details" path=gamedetails toggleable>
@@ -69,7 +64,7 @@ const btrSettingsModal = (() => {
 				</group>
 				<group label="Item Details" path=itemdetails toggleable>
 					<checkbox label="Item Previewer" path=itemPreviewer></checkbox>
-					<button id=btr-open-item-previewer-settings class=btn-control-xs>Previewer Preferences</button>
+					<button btr-tab=itemPreviewerSettings class=btn-control-xs>Previewer Preferences</button>
 					<checkbox label="Show Explorer Button" path=explorerButton></checkbox>
 					<checkbox label="Show Download Button" path=downloadButton></checkbox>
 					<checkbox label="Show Content Button" path=contentButton></checkbox>
@@ -92,6 +87,18 @@ const btrSettingsModal = (() => {
 						<button id=btr-reset-settings class=btn-control-xs style=float:right>Reset settings to default</button>
 					</div>
 				</group>
+			</div>
+			<div class=btr-settings-content data-name=navigation>
+				<div class=btr-settings-content-header>
+					<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
+					<h4>Navigation Buttons</h4>
+				</div>
+				<div style="display:flex">
+					<group label="Header">
+					</group>
+					<group label="Sidebar">
+					</group>
+				</div>
 			</div>
 			<div class=btr-settings-content id=btr-settings-shout-filters data-name=shoutFilters>
 				<div class=btr-settings-content-header>
@@ -391,10 +398,10 @@ const btrSettingsModal = (() => {
 	}
 
 	const initSettingsDiv = async () => {
-		settingsDiv.$on("click", "#btr-open-shout-filter", () => switchContent("shoutFilters"))
-		settingsDiv.$on("click", "#btr-open-item-previewer-settings", () => switchContent("itemPreviewerSettings"))
+		let labelCounter = 0
+		
+		settingsDiv.$on("click", "[btr-tab]", ev => switchContent(ev.currentTarget.getAttribute("btr-tab")))
 		settingsDiv.$on("click", ".btr-close-subcontent", () => switchContent("main"))
-		settingsDiv.$on("click", "#btr-open-group-redesign", () => switchContent("groupRedesign"))
 
 		settingsDiv.$on("click", "#btr-fix-chat", () => {
 			$.fetch("https://chat.roblox.com/v2/get-user-conversations?pageNumber=1&pageSize=10", {
@@ -419,6 +426,59 @@ const btrSettingsModal = (() => {
 			settingsDiv.$find(".btr-settings-header").after(html`<div style="position:absolute; width: 100%; height: 20px; text-align: center; background: red; top: 30px; z-index:1000; font-size: 16px; color: white; font-weight: bold;">Settings failed to load, changes may not save</div>`)
 		}
 
+		{
+			const navButtons = settingsDiv.$find(`.btr-settings-content[data-name="navigation"]`)
+			const header = navButtons.$find(`group[label="Header"]`)
+			const sidebar = navButtons.$find(`group[label="Sidebar"]`)
+			
+			const checkboxes = {}
+			
+			for(const name in btrNavigation.elements) {
+				const element = btrNavigation.elements[name]
+				
+				const parent = name.startsWith("header") ? header : sidebar
+				const checkbox = html`<checkbox></checkbox>`
+
+				checkbox.classList.add("btr-settings-checkbox")
+
+				const input = html`<input type=checkbox>`
+				checkbox.prepend(input)
+
+				const labelIndex = labelCounter++
+				input.id = `btr-settings-input-${labelIndex}`
+
+				const labelText = element.name || name
+				const label = html`<label for=btr-settings-input-${labelIndex}>${labelText}</label>`
+				checkbox.append(label)
+
+				input.$on("change", () => {
+					element.setEnabled(input.checked)
+				})
+
+				const resetButton = html`<span class=btr-setting-reset-button>🗙</span>`
+				label.after(resetButton)
+				
+				resetButton.$on("click", () => {
+					element.resetEnabled()
+				})
+				
+				parent.append(checkbox)
+				
+				checkboxes[name] = { element, input, resetButton }
+			}
+			
+			const update = () => {
+				for(const name in checkboxes) {
+					const { element, input, resetButton } = checkboxes[name]
+					input.checked = element.enabled
+					resetButton.classList.toggle("disabled", element.isDefault)
+				}
+			}
+			
+			SETTINGS.onChange("navigation.elements", update)
+			update()
+		}
+		
 		{
 			const currencySelect = settingsDiv.$find("#btr-robuxToCash-currency")
 			const rateSelect = settingsDiv.$find("#btr-robuxToCash-rate")
@@ -538,8 +598,6 @@ const btrSettingsModal = (() => {
 		// Settings 
 
 		const settingsDone = {}
-		let labelCounter = 0
-
 		const joinPaths = (group, path) => (!group || path.includes(".") ? path : `${group}.${path}`)
 
 		settingsDiv.$findAll("group").forEach(group => {
@@ -666,7 +724,7 @@ const btrSettingsModal = (() => {
 				}
 			})
 
-			group.$findAll("checkbox").forEach(checkbox => {
+			group.$findAll("checkbox[path]").forEach(checkbox => {
 				const settingAttr = checkbox.getAttribute("path")
 				const settingPath = joinPaths(groupPath, settingAttr.replace(/^!/, ""))
 				settingsDone[settingPath] = true
@@ -766,7 +824,7 @@ const btrSettingsModal = (() => {
 			})
 		})
 
-		settingsDiv.$findAll(".btr-setting-reset-button").forEach(btn => {
+		settingsDiv.$findAll(".btr-setting-reset-button[path]").forEach(btn => {
 			const settingPath = btn.getAttribute("path")
 			btn.textContent = "🗙"
 

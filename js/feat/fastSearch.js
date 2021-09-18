@@ -384,7 +384,13 @@ const btrFastSearch = {
 
 			reloadSearchResults()
 		}
-
+		
+		reactInject({
+			selector: "#navbar-universal-search, .navbar-search",
+			index: 0,
+			html: `<div id="btr-fastsearch-container"></div>`
+		})
+		
 		document.$watch("#header", header => {
 			header.$watch("#btr-fastsearch-container", _cont => {
 				container = _cont

@@ -500,6 +500,14 @@
 	font-size: 15px;
 }
 
+.btr-settings-content[data-name="navigation"] {
+	padding-bottom: 20px;
+}
+
+.btr-settings-content[data-name="navigation"] checkbox {
+	width: 100%;
+}
+
 #btr-settings-item-previewer {
 	display: flex;
 	flex-direction: column;

@@ -5,6 +5,7 @@ const startDate = new Date()
 
 let loggedInUserPromise = null
 let loggedInUser = -1
+let isLoggedIn = false
 
 const AssetTypeIds = [
 	null,
@@ -230,8 +231,94 @@ const toggleSettingsModal = async force => {
 	btrSettingsModal.toggle(force)
 }
 
+let reactListenerIndex = 0
+const reactInject = data => {
+	const parseSelector = selector => {
+		if(typeof selector === "string") {
+			const result = []
+			
+			for(let part of selector.split(/,/)) {
+				part = part.trim()
+				
+				if(part.length > 0) {
+					assert(!part.includes(" "), "Selector has a space")
+					const pieces = part.split(/(?=[#.])/)
+					const obj = {}
+					
+					for(const piece of pieces) {
+						if(piece[0] === ".") {
+							obj.classList = obj.classList ?? []
+							obj.classList.push(piece.slice(1))
+						} else if(piece[0] === "#") {
+							obj.id = piece.slice(1)
+						} else {
+							obj.type = piece.toLowerCase()
+						}
+					}
+					
+					result.push(obj)
+				}
+			}
+			
+			selector = result
+		}
+		
+		selector = Array.isArray(selector) ? selector : [selector]
+		
+		for(const obj of selector) {
+			for(const name of Object.keys(obj)) {
+				if(name !== "classList" && name !== "type" && name !== "key" && name !== "hasProps") {
+					obj.props = obj.props ?? {}
+					obj.props[name] = obj[name]
+					delete obj[name]
+				}
+			}
+			
+			if(obj.props?.key) {
+				obj.key = obj.props.key
+				delete obj.props.key
+			}
+		}
+		
+		return selector
+	}
+	
+	data = { ...data }
+	data.selector = parseSelector(data.selector)
+	
+	if(typeof data.index === "object") {
+		data.index = { ...data.index }
+		data.index.selector = parseSelector(data.index.selector)
+	}
+	
+	const callback = data.callback
+	const resultHtml = data.html
+	
+	delete data.callback
+	delete data.html
+	
+	data.elemType = html(resultHtml).nodeName
+	data.elemId = `btr-react-${reactListenerIndex++}`
+	
+	document.$watch(`#${data.elemId}`, node => {
+		const replace = html(resultHtml)
+		node.replaceWith(replace)
+		callback?.(replace)
+	}, { continuous: true })
+	
+	InjectJS.send("reactInject", data)
+}
+
+
+
 pageInit.common = () => {
 	document.$on("click", ".btr-settings-toggle", toggleSettingsModal)
+	
+	reactInject({
+		selector: "#settings-popover-menu",
+		index: 0,
+		html: `<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>`
+	})
 
 	try {
 		const url = new URL(window.location.href)
@@ -267,22 +354,46 @@ pageInit.common = () => {
 		// Empty asHttpRegex matches everything, so every link will be unsecured, so fix that
 		if(!linkify.dataset.asHttpRegex) { linkify.dataset.asHttpRegex = "^$" }
 	})
-
+	
 	loggedInUserPromise = new SyncPromise(resolve => {
 		headWatcher.$watch(`meta[name="user-data"]`, meta => {
 			const userId = +meta.dataset.userid
 			loggedInUser = Number.isSafeInteger(userId) ? userId : -1
+			isLoggedIn = userId !== -1
 			resolve(loggedInUser)
 		})
 		
 		$.ready(() => resolve(-1))
 	})
+	
+	if(SETTINGS.get("navigation.enabled")) {
+		try { btrNavigation.init() }
+		catch(ex) { console.error(ex) }
+	}
+	
+	if(SETTINGS.get("general.robuxToUSD")) {
+		bodyWatcher.$watchAll("#buy-robux-popover", popover => {
+			const bal = popover.$find("#nav-robux-balance")
+			if(!bal) { return }
 
-	loggedInUserPromise.then(userId => {
-		if(userId !== -1) {
-			btrNavigation.init()
-		}
-	})
+			const span = html`<span style="display:block;opacity:0.75;font-size:small;font-weight:500;"></span>`
+
+			const update = () => {
+				const matches = bal.textContent.trim().match(/^([\d,]+)\sRobux$/)
+				if(!matches) { return }
+
+				const amt = parseInt(matches[0].replace(/,/g, ""), 10)
+				if(!Number.isSafeInteger(amt)) { return }
+
+				span.textContent = RobuxToCash.convert(amt)
+				bal.append(span)
+			}
+
+			const observer = new MutationObserver(update)
+			observer.observe(bal, { childList: true })
+			update()
+		})
+	}
 
 	if(SETTINGS.get("general.fastSearch")) {
 		try { btrFastSearch.init() }
