@@ -392,10 +392,16 @@ pageInit.common = () => {
 	}).$then()
 
 	bodyWatcher.$watch("#roblox-linkify", linkify => {
-		linkify.dataset.regex = /(https?:\/\/)?([a-z0-9-]+\.)*(twitter\.com|youtube\.com|youtu\.be|twitch\.tv|roblox\.com|robloxlabs\.com|shoproblox\.com)(?!\/[A-Za-z0-9-+&@#/=~_|!:,.;]*%)((\/[A-Za-z0-9-+&@#/%?=~_|!:,.;]*)|(?=\s|\b))/.source
-
-		// Empty asHttpRegex matches everything, so every link will be unsecured, so fix that
-		if(!linkify.dataset.asHttpRegex) { linkify.dataset.asHttpRegex = "^$" }
+		const index = linkify.dataset.regex.search(/\|[^|]*shoproblox\\.com/)
+		
+		if(index !== -1) {
+			linkify.dataset.regex = linkify.dataset.regex.slice(0, index) + /|twitter\.com|youtube\.com|youtu\.be|twitch\.tv/.source + linkify.dataset.regex.slice(index)
+			
+			// Empty asHttpRegex matches everything, so every link will be unsecured, so fix that
+			if(!linkify.dataset.asHttpRegex) { linkify.dataset.asHttpRegex = "^$" }
+		} else {
+			THROW_DEV_WARNING("linkify regex is not compatible")
+		}
 	})
 	
 	loggedInUserPromise = new SyncPromise(resolve => {
