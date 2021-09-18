@@ -895,14 +895,16 @@ const injectCSS = (...paths) => {
 		mainStyleSheet = style.sheet
 	}
 	
+	const shouldHotReload = false // IS_DEV_MODE
+	
 	for(const path of paths) {
 		const url = getURL(path)
-		const cssRule = addStyleSheet(IS_DEV_MODE ? `${url}?_=${Date.now()}` : url)
+		const cssRule = addStyleSheet(shouldHotReload ? `${url}?_=${Date.now()}` : url)
 
 		const styleSheet = { path, cssRule }
 		activeStyleSheets.push(styleSheet)
 
-		if(IS_DEV_MODE) {
+		if(shouldHotReload) {
 			let lastCSSText = null
 
 			const tryReload = async () => {
