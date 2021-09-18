@@ -9,6 +9,8 @@ const RobuxToCash = {
 	UpdateDate: "September 16, 2021",
 	
 	Currencies: {
+		None: { symbol: "", rates: [] },
+		
 		USD: { symbol: "$", rates: [499, 999, 1999, 4999, 9999] },
 		EUR: { symbol: "€", rates: [499, 999, 2099, 4999, 9999] },
 		GBP: { symbol: "£", rates: [459, 899, 1849, 4649, 9299] },
@@ -171,19 +173,26 @@ const RobuxToCash = {
 	},
 	
 	OptionLists: {
+		None: [
+			{ name: "none", cash: 1, robux: 1 }
+		],
 		USD: [
 			{ name: "devex", cash: 350, robux: 1000 }
 		]
 	},
 
 	Options: {},
-
+	
+	isEnabled() {
+		return this.getSelectedOption() !== this.Options.none
+	},
+	
 	getSelectedOption() {
 		if(!SETTINGS.loaded) {
-			return this.Options.devex
+			return this.Options.none
 		}
 
-		return this.Options[SETTINGS.get("general.robuxToUSDRate")] || this.Options.devex
+		return this.Options[SETTINGS.get("general.robuxToUSDRate")] || this.Options.none
 	},
 
 	convertAngular(expr) {

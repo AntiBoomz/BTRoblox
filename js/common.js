@@ -147,8 +147,7 @@ const SETTINGS = {
 			fastSearch: { value: true },
 			fixAudioVolume: { value: true },
 
-			robuxToUSD: { value: false },
-			robuxToUSDRate: { value: "devex", hidden: true },
+			robuxToUSDRate: { value: "none", hidden: true },
 	
 			hoverPreview: { value: true },
 			hoverPreviewMode: { value: "always", validValues: ["always", "never"] },

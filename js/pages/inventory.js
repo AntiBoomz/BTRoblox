@@ -53,7 +53,7 @@ pageInit.inventory_pre = function() {
 }
 
 pageInit.inventory = function() {
-	if(SETTINGS.get("general.robuxToUSD")) {
+	if(RobuxToCash.isEnabled()) {
 		modifyTemplate("assets-explorer", template => {
 			const label = template.$find(".item-card-price .text-robux-tile")
 			if(!label) { return }

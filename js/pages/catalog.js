@@ -1,7 +1,7 @@
 "use strict"
 
 pageInit.catalog = function() {
-	if(SETTINGS.get("general.robuxToUSD")) {
+	if(RobuxToCash.isEnabled()) {
 		modifyTemplate("item-card", template => {
 			template.$findAll(".item-card-price .text-robux-tile").forEach(label => {
 				const cashText = ` (${RobuxToCash.convertAngular("(item.lowestPrice||item.price)")})`

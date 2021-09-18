@@ -1,7 +1,7 @@
 "use strict"
 
 pageInit.money = function() {
-	if(SETTINGS.get("general.robuxToUSD")) {
+	if(RobuxToCash.isEnabled()) {
 		const attached = new WeakSet()
 		
 		const attach = elem => {

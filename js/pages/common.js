@@ -371,30 +371,35 @@ pageInit.common = () => {
 		catch(ex) { console.error(ex) }
 	}
 	
-	if(SETTINGS.get("general.robuxToUSD")) {
-		bodyWatcher.$watchAll("#buy-robux-popover", popover => {
-			const bal = popover.$find("#nav-robux-balance")
-			if(!bal) { return }
+	bodyWatcher.$watchAll("#buy-robux-popover", popover => {
+		const bal = popover.$find("#nav-robux-balance")
+		if(!bal) { return }
 
-			const span = html`<span style="display:block;opacity:0.75;font-size:small;font-weight:500;"></span>`
+		const span = html`<span style="display:block;opacity:0.75;font-size:small;font-weight:500;"></span>`
 
-			const update = () => {
-				const matches = bal.textContent.trim().match(/^([\d,]+)\sRobux$/)
-				if(!matches) { return }
-
-				const amt = parseInt(matches[0].replace(/,/g, ""), 10)
-				if(!Number.isSafeInteger(amt)) { return }
-
-				span.textContent = RobuxToCash.convert(amt)
-				bal.append(span)
+		const update = () => {
+			if(!RobuxToCash.isEnabled()) {
+				span.remove()
+				return
 			}
+			
+			const matches = bal.textContent.trim().match(/^([\d,]+)\sRobux$/)
+			if(!matches) { return }
 
-			const observer = new MutationObserver(update)
-			observer.observe(bal, { childList: true })
-			update()
-		})
-	}
+			const amt = parseInt(matches[0].replace(/,/g, ""), 10)
+			if(!Number.isSafeInteger(amt)) { return }
 
+			span.textContent = RobuxToCash.convert(amt)
+			bal.append(span)
+		}
+
+		const observer = new MutationObserver(update)
+		observer.observe(bal, { childList: true })
+		update()
+		
+		SETTINGS.onChange("general.robuxToUSDRate", update)
+	})
+	
 	if(SETTINGS.get("general.fastSearch")) {
 		try { btrFastSearch.init() }
 		catch(ex) { console.error(ex) }

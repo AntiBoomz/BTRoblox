@@ -384,7 +384,7 @@ const initContentButton = async (assetId, assetTypeId) => {
 pageInit.itemdetails = function(category, assetIdString) {
 	const assetId = Number.parseInt(assetIdString, 10)
 
-	if(SETTINGS.get("general.robuxToUSD")) {
+	if(RobuxToCash.isEnabled()) {
 		document.$watch(".icon-robux-price-container .text-robux-lg", label => {
 			const cash = RobuxToCash.convert(+label.textContent.replace(/,/g, ""))
 			label.after(

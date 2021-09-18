@@ -29,15 +29,14 @@ const btrSettingsModal = (() => {
 					</div>
 					<checkbox label="Show 'Copy Id' Context Items" path=enableContextMenus></checkbox>
 					<checkbox label="Lower Default Audio Volume" path=fixAudioVolume></checkbox>
-					<div style="margin-top: 15px; display: flex;">
-						<checkbox label="Show Robux to Cash" path=robuxToUSD style="width: 50%"></checkbox>
-						<div style=width:50%>
-							<span style="width: calc(100% - 14px); display: inline-flex;">
-								<select id=btr-robuxToCash-currency style="flex: 0 1 auto"></select>
-								<select id=btr-robuxToCash-rate style="flex: 1 1 auto; min-width: 0; margin-left: 4px"></select>
-							</span>
-							<span class=btr-setting-reset-button path=general.robuxToUSDRate></span>
-						</div>
+					<empty></empty>
+					<div style="display: inline-block; width: 50%; padding: 6px 2px;">
+						<label style="">Robux to Cash Conversion Rate</label>
+						<span style="width: calc(100% - 14px); display: inline-flex;">
+							<select id=btr-robuxToCash-currency style="flex: 0 1 auto"></select>
+							<select id=btr-robuxToCash-rate style="flex: 1 1 auto; min-width: 0; margin-left: 4px"></select>
+						</span>
+						<span class=btr-setting-reset-button path=general.robuxToUSDRate></span>
 					</div>
 				</group>
 				<group label=Navigation path=navigation toggleable>
@@ -514,48 +513,45 @@ const btrSettingsModal = (() => {
 				let selected = false
 
 				RobuxToCash.OptionLists[name].forEach(option => {
-					const display = option.name.includes("devex") ? "DevEx"
-						: option.name.includes("Premium") ? "Premium"
-							: "Regular"
+					let fullText = ""
 					
-					const rateText = option.currency.usdRate ?
-						`${option.currency.symbol}${(option.cash / 100).toFixed(2)} ≈ US$${(option.usdCash / 100).toFixed(2)} = R$${option.robux}`
-						: `${option.currency.symbol}${(option.cash / 100).toFixed(2)} = R$${option.robux}`
+					if(option.name === "none") {
+						fullText = "No currency selected"
+					} else {
+						const display = option.name.includes("devex") ? "DevEx"
+							: option.name.includes("Premium") ? "Premium"
+								: "Regular"
+						
+						const rateText = option.currency.usdRate ?
+							`${option.currency.symbol}${(option.cash / 100).toFixed(2)} ≈ US$${(option.usdCash / 100).toFixed(2)} = R$${option.robux}`
+							: `${option.currency.symbol}${(option.cash / 100).toFixed(2)} = R$${option.robux}`
 					
-					rateSelect.append(html`<option value="${option.name}">${display} (${rateText})</option>`)
+						fullText = `${display} (${rateText})`
+					}
+					
+					rateSelect.append(html`<option value="${option.name}">${fullText}</option>`)
 
 					if(option.name === SETTINGS.get("general.robuxToUSDRate")) {
 						selected = true
 					}
 				})
-
+				
 				if(selected) {
 					rateSelect.value = SETTINGS.get("general.robuxToUSDRate")
 				} else {
 					rateSelect.value = rateSelect.options[0].value
 					setRate()
 				}
+				
+				if(name === "None") {
+					rateSelect.setAttribute("disabled", "")
+				} else {
+					rateSelect.removeAttribute("disabled")
+				}
 			}
 
 			SETTINGS.onChange("general.robuxToUSDRate", updateRate)
 			updateRate()
-
-			//
-
-			const updateDisabled = () => {
-				const value = SETTINGS.get("general.robuxToUSD")
-
-				if(value) {
-					currencySelect.removeAttribute("disabled")
-					rateSelect.removeAttribute("disabled")
-				} else {
-					currencySelect.setAttribute("disabled", "")
-					rateSelect.setAttribute("disabled", "")
-				}
-			}
-			
-			SETTINGS.onChange("general.robuxToUSD", updateDisabled)
-			updateDisabled()
 		}
 
 		{

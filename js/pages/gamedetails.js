@@ -11,7 +11,7 @@ pageInit.gamedetails = function(placeId) {
 	const midContainer = html`
 	<div class="col-xs-12 btr-mid-container"></div>`
 
-	if(SETTINGS.get("general.robuxToUSD")) {
+	if(RobuxToCash.isEnabled()) {
 		document.$watch("#rbx-passes-container").$then()
 			.$watchAll(".list-item", item => {
 				const label = item.$find(".text-robux")

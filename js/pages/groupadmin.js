@@ -3,7 +3,7 @@
 pageInit.groupadmin = () => {
 	const groupId = +new URLSearchParams(window.location.search).get("id")
 	
-	if(SETTINGS.get("general.robuxToUSD")) {
+	if(RobuxToCash.isEnabled()) {
 		modifyTemplate("configure-group-page", template => {
 			const robuxLabel = template.$find(`.text-robux[ng-bind="$ctrl.groupFunds | number:0"]`)
 			if(!robuxLabel) {
