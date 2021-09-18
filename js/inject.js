@@ -193,6 +193,10 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 			
 			return false
 		},
+		
+		flattenChildren(children) {
+			return (Array.isArray(children) ? children : [children]).flat(16)
+		},
 
 		onCreateElement(args) {
 			if(!settings || !(args[1] instanceof Object)) {
@@ -207,40 +211,79 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 				}
 			} else {
 				const props = args[1]
-				let children
 				
 				if(props?.dangerouslySetInnerHTML?.__html !== " ") { // Skip our own elems
-					const rootElem = { type: args[0], key: props.key, props }
+					const rootElem = {
+						type: args[0],
+						key: props.key,
+						props: { ...props }
+					}
+					
+					const childrenModified = new WeakSet()
 					
 					for(const content of this.injectedContent) {
-						if(this.selectorsMatch(content.selector, rootElem)) {
-							let index = 0
+						if(!this.selectorsMatch(content.selector, rootElem)) { continue }
+						
+						if(!childrenModified.has(rootElem)) {
+							childrenModified.add(rootElem)
+							rootElem.props.children = args[2] = this.flattenChildren(args.splice(2, args.length - 2))
+						}
+						
+						let target
+						
+						if(content.querySelector) {
+							const stack = [rootElem]
 							
-							if(!children) {
-								children = args[2] = args.splice(2, args.length - 2).flat(16)
-							}
-							
-							if(typeof content.index === "number") {
-								index = content.index
-							} else if (typeof content.index === "object") {
-								for(let i = 0; i < children.length; i++) {
-									if(this.selectorsMatch(content.index.selector, children[i])) {
-										index = i + (content.index.offset || 0) + 1
-										break
+							outer:
+							while(stack.length) {
+								const current = stack.pop()
+								const childArray = this.flattenChildren(current.props.children).filter(x => x?.props)
+													
+								for(const child of childArray) {
+									if(this.selectorsMatch(content.querySelector, child)) {
+										target = child
+										break outer
 									}
 								}
+								
+								stack.push(...childArray)
 							}
-							
-							children.splice(
-								index,
-								0,
-								React.createElement(content.elemType, {
-									key: content.elemId,
-									id: content.elemId,
-									dangerouslySetInnerHTML: { __html: " " }
-								})
-							)
+						} else {
+							target = rootElem
 						}
+						
+						if(!target) { continue }
+						
+						if(!childrenModified.has(target)) {
+							childrenModified.add(target)
+							target.props.children = this.flattenChildren(target.props.children)
+						}
+						
+						const children = target.props.children
+						let index = 0
+						
+						if(typeof content.index === "number") {
+							index = content.index
+						} else if (typeof content.index === "object") {
+							for(let i = 0; i < children.length; i++) {
+								const child = children[i]
+								
+								if(child.props && this.selectorsMatch(content.index.selector, child)) {
+									index = i + (content.index.offset || 0) + 1
+									break
+								}
+							}
+						}
+						
+						children.splice(
+							index,
+							0,
+							React.createElement(content.elemType, {
+								key: content.elemId,
+								id: content.elemId,
+								dangerouslySetInnerHTML: { __html: " " }
+							})
+						)
 					}
 				}
 			}

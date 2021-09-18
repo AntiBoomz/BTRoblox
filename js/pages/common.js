@@ -286,6 +286,10 @@ const reactInject = data => {
 	data = { ...data }
 	data.selector = parseSelector(data.selector)
 	
+	if(data.querySelector) {
+		data.querySelector = parseSelector(data.querySelector)
+	}
+	
 	if(typeof data.index === "object") {
 		data.index = { ...data.index }
 		data.index.selector = parseSelector(data.index.selector)
