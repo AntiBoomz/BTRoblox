@@ -468,12 +468,13 @@ const btrFastSearch = {
 		
 				input.$on("keyup", ev => {
 					if(ev.keyCode === 13) {
-						const selected = list.$find(`.${selectedClass}`)
-						if(!selected || !searchResults.includes(selected)) {
-							return
+						const selected = container.$find(`.${selectedClass}`)
+						if(!selected) { return }
+						
+						const url = selected.$find("a")?.href
+						if(url) {
+							window.location = url
 						}
-		
-						window.location = selected.$find("a").href
 		
 						ev.stopImmediatePropagation()
 						ev.stopPropagation()
