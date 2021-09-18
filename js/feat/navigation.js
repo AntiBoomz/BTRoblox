@@ -211,27 +211,49 @@ const btrNavigation = {
 		
 		// Sidebar
 		
-		btrNavigation.register("sidebar_premium", {
-			name: "Show Premium",
+		btrNavigation.register("sidebar_home", {
+			name: "Show Home",
 			
-			reactInject: {
-				selector: ".left-col-list",
-				index: { selector: { key: "blog" }, offset: -1 },
-				html: `
-				<li>
-					<a href=/premium/membership id=nav-premium class="dynamic-overflow-container text-nav">
-						<div><span class=icon-nav-premium-btr></span></div>
-						<span class="font-header-2 dynamic-ellipsis-item">Premium</span>
-					</a>
-				</li>`
+			selector: "#nav-home",
+			enabled: false,
+			
+			update(node) {
+				node.parentNode.style.display = this.enabled ? "" : "none"
 			}
 		})
 		
-		btrNavigation.register("sidebar_premium_2", {
-			name: "Show Premium Button",
+		btrNavigation.register("sidebar_messages", {
+			name: "Show Messages",
 			
-			selector: ".left-col-list > .rbx-upgrade-now",
-			enabled: false
+			selector: "#nav-message",
+			enabled: false,
+			
+			update(node) {
+				node.parentNode.style.display = this.enabled ? "" : "none"
+			},
+			
+			nodeAdded(node) {
+				const update = () => btrNavigation.elements.header_messages.updateAll()
+				new MutationObserver(update).observe(node, { childList: true, subtree: true, attributeFilter: ["href"] })
+				update()
+			}
+		})
+		
+		btrNavigation.register("sidebar_friends", {
+			name: "Show Friends",
+			
+			selector: "#nav-friends",
+			enabled: false,
+			
+			update(node) {
+				node.parentNode.style.display = this.enabled ? "" : "none"
+			},
+			
+			nodeAdded(node) {
+				const update = () => btrNavigation.elements.header_friends.updateAll()
+				new MutationObserver(update).observe(node, { childList: true, subtree: true, attributeFilter: ["href"] })
+				update()
+			}
 		})
 		
 		btrNavigation.register("sidebar_trade", {
@@ -309,38 +331,27 @@ const btrNavigation = {
 			}
 		})
 		
-		btrNavigation.register("sidebar_messages", {
-			name: "Show Messages",
+		btrNavigation.register("sidebar_premium", {
+			name: "Show Premium",
 			
-			selector: "#nav-message",
-			enabled: false,
-			
-			update(node) {
-				node.parentNode.style.display = this.enabled ? "" : "none"
-			},
-			
-			nodeAdded(node) {
-				const update = () => btrNavigation.elements.header_messages.updateAll()
-				new MutationObserver(update).observe(node, { childList: true, subtree: true, attributeFilter: ["href"] })
-				update()
+			reactInject: {
+				selector: ".left-col-list",
+				index: { selector: { key: "blog" }, offset: -1 },
+				html: `
+				<li>
+					<a href=/premium/membership id=nav-premium class="dynamic-overflow-container text-nav">
+						<div><span class=icon-nav-premium-btr></span></div>
+						<span class="font-header-2 dynamic-ellipsis-item">Premium</span>
+					</a>
+				</li>`
 			}
 		})
 		
-		btrNavigation.register("sidebar_friends", {
-			name: "Show Friends",
+		btrNavigation.register("sidebar_premium_2", {
+			name: "Show Premium Button",
 			
-			selector: "#nav-friends",
-			enabled: false,
-			
-			update(node) {
-				node.parentNode.style.display = this.enabled ? "" : "none"
-			},
-			
-			nodeAdded(node) {
-				const update = () => btrNavigation.elements.header_friends.updateAll()
-				new MutationObserver(update).observe(node, { childList: true, subtree: true, attributeFilter: ["href"] })
-				update()
-			}
+			selector: ".left-col-list > .rbx-upgrade-now",
+			enabled: false
 		})
 	}
 }
