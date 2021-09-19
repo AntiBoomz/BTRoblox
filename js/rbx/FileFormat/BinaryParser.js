@@ -119,6 +119,7 @@ const RBXBinaryParser = {
 		}
 
 		let values = new Array(instCount)
+		let resultTypeName = typeName
 
 		switch(typeName) {
 		case "string":
@@ -346,6 +347,8 @@ const RBXBinaryParser = {
 			for(let i = 0; i < instCount; i++) {
 				values[i] = [rgb[i] / 255, rgb[i + instCount] / 255, rgb[i + instCount * 2] / 255]
 			}
+			
+			resultTypeName = "Color3"
 			break
 		}
 		case "int64": { // Two's complement
@@ -403,7 +406,7 @@ const RBXBinaryParser = {
 		}
 
 		values.forEach((value, i) => {
-			group.Objects[i].setProperty(prop, value, typeName)
+			group.Objects[i].setProperty(prop, value, resultTypeName)
 		})
 	},
 
