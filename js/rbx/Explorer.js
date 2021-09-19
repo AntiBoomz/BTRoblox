@@ -364,7 +364,6 @@ const Explorer = (() => {
 					case "Vector3":
 						valueItem.textContent = fixNums(value).join(", ")
 						break
-					case "Color3uint8":
 					case "Color3": {
 						const rgb = value.map(x => Math.round(x * 255))
 						valueItem.textContent = `[${rgb.join(", ")}]`
