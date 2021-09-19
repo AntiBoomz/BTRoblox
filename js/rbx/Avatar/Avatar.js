@@ -210,7 +210,7 @@ const RBXAvatar = (() => {
 		}
 
 		sources.forEach(source => {
-			const entry = { source, dirty: false }
+			const entry = { source, dirty: true }
 			stack.push(entry)
 
 			source.onUpdate(() => {
