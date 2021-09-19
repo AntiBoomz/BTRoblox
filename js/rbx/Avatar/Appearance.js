@@ -296,11 +296,15 @@ const RBXAppearance = (() => {
 
 			const meshId = meshInst.MeshId
 			const texId = meshInst.TextureId
+			
+			const baseColor = hanInst.Color || hanInst.Color3uint8 // ugh
 
 			this.addAccessory({
-				meshId,
-				texId,
-				color: meshInst.VertexColor ? [...meshInst.VertexColor] : null,
+				meshId: meshId,
+				texId: texId,
+				
+				baseColor: baseColor ? [...baseColor] : null,
+				vertexColor: meshInst.VertexColor ? [...meshInst.VertexColor] : null,
 				opacity: 1 - (meshInst.Transparency || 0),
 				
 				scale: meshInst.Scale ? [...meshInst.Scale] : null,

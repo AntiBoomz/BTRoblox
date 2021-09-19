@@ -911,10 +911,28 @@ const RBXAvatar = (() => {
 			// Update accessories
 			accessories.forEach(acc => {
 				if(!acc.obj) {
-					const source = createSource(grayImage)
-					const texture = mergeTexture(256, 256, source)
-
-					const mat = new THREE.MeshLambertMaterial({ map: texture, transparent: false })
+					const color = new THREE.Color(1, 1, 1)
+					let texture
+					
+					if(acc.texId) {
+						if(acc.vertexColor) {
+							color.setRGB(...acc.vertexColor)
+						}
+						
+						const source = createSource(grayImage)
+						
+						AssetCache.loadImage(true, acc.texId, img => {
+							source.setImage(img)
+						})
+						
+						texture = mergeTexture(256, 256, source)
+					} else {
+						if(acc.baseColor) {
+							color.setRGB(...acc.baseColor)
+						}
+					}
+					
+					const mat = new THREE.MeshLambertMaterial({ map: texture, transparent: false, color })
 					const obj = acc.obj = new THREE.Mesh(undefined, mat)
 					obj.matrixAutoUpdate = false
 					obj.frustumCulled = false
@@ -926,18 +944,8 @@ const RBXAvatar = (() => {
 						mat.transparency = acc.opacity < 1
 					}
 					
-					if(acc.color) {
-						mat.color.setRGB(acc.color[0], acc.color[1], acc.color[2])
-					}
-					
 					if(acc.meshId) {
 						AssetCache.loadMesh(true, acc.meshId, mesh => applyMesh(obj, mesh))
-					}
-
-					if(acc.texId) {
-						AssetCache.loadImage(true, acc.texId, img => {
-							source.setImage(img)
-						})
 					}
 					
 					acc.bakedCFrame = new THREE.Matrix4()
