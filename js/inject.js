@@ -514,7 +514,7 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 				})
 			}
 
-			if(currentPage === "home" && settings.home.secondRow) {
+			if(currentPage === "home" && settings.home.friendsSecondRow) {
 				document.body.classList.add("btr-home-secondRow")
 				
 				hijackAngular("peopleList", {

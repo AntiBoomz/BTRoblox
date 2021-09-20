@@ -156,7 +156,8 @@ const SETTINGS = {
 			enableContextMenus: { value: true }
 		},
 		home: {
-			secondRow: { value: false }
+			friendsShowUsername: { value: true },
+			friendsSecondRow: { value: false }
 		},
 		navigation: {
 			enabled: { value: true },

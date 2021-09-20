@@ -2,12 +2,41 @@
 	max-width: 970px;
 }
 
-.btr-home-secondRow .people-list-container {
-	height: 326px;
+body {
+	--btr-people-height: 128px;
+	--btr-people-rows: 1;
+	--btr-people-padding: 4px;
 }
 
-html .btr-home-secondRow .people-list-container .people-list {
-	max-height: 266px;
-	min-height: 133px;
-	height: auto;
+.btr-home-showUsername {
+	--btr-people-height: 140px;
+}
+
+.btr-home-secondRow {
+	--btr-people-rows: 2;
+}
+
+body .people-list-container {
+	height: calc(var(--btr-people-height) * var(--btr-people-rows) + 62px);
+}
+
+body .people-list-container .people-list {
+	height: calc(var(--btr-people-height) * var(--btr-people-rows) + 5px);
+	max-height: none;
+}
+
+body .people-list-container .people-list .friend {
+	height: var(--btr-people-height + 20px);
+	margin-bottom: var(--btr-people-padding);
+}
+
+body .people-list-container .people-list .friend a {
+	padding-bottom: 8px; /* This moves the popup lower */
+}
+
+body .people-list-container .btr-people-username {
+	text-align: center;
+	margin-top: -5px;
+	margin-bottom: 2px;
+	font-weight: 0;
 }

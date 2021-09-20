@@ -43,6 +43,10 @@ const btrSettingsModal = (() => {
 					<checkbox label="Keep Sidebar Open" path=noHamburger require=false></checkbox>
 					<button btr-tab=navigation class=btn-control-xs>Modify Buttons</button>
 				</group>
+				<group label=Home path=home>
+					<checkbox label="Show Friend Usernames" path=friendsShowUsername></checkbox>
+					<checkbox label="Show More Friends" path=friendsSecondRow></checkbox>
+				</group>
 				<group label=Profile path=profile toggleable>
 					<checkbox label="Embed Inventory" path=embedInventoryEnabled></checkbox>
 					<checkbox label="Show Last Online" path=lastOnline></checkbox>
