@@ -17,11 +17,12 @@ body {
 }
 
 body .people-list-container {
-	height: calc(var(--btr-people-height) * var(--btr-people-rows) + 62px);
+	--btr-people-total-height: calc(var(--btr-people-height) * var(--btr-people-rows) + var(--btr-people-padding) * (var(--btr-people-rows) - 1));
+	height: calc(var(--btr-people-total-height) + 65px);
 }
 
 body .people-list-container .people-list {
-	height: calc(var(--btr-people-height) * var(--btr-people-rows) + 5px);
+	height: calc(var(--btr-people-total-height) + 5px);
 	max-height: none;
 }
 
