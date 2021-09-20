@@ -326,73 +326,6 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 			}
 		})
 	}
-
-	//
-	
-	function hijackAngular(moduleName, objects) {
-		try {
-			const module = angular.module(moduleName)
-			const done = {}
-
-			module._invokeQueue.forEach(data => {
-				const [, type, data2] = data
-				const [name, value] = data2
-				const fn = objects[name]
-				if(!fn) { return }
-
-				done[name] = true
-				if(type === "constant" || type === "component") {
-					try { fn(value) }
-					catch(ex) { console.error(ex) }
-
-					return
-				}
-
-				if(typeof value === "function") {
-					const injects = value.$inject
-					const oldFn = value
-
-					data2[1] = new Proxy(oldFn, {
-						apply(target, thisArg, args) {
-							const argMap = {}
-							args.forEach((x, i) => argMap[injects[i]] = x)
-
-							return fn.call(thisArg, target, args, argMap)
-						}
-					})
-				} else {
-					const injects = value
-					const oldFn = value[value.length - 1]
-
-					if(typeof oldFn === "function") {
-						value[value.length - 1] = new Proxy(oldFn, {
-							apply(target, thisArg, args) {
-								const argMap = {}
-								args.forEach((x, i) => argMap[injects[i]] = x)
-	
-								return fn.call(thisArg, target, args, argMap)
-							}
-						})
-					} else {
-						done[name] = false
-					}
-				}
-			})
-
-			if(IS_DEV_MODE) {
-				Object.keys(objects).forEach(name => {
-					if(!done[name]) {
-						console.warn(`Failed to hijack ${moduleName}.${name}`)
-						if(IS_DEV_MODE) { alert(`hijackAngular Missing Module '${moduleName}.${name}'`) }
-					}
-				})
-			}
-		} catch(ex) {
-			if(IS_DEV_MODE) {
-				console.warn(ex)
-			}
-		}
-	}
 	
 	function hijackFunction(a, b, c) {
 		if(arguments.length === 2) {
@@ -401,13 +334,112 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 
 		a[b] = new Proxy(a[b], { apply: c })
 	}
+
+	//
+	
+	const angularListeners = {}
+	
+	const angularApplyEntry = (module, entry, callback) => {
+		const [, type, data] = entry
+		
+		if(type === "constant" || type === "component") {
+			try { callback(data[1]) }
+			catch(ex) { console.error(ex) }
+			return
+		}
+		
+		const hijack = (a, b, injects) => {
+			const fn = a[b]
+			
+			if(typeof fn === "function") {
+				hijackFunction(a, b, (target, thisArg, args) => {
+					const argMap = {}
+					args.forEach((x, i) => argMap[injects[i]] = x)
+					return callback.call(thisArg, target, args, argMap)
+				})
+			}
+		}
+		
+		if(typeof data[1] === "function") {
+			hijack(data, 1, data[1].$inject)
+		} else {
+			hijack(data, data.length - 1, data)
+		}
+	}
+	
+	const angularInitEntry = (module, entry) => {
+		const name = entry[2][0]
+		const listeners = angularListeners[module.name]?.[name]
+		if(!listeners) { return }
+		
+		for(const callback of listeners) {
+			angularApplyEntry(module, entry, callback)
+		}
+	}
+	
+	const hijackAngular = (moduleName, objects) => {
+		let module
+		
+		try { module = angular.module(moduleName) }
+		catch(ex) {}
+		
+		if(module) {
+			for(const data of module._invokeQueue) {
+				const callback = objects[data[2][0]]
+				if(callback) {
+					angularApplyEntry(module, data, callback)
+				}
+			}
+		}
+		
+		for(const [name, callback] of Object.entries(objects)) {
+			angularListeners[moduleName] = angularListeners[moduleName] ?? {}
+			angularListeners[moduleName][name] = angularListeners[moduleName][name] ?? []
+			angularListeners[moduleName][name].push(callback)
+		}
+	}
 	
 	//
 	
 	function preInit() {
-		onSet(window, "angular", async angular => {
-			await Promise.resolve() // Wait for angular to load
-			angular.module("ng").run($templateCache => modifyTemplate.addCache($templateCache))
+		onSet(window, "angular", angular => {
+			onSet(angular, "module", () => {
+				const initModule = module => {
+					if(module.name === "ng") {
+						module.run($templateCache => modifyTemplate.addCache($templateCache))
+					}
+					
+					for(const entry of module._invokeQueue) {
+						angularInitEntry(module, entry)
+					}
+					
+					const init = (target, thisArg, args) => {
+						for(const entry of args) {
+							angularInitEntry(module, entry)
+						}
+						
+						return target.apply(thisArg, args)
+					}
+					
+					hijackFunction(module._invokeQueue, "unshift", init)
+					hijackFunction(module._invokeQueue, "push", init)
+				}
+				
+				// This wont catch initializing ng, so may as well
+				// do it on the first module init.
+				let didInitNg = false
+				
+				hijackFunction(angular, "module", (origFn, thisArg, args) => {
+					if(!didInitNg) {
+						didInitNg = true
+						initModule(origFn.call(angular, "ng"))
+					}
+					
+					const module = origFn.apply(thisArg, args)
+					initModule(module)
+					return module
+				})
+			})
 		})
 
 		onSet(window, "React", React => {
@@ -418,377 +450,374 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 			})
 		})
 	}
+	
+	function settingsLoaded() {
+		if(settings.general.higherRobuxPrecision) {
+			let hijackTruncValue = false
 
-	function documentReady() {
-		if(!window.jQuery) {
-			console.warn("[BTR] window.jQuery not set")
-			return
+			onSet(window, "CoreUtilities", CoreUtilities => {
+				hijackFunction(CoreUtilities.abbreviateNumber, "getTruncValue", (target, thisArg, args) => {
+					if(hijackTruncValue && args.length === 1) {
+						const result = target.apply(thisArg, args)
+
+						if(result.endsWith("+") && result.length < 5) {
+							try {
+								return target.apply(thisArg, [args[0], null, null, result.length - 1])
+							} catch(ex) {
+								console.error(ex)
+							}
+						}
+
+						return result
+					}
+
+					return target.apply(thisArg, args)
+				})
+			})
+
+			reactHook.replaceConstructor(
+				([fn, props]) => "robuxAmount" in props && fn.toString().includes("nav-robux-amount"),
+				(target, thisArg, args) => {
+					hijackTruncValue = true
+					const result = target.apply(thisArg, args)
+					hijackTruncValue = false
+					return result
+				}
+			)
+		}
+		
+		if(settings.general.smallChatButton) {
+			hijackAngular("chat", {
+				chatController(func, args, argMap) {
+					const result = func.apply(this, args)
+
+					try {
+						const { $scope, chatUtility } = argMap
+
+						const library = $scope.chatLibrary
+						const width = library.chatLayout.widthOfChat
+
+						$scope.$watch(() => library.chatLayout.collapsed, value => {
+							library.chatLayout.widthOfChat = value ? 54 + 6 : width
+							chatUtility.updateDialogsPosition(library)
+						})
+					} catch(ex) {
+						console.error(ex)
+						if(IS_DEV_MODE) { alert("hijackAngular Error") }
+					}
+
+					return result
+				}
+			})
 		}
 
-		if(window.angular) {
-			if(settings.general.higherRobuxPrecision) {
-				let hijackTruncValue = false
+		if(currentPage === "inventory" && settings.inventory.enabled && settings.inventory.inventoryTools) {
+			hijackAngular("assetsExplorer", {
+				assetsService(handler, args) {
+					const result = handler.apply(this, args)
 
-				onSet(window, "CoreUtilities", CoreUtilities => {
-					hijackFunction(CoreUtilities.abbreviateNumber, "getTruncValue", (target, thisArg, args) => {
-						if(hijackTruncValue && args.length === 1) {
-							const result = target.apply(thisArg, args)
-	
-							if(result.endsWith("+") && result.length < 5) {
-								try {
-									return target.apply(thisArg, [args[0], null, null, result.length - 1])
-								} catch(ex) {
-									console.error(ex)
-								}
-							}
-	
-							return result
-						}
-	
-						return target.apply(thisArg, args)
-					})
-				})
+					try {
+						const tbuat = result.beginUpdateAssetsItems
+						result.beginUpdateAssetsItems = function(...iargs) {
+							const promise = tbuat.apply(result, iargs)
 
-				reactHook.replaceConstructor(
-					([fn, props]) => "robuxAmount" in props && fn.toString().includes("nav-robux-amount"),
-					(target, thisArg, args) => {
-						hijackTruncValue = true
-						const result = target.apply(thisArg, args)
-						hijackTruncValue = false
-						return result
-					}
-				)
-			}
-			
-			if(settings.general.smallChatButton) {
-				hijackAngular("chat", {
-					chatController(func, args, argMap) {
-						const result = func.apply(this, args)
-
-						try {
-							const { $scope, chatUtility } = argMap
-
-							const library = $scope.chatLibrary
-							const width = library.chatLayout.widthOfChat
-	
-							$scope.$watch(() => library.chatLayout.collapsed, value => {
-								library.chatLayout.widthOfChat = value ? 54 + 6 : width
-								chatUtility.updateDialogsPosition(library)
-							})
-						} catch(ex) {
-							console.error(ex)
-							if(IS_DEV_MODE) { alert("hijackAngular Error") }
-						}
-
-						return result
-					}
-				})
-			}
-
-			if(currentPage === "inventory" && settings.inventory.enabled && settings.inventory.inventoryTools) {
-				hijackAngular("assetsExplorer", {
-					assetsService(handler, args) {
-						const result = handler.apply(this, args)
-
-						try {
-							const tbuat = result.beginUpdateAssetsItems
-							result.beginUpdateAssetsItems = function(...iargs) {
-								const promise = tbuat.apply(result, iargs)
-	
-								ContentJS.send("inventoryUpdateBegin")
-								promise.then(() => {
-									setTimeout(() => {
-										ContentJS.send("inventoryUpdateEnd")
-									}, 0)
-								})
-	
-								return promise
-							}
-						} catch(ex) {
-							console.error(ex)
-							if(IS_DEV_MODE) { alert("hijackAngular Error") }
-						}
-
-						return result
-					}
-				})
-			}
-
-			if(currentPage === "home" && settings.home.friendsSecondRow) {
-				document.body.classList.add("btr-home-secondRow")
-				
-				hijackAngular("peopleList", {
-					layoutService(handler, args) {
-						const result = handler.apply(this, args)
-						result.maxNumberOfFriendsDisplayed = 18
-						return result
-					}
-				})
-			}
-			
-			if(currentPage === "profile" && settings.profile.enabled) {
-				hijackAngular("peopleList", {
-					layoutService(handler, args) {
-						const result = handler.apply(this, args)
-						result.maxNumberOfFriendsDisplayed = 10
-						return result
-					}
-				})
-			}
-
-			if(currentPage === "avatar" && settings.avatar.enabled) {
-				const accessoryAssetTypeIds = [8, 41, 42, 43, 44, 45, 46, 47]
-
-				hijackAngular("avatar", {
-					avatarController(handler, args, argsMap) {
-						const result = handler.apply(this, args)
-
-						try {
-							const { $scope, avatarTypeService } = argsMap
-
-							const setMaxNumbers = () => {
-								try {
-									Object.values(avatarTypeService.assetTypeNameLookup).forEach(assetType => {
-										if(accessoryAssetTypeIds.includes(assetType.id)) {
-											assetType.maxNumber = 10
-										}
-									})
-								} catch(ex) { console.error(ex) }
-							}
-
-							setMaxNumbers()
-							
-							hijackFunction(avatarTypeService, "setAssetTypeLookups", (target, thisArg, args) => {
-								const result = target.apply(thisArg, args)
-								setMaxNumbers()
-								return result
+							ContentJS.send("inventoryUpdateBegin")
+							promise.then(() => {
+								setTimeout(() => {
+									ContentJS.send("inventoryUpdateEnd")
+								}, 0)
 							})
 
-							hijackFunction($scope, "onItemClicked", (target, thisArg, args) => {
-								const item = args[0]
-
-								if(item instanceof Object && item.type === "Asset" && !item.selected && accessoryAssetTypeIds.includes(item.assetType.id)) {
-									const origName = item.assetType.name
-									item.assetType.name = "Accessory"
-
-									const result = target.apply(thisArg, args)
-									item.assetType.name = origName
-
-									return result
-								}
-
-								return target.apply(thisArg, args)
-							})
-						} catch(ex) { console.error(ex) }
-
-						return result
-					}
-				})
-			}
-
-			if(currentPage === "messages") {
-				hijackAngular("messages", {
-					messagesNav(handler, args, argMap) {
-						const result = handler.apply(this, args)
-
-						try {
-							const { $location } = argMap
-
-							const link = result.link
-							result.link = function(u) {
-								try {
-									u.btr_setPage = function($event) {
-										if($event.which === 13) {
-											const value = $event.target.value
-		
-											if(!Number.isNaN(value)) {
-												$location.search({ page: value })
-											} else {
-												$event.target.value = u.currentStatus.currentPage
-											}
-		
-											$event.preventDefault()
-										}
-									}
-								} catch(ex) {
-									console.error(ex)
-									if(IS_DEV_MODE) { alert("hijackAngular Error") }
-								}
-
-								return link.call(this, u)
-							}
-						} catch(ex) {
-							console.error(ex)
-							if(IS_DEV_MODE) { alert("hijackAngular Error") }
+							return promise
 						}
-
-						return result
+					} catch(ex) {
+						console.error(ex)
+						if(IS_DEV_MODE) { alert("hijackAngular Error") }
 					}
-				})
-			}
 
-			if(currentPage === "groups" && settings.groups.redesign) {
-				if(settings.groups.modifySmallSocialLinksTitle) {
-					hijackAngular("socialLinksJumbotron", {
-						socialLinkIcon(component) {
-							component.bindings.title = "<"
-						}
-					})
+					return result
 				}
+			})
+		}
 
-				if(settings.groups.pagedGroupWall) {
-					const createCustomPager = (ctrl, { $scope }) => {
-						const wallPosts = []
-						const pageSize = 10
-						let loadMorePromise = null
-						let nextPageCursor = ""
-						let requestCounter = 0
-						let lastPageNum = 0
-						let isLoadingPosts = false
-						let activeLoadMore = 0
+		if(currentPage === "home" && settings.home.friendsSecondRow) {
+			hijackAngular("peopleList", {
+				layoutService(handler, args) {
+					const result = handler.apply(this, args)
+					document.body.classList.add("btr-home-secondRow")
+					result.maxNumberOfFriendsDisplayed = 18
+					return result
+				}
+			})
+		}
+		
+		if(currentPage === "profile" && settings.profile.enabled) {
+			hijackAngular("peopleList", {
+				layoutService(handler, args) {
+					const result = handler.apply(this, args)
+					result.maxNumberOfFriendsDisplayed = 10
+					return result
+				}
+			})
+		}
 
-						const btrPagerStatus = {
-							prev: false,
-							next: false,
-							input: false,
-							pageNum: 1
-						}
+		if(currentPage === "avatar" && settings.avatar.enabled) {
+			const accessoryAssetTypeIds = [8, 41, 42, 43, 44, 45, 46, 47]
 
-						const setPageNumber = page => {
-							btrPagerStatus.prev = page > 0
-							btrPagerStatus.next = !!nextPageCursor || wallPosts.length > ((page + 1) * pageSize)
-							btrPagerStatus.input = true
-							btrPagerStatus.pageNum = page + 1
+			hijackAngular("avatar", {
+				avatarController(handler, args, argsMap) {
+					const result = handler.apply(this, args)
 
-							lastPageNum = page
+					try {
+						const { $scope, avatarTypeService } = argsMap
 
-							const startIndex = page * pageSize
-							const endIndex = startIndex + pageSize
-
-							$scope.groupWall.posts = wallPosts.slice(startIndex, endIndex).map($scope.convertResultToPostObject)
-							$scope.$applyAsync()
-						}
-
-						const loadMorePosts = () => {
-							if(loadMorePromise) {
-								return loadMorePromise
-							}
-							
-							const currentLoadMore = activeLoadMore += 1
-							
-							return loadMorePromise = Promise.resolve().then(async () => {
-								const groupId = ctrl.groupId || $scope.library.currentGroup.id
-								const url = `https://groups.roblox.com/v2/groups/${groupId}/wall/posts?sortOrder=Desc&limit=100&cursor=${nextPageCursor}`
-								
-								let resp
-								
-								while(true) {
-									resp = await fetch(url, { credentials: "include" })
-									if(activeLoadMore !== currentLoadMore) { return }
-									
-									if(resp.status === 429) {
-										await new Promise(resolve => setTimeout(resolve, 5e3))
-										if(activeLoadMore !== currentLoadMore) { return }
-										continue
-									}
-									
-									break
-								}
-								
-								const json = await resp.json()
-								if(activeLoadMore !== currentLoadMore) { return }
-								
-								nextPageCursor = json.nextPageCursor || null
-								wallPosts.push(...json.data.filter(x => x.poster))
-
-								loadMorePromise = null
-							})
-						}
-
-						const requestWallPosts = page => {
-							if(!Number.isSafeInteger(page)) { return }
-							const myCounter = ++requestCounter
-
-							btrPagerStatus.prev = false
-							btrPagerStatus.next = false
-							btrPagerStatus.input = false
-
-							page = Math.max(0, Math.floor(page))
-							isLoadingPosts = true
-
-							const startIndex = page * pageSize
-							const endIndex = startIndex + pageSize
-							
-							const tryAgain = () => {
-								if(requestCounter !== myCounter) { return }
-
-								if(wallPosts.length < endIndex && nextPageCursor !== null) {
-									loadMorePosts().then(tryAgain)
-									return
-								}
-
-								const maxPage = Math.max(0, Math.floor((wallPosts.length - 1) / pageSize))
-								setPageNumber(Math.min(maxPage, page))
-
-								isLoadingPosts = false
-							}
-
-							tryAgain()
-						}
-
-						$scope.groupWall.pager.isBusy = () => isLoadingPosts
-						$scope.groupWall.pager.loadNextPage = () => {}
-						$scope.groupWall.pager.loadFirstPage = () => {
-							wallPosts.splice(0, wallPosts.length)
-							nextPageCursor = ""
-							loadMorePromise = null
-							activeLoadMore += 1
-							requestWallPosts(0)
-						}
-
-						$scope.btrPagerStatus = btrPagerStatus
-						$scope.btrLoadWallPosts = cursor => {
-							let pageNum = lastPageNum
-
-							if(cursor === "prev") {
-								pageNum = lastPageNum - 1
-							} else if(cursor === "next") {
-								pageNum = lastPageNum + 1
-							} else if(cursor === "input") {
-								const input = document.querySelector(".btr-comment-pager input")
-								const value = parseInt(input.value, 10)
-
-								if(Number.isSafeInteger(value)) {
-									pageNum = Math.max(0, value - 1)
-								}
-							} else if(cursor === "first") {
-								pageNum = lastPageNum - 50
-							} else if(cursor === "last") {
-								pageNum = lastPageNum + 50
-							}
-
-							requestWallPosts(pageNum)
-						}
-					}
-
-					hijackAngular("group", {
-						groupWallController(func, args, argMap) {
-							const result = func.apply(this, args)
-
+						const setMaxNumbers = () => {
 							try {
-								createCustomPager(this, argMap)
+								Object.values(avatarTypeService.assetTypeNameLookup).forEach(assetType => {
+									if(accessoryAssetTypeIds.includes(assetType.id)) {
+										assetType.maxNumber = 10
+									}
+								})
+							} catch(ex) { console.error(ex) }
+						}
+
+						setMaxNumbers()
+						
+						hijackFunction(avatarTypeService, "setAssetTypeLookups", (target, thisArg, args) => {
+							const result = target.apply(thisArg, args)
+							setMaxNumbers()
+							return result
+						})
+
+						hijackFunction($scope, "onItemClicked", (target, thisArg, args) => {
+							const item = args[0]
+
+							if(item instanceof Object && item.type === "Asset" && !item.selected && accessoryAssetTypeIds.includes(item.assetType.id)) {
+								const origName = item.assetType.name
+								item.assetType.name = "Accessory"
+
+								const result = target.apply(thisArg, args)
+								item.assetType.name = origName
+
+								return result
+							}
+
+							return target.apply(thisArg, args)
+						})
+					} catch(ex) { console.error(ex) }
+
+					return result
+				}
+			})
+		}
+
+		if(currentPage === "messages") {
+			hijackAngular("messages", {
+				messagesNav(handler, args, argMap) {
+					const result = handler.apply(this, args)
+
+					try {
+						const { $location } = argMap
+
+						const link = result.link
+						result.link = function(u) {
+							try {
+								u.btr_setPage = function($event) {
+									if($event.which === 13) {
+										const value = $event.target.value
+	
+										if(!Number.isNaN(value)) {
+											$location.search({ page: value })
+										} else {
+											$event.target.value = u.currentStatus.currentPage
+										}
+	
+										$event.preventDefault()
+									}
+								}
 							} catch(ex) {
 								console.error(ex)
 								if(IS_DEV_MODE) { alert("hijackAngular Error") }
 							}
 
-							return result
+							return link.call(this, u)
 						}
-					})
+					} catch(ex) {
+						console.error(ex)
+						if(IS_DEV_MODE) { alert("hijackAngular Error") }
+					}
+
+					return result
 				}
+			})
+		}
+
+		if(currentPage === "groups" && settings.groups.redesign) {
+			if(settings.groups.modifySmallSocialLinksTitle) {
+				hijackAngular("socialLinksJumbotron", {
+					socialLinkIcon(component) {
+						component.bindings.title = "<"
+					}
+				})
 			}
-		} else {
-			console.warn("[BTR] window.angular not set")
+
+			if(settings.groups.pagedGroupWall) {
+				const createCustomPager = (ctrl, { $scope }) => {
+					const wallPosts = []
+					const pageSize = 10
+					let loadMorePromise = null
+					let nextPageCursor = ""
+					let requestCounter = 0
+					let lastPageNum = 0
+					let isLoadingPosts = false
+					let activeLoadMore = 0
+
+					const btrPagerStatus = {
+						prev: false,
+						next: false,
+						input: false,
+						pageNum: 1
+					}
+
+					const setPageNumber = page => {
+						btrPagerStatus.prev = page > 0
+						btrPagerStatus.next = !!nextPageCursor || wallPosts.length > ((page + 1) * pageSize)
+						btrPagerStatus.input = true
+						btrPagerStatus.pageNum = page + 1
+
+						lastPageNum = page
+
+						const startIndex = page * pageSize
+						const endIndex = startIndex + pageSize
+
+						$scope.groupWall.posts = wallPosts.slice(startIndex, endIndex).map($scope.convertResultToPostObject)
+						$scope.$applyAsync()
+					}
+
+					const loadMorePosts = () => {
+						if(loadMorePromise) {
+							return loadMorePromise
+						}
+						
+						const currentLoadMore = activeLoadMore += 1
+						
+						return loadMorePromise = Promise.resolve().then(async () => {
+							const groupId = ctrl.groupId || $scope.library.currentGroup.id
+							const url = `https://groups.roblox.com/v2/groups/${groupId}/wall/posts?sortOrder=Desc&limit=100&cursor=${nextPageCursor}`
+							
+							let resp
+							
+							while(true) {
+								resp = await fetch(url, { credentials: "include" })
+								if(activeLoadMore !== currentLoadMore) { return }
+								
+								if(resp.status === 429) {
+									await new Promise(resolve => setTimeout(resolve, 5e3))
+									if(activeLoadMore !== currentLoadMore) { return }
+									continue
+								}
+								
+								break
+							}
+							
+							const json = await resp.json()
+							if(activeLoadMore !== currentLoadMore) { return }
+							
+							nextPageCursor = json.nextPageCursor || null
+							wallPosts.push(...json.data.filter(x => x.poster))
+
+							loadMorePromise = null
+						})
+					}
+
+					const requestWallPosts = page => {
+						if(!Number.isSafeInteger(page)) { return }
+						const myCounter = ++requestCounter
+
+						btrPagerStatus.prev = false
+						btrPagerStatus.next = false
+						btrPagerStatus.input = false
+
+						page = Math.max(0, Math.floor(page))
+						isLoadingPosts = true
+
+						const startIndex = page * pageSize
+						const endIndex = startIndex + pageSize
+						
+						const tryAgain = () => {
+							if(requestCounter !== myCounter) { return }
+
+							if(wallPosts.length < endIndex && nextPageCursor !== null) {
+								loadMorePosts().then(tryAgain)
+								return
+							}
+
+							const maxPage = Math.max(0, Math.floor((wallPosts.length - 1) / pageSize))
+							setPageNumber(Math.min(maxPage, page))
+
+							isLoadingPosts = false
+						}
+
+						tryAgain()
+					}
+
+					$scope.groupWall.pager.isBusy = () => isLoadingPosts
+					$scope.groupWall.pager.loadNextPage = () => {}
+					$scope.groupWall.pager.loadFirstPage = () => {
+						wallPosts.splice(0, wallPosts.length)
+						nextPageCursor = ""
+						loadMorePromise = null
+						activeLoadMore += 1
+						requestWallPosts(0)
+					}
+
+					$scope.btrPagerStatus = btrPagerStatus
+					$scope.btrLoadWallPosts = cursor => {
+						let pageNum = lastPageNum
+
+						if(cursor === "prev") {
+							pageNum = lastPageNum - 1
+						} else if(cursor === "next") {
+							pageNum = lastPageNum + 1
+						} else if(cursor === "input") {
+							const input = document.querySelector(".btr-comment-pager input")
+							const value = parseInt(input.value, 10)
+
+							if(Number.isSafeInteger(value)) {
+								pageNum = Math.max(0, value - 1)
+							}
+						} else if(cursor === "first") {
+							pageNum = lastPageNum - 50
+						} else if(cursor === "last") {
+							pageNum = lastPageNum + 50
+						}
+
+						requestWallPosts(pageNum)
+					}
+				}
+
+				hijackAngular("group", {
+					groupWallController(func, args, argMap) {
+						const result = func.apply(this, args)
+
+						try {
+							createCustomPager(this, argMap)
+						} catch(ex) {
+							console.error(ex)
+							if(IS_DEV_MODE) { alert("hijackAngular Error") }
+						}
+
+						return result
+					}
+				})
+			}
+		}
+	}
+
+	function documentReady() {
+		if(!window.jQuery) {
+			console.warn("[BTR] window.jQuery not set")
+			return
 		}
 
 		if(typeof Roblox !== "undefined") {
@@ -962,10 +991,12 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 	ContentJS.listen("INIT", (...initData) => {
 		[settings, currentPage, matches, IS_DEV_MODE] = initData
 		
+		Promise.resolve().then(settingsLoaded)
+		
 		if(document.readyState === "loading") {
-			document.addEventListener("DOMContentLoaded", documentReady)
+			document.addEventListener("DOMContentLoaded", documentReady, { once: true })
 		} else {
-			documentReady()
+			Promise.resolve().then(documentReady)
 		}
 	})
 
