@@ -514,6 +514,18 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 				})
 			}
 
+			if(currentPage === "home" && settings.home.secondRow) {
+				document.body.classList.add("btr-home-secondRow")
+				
+				hijackAngular("peopleList", {
+					layoutService(handler, args) {
+						const result = handler.apply(this, args)
+						result.maxNumberOfFriendsDisplayed = 18
+						return result
+					}
+				})
+			}
+			
 			if(currentPage === "profile" && settings.profile.enabled) {
 				hijackAngular("peopleList", {
 					layoutService(handler, args) {

@@ -155,6 +155,9 @@ const SETTINGS = {
 			higherRobuxPrecision: { value: true },
 			enableContextMenus: { value: true }
 		},
+		home: {
+			secondRow: { value: false }
+		},
 		navigation: {
 			enabled: { value: true },
 			noHamburger: { value: true },

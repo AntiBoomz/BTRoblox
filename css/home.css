@@ -1,3 +1,13 @@
 .btr-hide-ads .content {
 	max-width: 970px;
 }
+
+.btr-home-secondRow .people-list-container {
+	height: 326px;
+}
+
+html .btr-home-secondRow .people-list-container .people-list {
+	max-height: 266px;
+	min-height: 133px;
+	height: auto;
+}
