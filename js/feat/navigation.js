@@ -116,7 +116,7 @@ const btrNavigation = {
 			init() {
 				document.$watch("#header").$then().$watch("ul.rbx-navbar", navbar => {
 					const button = html`<li class=cursor-pointer style="order:-1"><a class="font-header-2 nav-menu-title text-header" href=/home>Home</a></li>`
-					navbar.prepend(button)
+					navbar.append(button)
 					this.addNode(button)
 				}, { continuous: true })
 			}
