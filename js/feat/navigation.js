@@ -113,6 +113,7 @@ const btrNavigation = {
 		// Left header buttons are not react, apparently?
 		btrNavigation.register("header_home", {
 			name: "Show Home",
+			
 			init() {
 				document.$watch("#header").$then().$watch("ul.rbx-navbar", navbar => {
 					const button = html`<li class=cursor-pointer style="order:-1"><a class="font-header-2 nav-menu-title text-header" href=/home>Home</a></li>`
@@ -124,11 +125,16 @@ const btrNavigation = {
 		
 		btrNavigation.register("header_robux", {
 			name: "Show Robux",
-			selector: `.rbx-navbar a[href^="/robux"]`,
 			enabled: false,
 			
-			update(node) {
-				node.parentNode.style.display = this.enabled ? "" : "none"
+			init() {
+				document.$watch("#header").$then().$watch("ul.rbx-navbar", navbar => {
+					const robuxBtn = navbar.$find(`.rbx-navbar a[href^="/robux"]`)
+					
+					if(robuxBtn) {
+						this.addNode(robuxBtn.parentNode)
+					}
+				}, { continuous: true })
 			}
 		})
 		
