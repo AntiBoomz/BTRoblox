@@ -9,7 +9,7 @@ body {
 }
 
 .btr-home-showUsername {
-	--btr-people-height: 140px;
+	--btr-people-height: 148px;
 }
 
 .btr-home-secondRow {
@@ -27,7 +27,7 @@ body .people-list-container .people-list {
 }
 
 body .people-list-container .people-list .friend {
-	height: var(--btr-people-height + 20px);
+	height: var(--btr-people-height);
 	margin-bottom: var(--btr-people-padding);
 }
 
