@@ -2,40 +2,44 @@
 	max-width: 970px;
 }
 
-body {
-	--btr-people-height: 128px;
-	--btr-people-rows: 1;
-	--btr-people-padding: 4px;
+/* Friend stuff */
+
+.btr-home-showUsername .people-list-container,
+.btr-home-secondRow .people-list-container {
+	--btr-friend-height: 148px;
+	--btr-friend-rows: 1;
 }
 
-.btr-home-showUsername {
-	--btr-people-height: 148px;
+.btr-home-showUsername .people-list-container {
+	--btr-friend-height: 152px;
 }
 
-.btr-home-secondRow {
-	--btr-people-rows: 2;
+.btr-home-secondRow .people-list-container {
+	--btr-friend-rows: 2;
 }
 
-body .people-list-container {
-	--btr-people-total-height: calc(var(--btr-people-height) * var(--btr-people-rows) + var(--btr-people-padding) * (var(--btr-people-rows) - 1));
-	height: calc(var(--btr-people-total-height) + 65px);
+.btr-home-showUsername .people-list-container,
+.btr-home-secondRow .people-list-container {
+	height: calc(var(--btr-friend-rows) * var(--btr-friend-height) + 42px);
 }
 
-body .people-list-container .people-list {
-	height: calc(var(--btr-people-total-height) + 5px);
+.btr-home-showUsername .people-list-container .people-list,
+.btr-home-secondRow .people-list-container .people-list {
 	max-height: none;
+	height: calc(var(--btr-friend-rows) * var(--btr-friend-height));
 }
 
-body .people-list-container .people-list .friend {
-	height: var(--btr-people-height);
-	margin-bottom: var(--btr-people-padding);
+.btr-home-showUsername .people-list-container .people-list .friend,
+.btr-home-secondRow .people-list-container .people-list .friend {
+	height: var(--btr-friend-height);
 }
 
-body .people-list-container .people-list .friend a {
+.btr-home-showUsername .people-list-container .people-list .friend a,
+.btr-home-secondRow .people-list-container .people-list .friend a {
 	padding-bottom: 8px; /* This moves the popup lower */
 }
 
-body .people-list-container .btr-people-username {
+.people-list-container .btr-people-username {
 	text-align: center;
 	margin-top: -5px;
 	margin-bottom: 2px;
