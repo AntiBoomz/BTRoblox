@@ -223,22 +223,24 @@
 		if(checkingForGroupShouts || Date.now() < lastCheckedForGroups + 10e3) { return }
 		checkingForGroupShouts = true
 		
-		const shoutFilters = await getShoutFilters()
-		const currentGroups = await getCurrentGroups()
-		
-		for(const groupId of currentGroups) {
-			if(shoutCheckerQueue.includes(groupId)) { continue }
+		return Promise.resolve().then(async () => {
+			const shoutFilters = await getShoutFilters()
+			const currentGroups = await getCurrentGroups()
 			
-			const blacklist = shoutFilters.mode === "blacklist"
-			const includes = shoutFilters[shoutFilters.mode].includes(groupId)
-			if((blacklist && includes) || (!blacklist && !includes)) { continue }
-			
-			shoutCheckerQueue.push(groupId)
-			checkNextShout()
-		}
-		
-		checkingForGroupShouts = false
-		lastCheckedForGroups = Date.now()
+			for(const groupId of currentGroups) {
+				if(shoutCheckerQueue.includes(groupId)) { continue }
+				
+				const blacklist = shoutFilters.mode === "blacklist"
+				const includes = shoutFilters[shoutFilters.mode].includes(groupId)
+				if((blacklist && includes) || (!blacklist && !includes)) { continue }
+				
+				shoutCheckerQueue.push(groupId)
+				checkNextShout()
+			}
+		}).finally(() => {
+			checkingForGroupShouts = false
+			lastCheckedForGroups = Date.now()
+		})
 	}
 	
 	let checkInterval
