@@ -790,13 +790,11 @@ pageInit.itemdetails = function(category, assetIdString) {
 					apply(sales)
 				}
 			})
-		} else {
-			const query = { id: assetId, itemType: category === "bundles" ? "Bundle" : "Asset" }
-			
-			RobloxApi.catalog.getItemDetails([query]).then(details => {
-				const sales = details.data[0].purchaseCount
+		} else if(category !== "bundles") {
+			RobloxApi.api.getProductInfo(assetId).then(info => {
+				const sales = info?.Sales
 				
-				if(Number.isSafeInteger(sales)) {
+				if(Number.isSafeInteger(sales) && sales > 0) {
 					apply(sales)
 				}
 			})
@@ -815,6 +813,7 @@ pageInit.itemdetails = function(category, assetIdString) {
 	document.$watch("#item-container", itemCont => {
 		const assetTypeName = itemCont.dataset.assetType
 		const assetTypeId = AssetTypeIds.indexOf(assetTypeName)
+		
 		if(assetTypeId === -1) {
 			if(IS_DEV_MODE) { alert(`Missing assetTypeId for ${assetTypeName}`) }
 			return
