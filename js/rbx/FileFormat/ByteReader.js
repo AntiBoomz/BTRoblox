@@ -108,7 +108,6 @@ class ByteReader extends Uint8Array {
 		}
 		
 		assert(this.GetRemaining() >= comLength, "[ByteReader.LZ4] unexpected eof")
-		assert(decomLength <= comLength * 10, "[ByteReader.LZ4] Decompressed length more than 10 times larger than compressed")
 
 		const start = this.index
 		const end = start + comLength
