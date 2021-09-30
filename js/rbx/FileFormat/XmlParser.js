@@ -6,9 +6,24 @@ const RBXXmlParser = {
 		Vector3: ["X", "Y", "Z"],
 		Vector2: ["X", "Y"]
 	},
+	
+	escapeXml(value) {
+		return value
+			.replace(/&amp;/g, "&amp;&amp;")
+			.replace(/&#((?!0?0?38;)\d{1,4}|(?!0?0?26;)x[0-9a-fA-F]{1,4});/g, "&amp;#$1;")
+	},
+	
+	unescapeXml(value) {
+		return value
+			.replace(/(?<!&)((?:&{2})*)&#(\d{1,4}|x[0-9a-fA-F]{1,4});/g, (_, prefix, inner) => {
+				const byte = inner[0] === "x" ? parseInt(inner.slice(1), 16) : parseInt(inner, 10)
+				return `${prefix}${String.fromCharCode(byte)}`
+			})
+			.replace(/&&/g, "&")
+	},
 
 	parse(buffer) {
-		const xml = new DOMParser().parseFromString(bufferToString(buffer), "text/xml").documentElement
+		const xml = new DOMParser().parseFromString(this.escapeXml(bufferToString(buffer)), "text/xml").documentElement
 
 		const parser = {
 			result: [],
@@ -81,7 +96,7 @@ const RBXXmlParser = {
 			case "content":
 			case "string":
 			case "protectedstring":
-			case "binarystring": return inst.setProperty(name, value.trim(), "string")
+			case "binarystring": return inst.setProperty(name, this.unescapeXml(value.trim()), "string")
 			case "double": return inst.setProperty(name, +value, "double")
 			case "float": return inst.setProperty(name, +value, "float")
 			case "int": return inst.setProperty(name, +value, "int")
