@@ -427,11 +427,6 @@ const Explorer = (() => {
 			const dropdown = this.element.$find(".btr-dropdown-container")
 
 			const element = html`<div class="btr-explorer-list hidden"></div>`
-			const inner = html`<div class=btr-explorer-inner-list>`
-			element.append(inner)
-
-			//
-
 			const btn = html`<li><a title="${title}" style="text-overflow:ellipsis;overflow:hidden;padding:8px 12px;">${title}</a></li>`
 
 			btn.$on("click", () => {
@@ -446,62 +441,67 @@ const Explorer = (() => {
 
 				this.select([])
 			})
+			
+			if(model) {
+				const inner = html`<div class=btr-explorer-inner-list>`
+				element.append(inner)
+				
+				const create = (inst, parent) => {
+					const icon = ApiDump.getExplorerIconIndex(inst.ClassName)
+					const item = html`
+					<div class=btr-explorer-item-container>
+						<div class=btr-explorer-more></div>
+						<div class=btr-explorer-item>
+							<div class=btr-explorer-icon style="background-position:-${icon * 16}px 0"></div>
+							${inst.Name}
+						</div>
+					</div>`
 
-			//
+					const itemBtn = inst.element = item.$find(".btr-explorer-item")
+					let lastClick
 
-			const create = (inst, parent) => {
-				const icon = ApiDump.getExplorerIconIndex(inst.ClassName)
-				const item = html`
-				<div class=btr-explorer-item-container>
-					<div class=btr-explorer-more></div>
-					<div class=btr-explorer-item>
-						<div class=btr-explorer-icon style="background-position:-${icon * 16}px 0"></div>
-						${inst.Name}
-					</div>
-				</div>`
-
-				const itemBtn = inst.element = item.$find(".btr-explorer-item")
-				let lastClick
-
-				itemBtn.$on("click", ev => {
-					this.select([inst])
-					ev.stopPropagation()
-
-					if(lastClick && Date.now() - lastClick < 500) {
-						lastClick = null
-
-						switch(inst.ClassName) {
-						case "Script":
-						case "LocalScript":
-						case "ModuleScript":
-							this.openSourceViewer(inst, "Source")
-							break
-						default:
-							item.classList.toggle("closed")
-						}
-					} else {
-						lastClick = Date.now()
-					}
-				})
-
-				parent.append(item)
-
-				if(inst.Children.length) {
-					item.classList.add("btr-explorer-has-children")
-					const childList = html`<div class=btr-explorer-childlist></div>`
-					
-					const children = [...inst.Children]
-					children.sort(sortChildren).forEach(child => create(child, childList))
-					item.after(childList)
-
-					item.$find(".btr-explorer-more").$on("click", ev => {
-						item.classList.toggle("closed")
+					itemBtn.$on("click", ev => {
+						this.select([inst])
 						ev.stopPropagation()
-					})
-				}
-			}
 
-			model.forEach(inst => create(inst, inner))
+						if(lastClick && Date.now() - lastClick < 500) {
+							lastClick = null
+
+							switch(inst.ClassName) {
+							case "Script":
+							case "LocalScript":
+							case "ModuleScript":
+								this.openSourceViewer(inst, "Source")
+								break
+							default:
+								item.classList.toggle("closed")
+							}
+						} else {
+							lastClick = Date.now()
+						}
+					})
+
+					parent.append(item)
+
+					if(inst.Children.length) {
+						item.classList.add("btr-explorer-has-children")
+						const childList = html`<div class=btr-explorer-childlist></div>`
+						
+						const children = [...inst.Children]
+						children.sort(sortChildren).forEach(child => create(child, childList))
+						item.after(childList)
+
+						item.$find(".btr-explorer-more").$on("click", ev => {
+							item.classList.toggle("closed")
+							ev.stopPropagation()
+						})
+					}
+				}
+
+				model.forEach(inst => create(inst, inner))
+			} else {
+				element.textContent = "Failed to load model"
+			}
 
 			dropdown.$find(".dropdown-menu").append(btn)
 			lists.append(element)
