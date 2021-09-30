@@ -103,8 +103,12 @@ class ByteReader extends Uint8Array {
 		this.Jump(4)
 
 		if(comLength === 0) { // TOOD: This path is actually not supported by Roblox, may have to take a look at some point?
+			assert(this.GetRemaining() >= decomLength, "[ByteReader.LZ4] unexpected eof")
 			return this.Array(decomLength)
 		}
+		
+		assert(this.GetRemaining() >= comLength, "[ByteReader.LZ4] unexpected eof")
+		assert(decomLength <= comLength * 10, "[ByteReader.LZ4] Decompressed length more than 10 times larger than compressed")
 
 		const start = this.index
 		const end = start + comLength
@@ -122,6 +126,8 @@ class ByteReader extends Uint8Array {
 					if(lenByte !== 0xFF) { break }
 				}
 			}
+			
+			assert(this.index + litLen <= end, "[ByteReader.LZ4] unexpected eof")
 
 			for(let i = 0; i < litLen; i++) {
 				data[index++] = this.Byte()
@@ -129,6 +135,8 @@ class ByteReader extends Uint8Array {
 
 			if(this.index < end) {
 				const offset = this.UInt16LE()
+				const begin = index - offset
+				
 				let len = token & 0xF
 
 				if(len === 0xF) {
@@ -140,14 +148,16 @@ class ByteReader extends Uint8Array {
 				}
 
 				len += 4
-				const begin = index - offset
+				
 				for(let i = 0; i < len; i++) {
 					data[index++] = data[begin + i]
 				}
 			}
 		}
 
-		assert(this.index === end, "[ByteReader.LZ4] LZ4 size mismatch")
+		assert(this.index === end, "[ByteReader.LZ4] input size mismatch")
+		assert(index === decomLength, "[ByteReader.LZ4] output size mismatch")
+		
 		return data
 	}
 

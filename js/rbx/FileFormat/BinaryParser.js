@@ -30,14 +30,12 @@ const RBXBinaryParser = {
 			instances: new Array(instancesCount)
 		}
 
-		while(true) {
+		while(reader.GetRemaining() >= 4) {
 			const chunkType = reader.String(4)
 			const chunkData = reader.LZ4()
-
-			if(chunkType === "END\0") {
-				break
-			}
-
+			
+			if(chunkType === "END\0") { break }
+			
 			const chunkReader = new ByteReader(chunkData)
 
 			switch(chunkType) {
