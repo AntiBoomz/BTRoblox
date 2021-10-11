@@ -153,7 +153,9 @@ const SETTINGS = {
 			hoverPreviewMode: { value: "always", validValues: ["always", "never"] },
 			
 			higherRobuxPrecision: { value: true },
-			enableContextMenus: { value: true }
+			enableContextMenus: { value: true },
+			
+			fixFirefoxLocalStorageIssue: { value: false }
 		},
 		home: {
 			friendsShowUsername: { value: false },

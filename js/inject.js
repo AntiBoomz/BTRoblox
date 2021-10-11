@@ -452,6 +452,38 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 	}
 	
 	function settingsLoaded() {
+		if(settings.general.fixFirefoxLocalStorageIssue) {
+			onSet(window, "CoreRobloxUtilities", CoreRobloxUtilities => {
+				if(!CoreRobloxUtilities?.localStorageService?.saveDataByTimeStamp) { return }
+				
+				const lss = CoreRobloxUtilities.localStorageService
+				const localCache = {}
+				
+				hijackFunction(lss, "removeLocalStorage", (fn, thisArg, args) => {
+					delete localCache[args[0]]
+					return fn.apply(thisArg, args)
+				})
+				
+				hijackFunction(lss, "getLocalStorage", (fn, thisArg, args) => {
+					if(args[0] in localCache) {
+						return JSON.parse(localCache[args[0]])
+					}
+					
+					return fn.apply(thisArg, args)
+				})
+				
+				hijackFunction(lss, "setLocalStorage", (fn, thisArg, args) => {
+					try {
+						delete localCache[args[0]]
+						return fn.apply(thisArg, args)
+					} catch(ex) {
+						localCache[args[0]] = JSON.stringify(args[1])
+						console.error(ex)
+					}
+				})
+			})
+		}
+		
 		if(settings.general.higherRobuxPrecision) {
 			let hijackTruncValue = false
 
