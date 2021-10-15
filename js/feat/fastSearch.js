@@ -2,16 +2,12 @@
 
 const btrFastSearch = {
 	init() {
-		const usernameRegex = /^\w+(?:[ _]?\w+)?$/
+		const usernameRegex = /^[a-zA-Z0-9]+(?:[ _]?[a-zA-Z0-9]+)?$/
 		const userCache = {}
-		const searchResults = []
-		let selectedClass = "selected"
-		let currentSearchStarted = 0
+		
 		let currentSearchText = ""
 		let lastResultsLoaded = 0
 		let friendsLoaded = false
-		let container
-		let list
 		
 		const thumbnailsToRequest = []
 		const thumbnailCache = {}
@@ -25,9 +21,12 @@ const btrFastSearch = {
 		try {
 			const data = JSON.parse(localStorage.getItem("btr-fastsearch-cache"))
 
-			Object.entries(data.friends).forEach(([name, id]) => {
-				userCache[name.toLowerCase()] = {
-					Username: name,
+			Object.entries(data.friends).forEach(([key, id]) => {
+				const pieces = key.split("|")
+				
+				userCache[pieces[0].toLowerCase()] = {
+					Username: pieces[0],
+					DisplayName: pieces[1] || pieces[0],
 					UserId: id,
 					IsFriend: true
 				}
@@ -131,25 +130,43 @@ const btrFastSearch = {
 		}
 
 		//
-
-		const clearResults = () => {
-			searchResults.splice(0, searchResults.length).forEach(x => x.remove())
-
-			const sel = list.$find(`>.${selectedClass}`)
-			if(!sel) {
-				const target = list.$find(">li")
-				target.classList.add(selectedClass)
-			}
-		}
-
+		
 		const getMatches = search => {
-			const allMatches = Object.entries(userCache)
-				.map(([name, user]) => ({ name, user }))
-				.filter(x => x.user && (x.name === search || (x.user.IsFriend && !x.user.Alias) && (x.index = x.name.indexOf(search)) !== -1))
-
-			allMatches.forEach(x => x.sort = x.name === search ? 0 : Math.abs(x.name.length - search.length) / 3 + x.index + (!x.user.IsFriend ? 1000 : 0))
-
-			const matches = allMatches.sort((a, b) => a.sort - b.sort).slice(0, 4)
+			const matches = Object.entries(userCache)
+				.map(([name, user]) => {
+					const x = {
+						name, user, isAlias: name !== user.Username.toLowerCase()
+					}
+					
+					if(name === search) {
+						x.display = user.Username
+						x.index = 0
+						x.sort = 0
+					} else if(!x.user.Hidden && x.user.IsFriend && !x.isAlias) {
+						const display = user.DisplayName.toLowerCase()
+						
+						const nameIndex = name.indexOf(search)
+						const displayIndex = display.indexOf(search)
+						
+						if(nameIndex !== -1 && (displayIndex === -1 || nameIndex < displayIndex)) {
+							x.display = user.Username
+							x.index = nameIndex
+							x.sort = nameIndex + x.display.length / 200
+						} else if(displayIndex !== -1) {
+							x.display = user.DisplayName
+							x.index = displayIndex
+							x.sort = displayIndex + x.display.length / 200
+						}
+					}
+					
+					if(x.display && !x.user.IsFriend) {
+						x.sort += 1000
+					}
+					
+					return x
+				})
+				.filter(x => x.display)
+				.sort((a, b) => a.sort - b.sort).slice(0, 4)
 
 			// Move non-friend exacts to be last of the visible ones
 			if(matches.length && matches[0].name === search && !matches[0].user.IsFriend) {
@@ -159,92 +176,118 @@ const btrFastSearch = {
 			return matches
 		}
 
-		const reloadSearchResults = preserveSelection => {
-			const search = currentSearchText
-			const now = Date.now()
+		const getInfo = () => {
+			const search = $("#navbar-universal-search, .navbar-search")
+			if(!search) { return {} }
+			
+			const input = search.$find("input")
+			if(!input) { return {} }
+			
+			const container = search.$find("#btr-fastsearch-container")
+			if(!container) { return {} }
+			
+			const list = container.parentNode
+			
+			return {
+				search, input, container, list,
+				selectedClass: list.classList.contains("new-dropdown-menu") ? "new-selected" : "selected"
+			}
+		}
 
+		const clearResults = () => {
+			const { list, container, selectedClass } = getInfo()
+			if(!list) { return }
+			
+			container.$findAll(`>li`).forEach(x => x.remove())
+			
+			if(!list.$find(`>.${selectedClass}`)) {
+				list.$find(">li")?.classList.add(selectedClass)
+			}
+		}
+
+		const reloadSearchResults = preserveSelection => {
+			const { container, list, selectedClass } = getInfo()
+			if(!container) { return }
+			
+			const now = Date.now()
 			lastResultsLoaded = now
 			
-			const selectedIndex = searchResults.indexOf(container.$find(`.${selectedClass}`))
+			if(currentSearchText.length === 0) {
+				return clearResults()
+			}
+			
+			const searchResults = Array.from(container.$findAll(">li"))
+			const preservedIndex = searchResults.findIndex(x => x.classList.contains(selectedClass))
+			const results = []
 
 			clearResults()
 
-			const matches = getMatches(search)
+			const matches = getMatches(currentSearchText)
 			for(let i = 0; i < matches.length; i++) {
-				const { name, user, index } = matches[i]
-				const highlightStart = name === search ? 0 : index
-				const highlightEnd = name === search ? search.length : highlightStart + search.length
+				const { name, user, display, index, isAlias } = matches[i]
+				const highlightStart = isAlias ? display.length : index
+				const highlightEnd = isAlias ? display.length : highlightStart + currentSearchText.length
 
-				let item
+				const item = html`
+				<li class="navbar-search-option rbx-clickable-li btr-fastsearch">
+					<a class=btr-fastsearch-anchor>
+						<div class=btr-fastsearch-avatar>
+							<img class=btr-fastsearch-thumbnail src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" style="visibility:hidden">
+							<div class=btr-fastsearch-status></div>
+						</div>
+						<div class=btr-fastsearch-text>
+							<div class=btr-fastsearch-name>
+								${display.slice(0, highlightStart)}
+								<b>${display.slice(highlightStart, highlightEnd)}</b>
+								${display.slice(highlightEnd)}
+							</div>
+							<div class="text-label"></div>
+						</div>
+					</a>
+				</li>`
+				
+				const label = item.$find(".text-label")
 
 				if(user.Temporary) {
-					item = html`
-					<li class="navbar-search-option rbx-clickable-li btr-fastsearch" data-searchurl=/User.aspx?username=>
-						<a class=btr-fastsearch-anchor>
-							<div class=btr-fastsearch-avatar>
-								<img class=btr-fastsearch-thumbnail src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" style="visibility: hidden">
-								<div class=btr-fastsearch-status></div>
-							</div>
-							<div class=btr-fastsearch-text>
-								<div class=btr-fastsearch-name>
-									${user.Username.slice(0, highlightStart)}
-									<b>${user.Username.slice(highlightStart, highlightEnd)}</b>
-									${user.Username.slice(highlightEnd)}
-								</div>
-								<div class="text-label">
-									${user.NotFound ? "User not found" : "Loading..."}
-								</div>
-							</div>
-						</a>
-					</li>`
+					item.dataset.searchurl = `/User.aspx?username=`
+					label.append(`${user.NotFound ? "User not found" : "Loading..."}`)
 				} else {
-					let label = user.IsFriend ? "You are friends" : ""
-					if(user.Alias) {
-						label += (label ? ". " : "") + `Formerly '${name}'`
+					item.dataset.searchurl = `/User.aspx?userId=${user.UserId}&searchTerm=`
+					item.$find("a").href = `/users/${user.UserId}/profile`
+					
+					if(user.IsFriend) {
+						label.append(`You are friends`)
 					}
-
-					item = html`
-					<li class="navbar-search-option rbx-clickable-li btr-fastsearch" data-searchurl=/User.aspx?userId=${user.UserId}&searchTerm=>
-						<a class=btr-fastsearch-anchor href=/users/${user.UserId}/profile>
-							<div class=btr-fastsearch-avatar>
-								<img class=btr-fastsearch-thumbnail src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==">
-								<div class=btr-fastsearch-status></div>
-							</div>
-							<div class=btr-fastsearch-text>
-								<div class=btr-fastsearch-name>
-									${user.Username.slice(0, highlightStart)}
-									<b>${user.Username.slice(highlightStart, highlightEnd)}</b>
-									${user.Username.slice(highlightEnd)}
-								</div>
-								<div class="text-label">
-									${label}
-								</div>
-							</div>
-						</a>
-					</li>`
+					
+					if(isAlias) {
+						if(user.IsFriend) {
+							label.append(`. `)
+						}
+						
+						label.append(`Formerly '`, html`<b>${name}</b>`, `'`)
+					}
 				}
-
-				if(searchResults.length) {
-					searchResults[searchResults.length - 1].after(item)
+				
+				if(results.length) {
+					results[results.length - 1].after(item)
 				} else {
 					container.prepend(item)
 				}
-
-				searchResults.push(item)
-
+				
+				results.push(item)
+				
 				if(!user.Temporary) {
 					requestThumbnail(user.UserId).then(url => {
 						if(lastResultsLoaded !== now) { return }
 						
 						if(url) {
+							item.$find(".btr-fastsearch-thumbnail").style.visibility = ""
 							item.$find(".btr-fastsearch-thumbnail").src = url
 						}
 					})
 
 					requestPresence(user.UserId).then(info => {
-						if(lastResultsLoaded !== now) {
-							return
-						}
+						if(lastResultsLoaded !== now) { return }
 						
 						const status = item.$find(".btr-fastsearch-status")
 						status.classList.remove("game", "studio", "online")
@@ -278,73 +321,71 @@ const btrFastSearch = {
 					})
 				}
 			}
-		
-			const lastSelected = list.$find(`.${selectedClass}`)
 			
-			if(preserveSelection) {
-				if(searchResults[selectedIndex]) {
-					lastSelected?.classList.remove(selectedClass)
-					searchResults[selectedIndex].classList.add(selectedClass)
-				}
+			const lastSelection = list.$find(`.${selectedClass}`)
+			
+			if(preserveSelection && preservedIndex === -1 && lastSelection) {
+				// If we want to preserve selection and we had a default option
+				// selected, then do nothing
 			} else {
-				const first = searchResults[0] || list.$find(`>li`)
+				const newSelection = (preserveSelection && results[preservedIndex]) || results[0] || container.nextElementSibling
 				
-				lastSelected?.classList.remove(selectedClass)
-				first?.classList.add(selectedClass)
+				lastSelection?.classList.remove(selectedClass)
+				newSelection?.classList.add(selectedClass)
 			}
 		}
 
 		const updateSearch = search => {
-			const searchStarted = Date.now()
-
+			if(currentSearchText === search) { return }
+			
 			currentSearchText = search
-			currentSearchStarted = searchStarted
 			lastResultsLoaded = -1
 
 			if(search.length >= 3 && usernameRegex.test(search)) {
 				if(!userCache[search]) {
 					const temp = {
 						Temporary: true,
+						Hidden: search.length > 20 || search.includes(" "), // Uncommon parts of a name
 						Username: search
 					}
 
 					userCache[search] = temp
-
-					$.fetch(`https://api.roblox.com/users/get-by-username?username=${search}`).then(async resp => {
+					
+					const url = `https://users.roblox.com/v1/usernames/users`
+					$.fetch(url, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ usernames: [search], excludeBannedUsers: false })
+					}).then(async resp => {
 						if(userCache[search] !== temp) {
 							return
 						}
 
-						const json = resp.ok && await resp.json()
-						if(!json || !json.Username) {
+						const result = resp.ok && await resp.json()
+						const json = result?.data?.[0]
+						
+						if(!json?.name) {
 							temp.NotFound = true
 							reloadSearchResults(true)
 							return
 						}
 
 						const user = userCache[search] = {
-							Username: json.Username,
-							UserId: json.Id
+							Username: json.name,
+							DisplayName: json.displayName,
+							UserId: json.id
 						}
 
-						const name = json.Username.toLowerCase()
+						const name = user.Username.toLowerCase()
 						if(search !== name) {
-							user.Alias = true
-
-							if(userCache[name] && userCache[name].IsFriend) {
-								user.IsFriend = true
-							}
-
-							userCache[name] = {
-								Username: json.Username,
-								UserId: json.Id,
-								IsFriend: user.IsFriend
+							if(userCache[name]) {
+								userCache[search] = userCache[name]
+							} else {
+								userCache[name] = user
 							}
 						}
 
-						if(currentSearchStarted === searchStarted) {
-							reloadSearchResults(true)
-						}
+						reloadSearchResults(true)
 					})
 				}
 			}
@@ -355,7 +396,7 @@ const btrFastSearch = {
 				loggedInUserPromise.then(userId => {
 					$.fetch(`https://friends.roblox.com/v1/users/${userId}/friends`, { credentials: "include" }).then(async resp => {
 						const json = resp.ok && await resp.json()
-						if(!json || !json.data) {
+						if(!json?.data) {
 							return
 						}
 
@@ -366,10 +407,11 @@ const btrFastSearch = {
 						const friends = {}
 						
 						json.data.forEach(friend => {
-							friends[friend.name] = friend.id
+							friends[friend.displayName !== friend.name ? `${friend.name}|${friend.displayName}` : friend.name] = friend.id
 
 							userCache[friend.name.toLowerCase()] = {
 								Username: friend.name,
+								DisplayName: friend.displayName,
 								UserId: friend.id,
 								IsFriend: true
 							}
@@ -378,10 +420,7 @@ const btrFastSearch = {
 						})
 
 						localStorage.setItem("btr-fastsearch-cache", JSON.stringify({ friends }))
-
-						if(currentSearchStarted === searchStarted) {
-							reloadSearchResults(true)
-						}
+						reloadSearchResults(true)
 					})
 				})
 			}
@@ -389,112 +428,126 @@ const btrFastSearch = {
 			reloadSearchResults(false)
 		}
 		
-		reactInject({
-			selector: "#navbar-universal-search ul, .navbar-search ul",
-			index: 0,
-			html: `<div id="btr-fastsearch-container"></div>`,
-			
-			callback(_cont) {
-				container = _cont
-				list = container.parentNode
+		const keyDown = ev => {
+			if(ev.keyCode === 38 || ev.keyCode === 40 || ev.keyCode === 9) {
+				const { list, container, selectedClass } = getInfo()
+				if(!list) { return }
 				
-				container.append(html`<div style=display:none></div>`) // just to make results not count as last-child
-
-				if(container.closest(".new-dropdown-menu")) {
-					selectedClass = "new-selected"
+				const selected = list.$find(`.${selectedClass}`)
+				if(!selected) {
+					return
 				}
-		
-				const search = container.closest("#navbar-universal-search, .navbar-search")
-				const input = search.$find("input")
-		
-				input.$on("keydown", ev => {
-					if(ev.keyCode === 38 || ev.keyCode === 40 || ev.keyCode === 9) {
-						const selected = list.$find(`.${selectedClass}`)
-						if(!selected || !searchResults.length) {
-							return
-						}
-		
-						const index = searchResults.indexOf(selected)
-						let prevent = true
-						let next
-		
-						if(index !== -1) {
-							if(ev.keyCode === 38) {
-								if(index === 0) {
-									next = list.lastElementChild
-									prevent = false
-								} else {
-									next = searchResults[index - 1]
-								}
-							} else {
-								if(index < searchResults.length - 1) {
-									next = searchResults[index + 1]
-								} else {
-									next = container.nextElementSibling
-								}
-							}
+				
+				const searchResults = Array.from(container.$findAll(">li"))
+				const searchIndex = searchResults.indexOf(selected)
+				
+				let prevent = true
+				let next
+				
+				if(searchIndex !== -1) {
+					if(ev.keyCode === 38) {
+						if(searchIndex > 0) {
+							next = searchResults[searchIndex - 1]
 						} else {
-							if(ev.keyCode === 38) {
-								if(selected.previousElementSibling === container) {
-									next = searchResults[searchResults.length - 1]
-								}
-							} else {
-								if(!selected.nextElementSibling) {
-									next = searchResults[0]
-									prevent = false
-								}
-							}
+							next = list.lastElementChild
+							prevent = false
 						}
-		
-						if(next) {
-							selected.classList.remove(selectedClass)
-							next.classList.add(selectedClass)
-		
-							if(prevent) {
-								ev.stopImmediatePropagation()
-								ev.stopPropagation()
-								ev.preventDefault()
-							}
+					} else {
+						if(searchIndex < searchResults.length - 1) {
+							next = searchResults[searchIndex + 1]
+						} else {
+							next = container.nextElementSibling
 						}
 					}
-				})
-		
-				input.$on("keyup", ev => {
-					if(ev.keyCode === 13) {
-						const selected = container.$find(`.${selectedClass}`)
-						if(!selected) { return }
-						
-						const url = selected.$find("a")?.href
-						if(url) {
-							window.location = url
+				} else {
+					if(ev.keyCode === 38) {
+						if(selected.previousElementSibling === container) {
+							next = searchResults[searchResults.length - 1]
 						}
-		
+					} else {
+						if(!selected.nextElementSibling) {
+							next = searchResults[0]
+							prevent = false
+						}
+					}
+				}
+
+				if(next) {
+					selected.classList.remove(selectedClass)
+					next.classList.add(selectedClass)
+
+					if(prevent) {
 						ev.stopImmediatePropagation()
 						ev.stopPropagation()
 						ev.preventDefault()
 					}
-				}, { capture: true })
+				}
+			}
+		}
 		
-				let lastValue = ""
-
-				const update = () => {
-					if(input.value === lastValue) { return }
-					lastValue = input.value
-					
-					updateSearch(input.value.toLowerCase())
+		const keyUp = ev => {
+			if(ev.keyCode === 13) {
+				const { container, selectedClass } = getInfo()
+				if(!container) { return }
+				
+				const selected = container.$find(`.${selectedClass}`)
+				if(!selected) { return }
+				
+				const url = selected.$find("a")?.href
+				if(url) {
+					window.location = url
 				}
 
-				input.$on("input", update)
-				update()
-				
-				list.$watchAll("li", li => {
-					new MutationObserver(() => {
-						if(li.classList.contains(selectedClass) && searchResults.find(x => x.classList.contains(selectedClass))) {
-							li.classList.remove(selectedClass)
-						}
-					}).observe(li, { attributeFilter: ["class"] })
-				})
+				ev.stopImmediatePropagation()
+				ev.stopPropagation()
+				ev.preventDefault()
 			}
+		}
+		
+		const update = () => {
+			const { input } = getInfo()
+			if(!input) { return }
+			
+			updateSearch(input.value.toLowerCase())
+		}
+		
+		let requesting = false
+		const requestClassUpdate = () => {
+			if(requesting) { return }
+			requesting = true
+			
+			setTimeout(() => {
+				requesting = false
+				
+				const { list, container, selectedClass } = getInfo()
+				if(!list) { return }
+				
+				const selectedResult = container.$find(`>.${selectedClass}`)
+				const selectedDefault = list.$find(`>.${selectedClass}`)
+				
+				if(selectedResult && selectedDefault) {
+					if(selectedDefault === container.nextElementSibling) {
+						selectedDefault.classList.remove(selectedClass)
+					} else {
+						selectedResult.classList.remove(selectedClass)
+					}
+				}
+			}, 0)
+		}
+		
+		document.$watch("#header").$then().$watch("#navbar-universal-search, .navbar-search", search => {
+			search.$on("keydown", "input", keyDown)
+			search.$on("keyup", "input", keyUp, { capture: true })
+			search.$on("input", "input", update)
+			update()
+			
+			new MutationObserver(requestClassUpdate).observe(search, { subtree: true, attributes: true, attributeFilter: ["class"] })
+		}, { continuous: true })
+		
+		reactInject({
+			selector: "#navbar-universal-search ul, .navbar-search ul",
+			index: 0,
+			html: `<div id="btr-fastsearch-container"><div style=display:none></div></div>`
 		})
 	}
 }

@@ -765,6 +765,10 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	height: 48px;
 }
 
+#header .new-dropdown-menu .btr-fastsearch-anchor {
+	height: 57px;
+}
+
 .btr-fastsearch-avatar {
 	position: relative;
 	display: inline-block;
