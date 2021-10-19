@@ -856,7 +856,7 @@ pageInit.profile = function(userId) {
 
 		if(SETTINGS.get("profile.embedInventoryEnabled") && +userId !== 1) {
 			const cont = html`<div></div>`
-			const iframe = html`<iframe id="btr-injected-inventory" src="/users/${userId}/inventory" scrolling="no">`
+			const iframe = html`<iframe id="btr-injected-inventory" sandbox="allow-forms allow-scripts" src="/users/${userId}/inventory" scrolling="no">`
 
 			cont.append(iframe)
 			newCont.$find(".placeholder-inventory").replaceWith(cont)
