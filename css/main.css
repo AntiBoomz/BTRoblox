@@ -777,12 +777,25 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; }
 	margin: -6px 6px -6px 0;
 }
 
-.btr-fastsearch-thumbnail {
+.btr-fastsearch-thumbnail-container {
+	display: block;
 	overflow: hidden;
 	width: 100%;
 	height: 100%;
 	border-radius: 20px;
-	border: 1px solid #BEBEBE;
+	border: 1px solid #a0a0a0;
+	background-color: rgba(0,0,0,.1);
+}
+
+.btr-fastsearch-thumbnail {
+	width: 100%;
+	height: 100%;
+	opacity: 1;
+	transition: opacity .5s ease;
+}
+
+.btr-fastsearch-thumbnail.loading {
+	opacity: 0;
 }
 
 .btr-fastsearch-status {
