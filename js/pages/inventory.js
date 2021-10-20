@@ -35,19 +35,45 @@ pageInit.inventory_pre = function() {
 					})
 				}).$then()
 					.$watch("#chat-container", chat => chat.remove())
-					.$watchAll("script", script => {
-						if(script.innerHTML.includes("Roblox.DeveloperConsoleWarning.showWarning()")) {
-							script.textContent = ""
+			
+			//
+			
+			const scripts = document.getElementsByTagName("script")
+			const checked = new WeakSet()
+			
+			const checkForScripts = () => {
+				for(let i = scripts.length; i--;) {
+					const script = scripts[i]
+					
+					if(!checked.has(script)) {
+						checked.add(script)
+						
+						if(script.src) {
+							continue
+						}
+						
+						const content = script.innerHTML
+						
+						if(
+							content.includes("Roblox.DeveloperConsoleWarning.showWarning()") ||
+							content.match(/top.location\s*=\s*self.location/)
+						) {
+							script.innerHTML = ""
 							script.remove()
 						}
-					})
-					.$watch(".container-main").$then()
-						.$watchAll("script", script => {
-							if(script.innerHTML.includes("top.location=self.location")) {
-								script.textContent = ""
-								script.remove()
-							}
-						})
+					}
+				}
+			}
+			
+			const observer = new MutationObserver(checkForScripts)
+			observer.observe(document.documentElement, { childList: true, subtree: true })
+			
+			checkForScripts()
+			
+			$.ready(() => {
+				observer.disconnect()
+				checkForScripts()
+			})
 		}
 	}
 }
