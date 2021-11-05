@@ -459,6 +459,8 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 				const lss = CoreRobloxUtilities.localStorageService
 				const localCache = {}
 				
+				hijackFunction(lss, "storage", () => true)
+				
 				hijackFunction(lss, "removeLocalStorage", (fn, thisArg, args) => {
 					delete localCache[args[0]]
 					return fn.apply(thisArg, args)
