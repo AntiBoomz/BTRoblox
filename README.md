@@ -86,6 +86,9 @@ Undocumented APIs
 * [DataStore APIs](#datastore-apis)
 * [Profile Page APIs](#profile-page-apis)
 
+⚠️ **Since these APIs are generally not intended for developer use, they are often subject to removal or even deletion.**
+If you use any of these, make sure to keep an eye on the [Official List of Deprecated Web Endpoints](https://devforum.roblox.com/t/official-list-of-deprecated-web-endpoints/62889) so you'll have time to migrate in such an event.
+
 
 User APIs
 ---------
@@ -638,95 +641,111 @@ Universe APIs
 
 DataStore APIs
 --------------
-### V1
 
-#### GetAsync("Key")
+#### DataStore:GetAsync("Key") <br> DataStore:GetVersionAsync("Key", "08D9A2FCD883E0E3.0000000014.08D9A35071DB24DC.01") <br> DataStore:RemoveAsync("Key") <br> DataStore:RemoveVersionAsync("Key", "08D9A2FCD883E0E3.0000000014.08D9A35071DB24DC.01")
 ```http
-GET https://gamepersistence.roblox.com/v1/persistence/standard?key=DSName&scope=DSScope&target=Key
-GET https://gamepersistence.roblox.com/v1/persistence/sorted?key=DSName&scope=DSScope&target=Key
-Cookie: .ROBLOSECURITY=*
-Content-Type: application/octet-stream
+GET https://gamepersistence.roblox.com/v2/persistence/13058/datastores/objects/object?datastore=DSName&objectKey=DSScope%2FKey
+GET https://gamepersistence.roblox.com/v2/persistence/13058/datastores/objects/object?datastore=DSName&objectKey=DSScope%2FKey&version=08D9A2FCD883E0E3.0000000014.08D9A35071DB24DC.01
+DELETE https://gamepersistence.roblox.com/v2/persistence/13058/datastores/objects/object?datastore=DSName&objectKey=DSScope%2FKey
+DELETE https://gamepersistence.roblox.com/v2/persistence/13058/datastores/objects/object?datastore=DSName&objectKey=DSScope%2FKey&version=08D9A2FCD883E0E3.0000000014.08D9A35071DB24DC.01
 Roblox-Place-Id: 1818
+Cookie: .ROBLOSECURITY=*
 ```
 ```http
-200 OK
-content-length: 7
+HTTP/1.1 200 OK
 content-type: application/octet-stream
-roblox-usn: 08D94934165492FF.0000000002.08D94934E28101F9.01
-
-"value"
-```
-
-#### SetAsync("Key", "value")
-```http
-POST https://gamepersistence.roblox.com/v1/persistence/standard?key=DSName&scope=DSScope&target=Key
-POST https://gamepersistence.roblox.com/v1/persistence/sorted?key=DSName&scope=DSScope&target=Key
-Cookie: .ROBLOSECURITY=*
-Content-Type: application/octet-stream
-Roblox-Place-Id: 1818
-Content-Length: 7
-
-"value"
-```
-```http
-200 OK
-content-length: 57
-content-type: application/json; charset=utf-8
-
-{"usn":"08D94934165492FF.0000000002.08D94934E28101F9.01"}
-```
-
-#### RemoveAsync("Key")
-```http
-POST https://gamepersistence.roblox.com/v1/persistence/standard/remove?key=DSName&scope=DSScope&target=Key
-POST https://gamepersistence.roblox.com/v1/persistence/sorted/remove?key=DSName&scope=DSScope&target=Key
-Cookie: .ROBLOSECURITY=*
-Content-Type: application/octet-stream
-Roblox-Place-Id: 1818
-```
-```http
-200 OK
 content-length: 7
-content-type: application/octet-stream
-roblox-usn: 08D94934165492FF.0000000002.08D94934E28101F9.01
+content-md5: TyfDgnYctlIRYXR2e29S/w==
+roblox-object-version-id: 08D9A2FCD883E0E3.0000000014.08D9A35071DB24DC.01
+roblox-object-created-time: 2021-11-08T21:15:09.7615587Z
+roblox-object-version-created-time: 2021-11-09T07:13:35.2534236Z
+roblox-object-attributes: {"some_datastore_attribute":"some_value"}
+roblox-object-userids: [261]
 
 "value"
 ```
 
-#### IncrementAsync("Key", 10)
+#### DataStore:SetAsync("Key", "value", {261}, options)
 ```http
-POST https://gamepersistence.roblox.com/v1/persistence/standard/increment?key=DSName&scope=DSScope&target=Key&by=10
-POST https://gamepersistence.roblox.com/v1/persistence/sorted/increment?key=DSName&scope=DSScope&target=Key&by=10
-Cookie: .ROBLOSECURITY=*
-Content-Type: application/octet-stream
+POST https://gamepersistence.roblox.com/v2/persistence/13058/datastores/objects/object?datastore=DSName&objectKey=DSScope%2FKey
 Roblox-Place-Id: 1818
-```
-```http
-200 OK
-content-type: application/json; charset=utf-8
-content-length: 70
-
-{"value":"10","usn":"08D94934165492FF.0000000004.08D9493603433C74.01"}
-```
-
-#### GetSortedAsync(true, 1, 1, 100):AdvanceToNextPageAsync()
-```http
-GET https://gamepersistence.roblox.com/v1/persistence/sorted/list?scope=DSScope&key=DSName&pageSize=10&direction=asc&minValue=1&maxValue=100&exclusiveStartKey=AQEBAQRLZXkx
 Cookie: .ROBLOSECURITY=*
-Content-Type: application/octet-stream
-Roblox-Place-Id: 1818
+Content-MD5: TyfDgnYctlIRYXR2e29S/w==
+roblox-object-attributes: {"some_datastore_attribute":"some_value"}
+roblox-object-userids: [261]
+
+"value"
 ```
 ```http
-200 OK
+HTTP/1.1 200 OK
 content-type: application/json; charset=utf-8
-content-length: 102
+content-length: 192
 
-{"entries":[{"target":"Key2","value":2,"usn":"2"}],"lastEvaluatedKey":"AQEBAgRLZXky"}
+{"version":"08D9A2FCD883E0E3.0000000018.08D9A352556DEABD.01","deleted":false,"contentLength":7,"createdTime":"2021-11-09T07:27:06.5548477Z","objectCreatedTime":"2021-11-08T21:15:09.7615587Z"}
 ```
 
-### V2
+#### DataStore:IncrementAsync("Key", 1, {261}, options)
+```http
+POST https://gamepersistence.roblox.com/v2/persistence/13058/datastores/objects/object/increment?datastore=DSName&objectKey=DSScope%2FKey&incrementBy=1
+Roblox-Place-Id: 1818
+Cookie: .ROBLOSECURITY=*
+roblox-object-attributes: {"some_datastore_attribute":"some_value"}
+roblox-object-userids: [261]
+```
+```http
+HTTP/1.1 200 OK
+content-type: application/octet-stream
+content-length: 1
+roblox-object-version-id: 08D9A2FCD883E0E3.0000000014.08D9A35071DB24DC.01
+roblox-object-created-time: 2021-11-08T21:15:09.7615587Z
+roblox-object-version-created-time: 2021-11-09T07:13:35.2534236Z
 
-#### GetAsync with multiple keys
+1
+```
+
+#### DataStore:ListVersionsAsync("Key", Enum.SortDirection.Ascending, 1636443068, 1636446676, 5)
+```http
+GET https://gamepersistence.roblox.com/v2/persistence/13058/datastores/objects/object/versions?datastore=DSName&objectKey=DSScope%2FKey&sortOrder=Descending&startTime=2021-11-09T07:31:08.000Z&endTime=2021-11-09T08:31:16.000Z&maxItemsToReturn=5&exclusiveStartKey=2%23
+Roblox-Place-Id: 1818
+Cookie: .ROBLOSECURITY=*
+```
+```http
+HTTP/1.1 200 OK
+content-type: application/json; charset=utf-8
+content-length: 1136
+
+{"versions":[{"version":"08D9A2FCD883E0E3.0000000018.08D9A352556DEABD.01","deleted":false,"contentLength":5,"createdTime":"2021-11-08T21:15:09.7615587Z","objectCreatedTime":"2021-11-08T21:15:09.7615587Z"},...],"lastReturnedKey":"6#"}
+```
+
+#### DataStore:ListKeysAsync("K", 5):AdvanceToNextPageAsync()
+```http
+GET https://gamepersistence.roblox.com/v2/persistence/13058/datastores/objects?datastore=DSName&prefix=global%2FK&maxItemsToReturn=5&exclusiveStartKey=2%23
+Roblox-Place-Id: 1818
+Cookie: .ROBLOSECURITY=*
+```
+```http
+HTTP/1.1 200 OK
+content-type: application/json; charset=utf-8
+content-length: 46
+
+{"keys":["global/Key",...],"lastReturnedKey":"8#"}
+```
+
+#### OrderedDataStore:GetSortedAsync(true, 1, 1, 100):AdvanceToNextPageAsync()
+```http
+POST https://gamepersistence.roblox.com/persistence/getSortedValues?scope=DSScope&key=DSName&pageSize=1&ascending=true&inclusiveMinValue=1&inclusiveMaxValue=100&exclusiveStartKey=AQEBAQRLZXkx
+Roblox-Place-Id: 1818
+Cookie: .ROBLOSECURITY=*
+```
+```http
+HTTP/1.1 200 OK
+content-type: application/json; charset=utf-8
+content-length: 85
+
+{"data":{"Entries":[{"Target":"Key2","Value":2}],"ExclusiveStartKey":"AQEBAgRLZXky"}}
+```
+
+#### GetAsync with multiple keys (works with all DataStore types)
 ```http
 POST https://gamepersistence.roblox.com/persistence/getV2?type=standard
 POST https://gamepersistence.roblox.com/persistence/getV2?type=sorted
@@ -745,19 +764,99 @@ content-length: 152
 {"data":[{"Key":{"Scope":"DSScope","Target":"Key1","Key":"DSName"},"Value":"1"},{"Key":{"Scope":"DSScope","Target":"Key2","Key":"DSName"},"Value":"2"}]}
 ```
 
-#### GetSortedAsync(true, 1, 1, 100):AdvanceToNextPageAsync()
-```http
-POST https://gamepersistence.roblox.com/persistence/getSortedValues?scope=DSScope&key=DSName&pageSize=1&ascending=true&inclusiveMinValue=1&inclusiveMaxValue=100&exclusiveStartKey=AQEBAQRLZXkx
-Roblox-Place-Id: 1818
-Cookie: .ROBLOSECURITY=*
-```
-```http
-HTTP/1.1 200 OK
-content-type: application/json; charset=utf-8
-content-length: 85
+### V1
 
-{"data":{"Entries":[{"Target":"Key2","Value":2}],"ExclusiveStartKey":"AQEBAgRLZXky"}}
+#### GlobalDataStore:GetAsync("Key") <br> OrderedDataStore:GetAsync("Key")
+```http
+GET https://gamepersistence.roblox.com/v1/persistence/standard?key=DSName&scope=DSScope&target=Key
+GET https://gamepersistence.roblox.com/v1/persistence/sorted?key=DSName&scope=DSScope&target=Key
+Cookie: .ROBLOSECURITY=*
+Content-Type: application/octet-stream
+Roblox-Place-Id: 1818
 ```
+```http
+200 OK
+content-length: 7
+content-type: application/octet-stream
+roblox-usn: 08D94934165492FF.0000000002.08D94934E28101F9.01
+
+"value"
+```
+
+#### GlobalDataStore:SetAsync("Key", "value") <br> OrderedDataStore:SetAsync("Key")
+```http
+POST https://gamepersistence.roblox.com/v1/persistence/standard?key=DSName&scope=DSScope&target=Key
+POST https://gamepersistence.roblox.com/v1/persistence/sorted?key=DSName&scope=DSScope&target=Key
+Cookie: .ROBLOSECURITY=*
+Content-Type: application/octet-stream
+Roblox-Place-Id: 1818
+Content-Length: 7
+
+"value"
+```
+```http
+200 OK
+content-length: 57
+content-type: application/json; charset=utf-8
+
+{"usn":"08D94934165492FF.0000000002.08D94934E28101F9.01"}
+```
+
+#### GlobalDataStore:RemoveAsync("Key") <br> OrderedDataStore:RemoveAsync("Key")
+```http
+POST https://gamepersistence.roblox.com/v1/persistence/standard/remove?key=DSName&scope=DSScope&target=Key
+POST https://gamepersistence.roblox.com/v1/persistence/sorted/remove?key=DSName&scope=DSScope&target=Key
+Cookie: .ROBLOSECURITY=*
+Content-Type: application/octet-stream
+Roblox-Place-Id: 1818
+```
+```http
+200 OK
+content-length: 7
+content-type: application/octet-stream
+roblox-usn: 08D94934165492FF.0000000002.08D94934E28101F9.01
+
+"value"
+```
+
+#### GlobalDataStore:IncrementAsync("Key", 10) <br> OrderedDataStore:IncrementAsync("Key")
+```http
+POST https://gamepersistence.roblox.com/v1/persistence/standard/increment?key=DSName&scope=DSScope&target=Key&by=10
+POST https://gamepersistence.roblox.com/v1/persistence/sorted/increment?key=DSName&scope=DSScope&target=Key&by=10
+Cookie: .ROBLOSECURITY=*
+Content-Type: application/octet-stream
+Roblox-Place-Id: 1818
+```
+```http
+200 OK
+content-type: application/json; charset=utf-8
+content-length: 70
+
+{"value":"10","usn":"08D94934165492FF.0000000004.08D9493603433C74.01"}
+```
+
+#### OrderedDataStore:GetSortedAsync(true, 1, 1, 100):AdvanceToNextPageAsync()
+```http
+GET https://gamepersistence.roblox.com/v1/persistence/sorted/list?scope=DSScope&key=DSName&pageSize=10&direction=asc&minValue=1&maxValue=100&exclusiveStartKey=AQEBAQRLZXkx
+Cookie: .ROBLOSECURITY=*
+Content-Type: application/octet-stream
+Roblox-Place-Id: 1818
+```
+```http
+200 OK
+content-type: application/json; charset=utf-8
+content-length: 102
+
+{"entries":[{"target":"Key2","value":2,"usn":"2"}],"lastEvaluatedKey":"AQEBAgRLZXky"}
+```
+
+#### Managing GlobalDataStores
+Managing data created using [DataStoreService:GetGlobalDataStore()](https://developer.roblox.com/en-us/api-reference/function/DataStoreService/GetGlobalDataStore) works a bit differently. You'll need to use the V1 endpoints using the "standard" type with the following adjustments:
+* The target (key) field should be blank
+* The DataStore name should be the desired key
+* The scope should be "u"
+
+For example: `/v1/persistence/standard?key=Key&scope=u&target=`
 
 -------------------------------------------------
 
