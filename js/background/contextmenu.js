@@ -173,14 +173,8 @@
 			menu.visible = enabled
 			
 			chrome.contextMenus.create(menu, () => {
-				if(chrome.runtime.lastError) {
-					chrome.contextMenus.update(menu.id, { visible: enabled }, () => {
-						const err = chrome.runtime.lastError
-						if(err) {
-							console.error(`Failed to update contextMenu item ${menu.id}: ${err.message}`)
-						}
-					})
-				}
+				if(!chrome.runtime.lastError) { return }
+				chrome.contextMenus.update(menu.id, { visible: enabled })
 			})
 		})
 	}
