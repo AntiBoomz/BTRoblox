@@ -712,6 +712,7 @@ const $ = (() => {
 					}
 
 					const resp = await fetch(respData.dataUrl)
+					URL.revokeObjectURL(respData.dataUrl)
 
 					Object.defineProperties(resp, {
 						ok: { value: respData.ok },

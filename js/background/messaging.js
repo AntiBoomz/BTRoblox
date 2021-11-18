@@ -357,16 +357,9 @@ MESSAGING.listen({
 
 
 			const blob = await resp.blob()
-			const fileReader = new FileReader()
-
-			fileReader.readAsDataURL(blob)
-			await new SyncPromise(resolve => fileReader.onload = resolve)
-
-			let dataUrl = fileReader.result
-
-			if(dataUrl === "data:") { // Why does filereader return an unreadable data url...?
-				dataUrl = `data:${blob.type};base64,`
-			}
+			const dataUrl = URL.createObjectURL(blob)
+			
+			setTimeout(() => URL.revokeObjectURL(dataUrl), 10e3)
 			
 			respond({
 				success: true,
