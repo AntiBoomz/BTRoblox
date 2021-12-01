@@ -98,7 +98,7 @@ const RBXAppearance = (() => {
 						break
 
 					case "Decal":
-						if(child.Name === "face") {
+						if(child.Name.toLowerCase() === "face") {
 							this.addClothing({
 								target: "face",
 								texId: child.Texture
