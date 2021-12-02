@@ -91,7 +91,7 @@ const currentPage = (() => {
 	return null
 })()
 
-const IS_VALID_PAGE = (() => {
+const isValidPage = (() => {
 	if(document.contentType !== "text/html" || location.protocol === "blob") {
 		return false
 	}

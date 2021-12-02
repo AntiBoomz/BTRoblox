@@ -1,7 +1,7 @@
 "use strict"
 
-if(IS_VALID_PAGE) {
 	btrThemes.init()
+if(isValidPage) {
 	
 	if(currentPage && pageInit[`${currentPage.name}_pre`]) {
 		try { pageInit[`${currentPage.name}_pre`].apply(currentPage, currentPage.matches) }
