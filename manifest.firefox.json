@@ -56,6 +56,7 @@
 				"js/common.js",
 				"js/utility.js",
 
+				"js/util/injectCSS.js",
 				"js/util/modifyTemplate.js",
 				"js/util/loadOptionalLibrary.js",
 				
