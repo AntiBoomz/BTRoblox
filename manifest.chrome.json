@@ -48,12 +48,12 @@
 		{
 			"matches": ["*://www.roblox.com/*", "*://web.roblox.com/*"],
 			"js": [
-				"js/inject.js",
 				"js/common.js",
 				"js/utility.js",
 				
 				"js/content.js",
 
+				"js/util/injectJS.js",
 				"js/util/injectCSS.js",
 				"js/util/modifyTemplate.js",
 				"js/util/loadOptionalLibrary.js",
@@ -91,6 +91,7 @@
 				"js/pages/placeconfig.js",
 				"js/pages/profile.js",
 				
+				"js/inject.js",
 				"js/main.js"
 			],
 			"run_at": "document_start",

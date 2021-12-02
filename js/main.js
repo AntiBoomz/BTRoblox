@@ -1,22 +1,22 @@
 "use strict"
 
-	btrThemes.init()
 if(isValidPage) {
+	InjectJS.init(INJECT_SCRIPT, [
+		currentPage ? currentPage.name : null,
+		currentPage ? currentPage.matches : null,
+		IS_DEV_MODE
+	])
+	
+	btrThemes.init()
 	
 	if(currentPage && pageInit[`${currentPage.name}_pre`]) {
 		try { pageInit[`${currentPage.name}_pre`].apply(currentPage, currentPage.matches) }
 		catch(ex) { console.error(ex) }
 	}
-
+	
 	SETTINGS.load(() => {
-		InjectJS.send(
-			"INIT",
-			SETTINGS.serialize(),
-			currentPage ? currentPage.name : null,
-			currentPage ? currentPage.matches : null,
-			IS_DEV_MODE
-		)
-
+		InjectJS.send("init", SETTINGS.serialize())
+			
 		try { pageInit.common() }
 		catch(ex) { console.error(ex) }
 	

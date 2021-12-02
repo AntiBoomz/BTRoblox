@@ -34,7 +34,7 @@ function modifyTemplate(idList, callback) {
 				{ once: true }
 			))
 
-			InjectJS.send("TEMPLATE_INIT", id)
+			InjectJS.send("initTemplate", id)
 		}
 		
 		templatePromises[id].then(template => {

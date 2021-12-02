@@ -1,58 +1,9 @@
 "use strict"
 
-const InjectJS = {
-	queue: [],
-
-	send(action, ...detail) {
-		try {
-			if(IS_FIREFOX) { detail = cloneInto(detail, window.wrappedJSObject) }
-			document.dispatchEvent(new CustomEvent(`inject.${action}`, { detail }))
-		} catch(ex) {
-			console.error(ex)
-		}
-	},
-
-	listen(actions, callback, props) {
-		const actionList = actions.split(" ")
-		const once = props && props.once
-
-		const cb = ev => {
-			if(once) {
-				actionList.forEach(action => {
-					document.removeEventListener(`content.${action}`, cb)
-				})
-			}
-
-			if(!ev.detail) {
-				console.warn("[BTRoblox] Didn't get event detail from InjectJS", actions)
-				return
-			}
-
-			return callback(...ev.detail)
-		}
-
-		actionList.forEach(action => {
-			document.addEventListener(`content.${action}`, cb)
-		})
-	},
-	
-	injectFunction(fn, ...args) {
-		const script = document.createElement("script")
-		script.async = true
-		script.type = "text/javascript"
-		script.textContent = `(${fn})(${JSON.stringify(args).slice(1, -1)})`
-		document.documentElement.prepend(script)
-	}
-}
-
-
-if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
+const INJECT_SCRIPT = (currentPage, matches, IS_DEV_MODE) => {
 	"use strict"
 	
-	let IS_DEV_MODE
 	let settings
-	let currentPage
-	let matches
 
 	const ContentJS = {
 		send(action, ...args) {
@@ -77,7 +28,7 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 			})
 		}
 	}
-	
+
 	const modifyTemplate = {
 		cachedResults: {},
 		listeningFor: {},
@@ -312,7 +263,7 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 	}
 
 	//
-	
+
 	const onSet = (a, b, c) => {
 		if(a[b]) { return c(a[b]) }
 
@@ -326,7 +277,7 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 			}
 		})
 	}
-	
+
 	function hijackFunction(a, b, c) {
 		if(arguments.length === 2) {
 			return new Proxy(a, { apply: b })
@@ -336,9 +287,9 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 	}
 
 	//
-	
+
 	const angularListeners = {}
-	
+
 	const angularApplyEntry = (module, entry, callback) => {
 		const [, type, data] = entry
 		
@@ -366,7 +317,7 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 			hijack(data, data.length - 1, data)
 		}
 	}
-	
+
 	const angularInitEntry = (module, entry) => {
 		const name = entry[2][0]
 		const listeners = angularListeners[module.name]?.[name]
@@ -376,7 +327,7 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 			angularApplyEntry(module, entry, callback)
 		}
 	}
-	
+
 	const hijackAngular = (moduleName, objects) => {
 		let module
 		
@@ -398,9 +349,9 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 			angularListeners[moduleName][name].push(callback)
 		}
 	}
-	
+
 	//
-	
+
 	function preInit() {
 		onSet(window, "angular", angular => {
 			onSet(angular, "module", () => {
@@ -450,7 +401,7 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 			})
 		})
 	}
-	
+
 	function settingsLoaded() {
 		if(settings.general.fixFirefoxLocalStorageIssue) {
 			onSet(window, "CoreRobloxUtilities", CoreRobloxUtilities => {
@@ -659,13 +610,13 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 								u.btr_setPage = function($event) {
 									if($event.which === 13) {
 										const value = $event.target.value
-	
+
 										if(!Number.isNaN(value)) {
 											$location.search({ page: value })
 										} else {
 											$event.target.value = u.currentStatus.currentPage
 										}
-	
+
 										$event.preventDefault()
 									}
 								}
@@ -1011,19 +962,19 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 	}
 
 	//
-	
+
 	ContentJS.listen("linkify", target => {
 		if(window.Roblox?.Linkify) { $(target).linkify() }
 		else { target.classList.add("linkify") }
 	})
 
 	ContentJS.listen("reactInject", (...args) => reactHook.contentInject(...args))
+	ContentJS.listen("initTemplate", key => modifyTemplate.listenForTemplate(key))
+	
 	//
-
-	ContentJS.listen("TEMPLATE_INIT", key => modifyTemplate.listenForTemplate(key))
-
-	ContentJS.listen("INIT", (...initData) => {
-		[settings, currentPage, matches, IS_DEV_MODE] = initData
+	
+	ContentJS.listen("init", _settings => {
+		settings = _settings
 		
 		Promise.resolve().then(settingsLoaded)
 		
@@ -1033,9 +984,6 @@ if(IS_VALID_PAGE) { InjectJS.injectFunction(() => {
 			Promise.resolve().then(documentReady)
 		}
 	})
-
-	//
-
+	
 	preInit()
-})
 }
