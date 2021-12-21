@@ -115,7 +115,24 @@ const AssetCache = (() => {
 	}
 
 	return {
-		loadAnimation: createMethod(buffer => RBXParser.parseAnimation(RBXParser.parseModel(buffer))),
+		loadAnimation: createMethod(buffer => {
+			const findSequence = array => {
+				for(const inst of array) {
+					if(inst.ClassName === "KeyframeSequence") {
+						return inst
+					}
+					
+					const sequence = findSequence(inst.Children)
+					if(sequence) {
+						return sequence
+					}
+				}
+				
+				return null
+			}
+			
+			return RBXParser.parseAnimation(findSequence(RBXParser.parseModel(buffer)))
+		}),
 		loadModel: createMethod(buffer => RBXParser.parseModel(buffer)),
 		loadMesh: createMethod(buffer => RBXParser.parseMesh(buffer)),
 		loadImage: createMethod(buffer => new SyncPromise(resolve => {
