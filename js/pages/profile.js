@@ -689,8 +689,9 @@ pageInit.profile = function(userId) {
 				hlist.$empty()
 
 				const thumbs = {}
+				const groups = json.data.sort((a, b) => a.isPrimaryGroup ? -1 : b.isPrimaryGroup ? 1 : 0)
 
-				json.data.forEach(({ group, role }, index) => {
+				groups.forEach(({ group, role }, index) => {
 					const parent = html`
 					<li class="list-item game-card ${index < pageSize ? "visible" : ""}">
 						<div class="card-item game-card-container">
