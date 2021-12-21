@@ -8,8 +8,8 @@
 			contexts: ["link"],
 			targetUrlPatterns: [
 				"*://*.roblox.com/*-item?*id=*",
-				"*://*.roblox.com/catalog/*/*",
-				"*://*.roblox.com/library/*/*",
+				"*://*.roblox.com/catalog/*",
+				"*://*.roblox.com/library/*",
 				"*://*.roblox.com/My/Item.aspx*ID=*"
 			]
 		},
