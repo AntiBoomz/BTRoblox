@@ -4,110 +4,128 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 	if(!SETTINGS.get("itemdetails.itemPreviewer")) { return }
 	
 	const isPreviewable = AnimationPreviewAssetTypeIds.includes(assetTypeId) || WearableAssetTypeIds.includes(assetTypeId)
-	const isPackage = assetTypeId === 32
 
-	if(isPackage || isBundle || isPreviewable) {
-		await loadOptionalLibrary("previewer")
-
+	if(isBundle || isPreviewable) {
 		const previewerMode = SETTINGS.get("itemdetails.itemPreviewerMode")
-		const preview = new ItemPreviewer()
-
-		let playedAnim = false
 		let autoLoading = false
-		let bundleOutfitId
-
-		const addAssetPreview = async (itemId, itemName = "Unknown") => {
-			const assetPreview = preview.addAssetPreview(itemId)
-			const model = await AssetCache.loadModel(itemId)
+		
+		let currentOutfitId
+		let playedAnimation
+		let bundleType
+		let preview
+		
+		const setOutfit = outfitId => {
+			if(!preview) {
+				currentOutfitId = outfitId
+				return
+			}
 			
-			let isAnimation = false
+			preview.setBundleOutfit(outfitId)
 			
-			for(const child of model) {
-				if(child.ClassName === "Folder" && child.Name === "R15Anim") {
-					for(const value of child.Children) {
+			if(bundleType !== "AvatarAnimations") {
+				preview.selectOutfit("bundle")
+			}
+		}
+		
+		const loadPreview = $.onceFn(async () => {
+			await loadOptionalLibrary("previewer")
+			preview = new ItemPreviewer()
+			
+			if(currentOutfitId) {
+				setOutfit(currentOutfitId)
+			}
+		})
+		
+		const addAsset = async (assetId, assetTypeId, assetName) => {
+			if(AnimationPreviewAssetTypeIds.includes(assetTypeId)) {
+				await loadPreview()
+				preview.setVisible(true)
+				
+				if(!autoLoading && (previewerMode === "always" || previewerMode === "animations")) {
+					autoLoading = true
+					$.ready(() => preview.setEnabled(true))
+				}
+				
+				if(assetTypeId === 24) {
+					// Animation asset, no need to process
+					preview.addAnimation(assetId, assetName)
+					
+					if(!playedAnimation) {
+						playedAnimation = true
+						preview.playAnimation(assetId)
+					}
+					
+				} else if(assetTypeId === 61) {
+					// Emote asset, contains an Animation
+					const model = await AssetCache.loadModel(assetId)
+					const animation = model.find(x => x.ClassName === "Animation")
+					const animationId = AssetCache.resolveAssetId(animation.AnimationId)
+					
+					preview.addAnimation(animationId, assetName)
+					
+					if(!playedAnimation) {
+						playedAnimation = true
+						preview.playAnimation(animationId)
+					}
+					
+				} else {
+					// Avatar animation
+					const model = await AssetCache.loadModel(assetId)
+					const folder = model.find(x => x.Name === "R15Anim")
+					
+					for(const value of folder.Children) {
 						if(value.ClassName !== "StringValue") { continue }
 						
-						for(const anim of value.Children) {
-							if(anim.ClassName !== "Animation") { continue }
-
-							const animId = AssetCache.resolveAssetId(anim.AnimationId)
-							if(!animId) { continue }
-
-							isAnimation = true
-
+						for(const animation of value.Children) {
+							if(animation.ClassName !== "Animation") { continue }
+							
+							const animationId = AssetCache.resolveAssetId(animation.AnimationId)
+							
 							if(isBundle) {
-								preview.addBundleAnimation(animId, value.Name, itemName)
+								preview.addBundleAnimation(animationId, value.Name, assetName)
 
-								if(!playedAnim && value.Name === "run") {
-									playedAnim = true
-									preview.playAnimation(animId)
+								if(!playedAnimation && value.Name === "run") {
+									playedAnimation = true
+									preview.playAnimation(animationId)
 								}
 							} else {
-								preview.addAnimation(animId, value.Name)
+								preview.addAnimation(animationId, value.Name)
 
-								if(!playedAnim) {
-									playedAnim = true
-									preview.playAnimation(animId)
+								if(!playedAnimation) {
+									playedAnimation = true
+									preview.playAnimation(animationId)
 								}
 							}
 						}
 					}
-				} else if(child.ClassName === "KeyframeSequence") {
-					isAnimation = true
-
-					preview.addAnimation(itemId, String(itemId))
-					preview.playAnimation(itemId)
-				} else if(child.ClassName === "Animation") {
-					isAnimation = true
-
-					const animId = child.AnimationId
-					preview.addAnimation(animId, child.Name)
-					preview.playAnimation(animId)
 				}
-			}
-
-			if(assetPreview || isAnimation) {
+				
+			} else if(WearableAssetTypeIds.includes(assetTypeId)) {
+				await loadPreview()
 				preview.setVisible(true)
-
-				if(isAnimation) {
-					preview.applyAnimationPlayerType = true
-				}
-
-				if(!autoLoading && (previewerMode === "always" || previewerMode === "animations" && isAnimation)) {
+				
+				preview.addAssetPreview(assetId)
+				
+				if(!autoLoading && previewerMode === "always") {
 					autoLoading = true
 					$.ready(() => preview.setEnabled(true))
 				}
 			}
 		}
-
+		
 		if(isBundle) {
 			const details = await RobloxApi.catalog.getBundleDetails(assetId)
+			bundleType = details.bundleType
 			
 			for(const item of details.items) {
 				if(item.type === "Asset") {
-					addAssetPreview(item.id, item.name)
+					RobloxApi.api.getProductInfo(item.id).then(info => addAsset(item.id, info.AssetTypeId, item.name))
 				} else if(item.type === "UserOutfit") {
-					bundleOutfitId = item.id
-					preview.setBundleOutfit(bundleOutfitId)
-					
-					if(details.bundleType !== "AvatarAnimations") {
-						preview.selectOutfit("bundle")
-					}
+					setOutfit(item.id)
 				}
 			}
-		} else if(isPackage) {
-			const text = await AssetCache.loadText(assetId)
-			
-			for(const itemId of text.split(";")) {
-				addAssetPreview(itemId)
-			}
 		} else {
-			const isAnim = AnimationPreviewAssetTypeIds.includes(assetTypeId)
-			const isAsset = WearableAssetTypeIds.includes(assetTypeId)
-
-			if(isAnim || isAsset) {
-				addAssetPreview(assetId)
-			}
+			addAsset(assetId, assetTypeId, "Asset")
 		}
 	}
 }
