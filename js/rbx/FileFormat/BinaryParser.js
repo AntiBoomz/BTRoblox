@@ -9,7 +9,8 @@ const RBXBinaryParser = {
 		null, "string", "bool", "int", "float", "double", "UDim", "UDim2", // 7
 		"Ray", "Faces", "Axes", "BrickColor", "Color3", "Vector2", "Vector3", "Vector2int16", // 15
 		"CFrame", "Quaternion", "Enum", "Instance", "Vector3int16", "NumberSequence", "ColorSequence", // 22
-		"NumberRange", "Rect2D", "PhysicalProperties", "Color3uint8", "int64", "SharedString", "UnknownScriptFormat" // 29
+		"NumberRange", "Rect2D", "PhysicalProperties", "Color3uint8", "int64", "SharedString", "UnknownScriptFormat", // 29
+		"WorldPivotData"
 	],
 
 	parse(buffer) {
@@ -394,13 +395,15 @@ const RBXBinaryParser = {
 			}
 			break
 		}
-		case "UnknownScriptFormat":
-			for(let i = 0; i < instCount; i++) {
-				values[i] = "<UnknownScriptFormat>"
-			}
-			break
 		default:
 			THROW_DEV_WARNING(`[ParseRBXBin] Unimplemented dataType '${typeName}' for ${group.ClassName}.${prop}`)
+			// break omitted
+		case "WorldPivotData":
+		case "UnknownScriptFormat":
+			for(let i = 0; i < instCount; i++) {
+				values[i] = `<${typeName}>`
+			}
+			break
 		}
 
 		values.forEach((value, i) => {
