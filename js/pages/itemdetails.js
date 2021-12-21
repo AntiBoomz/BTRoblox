@@ -376,7 +376,7 @@ const initContentButton = async (assetId, assetTypeId) => {
 		const actId = AssetCache.resolveAssetId(inst[assetTypeContainer.prop])
 		if(!actId) { return }
 
-		btn.href = `/catalog/${actId}`
+		btn.href = `/catalog/${actId}/`
 		btn.classList.remove("disabled")
 	})
 }
