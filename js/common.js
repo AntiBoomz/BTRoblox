@@ -159,7 +159,8 @@ const SETTINGS = {
 		},
 		home: {
 			friendsShowUsername: { value: false },
-			friendsSecondRow: { value: false }
+			friendsSecondRow: { value: false },
+			friendPresenceLinks: { value: false }
 		},
 		navigation: {
 			enabled: { value: true },

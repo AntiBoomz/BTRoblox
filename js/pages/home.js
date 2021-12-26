@@ -12,4 +12,18 @@ pageInit.home = function() {
 			}
 		})
 	}
+	
+	if(SETTINGS.get("home.friendPresenceLinks")) {
+		modifyTemplate("people-info-card", template => {
+			for(const elem of template.$findAll(`[ng-click^="goToGameDetails"]`)) {
+				const anchor = document.createElement("a")
+				anchor.href = `{{friend.presence.placeUrl}}`
+				anchor.append(...elem.childNodes)
+				for(const attr of elem.attributes) {
+					anchor.setAttribute(attr.name, attr.value)
+				}
+				elem.replaceWith(anchor)
+			}
+		})
+	}
 }
