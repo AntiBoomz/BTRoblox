@@ -2,29 +2,30 @@
 
 pageInit.money = function() {
 	if(RobuxToCash.isEnabled()) {
-		const attached = new WeakSet()
-		
-		const attach = elem => {
-			if(attached.has(elem)) { return }
-			attached.add(elem)
-			
-			const span = elem.lastElementChild
-			const amt = parseInt(span?.textContent.replace(/,/g, ""), 10)
+		const update = span => {
+			const amt = parseInt(span.textContent.replace(/,/g, ""), 10)
 			
 			if(Number.isSafeInteger(amt)) {
 				const cash = RobuxToCash.convert(amt)
-				span.after(html`<span style=color:#060;font-size:12px;>&nbsp;(${cash})</span>`)
+				let cashLabel = span.nextElementSibling
+				
+				if(!cashLabel || !cashLabel.matches("cashlabel")) {
+					cashLabel = html`<cashlabel style=color:#060;font-size:12px;></cashlabel>`
+					span.after(cashLabel)
+				}
+				
+				cashLabel.textContent = ` (${cash})`
 			}
 		}
 		
 		const observe = () => {
-			setTimeout(() => {
-				const list = document.$findAll("#transactions-page-container .amount.icon-robux-container")
-				
-				for(const elem of list) {
-					attach(elem)
-				}
-			}, 0)
+			const list = document.$findAll("#transactions-page-container .amount.icon-robux-container > span:not([btr-cash]):last-of-type")
+			
+			for(const span of list) {
+				span.setAttribute("btr-cash", true)
+				new MutationObserver(() => update(span)).observe(span, { characterData: true, subtree: true })
+				update(span)
+			}
 		}
 		
 		document.$watch("#transactions-page-container", cont => {
