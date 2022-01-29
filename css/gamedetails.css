@@ -166,18 +166,20 @@ body .btr-game-main-container {
 
 /* Developer Store */
 
-#rbx-passes-container .store-card,
-#rbx-gear-container .store-card {
+#store .store-cards { /* Fix stuff breaking when price or robuxtocash wraps to next line */
+	display: flex;
+	flex-wrap: wrap;
+}
+
+#store .store-cards .store-card {
 	border: 1px solid #E3E3E3;
 }
 
-
-.dark-theme.btr-gamedetails #rbx-passes-container .store-card,
-.dark-theme.btr-gamedetails #rbx-gear-container .store-card {
+.dark-theme.btr-gamedetails #store .store-cards .store-card {
 	border-color: #656668;
 }
 
-.dark-theme.btr-gamedetails .store-card .store-card-caption {
+.dark-theme.btr-gamedetails #store .store-cards .store-card .store-card-caption {
 	border-top-color: #656668;
 }
 
