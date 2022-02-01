@@ -775,7 +775,7 @@ pageInit.profile = function(userId) {
 			isLoading = true
 
 			lastCategory = category
-
+			
 			const params = new URLSearchParams({
 				userId,
 				thumbWidth: 150,
@@ -794,15 +794,22 @@ pageInit.profile = function(userId) {
 					pager.setPage(page)
 					pager.setMaxPage(Math.floor((json.Data.TotalItems - 1) / pageSize) + 1)
 					hlist.$empty()
-
-					const categoryName = dropdownLabel.textContent
-
-					const items = json.Data.Items
-					if(!items.length) {
+					
+					if(json.Data.TotalItems === 0) {
+						const categoryName = dropdownLabel.textContent
 						hlist.append(html`<div class='section-content-off btr-section-content-off'>This user has no favorite ${categoryName}</div>`)
-					} else {
-						items.forEach(data => {
-							const item = html`
+						return
+					}
+					
+					const items = json.Data.Items
+					const numItems = Math.min(pageSize, json.Data.TotalItems - (page - 1) * pageSize)
+
+					for(let i = 0; i < numItems; i++) {
+						const data = items[i]
+						let item
+						
+						if(data) {
+							item = html`
 							<li class="list-item game-card">
 								<div class="card-item game-card-container">
 									<a href="${data.Item.AbsoluteUrl}" title="${data.Item.Name}">
@@ -819,9 +826,25 @@ pageInit.profile = function(userId) {
 									</div>
 								</div>
 							</li>`
+						} else {
+							item = html`
+							<li class="list-item game-card">
+								<div class="card-item game-card-container">
+									<a>
+										<div class="game-card-thumb-container icon-blocked"></div>
+										<div class="text-overflow game-card-name" title="[ Content Deleted ]" ng-non-bindable>[ Content Deleted ]</div>
+									</a>
+									<div class="game-card-name-secondary btr-creator-link-container">
+										<span class="text-secondary">By </span>
+										<a class="text-link text-overflow btr-creator-link" title="Unknown" href="#">
+										Unknown
+										</a>
+									</div>
+								</div>
+							</li>`
+						}
 
-							hlist.append(item)
-						})
+						hlist.append(item)
 					}
 				}
 			})
