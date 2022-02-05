@@ -16,7 +16,9 @@ const AssetTypeIds = [
 	"HairAccessory", "FaceAccessory", "NeckAccessory", "ShoulderAccessory", "FrontAccessory", "BackAccessory", "WaistAccessory", // 47
 	"ClimbAnimation", "DeathAnimation", "FallAnimation", "IdleAnimation", "JumpAnimation", "RunAnimation", "SwimAnimation", "WalkAnimation", "PoseAnimation", // 56
 	"EarAccessory", "EyeAccessory", "null", "null", // 60
-	"EmoteAnimation"
+	"EmoteAnimation", "Video", // 62
+	"TShirtAccessory", "ShirtAccessory", "PantsAccessory", "JacketAccessory", "SweaterAccessory", // 68
+	"ShortsAccessory", "LeftShoeAccessory", "RightShoeAccessory", "DressSkirtAccessory", // 72
 ]
 
 const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34, 35, 37]
