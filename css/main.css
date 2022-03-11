@@ -1,12 +1,32 @@
 /* Navigation */
 
+#btr-navbar-messages > a,
+#btr-navbar-friends  > a {
+	padding: 4px;
+	border-radius: 8px;
+}
+
+.light-theme #btr-navbar-messages:hover > a,
+.light-theme #btr-navbar-friends:hover  > a {
+	background: rgba(0, 0, 0, 0.1);
+	border-color: rgba(0, 0, 0, 0.6);
+	color: #393b3d;
+}
+
+.dark-theme #btr-navbar-messages:hover > a,
+.dark-theme #btr-navbar-friends:hover  > a {
+	background-color: hsla(0,0%,100%,.1);
+	border-color: hsla(0,0%,100%,.7);
+	color: #fff;
+}
+
 .icon-nav-friend-btr, .icon-nav-message-btr {
 	background-image: url(/res/icon_nav.svg);
 	background-repeat: no-repeat;
 	background-size: auto auto;
 	width: 28px;
 	height: 28px;
-	display: inline-block;
+	display: block;
 }
 
 .icon-nav-premium-btr {
@@ -20,10 +40,9 @@
 }
 
 .icon-nav-friend-btr { background-position: 0 -28px; }
-a:hover .icon-nav-friend-btr { background-position: -28px -28px; }
-
 .icon-nav-message-btr { background-position: 0 0; }
-a:hover .icon-nav-message-btr { background-position: -28px 0; }
+/* a:hover .icon-nav-friend-btr { background-position: -28px -28px; }
+a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 
 .dark-theme .icon-nav-premium-btr { filter: invert(100%); }
 .dark-theme a:hover .icon-nav-premium-btr { filter: invert(100%) brightness(2); }
