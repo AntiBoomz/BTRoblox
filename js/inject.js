@@ -632,16 +632,13 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 						result.link = function(u) {
 							try {
 								u.btr_setPage = function($event) {
-									if($event.which === 13) {
-										const value = $event.target.value
+									const value = +$event.target.value
 
-										if(!Number.isNaN(value)) {
-											$location.search({ page: value })
-										} else {
-											$event.target.value = u.currentStatus.currentPage
-										}
-
-										$event.preventDefault()
+									if(!Number.isNaN(value)) {
+										$location.search({ page: value })
+										$event.target.value = value
+									} else {
+										$event.target.value = u.currentStatus.currentPage
 									}
 								}
 							} catch(ex) {

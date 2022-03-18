@@ -156,7 +156,7 @@ pageInit.messages = function() {
 			curPage.removeAttribute("ng-bind")
 			curPage.textContent = ""
 
-			const pageInput = html`<input type=number ng-keydown="btr_setPage($event)">`
+			const pageInput = html`<input type=text ng-keydown="$event.which===13&&$event.target.blur()" ng-blur="btr_setPage($event)">`
 			pageInput.setAttribute("ng-value", bindAttr)
 			curPage.append(pageInput)
 		} else {

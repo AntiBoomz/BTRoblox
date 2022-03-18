@@ -22,17 +22,7 @@ body .content .btr-currentPage input {
 	margin-right: 6px;
 
 	text-align: center;
-
 	color: #191919;
-
-	-webkit-appearance: none;
-	-moz-appearance: textfield; /* ugh */
-	appearance: none;
-}
-
-body .content .btr-currentPage input::-webkit-inner-spin-button,
-body .content .btr-currentPage input::-webkit-outer-spin-button {
-	display: none;
 }
 
 .btr-messages .message-actions .btn-control-sm {
