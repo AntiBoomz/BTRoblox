@@ -263,6 +263,11 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	text-align: center;
 }
 
+.btr-pager-holder .pager .disabled {
+	pointer-events: none;
+	opacity: 0.5;
+}
+
 /* Backup from roblox's css */
 /*
 .btr-pager-holder {box-sizing:border-box;font-size:16px;}
