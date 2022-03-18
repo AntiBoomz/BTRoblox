@@ -594,6 +594,10 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 
 						setMaxNumbers()
 						
+						hijackFunction($scope, "validateAdvancedAccessories", (target, thisArg, args) => {
+							return true
+						})
+						
 						hijackFunction(avatarTypeService, "setAssetTypeLookups", (target, thisArg, args) => {
 							const result = target.apply(thisArg, args)
 							setMaxNumbers()
