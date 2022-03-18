@@ -28,7 +28,7 @@ const isValidPage = (() => {
 
 if(isValidPage) {
 	SETTINGS.load(() => {
-		InjectJS.init([
+		InjectJS.inject(INJECT_SCRIPT, [
 			SETTINGS.serialize(),
 			currentPage ? currentPage.name : null,
 			currentPage ? currentPage.matches : null,

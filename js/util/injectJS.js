@@ -4,31 +4,23 @@ const InjectJS = {
 	loaded: false,
 	queue: [],
 	
-	init(args) {
-		InjectJS.listen("init", () => {
-			this.loaded = true
-			
-			for(const args of this.queue) {
-				this.send.call(this, ...args)
-			}
-			
-			delete this.queue
-		})
+	inject(fn, args) {
+		const injector = document.createElement("div")
+		injector.setAttribute("onclick", `(${INJECT_SCRIPT})(${JSON.stringify(args).slice(1, -1)})`)
 		
-		if(IS_MANIFEST_V3) {
-			const script = document.createElement("script")
-			script.type = "text/javascript"
-			script.id = "btrInjectScript"
-			script.src = getURL("js/inject.js")
-			script.dataset.args = JSON.stringify(args)
-			document.documentElement.append(script)
-		} else {
-			const script = document.createElement("script")
-			script.type = "text/javascript"
-			script.id = "btrInjectScript"
-			script.textContent = `(${INJECT_SCRIPT})(${JSON.stringify(args).slice(1, -1)})`
-			document.documentElement.append(script)
+		document.documentElement.append(injector)
+		injector.click()
+		injector.remove()
+	},
+	
+	init() {
+		this.loaded = true
+		
+		for(const args of this.queue) {
+			this.send.call(this, ...args)
 		}
+		
+		delete this.queue
 	},
 
 	send(action, ...detail) {
@@ -69,3 +61,5 @@ const InjectJS = {
 		})
 	}
 }
+
+InjectJS.listen("init", () => InjectJS.init())

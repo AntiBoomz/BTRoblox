@@ -38,7 +38,7 @@
 
 	"web_accessible_resources": [
 		{
-			"resources": ["/res/*", "/css/*", "/js/inject.js"],
+			"resources": ["/res/*", "/css/*"],
 			"matches": ["*://*.roblox.com/*"]
 		}
 	],
@@ -100,6 +100,7 @@
 				"js/pages/placeconfig.js",
 				"js/pages/profile.js",
 				
+				"js/inject.js",
 				"js/main.js"
 			],
 			"run_at": "document_start",

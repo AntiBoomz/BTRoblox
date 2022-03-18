@@ -1,6 +1,8 @@
 "use strict"
 
 const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
+	"use strict"
+	
 	const ContentJS = {
 		send(action, ...args) {
 			document.dispatchEvent(new CustomEvent("content." + action, { detail: args }))
@@ -1312,14 +1314,4 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 	} else {
 		Promise.resolve().then(documentReady)
 	}
-}
-
-
-if(!chrome?.runtime?.id) {
-	const scriptObject = document.querySelector("#btrInjectScript")
-	
-	const args = scriptObject.dataset.args
-	delete scriptObject.dataset.args
-	
-	INJECT_SCRIPT(...JSON.parse(args))
 }

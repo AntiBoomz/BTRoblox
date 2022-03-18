@@ -49,7 +49,6 @@
 	],
 
 	"web_accessible_resources": [
-		"js/inject.js",
 		"res/*",
 		"css/*"
 	],
