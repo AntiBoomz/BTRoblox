@@ -79,6 +79,8 @@ function robloxTimeToDate(dateString) {
 	return Date.parse(dateString) ? new Date(`${dateString} ${getRobloxTimeZoneString()}`) : false
 }
 
+//
+
 const formatNumber = num => String(num).replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/yg, "$1,")
 const formatUrlName = (name, def = "Name") => encodeURIComponent(name.replace(/[']/g, "").replace(/\W+/g, "-").replace(/^-+|-+$/g, "") || def)
 
@@ -92,6 +94,18 @@ const robloxLinkify = target => {
 
 //
 
+let cachedPageXsrfToken = null
+
+const getXsrfToken = () => {
+	if(cachedPageXsrfToken === null) {
+		const matches = document.documentElement.innerHTML.match(/XsrfToken\.setToken\('([^']+)'\)/)
+		cachedPageXsrfToken = matches?.[1] ?? false
+	}
+	
+	return cachedPageXsrfToken || null
+}
+
+//
 
 function startDownload(blob, fileName) {
 	const link = document.createElement("a")

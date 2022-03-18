@@ -73,8 +73,8 @@ pageInit.gamedetails = function(placeId) {
 			newContainer.after(midContainer)
 			newContainer.$find(".placeholder-main").replaceWith(mainCont)
 		})
-		.$watch(".game-about-container", aboutCont => {
-			const descCont = aboutCont.$find(">.section-content")
+		.$watch(".game-about-container", async aboutCont => {
+			const descCont = await aboutCont.$watch(">.section-content").$promise()
 
 			descCont.classList.remove("section-content")
 			descCont.classList.add("btr-description")

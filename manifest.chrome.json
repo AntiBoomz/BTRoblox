@@ -1,16 +1,16 @@
 {
-	"manifest_version": 2,
+	"manifest_version": 3,
 
 	"name": "BTRoblox - Making Roblox Better",
 	"short_name": "BTRoblox",
 	"description": "Enhance your Roblox experience!",
-	"version": "2.20.5",
+	"version": "2.20.8",
 	"author": "AntiBoomz",
 
-	"minimum_chrome_version": "80",
+	"minimum_chrome_version": "96",
 	"incognito": "split",
 
-	"browser_action": {
+	"action": {
 		"default_title": "Open BTRoblox Settings"
 	},
 
@@ -19,40 +19,49 @@
 	},
 
 	"background": {
-		"persistent": false,
-		"scripts": [
-			"js/common.js",
-			"js/utility.js",
-			"js/background/blogfeed.js",
-			"js/background/groupshout.js",
-			"js/background/contextmenu.js",
-			"js/background/browseraction.js",
-			"js/background/messaging.js"
-		]
+		"service_worker": "js/_chrome/serviceWorker.js"
 	},
+	
+	"host_permissions": [
+		"*://*.roblox.com/",
+		"*://*.rbxcdn.com/"
+	],
 
 	"permissions": [
-		"*://*.roblox.com/",
-		"*://*.rbxcdn.com/",
-		"contextMenus",
+		"declarativeNetRequest",
 		"notifications",
+		"contextMenus",
+		"scripting",
 		"storage",
 		"alarms"
 	],
 
 	"web_accessible_resources": [
-		"res/*", "css/*"
+		{
+			"resources": ["/res/*", "/css/*", "/js/inject.js"],
+			"matches": ["*://*.roblox.com/*"]
+		}
 	],
 
 	"content_scripts": [
 		{
-			"matches": ["*://www.roblox.com/*", "*://web.roblox.com/*"],
+			"matches": [
+				"*://www.roblox.com/*",
+				"*://web.roblox.com/*"
+			],
+			"exclude_matches": [
+				"*://*/userads/*",
+				"*://*/user-sponsorship/*",
+				"*://*/build/upload"
+			],
 			"js": [
-				"js/common.js",
-				"js/utility.js",
+				"js/shared/common.js",
+				"js/shared/utility.js",
 				
-				"js/content.js",
-
+				"js/shared/sharedData.js",
+				"js/shared/messaging.js",
+				"js/shared/settings.js",
+				
 				"js/util/injectJS.js",
 				"js/util/injectCSS.js",
 				"js/util/modifyTemplate.js",
@@ -91,7 +100,6 @@
 				"js/pages/placeconfig.js",
 				"js/pages/profile.js",
 				
-				"js/inject.js",
 				"js/main.js"
 			],
 			"run_at": "document_start",

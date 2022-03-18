@@ -2,7 +2,7 @@
 
 const btrFastSearch = {
 	init() {
-		const usernameRegex = /^[a-zA-Z0-9]+(?:[ _]?[a-zA-Z0-9]+)?$/
+		const usernameRegex = /^[a-zA-Z0-9]+(?:[ _.]?[a-zA-Z0-9]+)?$/
 		const userCache = {}
 		
 		let currentSearchText = ""
@@ -48,20 +48,16 @@ const btrFastSearch = {
 						setTimeout(() => {
 							const userIds = thumbnailsToRequest.splice(0, thumbnailsToRequest.length)
 							thumbnailPromise = null
-	
-							const url = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userIds.join(",")}&size=48x48&format=Png`
-							$.fetch(url).then(async resp => {
-								const json = resp.ok && await resp.json()
+							
+							RobloxApi.thumbnails.getAvatarHeadshots(userIds).then(thumbs => {
 								const result = {}
-	
-								if(json && json.data) {
-									json.data.forEach(info => {
-										if(info.imageUrl) {
-											result[info.targetId] = info.imageUrl
-										}
-									})
+								
+								for(const thumb of thumbs) {
+									if(thumb.imageUrl) {
+										result[thumb.targetId] = thumb.imageUrl
+									}
 								}
-	
+								
 								resolve(result)
 							})
 						}, 100)
@@ -415,20 +411,15 @@ const btrFastSearch = {
 				friendsLoaded = true
 
 				loggedInUserPromise.then(userId => {
-					$.fetch(`https://friends.roblox.com/v1/users/${userId}/friends`, { credentials: "include" }).then(async resp => {
-						const json = resp.ok && await resp.json()
-						if(!json?.data) {
-							return
-						}
-
+					RobloxApi.friends.getFriends(userId).then(friendsArray => {
 						Object.entries(userCache).filter(x => x[1].IsFriend).forEach(([name]) => {
 							delete userCache[name]
 						})
 
-						const friends = {}
+						const friendsDict = {}
 						
-						json.data.forEach(friend => {
-							friends[friend.displayName !== friend.name ? `${friend.name}|${friend.displayName}` : friend.name] = friend.id
+						for(const friend of friendsArray) {
+							friendsDict[friend.displayName !== friend.name ? `${friend.name}|${friend.displayName}` : friend.name] = friend.id
 
 							userCache[friend.name.toLowerCase()] = {
 								Username: friend.name,
@@ -438,9 +429,9 @@ const btrFastSearch = {
 							}
 
 							requestPresence(friend.id)
-						})
+						}
 
-						localStorage.setItem("btr-fastsearch-cache", JSON.stringify({ friends }))
+						localStorage.setItem("btr-fastsearch-cache", JSON.stringify({ friendsDict }))
 						reloadSearchResults(true)
 					})
 				})

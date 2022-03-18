@@ -19,6 +19,8 @@ const btrSettingsModal = (() => {
 							<option value=sky>Sky</option>
 							<option value=red>Red</option>
 						</select>
+						
+						<checkbox devOnly label="Theme Hot Reload" path=themeHotReload></checkbox>
 					</div>
 
 					<checkbox label="Show Ads" path=!hideAds></checkbox>
@@ -165,6 +167,12 @@ const btrSettingsModal = (() => {
 			</div>
 		</div>
 	</div>`
+	
+	if(!IS_DEV_MODE) {
+		for(const elem of settingsDiv.$findAll("[devOnly]")) {
+			elem.remove()
+		}
+	}
 	
 	const contentDivs = {}
 	settingsDiv.$findAll(".btr-settings-content[data-name]").forEach(elem => {
@@ -789,7 +797,7 @@ const btrSettingsModal = (() => {
 		const wipGroup = settingsDiv.$find("#btr-settings-wip")
 		Object.entries(SETTINGS.loadedSettings).forEach(([groupPath, settingsGroup]) => {
 			Object.entries(settingsGroup).forEach(([settingName, settingValueInfo]) => {
-				const defaultValueInfo = SETTINGS.defaultSettings[groupPath][settingName]
+				const defaultValueInfo = DEFAULT_SETTINGS[groupPath][settingName]
 				const settingValue = settingValueInfo.value
 
 				const settingPath = `${groupPath}.${settingName}`

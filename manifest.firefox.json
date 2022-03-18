@@ -4,7 +4,7 @@
 	"name": "BTRoblox - Making Roblox Better",
 	"short_name": "BTRoblox",
 	"description": "Enhance your Roblox experience!",
-	"version": "2.20.5",
+	"version": "2.20.8",
 	"author": "AntiBoomz",
 
 	"browser_action": {
@@ -24,38 +24,54 @@
 	
 	"background": {
 		"scripts": [
-			"js/common.js",
-			"js/utility.js",
-			"js/background/blogfeed.js",
-			"js/background/groupshout.js",
-			"js/background/contextmenu.js",
-			"js/background/browseraction.js",
-			"js/background/messaging.js"
+			"js/shared/common.js",
+			"js/shared/utility.js",
+			
+			"js/shared/sharedData.js",
+			"js/shared/messaging.js",
+			"js/shared/settings.js",
+			
+			"js/bg/groupshout.js",
+			"js/bg/blogfeed.js",
+			"js/bg/contextmenu.js",
+			
+			"js/rbx/RobloxApi.js",
+			"js/_firefox/background.js"
 		]
 	},
 
 	"permissions": [
 		"*://*.roblox.com/",
 		"*://*.rbxcdn.com/",
-		"clipboardWrite",
 		"contextMenus",
 		"notifications",
 		"storage"
 	],
 
 	"web_accessible_resources": [
-		"res/*", "css/*"
+		"js/inject.js",
+		"res/*",
+		"css/*"
 	],
 
 	"content_scripts": [
 		{
-			"matches": ["*://www.roblox.com/*", "*://web.roblox.com/*"],
+			"matches": [
+				"*://www.roblox.com/*",
+				"*://web.roblox.com/*"
+			],
+			"exclude_matches": [
+				"*://*/userads/*",
+				"*://*/user-sponsorship/*",
+				"*://*/build/upload"
+			],
 			"js": [
-				"js/common.js",
-				"js/utility.js",
+				"js/shared/common.js",
+				"js/shared/sharedData.js",
+				"js/shared/messaging.js",
+				"js/shared/settings.js",
 				
-				"js/content.js",
-
+				"js/util/utility.js",
 				"js/util/injectJS.js",
 				"js/util/injectCSS.js",
 				"js/util/modifyTemplate.js",

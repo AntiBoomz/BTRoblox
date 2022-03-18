@@ -1,85 +1,75 @@
 "use strict"
 
-const activeStyleSheets = []
-let mainStyleSheet = null
+const activeStyleSheets = {}
+const reloadingStyleSheets = {}
+let ffMainStyleSheet
 
-const addStyleSheet = url => {
-	const cssRule = `@import url("${url}")`
-	const ruleIndex = mainStyleSheet.insertRule(cssRule, mainStyleSheet.cssRules.length)
+const startReloadingCSS = (path, skipFirst) => {
+	if(reloadingStyleSheets[path]) { return }
 	
-	return mainStyleSheet.cssRules[ruleIndex]
-}
-
-const clearStyleSheet = styleSheet => {
-	if(styleSheet.cssRule) {
-		const ruleIndex = Array.prototype.indexOf.call(mainStyleSheet.cssRules, styleSheet.cssRule)
-
-		if(ruleIndex !== -1) {
-			mainStyleSheet.deleteRule(ruleIndex)
-			styleSheet.cssRule = null
+	const styleSheet = activeStyleSheets[path]
+	if(!styleSheet) { return }
+	
+	const key = Date.now()
+	reloadingStyleSheets[path] = key
+	
+	let lastCssText
+	
+	setInterval(async () => {
+		if(reloadingStyleSheets[path] !== key) { return }
+		const newUrl = `${getURL(path)}?_=${Date.now()}`
+		
+		const res = await fetch(newUrl)
+		const cssText = await res.text()
+		
+		if(reloadingStyleSheets[path] !== key) { return }
+		
+		if(lastCssText !== cssText && (lastCssText || !skipFirst)) {
+			styleSheet.href = newUrl
 		}
-	}
+		
+		lastCssText = cssText
+	}, 2000)
 }
 
 const injectCSS = (...paths) => {
-	if(!mainStyleSheet) {
-		const style = document.createElement("style")
-		style.type = "text/css"
-
-		const parent = document.head || document.documentElement
-		parent.append(style)
-
-		mainStyleSheet = style.sheet
-	}
-	
-	const shouldHotReload = IS_DEV_MODE
-	
 	for(const path of paths) {
-		const url = getURL(path)
-		const cssRule = addStyleSheet(shouldHotReload ? `${url}?_=${Date.now()}` : url)
-
-		const styleSheet = { path, cssRule }
-		activeStyleSheets.push(styleSheet)
-
-		if(shouldHotReload) {
-			let lastCSSText = null
-
-			const tryReload = async () => {
-				if(!activeStyleSheets.includes(styleSheet)) {
-					return
-				}
-
-				const newUrl = `${url}?_=${Date.now()}`
-
-				const resp = await fetch(newUrl)
-				const cssText = await resp.text()
-
-				if(cssText !== lastCSSText) {
-					if(lastCSSText !== null) {
-						clearStyleSheet(styleSheet)
-						styleSheet.cssRule = addStyleSheet(newUrl)
-					}
-
-					lastCSSText = cssText
-				}
-				
-				setTimeout(tryReload, 1.5e3)
-			}
-
-			setTimeout(tryReload, 1.5e3)
+		if(activeStyleSheets[path]) { continue }
+		
+		const styleSheet = document.createElement("link")
+		styleSheet.href = SETTINGS.get("general.themeHotReload") ? `${getURL(path)}?_=${Date.now()}` : getURL(path)
+		styleSheet.rel = "stylesheet"
+		
+		const parent = document.head ?? document.documentElement
+		parent.append(styleSheet)
+		
+		activeStyleSheets[path] = styleSheet
+		
+		if(SETTINGS.get("general.themeHotReload")) {
+			startReloadingCSS(path, true)
 		}
 	}
 }
 
 const removeCSS = (...paths) => {
-	paths.forEach(path => {
-		const styleSheet = activeStyleSheets.find(x => x.path === path)
-
-		if(styleSheet) {
-			const index = activeStyleSheets.indexOf(styleSheet)
-			activeStyleSheets.splice(index, 1)
-
-			clearStyleSheet(styleSheet)
-		}
-	})
+	for(const path of paths) {
+		const styleSheet = activeStyleSheets[path]
+		if(!styleSheet) { continue }
+		
+		styleSheet.remove()
+		delete activeStyleSheets[path]
+		delete reloadingStyleSheets[path]
+	}
 }
+
+SETTINGS.onChange("general.themeHotReload", () => {
+	if(SETTINGS.get("general.themeHotReload")) {
+		for(const path of Object.keys(activeStyleSheets)) {
+			startReloadingCSS(path)
+		}
+	} else {
+		for(const path of Object.keys(activeStyleSheets)) {
+			delete reloadingStyleSheets[path]
+		}
+	}
+})

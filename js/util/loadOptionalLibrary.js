@@ -57,7 +57,7 @@ function loadOptionalLibrary(name) {
 		}
 
 		if(jsAssets.length) {
-			lib.promise = new SyncPromise(resolve => MESSAGING.send("loadOptAssets", jsAssets, resolve))
+			lib.promise = new SyncPromise(resolve => MESSAGING.send("loadScripts", jsAssets, resolve))
 		} else {
 			lib.promise = SyncPromise.resolve()
 		}

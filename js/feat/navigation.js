@@ -299,9 +299,8 @@ const btrNavigation = {
 					this.loadedFeed = true
 					
 					const blogfeed = node.$find("#btr-blogfeed")
-					let blogFeedData
 					
-					const updateBlogFeed = () => {
+					const updateBlogFeed = blogFeedData => {
 						blogfeed.$empty()
 		
 						blogFeedData.forEach(item => {
@@ -316,17 +315,11 @@ const btrNavigation = {
 						})
 					}
 					
-					MESSAGING.send("requestBlogFeed", data => {
-						blogFeedData = data
-						updateBlogFeed()
-					})
-
-					STORAGE.get(["cachedBlogFeedV2"], data => {
-						if(!blogFeedData && data.cachedBlogFeedV2) {
-							blogFeedData = data.cachedBlogFeedV2
-							updateBlogFeed()
-						}
-					})
+					MESSAGING.send("requestBlogFeed", data => updateBlogFeed(data))
+					
+					if(SHARED_DATA.get("blogfeed")) {
+						updateBlogFeed(SHARED_DATA.get("blogfeed"))
+					}
 				}
 			},
 			

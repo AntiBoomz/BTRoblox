@@ -1,5 +1,239 @@
 "use strict"
 
+const OwnerAssetCache = {
+	assetTypes: ["bundles", "assets"],
+	requestedAssetTypes: [
+		"Hat", "Shirt", "Pants", "Head", "Face", "Gear",
+		"HairAccessory", "FaceAccessory", "NeckAccessory", "ShoulderAccessory",
+		"FrontAccessory", "BackAccessory", "WaistAccessory", "EmoteAnimation",
+		"TShirtAccessory", "ShirtAccessory", "PantsAccessory", "JacketAccessory", "SweaterAccessory",
+		"ShortsAccessory", "LeftShoeAccessory", "RightShoeAccessory", "DressSkirtAccessory",
+	],
+	assetMap: {},
+	data: null,
+
+	initialized: false,
+
+	resetData() {
+		this.data = {
+			lastUserId: null,
+			types: {},
+		}
+
+		this.assetTypes.forEach(assetType => {
+			const typeData = this.data.types[assetType] = {
+				list: new Set(),
+				lastPopulate: 0
+			}
+
+			Object.defineProperties(typeData, {
+				type: { configurable: true, value: assetType },
+				lastUpdate: { configurable: true, value: 0, writable: true },
+				currentOperation: { configurable: true, value: null, writable: true }
+			})
+		})
+
+		this.assetMap = {}
+	},
+	
+	markAsset(next, id, owned, copyTo) {
+		if(next.type === "bundles") {
+			id = "b" + id
+		}
+
+		if(owned) {
+			this.assetMap[id] = true
+		} else {
+			delete this.assetMap[id]
+		}
+
+		if(copyTo) {
+			copyTo[id] = !!owned
+		}
+	},
+
+	markDirty() {
+		if(!this.markedDirty) {
+			this.markedDirty = true
+
+			setTimeout(() => {
+				this.markedDirty = false
+				localStorage.setItem("btr-ownerAssetCache", JSON.stringify(this.data, (k, v) => (v instanceof Set ? Array.from(v) : v)))
+			}, 10e3)
+		}
+	},
+
+	async request(next, populate = false, cursor = "") {
+		const cursorParam = populate ? `&cursor=${cursor}` : ""
+		const url = next.type === "bundles"
+			? `https://catalog.roblox.com/v1/users/${this.data.lastUserId}/bundles?sortOrder=Desc&limit=${populate ? 100 : 10}${cursorParam}`
+			: `https://inventory.roblox.com/v2/users/${this.data.lastUserId}/inventory?assetTypes=${this.requestedAssetTypes.join(",")}&sortOrder=Desc&limit=${populate ? 100 : 10}${cursorParam}`
+
+		const resp = await fetch(url, { credentials: "include" })
+		if(!resp.ok) { throw new Error("Response not ok") }
+
+		const json = await resp.json()
+		const newItems = next.type === "bundles"
+			? json.data.map(x => x.id)
+			: json.data.map(x => x.assetId)
+
+		return [newItems, json.nextPageCursor]
+	},
+
+	async update(onchange) {
+		if(loggedInUser === -1) { return }
+		
+		if(this.data.lastUserId && this.data.lastUserId !== loggedInUser) {
+			this.resetData()
+		}
+		
+		this.data.lastUserId = loggedInUser
+
+		const list = Object.values(this.data.types)
+		const promises = []
+		
+		list.forEach(async next => {
+			let operation = next.currentOperation
+
+			if(!operation) {
+				const timeUntilPopulate = 300e3 - (Date.now() - next.lastPopulate)
+				const timeUntilUpdate = 5e3 - (Date.now() - next.lastUpdate)
+
+				if(timeUntilPopulate > 0 && timeUntilUpdate > 0) { return }
+
+				operation = next.currentOperation = {
+					onchange: [],
+					promise: null
+				}
+
+				let changes = {}
+
+				const pushChanges = () => {
+					if(Object.keys(changes).length) {
+						operation.onchange.forEach(fn => fn(changes))
+						changes = {}
+					}
+				}
+				
+				if(timeUntilPopulate <= 0) {
+					operation.promise = new SyncPromise(async resolve => {
+						const removedSet = new Set(next.list)
+						let cursor = ""
+			
+						while(true) {
+							let newItems, newCursor
+							
+							for(let i = 0; i < 3; i++) {
+								try {
+									[newItems, newCursor] = await this.request(next, true, cursor)
+									break
+								} catch(ex) {
+									console.error(ex)
+									await new Promise(resolve => setTimeout(resolve, 2e3))
+								}
+							}
+							
+							if(!newItems) {
+								next.currentOperation = null
+								resolve(false)
+								break
+							}
+
+							newItems.forEach(id => {
+								removedSet.delete(id)
+		
+								next.list.add(id)
+								this.markAsset(next, id, true, changes)
+							})
+		
+							if(!newCursor) { break }
+							cursor = newCursor
+							pushChanges()
+						}
+						
+						removedSet.forEach(id => {
+							this.markAsset(next, id, false, changes)
+						})
+
+						next.currentOperation = null
+						next.lastPopulate = Date.now()
+						next.lastUpdate = Date.now() // Populate also works as an update
+						this.markDirty()
+
+						pushChanges()
+						resolve(true)
+					})
+				} else {
+					operation.promise = new SyncPromise(async resolve => {
+						try {
+							const [newItems] = await this.request(next, false)
+			
+							newItems.forEach(id => {
+								next.list.add(id)
+								this.markAsset(next, id, true, changes)
+							})
+						} catch(ex) {
+							console.error(ex)
+							next.currentOperation = null
+							resolve(false)
+							return
+						}
+		
+						next.currentOperation = null
+						next.lastUpdate = Date.now()
+						this.markDirty()
+		
+						pushChanges()
+						resolve(true)
+					})
+				}
+			}
+
+			if(onchange) { operation.onchange.push(onchange) }
+			promises.push(operation.promise)
+		})
+
+		return SyncPromise.all(promises)
+	},
+
+	init() {
+		if(this.initialized) {
+			return
+		}
+		
+		this.initialized = true
+		this.resetData()
+
+		const savedCache = localStorage.getItem("btr-ownerAssetCache")
+		if(savedCache) {
+			const parsed = JSON.parse(savedCache)
+
+			if(parsed.types) {
+				Object.entries(this.data.types).forEach(([type, next]) => {
+					const savedNext = parsed.types[type]
+					if(!savedNext) { return }
+
+					Object.assign(next, savedNext)
+
+					if(Array.isArray(next.list)) {
+						next.list = new Set(next.list)
+					}
+
+					next.list.forEach(id => {
+						this.markAsset(next, id, true)
+					})
+				})
+
+				delete parsed.types
+			}
+
+			Object.assign(this.data, parsed)
+		}
+
+		return this
+	}
+}
+
 pageInit.catalog = function() {
 	if(RobuxToCash.isEnabled()) {
 		modifyTemplate("item-card", template => {
@@ -72,10 +306,10 @@ pageInit.catalog = function() {
 
 	if(SETTINGS.get("catalog.showOwnedAssets")) {
 		const updateOwnedAssets = ownedAssets => {
-			Object.entries(ownedAssets).forEach(([key, isOwned]) => {
-				const elems = document.$findAll(`.item-card-thumb-container[data-btr-owned-id="${key}"]`)
-
-				elems.forEach(thumb => {
+			for(const [assetId, isOwned] of Object.entries(ownedAssets)) {
+				const elems = document.$findAll(`.item-card-thumb-container[data-btr-owned-id="${assetId}"]`)
+				
+				for(const thumb of elems) {
 					const ownedLabel = thumb.$find(".btr-item-owned")
 
 					if(isOwned) {
@@ -87,8 +321,8 @@ pageInit.catalog = function() {
 							ownedLabel.remove()
 						}
 					}
-				})
-			})
+				}
+			}
 		}
 
 		let currentRequest
@@ -106,7 +340,24 @@ pageInit.catalog = function() {
 				currentRequest = []
 
 				$.setImmediate(() => {
-					MESSAGING.send("filterOwnedAssets", currentRequest, updateOwnedAssets)
+					// MESSAGING.send("filterOwnedAssets", currentRequest, updateOwnedAssets)
+					
+					const assetIds = currentRequest
+					currentRequest = null
+					
+					OwnerAssetCache.init()
+					
+					const initData = {}
+					
+					for(const assetId of assetIds) {
+						if(OwnerAssetCache.assetMap[assetId]) {
+							initData[assetId] = true
+						}
+					}
+					
+					updateOwnedAssets(initData)
+					OwnerAssetCache.update(changes => updateOwnedAssets(changes))
+					
 					currentRequest = null
 				})
 			}

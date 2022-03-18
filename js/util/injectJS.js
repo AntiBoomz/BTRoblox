@@ -1,18 +1,42 @@
 "use strict"
 
 const InjectJS = {
+	loaded: false,
 	queue: [],
 	
-	init(fn, args) {
-		const script = document.createElement("script")
-		script.async = true
-		script.type = "text/javascript"
-		script.id = "btrInjectScript"
-		script.textContent = `(${fn})(${JSON.stringify(args).slice(1, -1)})`
-		document.documentElement.prepend(script)
+	init(args) {
+		InjectJS.listen("init", () => {
+			this.loaded = true
+			
+			for(const args of this.queue) {
+				this.send.call(this, ...args)
+			}
+			
+			delete this.queue
+		})
+		
+		if(IS_MANIFEST_V3) {
+			const script = document.createElement("script")
+			script.type = "text/javascript"
+			script.id = "btrInjectScript"
+			script.src = getURL("js/inject.js")
+			script.dataset.args = JSON.stringify(args)
+			document.documentElement.append(script)
+		} else {
+			const script = document.createElement("script")
+			script.type = "text/javascript"
+			script.id = "btrInjectScript"
+			script.textContent = `(${INJECT_SCRIPT})(${JSON.stringify(args).slice(1, -1)})`
+			document.documentElement.append(script)
+		}
 	},
 
 	send(action, ...detail) {
+		if(!this.loaded) {
+			this.queue.push([action, ...detail])
+			return
+		}
+		
 		try {
 			if(IS_FIREFOX) { detail = cloneInto(detail, window.wrappedJSObject) }
 			document.dispatchEvent(new CustomEvent(`inject.${action}`, { detail }))

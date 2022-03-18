@@ -1,7 +1,7 @@
 "use strict"
 
-{
-	const contextMenus = [
+const ContextMenu = {
+	items: [
 		{
 			id: "assetLink",
 			title: "Copy asset id",
@@ -107,81 +107,99 @@
 				"*://*.roblox.com/btr_context/*btr_roleId=*"
 			]
 		}
-	]
+	],
 	
-	function copyToClipboard(text) {
-		const onCopy = ev => {
-			ev.clipboardData.setData("text/plain", text)
-			ev.preventDefault()
+	onClick(info, tab) {
+		const copyToClipboard = text => {
+			const copy = text => {
+				document.addEventListener("copy", ev => {
+					ev.clipboardData.setData("text/plain", text)
+					ev.preventDefault()
+				}, { once: true })
+				
+				document.execCommand("copy", false, null)
+			}
+			
+			if(IS_MANIFEST_V3) {
+				chrome.scripting.executeScript({
+					target: { tabId: tab.id, frameIds: [info.frameId] },
+					func: copy,
+					args: [text]
+				})
+			} else {
+				chrome.tabs.executeScript(
+					tab.id,
+					{
+						frameId: info.frameId,
+						code: `(${copy})(${JSON.stringify(text)})`
+					}
+				)
+			}
 		}
-
-		document.addEventListener("copy", onCopy, { once: true })
-		document.execCommand("Copy", false, null)
-	}
-
-	function onContextMenuClick(info) {
-		const menuId = info.menuItemId
-
-		switch(menuId) {
-		case "assetLink": case "bundleLink": case "badgeLink": case "gamepassLink": case "pluginLink": {
-			const assetId = info.linkUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library|bundles|badges|game-pass|plugins)\/(?:refer\/)?)(\d+).*$/i, "$1")
-			copyToClipboard(assetId)
-			break
+		
+		switch(info.menuItemId) {
+			case "assetLink": case "bundleLink": case "badgeLink": case "gamepassLink": case "pluginLink": {
+				const assetId = info.linkUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library|bundles|badges|game-pass|plugins)\/(?:refer\/)?)(\d+).*$/i, "$1")
+				copyToClipboard(assetId)
+				break
+			}
+			case "placeLink": {
+				const placeId = info.linkUrl.replace(/^.*(?:[&?]placeid=|\/games\/)(\d+).*$/i, "$1")
+				copyToClipboard(placeId)
+				break
+			}
+			case "userLink": {
+				const userId = info.linkUrl.replace(/^.*(?:\/users\/)(\d+).*$/i, "$1")
+				copyToClipboard(userId)
+				break
+			}
+			case "groupLink": {
+				const groupId = info.linkUrl.replace(/^.*(?:groups?.aspx.*[?&]gid=|\/groups\/)(\d+).*$/i, "$1")
+				copyToClipboard(groupId)
+				break
+			}
+			case "universeLink": {
+				const universeId = info.linkUrl.replace(/^.*(?:[&?]id=)(\d+).*$/i, "$1")
+				copyToClipboard(universeId)
+				break
+			}
+			case "roleId": {
+				const roleId = info.linkUrl.replace(/^.*(?:[&?]btr_roleId=)(\d+).*$/i, "$1")
+				copyToClipboard(roleId)
+				break
+			}
+			case "roleRank": {
+				const rankId = info.linkUrl.replace(/^.*(?:[&?]btr_roleRank=)(\d+).*$/i, "$1")
+				copyToClipboard(rankId)
+				break
+			}
 		}
-		case "placeLink": {
-			const placeId = info.linkUrl.replace(/^.*(?:[&?]placeid=|\/games\/)(\d+).*$/i, "$1")
-			copyToClipboard(placeId)
-			break
-		}
-		case "userLink": {
-			const userId = info.linkUrl.replace(/^.*(?:\/users\/)(\d+).*$/i, "$1")
-			copyToClipboard(userId)
-			break
-		}
-		case "groupLink": {
-			const groupId = info.linkUrl.replace(/^.*(?:groups?.aspx.*[?&]gid=|\/groups\/)(\d+).*$/i, "$1")
-			copyToClipboard(groupId)
-			break
-		}
-		case "universeLink": {
-			const universeId = info.linkUrl.replace(/^.*(?:[&?]id=)(\d+).*$/i, "$1")
-			copyToClipboard(universeId)
-			break
-		}
-		case "roleId": {
-			const roleId = info.linkUrl.replace(/^.*(?:[&?]btr_roleId=)(\d+).*$/i, "$1")
-			copyToClipboard(roleId)
-			break
-		}
-		case "roleRank": {
-			const rankId = info.linkUrl.replace(/^.*(?:[&?]btr_roleRank=)(\d+).*$/i, "$1")
-			copyToClipboard(rankId)
-			break
-		}
-		}
-	}
-
-	function updateContextMenus() {
+	},
+	
+	update() {
 		const enabled = SETTINGS.get("general.enableContextMenus")
 
 		if(!enabled) {
 			chrome.contextMenus.removeAll()
 			return
 		}
-
-		contextMenus.forEach(menu => {
+		
+		for(const menu of this.items) {
 			menu.visible = enabled
 			
 			chrome.contextMenus.create(menu, () => {
 				if(!chrome.runtime.lastError) { return }
 				chrome.contextMenus.update(menu.id, { visible: enabled })
 			})
-		})
+		}
 	}
-
-	chrome.contextMenus.onClicked.addListener(onContextMenuClick)
-	chrome.runtime.onInstalled.addListener(() => SETTINGS.load(() => chrome.contextMenus.removeAll(updateContextMenus)))
-
-	SETTINGS.load(updateContextMenus)
-	SETTINGS.onChange("general.enableContextMenus", updateContextMenus)
 }
+
+SETTINGS.onChange("general.enableContextMenus", () => ContextMenu.update())
+
+chrome.contextMenus.onClicked.addListener((...args) => ContextMenu.onClick(...args))
+
+chrome.runtime.onInstalled.addListener(() => {
+	chrome.contextMenus.removeAll()
+	SETTINGS.load(() => ContextMenu.update())
+})

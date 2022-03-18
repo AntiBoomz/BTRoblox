@@ -1,10 +1,6 @@
 "use strict"
 
-const INJECT_SCRIPT = (currentPage, matches, IS_DEV_MODE) => {
-	"use strict"
-	
-	let settings
-
+const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 	const ContentJS = {
 		send(action, ...args) {
 			document.dispatchEvent(new CustomEvent("content." + action, { detail: args }))
@@ -987,7 +983,7 @@ const INJECT_SCRIPT = (currentPage, matches, IS_DEV_MODE) => {
 					}
 				
 				} else {
-					const btrPager = { currentPage: 1, maxPage: 0, loading: false }
+					const btrPager = { currentPage: 1, maxPage: 1, loading: false }
 					let gPGIProxy
 					
 					const query = (self, filter, n = 5) => {
@@ -1307,17 +1303,26 @@ const INJECT_SCRIPT = (currentPage, matches, IS_DEV_MODE) => {
 	
 	//
 	
-	ContentJS.listen("init", _settings => {
-		settings = _settings
-		
-		Promise.resolve().then(settingsLoaded)
-		
-		if(document.readyState === "loading") {
-			document.addEventListener("DOMContentLoaded", documentReady, { once: true })
-		} else {
-			Promise.resolve().then(documentReady)
-		}
-	})
+	ContentJS.send("init")
+	
+	//
 	
 	preInit()
+	settingsLoaded()
+		
+	if(document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", documentReady, { once: true })
+	} else {
+		Promise.resolve().then(documentReady)
+	}
+}
+
+
+if(!chrome?.runtime?.id) {
+	const scriptObject = document.querySelector("#btrInjectScript")
+	
+	const args = scriptObject.dataset.args
+	delete scriptObject.dataset.args
+	
+	INJECT_SCRIPT(...JSON.parse(args))
 }
