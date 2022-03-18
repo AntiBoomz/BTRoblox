@@ -28,7 +28,7 @@
 	],
 
 	"permissions": [
-		"declarativeNetRequest",
+		"declarativeNetRequestWithHostAccess",
 		"notifications",
 		"contextMenus",
 		"scripting",
