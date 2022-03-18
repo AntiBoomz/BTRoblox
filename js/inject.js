@@ -1257,21 +1257,25 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 						}
 					)
 					
-					
-					setTimeout(() => {
-						// Init tab
-						const tabBtn = document.querySelector(".rbx-tab.active a")
-						if(tabBtn) {
-							const hash = window.location.hash
-							tabBtn.click()
-							
-							if(window.location.hash !== hash) {
-								setTimeout(() => {
-									history.replaceState("", document.title, window.location.pathname + window.location.search + hash)
-								}, 0)
-							}
+					const updateHash = ev => {
+						const hash = location.hash
+						
+						if(ev && new window.URL(ev.newURL).hash !== hash) {
+							return
 						}
-					}, 0)
+						
+						if(!hash || !ev && hash !== "#!/about" && hash !== "#!/store" && hash !== "#!/game-instances") {
+							const oldUrl = new window.URL(location)
+							const newUrl = new window.URL(location)
+							newUrl.hash = "#!/game-instances"
+							
+							history.replaceState("", document.title, newUrl.href)
+							setTimeout(() => history.replaceState("", document.title, oldUrl.href), 0)
+						}
+					}
+					
+					window.addEventListener("hashchange", updateHash)
+					updateHash()
 				}
 			} else if(currentPage === "develop") {
 				if(Roblox.BuildPage) {
