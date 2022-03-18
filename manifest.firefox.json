@@ -43,8 +43,8 @@
 	"permissions": [
 		"*://*.roblox.com/",
 		"*://*.rbxcdn.com/",
-		"contextMenus",
 		"notifications",
+		"contextMenus",
 		"storage"
 	],
 
@@ -67,11 +67,12 @@
 			],
 			"js": [
 				"js/shared/common.js",
+				"js/shared/utility.js",
+				
 				"js/shared/sharedData.js",
 				"js/shared/messaging.js",
 				"js/shared/settings.js",
 				
-				"js/util/utility.js",
 				"js/util/injectJS.js",
 				"js/util/injectCSS.js",
 				"js/util/modifyTemplate.js",
