@@ -136,6 +136,11 @@ body .btr-game-main-container {
 	border-color: #656668;
 }
 
+.btr-gamedetails .rbx-game-status {
+	white-space: pre-line;
+}
+
+
 /* Pager */
 
 .rbx-running-games-footer .pager.btr-server-pager {
