@@ -1269,12 +1269,8 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 						}
 						
 						if(!hash || !ev && hash !== "#!/about" && hash !== "#!/store" && hash !== "#!/game-instances") {
-							const oldUrl = new window.URL(location)
-							const newUrl = new window.URL(location)
-							newUrl.hash = "#!/game-instances"
-							
-							history.replaceState("", document.title, newUrl.href)
-							setTimeout(() => history.replaceState("", document.title, oldUrl.href), 0)
+							history.replaceState("", document.title, location.pathname + location.search + "#!/game-instances")
+							setTimeout(() => history.replaceState("", document.title, location.pathname + location.search + hash), 0)
 						}
 					}
 					
