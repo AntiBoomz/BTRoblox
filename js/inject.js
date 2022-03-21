@@ -1029,7 +1029,7 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 											btrPager.currentPage = Math.max(1, Math.min(btrPager.currentPage, btrPager.maxPage))
 											btrPager.loading = true
 											
-											const url = `https://www.roblox.com/games/getgameinstancesjson?placeId=${args[0]}&startIndex=${(btrPager.currentPage - 1) * 10}&_=${Date.now()}`
+											const url = `/games/getgameinstancesjson?placeId=${args[0]}&startIndex=${(btrPager.currentPage - 1) * 10}&_=${Date.now()}`
 											
 											return fetch(url, { credentials: "include" }).then(async res => {
 												const json = await res.json()
