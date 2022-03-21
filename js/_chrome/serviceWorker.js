@@ -43,14 +43,6 @@ chrome.runtime.onInstalled.addListener(() => {})
 //
 
 MESSAGING.listen({
-	hasPermissions(_, respond) {
-		chrome.permissions.contains({ origins: chrome.runtime.getManifest().host_permissions }, respond)
-	},
-	
-	requestPermissions(_, respond) {
-		chrome.permissions.request({ origins: chrome.runtime.getManifest().host_permissions }, respond)
-	},
-	
 	loadScripts(assets, respond, port) {
 		const scripts = assets.filter(file => file.endsWith(".js"))
 

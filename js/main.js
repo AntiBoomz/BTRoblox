@@ -49,25 +49,6 @@ if(isValidPage) {
 			try { pageInit[currentPage.name].apply(currentPage, currentPage.matches) }
 			catch(ex) { console.error(ex) }
 		}
-		
-		//
-		
-		if(IS_CHROME) {
-			MESSAGING.send("hasPermissions", hasPermissions => {
-				if(!hasPermissions) {
-					document.$watch("#header", header => {
-						const thing = html`<div style="display:block;position:absolute;left:0;width:100%;height:24px;background:red;color:white;cursor:pointer">BTRoblox is unable to access Roblox APIs. Click to fix</div>`
-						header.after(thing)
-						
-						thing.$on("click", () => {
-							MESSAGING.send("requestPermissions", () => {
-								location.reload()
-							})
-						})
-					})
-				}
-			})
-		}
 	})
 	
 	SHARED_DATA.start()
