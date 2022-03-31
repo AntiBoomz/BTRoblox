@@ -194,7 +194,8 @@ body .btr-game-main-container {
 	background: transparent !important;
 }
 
-.btr-gamedetails #about #rbx-private-servers {
+.btr-gamedetails #about #rbx-private-servers,
+.btr-gamedetails #about #private-server-container-about-tab {
 	display: none !important;
 }
 
