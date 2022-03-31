@@ -46,29 +46,30 @@ const backgroundCall = callback => {
 	})
 }
 
-const xsrfFetch = (url, init = {}) => {
+const btrFetch = (url, init = {}) => {
+	init = { ...init }
+	
 	const usingXsrf = init.xsrf
 	
 	if(usingXsrf) {
 		delete init.xsrf
 		
-		if(cachedXsrfToken && !invalidXsrfTokens[cachedXsrfToken]) {
-			if(!init.headers) {
-				init.headers = {}
-			}
-			
-			init.headers["X-CSRF-TOKEN"] = cachedXsrfToken
+		if(!init.headers) {
+			init.headers = {}
 		}
+		
+		init.headers["X-CSRF-TOKEN"] = cachedXsrfToken
 	}
 	
-	return fetch(url, init).then(async res => {
+	return fetch(url, init).then(res => {
 		if(usingXsrf && !res.ok && res.status === 403 && res.headers.get("X-CSRF-TOKEN")) {
 			if(init.headers["X-CSRF-TOKEN"]) {
 				invalidXsrfTokens[init.headers["X-CSRF-TOKEN"]] = true
 			}
 			
 			cachedXsrfToken = init.headers["X-CSRF-TOKEN"] = res.headers.get("X-CSRF-TOKEN")
-			res = await fetch(url, init)
+			
+			return fetch(url, init)
 		}
 		
 		return res
@@ -78,14 +79,14 @@ const xsrfFetch = (url, init = {}) => {
 const RobloxApi = {
 	api: {
 		getUncachedProductInfo: backgroundCall(assetId =>
-			xsrfFetch(`https://api.roblox.com/marketplace/productinfo?assetId=${assetId}`)
+			btrFetch(`https://api.roblox.com/marketplace/productinfo?assetId=${assetId}`)
 				.then(res => res.json())
 		),
 		getProductInfo: cacheResult(assetId => RobloxApi.api.getUncachedProductInfo(assetId))
 	},
 	catalog: {
 		getItemDetails: cacheBackgroundResult(items =>
-			xsrfFetch(`https://catalog.roblox.com/v1/catalog/items/details`, {
+			btrFetch(`https://catalog.roblox.com/v1/catalog/items/details`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ items }),
@@ -93,20 +94,42 @@ const RobloxApi = {
 			}).then(res => res.json())
 		),
 		getBundleDetails: cacheBackgroundResult(bundleId =>
-			xsrfFetch(`https://catalog.roblox.com/v1/bundles/${bundleId}/details`)
+			btrFetch(`https://catalog.roblox.com/v1/bundles/${bundleId}/details`)
 				.then(res => res.json())
 		)
 	},
 	thumbnails: {
 		getAvatarHeadshots: backgroundCall(userIds => {
 			const url = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userIds.join(",")}&size=48x48&format=Png`
-			return xsrfFetch(url).then(async res => (await res.json()).data)
+			return btrFetch(url).then(async res => (await res.json()).data)
 		})
 	},
 	friends: {
 		getFriends: backgroundCall(userId =>
-			xsrfFetch(`https://friends.roblox.com/v1/users/${userId}/friends`)
+			btrFetch(`https://friends.roblox.com/v1/users/${userId}/friends`)
 				.then(async res => (await res.json()).data)
+		)
+	},
+	inventory: {
+		toggleInCollection: backgroundCall((assetType, assetId, addToCollection = true) =>
+			btrFetch(`https://inventory.roblox.com/v1/collections/items/${assetType}/${assetId}`, {
+				method: addToCollection ? "POST" : "DELETE",
+				credentials: "include",
+				xsrf: true
+			}).then(
+				async res => {
+					const result = await res.json()
+					const errorCode = result.errors?.[0]?.code
+					
+					if(res.ok || errorCode === 7 || errorCode === 8) {
+						// adding returns 7 if already in collection, delte returns 8 if not in collection
+						return { inCollection: addToCollection }
+					}
+					
+					return null // return null if error
+				},
+				() => null // return null if error
+			)
 		)
 	}
 }

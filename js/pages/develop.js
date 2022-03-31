@@ -16,16 +16,10 @@ pageInit.develop = function() {
 				const isVisible = table.dataset.inShowcase.toLowerCase() === "true"
 
 				if(Number.isNaN(placeId)) { return }
-
-				$.fetch("https://www.roblox.com/game/toggle-profile", {
-					method: "POST",
-					credentials: "include",
-					body: new URLSearchParams({ placeId, addToProfile: !isVisible }),
-					xsrf: true
-				}).then(async response => {
-					const json = await response.json()
-					if(json.isValid) {
-						table.setAttribute("data-in-showcase", json.data.inShowcase)
+				
+				RobloxApi.inventory.toggleInCollection("asset", placeId, !isVisible).then(result => {
+					if(result) {
+						table.setAttribute("data-in-showcase", result.inCollection)
 					}
 				})
 			})

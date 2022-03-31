@@ -548,21 +548,6 @@ Place APIs
   ```
 
   </details>
-    
-
-#### Toggle game visibility in profile
-```http
-POST https://www.roblox.com/game/toggle-profile
-Cookie: .ROBLOSECURITY=*
-X-CSRF-TOKEN: *
-Content-Type: application/json
-Content-Length: 42
-
-{"placeId":1818,"addToProfile":true}
-```
-```json
-{"isValid":true,"data":{"inShowcase":true},"error":""}
-```
 
 Universe APIs
 -------------

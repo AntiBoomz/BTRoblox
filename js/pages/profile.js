@@ -518,12 +518,8 @@ pageInit.profile = function(userId) {
 			document.body
 				.$on("click", ".btr-btn-toggle-profile", ev => {
 					const placeId = ev.currentTarget.dataset.placeid
-					$.fetch("https://www.roblox.com/game/toggle-profile", {
-						method: "POST",
-						credentials: "include",
-						body: new URLSearchParams({ placeId, addToProfile: false }),
-						xsrf: true
-					})
+					
+					RobloxApi.inventory.toggleInCollection("asset", placeId, false)
 				})
 				.$on("click", ".btr-btn-shutdown-all", ev => {
 					const placeId = ev.currentTarget.dataset.placeid
