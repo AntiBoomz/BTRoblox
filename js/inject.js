@@ -89,10 +89,13 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 			return {
 				listeners: new Set(),
 				value: value,
+				counter: 0,
 				
 				update() {
+					this.counter++
+					
 					for(const setValue of this.listeners.values()) {
-						setValue(Date.now())
+						setValue(this.counter)
 					}
 				}
 			}
@@ -899,40 +902,47 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 				const cursors = []
 				
 				const findMaxPage = async largePageIndex => {
+					if(largePageIndex * 10 >= Math.max(btrPager.targetPage, btrPager.currentPage, btrPager.startingMaxPage ?? 1) + 200) {
+						btrPager.updatingMaxPage = false
+						btrPagerState.update()
+						return null
+					}
+					
 					const cursor = cursors[largePageIndex - 2] ?? ""
 					const url = `https://games.roblox.com/v1/games/${placeId}/servers/Public?sortOrder=Desc&limit=100&cursor=${cursor}`
 					
 					await new Promise(resolve => setTimeout(resolve, 100))
 					
-					return fetch(url, { credentials: "include" }).then(
-						async res => {
-							const json = await res.json()
-							const numSmallPages = Math.floor((json.data.length - 1) / 10) + 1
-							
-							if(numSmallPages === 0 && largePageIndex > 1) {
-								cursors.splice(largePageIndex - 2, cursors.length)
-								return findMaxPage(largePageIndex - 1)
-							}
-							
-							if(json.nextPageCursor) {
-								cursors[largePageIndex - 1] = json.nextPageCursor
-								
-								btrPager.maxPage = largePageIndex * 10 + 1
-								btrPagerState.update()
-								
-								return findMaxPage(largePageIndex + 1)
-							}
-							
-							btrPager.maxPage = (largePageIndex - 1) * 10 + Math.max(1, numSmallPages)
-							btrPager.updatingMaxPage = false
-							
-							btrPagerState.update()
-						},
-						async () => {
-							await new Promise(resolve => setTimeout(resolve, 400))
-							return findMaxPage(cursors.length + 1)
+					return fetch(url, { credentials: "include" }).then(async res => {
+						if(!res.ok) {
+							return Promise.reject()
 						}
-					)
+						
+						const json = await res.json()
+						const numSmallPages = Math.floor((json.data.length - 1) / 10) + 1
+						
+						if(numSmallPages === 0 && largePageIndex > 1) {
+							cursors.splice(largePageIndex - 2, cursors.length)
+							return findMaxPage(largePageIndex - 1)
+						}
+						
+						if(json.nextPageCursor) {
+							cursors[largePageIndex - 1] = json.nextPageCursor
+							
+							btrPager.maxPage = largePageIndex * 10 + 1
+							btrPagerState.update()
+							
+							return findMaxPage(largePageIndex + 1)
+						}
+						
+						btrPager.maxPage = (largePageIndex - 1) * 10 + Math.max(1, numSmallPages)
+						btrPager.updatingMaxPage = false
+						btrPager.foundMaxPage = true
+						btrPagerState.update()
+					}).catch(async () => {
+						await new Promise(resolve => setTimeout(resolve, 400))
+						return findMaxPage(cursors.length + 1)
+					})
 				}
 				
 				const btrPagerState = reactHook.createGlobalState(btrPager)
@@ -965,72 +975,77 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 						
 						const url = `https://games.roblox.com/v1/games/${placeId}/servers/Public?sortOrder=Desc&limit=${limit}&cursor=${cursor}`
 						
-						return fetch(url, { credentials: "include" }).then(
-							async res => {
-								const json = await res.json()
+						return fetch(url, { credentials: "include" }).then(async res => {
+							if(!res.ok) {
+								return Promise.reject()
+							}
+							
+							const json = await res.json()
+							
+							if(limit === 100) {
+								const numSmallPages = Math.floor((json.data.length - 1) / 10) + 1
 								
-								if(limit === 100) {
-									const numSmallPages = Math.floor((json.data.length - 1) / 10) + 1
-									
-									if(numSmallPages === 0 && largePageIndex > 1) {
-										cursors.splice(largePageIndex - 2, cursors.length)
-										return loadServers((largePageIndex - 1) * 10)
-									}
-									
-									if(numSmallPages > 0 || largePageIndex === 1) {
-										const largestKnownPage = (largePageIndex - 1) * 10 + Math.max(1, numSmallPages)
-										
-										if(json.nextPageCursor) {
-											if((btrPager.maxPage ?? -1) < largestKnownPage + 1) {
-												btrPager.maxPage = largestKnownPage + 1
-												btrPagerState.update()
-											}
-										} else {
-											btrPager.maxPage = largestKnownPage
-											btrPagerState.update()
-											updatedMaxPage = true
-										}
-									}
+								if(numSmallPages === 0 && largePageIndex > 1) {
+									cursors.splice(largePageIndex - 2, cursors.length)
+									return loadServers((largePageIndex - 1) * 10)
+								}
+								
+								if(numSmallPages > 0 || largePageIndex === 1) {
+									const largestKnownPage = (largePageIndex - 1) * 10 + Math.max(1, numSmallPages)
 									
 									if(json.nextPageCursor) {
-										cursors[largePageIndex - 1] = json.nextPageCursor
-										
-										if(targetPage > largePageIndex * 10) {
-											return loadServers(targetPage)
+										if((btrPager.maxPage ?? -1) < largestKnownPage + 1) {
+											btrPager.maxPage = largestKnownPage + 1
+											btrPagerState.update()
 										}
-									}
-									
-									if(smallPageIndex > numSmallPages) {
-										smallPageIndex = Math.max(1, numSmallPages)
-									}
-									
-									json.nextPageCursor = (json.nextPageCursor || smallPageIndex < numSmallPages) ? "idk" : ""
-									json.data = json.data.slice((smallPageIndex - 1) * 10, smallPageIndex * 10)
-								} else {
-									if(!json.nextPageCursor) {
-										btrPager.maxPage = 1
+									} else {
+										btrPager.maxPage = largestKnownPage
+										btrPager.foundMaxPage = true
 										btrPagerState.update()
 										updatedMaxPage = true
 									}
 								}
 								
-								if(!updatedMaxPage && !btrPager.updatingMaxPage) {
-									if(limit === 100 || btrPager.maxPage) {
-										btrPager.updatingMaxPage = true
-										findMaxPage(cursors.length + 1)
+								if(json.nextPageCursor) {
+									cursors[largePageIndex - 1] = json.nextPageCursor
+									
+									if(targetPage > largePageIndex * 10) {
+										return loadServers(targetPage)
 									}
 								}
 								
-								btrPager.currentPage = (largePageIndex - 1) * 10 + smallPageIndex
-								btrPager.loading = false
+								if(smallPageIndex > numSmallPages) {
+									smallPageIndex = Math.max(1, numSmallPages)
+								}
 								
-								return { data: json }
-							},
-							() => {
-								btrPager.loading = false
-								return null
+								json.nextPageCursor = (json.nextPageCursor || smallPageIndex < numSmallPages) ? "idk" : ""
+								json.data = json.data.slice((smallPageIndex - 1) * 10, smallPageIndex * 10)
+							} else {
+								if(!json.nextPageCursor) {
+									btrPager.maxPage = 1
+									btrPager.foundMaxPage = true
+									btrPagerState.update()
+									updatedMaxPage = true
+								}
 							}
-						)
+							
+							if(!updatedMaxPage && !btrPager.updatingMaxPage) {
+								if(limit === 100 || btrPager.maxPage) {
+									btrPager.updatingMaxPage = true
+									btrPagerState.update()
+									
+									findMaxPage(cursors.length + 1)
+								}
+							}
+							
+							btrPager.currentPage = (largePageIndex - 1) * 10 + smallPageIndex
+							btrPager.loading = false
+							
+							return { data: json }
+						}).catch(() => {
+							btrPager.loading = false
+							return null
+						})
 					}
 					
 					return loadServers(btrPager.targetPage)
@@ -1106,25 +1121,26 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 								),
 								` of `,
 								
-								(btrPager.maxPage
-									? React.createElement(
-										"span", {
-											style: { display: "inline", padding: "0", margin: "0" }
+								React.createElement(
+									"span", {
+										style: {
+											display: "inline",
+											padding: "0",
+											margin: "0",
+											
+											opacity: (!btrPager.foundMaxPage && !btrPager.updatingMaxPage) ? "0.7" : null,
+											cursor: (!btrPager.foundMaxPage && !btrPager.updatingMaxPage) ? "pointer" : null
 										},
-										btrPager.maxPage
-									)
-									: React.createElement(
-										"span", {
-											style: { display: "inline", cursor: "pointer", opacity: "0.7", padding: "0", margin: "0" },
-											onClick() {
-												if(!btrPager.updatingMaxPage) {
-													btrPager.updatingMaxPage = true
-													findMaxPage(cursors.length + 1)
-												}
+										
+										onClick() {
+											if(!btrPager.updatingMaxPage && !btrPager.foundMaxPage) {
+												btrPager.updatingMaxPage = true
+												btrPager.startingMaxPage = btrPager.maxPage ?? 1
+												findMaxPage(cursors.length + 1)
 											}
-										},
-										"??"
-									)
+										}
+									},
+									btrPager.maxPage ? `${btrPager.maxPage}${btrPager.foundMaxPage ? "" : "+"}` : "??"
 								)
 							),
 							
