@@ -85,6 +85,32 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 		constructorReplaces: [],
 		injectedContent: [],
 		
+		createGlobalState(value) {
+			return {
+				listeners: new Set(),
+				value: value,
+				
+				update() {
+					for(const setValue of this.listeners.values()) {
+						setValue(Date.now())
+					}
+				}
+			}
+		},
+		
+		useGlobalState(globalState) {
+			const [, setValue] = React.useState()
+			
+			React.useEffect(() => {
+				globalState.listeners.add(setValue)
+				return () => {
+					globalState.listeners.delete(setValue)
+				}
+			}, [])
+			
+			return globalState.value
+		},
+		
 		contentInject(data) {
 			this.injectedContent.push(data)
 		},
@@ -281,7 +307,7 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 			return new Proxy(a, { apply: b })
 		}
 
-		a[b] = new Proxy(a[b], { apply: c })
+		return a[b] = new Proxy(a[b], { apply: c })
 	}
 
 	//
@@ -867,416 +893,429 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 			}
 
 			if(currentPage === "gamedetails" && settings.gamedetails.enabled) {
-				if(Roblox.RunningGameInstances) {
-					// Legacy server list code
+				const placeId = matches[0]
+				
+				const btrPager = { currentPage: 1, targetPage: 1, hasMore: false, loading: false }
+				const cursors = []
+				
+				const findMaxPage = async largePageIndex => {
+					const cursor = cursors[largePageIndex - 2] ?? ""
+					const url = `https://games.roblox.com/v1/games/${placeId}/servers/Public?sortOrder=Desc&limit=100&cursor=${cursor}`
 					
-					// Server pagers
-					const createPager = gameInstance => {
-						let curPage = 1
-						let maxPage = 1
-
-						$(".rbx-running-games-load-more").hide() // Hide Load More
-						$(".rbx-running-games-footer > .pager").hide() // Hide Roblox+ pager?
-
-						const pager = $(`
-						<div class=btr-pager-holder>
-							<ul class="pager btr-server-pager">
-								<li class=first><a><span class=icon-first-page></a></li>
-								<li class=pager-prev><a><span class=icon-left></a></li>
-								<li class=pager-mid>
-									Page <input class=pager-cur type=text></input>
-									of <span class=pager-total></span>
-								</li>
-								<li class=pager-next><a><span class=icon-right></a></li>
-								<li class=last><a><span class=icon-last-page></a></li>
-							</ul>
-						</div>`).appendTo($(".rbx-running-games-footer"))
-
-						const updatePager = () => {
-							pager.find(".pager-cur").val(curPage)
-							pager.find(".pager-total").text(maxPage)
-
-							pager.find(".first").toggleClass("disabled", curPage <= 1)
-							pager.find(".pager-prev").toggleClass("disabled", curPage <= 1)
-							pager.find(".last").toggleClass("disabled", curPage >= maxPage)
-							pager.find(".pager-next").toggleClass("disabled", curPage >= maxPage)
-
-							$(".rbx-game-server-join").removeAttr("href")
+					await new Promise(resolve => setTimeout(resolve, 250))
+					
+					return fetch(url, { credentials: "include" }).then(
+						async res => {
+							const json = await res.json()
+							const numSmallPages = Math.floor((json.data.length - 1) / 10) + 1
+							
+							if(numSmallPages === 0 && largePageIndex > 1) {
+								cursors.splice(largePageIndex - 2, cursors.length)
+								return findMaxPage(largePageIndex - 1)
+							}
+							
+							if(json.nextPageCursor) {
+								cursors[largePageIndex - 1] = json.nextPageCursor
+								
+								btrPager.maxPage = largePageIndex * 10 + 1
+								btrPagerState.update()
+								
+								return findMaxPage(largePageIndex + 1)
+							}
+							
+							btrPager.maxPage = (largePageIndex - 1) * 10 + Math.max(1, numSmallPages)
+							btrPager.updatingMaxPage = false
+							
+							btrPagerState.update()
+						},
+						async () => {
+							await new Promise(resolve => setTimeout(resolve, 2000))
+							return findMaxPage(cursors.length + 1)
 						}
-
-						$.ajaxPrefilter(options => {
-							if(!options.url.includes("/games/getgameinstancesjson")) { return }
-
-							const startIndex = +new URLSearchParams(options.data).get("startIndex")
-							if(!Number.isSafeInteger(startIndex)) { return }
-
-							const success = options.success
-							options.success = function(...args) {
-								curPage = Math.floor(startIndex / 10) + 1
-								maxPage = Math.max(1, Math.ceil(args[0].TotalCollectionSize / 10))
+					)
+				}
+				
+				const btrPagerState = reactHook.createGlobalState(btrPager)
+				
+				const btrGetPublicGameInstances = () => {
+					let updatedMaxPage = false
+					
+					btrPager.targetPage = Math.max(1, btrPager.targetPage)
+					btrPager.loading = true
+					
+					const loadServers = targetPage => {
+						let largePageIndex = Math.floor((targetPage - 1) / 10) + 1
+						let smallPageIndex = (targetPage - 1) % 10 + 1
+						
+						let cursor
+						let limit
+						
+						if(targetPage <= 1) {
+							cursor = ""
+							limit = 10
+						} else {
+							if(largePageIndex - 2 >= cursors.length) {
+								largePageIndex = cursors.length + 1
+								smallPageIndex = 10
+							}
+							
+							cursor = cursors[largePageIndex - 2] ?? ""
+							limit = 100
+						}
+						
+						const url = `https://games.roblox.com/v1/games/${placeId}/servers/Public?sortOrder=Desc&limit=${limit}&cursor=${cursor}`
+						
+						return fetch(url, { credentials: "include" }).then(
+							async res => {
+								const json = await res.json()
 								
-								$("#rbx-game-server-item-container").find(">.rbx-game-server-item, >.section-content-off").remove()
-								updatePager()
-
-								if(!args[0].Collection.length) {
-									$("#rbx-game-server-item-container").append(`<p class=section-content-off>No Servers Found.</p>`)
-								}
-
-								const result = success.apply(this, args)
-								
-								if(settings.gamedetails.showServerPing) {
-									$("#rbx-game-server-item-container > li").each((_, row) => {
-										const info = args[0].Collection.find(x => x.Guid === row.dataset.gameid)
+								if(limit === 100) {
+									const numSmallPages = Math.floor((json.data.length - 1) / 10) + 1
+									
+									if(numSmallPages === 0 && largePageIndex > 1) {
+										cursors.splice(largePageIndex - 2, cursors.length)
+										return loadServers((largePageIndex - 1) * 10)
+									}
+									
+									if(numSmallPages > 0 || largePageIndex === 1) {
+										const largestKnownPage = (largePageIndex - 1) * 10 + Math.max(1, numSmallPages)
 										
-										if(info) {
-											$(".rbx-game-status", row).append($(`<div>`).text(`Ping: ${info.Ping}ms`))
+										if(json.nextPageCursor) {
+											if((btrPager.maxPage ?? -1) < largestKnownPage + 1) {
+												btrPager.maxPage = largestKnownPage + 1
+												btrPagerState.update()
+											}
+										} else {
+											btrPager.maxPage = largestKnownPage
+											btrPagerState.update()
+											updatedMaxPage = true
 										}
-									})
+									}
+									
+									if(json.nextPageCursor) {
+										cursors[largePageIndex - 1] = json.nextPageCursor
+										
+										if(targetPage > largePageIndex * 10) {
+											return loadServers(targetPage)
+										}
+									}
+									
+									if(smallPageIndex > numSmallPages) {
+										smallPageIndex = Math.max(1, numSmallPages)
+									}
+									
+									json.nextPageCursor = (json.nextPageCursor || smallPageIndex < numSmallPages) ? "idk" : ""
+									json.data = json.data.slice((smallPageIndex - 1) * 10, smallPageIndex * 10)
+								} else {
+									if(!json.nextPageCursor) {
+										btrPager.maxPage = 1
+										btrPagerState.update()
+										updatedMaxPage = true
+									}
 								}
 								
+								if(!updatedMaxPage && !btrPager.updatingMaxPage) {
+									if(limit === 100 || btrPager.maxPage) {
+										btrPager.updatingMaxPage = true
+										findMaxPage(cursors.length + 1)
+									}
+								}
+								
+								btrPager.currentPage = (largePageIndex - 1) * 10 + smallPageIndex
+								btrPager.loading = false
+								
+								return { data: json }
+							},
+							() => {
+								btrPager.loading = false
+								return null
+							}
+						)
+					}
+					
+					return loadServers(btrPager.targetPage)
+				}
+				
+				const btrPagerConstructor = ({ refreshGameInstances }) => {
+					const btrPager = reactHook.useGlobalState(btrPagerState)
+					
+					const canPrev = !btrPager.loading && btrPager.currentPage > 1
+					const canNext = !btrPager.loading && btrPager.currentPage < (btrPager.maxPage ?? 2)
+					
+					return React.createElement(
+						"div", { className: "btr-pager-holder" },
+						React.createElement(
+							"ul", { className: "pager btr-server-pager" },
+							
+							React.createElement(
+								"li", { className: `first${!canPrev ? " disabled" : ""}` },
+								React.createElement(
+									"a", {
+										onClick() {
+											if(!canPrev) { return }
+											btrPager.targetPage = 1
+											refreshGameInstances()
+										}
+									},
+									React.createElement(
+										"span", { className: "icon-first-page" }
+									)
+								)
+							),
+							
+							React.createElement(
+								"li", { className: `pager-prev${!canPrev ? " disabled" : ""}` },
+								React.createElement(
+									"a", {
+										onClick() {
+											if(!canPrev) { return }
+											btrPager.targetPage = btrPager.currentPage - 1
+											refreshGameInstances()
+										}
+									},
+									React.createElement(
+										"span", { className: "icon-left" }
+									)
+								)
+							),
+							
+							React.createElement(
+								"li", { className: "pager-mid" },
+								"Page ",
+								React.createElement(
+									"input", {
+										className: "pager-cur",
+										type: "text",
+										defaultValue: btrPager.currentPage,
+										
+										onKeyDown(e) {
+											if(e.which === 13) {
+												e.target.blur()
+											}
+										},
+										
+										onBlur(e) {
+											const num = parseInt(e.target.value, 10)
+			
+											if(!Number.isNaN(num)) {
+												btrPager.targetPage = num
+												refreshGameInstances()
+											}
+										}
+									}
+								),
+								` of `,
+								
+								(btrPager.maxPage
+									? React.createElement(
+										"span", {
+											style: { display: "inline", padding: "0", margin: "0" }
+										},
+										btrPager.maxPage
+									)
+									: React.createElement(
+										"span", {
+											style: { display: "inline", cursor: "pointer", opacity: "0.7", padding: "0", margin: "0" },
+											onClick() {
+												if(!btrPager.updatingMaxPage) {
+													btrPager.updatingMaxPage = true
+													findMaxPage(cursors.length + 1)
+												}
+											}
+										},
+										"??"
+									)
+								)
+							),
+							
+							React.createElement(
+								"li", { className: `pager-next${!canNext ? " disabled" : ""}` },
+								React.createElement(
+									"a", {
+										onClick() {
+											if(!canNext) { return }
+											btrPager.targetPage = btrPager.currentPage + 1
+											refreshGameInstances()
+										}
+									},
+									React.createElement(
+										"span", { className: "icon-right" }
+									)
+								)
+							),
+							
+							React.createElement(
+								"li", { className: `last${!canNext ? " disabled" : ""}` },
+								React.createElement(
+									"a", {
+										onClick() {
+											if(!canNext) { return }
+											btrPager.targetPage = Math.max(btrPager.maxPage ?? 1, btrPager.currentPage + 50)
+											refreshGameInstances()
+										}
+									},
+									React.createElement(
+										"span", { className: "icon-last-page" }
+									)
+								)
+							)
+						)
+					)
+				}
+				
+				const query = (self, filter, n = 5) => {
+					if(self && filter(self)) {
+						return self
+					}
+					
+					let children = self?.props?.children
+					if(!children) { return }
+					
+					if(!Array.isArray(children)) {
+						children = [children]
+					}
+					
+					for(const child of children) {
+						if(filter(child)) {
+							return child
+						}
+					}
+					
+					if(n >= 2) {
+						for(const child of children) {
+							const result = query(child, filter, n - 1)
+							if(result) {
 								return result
 							}
-						})
-
-						pager
-							.on("click", ".pager-prev:not(.disabled)", () => {
-								gameInstance.fetchServers(placeId, Math.max((curPage - 2) * 10, 0))
-							})
-							.on("click", ".pager-next:not(.disabled)", () => {
-								gameInstance.fetchServers(placeId, Math.min(curPage * 10, (maxPage - 1) * 10))
-							})
-							.on("click", ".first:not(.disabled)", () => {
-								gameInstance.fetchServers(placeId, 0)
-							})
-							.on("click", ".last:not(.disabled)", () => {
-								gameInstance.fetchServers(placeId, (maxPage - 1) * 10)
-							})
-							.on({
-								blur() {
-									const text = $(this).val()
-									let num = parseInt(text, 10)
-
-									if(!Number.isNaN(num)) {
-										num = Math.max(1, Math.min(maxPage, num))
-										gameInstance.fetchServers(placeId, (num - 1) * 10)
-									}
-								},
-								keypress(e) {
-									if(e.which === 13) {
-										$(this).blur()
-									}
-								}
-							}, ".pager-cur")
-					}
-
-					const init = () => {
-						if(settings.gamedetails.addServerPager) {
-							createPager(Roblox.RunningGameInstances)
-						}
-
-						// Init tab
-						const tabBtn = document.querySelector(".rbx-tab.active a")
-						if(tabBtn) {
-							jQuery(tabBtn).trigger("shown.bs.tab")
 						}
 					}
-
-					if(Roblox.RunningGameInstances) {
-						setTimeout(init, 0)
-					}
-				
-				} else {
-					const btrPager = { currentPage: 1, maxPage: 1, loading: false }
-					let gPGIProxy
-					
-					const query = (self, filter, n = 5) => {
-						if(self && filter(self)) {
-							return self
-						}
-						
-						let children = self?.props?.children
-						if(!children) { return }
-						
-						if(!Array.isArray(children)) {
-							children = [children]
-						}
-						
-						for(const child of children) {
-							if(filter(child)) {
-								return child
-							}
-						}
-						
-						if(n >= 2) {
-							for(const child of children) {
-								const result = query(child, filter, n - 1)
-								if(result) {
-									return result
-								}
-							}
-						}
-					}
-					
-					reactHook.replaceConstructor( // RunningGameServers
-						args => args[1]?.getGameServers,
-						(target, thisArg, args) => {
-							const enablePager = settings.gamedetails.addServerPager && args[0]?.getGameServers?.name === "getPublicGameInstances"
-							
-							if(enablePager) {
-								if(!gPGIProxy) {
-									gPGIProxy = new Proxy(args[0].getGameServers, {
-										apply(target, thisArg, args) {
-											btrPager.currentPage = Math.max(1, Math.min(btrPager.currentPage, btrPager.maxPage))
-											btrPager.loading = true
-											
-											const url = `/games/getgameinstancesjson?placeId=${args[0]}&startIndex=${(btrPager.currentPage - 1) * 10}&_=${Date.now()}`
-											
-											return fetch(url, { credentials: "include" }).then(async res => {
-												const json = await res.json()
-												
-												btrPager.maxPage = Math.max(1, Math.floor((json.TotalCollectionSize - 1) / 10))
-												btrPager.loading = false
-												
-												return {
-													data: {
-														previousPageCursor: null,
-														nextPageCursor: "idk",
-														data: json.Collection.map(x => ({
-															id: x.Guid,
-															maxPlayers: x.Capacity,
-															playing: x.CurrentPlayers.length,
-															ping: x.Ping,
-															fps: x.Fps,
-															playerTokens: x.CurrentPlayers.map(x => `btr/${x.Thumbnail.Url}`),
-															players: []
-														}))
-													}
-												}
-											})
-										}
-									})
-								}
-								
-								args[0].getGameServers = gPGIProxy
-							}
-							
-							const result = target.apply(thisArg, args)
-							
-							if(enablePager) {
-								try {
-									const serverList = query(result, x => x.props.gameInstances)
-									
-									if(serverList) {
-										serverList.props.btrPager = btrPager
-									}
-									
-								} catch(ex) {
-									console.error(ex)
-								}
-							}
-							
-							return result
-						}
-					)
-					
-					reactHook.replaceConstructor( // GameSection
-						args => args[1]?.loadMoreGameInstances,
-						(target, thisArg, args) => {
-							if(args[0].btrPager) {
-								args[0].showLoadMoreButton = false
-							}
-							
-							const result = target.apply(thisArg, args)
-							
-							try {
-								const list = query(result, x => x.props.id?.includes("running-games"))
-								
-								if(args[0].btrPager) {
-									const canPrev = !btrPager.loading && btrPager.currentPage > 1
-									const canNext = !btrPager.loading && btrPager.currentPage < btrPager.maxPage
-									
-									list.props.children.push(React.createElement(
-										"div", { className: "btr-pager-holder" },
-										React.createElement(
-											"ul", { className: "pager btr-server-pager" },
-											
-											React.createElement(
-												"li", { className: `first${!canPrev ? " disabled" : ""}` },
-												React.createElement(
-													"a", {
-														onClick() {
-															if(!canPrev) { return }
-															btrPager.currentPage = 1
-															args[0].refreshGameInstances()
-														}
-													},
-													React.createElement(
-														"span", { className: "icon-first-page" }
-													)
-												)
-											),
-											
-											React.createElement(
-												"li", { className: `pager-prev${!canPrev ? " disabled" : ""}` },
-												React.createElement(
-													"a", {
-														onClick() {
-															if(!canPrev) { return }
-															btrPager.currentPage -= 1
-															args[0].refreshGameInstances()
-														}
-													},
-													React.createElement(
-														"span", { className: "icon-left" }
-													)
-												)
-											),
-											
-											React.createElement(
-												"li", { className: "pager-mid" },
-												"Page ",
-												React.createElement(
-													"input", {
-														className: "pager-cur",
-														type: "text",
-														defaultValue: args[0].btrPager.currentPage,
-														
-														onKeyDown(e) {
-															if(e.which === 13) {
-																e.target.blur()
-															}
-														},
-														
-														onBlur(e) {
-															const num = parseInt(e.target.value, 10)
-							
-															if(!Number.isNaN(num)) {
-																btrPager.currentPage = num
-																args[0].refreshGameInstances()
-															}
-														}
-													}
-												),
-												" of ",
-												React.createElement(
-													"span", { className: "pager-total" },
-													args[0].btrPager.maxPage
-												)
-											),
-											
-											React.createElement(
-												"li", { className: `pager-next${!canNext ? " disabled" : ""}` },
-												React.createElement(
-													"a", {
-														onClick() {
-															if(!canNext) { return }
-															btrPager.currentPage += 1
-															args[0].refreshGameInstances()
-														}
-													},
-													React.createElement(
-														"span", { className: "icon-right" }
-													)
-												)
-											),
-											
-											React.createElement(
-												"li", { className: `last${!canNext ? " disabled" : ""}` },
-												React.createElement(
-													"a", {
-														onClick() {
-															if(!canNext) { return }
-															btrPager.currentPage = btrPager.maxPage
-															args[0].refreshGameInstances()
-														}
-													},
-													React.createElement(
-														"span", { className: "icon-last-page" }
-													)
-												)
-											)
-										)
-									))
-								}
-								
-								if(settings.gamedetails.showServerPing) {
-									const ul = query(list, x => x.type === "ul", 5)
-									
-									let servers = ul?.props?.children
-									if(servers) {
-										if(!Array.isArray(servers)) { servers = [servers] }
-										
-										for(const server of servers) {
-											const serverInfo = args[0]?.gameInstances?.find(x => x.id === server.props.id)
-		
-											if(serverInfo) {
-												server.props.gameServerStatus += `\nPing: ${serverInfo.ping}ms`
-											}
-										}
-									}
-								}
-							} catch(ex) {
-								console.error(ex)
-							}
-							
-							return result
-						}
-					)
-					
-					reactHook.replaceConstructor( // GameInstance
-						args => args[1]?.gameServerStatus,
-						(target, thisArg, args) => {
-							const result = target.apply(thisArg, args)
-							
-							try {
-								const list = query(result, x => x.props?.className?.includes("game-server-players"))
-								let entries = list?.props?.children
-								
-								if(entries) {
-									if(!Array.isArray(entries)) { entries = [entries] }
-									
-									for(const entry of entries) {
-										const thumb = query(entry, x => x.props?.type === "AvatarHeadshot")
-										
-										if(thumb && thumb.props.token?.startsWith("btr/")) {
-											const token = thumb.props.token
-											thumb.type = "span"
-											
-											for(const key of Object.keys(thumb.props)) {
-												delete thumb.props[key]
-											}
-											
-											thumb.props.className = "thumbnail-2d-container avatar-card-image"
-											thumb.props.children = React.createElement(
-												"img", { src: token.slice(4) }
-											)
-										}
-									}
-								}
-							} catch(ex) {
-								console.error(ex)
-							}
-							
-							return result
-						}
-					)
-					
-					const updateHash = ev => {
-						const hash = location.hash
-						
-						if(ev && new window.URL(ev.newURL).hash !== hash) {
-							return
-						}
-						
-						if(!hash || !ev && hash !== "#!/about" && hash !== "#!/store" && hash !== "#!/game-instances") {
-							history.replaceState("", document.title, location.pathname + location.search + "#!/game-instances")
-							setTimeout(() => history.replaceState("", document.title, location.pathname + location.search + hash), 0)
-						}
-					}
-					
-					window.addEventListener("hashchange", updateHash)
-					updateHash()
 				}
+				
+				reactHook.replaceConstructor( // RunningGameServers
+					args => args[1]?.getGameServers,
+					(target, thisArg, args) => {
+						const [props] = args
+						
+						if(settings.gamedetails.addServerPager && (props.getGameServers?.name === "getPublicGameInstances" || props.getGameServers === btrGetPublicGameInstances)) {
+							props.getGameServers = btrGetPublicGameInstances
+							
+							const result = target.apply(thisArg, args)
+							
+							try {
+								const serverList = query(result, x => x.props.gameInstances)
+								
+								if(serverList) {
+									serverList.props.btrPagerEnabled = true
+								}
+								
+							} catch(ex) {
+								console.error(ex)
+							}
+							
+							return result
+						}
+						
+						return target.apply(thisArg, args)
+					}
+				)
+				
+				reactHook.replaceConstructor( // GameSection
+					args => args[1]?.loadMoreGameInstances,
+					(target, thisArg, args) => {
+						if(args[0].btrPagerEnabled) {
+							args[0].showLoadMoreButton = false
+						}
+						
+						const result = target.apply(thisArg, args)
+						
+						try {
+							const list = query(result, x => x.props.id?.includes("running-games"))
+							
+							if(args[0].btrPagerEnabled) {
+								list.props.children.push(
+									React.createElement(btrPagerConstructor, {
+										refreshGameInstances: args[0].refreshGameInstances
+									})
+								)
+							}
+							
+							if(settings.gamedetails.showServerPing) {
+								const ul = query(list, x => x.type === "ul", 5)
+								
+								let servers = ul?.props?.children
+								if(servers) {
+									if(!Array.isArray(servers)) { servers = [servers] }
+									
+									for(const server of servers) {
+										const serverInfo = args[0]?.gameInstances?.find(x => x.id === server.props.id)
+	
+										if(serverInfo) {
+											server.props.gameServerStatus += `\nPing: ${serverInfo.ping ?? 0}ms`
+										}
+									}
+								}
+							}
+						} catch(ex) {
+							console.error(ex)
+						}
+						
+						return result
+					}
+				)
+				
+				reactHook.replaceConstructor( // GameInstance
+					args => args[1]?.gameServerStatus,
+					(target, thisArg, args) => {
+						const result = target.apply(thisArg, args)
+						
+						try {
+							const list = query(result, x => x.props?.className?.includes("game-server-players"))
+							let entries = list?.props?.children
+							
+							if(entries) {
+								if(!Array.isArray(entries)) { entries = [entries] }
+								
+								for(const entry of entries) {
+									const thumb = query(entry, x => x.props?.type === "AvatarHeadshot")
+									
+									if(thumb && thumb.props.token?.startsWith("btr/")) {
+										const token = thumb.props.token
+										thumb.type = "span"
+										
+										for(const key of Object.keys(thumb.props)) {
+											delete thumb.props[key]
+										}
+										
+										thumb.props.className = "thumbnail-2d-container avatar-card-image"
+										thumb.props.children = React.createElement(
+											"img", { src: token.slice(4) }
+										)
+									}
+								}
+							}
+						} catch(ex) {
+							console.error(ex)
+						}
+						
+						return result
+					}
+				)
+				
+				const updateHash = ev => {
+					const hash = location.hash
+					
+					if(ev && new window.URL(ev.newURL).hash !== hash) {
+						return
+					}
+					
+					if(!hash || !ev && hash !== "#!/about" && hash !== "#!/store" && hash !== "#!/game-instances") {
+						history.replaceState("", document.title, location.pathname + location.search + "#!/game-instances")
+						setTimeout(() => history.replaceState("", document.title, location.pathname + location.search + hash), 0)
+					}
+				}
+				
+				window.addEventListener("hashchange", updateHash)
+				updateHash()
 			} else if(currentPage === "develop") {
 				if(Roblox.BuildPage) {
 					Roblox.BuildPage.GameShowcase = new Proxy(Roblox.BuildPage.GameShowcase || {}, {

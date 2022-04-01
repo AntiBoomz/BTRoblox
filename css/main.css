@@ -239,10 +239,6 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	width: auto;
 }
 
-.btr-pager-holder .pager-mid {
-	padding-right: 9px;
-}
-
 .btr-pager-holder .pager-mid span {
 	padding-right: 0;
 }
