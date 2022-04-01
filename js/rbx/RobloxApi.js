@@ -119,7 +119,7 @@ const RobloxApi = {
 			}).then(
 				async res => {
 					const result = await res.json()
-					const errorCode = result.errors?.[0]?.code
+					const errorCode = result?.errors?.[0]?.code
 					
 					if(res.ok || errorCode === 7 || errorCode === 8) {
 						// adding returns 7 if already in collection, delte returns 8 if not in collection
