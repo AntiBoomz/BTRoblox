@@ -902,7 +902,7 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 					const cursor = cursors[largePageIndex - 2] ?? ""
 					const url = `https://games.roblox.com/v1/games/${placeId}/servers/Public?sortOrder=Desc&limit=100&cursor=${cursor}`
 					
-					await new Promise(resolve => setTimeout(resolve, 250))
+					await new Promise(resolve => setTimeout(resolve, 100))
 					
 					return fetch(url, { credentials: "include" }).then(
 						async res => {
@@ -929,7 +929,7 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 							btrPagerState.update()
 						},
 						async () => {
-							await new Promise(resolve => setTimeout(resolve, 2000))
+							await new Promise(resolve => setTimeout(resolve, 400))
 							return findMaxPage(cursors.length + 1)
 						}
 					)
