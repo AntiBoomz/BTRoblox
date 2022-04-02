@@ -74,11 +74,8 @@ function CreateNewVersionHistory(assetId, assetType) {
 
 			versionList.append(card)
 		}
-
-		const script = document.createElement("script")
-		script.innerHTML = "Roblox.BootstrapWidgets.SetupPopover()"
-		versionList.append(script)
-
+		
+		InjectJS.send("setupPopover")
 		isBusy = false
 	}
 

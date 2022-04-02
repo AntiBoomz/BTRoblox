@@ -1350,6 +1350,10 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 	}
 
 	//
+	
+	ContentJS.listen("setupPopover", () => {
+		Roblox.BootstrapWidgets.SetupPopover()
+	})
 
 	ContentJS.listen("linkify", target => {
 		if(window.Roblox?.Linkify) { $(target).linkify() }
