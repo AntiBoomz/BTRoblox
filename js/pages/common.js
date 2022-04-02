@@ -154,23 +154,31 @@ function getAssetFileType(assetTypeId, buffer) {
 function createPager(noSelect, hideWhenEmpty) {
 	const pager = html`
 	<div class=btr-pager-holder>
-		<ul class=pager>
-			<li class=pager-prev><a><span class=icon-left></span></a></li>
-			<li class=pager-mid>
-				Page <span class=pager-cur type=text value></span>
+		<ul class=btr-pager>
+			<li class=btr-pager-prev>
+				<button class=btn-generic-left-sm>
+					<span class=icon-left></span>
+				</button>
 			</li>
-			<li class=pager-next><a><span class=icon-right></span></a></li>
+			<li class=btr-pager-mid>
+				<span>Page </span><span class=btr-pager-cur type=text value></span>
+			</li>
+			<li class=btr-pager-next>
+				<button class=btn-generic-right-sm>
+					<span class=icon-right></span>
+				</button>
+			</li>
 		</ul>
 	</div>`
 
 	if(!noSelect) {
-		const mid = pager.$find(".pager-mid")
-		mid.innerHTML = htmlstring`Page <input class=pager-cur type=text value> of <span class=pager-total></span>`
+		const mid = pager.$find(".btr-pager-mid")
+		mid.innerHTML = htmlstring`<span>Page </span><input class=btr-pager-cur type=text value=1> of <span class=btr-pager-total></span>`
 	}
 
-	const prev = pager.$find(".pager-prev")
-	const next = pager.$find(".pager-next")
-	const cur = pager.$find(".pager-cur")
+	const prev = pager.$find(".btr-pager-prev")
+	const next = pager.$find(".btr-pager-next")
+	const cur = pager.$find(".btr-pager-cur")
 
 	Object.assign(pager, {
 		curPage: 1,
@@ -187,17 +195,24 @@ function createPager(noSelect, hideWhenEmpty) {
 			}
 		},
 
-		togglePrev(bool) { prev.classList.toggle("disabled", !bool) },
-		toggleNext(bool) { next.classList.toggle("disabled", !bool) }
+		togglePrev(bool) { prev.$find("button").disabled = !bool },
+		toggleNext(bool) { next.$find("button").disabled = !bool }
 	})
 
 	pager.setPage(1)
 
-	prev.$find("a").$on("click", () => pager.onprevpage && pager.onprevpage())
-	next.$find("a").$on("click", () => pager.onnextpage && pager.onnextpage())
+	prev.$find("button").$on("click", ev => {
+		pager.onprevpage?.()
+		ev.preventDefault()
+	})
+	
+	next.$find("button").$on("click", ev => {
+		pager.onnextpage?.()
+		ev.preventDefault()
+	})
 
 	if(!noSelect) {
-		const tot = pager.$find(".pager-total")
+		const tot = pager.$find(".btr-pager-total")
 		pager.maxPage = 1
 
 		Object.assign(pager, {
@@ -217,12 +232,43 @@ function createPager(noSelect, hideWhenEmpty) {
 		})
 
 		pager.setMaxPage(1)
+		
+		{
+			const input = cur
+			
+			const updateInputWidth = () => {
+				input.style.width = "0px"
+				input.style.width = `${Math.max(32, Math.min(100, input.scrollWidth + 12))}px`
+			}
+			
+			input.addEventListener("input", updateInputWidth)
+			input.addEventListener("change", updateInputWidth)
+			
+			const descriptor = {
+				configurable: true,
+				
+				get() {
+					delete this.value
+					const result = this.value
+					Object.defineProperty(input, "value", descriptor)
+					return result
+				},
+				set(x) {
+					delete this.value
+					this.value = x
+					Object.defineProperty(input, "value", descriptor)
+					updateInputWidth()
+				}
+			}
+			
+			Object.defineProperty(input, "value", descriptor)
+		}
 
-		cur.$on("keydown", e => {
-			if(e.keyCode === 13 && pager.onsetpage) {
-				let page = parseInt(cur.value, 10)
-				if(Number.isNaN(page)) { return }
-
+		cur.$on("keydown", e => e.keyCode === 13 && cur.blur())
+		cur.$on("blur", () => {
+			let page = parseInt(cur.value, 10)
+			
+			if(!Number.isNaN(page) && pager.onsetpage) {
 				page = Math.max(1, Math.min(pager.maxPage, page))
 
 				if(pager.curPage !== page) {
@@ -230,6 +276,8 @@ function createPager(noSelect, hideWhenEmpty) {
 				} else {
 					pager.setPage(page)
 				}
+			} else {
+				cur.value = pager.curPage
 			}
 		})
 	}

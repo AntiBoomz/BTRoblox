@@ -223,6 +223,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 }
 
 /* PAGER */
+
 .btr-pager-holder {
 	width: 100%;
 	text-align: center;
@@ -233,19 +234,24 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	box-sizing: inherit;
 }
 
-.btr-pager-holder .pager {
-	display: inline-block;
+.btr-pager-holder .btr-pager {
+	display: inline-flex;
 	margin: 0;
 	width: auto;
 }
 
-.btr-pager-holder .pager-mid span {
-	padding-right: 0;
+.btr-pager-holder .btr-pager > li:not(:first-child) {
+	margin-left: 4px;
 }
 
-.btr-pager-holder input.pager-cur {
-	width: 48px;
-	height: 28px;
+.btr-pager-holder .btr-pager > li span {
+	display: inline-block;
+	padding: 5px 5px 0;
+}
+
+.btr-pager-holder input.btr-pager-cur {
+	width: 32px;
+	height: 25px;
 
 	background-color: white;
 	color: #191919;
@@ -259,18 +265,13 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	text-align: center;
 }
 
-.btr-pager-holder .pager .disabled {
-	pointer-events: none;
-	opacity: 0.5;
+.btr-pager-holder .btr-pager-total {
+	display: inline;
+	padding: 0;
+	margin: 0;
+	
+	padding-left: 2px;
 }
-
-/* Backup from roblox's css */
-/*
-.btr-pager-holder {box-sizing:border-box;font-size:16px;}
-.btr-pager-holder * {box-sizing:inherit;}
-.btr-pager-holder .pager{padding-left:0;margin:20px 0;list-style:none;text-align:center;}.btr-pager-holder .pager:before,.btr-pager-holder .pager:after{content:" ";display:table;}.btr-pager-holder .pager:after{clear:both;}.btr-pager-holder .pager li{float:left;}.btr-pager-holder .pager li a{margin:0 9px 0 0;height:32px;width:32px;color:#191919;padding:3px 0 0 0;text-align:center;}.btr-pager-holder .pager li span{border:0 none;padding:5px 5px 0 0;display:inline-block;}.btr-pager-holder .pager .first,.btr-pager-holder .pager .last,.btr-pager-holder .pager .pager-prev,.btr-pager-holder .pager .pager-next{-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}.btr-pager-holder .pager .first a,.btr-pager-holder .pager .last a,.btr-pager-holder .pager .pager-prev a,.btr-pager-holder .pager .pager-next a{margin-left:0;background-color:#fff;border:1px solid #B8B8B8;border-radius:3px;display:inline-block;}.btr-pager-holder .pager .first a:hover,.btr-pager-holder .pager .last a:hover,.btr-pager-holder .pager .pager-prev a:hover,.btr-pager-holder .pager .pager-next a:hover{background-color:#F2F2F2;}.btr-pager-holder .pager .first a:hover span,.btr-pager-holder .pager .last a:hover span,.btr-pager-holder .pager .pager-prev a:hover span,.btr-pager-holder .pager .pager-next a:hover span{background-color:#F2F2F2;}.btr-pager-holder .pager .first a span,.btr-pager-holder .pager .last a span,.btr-pager-holder .pager .pager-prev a span,.btr-pager-holder .pager .pager-next a span{background-color:#fff;background-size:40px auto;width:20px;height:20px;}.btr-pager-holder .pager .pager-cur a{border:0 none;}.btr-pager-holder .pager .first span{background-position:0 -820px;}.btr-pager-holder .pager .last span{background-position:0 -800px;}.btr-pager-holder .pager .pager-prev span{background-position:0 -300px;}.btr-pager-holder .pager .pager-next span{background-position:0 -280px;}.btr-pager-holder .pager .pager-cur a{border:1px solid #B8B8B8;}.btr-pager-holder .pager .pager-total a:hover{border:0 none;}.btr-pager-holder .pager .disabled>a,.btr-pager-holder .pager .disabled>a:hover,.btr-pager-holder .pager .disabled>a:focus{cursor:default;background-color:#F2F2F2;border:1px solid #E3E3E3;}.btr-pager-holder .pager .disabled>a span,.btr-pager-holder .pager .disabled>a:hover span,.btr-pager-holder .pager .disabled>a:focus span{background-color:#F2F2F2;}.btr-pager-holder .pager .disabled>a .icon-left,.btr-pager-holder .pager .disabled>a:hover .icon-left,.btr-pager-holder .pager .disabled>a:focus .icon-left{background-position:0 -960px;}.btr-pager-holder .pager .disabled>a .icon-right,.btr-pager-holder .pager .disabled>a:hover .icon-right,.btr-pager-holder .pager .disabled>a:focus .icon-right{background-position:0 -940px;}.btr-pager-holder .pager .disabled>a .icon-first-page,.btr-pager-holder .pager .disabled>a:hover .icon-first-page,.btr-pager-holder .pager .disabled>a:focus .icon-first-page{background-position:0 -1000px;}.btr-pager-holder .pager .disabled>a .icon-last-page,.btr-pager-holder .pager .disabled>a:hover .icon-last-page,.btr-pager-holder .pager .disabled>a:focus .icon-last-page{background-position:0 -980px;}.btr-pager-holder{text-align:center;width:100%;}.btr-pager-holder:before,.btr-pager-holder:after{content:" ";display:table;}.btr-pager-holder:after{clear:both;}.btr-pager-holder .pager{display:inline-block;margin:0 auto;width:auto;}
-*/
-
 
 /* Switch */
 

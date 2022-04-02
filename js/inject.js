@@ -811,6 +811,37 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 						activeLoadMore += 1
 						requestWallPosts(0)
 					}
+					
+					$scope.btrAttachInput = () => {
+						const input = document.querySelector(".btr-comment-pager input")
+			
+						const updateInputWidth = () => {
+							input.style.width = "0px"
+							input.style.width = `${Math.max(32, Math.min(100, input.scrollWidth + 12))}px`
+						}
+						
+						input.addEventListener("input", updateInputWidth)
+						input.addEventListener("change", updateInputWidth)
+						
+						const descriptor = {
+							configurable: true,
+							
+							get() {
+								delete this.value
+								const result = this.value
+								Object.defineProperty(input, "value", descriptor)
+								return result
+							},
+							set(x) {
+								delete this.value
+								this.value = x
+								Object.defineProperty(input, "value", descriptor)
+								updateInputWidth()
+							}
+						}
+						
+						Object.defineProperty(input, "value", descriptor)
+					}
 
 					$scope.btrPagerStatus = btrPagerStatus
 					$scope.btrLoadWallPosts = cursor => {
@@ -1057,15 +1088,26 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 					const canPrev = !btrPager.loading && btrPager.currentPage > 1
 					const canNext = !btrPager.loading && btrPager.currentPage < (btrPager.maxPage ?? 2)
 					
+					const inputRef = React.useRef()
+					
+					const updateInputWidth = () => {
+						inputRef.current.style.width = "0px"
+						inputRef.current.style.width = `${Math.max(32, Math.min(100, inputRef.current.scrollWidth + 12))}px`
+					}
+					
+					React.useEffect(updateInputWidth, [])
+					
 					return React.createElement(
-						"div", { className: "btr-pager-holder" },
+						"div", { className: "btr-pager-holder btr-server-pager" },
 						React.createElement(
-							"ul", { className: "pager btr-server-pager" },
+							"ul", { className: "btr-pager" },
 							
 							React.createElement(
-								"li", { className: `first${!canPrev ? " disabled" : ""}` },
+								"li", { className: `btr-pager-first` },
 								React.createElement(
-									"a", {
+									"button", {
+										className: "btn-generic-first-page-sm",
+										disabled: !canPrev,
 										onClick() {
 											if(!canPrev) { return }
 											btrPager.targetPage = 1
@@ -1079,9 +1121,11 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 							),
 							
 							React.createElement(
-								"li", { className: `pager-prev${!canPrev ? " disabled" : ""}` },
+								"li", { className: `btr-pager-prev` },
 								React.createElement(
-									"a", {
+									"button", {
+										className: "btn-generic-left-sm",
+										disabled: !canPrev,
 										onClick() {
 											if(!canPrev) { return }
 											btrPager.targetPage = btrPager.currentPage - 1
@@ -1095,13 +1139,18 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 							),
 							
 							React.createElement(
-								"li", { className: "pager-mid" },
+								"li", { className: `btr-pager-mid` },
 								"Page ",
 								React.createElement(
 									"input", {
-										className: "pager-cur",
+										className: "btr-pager-cur",
 										type: "text",
 										defaultValue: btrPager.currentPage,
+										ref: inputRef,
+										
+										onChange() {
+											updateInputWidth()
+										},
 										
 										onKeyDown(e) {
 											if(e.which === 13) {
@@ -1115,6 +1164,8 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 											if(!Number.isNaN(num)) {
 												btrPager.targetPage = num
 												refreshGameInstances()
+											} else {
+												e.target.value = btrPager.currentPage
 											}
 										}
 									}
@@ -1123,11 +1174,8 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 								
 								React.createElement(
 									"span", {
+										className: "btr-pager-total",
 										style: {
-											display: "inline",
-											padding: "0",
-											margin: "0",
-											
 											opacity: (!btrPager.foundMaxPage && !btrPager.updatingMaxPage) ? "0.7" : null,
 											cursor: (!btrPager.foundMaxPage && !btrPager.updatingMaxPage) ? "pointer" : null
 										},
@@ -1145,9 +1193,11 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 							),
 							
 							React.createElement(
-								"li", { className: `pager-next${!canNext ? " disabled" : ""}` },
+								"li", { className: `btr-pager-next` },
 								React.createElement(
-									"a", {
+									"button", {
+										className: "btn-generic-right-sm",
+										disabled: !canNext,
 										onClick() {
 											if(!canNext) { return }
 											btrPager.targetPage = btrPager.currentPage + 1
@@ -1161,9 +1211,11 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 							),
 							
 							React.createElement(
-								"li", { className: `last${!canNext ? " disabled" : ""}` },
+								"li", { className: `btr-pager-last` },
 								React.createElement(
-									"a", {
+									"button", {
+										className: "btn-generic-last-page-sm",
+										disabled: !canNext,
 										onClick() {
 											if(!canNext) { return }
 											btrPager.targetPage = Math.max(btrPager.maxPage ?? 1, btrPager.currentPage + 50)

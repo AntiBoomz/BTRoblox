@@ -89,3 +89,26 @@
 .btr-versionHistory .version-date {
 	margin-bottom: 4px;
 }
+
+/* Pager compatibility */
+
+.btr-versionHistory .btr-pager-holder button {
+	background-color: transparent;
+	background-position-x: 0px !important;
+}
+
+.btr-versionHistory .btr-pager-holder button span {
+	background-position-x: 0px !important;
+}
+
+.btr-versionHistory .btr-pager-holder button:hover {
+	opacity: 0.5;
+}
+
+.btr-versionHistory .btr-pager-holder button[disabled] {
+	opacity: 0.2;
+}
+
+.btr-versionHistory .btr-pager-holder button:not([disabled]) {
+	cursor: pointer;
+}
