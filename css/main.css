@@ -240,13 +240,13 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	width: auto;
 }
 
-.btr-pager-holder .btr-pager > li:not(:first-child) {
+.btr-pager-holder .btr-pager li:not(:first-child) {
 	margin-left: 4px;
 }
 
-.btr-pager-holder .btr-pager > li span {
+.btr-pager-holder .btr-pager li span {
 	display: inline-block;
-	padding: 5px 5px 0;
+	padding: 4px 5px 0;
 }
 
 .btr-pager-holder input.btr-pager-cur {
@@ -265,12 +265,11 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	text-align: center;
 }
 
-.btr-pager-holder .btr-pager-total {
+.btr-pager-holder .btr-pager span.btr-pager-cur,
+.btr-pager-holder .btr-pager .btr-pager-total {
 	display: inline;
 	padding: 0;
 	margin: 0;
-	
-	padding-left: 2px;
 }
 
 /* Switch */

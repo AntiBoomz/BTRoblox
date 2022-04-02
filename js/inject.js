@@ -1140,7 +1140,10 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 							
 							React.createElement(
 								"li", { className: `btr-pager-mid` },
-								"Page ",
+								React.createElement(
+									"span", {},
+									"Page",
+								),
 								React.createElement(
 									"input", {
 										className: "btr-pager-cur",
@@ -1170,25 +1173,28 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 										}
 									}
 								),
-								` of `,
-								
 								React.createElement(
-									"span", {
-										className: "btr-pager-total",
-										style: {
-											opacity: (!btrPager.foundMaxPage && !btrPager.updatingMaxPage) ? "0.7" : null,
-											cursor: (!btrPager.foundMaxPage && !btrPager.updatingMaxPage) ? "pointer" : null
-										},
-										
-										onClick() {
-											if(!btrPager.updatingMaxPage && !btrPager.foundMaxPage) {
-												btrPager.updatingMaxPage = true
-												btrPager.startingMaxPage = btrPager.maxPage ?? 1
-												findMaxPage(cursors.length + 1)
+									"span", {},
+									` of `,
+									
+									React.createElement(
+										"span", {
+											className: "btr-pager-total",
+											style: {
+												opacity: (!btrPager.foundMaxPage && !btrPager.updatingMaxPage) ? "0.7" : null,
+												cursor: (!btrPager.foundMaxPage && !btrPager.updatingMaxPage) ? "pointer" : null
+											},
+											
+											onClick() {
+												if(!btrPager.updatingMaxPage && !btrPager.foundMaxPage) {
+													btrPager.updatingMaxPage = true
+													btrPager.startingMaxPage = btrPager.maxPage ?? 1
+													findMaxPage(cursors.length + 1)
+												}
 											}
-										}
-									},
-									btrPager.maxPage ? `${btrPager.maxPage}${btrPager.foundMaxPage ? "" : "+"}` : "??"
+										},
+										btrPager.maxPage ? `${btrPager.maxPage}${btrPager.foundMaxPage ? "" : "+"}` : "??"
+									)
 								)
 							),
 							
