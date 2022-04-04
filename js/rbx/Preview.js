@@ -455,6 +455,8 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 			<div class="btr-bundle-btn btn-control-xs" data-anim=swim disabled><div class=btr-anim-icon-swim></div></div>
 			<div class="btr-bundle-btn btn-control-xs" data-anim=climb disabled><div class=btr-anim-icon-climb></div></div>
 		</div>`
+		
+		this.animNameLabel = html`<div class=btr-animation-name></div>`
 
 		const buttons = this.buttons = html`
 		<div class=btr-thumb-btn-container>
@@ -523,6 +525,8 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 				</div>
 			</div>
 		</div>`
+		
+		container.append(this.dropdown, this.typeSwitch, this.bundleAnims, this.animNameLabel, this.buttons)
 
 		const bodyPopup = buttons.$find(".btr-body-popup")
 		// const bodyBtn = buttons.$find(".btr-body-btn")
@@ -624,20 +628,16 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		
 		this.on("enabled", () => {
 			previewBtn.classList.add("checked")
-			document.$watch("#AssetThumbnail", thumb => {
-				thumb.classList.add("btr-preview-active")
-				thumb.parentNode.before(this.container)
-			})
+			this.container.parentNode?.classList.add("btr-preview-active")
+			this.container.parentNode?.classList.remove("btr-preview-inactive")
 			
 			disableOrigThumbs()
 		})
 
 		this.on("disabled", () => {
 			previewBtn.classList.remove("checked")
-			document.$watch("#AssetThumbnail", thumb => {
-				thumb.classList.remove("btr-preview-active")
-				this.container.remove()
-			})
+			this.container.parentNode?.classList.remove("btr-preview-active")
+			this.container.parentNode?.classList.add("btr-preview-inactive")
 		})
 
 		previewBtn.$on("click", () => this.setEnabled(!this.enabled))
@@ -655,23 +655,6 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		})
 		
 		this.scene.cameraFocus.y -= 0.5
-
-
-		this.on("enabled", () => {
-			const animName = $("#current-animation-name")
-			if(animName) {
-				this.prevAnimName = animName.textContent
-				animName.textContent = this.currentAnimName || ""
-			}
-		})
-
-		this.on("disabled", () => {
-			const animName = $("#current-animation-name")
-			if(animName && typeof this.prevAnimName === "string") {
-				animName.textContent = this.prevAnimName
-				this.prevAnimName = null
-			}
-		})
 	}
 
 	selectOutfit(target) {
@@ -708,20 +691,21 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 	setVisible(bool) {
 		if(this.isShown === !!bool) { return }
 		this.isShown = !!bool
-
-		document.$watch(["#AssetThumbnail", "#AssetThumbnail .thumbnail-buttons"], (thumb, btns) => {
-			if(this.isShown) {
-				thumb.classList.add("btr-preview-enabled")
-				thumb.append(this.dropdown, this.typeSwitch, this.bundleAnims)
-				btns.append(this.buttons)
-			} else {
-				thumb.classList.remove("btr-preview-enabled")
-				this.dropdown.remove()
-				this.typeSwitch.remove()
-				this.bundleAnims.remove()
-				this.buttons.remove()
-			}
-		})
+		
+		if(this.isShown) {
+			document.$watch(".item-thumbnail-container, #item-thumbnail-container-frontend", thumbCont => {
+				if(this.isShown && !this.container.parentNode) {
+					thumbCont.before(this.container)
+					
+					this.container.parentNode?.classList.toggle("btr-preview-active", this.enabled)
+					this.container.parentNode?.classList.toggle("btr-preview-inactive", !this.enabled)
+				}
+			})
+		} else {
+			this.container.parentNode?.classList.remove("btr-preview-active")
+			this.container.parentNode?.classList.remove("btr-preview-inactive")
+			this.container.remove()
+		}
 	}
 
 	setBundleOutfit(outfitId) {
@@ -769,11 +753,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 				})
 			}
 			
-			const curName = $("#current-animation-name")
-			if(curName) {
-				this.currentAnimName = anim.name
-				curName.textContent = anim.name
-			}
+			this.animNameLabel.textContent = anim.name || ""
 		}
 	}
 

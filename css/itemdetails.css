@@ -128,48 +128,45 @@ a:not(.disabled) > .btr-icon-content:hover {
 	background-position-x: -28px;
 }
 
+/* */
+
 .btr-preview-container-itempage {
 	position: absolute;
 	height: 420px;
 	width: 420px;
 
 	top: 0;
-}
-
-.light-theme .btr-preview-container-itempage {
-	background: #fff;
+	z-index: 2;
+	--btr-btn-color: #fff;
 }
 
 .dark-theme .btr-preview-container-itempage {
-	background: #393b3d;
+	--btr-btn-color: #393b3d;
 }
 
-#AssetThumbnail.btr-preview-active .thumbnail-span {
-	display: none !important;
-}
-
-#AssetThumbnail.btr-preview-active {
+.btr-preview-inactive .btr-preview-container-itempage {
 	pointer-events: none;
 }
 
-.light-theme #AssetThumbnail.btr-preview-active,
-.dark-theme #AssetThumbnail.btr-preview-active {
-	background: none;
-}
-
-#AssetThumbnail.btr-preview-active > * {
-	pointer-events: auto;
+.btr-preview-inactive .btr-preview-container-itempage > *:not(.btr-thumb-btn-container) {
+	display: none;
 }
 
 /* */
 
-#AssetThumbnail {
-	--btr-btn-color: #fff;
+.btr-preview-inactive .btr-preview-container {
+	display: none;
 }
 
-.dark-theme #AssetThumbnail {
-	--btr-btn-color: #393b3d;
+.light-theme .btr-preview-container {
+	background: #fff;
 }
+
+.dark-theme .btr-preview-container {
+	background: #393b3d;
+}
+
+/* */
 
 .btr-thumb-btn-container {
 	display: inline-flex;
@@ -180,26 +177,26 @@ a:not(.disabled) > .btr-icon-content:hover {
 	vertical-align: bottom;
 	margin: 12px;
 	margin-left: -2px;
-}
-
-#AssetThumbnail:not(.btr-preview-active) .enable-three-dee + .btr-thumb-btn-container {
+	
 	position: absolute;
 	bottom: 56px;
 	right: 0;
+	
+	pointer-events: all;
 }
 
-#AssetThumbnail.btr-preview-active .thumbnail-buttons > :not(.btr-thumb-btn-container),
-#AssetThumbnail.btr-preview-active .asset-status-icon,
-#AssetThumbnail.btr-preview-active .asset-restriction-icon,
-.btr-preview-container-itempage ~ .bundle-animation-btn-container {
+.btr-preview-active .btr-thumb-btn-container {
+	bottom: 0px;
+}
+
+.btr-preview-inactive .btr-thumb-btn-container .btr-thumb-btn:not(.btr-preview-btn) {
 	display: none;
 }
 
-#AssetThumbnail:not(.btr-preview-active) .btr-thumb-btn:not(.btr-preview-btn),
-#AssetThumbnail:not(.btr-preview-active) .btr-playertype-switch,
-#AssetThumbnail:not(.btr-preview-active) .btr-dropdown-container,
-#AssetThumbnail:not(.btr-preview-active) .btr-bundle-animations {
-	display: none;
+.btr-preview-active .item-thumbnail-container,
+.btr-preview-active #item-thumbnail-container-frontend {
+	opacity: 0 !important;
+	pointer-events: none !important;
 }
 
 html body .btr-thumb-btn-container .btr-thumb-btn {
@@ -411,6 +408,15 @@ html body .btr-thumb-btn-container .btr-thumb-btn {
 .btr-thumb-popup.btr-body-popup input[type=range]:not(:disabled)::-moz-range-thumb:hover { box-shadow: none; }
 
 /* */
+
+.btr-animation-name {
+	margin: 0 12px 12px;
+    line-height: 1em;
+    float: left;
+    position: absolute;
+    bottom: 50px;
+    font-size: 18px;
+}
 
 .btr-bundle-animations {
 	position: absolute;
