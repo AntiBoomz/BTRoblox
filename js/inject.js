@@ -322,6 +322,14 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 	}
 
 	//
+	
+	const onReady = fn => {
+		if(document.readyState === "loading") {
+			document.addEventListener("DOMContentLoaded", fn, { once: true })
+		} else {
+			Promise.resolve().then(fn)
+		}
+	}
 
 	const onSet = (a, b, c) => {
 		if(a[b]) { return c(a[b]) }
@@ -1380,8 +1388,10 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 				}
 			}
 			
-			window.addEventListener("hashchange", updateHash)
-			updateHash()
+			onReady(() => {
+				window.addEventListener("hashchange", updateHash)
+				updateHash()
+			})
 		}
 	}
 
@@ -1463,10 +1473,5 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 	//
 	
 	preInit()
-		
-	if(document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", documentReady, { once: true })
-	} else {
-		Promise.resolve().then(documentReady)
-	}
+	onReady(documentReady)
 }
