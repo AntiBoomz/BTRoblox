@@ -17,6 +17,7 @@ const DEFAULT_SETTINGS = {
 		hoverPreview: { value: true },
 		hoverPreviewMode: { value: "always", validValues: ["always", "never"] },
 		
+		cacheRobuxAmount: { value: true },
 		higherRobuxPrecision: { value: true },
 		enableContextMenus: { value: true },
 		

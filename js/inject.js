@@ -496,6 +496,35 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 			})
 		}
 		
+		if(settings.general.cacheRobuxAmount) {
+			reactHook.replaceConstructor(
+				([fn, props]) => "robuxAmount" in props && fn.toString().includes("nav-robux-amount"),
+				(target, thisArg, args) => {
+					const result = target.apply(thisArg, args)
+					
+					try {
+						const amountLabel = reactHook.queryElement(result, x => x.props?.id === "nav-robux-amount")
+						
+						if(amountLabel) {
+							if(amountLabel.props.children) {
+								if(typeof amountLabel.props.children === "string") {
+									localStorage.setItem("btr-cached-robux", amountLabel.props.children)
+								}
+							} else {
+								const cached = localStorage.getItem("btr-cached-robux")
+								
+								if(cached) {
+									amountLabel.props.children = cached
+								}
+							}
+						}
+					} catch(ex) {}
+					
+					return result
+				}
+			)
+		}
+		
 		if(settings.general.higherRobuxPrecision) {
 			let hijackTruncValue = false
 
