@@ -32,24 +32,23 @@
 	height: 15px;
 }
 
-.item-table[data-in-showcase$='alse'] .btr-listed-status {
-	background-position:0 -30px;
-}
-
-.item-table[data-in-showcase$='alse'] .btr-listed-status:hover {
-	background-position: 0 -45px;
-	text-decoration: none;
-}
-
-.item-table:not([data-in-showcase$='alse']) .btr-listed-status:hover {
+.item-table .btr-listed-status:hover {
 	background-position: 0 -15px;
 	text-decoration: none;
 }
 
-.item-table[data-in-showcase$='alse'] .btr-listed-status:after {
-	content: "Unlisted";
+.item-table .btr-listed-status.unlisted {
+	background-position:0 -30px;
 }
 
-.item-table:not([data-in-showcase$='alse']) .btr-listed-status:after {
+.item-table .btr-listed-status.unlisted:hover {
+	background-position: 0 -45px;
+}
+
+.item-table .btr-listed-status:after {
 	content: "Listed";
+}
+
+.item-table .btr-listed-status.unlisted:after {
+	content: "Unlisted";
 }
