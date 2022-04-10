@@ -226,11 +226,15 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 			}
 
 			if(typeof args[0] === "function") {
+				let handler = args[0]
+				
 				for(const info of this.constructorReplaces) {
 					if(info.filter(args)) {
-						args[0] = new Proxy(args[0], { apply: info.handler })
+						handler = new Proxy(handler, { apply: info.handler })
 					}
 				}
+				
+				args[0] = handler
 			}
 			
 			if(props?.dangerouslySetInnerHTML?.__html !== " ") { // Skip our own elems
