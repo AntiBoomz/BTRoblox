@@ -85,43 +85,69 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 		constructorReplaces: [],
 		injectedContent: [],
 		
-		createGlobalState(value) {
-			return {
-				listeners: new Set(),
-				value: value,
-				counter: 0,
-				
-				update() {
-					this.counter++
-					
-					for(const setValue of this.listeners.values()) {
-						setValue(this.counter)
-					}
-				}
-			}
-		},
+		stateQueue: [],
+		stateIndex: 0,
 		
-		useGlobalState(globalState) {
-			const [, setValue] = React.useState()
-			
-			React.useEffect(() => {
-				globalState.listeners.add(setValue)
-				return () => {
-					globalState.listeners.delete(setValue)
-				}
-			}, [])
-			
-			return globalState.value
-		},
+		// Content injection
 		
 		contentInject(data) {
 			this.injectedContent.push(data)
 		},
 		
-		replaceConstructor(filter, handler) {
-			this.constructorReplaces.push({
-				filter, handler
-			})
+		processContent(args) {
+			const props = args[1]
+			
+			const rootElem = {
+				type: args[0],
+				key: props.key,
+				props: {
+					...props,
+					key: null,
+					children: args.slice(2)
+				}
+			}
+			
+			const childrenModified = new WeakSet()
+			
+			for(const content of this.injectedContent) {
+				const target = this.contentQuery(content.selector, rootElem)
+				if(!target) { continue }
+				
+				if(!childrenModified.has(target)) {
+					childrenModified.add(target)
+					target.props.children = this.flattenChildren(target.props.children)
+					
+					if(target === rootElem) {
+						args.splice(2, args.length - 2, target.props.children)
+					}
+				}
+				
+				const children = target.props.children
+				let index = 0
+				
+				if(typeof content.index === "number") {
+					index = content.index
+				} else if (typeof content.index === "object") {
+					for(let i = 0; i < children.length; i++) {
+						const child = children[i]
+						
+						if(child.props && this.selectorsMatch(content.index.selector, child)) {
+							index = i + (content.index.offset || 0) + 1
+							break
+						}
+					}
+				}
+				
+				children.splice(
+					index,
+					0,
+					React.createElement(content.elemType, {
+						key: content.elemId,
+						id: content.elemId,
+						dangerouslySetInnerHTML: { __html: " " }
+					})
+				)
+			}
 		},
 		
 		flattenChildren(children) {
@@ -180,7 +206,7 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 			return false
 		},
 		
-		querySelector(selectors, elem) {
+		contentQuery(selectors, elem) {
 			for(const selector of selectors) {
 				if(!this.selectorMatches(selector, elem)) { continue }
 				
@@ -217,81 +243,84 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 			
 			return null
 		},
-
-		onCreateElement(args) {
-			const props = args[1]
-			
-			if(!settings || !(props instanceof Object)) {
-				return
-			}
-
-			if(typeof args[0] === "function") {
-				let handler = args[0]
+		
+		// Global state
+		
+		createGlobalState(value) {
+			return {
+				listeners: new Set(),
+				value: value,
+				counter: 0,
 				
-				for(const info of this.constructorReplaces) {
-					if(info.filter(args)) {
-						handler = new Proxy(handler, { apply: info.handler })
-					}
-				}
-				
-				args[0] = handler
-			}
-			
-			if(props?.dangerouslySetInnerHTML?.__html !== " ") { // Skip our own elems
-				const rootElem = {
-					type: args[0],
-					key: props.key,
-					props: {
-						...props,
-						key: null,
-						children: args.slice(2)
-					}
-				}
-				
-				const childrenModified = new WeakSet()
-				
-				for(const content of this.injectedContent) {
-					const target = this.querySelector(content.selector, rootElem)
-					if(!target) { continue }
+				update() {
+					this.counter++
 					
-					if(!childrenModified.has(target)) {
-						childrenModified.add(target)
-						target.props.children = this.flattenChildren(target.props.children)
-						
-						if(target === rootElem) {
-							args.splice(2, args.length - 2, target.props.children)
-						}
+					for(const setValue of this.listeners.values()) {
+						setValue(this.counter)
 					}
-					
-					const children = target.props.children
-					let index = 0
-					
-					if(typeof content.index === "number") {
-						index = content.index
-					} else if (typeof content.index === "object") {
-						for(let i = 0; i < children.length; i++) {
-							const child = children[i]
-							
-							if(child.props && this.selectorsMatch(content.index.selector, child)) {
-								index = i + (content.index.offset || 0) + 1
-								break
-							}
-						}
-					}
-					
-					children.splice(
-						index,
-						0,
-						React.createElement(content.elemType, {
-							key: content.elemId,
-							id: content.elemId,
-							dangerouslySetInnerHTML: { __html: " " }
-						})
-					)
 				}
 			}
 		},
-
+		
+		useGlobalState(globalState) {
+			const [, setValue] = React.useState()
+			
+			React.useEffect(() => {
+				globalState.listeners.add(setValue)
+				return () => {
+					globalState.listeners.delete(setValue)
+				}
+			}, [])
+			
+			return globalState.value
+		},
+		
+		// 
+		
+		hijackConstructor(filter, handler) {
+			this.constructorReplaces.push({
+				filter, handler
+			})
+		},
+		
+		hijackUseState(filter) {
+			if("expectedValue" in filter && filter.filter) {
+				throw new TypeError("can't have both filter.expectedValue and filter.filter")
+			}
+			
+			if(Number.isSafeInteger(filter.index)) {
+				if(filter.index < 0) {
+					throw new TypeError("filter.index is not a positive integer")
+				}
+				
+				filter = {
+					...filter,
+					index: this.stateIndex + filter.index + 1
+				}
+				
+			} else if(filter.filter) {
+				// we good
+				
+			} else {
+				throw new TypeError("neither filter.index or filter.filter is not set")
+			}
+			
+			this.stateQueue.push(filter)
+			
+			Promise.resolve().then(() => {
+				const index = this.stateQueue.indexOf(filter)
+				
+				if(index !== -1) {
+					this.stateQueue.splice(index, 1)
+					
+					if(IS_DEV_MODE) {
+						console.log("failed to resolve hijackUseState", filter)
+						alert("failed to resolve hijackUseState")
+					}
+				}
+			})
+		},
+		
 		queryElement(self, filter, n = 5) {
 			if(self && filter(self)) {
 				return self
@@ -318,6 +347,99 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 					}
 				}
 			}
+		},
+		
+		//
+		
+		onCreateElement(args) {
+			const props = args[1]
+			
+			if(typeof args[0] === "function") {
+				let handler = args[0]
+				
+				for(const info of this.constructorReplaces) {
+					if(info.filter(args)) {
+						handler = new Proxy(handler, { apply: info.handler })
+					}
+				}
+				
+				args[0] = handler
+			}
+			
+			if(props?.dangerouslySetInnerHTML?.__html !== " ") { // Skip our own elems
+				this.processContent(args)
+			}
+		},
+		
+		init() {
+			onSet(window, "React", React => {
+				hijackFunction(React, "createElement", (target, thisArg, args) => {
+					if(args[1] == null) {
+						args[1] = {}
+					}
+					
+					try { reactHook.onCreateElement(args) }
+					catch(ex) { console.error(ex) }
+					
+					return target.apply(thisArg, args)
+				})
+				
+				hijackFunction(React, "useState", (target, thisArg, args) => {
+					this.stateIndex += 1
+					
+					const originalValue = args[0]
+					const matches = []
+					
+					for(let i = 0; i < this.stateQueue.length; i++) {
+						const filter = this.stateQueue[i]
+						let filterFn = filter.filter
+						
+						if(filter.index) {
+							if(filter.index !== this.stateIndex) {
+								continue
+							}
+							
+						} else if(filterFn) {
+							if(!filterFn.call(filter, originalValue, args[0])) {
+								continue
+							}
+							
+							filterFn = null
+						}
+						
+						this.stateQueue.splice(i--, 1)
+						
+						if("expectedValue" in filter && originalValue !== filter.expectedValue) {
+							continue
+						} else if(filterFn && filterFn.call(filter, originalValue, args[0])) {
+							continue
+						}
+						
+						if(filter.transform) {
+							args[0] = filter.transform(args[0])
+						}
+						
+						matches.push(filter)
+					}
+					
+					let result = target.apply(thisArg, args)
+					
+					for(const filter of matches) {
+						if(filter.transform) {
+							hijackFunction(result, 1, (target, thisArg, args) => {
+								args[0] = filter.transform(args[0])
+								return target.apply(thisArg, args)
+							})
+						}
+						
+						if(filter.replace) {
+							result = filter.replace(result)
+						}
+					}
+					
+					return result
+				})
+			})
 		}
 	}
 
@@ -420,6 +542,8 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 	//
 
 	function preInit() {
+		reactHook.init()
+		
 		onSet(window, "angular", angular => {
 			onSet(angular, "module", () => {
 				const initModule = module => {
@@ -457,14 +581,6 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 					initModule(module)
 					return module
 				})
-			})
-		})
-
-		onSet(window, "React", React => {
-			hijackFunction(React, "createElement", (target, thisArg, args) => {
-				try { reactHook.onCreateElement(args) }
-				catch(ex) { console.error(ex) }
-				return target.apply(thisArg, args)
 			})
 		})
 		
@@ -505,7 +621,7 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 		}
 		
 		if(settings.general.cacheRobuxAmount) {
-			reactHook.replaceConstructor(
+			reactHook.hijackConstructor(
 				([fn, props]) => "robuxAmount" in props && fn.toString().includes("nav-robux-amount"),
 				(target, thisArg, args) => {
 					const result = target.apply(thisArg, args)
@@ -556,7 +672,7 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 				})
 			})
 
-			reactHook.replaceConstructor(
+			reactHook.hijackConstructor(
 				([fn, props]) => "robuxAmount" in props && fn.toString().includes("nav-robux-amount"),
 				(target, thisArg, args) => {
 					hijackTruncValue = true
@@ -1208,6 +1324,7 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 								React.createElement(
 									"span", {
 										className: "btr-pager-total",
+										title: (!btrPager.foundMaxPage && !btrPager.updatingMaxPage) ? "Click to load more" : null,
 										style: {
 											opacity: (!btrPager.foundMaxPage && !btrPager.updatingMaxPage) ? "0.7" : null,
 											cursor: (!btrPager.foundMaxPage && !btrPager.updatingMaxPage) ? "pointer" : null
@@ -1265,7 +1382,7 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 				)
 			}
 			
-			reactHook.replaceConstructor( // RunningGameServers
+			reactHook.hijackConstructor( // RunningGameServers
 				args => args[1]?.getGameServers,
 				(target, thisArg, args) => {
 					const [props] = args
@@ -1293,7 +1410,7 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 				}
 			)
 			
-			reactHook.replaceConstructor( // GameSection
+			reactHook.hijackConstructor( // GameSection
 				args => args[1]?.loadMoreGameInstances,
 				(target, thisArg, args) => {
 					if(args[0].btrPagerEnabled) {
@@ -1337,7 +1454,7 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 				}
 			)
 			
-			reactHook.replaceConstructor( // GameInstance
+			reactHook.hijackConstructor( // GameInstance
 				args => args[1]?.gameServerStatus,
 				(target, thisArg, args) => {
 					const result = target.apply(thisArg, args)
@@ -1350,7 +1467,7 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 							if(!Array.isArray(entries)) { entries = [entries] }
 							
 							for(const entry of entries) {
-								const thumb = reactQuery(entry, x => x.props?.type === "AvatarHeadshot")
+								const thumb = reactHook.queryElement(entry, x => x.props?.type === "AvatarHeadshot")
 								
 								if(thumb && thumb.props.token?.startsWith("btr/")) {
 									const token = thumb.props.token
