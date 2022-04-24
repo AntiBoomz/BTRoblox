@@ -1073,7 +1073,7 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 		if(currentPage === "gamedetails" && settings.gamedetails.enabled) {
 			const placeId = matches[0]
 			
-			const btrPager = { currentPage: 1, targetPage: 1, hasMore: false, loading: false }
+			const btrPager = { currentPage: 1, targetPage: 1, loading: false }
 			const cursors = []
 			
 			const findMaxPage = async largePageIndex => {
@@ -1135,7 +1135,7 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 					let cursor
 					let limit
 					
-					if(targetPage <= 1) {
+					if(targetPage <= 1 && btrPager.maxPage == null) {
 						cursor = ""
 						limit = 10
 					} else {
@@ -1156,31 +1156,28 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 						}
 						
 						const json = await res.json()
+						const numSmallPages = Math.floor((json.data.length - 1) / 10) + 1
+							
+						if(numSmallPages === 0 && largePageIndex > 1) {
+							cursors.splice(largePageIndex - 2, cursors.length)
+							return loadServers((largePageIndex - 1) * 10)
+						} else {
+							const largestKnownPage = (largePageIndex - 1) * 10 + Math.max(1, numSmallPages)
+							
+							if(json.nextPageCursor) {
+								if((btrPager.maxPage ?? -1) < largestKnownPage + 1) {
+									btrPager.maxPage = largestKnownPage + 1
+									btrPagerState.update()
+								}
+							} else {
+								btrPager.maxPage = largestKnownPage
+								btrPager.foundMaxPage = true
+								btrPagerState.update()
+								updatedMaxPage = true
+							}
+						}
 						
 						if(limit === 100) {
-							const numSmallPages = Math.floor((json.data.length - 1) / 10) + 1
-							
-							if(numSmallPages === 0 && largePageIndex > 1) {
-								cursors.splice(largePageIndex - 2, cursors.length)
-								return loadServers((largePageIndex - 1) * 10)
-							}
-							
-							if(numSmallPages > 0 || largePageIndex === 1) {
-								const largestKnownPage = (largePageIndex - 1) * 10 + Math.max(1, numSmallPages)
-								
-								if(json.nextPageCursor) {
-									if((btrPager.maxPage ?? -1) < largestKnownPage + 1) {
-										btrPager.maxPage = largestKnownPage + 1
-										btrPagerState.update()
-									}
-								} else {
-									btrPager.maxPage = largestKnownPage
-									btrPager.foundMaxPage = true
-									btrPagerState.update()
-									updatedMaxPage = true
-								}
-							}
-							
 							if(json.nextPageCursor) {
 								cursors[largePageIndex - 1] = json.nextPageCursor
 								
@@ -1195,17 +1192,8 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 							
 							json.nextPageCursor = (json.nextPageCursor || smallPageIndex < numSmallPages) ? "idk" : ""
 							json.data = json.data.slice((smallPageIndex - 1) * 10, smallPageIndex * 10)
-						} else {
-							if(!json.nextPageCursor) {
-								btrPager.maxPage = 1
-								btrPager.foundMaxPage = true
-								btrPagerState.update()
-								updatedMaxPage = true
-							}
-						}
-						
-						if(!updatedMaxPage && !btrPager.updatingMaxPage) {
-							if(limit === 100 || btrPager.maxPage) {
+							
+							if(!updatedMaxPage && !btrPager.updatingMaxPage) {
 								btrPager.updatingMaxPage = true
 								btrPagerState.update()
 								
@@ -1338,7 +1326,7 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 											}
 										}
 									},
-									btrPager.maxPage ? `${btrPager.maxPage}${btrPager.foundMaxPage ? "" : "+"}` : "??"
+									btrPager.foundMaxPage ? `${btrPager.maxPage}` : btrPager.maxPage ? `${btrPager.maxPage - 1}+` : "1"
 								)
 							)
 						),
