@@ -1480,23 +1480,35 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 				}
 			)
 			
-			const updateHash = ev => {
-				const hash = location.hash
-				
-				if(ev && new window.URL(ev.newURL).hash !== hash) {
-					return
+			reactHook.hijackConstructor( // App (serverList)
+				args => args[0].toString().includes("getPublicGameInstances"),
+				(target, thisArg, args) => {
+					reactHook.hijackUseState({ // shouldRender
+						index: 0,
+						expectedValue: false,
+						
+						transform(value) {
+							return true
+						}
+					})
+					
+					reactHook.hijackUseState({ // currentTab
+						filter(value) {
+							return ["tab-about", "tab-game-instances", "tab-store"].includes(value)
+						},
+						
+						transform(value) {
+							if(value === "tab-about" && window.location.hash !== "#!/about") {
+								return "tab-game-instances"
+							}
+							
+							return value
+						}
+					})
+					
+					return target.apply(thisArg, args)
 				}
-				
-				if(!hash || !ev && hash !== "#!/about" && hash !== "#!/store" && hash !== "#!/game-instances") {
-					history.replaceState("", document.title, location.pathname + location.search + "#!/game-instances")
-					setTimeout(() => history.replaceState("", document.title, location.pathname + location.search + hash), 0)
-				}
-			}
-			
-			onReady(() => {
-				window.addEventListener("hashchange", updateHash)
-				updateHash()
-			})
+			)
 		}
 	}
 
