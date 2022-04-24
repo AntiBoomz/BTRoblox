@@ -28,6 +28,9 @@ const DEFAULT_SETTINGS = {
 		friendsSecondRow: { value: false },
 		friendPresenceLinks: { value: false }
 	},
+	messages: {
+		enabled: { value: true }
+	},
 	navigation: {
 		enabled: { value: true },
 		noHamburger: { value: true },

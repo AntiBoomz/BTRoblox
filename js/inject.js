@@ -717,44 +717,6 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 				}
 			})
 		}
-
-		if(currentPage === "messages") {
-			hijackAngular("messages", {
-				messagesNav(handler, args, argMap) {
-					const result = handler.apply(this, args)
-
-					try {
-						const { $location } = argMap
-
-						const link = result.link
-						result.link = function(u) {
-							try {
-								u.btr_setPage = function($event) {
-									const value = +$event.target.value
-
-									if(!Number.isNaN(value)) {
-										$location.search({ page: value })
-										$event.target.value = value
-									} else {
-										$event.target.value = u.currentStatus.currentPage
-									}
-								}
-							} catch(ex) {
-								console.error(ex)
-								if(IS_DEV_MODE) { alert("hijackAngular Error") }
-							}
-
-							return link.call(this, u)
-						}
-					} catch(ex) {
-						console.error(ex)
-						if(IS_DEV_MODE) { alert("hijackAngular Error") }
-					}
-
-					return result
-				}
-			})
-		}
 	}
 
 	function documentReady() {

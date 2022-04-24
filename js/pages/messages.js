@@ -7,144 +7,126 @@ class MarkAllAsReadAction {
 		this.markAsReadUrl = `https://privatemessages.roblox.com/v1/messages/mark-read`
 
 		this.reqParams = { credentials: "include", cache: "no-store" }
+		
+		this.messagesPerReadRequest = 20 // more than this errors
 		this.threadCount = 5
-
-		this.state = "IDLE"
-		this.pagesToCheck = []
-		this.unreadMessageIds = []
+		
+		this.unreadMessagesTotal = 0
 		this.unreadMessagesLeft = 0
-
-		this.elem = $(".btr-markAllAsReadInbox")
+		this.unreadMessageIds = []
+		this.pagesToCheck = []
+		this.totalPages = 0
+		this.running = false
 	}
-
-	hasUnreadMessagesLeft() {
-		return this.unreadMessagesLeft > 0
-	}
-
-	isFinished() {
-		return this.state === "FINISHED"
-	}
-
-	execute() {
-		if(this.state !== "IDLE") { return }
-		this.state = "EXECUTE"
-
-		this.getUnreadMessagesLeft()
-
-		if(this.elem) {
-			this.elem.textContent = "Processing..."
+	
+	setButtonText(text) {
+		const elem = $(".btr-markAllAsReadInbox")
+		
+		if(elem) {
+			elem.textContent = text
 		}
 	}
 
-	finish() {
-		if(this.state === "FINISHED") { return }
-		this.state = "FINISHED"
-
-		if(this.elem) {
-			this.elem.textContent = "Done!"
-		}
-
-		console.log("Done!")
-		window.location.reload(true)
-	}
-
-	async getUnreadMessagesLeft() {
-		const unreadCount = (await $.fetch(this.getUnreadCountUrl, this.reqParams).then(resp => resp.json())).count
-		if(unreadCount === 0) {
-			return this.finish()
-		}
-
-		this.unreadMessagesLeft = unreadCount
-		this.loadFirstPage()
-	}
-
-	processPageData(pageData) {
-		pageData.collection.forEach(msg => {
-			if(!msg.isRead) {
-				this.unreadMessageIds.push(msg.id)
-				this.unreadMessagesLeft--
-			}
-		})
-	}
-
-	async markAllAsRead() {
-		if(this.state !== "EXECUTE") { return }
-		this.state = "MARK"
-
-		if(!this.unreadMessageIds.length) {
-			return this.finish()
-		}
-
+	async markAsRead(messageIds) {
+		if(!messageIds.length) { return }
+		
 		const postParams = {
 			method: "POST",
 			credentials: "include",
 			cache: "no-store",
 			headers: { "Content-Type": "application/json" },
 			xsrf: true,
-			body: JSON.stringify({
-				messageIds: this.unreadMessageIds
-			})
+			body: JSON.stringify({ messageIds })
 		}
-
-		$.fetch(this.markAsReadUrl, postParams).then(() => this.finish())
+		
+		const tryFetch = () => $.fetch(this.markAsReadUrl, postParams).catch(tryFetch)
+		return tryFetch()
 	}
 
 	async loadPage(pageNum) {
-		const pageData = await $.fetch(this.getMessagesUrl + pageNum, this.reqParams).then(resp => resp.json())
-		return pageData
+		const tryFetch = () => $.fetch(this.getMessagesUrl + pageNum, this.reqParams).catch(tryFetch)
+		
+		return tryFetch().then(async resp => {
+			const json = await resp.json()
+			
+			for(const msg of json.collection) {
+				if(!msg.isRead) {
+					this.unreadMessageIds.push(msg.id)
+					this.unreadMessagesLeft--
+				}
+			}
+			
+			this.setButtonText(`${this.totalPages - this.pagesToCheck.length}/${this.totalPages} (${this.unreadMessagesTotal - this.unreadMessagesLeft}/${this.unreadMessagesTotal})`)
+			
+			return json
+		})
 	}
 
-	async loadNextPage() {
-		if(!this.pagesToCheck.length) { return }
-
-		const pageN = this.pagesToCheck.pop()
-		const pageData = await this.loadPage(pageN)
-
-		if(this.state !== "EXECUTE") {
-			return
+	async initThread() {
+		while(this.unreadMessagesLeft > 0 && this.pagesToCheck.length) {
+			const pageN = this.pagesToCheck.shift()
+			await this.loadPage(pageN)
+			
+			if(this.unreadMessageIds.length >= this.messagesPerReadRequest) {
+				await this.markAsRead(this.unreadMessageIds.splice(0, this.messagesPerReadRequest))
+			}
+			
+			await new Promise(resolve => setTimeout(resolve, 500))
 		}
-
-		this.processPageData(pageData)
-
-		if(!this.hasUnreadMessagesLeft()) {
-			return this.markAllAsRead()
-		}
-
-		setTimeout(() => this.loadNextPage(), 500)
 	}
-
-	async loadFirstPage() {
-		const pageData = await this.loadPage(0)
-		this.processPageData(pageData)
-
-		const maxPage = pageData.totalPages
-
-		if(!this.hasUnreadMessagesLeft() || maxPage === 1) {
-			return this.finish()
+	
+	async execute() {
+		if(this.running) { return }
+		this.running = true
+		
+		this.setButtonText("Processing...")
+		
+		const tryFetch = () => $.fetch(this.getUnreadCountUrl, this.reqParams).catch(tryFetch)
+		
+		this.unreadMessagesTotal = await tryFetch().then(async resp => (await resp.json()).count)
+		this.unreadMessagesLeft = this.unreadMessagesTotal
+		
+		const threads = []
+		
+		if(this.unreadMessagesLeft > 0) {
+			const pageData = await this.loadPage(0)
+			this.totalPages = pageData.totalPages
+			
+			if(this.unreadMessagesLeft > 0) {
+				for(let i = 1; i <= this.totalPages; i++) {
+					this.pagesToCheck.push(i)
+				}
+		
+				// Shuffle
+				// for(let i = 0; i < this.pagesToCheck.length; i++) {
+				// 	const j = Math.floor(Math.random() * (this.pagesToCheck.length + 1))
+				// 	const v = this.pagesToCheck[i]
+		
+				// 	this.pagesToCheck[i] = this.pagesToCheck[j]
+				// 	this.pagesToCheck[j] = v
+				// }
+		
+				for(let i = 0; i < this.threadCount; i++) {
+					threads.push(this.initThread())
+				}
+			}
 		}
-
-		for(let i = maxPage; i-- > 1;) {
-			this.pagesToCheck.push(i)
+		
+		await Promise.all(threads)
+		
+		while(this.unreadMessageIds.length) {
+			await this.markAsRead(this.unreadMessageIds.splice(0, this.messagesPerReadRequest))
 		}
-
-		// Shuffle
-		// for(let i = 0; i < this.pagesToCheck.length; i++) {
-		// 	const j = Math.floor(Math.random() * (this.pagesToCheck.length + 1))
-		// 	const v = this.pagesToCheck[i]
-
-		// 	this.pagesToCheck[i] = this.pagesToCheck[j]
-		// 	this.pagesToCheck[j] = v
-		// }
-
-		for(let i = 0; i < this.threadCount; i++) {
-			this.loadNextPage()
-		}
+		
+		this.running = false
+		this.setButtonText("Mark All As Read")
 	}
 }
 
 pageInit.messages = function() {
-	document.$watch(">body", body => body.classList.add("btr-messages"))
+	if(!SETTINGS.get("messages.enabled")) { return }
 	
+	document.$watch(">body", body => body.classList.add("btr-messages"))
 
 	modifyTemplate("messages-nav", template => {
 		const curPage = template.$find(".CurrentPage")
@@ -181,11 +163,63 @@ pageInit.messages = function() {
 	let markAllAsRead
 
 	document.$on("click", ".btr-markAllAsReadInbox", () => {
-		if(markAllAsRead && !markAllAsRead.isFinished()) {
+		if(markAllAsRead?.running) {
 			return
 		}
 
 		markAllAsRead = new MarkAllAsReadAction()
-		markAllAsRead.execute()
+		markAllAsRead.execute().then(() => {
+			markAllAsRead = null
+			
+			InjectJS.inject(() => {
+				const scope = angular.element(document.querySelector(`div[ng-controller="messagesController"]`))?.scope()
+				
+				if(scope) {
+					scope.getMessages(scope.currentStatus.activeTab, scope.currentStatus.currentPage)
+					scope.$digest()
+				}
+			})
+		})
+	})
+	
+	InjectJS.inject(() => {
+		const { hijackAngular, hijackFunction, IS_DEV_MODE } = window.BTRoblox
+		
+		hijackAngular("messages", {
+			messagesNav(handler, args, argMap) {
+				const result = handler.apply(this, args)
+
+				try {
+					const { $location } = argMap
+					
+					hijackFunction(result, "link", (target, thisArg, args) => {
+						try {
+							const [$state] = args
+							
+							$state.btr_setPage = $event => {
+								const value = +$event.target.value
+
+								if(!Number.isNaN(value)) {
+									$location.search({ page: value })
+									$event.target.value = value
+								} else {
+									$event.target.value = $state.currentStatus.currentPage
+								}
+							}
+						} catch(ex) {
+							console.error(ex)
+							if(IS_DEV_MODE) { alert("hijackAngular Error") }
+						}
+
+						return target.apply(thisArg, args)
+					})
+				} catch(ex) {
+					console.error(ex)
+					if(IS_DEV_MODE) { alert("hijackAngular Error") }
+				}
+
+				return result
+			}
+		})
 	})
 }
