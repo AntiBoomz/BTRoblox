@@ -5,8 +5,12 @@ const InjectJS = {
 	queue: [],
 	
 	inject(fn, args) {
+		if(!(fn instanceof Function)) {
+			throw new TypeError("You can only pass functions to inject")
+		}
+		
 		const injector = document.createElement("div")
-		injector.setAttribute("onclick", `(${INJECT_SCRIPT})(${JSON.stringify(args).slice(1, -1)})`)
+		injector.setAttribute("onclick", `(${fn})(${JSON.stringify(Array.isArray(args) ? args : [args]).slice(1, -1)})`)
 		
 		document.documentElement.append(injector)
 		injector.click()

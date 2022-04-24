@@ -419,7 +419,7 @@ const reactInject = data => {
 
 
 pageInit.common = () => {
-	document.$on("click", ".btr-settings-toggle", toggleSettingsModal)
+	// Initialize settings
 	
 	reactInject({
 		selector: "#settings-popover-menu",
@@ -442,6 +442,8 @@ pageInit.common = () => {
 		try { toggleSettingsModal() }
 		catch(ex) { console.error(ex) }
 	}
+	
+	document.$on("click", ".btr-settings-toggle", toggleSettingsModal)
 
 	//
 
@@ -455,6 +457,17 @@ pageInit.common = () => {
 		}
 	}).$then()
 
+	loggedInUserPromise = new SyncPromise(resolve => {
+		headWatcher.$watch(`meta[name="user-data"]`, meta => {
+			const userId = +meta.dataset.userid
+			loggedInUser = Number.isSafeInteger(userId) ? userId : -1
+			isLoggedIn = userId !== -1
+			resolve(loggedInUser)
+		})
+		
+		$.ready(() => resolve(-1))
+	})
+	
 	bodyWatcher.$watch("#roblox-linkify", linkify => {
 		const index = linkify.dataset.regex.search(/\|[^|]*shoproblox\\.com/)
 		
@@ -468,50 +481,43 @@ pageInit.common = () => {
 		}
 	})
 	
-	loggedInUserPromise = new SyncPromise(resolve => {
-		headWatcher.$watch(`meta[name="user-data"]`, meta => {
-			const userId = +meta.dataset.userid
-			loggedInUser = Number.isSafeInteger(userId) ? userId : -1
-			isLoggedIn = userId !== -1
-			resolve(loggedInUser)
+	bodyWatcher.$watch("#navbar-robux").$then()
+		.$watchAll("#buy-robux-popover", popover => {
+			const bal = popover.$find("#nav-robux-balance")
+			if(!bal) { return }
+
+			const span = html`<span style="display:block;opacity:0.75;font-size:small;font-weight:500;"></span>`
+
+			const update = () => {
+				if(!RobuxToCash.isEnabled()) {
+					span.remove()
+					return
+				}
+				
+				const matches = bal.textContent.trim().match(/^([\d,]+)\sRobux$/)
+				if(!matches) { return }
+
+				const amt = parseInt(matches[0].replace(/,/g, ""), 10)
+				if(!Number.isSafeInteger(amt)) { return }
+
+				span.textContent = RobuxToCash.convert(amt)
+				bal.append(span)
+				bal.style.flexDirection = "column"
+			}
+
+			const observer = new MutationObserver(update)
+			observer.observe(bal, { childList: true })
+			update()
+			
+			SETTINGS.onChange("general.robuxToUSDRate", update)
 		})
-		
-		$.ready(() => resolve(-1))
-	})
+	
+	// Init features
 	
 	if(SETTINGS.get("navigation.enabled")) {
 		try { btrNavigation.init() }
 		catch(ex) { console.error(ex) }
 	}
-	
-	bodyWatcher.$watchAll("#buy-robux-popover", popover => {
-		const bal = popover.$find("#nav-robux-balance")
-		if(!bal) { return }
-
-		const span = html`<span style="display:block;opacity:0.75;font-size:small;font-weight:500;"></span>`
-
-		const update = () => {
-			if(!RobuxToCash.isEnabled()) {
-				span.remove()
-				return
-			}
-			
-			const matches = bal.textContent.trim().match(/^([\d,]+)\sRobux$/)
-			if(!matches) { return }
-
-			const amt = parseInt(matches[0].replace(/,/g, ""), 10)
-			if(!Number.isSafeInteger(amt)) { return }
-
-			span.textContent = RobuxToCash.convert(amt)
-			bal.append(span)
-		}
-
-		const observer = new MutationObserver(update)
-		observer.observe(bal, { childList: true })
-		update()
-		
-		SETTINGS.onChange("general.robuxToUSDRate", update)
-	})
 	
 	if(SETTINGS.get("general.fastSearch")) {
 		try { btrFastSearch.init() }
@@ -523,11 +529,150 @@ pageInit.common = () => {
 		catch(ex) { console.error(ex) }
 	}
 	
+	//
+	
+	if(SETTINGS.get("general.fixFirefoxLocalStorageIssue")) {
+		InjectJS.inject(() => {
+			const { onSet, hijackFunction } = window.BTRoblox
+			
+			onSet(window, "CoreRobloxUtilities", CoreRobloxUtilities => {
+				if(!CoreRobloxUtilities?.localStorageService?.saveDataByTimeStamp) { return }
+				
+				const lss = CoreRobloxUtilities.localStorageService
+				const localCache = {}
+				
+				hijackFunction(lss, "storage", () => true)
+				
+				hijackFunction(lss, "removeLocalStorage", (fn, thisArg, args) => {
+					delete localCache[args[0]]
+					return fn.apply(thisArg, args)
+				})
+				
+				hijackFunction(lss, "getLocalStorage", (fn, thisArg, args) => {
+					if(args[0] in localCache) {
+						return JSON.parse(localCache[args[0]])
+					}
+					
+					return fn.apply(thisArg, args)
+				})
+				
+				hijackFunction(lss, "setLocalStorage", (fn, thisArg, args) => {
+					try {
+						delete localCache[args[0]]
+						return fn.apply(thisArg, args)
+					} catch(ex) {
+						localCache[args[0]] = JSON.stringify(args[1])
+						console.error(ex)
+					}
+				})
+			})
+		})
+	}
+	
+	if(SETTINGS.get("general.cacheRobuxAmount")) {
+		InjectJS.inject(() => {
+			const { reactHook } = window.BTRoblox
+			
+			reactHook.hijackConstructor(
+				([fn, props]) => "robuxAmount" in props && fn.toString().includes("nav-robux-amount"),
+				(target, thisArg, args) => {
+					const result = target.apply(thisArg, args)
+					
+					try {
+						const amountLabel = reactHook.queryElement(result, x => x.props?.id === "nav-robux-amount")
+						
+						if(amountLabel) {
+							if(amountLabel.props.children) {
+								if(typeof amountLabel.props.children === "string") {
+									localStorage.setItem("btr-cached-robux", amountLabel.props.children)
+								}
+							} else {
+								const cached = localStorage.getItem("btr-cached-robux")
+								
+								if(cached) {
+									amountLabel.props.children = cached
+								}
+							}
+						}
+					} catch(ex) {}
+					
+					return result
+				}
+			)
+		})
+	}
+	
+	if(SETTINGS.get("general.higherRobuxPrecision")) {
+		InjectJS.inject(() => {
+			const { reactHook, hijackFunction, onSet } = window.BTRoblox
+			let hijackTruncValue = false
+
+			onSet(window, "CoreUtilities", CoreUtilities => {
+				hijackFunction(CoreUtilities.abbreviateNumber, "getTruncValue", (target, thisArg, args) => {
+					if(hijackTruncValue && args.length === 1) {
+						const result = target.apply(thisArg, args)
+
+						if(result.endsWith("+") && result.length < 5) {
+							try {
+								return target.apply(thisArg, [args[0], null, null, result.length - 1])
+							} catch(ex) {
+								console.error(ex)
+							}
+						}
+
+						return result
+					}
+
+					return target.apply(thisArg, args)
+				})
+			})
+
+			reactHook.hijackConstructor(
+				([fn, props]) => "robuxAmount" in props && fn.toString().includes("nav-robux-amount"),
+				(target, thisArg, args) => {
+					hijackTruncValue = true
+					const result = target.apply(thisArg, args)
+					hijackTruncValue = false
+					return result
+				}
+			)
+		})
+	}
+	
+	// Chat
+	
 	if(SETTINGS.get("general.hideChat")) {
 		bodyWatcher.$watch("#chat-container", cont => cont.remove())
 	} else {
 		if(SETTINGS.get("general.smallChatButton")) {
 			bodyWatcher.$watch("#chat-container", cont => cont.classList.add("btr-small-chat-button"))
+			
+			InjectJS.inject(() => {
+				const { hijackAngular, IS_DEV_MODE } = window.BTRoblox
+				
+				hijackAngular("chat", {
+					chatController(func, args, argMap) {
+						const result = func.apply(this, args)
+
+						try {
+							const { $scope, chatUtility } = argMap
+
+							const library = $scope.chatLibrary
+							const width = library.chatLayout.widthOfChat
+
+							$scope.$watch(() => library.chatLayout.collapsed, value => {
+								library.chatLayout.widthOfChat = value ? 54 + 6 : width
+								chatUtility.updateDialogsPosition(library)
+							})
+						} catch(ex) {
+							console.error(ex)
+							if(IS_DEV_MODE) { alert("hijackAngular Error") }
+						}
+
+						return result
+					}
+				})
+			})
 		}
 	}
 }
