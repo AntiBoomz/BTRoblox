@@ -437,18 +437,18 @@ const useNativeAudioPlayer = (mediaPlayer, bigPlayer) => {
 		audio.volume = 0.5
 		
 		if(bigPlayer) {
-			audio.style.cssText = `position:absolute;left:0;bottom:0;width:calc(100% - 50px);padding:10px;`
+			audio.style.cssText = `position:absolute;left:10px;bottom:11px;width:calc(100% - 50px - 20px);height:38px;border-radius:100px;box-shadow:0 0px 3px 1px rgba(0,0,0,0.15);`
 			mediaPlayer.parentNode.after(audio)
 		} else {
-			const parent = document.body
-			const target = mediaPlayer.parentNode.parentNode
+			const parent = document.documentElement
+			const target = mediaPlayer
 			
 			const rect0 = parent.getBoundingClientRect()
 			const rect1 = target.getBoundingClientRect()
 			
-			audio.style.cssText = `position:absolute;transform:translate(-50%,0);width:360px;padding:10px;z-index:1000`
+			audio.style.cssText = `position:absolute;transform:translateX(-50%);width:360px;height:38px;border-radius:100px;box-shadow:0 0px 3px 1px rgba(0,0,0,0.15);z-index:1000`
 			audio.style.left = `${rect1.x + rect1.width / 2 - rect0.x}px`
-			audio.style.top = `${rect1.y + rect1.height - 10 - rect0.y}px`
+			audio.style.top = `${rect1.y + rect1.height + 4 - rect0.y}px`
 			
 			parent.append(audio)
 		}
@@ -463,6 +463,7 @@ const useNativeAudioPlayer = (mediaPlayer, bigPlayer) => {
 					audioPlayer.close()
 				}
 			}, 100),
+			
 			close() {
 				if(currentNativeAudioPlayer === this) {
 					currentNativeAudioPlayer = null
