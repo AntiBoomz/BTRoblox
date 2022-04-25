@@ -5,6 +5,7 @@ const IS_FIREFOX = !!chrome.runtime.getManifest().browser_specific_settings?.gec
 const IS_CHROME = !IS_FIREFOX
 
 const IS_BACKGROUND_PAGE = !self.window || chrome.extension?.getBackgroundPage?.() === self.window
+const IS_CONTENT_SCRIPT = !IS_BACKGROUND_PAGE
 const IS_DEV_MODE = chrome.runtime.getManifest().short_name === "BTRoblox_DEV"
 
 const STORAGE = chrome.storage.local
@@ -103,5 +104,24 @@ const PAGE_INFO = {
 		matches: ["^/universes/configure"],
 		js: [],
 		css: ["universeconfig.css"]
+	}
+}
+
+if(IS_CONTENT_SCRIPT) {
+	const currentPage = (() => {
+		for(const [name, page] of Object.entries(PAGE_INFO)) {
+			for(const pattern of page.matches) {
+				const matches = location.pathname.match(new RegExp(pattern, "i"))
+				if(matches) {
+					return { ...page, name, matches: matches.slice(1) }
+				}
+			}
+		}
+	
+		return null
+	})()
+	
+	window.BTRoblox = {
+		currentPage
 	}
 }

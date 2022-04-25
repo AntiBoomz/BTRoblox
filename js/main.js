@@ -1,18 +1,5 @@
 "use strict"
 
-const currentPage = (() => {
-	for(const [name, page] of Object.entries(PAGE_INFO)) {
-		for(const pattern of page.matches) {
-			const matches = location.pathname.match(new RegExp(pattern, "i"))
-			if(matches) {
-				return { ...page, name, matches: matches.slice(1) }
-			}
-		}
-	}
-
-	return null
-})()
-
 const isValidPage = (() => {
 	if(document.contentType !== "text/html" || location.protocol === "blob") {
 		return false
@@ -28,6 +15,8 @@ const isValidPage = (() => {
 
 if(isValidPage) {
 	SETTINGS.load(() => {
+		const currentPage = BTRoblox.currentPage
+		
 		InjectJS.inject([
 			SETTINGS.serialize(),
 			currentPage ? currentPage.name : null,

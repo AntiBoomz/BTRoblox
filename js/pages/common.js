@@ -534,8 +534,8 @@ pageInit.common = () => {
 		body.classList.toggle("btr-no-hamburger", SETTINGS.get("navigation.noHamburger"))
 		body.classList.toggle("btr-hide-ads", SETTINGS.get("general.hideAds"))
 
-		if(currentPage) {
-			body.dataset.btrPage = currentPage.name
+		if(BTRoblox.currentPage) {
+			body.dataset.btrPage = BTRoblox.currentPage.name
 		}
 	}).$then()
 

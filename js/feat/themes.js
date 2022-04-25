@@ -17,8 +17,8 @@ const btrThemes = {
 	},
 	
 	init() {
-		if(currentPage && currentPage.css) {
-			this.cssFiles.push(...currentPage.css)
+		if(BTRoblox.currentPage?.css) {
+			this.cssFiles.push(...BTRoblox.currentPage.css)
 		}
 
 		injectCSS(...this.cssFiles.map(subPath => `css/${subPath}`))
