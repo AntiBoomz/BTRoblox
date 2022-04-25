@@ -76,10 +76,6 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 		
 		// Content injection
 		
-		contentInject(data) {
-			this.injectedContent.push(data)
-		},
-		
 		processContent(args) {
 			const props = args[1]
 			
@@ -358,6 +354,10 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 		},
 		
 		init() {
+			contentScript.listen("reactInject", data => {
+				this.injectedContent.push(data)
+			})
+			
 			onSet(window, "React", React => {
 				hijackFunction(React, "createElement", (target, thisArg, args) => {
 					if(args[1] == null) {

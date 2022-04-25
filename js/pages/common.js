@@ -414,9 +414,7 @@ const reactInject = data => {
 		callback?.(replace)
 	}, { continuous: true })
 	
-	InjectJS.inject([data], data => {
-		BTRoblox.reactHook.contentInject(data)
-	})
+	InjectJS.send("reactInject", data)
 }
 
 let currentNativeAudioPlayer
