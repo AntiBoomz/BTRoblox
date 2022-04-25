@@ -1,13 +1,22 @@
 "use strict"
 
 const InjectJS = {
-	inject(fn, args) {
-		if(!(fn instanceof Function)) {
-			throw new TypeError("You can only pass functions to inject")
+	inject(args, fn) {
+		if(typeof args === "function") {
+			fn = args
+			args = []
+		}
+		
+		if(typeof fn !== "function") {
+			throw new TypeError("fn is not a function")
+		}
+		
+		if(!Array.isArray(args)) {
+			args = [args]
 		}
 		
 		const injector = document.createElement("div")
-		injector.setAttribute("onclick", `(${fn})(${JSON.stringify(Array.isArray(args) ? args : [args]).slice(1, -1)})`)
+		injector.setAttribute("onclick", `(${fn})(${JSON.stringify(args).slice(1, -1)})`)
 		
 		document.documentElement.append(injector)
 		injector.click()

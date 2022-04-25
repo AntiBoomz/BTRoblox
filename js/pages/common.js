@@ -89,7 +89,7 @@ const robloxLinkify = target => {
 	const className = `btr-linkify-${linkifyCounter++}`
 	target.classList.add("linkify", className)
 	
-	InjectJS.inject(className => $?.(`.${className}`).linkify?.(), [className])
+	InjectJS.inject([className], className => $?.(`.${className}`).linkify?.())
 	target.classList.remove(className)
 }
 
@@ -414,7 +414,9 @@ const reactInject = data => {
 		callback?.(replace)
 	}, { continuous: true })
 	
-	InjectJS.send("reactInject", data)
+	InjectJS.inject([data], data => {
+		BTRoblox.reactHook.contentInject(data)
+	})
 }
 
 let currentNativeAudioPlayer

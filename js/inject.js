@@ -418,9 +418,6 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 					return result
 				})
 			})
-			
-			
-			contentScript.listen("reactInject", (...args) => reactHook.contentInject(...args))
 		}
 	}
 	

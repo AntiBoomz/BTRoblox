@@ -28,12 +28,12 @@ const isValidPage = (() => {
 
 if(isValidPage) {
 	SETTINGS.load(() => {
-		InjectJS.inject(INJECT_SCRIPT, [
+		InjectJS.inject([
 			SETTINGS.serialize(),
 			currentPage ? currentPage.name : null,
 			currentPage ? currentPage.matches : null,
 			IS_DEV_MODE
-		])
+		], INJECT_SCRIPT)
 		
 		btrThemes.init()
 		
