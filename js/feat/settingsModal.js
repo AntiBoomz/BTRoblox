@@ -84,7 +84,7 @@ const btrSettingsModal = (() => {
 				<group label="Place Configure" path=placeConfigure>
 					<checkbox label="Version History" path=versionHistory></checkbox>
 				</group>
-				<group label="WIP / Other" minimizable minimized>
+				<group label="Advanced" minimizable minimized>
 					<div id=btr-settings-wip>
 					</div>
 					<div style="margin-top: 12px; float:right; width: 100%; clear:both">
