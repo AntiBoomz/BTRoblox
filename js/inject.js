@@ -39,26 +39,31 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 	//
 	
 	const contentScript = {
+		messageListeners: {},
+		listening: false,
+		
 		send(action, ...args) {
-			document.dispatchEvent(new CustomEvent("content." + action, { detail: args }))
+			BTRoblox.element.dispatchEvent(new CustomEvent(`content`, { detail: { action, args } }))
 		},
-		listen(actions, callback, props) {
-			const actionList = actions.split(" ")
-			const once = props && props.once
-
-			const cb = ev => {
-				if(once) {
-					actionList.forEach(action => {
-						document.removeEventListener(`inject.${action}`, cb)
-					})
-				}
-
-				return callback(...ev.detail)
+		listen(action, callback) {
+			this.messageListeners[action] = this.messageListeners[action] || []
+			this.messageListeners[action].push(callback)
+			
+			if(!this.listening) {
+				this.listening = true
+				
+				BTRoblox.element.addEventListener(`inject`, ev => {
+					const { action, args } = ev.detail
+					
+					const listeners = this.messageListeners[action]
+					if(!listeners) { return }
+					
+					for(let i = listeners.length; i--;) {
+						try { listeners[i].apply(null, args) }
+						finally {}
+					}
+				})
 			}
-
-			actionList.forEach(action => {
-				document.addEventListener(`inject.${action}`, cb)
-			})
 		}
 	}
 

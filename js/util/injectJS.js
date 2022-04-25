@@ -1,6 +1,9 @@
 "use strict"
 
 const InjectJS = {
+	messageListeners: {},
+	listening: false,
+	
 	inject(args, fn) {
 		if(typeof args === "function") {
 			fn = args
@@ -31,36 +34,31 @@ const InjectJS = {
 		return returnValue
 	},
 
-	send(action, ...detail) {
+	send(action, ...args) {
 		try {
-			if(IS_FIREFOX) { detail = cloneInto(detail, window.wrappedJSObject) }
-			document.dispatchEvent(new CustomEvent(`inject.${action}`, { detail }))
-		} catch(ex) {
-			console.error(ex)
-		}
+			if(IS_FIREFOX) { args = cloneInto(args, window.wrappedJSObject) }
+			BTRoblox.element.dispatchEvent(new CustomEvent(`inject`, { detail: { action, args } }))
+		} finally {}
 	},
 
-	listen(actions, callback, props) {
-		const actionList = actions.split(" ")
-		const once = props && props.once
-
-		const cb = ev => {
-			if(once) {
-				actionList.forEach(action => {
-					document.removeEventListener(`content.${action}`, cb)
-				})
-			}
-
-			if(!ev.detail) {
-				console.warn("[BTRoblox] Didn't get event detail from InjectJS", actions)
-				return
-			}
-
-			return callback(...ev.detail)
+	listen(action, callback) {
+		this.messageListeners[action] = this.messageListeners[action] || []
+		this.messageListeners[action].push(callback)
+		
+		if(!this.listening) {
+			this.listening = true
+			
+			BTRoblox.element.addEventListener(`content`, ev => {
+				const { action, args } = ev.detail
+				
+				const listeners = this.messageListeners[action]
+				if(!listeners) { return }
+				
+				for(let i = listeners.length; i--;) {
+					try { listeners[i].apply(null, args) }
+					finally {}
+				}
+			})
 		}
-
-		actionList.forEach(action => {
-			document.addEventListener(`content.${action}`, cb)
-		})
 	}
 }
