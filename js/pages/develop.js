@@ -28,9 +28,7 @@ pageInit.develop = function() {
 				}
 			}
 			
-			fetch(`/users/profile/playergames-json?userId=${loggedInUser}`).then(async res => {
-				const json = await res.json()
-				
+			RobloxApi.www.getProfilePlayerGames(loggedInUser).then(json => {
 				for(const game of json.Games) {
 					setInShowcase(+game.PlaceID, true)
 				}

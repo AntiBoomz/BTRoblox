@@ -136,19 +136,23 @@ const RobloxApi = {
 		)
 	},
 	thumbnails: {
-		getAvatarHeadshots: backgroundCall(userIds => 
+		getAvatarHeadshots: backgroundCall(userIds =>
 			btrFetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userIds.join(",")}&size=48x48&format=Png`)
 				.then(async res => (await res.json()).data)
 		)
 	},
 	www: {
+		getProfilePlayerGames: backgroundCall(userId =>
+			btrFetch(`https://www.roblox.com/users/profile/playergames-json?userId=${userId}`)
+				.then(res => res.json())
+		),
 		deleteAssetFromInventory: backgroundCall(assetId =>
 			btrFetch(`https://www.roblox.com/asset/delete-from-inventory`, {
 				method: "POST",
 				credentials: "include",
 				body: new URLSearchParams({ assetId }),
 				xsrf: true
-			})
+			}).then(res => res.json())
 		)
 	}
 }
