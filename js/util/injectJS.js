@@ -16,11 +16,19 @@ const InjectJS = {
 		}
 		
 		const injector = document.createElement("div")
-		injector.setAttribute("onclick", `(${fn})(${JSON.stringify(args).slice(1, -1)})`)
+		injector.setAttribute("onclick", `this.dataset.returnValue = JSON.stringify((${fn})(${JSON.stringify(args).slice(1, -1)}))`)
 		
 		document.documentElement.append(injector)
 		injector.click()
+		
+		let returnValue
+		
+		try { returnValue = JSON.parse(injector.dataset.returnValue) }
+		catch(ex) {}
+		
 		injector.remove()
+		
+		return returnValue
 	},
 
 	send(action, ...detail) {
