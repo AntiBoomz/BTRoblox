@@ -67,5 +67,19 @@ const btrAdblock = {
 				}
 			}
 		}).observe(document.documentElement, { childList: true, subtree: true })
+		
+		InjectJS.inject(() => {
+			const { onReady } = window.BTRoblox
+			
+			onReady(() => {
+				if(window.Roblox?.PrerollPlayer) {
+					window.Roblox.PrerollPlayer.waitForPreroll = x => $.Deferred().resolve(x)
+				}
+
+				if(window.Roblox?.VideoPreRollDFP) {
+					window.Roblox.VideoPreRollDFP = null
+				}
+			})
+		})
 	}
 }

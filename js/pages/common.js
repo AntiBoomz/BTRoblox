@@ -639,6 +639,35 @@ pageInit.common = () => {
 		})
 	}
 	
+	if(SETTINGS.get("general.fixAudioVolume")) {
+		InjectJS.inject(() => {
+			const { hijackFunction, onReady } = window.BTRoblox
+			
+			onReady(() => {
+				const audioService = window.Roblox?.Audio?.AudioService
+				
+				if(audioService) {
+					hijackFunction(audioService, "getAudioPlayer", (target, thisArg, args) => {
+						const origAudio = window.Audio
+		
+						const audioProxy = new Proxy(origAudio, {
+							construct(target, args) {
+								const audio = new target(...args)
+								audio.volume = 0.3
+								return audio
+							}
+						})
+		
+						window.Audio = audioProxy
+						const result = target.apply(thisArg, args)
+						window.Audio = origAudio
+						return result
+					})
+				}
+			})
+		})
+	}
+	
 	// Chat
 	
 	if(SETTINGS.get("general.hideChat")) {

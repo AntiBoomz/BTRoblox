@@ -592,38 +592,6 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 		}
 
 		if(typeof Roblox !== "undefined") {
-			if(settings.general.fixAudioVolume) {
-				const audioService = Roblox.Audio && Roblox.Audio.AudioService
-
-				if(audioService && audioService.getAudioPlayer) {
-					hijackFunction(audioService, "getAudioPlayer", (target, thisArg, args) => {
-						const origAudio = window.Audio
-
-						const audioProxy = new Proxy(origAudio, {
-							construct(target, args) {
-								const audio = new target(...args)
-								audio.volume = 0.3
-								return audio
-							}
-						})
-
-						window.Audio = audioProxy
-						const result = target.apply(thisArg, args)
-						window.Audio = origAudio
-						return result
-					})
-				}
-			}
-
-			if(settings.general.hideAds) {
-				if(Roblox.PrerollPlayer) {
-					Roblox.PrerollPlayer.waitForPreroll = x => $.Deferred().resolve(x)
-				}
-
-				if(Roblox.VideoPreRollDFP) {
-					Roblox.VideoPreRollDFP = null
-				}
-			}
 
 			if(currentPage === "develop") {
 				if(Roblox.BuildPage) {
