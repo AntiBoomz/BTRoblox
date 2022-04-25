@@ -1,54 +1,66 @@
 "use strict"
 
-const templateDomParser = new DOMParser()
-const templatePromises = {}
+const templateCache = {}
 
-function modifyTemplate(idList, callback) {
-	if(typeof idList === "string") {
-		idList = [idList]
+function modifyTemplate(keyArray, callback) {
+	if(typeof keyArray === "string") {
+		keyArray = [keyArray]
 	}
-
-	const templates = new Array(idList.length)
-	let templatesLeft = idList.length
-
-	const finish = () => {
-		try { callback(...templates) }
-		catch(ex) {
-			console.error(ex)
-
-			if(IS_DEV_MODE) {
-				alert("Hey, modifyTemplate errored!")
+	
+	const listener = {
+		finished: false,
+		
+		update() {
+			for(const key of keyArray) {
+				if(!templateCache[key].body) {
+					console.log("missing some", keyArray)
+					return
+				}
+			}
+			
+			if(this.finished) { return }
+			this.finished = true
+			
+			const args = []
+			
+			for(const key of keyArray) {
+				const cacheEntry = templateCache[key]
+				cacheEntry.listeners.delete(listener)
+				args.push(cacheEntry.body)
+			}
+			
+			try { callback(...args) }
+			finally {}
+			
+			for(const key of keyArray) {
+				const cacheEntry = templateCache[key]
+				InjectJS.send("updateTemplate", key, cacheEntry.body.innerHTML)
 			}
 		}
-		
-		idList.forEach((id, i) => {
-			InjectJS.send(`TEMPLATE_${id}`, templates[i].innerHTML)
-		})
 	}
-
-	idList.forEach((id, index) => {
-		if(!templatePromises[id]) {
-			templatePromises[id] = new SyncPromise(resolve => InjectJS.listen(
-				`TEMPLATE_${id}`,
-				html => resolve(templateDomParser.parseFromString(`<body>${html}</body>`, "text/html").body),
-				{ once: true }
-			))
-
-			InjectJS.send("initTemplate", id)
-		}
-		
-		templatePromises[id].then(template => {
-			templates[index] = template
-
-			if(--templatesLeft === 0) {
-				finish()
-			}
-		})
-	})
-
+	
 	$.ready(() => setTimeout(() => {
-		if(templatesLeft > 0) {
-			THROW_DEV_WARNING(`Missing templates in modifyTemplate ${JSON.stringify(idList)}`)
+		if(!listener.finished) {
+			THROW_DEV_WARNING(`Missing templates in modifyTemplate ${JSON.stringify(keyArray)}`)
 		}
-	}, 1e3))
+	}, 1000))
+	
+	for(const key of keyArray) {
+		const cacheEntry = templateCache[key] = templateCache[key] || { listeners: new Set(), listening: false }
+		cacheEntry.listeners.add(listener)
+		
+		if(!cacheEntry.listening) {
+			cacheEntry.listening = true
+			InjectJS.send("listenForTemplate", key)
+		}
+	}
 }
+
+InjectJS.listen("initTemplate", (key, html) => {
+	const cacheEntry = templateCache[key]
+	cacheEntry.body = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html").body
+	
+	for(const listener of cacheEntry.listeners.values()) {
+		listener.update()
+	}
+})

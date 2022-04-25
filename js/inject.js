@@ -430,7 +430,14 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 	}
 	
 	const angularHook = {
+		templateListeners: {},
+		cachedTemplates: {},
+		templateCaches: [],
+		
+		//
+		
 		moduleListeners: [],
+		loadedModules: {},
 
 		applyEntry(module, entry, callback) {
 			const [, type, data] = entry
@@ -470,60 +477,6 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 			}
 		},
 		
-		// Templates
-		
-		cachedTemplates: {},
-		templateListeners: {},
-		templateCaches: new Set(),
-		
-		updateTemplate(key) {
-			this.templateCaches.forEach(cache => {
-				const oldValue = cache.get(key)
-				if(oldValue) {
-					this.putTemplate(cache, key, oldValue)
-				}
-			})
-		},
-
-		listenForTemplate(key) {
-			this.templateListeners[key] = true
-			this.updateTemplate(key)
-		},
-
-		putTemplate($templateCache, key, value) {
-			if(key in this.cachedTemplates) {
-				value = this.cachedTemplates[key]
-			}
-			
-			this.cachedTemplates[key] = value
-			$templateCache.real_put(key, value)
-			
-			if(this.templateListeners[key]) {
-				delete this.templateListeners[key]
-
-				contentScript.listen(`TEMPLATE_${key}`, changedValue => {
-					this.cachedTemplates[key] = changedValue
-					$templateCache.real_put(key, changedValue)
-					this.updateTemplate(key)
-				})
-				
-				contentScript.send(`TEMPLATE_${key}`, $templateCache.get(key))
-			}
-			
-			return $templateCache.get(key)
-		},
-
-		addTemplateCache($templateCache) {
-			if(this.templateCaches.has($templateCache)) {
-				return
-			}
-
-			this.templateCaches.add($templateCache)
-
-			$templateCache.real_put = $templateCache.put
-			$templateCache.put = (key, value) => this.putTemplate($templateCache, key, value)
-		},
-		
 		//
 		
 		hijackModule(moduleName, objects) {
@@ -550,8 +503,6 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 		
 		//
 		
-		loadedModules: {},
-		
 		initModule(module) {
 			if(this.loadedModules[module.name] === module) { return }
 			this.loadedModules[module.name] = module
@@ -567,9 +518,25 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 									const result = new target(...args)
 									
 									hijackFunction(result.$get, 1, (target, thisArg, args) => {
-										const result = target.apply(thisArg, args)
-										this.addTemplateCache(result)
-										return result
+										const cache = target.apply(thisArg, args)
+										this.templateCaches.push(cache)
+										
+										hijackFunction(cache, "put", (target, thisArg, args) => {
+											const key = args[0]
+											
+											if(this.templateListeners[key]) {
+												delete this.templateListeners[key]
+												contentScript.send("initTemplate", key, args[1])
+											}
+											
+											if(this.cachedTemplates[key]) {
+												args[1] = this.cachedTemplates[key]
+											}
+											
+											return target.apply(thisArg, args)
+										})
+										
+										return cache
 									})
 									
 									return result
@@ -601,6 +568,29 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 		},
 		
 		init() {
+			contentScript.listen("updateTemplate", (key, html) => {
+				this.cachedTemplates[key] = html
+				
+				for(const cache of this.templateCaches) {
+					if(cache.get(key)) {
+						cache.put(key, html)
+					}
+				}
+			})
+			
+			contentScript.listen("listenForTemplate", key => {
+				for(const cache of this.templateCaches) {
+					const html = cache.get(key)
+					
+					if(html) {
+						contentScript.send("initTemplate", key, html)
+						return
+					}
+				}
+				
+				this.templateListeners[key] = true
+			})
+			
 			onSet(window, "angular", angular => {
 				onSet(angular, "module", () => {
 					let didInitNg = false
@@ -617,11 +607,9 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 					})
 				})
 			})
-			
-			contentScript.listen("initTemplate", key => this.listenForTemplate(key))
 		}
 	}
-
+	
 	//
 
 	reactHook.init()
