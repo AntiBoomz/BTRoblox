@@ -3,6 +3,38 @@
 const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 	"use strict"
 	
+	const onReady = fn => {
+		if(document.readyState === "loading") {
+			document.addEventListener("DOMContentLoaded", fn, { once: true })
+		} else {
+			Promise.resolve().then(fn)
+		}
+	}
+
+	const onSet = (a, b, c) => {
+		if(a[b]) { return c(a[b]) }
+
+		Object.defineProperty(a, b, {
+			enumerable: false,
+			configurable: true,
+			set(v) {
+				delete a[b]
+				a[b] = v
+				c(v)
+			}
+		})
+	}
+
+	const hijackFunction = (...args) => {
+		if(args.length === 2) {
+			return new Proxy(args[0], { apply: args[1] })
+		}
+
+		return args[0][args[1]] = new Proxy(args[0][args[1]], { apply: args[2] })
+	}
+	
+	//
+	
 	const contentScript = {
 		send(action, ...args) {
 			document.dispatchEvent(new CustomEvent("content." + action, { detail: args }))
@@ -586,47 +618,17 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 	}
 
 	//
-	
-	const onReady = fn => {
-		if(document.readyState === "loading") {
-			document.addEventListener("DOMContentLoaded", fn, { once: true })
-		} else {
-			Promise.resolve().then(fn)
-		}
-	}
-
-	const onSet = (a, b, c) => {
-		if(a[b]) { return c(a[b]) }
-
-		Object.defineProperty(a, b, {
-			enumerable: false,
-			configurable: true,
-			set(v) {
-				delete a[b]
-				a[b] = v
-				c(v)
-			}
-		})
-	}
-
-	function hijackFunction(a, b, c) {
-		if(arguments.length === 2) {
-			return new Proxy(a, { apply: b })
-		}
-
-		return a[b] = hijackFunction(a[b], c)
-	}
-
-	//
 
 	reactHook.init()
 	angularHook.init()
-
-	//
 	
-	window.BTRoblox = window.BTRoblox ?? {}
+	window.BTRoblox = window.BTRoblox || {}
+	
 	Object.assign(window.BTRoblox, {
-		settings, currentPage, matches, IS_DEV_MODE,
+		settings,
+		currentPage,
+		matches,
+		IS_DEV_MODE,
 		
 		contentScript,
 		angularHook,
@@ -637,8 +639,4 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 		onReady,
 		onSet
 	})
-	
-	//
-	
-	contentScript.send("init")
 }

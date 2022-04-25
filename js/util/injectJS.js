@@ -1,9 +1,6 @@
 "use strict"
 
 const InjectJS = {
-	loaded: false,
-	queue: [],
-	
 	inject(fn, args) {
 		if(!(fn instanceof Function)) {
 			throw new TypeError("You can only pass functions to inject")
@@ -16,23 +13,8 @@ const InjectJS = {
 		injector.click()
 		injector.remove()
 	},
-	
-	init() {
-		this.loaded = true
-		
-		for(const args of this.queue) {
-			this.send.call(this, ...args)
-		}
-		
-		delete this.queue
-	},
 
 	send(action, ...detail) {
-		if(!this.loaded) {
-			this.queue.push([action, ...detail])
-			return
-		}
-		
 		try {
 			if(IS_FIREFOX) { detail = cloneInto(detail, window.wrappedJSObject) }
 			document.dispatchEvent(new CustomEvent(`inject.${action}`, { detail }))
@@ -65,5 +47,3 @@ const InjectJS = {
 		})
 	}
 }
-
-InjectJS.listen("init", () => InjectJS.init())
