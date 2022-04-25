@@ -234,7 +234,7 @@ const OwnerAssetCache = {
 	}
 }
 
-pageInit.catalog = function() {
+pageInit.catalog = () => {
 	if(RobuxToCash.isEnabled()) {
 		modifyTemplate("item-card", template => {
 			template.$findAll(".item-card-price .text-robux-tile").forEach(label => {

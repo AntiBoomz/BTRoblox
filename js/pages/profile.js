@@ -1,6 +1,6 @@
 "use strict"
 
-pageInit.profile = function(userId) {
+pageInit.profile = userId => {
 	if(!SETTINGS.get("profile.enabled")) { return }
 
 	const newCont = html`

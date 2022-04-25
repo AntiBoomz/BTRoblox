@@ -399,7 +399,7 @@ const initContentButton = async (assetId, assetTypeId) => {
 	})
 }
 
-pageInit.itemdetails = function(category, assetIdString) {
+pageInit.itemdetails = (category, assetIdString) => {
 	const assetId = Number.parseInt(assetIdString, 10)
 
 	if(RobuxToCash.isEnabled()) {

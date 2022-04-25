@@ -37,16 +37,11 @@ if(isValidPage) {
 		
 		btrThemes.init()
 		
-		if(currentPage && pageInit[`${currentPage.name}_pre`]) {
-			try { pageInit[`${currentPage.name}_pre`].apply(currentPage, currentPage.matches) }
-			catch(ex) { console.error(ex) }
-		}
-		
 		try { pageInit.common() }
-		catch(ex) { console.error(ex) }
+		finally {}
 	
 		if(currentPage && pageInit[currentPage.name]) {
-			try { pageInit[currentPage.name].apply(currentPage, currentPage.matches) }
+			try { pageInit[currentPage.name].apply(null, currentPage.matches) }
 			catch(ex) { console.error(ex) }
 		}
 	})

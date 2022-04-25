@@ -1,6 +1,6 @@
 "use strict"
 
-pageInit.gamedetails = function(placeId) {
+pageInit.gamedetails = placeId => {
 	if(!SETTINGS.get("gamedetails.enabled")) { return }
 	
 	InjectJS.inject(() => {

@@ -1,6 +1,6 @@
 "use strict"
 
-pageInit.develop = function() {
+pageInit.develop = () => {
 	if(SETTINGS.get("general.useNativeAudioPlayer")) {
 		document.$watch("#LibraryTab").$then()
 			.$watchAll("#catalog", catalog => {

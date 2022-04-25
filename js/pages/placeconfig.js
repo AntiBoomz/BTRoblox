@@ -133,7 +133,7 @@ function CreateNewVersionHistory(assetId, assetType) {
 }
 
 
-pageInit.placeconfig = function(placeId) {
+pageInit.placeconfig = placeId => {
 	if(!SETTINGS.get("placeConfigure.versionHistory")) { return }
 
 	const newVersionHistory = CreateNewVersionHistory(placeId, "place")

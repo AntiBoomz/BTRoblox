@@ -340,7 +340,7 @@ function enableRedesign() {
 	}
 }
 
-pageInit.groups = function() {
+pageInit.groups = () => {
 	if(SETTINGS.get("general.hoverPreview")) {
 		loadOptionalLibrary("previewer").then(() => {
 			HoverPreview.register(".item-card", ".item-card-thumb-container")

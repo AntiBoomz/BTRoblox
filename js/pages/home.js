@@ -1,6 +1,6 @@
 "use strict"
 
-pageInit.home = function() {
+pageInit.home = () => {
 	if(SETTINGS.get("home.friendsShowUsername")) {
 		modifyTemplate("people", card => {
 			const nameLabel = card.$find(".friend-name")

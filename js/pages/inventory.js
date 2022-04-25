@@ -1,7 +1,6 @@
 "use strict"
 
-
-pageInit.inventory_pre = function() {
+pageInit.inventory = () => {
 	if(window.parent !== window) {
 		const iframe = window.top.document.querySelector("#btr-injected-inventory")
 
@@ -76,9 +75,7 @@ pageInit.inventory_pre = function() {
 			})
 		}
 	}
-}
-
-pageInit.inventory = function() {
+	
 	if(RobuxToCash.isEnabled()) {
 		modifyTemplate("assets-explorer", template => {
 			const label = template.$find(".item-card-price .text-robux-tile")
