@@ -37,7 +37,6 @@ function CreateNewVersionHistory(assetId, assetType) {
 			}))
 		}
 
-
 		const results = (await SyncPromise.all(innerPromises)).flat()
 		const pageEnd = Math.min(results.length - innerPageOffset, pageSize)
 
@@ -75,7 +74,10 @@ function CreateNewVersionHistory(assetId, assetType) {
 			versionList.append(card)
 		}
 		
-		InjectJS.send("setupPopover")
+		InjectJS.inject(() => {
+			Roblox.BootstrapWidgets.SetupPopover()
+		})
+		
 		isBusy = false
 	}
 
