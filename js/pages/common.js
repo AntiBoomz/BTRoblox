@@ -416,6 +416,84 @@ const reactInject = data => {
 	InjectJS.send("reactInject", data)
 }
 
+let currentNativeAudioPlayer
+const useNativeAudioPlayer = (mediaPlayer, bigPlayer) => {
+	mediaPlayer.$on("click", ev => {
+		ev.preventDefault()
+		ev.stopPropagation()
+		ev.stopImmediatePropagation()
+		
+		if(currentNativeAudioPlayer?.element === mediaPlayer) {
+			currentNativeAudioPlayer.close()
+			return
+		}
+		
+		currentNativeAudioPlayer?.close()
+		
+		const mediaUrl = mediaPlayer.dataset.mediathumbUrl
+		
+		const audio = html`<audio id="btr-native-player" controls autoplay loop>`
+		audio.src = mediaUrl
+		audio.volume = 0.5
+		
+		if(bigPlayer) {
+			audio.style.cssText = `position:absolute;left:0;bottom:0;width:calc(100% - 50px);padding:10px;`
+			mediaPlayer.parentNode.after(audio)
+		} else {
+			const parent = document.body
+			const target = mediaPlayer.parentNode.parentNode
+			
+			const rect0 = parent.getBoundingClientRect()
+			const rect1 = target.getBoundingClientRect()
+			
+			audio.style.cssText = `position:absolute;transform:translate(-50%,0);width:360px;padding:10px;z-index:1000`
+			audio.style.left = `${rect1.x + rect1.width / 2 - rect0.x}px`
+			audio.style.top = `${rect1.y + rect1.height - 10 - rect0.y}px`
+			
+			parent.append(audio)
+		}
+		
+		mediaPlayer.classList.add("icon-pause")
+		mediaPlayer.classList.remove("icon-play")
+		
+		const audioPlayer = currentNativeAudioPlayer = {
+			element: mediaPlayer,
+			interval: setInterval(() => {
+				if(mediaPlayer.offsetWidth === 0) {
+					audioPlayer.close()
+				}
+			}, 100),
+			close() {
+				if(currentNativeAudioPlayer === this) {
+					currentNativeAudioPlayer = null
+				}
+				
+				clearInterval(this.interval)
+				
+				mediaPlayer.classList.remove("icon-pause")
+				mediaPlayer.classList.add("icon-play")
+				audio.remove()
+			}
+		}
+		
+		audio.$on("error", () => {
+			fetch(mediaUrl).then(async res => {
+				const toDataURL = blob => new SyncPromise((resolve, reject) => {
+					const fileReader = new FileReader()
+					fileReader.onload = ev => resolve(ev.target.result)
+					fileReader.onerror = err => reject(err)
+					fileReader.readAsDataURL(blob)
+				})
+				
+				toDataURL(await res.blob()).then(
+					src => audio.src = src,
+					() => audioPlayer.close()
+				)
+			})
+		}, { once: true })
+	})
+}
+
 
 
 pageInit.common = () => {

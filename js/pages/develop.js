@@ -1,6 +1,15 @@
 "use strict"
 
 pageInit.develop = function() {
+	if(SETTINGS.get("general.useNativeAudioPlayer")) {
+		document.$watch("#LibraryTab").$then()
+			.$watchAll("#catalog", catalog => {
+				for(const mediaPlayer of catalog.$findAll(".MediaPlayerIcon[data-mediathumb-url]")) {
+					useNativeAudioPlayer(mediaPlayer)
+				}
+			})
+	}
+	
 	if(SETTINGS.get("develop.addListedButtons")) {
 		loggedInUserPromise.then(async loggedInUser => {
 			if(loggedInUser === -1) { return }

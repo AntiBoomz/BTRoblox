@@ -21,6 +21,7 @@ const DEFAULT_SETTINGS = {
 		higherRobuxPrecision: { value: true },
 		enableContextMenus: { value: true },
 		
+		useNativeAudioPlayer: { value: false },
 		fixFirefoxLocalStorageIssue: { value: false }
 	},
 	home: {

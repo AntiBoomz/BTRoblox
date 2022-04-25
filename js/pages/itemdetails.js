@@ -456,6 +456,14 @@ pageInit.itemdetails = function(category, assetIdString) {
 			HoverPreview.register(".item-card", ".item-card-thumb-container")
 		})
 	}
+	
+	if(SETTINGS.get("general.useNativeAudioPlayer")) {
+		document.$watch("#item-container", itemContainer => {
+			itemContainer.$watch(".MediaPlayerIcon[data-mediathumb-url]", mediaPlayer => {
+				useNativeAudioPlayer(mediaPlayer, true)
+			})
+		})
+	}
 
 	if(!SETTINGS.get("itemdetails.enabled")) { return }
 
