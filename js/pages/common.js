@@ -86,9 +86,10 @@ const formatUrlName = (name, def = "Name") => encodeURIComponent(name.replace(/[
 
 let linkifyCounter = 0
 const robloxLinkify = target => {
-	const className = `btr-linkify-pls-${linkifyCounter++}`
-	target.classList.add(className)
-	InjectJS.send("linkify", className)
+	const className = `btr-linkify-${linkifyCounter++}`
+	target.classList.add("linkify", className)
+	
+	InjectJS.inject(className => $?.(`.${className}`).linkify?.(), [className])
 	target.classList.remove(className)
 }
 

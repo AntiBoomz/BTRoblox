@@ -638,10 +638,6 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 		onSet
 	})
 	
-	contentScript.listen("linkify", target => {
-		if(window.Roblox?.Linkify) { $(target).linkify() }
-		else { target.classList.add("linkify") }
-	})
 	//
 	
 	contentScript.send("init")
