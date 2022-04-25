@@ -40,8 +40,7 @@ const injectCSS = (...paths) => {
 		styleSheet.href = SETTINGS.get("general.themeHotReload") ? `${getURL(path)}?_=${Date.now()}` : getURL(path)
 		styleSheet.rel = "stylesheet"
 		
-		const parent = document.head ?? document.documentElement
-		parent.append(styleSheet)
+		BTRoblox.element.append(styleSheet)
 		
 		activeStyleSheets[path] = styleSheet
 		

@@ -1,26 +1,14 @@
 "use strict"
 
-const isValidPage = (() => {
-	if(document.contentType !== "text/html" || location.protocol === "blob") {
-		return false
-	}
+if(document.contentType === "text/html" && location.protocol !== "blob" && !document.querySelector("btroblox")) {
+	document.documentElement.prepend(BTRoblox.element)
 	
-	if(document.documentElement.dataset.btrLoaded) {
-		return false
-	}
-	
-	document.documentElement.dataset.btrLoaded = true
-	return true
-})()
-
-if(isValidPage) {
 	SETTINGS.load(() => {
 		const currentPage = BTRoblox.currentPage
 		
 		InjectJS.inject([
 			SETTINGS.serialize(),
-			currentPage ? currentPage.name : null,
-			currentPage ? currentPage.matches : null,
+			currentPage ? { name: currentPage.name, matches: currentPage.matches } : null,
 			IS_DEV_MODE
 		], INJECT_SCRIPT)
 		

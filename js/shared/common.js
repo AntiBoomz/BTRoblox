@@ -122,6 +122,7 @@ if(IS_CONTENT_SCRIPT) {
 	})()
 	
 	window.BTRoblox = {
+		element: document.createElement("btroblox"),
 		currentPage
 	}
 }

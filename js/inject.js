@@ -1,7 +1,10 @@
 "use strict"
 
-const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
+const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 	"use strict"
+	
+	const BTRoblox = window.BTRoblox = window.BTRoblox || {}
+	BTRoblox.element = document.querySelector("btroblox")
 	
 	const onReady = fn => {
 		if(document.readyState === "loading") {
@@ -619,12 +622,9 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 	reactHook.init()
 	angularHook.init()
 	
-	window.BTRoblox = window.BTRoblox || {}
-	
 	Object.assign(window.BTRoblox, {
 		settings,
 		currentPage,
-		matches,
 		IS_DEV_MODE,
 		
 		contentScript,
