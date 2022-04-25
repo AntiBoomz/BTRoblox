@@ -4,6 +4,9 @@ const InjectJS = {
 	messageListeners: {},
 	listening: false,
 	
+	injectResults: new Map(),
+	injectCounter: 0,
+	
 	inject(args, fn) {
 		if(typeof args === "function") {
 			fn = args
@@ -18,20 +21,17 @@ const InjectJS = {
 			args = [args]
 		}
 		
+		const injectId = this.injectCounter++
+		
 		const injector = document.createElement("div")
-		injector.setAttribute("onclick", `this.dataset.returnValue = JSON.stringify((${fn})(${JSON.stringify(args).slice(1, -1)}))`)
+		injector.setAttribute("onclick", `{ let result; try { result = (${fn})(...${JSON.stringify(args)}) } finally {} window.BTRoblox?.contentScript.send("injectResult", ${injectId}, result); }`)
 		
-		document.documentElement.append(injector)
+		BTRoblox.element.append(injector)
+		
 		injector.click()
-		
-		let returnValue
-		
-		try { returnValue = JSON.parse(injector.dataset.returnValue) }
-		catch(ex) {}
-		
 		injector.remove()
 		
-		return returnValue
+		return this.injectResults.get(injectId)
 	},
 
 	send(action, ...args) {
@@ -62,3 +62,9 @@ const InjectJS = {
 		}
 	}
 }
+
+InjectJS.listen("injectResults", (id, result) => {
+	InjectJS.injectResults.set(id, result)
+	setTimeout(() => InjectJS.injectResults.delete(id), 0)
+})
+
