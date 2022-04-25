@@ -869,6 +869,18 @@ pageInit.profile = function(userId) {
 		const friends = newCont.$find(".placeholder-friends")
 		if(friends) { friends.remove() }
 	}
+	
+	InjectJS.inject(() => {
+		const { hijackAngular } = window.BTRoblox
+		
+		hijackAngular("peopleList", {
+			layoutService(handler, args) {
+				const result = handler.apply(this, args)
+				result.maxNumberOfFriendsDisplayed = 10
+				return result
+			}
+		})
+	})
 
 	$.ready(() => {
 		const oldContainer = $(".profile-container > .rbx-tabs-horizontal")

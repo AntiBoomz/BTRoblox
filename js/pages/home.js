@@ -13,6 +13,49 @@ pageInit.home = function() {
 		})
 	}
 	
+	if(SETTINGS.get("home.friendsSecondRow")) {
+		InjectJS.inject(() => {
+			const { hijackAngular } = window.BTRoblox
+			
+			hijackAngular("peopleList", {
+				peopleListContainer(handler, args) {
+					const directive = handler.apply(this, args)
+					
+					directive.link = ($scope, iElem) => {
+						const elem = iElem[0]
+						
+						let showSecondRow = true
+						
+						try { showSecondRow = !!localStorage.getItem("btr-showSecondRow") }
+						catch(ex) { console.error(ex) }
+						
+						elem.classList.toggle("btr-home-secondRow", showSecondRow)
+						
+						$scope.$watch("library.numOfFriends", numOfFriends => {
+							if(numOfFriends == null) { return }
+							
+							showSecondRow = numOfFriends > 9
+							elem.classList.toggle("btr-home-secondRow", showSecondRow)
+							
+							if(showSecondRow) {
+								localStorage.setItem("btr-showSecondRow", "1")
+							} else {
+								localStorage.removeItem("btr-showSecondRow")
+							}
+						})
+					}
+					
+					return directive
+				},
+				layoutService(handler, args) {
+					const result = handler.apply(this, args)
+					result.maxNumberOfFriendsDisplayed = 18
+					return result
+				}
+			})
+		})
+	}
+	
 	if(SETTINGS.get("home.friendPresenceLinks")) {
 		modifyTemplate("people-info-card", template => {
 			for(const elem of template.$findAll(`[ng-click^="goToGameDetails"]`)) {
