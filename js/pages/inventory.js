@@ -101,7 +101,7 @@ pageInit.inventory = function() {
 	if(SETTINGS.get("inventory.inventoryTools")) {
 		const validAssetTypes = [
 			10, 13, 40, 3, 24,
-			2, 11, 12
+			2, 11, 12, 21
 		]
 
 		modifyTemplate("assets-explorer", template => {
@@ -114,8 +114,7 @@ pageInit.inventory = function() {
 			template.$findAll(".assets-explorer-title").forEach(title => {
 				title.after(html`
 				<div class="header-content" ng-show="${visibility}">
-					<a class="btn btn-secondary-sm btr-it-btn btr-it-remove disabled" style="float:right;margin:4px 10px;">Remove</a>
-					<div id="btr-inventory-refresh-btn" ng-click="cursorPaging.loadFirstPage()" style="display:none"></div>
+					<a class="btn btn-secondary-sm btr-it-btn btr-it-remove disabled" style="float:right;margin-left:10px;">Remove</a>
 				</div>`)
 			})
 
@@ -127,16 +126,40 @@ pageInit.inventory = function() {
 				</span>`)
 			})
 		})
-
+		
 		let isRemoving = false
 		let shiftPressed = false
 		let lastPressed = null
 
 		const updateButtons = function() {
-			$(".btr-it-btn").classList.toggle("disabled", !$(".btr-it-box:checked"))
+			$(".btr-it-btn")?.classList.toggle("disabled", !$(".btr-it-box:checked"))
 		}
 
 		InjectJS.listen("inventoryUpdateEnd", updateButtons)
+		
+		InjectJS.inject(() => {
+			const { hijackAngular, contentScript, IS_DEV_MODE } = window.BTRoblox
+			
+			hijackAngular("inventory", {
+				inventoryContentController(handler, args, argsMap) {
+					const result = handler.apply(this, args)
+					
+					try {
+						const { $scope } = argsMap
+						
+						$scope.$watch("$ctrl.assets", () => {
+							setTimeout(() => contentScript.send("inventoryUpdateEnd"), 0)
+						})
+						
+					} catch(ex) {
+						console.error(ex)
+						if(IS_DEV_MODE) { alert("hijackAngular Error") }
+					}
+					
+					return result
+				}
+			})
+		})
 
 		document
 			.$on("keyup keydown", e => { shiftPressed = e.shiftKey })
@@ -169,12 +192,13 @@ pageInit.inventory = function() {
 				const items = []
 				for(let i = 0; i < checked.length; i++) {
 					const self = checked[i].closest(".item-card")
-					const matches = self.$find(".item-card-link").href.match(/(?:\/(?:catalog|library|game-pass|badges)\/|[?&]id=)(\d+)/)
+					const matches = self.$find(".item-card-link").href.match(/(?:\/(catalog|library|game-pass|badges)\/|[?&]id=)(\d+)/)
 
-					if(matches && Number.isSafeInteger(+matches[1])) {
+					if(matches && Number.isSafeInteger(+matches[2])) {
 						items.push({
 							obj: self,
-							assetId: matches[1]
+							assetType: matches[1].toLowerCase(),
+							assetId: matches[2]
 						})
 					}
 				}
@@ -184,26 +208,45 @@ pageInit.inventory = function() {
 				function removeItem(index) {
 					const item = items[index]
 					if(!item) { return }
-
-					const url = `https://api.roblox.com/Marketplace/ProductInfo?assetId=${item.assetId}`
-					$.fetch(url).then(async response => {
-						const data = await response.json()
-						if(validAssetTypes.indexOf(data.AssetTypeId) === -1) { return console.log("Bad assetType", data) }
-
-						$.fetch("https://www.roblox.com/asset/delete-from-inventory", {
-							method: "POST",
-							credentials: "include",
-							body: new URLSearchParams({ assetId: item.assetId }),
-							xsrf: true
-						}).then(() => {
-							item.obj.remove()
-							if(--itemsLeft === 0) {
-								isRemoving = false
-								$("#btr-inventory-refresh-btn").click()
-								// InjectJS.send("refreshInventory")
+					
+					const done = () => {
+						item.obj.remove()
+						
+						if(--itemsLeft === 0) {
+							isRemoving = false
+							
+							InjectJS.inject(() => {
+								const scope = angular.element(document.querySelector("assets-explorer")).scope()
+								const ctrl = scope?.$parent?.$ctrl
+								
+								if(ctrl) {
+									const real1 = ctrl.cursorPager.loadPreviousPage
+									const real2 = ctrl.assetsPager.canLoadPreviousPage
+									
+									ctrl.cursorPager.loadPreviousPage = ctrl.cursorPager.reloadCurrentPage
+									ctrl.assetsPager.canLoadPreviousPage = () => true
+									
+									try { ctrl.assetsPager.loadPreviousPage() }
+									catch(ex) {}
+									
+									ctrl.cursorPager.loadPreviousPage = real1
+									ctrl.assetsPager.canLoadPreviousPage = real2
+								}
+							})
+						}
+					}
+					
+					if(item.assetType === "badges") {
+						RobloxApi.badges.deleteBadge(item.assetId).then(done)
+					} else {
+						RobloxApi.api.getProductInfo(item.assetId).then(info => {
+							if(validAssetTypes.indexOf(info.AssetTypeId) === -1) {
+								return console.log("Bad assetType", info)
 							}
+							
+							RobloxApi.www.deleteAssetFromInventory(item.assetId).then(done)
 						})
-					})
+					}
 
 					setTimeout(removeItem, 250, index + 1)
 				}

@@ -583,37 +583,6 @@ const INJECT_SCRIPT = (settings, currentPage, matches, IS_DEV_MODE) => {
 				})
 			})
 		})
-		
-		//
-
-		if(currentPage === "inventory" && settings.inventory.enabled && settings.inventory.inventoryTools) {
-			hijackAngular("assetsExplorer", {
-				assetsService(handler, args) {
-					const result = handler.apply(this, args)
-
-					try {
-						const tbuat = result.beginUpdateAssetsItems
-						result.beginUpdateAssetsItems = function(...iargs) {
-							const promise = tbuat.apply(result, iargs)
-
-							contentScript.send("inventoryUpdateBegin")
-							promise.then(() => {
-								setTimeout(() => {
-									contentScript.send("inventoryUpdateEnd")
-								}, 0)
-							})
-
-							return promise
-						}
-					} catch(ex) {
-						console.error(ex)
-						if(IS_DEV_MODE) { alert("hijackAngular Error") }
-					}
-
-					return result
-				}
-			})
-		}
 	}
 
 	function documentReady() {

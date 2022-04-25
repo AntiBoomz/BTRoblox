@@ -10,7 +10,7 @@ const cacheResult = callback => {
 	return (...args) => (cache[args[0]] = cache[args[0]] || [callback(...args)])[0]
 }
 
-const cacheBackgroundResult = callback => cacheResult(backgroundCall(callback))
+const cacheBackgroundCall = callback => cacheResult(backgroundCall(callback))
 
 const backgroundCall = callback => {
 	const messageId = `RobloxApi.${backgroundCallCounter}`
@@ -23,11 +23,11 @@ const backgroundCall = callback => {
 					cachedXsrfToken = xsrf
 				}
 				
-				SyncPromise.resolve()
+				Promise.resolve()
 					.then(() => callback(...args))
 					.then(
 						result => respond({ success: true, result: result }),
-						err => respond({ success: false, error: err })
+						err => respond({ success: false, result: err })
 					)
 			}
 		})
@@ -35,12 +35,12 @@ const backgroundCall = callback => {
 		return callback
 	}
 	
-	return (...args) => new SyncPromise((resolve, reject) => {
+	return (...args) => new Promise((resolve, reject) => {
 		MESSAGING.send(messageId, { args: args, xsrf: getXsrfToken() }, result => {
 			if(result.success) {
 				resolve(result.result)
 			} else {
-				reject(result.error)
+				reject(result.result)
 			}
 		})
 	})
@@ -84,8 +84,17 @@ const RobloxApi = {
 		),
 		getProductInfo: cacheResult(assetId => RobloxApi.api.getUncachedProductInfo(assetId))
 	},
+	badges: {
+		deleteBadge: backgroundCall(badgeId =>
+			btrFetch(`https://badges.roblox.com/v1/user/badges/${badgeId}`, {
+				method: "DELETE",
+				credentials: "include",
+				xsrf: true
+			}).then(res => res.json())
+		)
+	},
 	catalog: {
-		getItemDetails: cacheBackgroundResult(items =>
+		getItemDetails: backgroundCall(items =>
 			btrFetch(`https://catalog.roblox.com/v1/catalog/items/details`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -93,16 +102,10 @@ const RobloxApi = {
 				xsrf: true
 			}).then(res => res.json())
 		),
-		getBundleDetails: cacheBackgroundResult(bundleId =>
+		getBundleDetails: cacheBackgroundCall(bundleId =>
 			btrFetch(`https://catalog.roblox.com/v1/bundles/${bundleId}/details`)
 				.then(res => res.json())
 		)
-	},
-	thumbnails: {
-		getAvatarHeadshots: backgroundCall(userIds => {
-			const url = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userIds.join(",")}&size=48x48&format=Png`
-			return btrFetch(url).then(async res => (await res.json()).data)
-		})
 	},
 	friends: {
 		getFriends: backgroundCall(userId =>
@@ -130,6 +133,22 @@ const RobloxApi = {
 				},
 				() => null // return null if error
 			)
+		)
+	},
+	thumbnails: {
+		getAvatarHeadshots: backgroundCall(userIds => 
+			btrFetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userIds.join(",")}&size=48x48&format=Png`)
+				.then(async res => (await res.json()).data)
+		)
+	},
+	www: {
+		deleteAssetFromInventory: backgroundCall(assetId =>
+			btrFetch(`https://www.roblox.com/asset/delete-from-inventory`, {
+				method: "POST",
+				credentials: "include",
+				body: new URLSearchParams({ assetId }),
+				xsrf: true
+			})
 		)
 	}
 }
