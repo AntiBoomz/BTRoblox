@@ -67,6 +67,187 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 		}
 	}
 
+	const angularHook = {
+		templateListeners: {},
+		cachedTemplates: {},
+		templateCaches: [],
+		
+		//
+		
+		moduleListeners: [],
+		loadedModules: {},
+
+		applyEntry(module, entry, callback) {
+			const [, type, data] = entry
+			
+			if(type === "constant" || type === "component") {
+				try { callback(data[1]) }
+				catch(ex) { console.error(ex) }
+				return
+			}
+			
+			const hijack = (a, b, injects) => {
+				const fn = a[b]
+				
+				if(typeof fn === "function") {
+					hijackFunction(a, b, (target, thisArg, args) => {
+						const argMap = {}
+						args.forEach((x, i) => argMap[injects[i]] = x)
+						return callback.call(thisArg, target, args, argMap)
+					})
+				}
+			}
+			
+			if(typeof data[1] === "function") {
+				hijack(data, 1, data[1].$inject)
+			} else {
+				hijack(data, data.length - 1, data)
+			}
+		},
+
+		initEntry(module, entry) {
+			const name = entry[2][0]
+			const listeners = this.moduleListeners[module.name]?.[name]
+			if(!listeners) { return }
+			
+			for(const callback of listeners) {
+				this.applyEntry(module, entry, callback)
+			}
+		},
+		
+		//
+		
+		hijackModule(moduleName, objects) {
+			let module
+			
+			try { module = angular.module(moduleName) }
+			catch(ex) {}
+			
+			if(module) {
+				for(const data of module._invokeQueue) {
+					const callback = objects[data[2][0]]
+					if(callback) {
+						this.applyEntry(module, data, callback)
+					}
+				}
+			}
+			
+			for(const [name, callback] of Object.entries(objects)) {
+				this.moduleListeners[moduleName] = this.moduleListeners[moduleName] ?? {}
+				this.moduleListeners[moduleName][name] = this.moduleListeners[moduleName][name] ?? []
+				this.moduleListeners[moduleName][name].push(callback)
+			}
+		},
+		
+		//
+		
+		initModule(module) {
+			if(this.loadedModules[module.name] === module) { return }
+			this.loadedModules[module.name] = module
+			
+			if(module.name === "ng") {
+				// Behold the monstrosity~
+				
+				hijackFunction(module._configBlocks[0][2][0], 1, (target, thisArg, args) => {
+					hijackFunction(args[0], "provider", (target, thisArg, args) => {
+						if(args[0] instanceof Object && "$templateCache" in args[0]) {
+							args[0].$templateCache = new Proxy(args[0].$templateCache, {
+								construct: (target, args) => {
+									const result = new target(...args)
+									
+									hijackFunction(result.$get, 1, (target, thisArg, args) => {
+										const cache = target.apply(thisArg, args)
+										this.templateCaches.push(cache)
+										
+										hijackFunction(cache, "put", (target, thisArg, args) => {
+											const key = args[0]
+											
+											if(this.templateListeners[key]) {
+												delete this.templateListeners[key]
+												contentScript.send("initTemplate", key, args[1])
+											}
+											
+											if(this.cachedTemplates[key]) {
+												args[1] = this.cachedTemplates[key]
+											}
+											
+											return target.apply(thisArg, args)
+										})
+										
+										return cache
+									})
+									
+									return result
+								}
+							})
+						}
+						
+						return target.apply(thisArg, args)
+					})
+					
+					return target.apply(thisArg, args)
+				})
+			}
+			
+			for(const entry of module._invokeQueue) {
+				this.initEntry(module, entry)
+			}
+			
+			const init = (target, thisArg, args) => {
+				for(const entry of args) {
+					this.initEntry(module, entry)
+				}
+				
+				return target.apply(thisArg, args)
+			}
+			
+			hijackFunction(module._invokeQueue, "unshift", init)
+			hijackFunction(module._invokeQueue, "push", init)
+		},
+		
+		init() {
+			contentScript.listen("updateTemplate", (key, html) => {
+				this.cachedTemplates[key] = html
+				
+				for(const cache of this.templateCaches) {
+					if(cache.get(key)) {
+						cache.put(key, html)
+					}
+				}
+			})
+			
+			contentScript.listen("listenForTemplate", key => {
+				for(const cache of this.templateCaches) {
+					const html = cache.get(key)
+					
+					if(html) {
+						contentScript.send("initTemplate", key, html)
+						return
+					}
+				}
+				
+				this.templateListeners[key] = true
+			})
+			
+			onSet(window, "angular", angular => {
+				onSet(angular, "module", () => {
+					let didInitNg = false
+					
+					hijackFunction(angular, "module", (target, thisArg, args) => {
+						if(!didInitNg) {
+							didInitNg = true
+							this.initModule(target.call(angular, "ng"))
+						}
+						
+						const module = target.apply(thisArg, args)
+						this.initModule(module)
+						return module
+					})
+				})
+			})
+		}
+	}
+	
 	const reactHook = {
 		constructorReplaces: [],
 		injectedContent: [],
@@ -424,187 +605,6 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 					}
 					
 					return result
-				})
-			})
-		}
-	}
-	
-	const angularHook = {
-		templateListeners: {},
-		cachedTemplates: {},
-		templateCaches: [],
-		
-		//
-		
-		moduleListeners: [],
-		loadedModules: {},
-
-		applyEntry(module, entry, callback) {
-			const [, type, data] = entry
-			
-			if(type === "constant" || type === "component") {
-				try { callback(data[1]) }
-				catch(ex) { console.error(ex) }
-				return
-			}
-			
-			const hijack = (a, b, injects) => {
-				const fn = a[b]
-				
-				if(typeof fn === "function") {
-					hijackFunction(a, b, (target, thisArg, args) => {
-						const argMap = {}
-						args.forEach((x, i) => argMap[injects[i]] = x)
-						return callback.call(thisArg, target, args, argMap)
-					})
-				}
-			}
-			
-			if(typeof data[1] === "function") {
-				hijack(data, 1, data[1].$inject)
-			} else {
-				hijack(data, data.length - 1, data)
-			}
-		},
-
-		initEntry(module, entry) {
-			const name = entry[2][0]
-			const listeners = this.moduleListeners[module.name]?.[name]
-			if(!listeners) { return }
-			
-			for(const callback of listeners) {
-				this.applyEntry(module, entry, callback)
-			}
-		},
-		
-		//
-		
-		hijackModule(moduleName, objects) {
-			let module
-			
-			try { module = angular.module(moduleName) }
-			catch(ex) {}
-			
-			if(module) {
-				for(const data of module._invokeQueue) {
-					const callback = objects[data[2][0]]
-					if(callback) {
-						this.applyEntry(module, data, callback)
-					}
-				}
-			}
-			
-			for(const [name, callback] of Object.entries(objects)) {
-				this.moduleListeners[moduleName] = this.moduleListeners[moduleName] ?? {}
-				this.moduleListeners[moduleName][name] = this.moduleListeners[moduleName][name] ?? []
-				this.moduleListeners[moduleName][name].push(callback)
-			}
-		},
-		
-		//
-		
-		initModule(module) {
-			if(this.loadedModules[module.name] === module) { return }
-			this.loadedModules[module.name] = module
-			
-			if(module.name === "ng") {
-				// Behold the monstrosity~
-				
-				hijackFunction(module._configBlocks[0][2][0], 1, (target, thisArg, args) => {
-					hijackFunction(args[0], "provider", (target, thisArg, args) => {
-						if(args[0] instanceof Object && "$templateCache" in args[0]) {
-							args[0].$templateCache = new Proxy(args[0].$templateCache, {
-								construct: (target, args) => {
-									const result = new target(...args)
-									
-									hijackFunction(result.$get, 1, (target, thisArg, args) => {
-										const cache = target.apply(thisArg, args)
-										this.templateCaches.push(cache)
-										
-										hijackFunction(cache, "put", (target, thisArg, args) => {
-											const key = args[0]
-											
-											if(this.templateListeners[key]) {
-												delete this.templateListeners[key]
-												contentScript.send("initTemplate", key, args[1])
-											}
-											
-											if(this.cachedTemplates[key]) {
-												args[1] = this.cachedTemplates[key]
-											}
-											
-											return target.apply(thisArg, args)
-										})
-										
-										return cache
-									})
-									
-									return result
-								}
-							})
-						}
-						
-						return target.apply(thisArg, args)
-					})
-					
-					return target.apply(thisArg, args)
-				})
-			}
-			
-			for(const entry of module._invokeQueue) {
-				this.initEntry(module, entry)
-			}
-			
-			const init = (target, thisArg, args) => {
-				for(const entry of args) {
-					this.initEntry(module, entry)
-				}
-				
-				return target.apply(thisArg, args)
-			}
-			
-			hijackFunction(module._invokeQueue, "unshift", init)
-			hijackFunction(module._invokeQueue, "push", init)
-		},
-		
-		init() {
-			contentScript.listen("updateTemplate", (key, html) => {
-				this.cachedTemplates[key] = html
-				
-				for(const cache of this.templateCaches) {
-					if(cache.get(key)) {
-						cache.put(key, html)
-					}
-				}
-			})
-			
-			contentScript.listen("listenForTemplate", key => {
-				for(const cache of this.templateCaches) {
-					const html = cache.get(key)
-					
-					if(html) {
-						contentScript.send("initTemplate", key, html)
-						return
-					}
-				}
-				
-				this.templateListeners[key] = true
-			})
-			
-			onSet(window, "angular", angular => {
-				onSet(angular, "module", () => {
-					let didInitNg = false
-					
-					hijackFunction(angular, "module", (target, thisArg, args) => {
-						if(!didInitNg) {
-							didInitNg = true
-							this.initModule(target.call(angular, "ng"))
-						}
-						
-						const module = target.apply(thisArg, args)
-						this.initModule(module)
-						return module
-					})
 				})
 			})
 		}
