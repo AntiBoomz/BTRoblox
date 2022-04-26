@@ -78,7 +78,7 @@ const SHARED_DATA = {
 	start() {
 		if(IS_CHROME) {
 			const request = new XMLHttpRequest()
-			request.open("GET", `/btr/settings?_=${Date.now()}`, false)
+			request.open("GET", `${location.origin}/btr/settings`, false)
 			request.send(null)
 			
 			SHARED_DATA.init(JSON.parse(request.responseText))
