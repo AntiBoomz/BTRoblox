@@ -178,11 +178,6 @@ const ContextMenu = {
 	
 	update() {
 		const enabled = SETTINGS.get("general.enableContextMenus")
-
-		if(!enabled) {
-			chrome.contextMenus.removeAll()
-			return
-		}
 		
 		for(const menu of this.items) {
 			menu.visible = enabled
@@ -195,11 +190,12 @@ const ContextMenu = {
 	}
 }
 
+chrome.contextMenus.onClicked.addListener((...args) => SETTINGS.load(() => ContextMenu.onClick(...args)))
 SETTINGS.onChange("general.enableContextMenus", () => ContextMenu.update())
 
-chrome.contextMenus.onClicked.addListener((...args) => ContextMenu.onClick(...args))
-
-chrome.runtime.onInstalled.addListener(() => {
-	chrome.contextMenus.removeAll()
-	SETTINGS.load(() => ContextMenu.update())
-})
+if(IS_CHROME) {
+	chrome.runtime.onInstalled.addListener(() => SETTINGS.load(() => ContextMenu.update()))
+	chrome.runtime.onStartup.addListener(() => SETTINGS.load(() => ContextMenu.update()))
+} else {
+	chrome.contextMenus.removeAll(() => SETTINGS.load(() => ContextMenu.update()))
+}
