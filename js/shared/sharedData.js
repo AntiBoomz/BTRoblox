@@ -2,8 +2,6 @@
 
 const SHARED_DATA = {
 	_loadPromise: new SyncPromise(),
-	_csPromise: null,
-	
 	updating: false,
 	data: {},
 	
@@ -23,12 +21,10 @@ const SHARED_DATA = {
 			}, { once: true })
 			
 			reader.readAsDataURL(new Blob([JSON.stringify(this.data)], { type: "application/json" }))
-			
 		} else {
 			if(this._csPromise) { this._csPromise.then(x => x.unregister()) }
 			
 			const manifest = chrome.runtime.getManifest()
-			
 			this._csPromise = browser.contentScripts.register({
 				allFrames: true,
 				runAt: "document_start",
@@ -51,6 +47,7 @@ const SHARED_DATA = {
 	get(key) {
 		return this.data[key]
 	},
+	
 	set(key, value) {
 		this.data[key] = value
 		
