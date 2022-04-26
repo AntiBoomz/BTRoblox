@@ -23,7 +23,7 @@ const btrSettingsModal = (() => {
 						<checkbox devOnly label="Theme Hot Reload" path=themeHotReload></checkbox>
 					</div>
 
-					<checkbox label="Show Ads" path=!hideAds></checkbox>
+					<checkbox label="Hide Ads" path=hideAds></checkbox>
 					<checkbox label="Fast User Search" path=general.fastSearch></checkbox>
 					<div>
 						<checkbox label="Show Chat" path=!hideChat></checkbox>
