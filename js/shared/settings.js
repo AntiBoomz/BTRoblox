@@ -4,7 +4,7 @@ const DEFAULT_SETTINGS = {
 	_version: 2,
 	general: {
 		theme: { value: "default", validValues: ["default", "simblk", "sky", "red"] },
-		themeHotReload: { value: false },
+		themeHotReload: { value: false, hidden: true },
 
 		hideAds: { value: false },
 		hideChat: { value: false },
