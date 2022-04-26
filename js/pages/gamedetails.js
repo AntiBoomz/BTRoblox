@@ -4,8 +4,8 @@ pageInit.gamedetails = placeId => {
 	if(!SETTINGS.get("gamedetails.enabled")) { return }
 	
 	InjectJS.inject(() => {
-		const { settings, reactHook, matches } = window.BTRoblox
-		const placeId = matches[0]
+		const { settings, reactHook } = window.BTRoblox
+		const placeId = BTRoblox.currentPage.matches[0]
 		
 		const btrPager = { currentPage: 1, targetPage: 1, loading: false }
 		const cursors = []
