@@ -31,9 +31,10 @@ const BlogFeed = {
 					desc: striphtml(post.excerpt.rendered).trim()
 				}))
 
+				STORAGE.set({ cachedBlogFeedV2: this.cached })
 				SHARED_DATA.set("blogfeed", this.cached)
-				this.fetching = null
 				
+				this.fetching = null
 				return this.cached
 			})
 		}
