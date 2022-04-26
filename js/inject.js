@@ -385,8 +385,8 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 			})
 		},
 		
-		queryElement(elem, query, n = 5) {
-			if(!elem) {
+		queryElement(elem, query, n = 5, requireRootMatch = false) {
+			if(!elem?.props) {
 				return null
 			}
 			
@@ -413,21 +413,20 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 			} else {
 				for(const selector of (Array.isArray(query) ? query : [query])) {
 					if(this.selectorMatches(elem, selector)) {
-						if(selector.next) {
-							const result = iterate(elem.props?.children, selector.next, n)
-							
-							if(result) {
-								return result
-							}
-						} else {
+						if(!selector.next) {
 							return elem
+						}
+						
+						const result = iterate(elem.props.children, selector.next, n)
+						if(result) {
+							return result
 						}
 					}
 				}
 			}
 			
-			if(n >= 2) {
-				return iterate(elem.props?.children, query, n - 1)
+			if(n >= 2 && !requireRootMatch) {
+				return iterate(elem.props.children, query, n - 1)
 			}
 			
 			return null
@@ -465,7 +464,7 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 			}
 			
 			for(const content of this.injectedContent) {
-				const target = this.queryElement(rootElem, content.selector)
+				const target = this.queryElement(rootElem, content.selector, 5, true)
 				if(!target) { continue }
 				
 				if(!childrenModified.has(target)) {
@@ -482,7 +481,7 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 				
 				if(typeof content.index === "number") {
 					index = content.index
-				} else if (typeof content.index === "object") {
+				} else if(typeof content.index === "object") {
 					for(let i = 0; i < children.length; i++) {
 						const child = children[i]
 						
