@@ -24,7 +24,7 @@ const InjectJS = {
 		const injectId = this.injectCounter++
 		
 		const injector = document.createElement("div")
-		injector.setAttribute("onclick", `{ let result; try { result = (${fn})(...${JSON.stringify(args)}) } finally {} window.BTRoblox?.contentScript.send("injectResult", ${injectId}, result); }`)
+		injector.setAttribute("onclick", `{ let result; try { result = (${fn})(...${JSON.stringify(args)}) } catch(ex) { console.error(ex) } window.BTRoblox?.contentScript.send("injectResult", ${injectId}, result); }`)
 		
 		BTRoblox.element.append(injector)
 		
@@ -55,7 +55,7 @@ const InjectJS = {
 				
 				for(let i = listeners.length; i--;) {
 					try { listeners[i].apply(null, args) }
-					finally {}
+					catch(ex) { console.error(ex) }
 				}
 			})
 		}

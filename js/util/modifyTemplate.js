@@ -30,7 +30,7 @@ function modifyTemplate(keyArray, callback) {
 			}
 			
 			try { callback(...args) }
-			finally {}
+			catch(ex) { console.error(ex) }
 			
 			for(const key of keyArray) {
 				const cacheEntry = templateCache[key]

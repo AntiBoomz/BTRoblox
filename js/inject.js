@@ -60,7 +60,7 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 					
 					for(let i = listeners.length; i--;) {
 						try { listeners[i].apply(null, args) }
-						finally {}
+						catch(ex) { console.error(ex) }
 					}
 				})
 			}

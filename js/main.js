@@ -15,7 +15,7 @@ if(document.contentType === "text/html" && location.protocol !== "blob" && !docu
 		btrThemes.init()
 		
 		try { pageInit.common() }
-		finally {}
+		catch(ex) { console.error(ex) }
 	
 		if(currentPage && pageInit[currentPage.name]) {
 			try { pageInit[currentPage.name].apply(null, currentPage.matches) }
