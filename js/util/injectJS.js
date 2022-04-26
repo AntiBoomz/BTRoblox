@@ -35,10 +35,9 @@ const InjectJS = {
 	},
 
 	send(action, ...args) {
-		try {
-			if(IS_FIREFOX) { args = cloneInto(args, window.wrappedJSObject) }
-			BTRoblox.element.dispatchEvent(new CustomEvent(`inject`, { detail: { action, args } }))
-		} finally {}
+		BTRoblox.element.dispatchEvent(new CustomEvent(`inject`, {
+			detail: IS_FIREFOX ? cloneInto({ action, args }, window.wrappedJSObject) : { action, args }
+		}))
 	},
 
 	listen(action, callback) {
@@ -49,7 +48,7 @@ const InjectJS = {
 			this.listening = true
 			
 			BTRoblox.element.addEventListener(`content`, ev => {
-				const { action, args } = ev.detail
+				const { action, args } = IS_FIREFOX ? cloneInto(ev.detail, window) : ev.detail
 				
 				const listeners = this.messageListeners[action]
 				if(!listeners) { return }
