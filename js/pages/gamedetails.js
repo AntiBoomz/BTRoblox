@@ -260,7 +260,7 @@ pageInit.gamedetails = placeId => {
 										}
 									}
 								},
-								btrPager.foundMaxPage ? `${btrPager.maxPage}` : btrPager.maxPage ? `${btrPager.maxPage - 1}+` : "1"
+								btrPager.foundMaxPage ? `${btrPager.maxPage}` : btrPager.maxPage ? `${btrPager.maxPage}+` : "1"
 							)
 						)
 					),
