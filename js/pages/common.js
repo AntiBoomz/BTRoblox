@@ -8,7 +8,7 @@ let loggedInUser = -1
 let isLoggedIn = false
 
 const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34, 35, 37, 63]
-const InvalidDownloadableAssetTypeIds = [21, 32, 34, 63]
+const InvalidDownloadableAssetTypeIds = [21, 32, 34]
 
 const ContainerAssetTypeIds = {
 	2: { filter: x => x.ClassName === "ShirtGraphic", prop: "Graphic" },
@@ -132,6 +132,7 @@ function getAssetFileType(assetTypeId, buffer) {
 		
 		return "mp3"
 	case 4: return "mesh"
+	case 63: return "xml"
 	case 9: return (buffer && buffer[7] !== 0x21) && "rbxlx" || "rbxl"
 	default: return (buffer && buffer[7] !== 0x21) && "rbxmx" || "rbxm"
 	}
