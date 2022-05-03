@@ -200,14 +200,14 @@ function enableRedesign() {
 						const groupId = ctrl.groupId || $scope.library.currentGroup.id
 						const url = `https://groups.roblox.com/v2/groups/${groupId}/wall/posts?sortOrder=Desc&limit=100&cursor=${nextPageCursor}`
 						
-						let resp
+						let res
 						
 						while(true) {
-							resp = await fetch(url, { credentials: "include" })
+							res = await fetch(url, { credentials: "include" })
 							if(activeLoadMore !== currentLoadMore) { return }
 							
-							if(resp.status === 429) {
-								await new Promise(resolve => setTimeout(resolve, 5e3))
+							if(!res.ok) {
+								await new Promise(resolve => setTimeout(resolve, 1e3))
 								if(activeLoadMore !== currentLoadMore) { return }
 								continue
 							}
@@ -215,7 +215,7 @@ function enableRedesign() {
 							break
 						}
 						
-						const json = await resp.json()
+						const json = await res.json()
 						if(activeLoadMore !== currentLoadMore) { return }
 						
 						nextPageCursor = json.nextPageCursor || null
