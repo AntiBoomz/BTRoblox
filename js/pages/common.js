@@ -435,7 +435,7 @@ const useNativeAudioPlayer = (mediaPlayer, bigPlayer) => {
 		
 		const audio = html`<audio id="btr-native-player" controls autoplay>`
 		audio.src = mediaUrl
-		audio.volume = 0.5
+		audio.volume = SETTINGS.get("general.fixAudioVolume") ? 0.5 : 1
 		
 		if(bigPlayer) {
 			audio.style.cssText = `position:absolute;left:10px;bottom:11px;width:calc(100% - 50px - 20px);height:38px;border-radius:100px;box-shadow:0 0px 3px 1px rgba(0,0,0,0.15);`
