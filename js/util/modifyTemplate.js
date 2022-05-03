@@ -13,7 +13,6 @@ function modifyTemplate(keyArray, callback) {
 		update() {
 			for(const key of keyArray) {
 				if(!templateCache[key].body) {
-					console.log("missing some", keyArray)
 					return
 				}
 			}
