@@ -837,11 +837,10 @@ pageInit.itemdetails = (category, assetIdString) => {
 	}
 	
 	document.$watch("#item-container", itemCont => {
-		const assetTypeName = itemCont.dataset.assetType
-		const assetTypeId = AssetTypeIds.indexOf(assetTypeName)
+		const assetTypeId = parseInt(itemCont.dataset.assetTypeId, 10)
 		
-		if(assetTypeId === -1) {
-			if(IS_DEV_MODE) { alert(`Missing assetTypeId for ${assetTypeName}`) }
+		if(!Number.isSafeInteger(assetTypeId)) {
+			if(IS_DEV_MODE) { alert(`Invalid assetTypeId for ${itemCont.dataset.assetType}`) }
 			return
 		}
 
