@@ -30,9 +30,9 @@ const btrSettingsModal = (() => {
 						<checkbox label="Minimize Chat" path=smallChatButton require=!hideChat></checkbox>
 					</div>
 					<checkbox label="Show 'Copy Id' Context Items" path=enableContextMenus></checkbox>
-					<checkbox label="Lower Default Audio Volume" path=fixAudioVolume></checkbox>
-					<empty></empty>
-					<div style="display: inline-block; width: 50%; padding: 6px 2px;">
+					<checkbox label="Higher Robux Precision" path=higherRobuxPrecision></checkbox>
+					
+					<div style="display: inline-block; width: 50%; padding: 6px 2px;float:right;">
 						<label style="">Robux to Cash Conversion Rate</label>
 						<span style="width: calc(100% - 14px); display: inline-flex;">
 							<select id=btr-robuxToCash-currency style="flex: 0 1 auto"></select>
@@ -40,6 +40,9 @@ const btrSettingsModal = (() => {
 						</span>
 						<span class=btr-setting-reset-button path=general.robuxToUSDRate></span>
 					</div>
+					
+					<checkbox label="Lower Default Audio Volume" path=fixAudioVolume></checkbox>
+					<checkbox label="Audio Player Controls" path=useNativeAudioPlayer></checkbox>
 				</group>
 				<group label=Navigation path=navigation toggleable>
 					<checkbox label="Keep Sidebar Open" path=noHamburger require=false></checkbox>
