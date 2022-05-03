@@ -319,6 +319,29 @@ pageInit.profile = userId => {
 					})
 				}
 			}
+			
+			let thumbnailRequest
+			const requestThumbnail = placeId => {
+				if(!thumbnailRequest || thumbnailRequest.placeIds.length >= 50) {
+					const request = thumbnailRequest = {
+						placeIds: []
+					}
+					
+					request.promise = new Promise(resolve => {
+						setTimeout(() => {
+							if(thumbnailRequest === request) {
+								thumbnailRequest = null
+							}
+							
+							RobloxApi.thumbnails.getAssetThumbnails(request.placeIds, "768x432").then(resolve)
+						}, 0)
+					})
+				}
+				
+				thumbnailRequest.placeIds.push(placeId)
+				
+				return thumbnailRequest.promise.then(json => json.find(x => +x.targetId === +placeId))
+			}
 
 			class GameItem {
 				constructor(slide) {
@@ -372,7 +395,15 @@ pageInit.profile = userId => {
 					hlist.append(item)
 					pager.setMaxPage(pageIndex + 1)
 					gameItems.push(this)
-
+					
+					requestThumbnail(this.placeId).then(thumb => {
+						this.thumbnailSrc = thumb.imageUrl
+						
+						if(this.firstVisible) {
+							this.item.$find(".btr-game-thumb").src = this.thumbnailSrc
+						}
+					})
+					
 					this.updateVisibility()
 				}
 
@@ -387,13 +418,14 @@ pageInit.profile = userId => {
 					if(visible && !this.firstVisible) {
 						this.firstVisible = true
 						
-						const thumb = this.item.$find(".btr-game-thumb")
-						thumb.src = `https://www.roblox.com/asset-thumbnail/image?assetId=${this.placeId}&width=768&height=432`
 
 						lastRequest = (lastRequest && lastRequest.canJoin()) ? lastRequest : new GameDetailsRequest()
 						lastRequest.append(this.placeId)
 
 						const gamePromise = lastRequest.promise.then(data => data.find(x => +x.placeId === +this.placeId))
+						if(this.thumbnailSrc) {
+							this.item.$find(".btr-game-thumb").src = this.thumbnailSrc
+						}
 
 						loggedInUserPromise.then(loggedInUser => {
 							if(+userId !== +loggedInUser) { return }

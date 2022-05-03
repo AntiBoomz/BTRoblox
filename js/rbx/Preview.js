@@ -470,7 +470,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 
 					<div class="btr-body-outfit-btn selected" data-outfit=current>
 						<div class=btr-body-outfit-icon>
-							<img src="https://www.roblox.com/avatar-thumbnail/image?userId=${loggedInUser}&width=150&height=150&format=png">
+							<img src="">
 						</div>
 						<span class=btr-body-outfit-title>Current</span>
 					</div>
@@ -525,6 +525,12 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 				</div>
 			</div>
 		</div>`
+		
+		loggedInUserPromise.then(userId => {
+			RobloxApi.thumbnails.getAvatarThumbnails([userId]).then(thumbs => {
+				buttons.$find(`.btr-body-outfit-btn[data-outfit="current"] img`).src = thumbs[0].imageUrl
+			})
+		})
 		
 		container.append(this.dropdown, this.typeSwitch, this.bundleAnims, this.animNameLabel, this.buttons)
 

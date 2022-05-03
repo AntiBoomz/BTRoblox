@@ -545,15 +545,11 @@ pageInit.itemdetails = (category, assetIdString) => {
 			const createElement = ({ userId, userName, item }) => {
 				const url = userId ? `/users/${userId}/profile` : ""
 
-				const thumbUrl = userId
-					? `https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=60&height=60&format=png`
-					: `https://t0.rbxcdn.com/36eac87cdcca4e2027787d6ceae80507`
-
 				const elem = html`
 				<div class=btr-owner-item>
 					<a href="${url}" title="${userName}" class="avatar avatar-headshot-md list-header">
 						<img class=avatar-card-image 
-							src="${thumbUrl}"
+							src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
 							alt="${userName}"
 						>
 					</a>
@@ -564,7 +560,11 @@ pageInit.itemdetails = (category, assetIdString) => {
 					<div class=btr-serial>${item.serialNumber ? `#${item.serialNumber}` : `N/A`}</div>
 				</div>`
 
-				if(!userId) {
+				if(userId) {
+					RobloxApi.thumbnails.getAvatarHeadshots([userId]).then(thumbs => {
+						elem.$find(".avatar-card-image").src = thumbs[0].imageUrl
+					})
+				} else {
 					elem.$findAll("a").forEach(x => x.removeAttribute("href"))
 				}
 

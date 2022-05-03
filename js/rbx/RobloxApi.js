@@ -136,8 +136,16 @@ const RobloxApi = {
 		)
 	},
 	thumbnails: {
-		getAvatarHeadshots: backgroundCall(userIds =>
-			btrFetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userIds.join(",")}&size=48x48&format=Png`)
+		getAvatarHeadshots: backgroundCall((userIds, size = "150x150") =>
+			btrFetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userIds.join(",")}&size=${size}&format=Png`)
+				.then(async res => (await res.json()).data)
+		),
+		getAvatarThumbnails: backgroundCall((userIds, size = "150x150") =>
+			btrFetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userIds.join(",")}&size=${size}&format=Png`)
+				.then(async res => (await res.json()).data)
+		),
+		getAssetThumbnails: backgroundCall((assetIds, size) =>
+			btrFetch(`https://thumbnails.roblox.com/v1/assets?assetIds=${assetIds.join(",")}&size=${size}&format=Png`)
 				.then(async res => (await res.json()).data)
 		)
 	},
