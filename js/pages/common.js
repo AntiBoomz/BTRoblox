@@ -7,20 +7,6 @@ let loggedInUserPromise = null
 let loggedInUser = -1
 let isLoggedIn = false
 
-const AssetTypeIds = [
-	null,
-	"Image", "TShirt", "Audio", "Mesh", "Lua", "HTML", "Text", "Hat", "Place", "Model", // 10
-	"Shirt", "Pants", "Decal", "null", "null", "Avatar", "Head", "Face", "Gear", "null", // 20
-	"Badge", "Group Emblem", "null", "Animation", "Arms", "Legs", "Torso", "RightArm", "LeftArm", "LeftLeg", // 30
-	"RightLeg", "Package", "YouTubeVideo", "Game Pass", "App", "null", "Code", "Plugin", "SolidModel", "MeshPart", // 40
-	"HairAccessory", "FaceAccessory", "NeckAccessory", "ShoulderAccessory", "FrontAccessory", "BackAccessory", "WaistAccessory", // 47
-	"ClimbAnimation", "DeathAnimation", "FallAnimation", "IdleAnimation", "JumpAnimation", "RunAnimation", "SwimAnimation", "WalkAnimation", "PoseAnimation", // 56
-	"EarAccessory", "EyeAccessory", "null", "null", // 60
-	"EmoteAnimation", "Video", // 62
-	"TShirtAccessory", "ShirtAccessory", "PantsAccessory", "JacketAccessory", "SweaterAccessory", // 68
-	"ShortsAccessory", "LeftShoeAccessory", "RightShoeAccessory", "DressSkirtAccessory", // 72
-]
-
 const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34, 35, 37]
 const InvalidDownloadableAssetTypeIds = [21, 32, 34]
 
