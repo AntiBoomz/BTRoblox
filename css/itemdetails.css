@@ -278,8 +278,9 @@ html body .btr-thumb-btn-container .btr-thumb-btn {
 
 	user-select: none;
 	-moz-user-select: none;
-
-	transition: .2s opacity .2s, 0s z-index .4s;
+	
+	visibility: hidden;
+	transition: .2s opacity .2s, 0s visibility .4s;
 }
 
 .dark-theme .btr-thumb-btn-container .btr-thumb-popup {
@@ -291,10 +292,9 @@ html body .btr-thumb-btn-container .btr-thumb-btn {
 .btr-body-btn:focus-within ~ .btr-body-popup:not(.disabled),
 .btr-body-popup:not(.disabled):hover,
 .btr-body-popup:not(.disabled):focus-within {
+	visibility: visible;
 	opacity: 1;
-
-	z-index: 4;
-	transition: .2s opacity 0s, 0s z-index 0s;
+	transition: .2s opacity 0s, 0s visibility 0s;
 }
 
 .btr-thumb-btn-container .btr-body-popup {
