@@ -27,7 +27,7 @@ const backgroundCall = callback => {
 					.then(() => callback(...args))
 					.then(
 						result => respond({ success: true, result: result }),
-						err => respond({ success: false, result: err })
+						err => respond({ success: false, result: err.message })
 					)
 			}
 		})
