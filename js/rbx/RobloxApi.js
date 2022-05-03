@@ -113,6 +113,12 @@ const RobloxApi = {
 				.then(async res => (await res.json()).data)
 		)
 	},
+	games: {
+		getPlaceDetails: backgroundCall(placeIds =>
+			btrFetch(`https://games.roblox.com/v1/games/multiget-place-details?placeIds=${placeIds.join("&placeIds=")}`)
+				.then(res => res.json())
+		)
+	},
 	inventory: {
 		toggleInCollection: backgroundCall((assetType, assetId, addToCollection = true) =>
 			btrFetch(`https://inventory.roblox.com/v1/collections/items/${assetType}/${assetId}`, {

@@ -278,46 +278,11 @@ pageInit.profile = userId => {
 			hlist.after(pager)
 
 			const gameItems = []
-			let lastRequest
 			let selected
 
 			pager.onsetpage = page => {
 				pager.setPage(page)
 				gameItems.forEach(item => item.updateVisibility())
-			}
-
-			class GameDetailsRequest {
-				constructor() {
-					this.placeIdList = []
-					this.executed = false
-				}
-				canJoin() {
-					return !this.executed && this.placeIdList.length < 50
-				}
-				append(placeId) {
-					this.placeIdList.push(placeId)
-
-					if(!this.promise) {
-						this.promise = new SyncPromise(resolve =>
-							$.setImmediate(() => this.execute(resolve))
-						)
-					}
-				}
-				execute(resolve) {
-					this.executed = true
-
-					const places = this.placeIdList.join("&placeIds=")
-					const fetchUrl = `https://games.roblox.com/v1/games/multiget-place-details?placeIds=${places}`
-
-					$.fetch(fetchUrl, { credentials: "include" }).then(resp => {
-						if(!resp.ok) {
-							console.warn("[BTRoblox]: Failed to load place details")
-							return
-						}
-
-						resolve(resp.json())
-					})
-				}
 			}
 			
 			let thumbnailRequest
@@ -341,6 +306,29 @@ pageInit.profile = userId => {
 				thumbnailRequest.placeIds.push(placeId)
 				
 				return thumbnailRequest.promise.then(json => json.find(x => +x.targetId === +placeId))
+			}
+			
+			let detailsRequest
+			const requestDetails = placeId => {
+				if(!detailsRequest || detailsRequest.placeIds.length >= 50) {
+					const request = detailsRequest = {
+						placeIds: []
+					}
+					
+					request.promise = new Promise(resolve => {
+						setTimeout(() => {
+							if(detailsRequest === request) {
+								detailsRequest = null
+							}
+							
+							RobloxApi.games.getPlaceDetails(request.placeIds, "768x432").then(resolve)
+						}, 0)
+					})
+				}
+				
+				detailsRequest.placeIds.push(placeId)
+				
+				return detailsRequest.promise.then(json => json.find(x => +x.placeId === +placeId))
 			}
 
 			class GameItem {
@@ -418,14 +406,11 @@ pageInit.profile = userId => {
 					if(visible && !this.firstVisible) {
 						this.firstVisible = true
 						
-
-						lastRequest = (lastRequest && lastRequest.canJoin()) ? lastRequest : new GameDetailsRequest()
-						lastRequest.append(this.placeId)
-
-						const gamePromise = lastRequest.promise.then(data => data.find(x => +x.placeId === +this.placeId))
 						if(this.thumbnailSrc) {
 							this.item.$find(".btr-game-thumb").src = this.thumbnailSrc
 						}
+						
+						const gamePromise = requestDetails(this.placeId)
 
 						loggedInUserPromise.then(loggedInUser => {
 							if(+userId !== +loggedInUser) { return }
