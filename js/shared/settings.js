@@ -60,8 +60,6 @@ const DEFAULT_SETTINGS = {
 		showCreatedAndUpdated: { value: true },
 
 		imageBackgrounds: { value: true },
-		whiteDecalThumbnailFix: { value: true },
-
 		addOwnersList: { value: true }
 	},
 	gamedetails: {

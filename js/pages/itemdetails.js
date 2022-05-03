@@ -886,39 +886,5 @@ pageInit.itemdetails = (category, assetIdString) => {
 				btns.$find(`[data-color="${selectedBg}"]`).click()
 			})
 		}
-
-		if(SETTINGS.get("itemdetails.whiteDecalThumbnailFix") && assetTypeId === 13) {
-			const emptyImg = "https://t3.rbxcdn.com/a95654871aa1ffd3c6fc38e1ac3bf369"
-			let fixingThumb = false
-			let newThumb
-
-			const fixThumb = thumb => {
-				if(newThumb) { thumb.src = newThumb }
-				if(fixingThumb || thumb.src !== emptyImg) { return }
-
-				fixingThumb = true
-
-				AssetCache.loadModel(assetId, model => {
-					const decal = model.find(x => x.ClassName === "Decal")
-					if(!decal) { return }
-
-					const imgId = AssetCache.resolveAssetId(decal.Texture)
-					if(!imgId) { return }
-
-					newThumb = `https://assetgame.roblox.com/asset-thumbnail/image?assetId=${imgId}&width=420&height=420`
-
-					$.all(".thumbnail-span > img, .thumbnail-span-original > img").forEach(img => {
-						img.src = newThumb
-					})
-				})
-			}
-
-			itemCont.$watch("#AssetThumbnail").$then().$watchAll(".thumbnail-span", parent => {
-				parent.$watchAll("img", img => {
-					new MutationObserver(() => fixThumb(img)).observe(img, { attributes: true, attributeFilter: ["src"] })
-					fixThumb(img)
-				})
-			})
-		}
 	})
 }
