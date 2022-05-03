@@ -960,7 +960,7 @@ const RBXAvatar = (() => {
 					// Scale
 					
 					const scale = this.getScaleMod(parent.name, acc.scaleType, parent.rbxScaleType)
-					acc.obj.scale.set(...acc.scale).multiply(scale)
+					acc.obj.scale.set(...(acc.scale || [1, 1, 1])).multiply(scale)
 					
 					// Position
 					

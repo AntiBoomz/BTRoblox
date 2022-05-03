@@ -285,37 +285,49 @@ const RBXAppearance = (() => {
 		loadAccessory(accInst) {
 			const hanInst = accInst.Children.find(x => x.Name === "Handle")
 			if(!hanInst) { return }
-
-			const meshInst = hanInst.Children.find(x => x.ClassName === "SpecialMesh")
-			if(!meshInst) { return }
 			
+			let vertexColor
+			let offset
+			let scale
+			let meshId
+			let texId
+			
+			if(hanInst.ClassName === "MeshPart") {
+				return // unimplemented
+			} else {
+				const meshInst = hanInst.Children.find(x => x.ClassName === "SpecialMesh")
+				if(!meshInst) { return }
+				
+				vertexColor = meshInst.VertexColor ? [...meshInst.VertexColor] : null
+				offset = meshInst.Offset ? [...meshInst.Offset] : null
+				scale = meshInst.Scale ? [...meshInst.Scale] : null
+				meshId = meshInst.MeshId
+				texId = meshInst.TextureId
+			}
+
 			const attInst = hanInst.Children.find(x => x.ClassName === "Attachment")
 
 			const scaleTypeValue = hanInst.Children.find(x => x.Name === "AvatarPartScaleType")
 			const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
-
-			const meshId = meshInst.MeshId
-			const texId = meshInst.TextureId
 			
 			const baseColor = hanInst.Color || hanInst.Color3uint8 // ugh
 
 			this.addAccessory({
+				vertexColor: vertexColor,
+				offset: offset,
+				scale: scale,
+				
 				meshId: meshId,
 				texId: texId,
 				
 				baseColor: baseColor ? [...baseColor] : null,
-				vertexColor: meshInst.VertexColor ? [...meshInst.VertexColor] : null,
-				opacity: 1 - (meshInst.Transparency || 0),
-				
-				scale: meshInst.Scale ? [...meshInst.Scale] : null,
-				offset: meshInst.Offset ? [...meshInst.Offset] : null,
+				opacity: 1 - (hanInst.Transparency || 0),
 
 				attName: attInst ? attInst.Name : null,
 				attCFrame: attInst ? (attInst.CFrame ? InvertCFrame(...attInst.CFrame) : new THREE.Matrix4()) : null,
 				
 				legacyHatCFrame: accInst.AttachmentPoint ? InvertCFrame(...accInst.AttachmentPoint) : new THREE.Matrix4(),
-
-				scaleType
+				scaleType: scaleType
 			})
 		}
 	}
