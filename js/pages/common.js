@@ -7,8 +7,8 @@ let loggedInUserPromise = null
 let loggedInUser = -1
 let isLoggedIn = false
 
-const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34, 35, 37]
-const InvalidDownloadableAssetTypeIds = [21, 32, 34]
+const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34, 35, 37, 63]
+const InvalidDownloadableAssetTypeIds = [21, 32, 34, 63]
 
 const ContainerAssetTypeIds = {
 	2: { filter: x => x.ClassName === "ShirtGraphic", prop: "Graphic" },
