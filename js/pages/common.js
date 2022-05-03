@@ -433,7 +433,7 @@ const useNativeAudioPlayer = (mediaPlayer, bigPlayer) => {
 		
 		const mediaUrl = mediaPlayer.dataset.mediathumbUrl
 		
-		const audio = html`<audio id="btr-native-player" controls autoplay loop>`
+		const audio = html`<audio id="btr-native-player" controls autoplay>`
 		audio.src = mediaUrl
 		audio.volume = 0.5
 		
