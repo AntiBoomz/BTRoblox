@@ -620,7 +620,7 @@ pageInit.itemdetails = (category, assetIdString) => {
 						const self = {
 							item,
 							userId: 0,
-							userName: `Unknown User`
+							userName: `Hidden User`
 						}
 
 						elems.push(self)
