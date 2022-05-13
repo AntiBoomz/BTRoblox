@@ -842,12 +842,7 @@ class SyncPromise extends Promise {
 	reject(reason) {
 		if(this._intState === "pending") {
 			this._intState = "waiting"
-
-			if(reason instanceof Promise) {
-				reason.then(x => this._intResolve(x), x => this._intReject(x))
-			} else {
-				this._intReject(reason)
-			}
+			this._intReject(reason)
 		}
 	}
 
@@ -862,7 +857,8 @@ class SyncPromise extends Promise {
 	}
 
 	finally(onfinally) {
-		return this.then(() => onfinally(), () => onfinally())
+		this.then(() => onfinally(), () => onfinally())
+		return this
 	}
 }
 
