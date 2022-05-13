@@ -135,7 +135,7 @@ const RBXAppearance = (() => {
 					this.loadBodyPartR15(R15Folders[0])
 				}
 
-				SyncPromise.all(this.loaders).then(() => finish(true), () => finish(false))
+				SyncPromise.allSettled(this.loaders).then(() => finish(true))
 				delete this.loaders
 			})
 		}
