@@ -76,6 +76,7 @@ API Docs
 Undocumented APIs
 =================
 * [User APIs](#user-apis)
+* [Asset APIs](#asset-apis)
 * [Place APIs](#place-apis)
 * [Universe APIs](#universe-apis)
 * [DataStore APIs](#datastore-apis)
@@ -255,6 +256,43 @@ User APIs
     }
     ```
 
+Asset APIs
+-------------
+#### Get asset details
+* https://economy.roblox.com/v2/assets/7192553841/details
+  ```json
+  {
+      "TargetId": 0,
+      "ProductType": null,
+      "AssetId": 606849621,
+      "ProductId": 0,
+      "Name": "Jailbreak",
+      "Description": "🏆 Jailbreak is an award-winning game played over five billion times where you can orchestrate a robbery or stop the criminals before they get away! Team up with friends for even more fun and plan the ultimate raid or heist. What role will you play? \r\n\r\nJailbreak's latest update is here!\r\n🚀 - FAST TRAVEL JETS! Book a private flight to quickly travel around the map!\r\n💰 - New Bank and new Bank Vault: Upper Management!\r\n🕺 - New Crater City stores: 1M Store, Garage & Gun Store!\r\n🎯 - Damage direction indicators!\r\nPlus many other changes and improvements! \r\n\r\n🖥 Programmed by Badcc. @badccvoid\r\n🎨 Designed by asimo3089.  @asimo3089",
+      "AssetTypeId": 9,
+      "Creator": {
+          "Id": 210085248,
+          "Name": "Badimo",
+          "CreatorType": "Group",
+          "CreatorTargetId": 3059674
+      },
+      "IconImageAssetId": 9771986545,
+      "Created": "2017-01-06T16:39:11.173Z",
+      "Updated": "2022-05-30T20:38:45.0434685Z",
+      "PriceInRobux": null,
+      "PriceInTickets": null,
+      "Sales": 0,
+      "IsNew": false,
+      "IsForSale": false,
+      "IsPublicDomain": false,
+      "IsLimited": false,
+      "IsLimitedUnique": false,
+      "Remaining": null,
+      "MinimumMembershipLevel": 0,
+      "ContentRatingTypeId": 0,
+      "SaleAvailabilityLocations": null
+  }
+  ```
+    
 Place APIs
 -------------
 #### Get place details
