@@ -34,6 +34,53 @@
 	float: right;
 }
 
+
+.menu-shown {
+	--btr-menu-visible: 1;
+}
+
+.btr-explorer-btn-shown {
+	--btr-explorer-visible: 1;
+}
+
+.btr-download-btn-shown {
+	--btr-download-visible: 1;
+}
+
+.btr-content-btn-shown {
+	--btr-content-visible: 1;
+}
+
+#item-container .item-name-container h1 {
+	padding-right: calc((
+		var(--btr-menu-visible, 0) +
+		var(--btr-explorer-visible, 0) +
+		var(--btr-download-visible, 0) +
+		var(--btr-content-visible, 0)
+	) * 38px + 12px);
+}
+
+#item-container .btr-explorer-button {
+	right: calc((
+		var(--btr-menu-visible, 0)
+	) * 38px + 12px);
+}
+
+#item-container .btr-download-button {
+	right: calc((
+		var(--btr-menu-visible, 0) +
+		var(--btr-explorer-visible, 0)
+	) * 38px + 12px);
+}
+
+#item-container .btr-content-button {
+	right: calc((
+		var(--btr-menu-visible, 0) +
+		var(--btr-explorer-visible, 0) +
+		var(--btr-download-visible, 0)
+	) * 38px + 12px);
+}
+
 .btr-explorer-button,
 .btr-download-button,
 .btr-content-button {
@@ -48,48 +95,6 @@
 .btr-content-button.disabled {
 	cursor: default;
 }
-
-.menu-shown .btr-explorer-button,
-.menu-shown .btr-download-button,
-.menu-shown .btr-content-button,
-.btr-explorer-btn-shown .btr-download-button,
-.btr-explorer-btn-shown .btr-content-button,
-.btr-download-btn-shown .btr-content-button {
-	right: 50px;
-}
-
-.menu-shown.btr-explorer-btn-shown .btr-download-button,
-.menu-shown.btr-download-btn-shown .btr-content-button,
-.menu-shown.btr-explorer-btn-shown .btr-content-button,
-.btr-explorer-btn-shown.btr-download-btn-shown .btr-content-button {
-	right: 88px;
-}
-
-.menu-shown.btr-explorer-btn-shown.btr-download-btn-shown .btr-content-button {
-	right: 126px;
-}
-
-
-.btr-explorer-btn-shown h2 {
-	padding-right: 40px;
-}
-
-.btr-explorer-btn-shown h2,
-.btr-download-btn-shown h2,
-.btr-content-btn-shown h2 {
-	padding-right: 40px;
-}
-
-.btr-explorer-btn-shown.btr-download-btn-shown h2,
-.btr-explorer-btn-shown.btr-content-btn-shown h2,
-.btr-download-btn-shown.btr-content-btn-shown h2 {
-	padding-right: 80px;
-}
-
-.btr-explorer-btn-shown.btr-download-btn-shown.btr-content-btn-shown h2 {
-	padding-right: 120px;
-}
-
 
 .btr-icon-explorer,
 .btr-icon-download,
