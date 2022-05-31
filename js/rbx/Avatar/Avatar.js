@@ -859,17 +859,17 @@ const RBXAvatar = (() => {
 				let rightLegHeight = -this.joints.RightHip.bakedC1.elements[13] + calcHeight("RightKnee") + calcHeight("RightAnkle") + this.parts.RightFoot.rbxSize[1] / 2
 
 				if(leftLegHeight >= 0.1 && rightLegHeight >= 0.1) {
-					const scale = rightLegHeight / leftLegHeight
+					const scale = new Vector3(1, rightLegHeight / leftLegHeight, 1)
 
 					if(scale > 1) {
-						this.parts.LeftUpperLeg.rbxScaleMod.multiplyScalar(scale)
-						this.parts.LeftLowerLeg.rbxScaleMod.multiplyScalar(scale)
-						this.parts.LeftFoot.rbxScaleMod.multiplyScalar(scale)
+						this.parts.LeftUpperLeg.rbxScaleMod.multiply(scale)
+						this.parts.LeftLowerLeg.rbxScaleMod.multiply(scale)
+						this.parts.LeftFoot.rbxScaleMod.multiply(scale)
 						leftLegHeight = rightLegHeight
 					} else {
-						this.parts.RightUpperLeg.rbxScaleMod.divideScalar(scale)
-						this.parts.RightLowerLeg.rbxScaleMod.divideScalar(scale)
-						this.parts.RightFoot.rbxScaleMod.divideScalar(scale)
+						this.parts.RightUpperLeg.rbxScaleMod.divide(scale)
+						this.parts.RightLowerLeg.rbxScaleMod.divide(scale)
+						this.parts.RightFoot.rbxScaleMod.divide(scale)
 						rightLegHeight = leftLegHeight
 					}
 
