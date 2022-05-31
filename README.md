@@ -10,8 +10,6 @@ BTRoblox, or Better Roblox, is an extension that aims to enhance Roblox website'
 Links
 -----
 
-* [Roblox Consolidated Web Apis](https://api.roblox.com/docs?useConsolidatedPage=true)
-* [Roblox Mesh Format (wiki)](https://developer.roblox.com/articles/Roblox-Mesh-Format) <!--Backup: https://pastebin.com/yCknWRaj-->
 * [Roblox Web Apis by Seranok](https://github.com/matthewdean/roblox-web-apis)
 * [API Docs](#api-docs)
 * [Undocumented APIs](#undocumented-apis)
