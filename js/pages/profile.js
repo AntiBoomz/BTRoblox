@@ -594,9 +594,7 @@ pageInit.profile = userId => {
 			if(!badges.length) {
 				hlist.append(html`<div class="section-content-off btr-section-content-off">This user has no Player Badges</div>`)
 			} else {
-				if(!pager.parentNode && (currentPage > 1 || hasMorePages)) {
-					hlist.after(pager)
-				}
+				hlist.after(pager)
 
 				badges.forEach(data => {
 					const badgeUrl = `/badges/${data.id}/${formatUrlName(data.name)}`
