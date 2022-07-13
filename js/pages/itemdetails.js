@@ -36,8 +36,17 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 			}
 		})
 		
+		const documentVisible = $.onceFn(async () => {
+			if(document.visibilityState === "hidden") {
+				return new Promise(resolve => {
+					document.$on("visibilitychange", () => resolve(), { once: true })
+				})
+			}
+		})
+		
 		const addAsset = async (assetId, assetTypeId, assetName) => {
 			if(AnimationPreviewAssetTypeIds.includes(assetTypeId)) {
+				await documentVisible()
 				await loadPreview()
 				preview.setVisible(true)
 				
@@ -101,6 +110,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 				}
 				
 			} else if(WearableAssetTypeIds.includes(assetTypeId)) {
+				await documentVisible()
 				await loadPreview()
 				preview.setVisible(true)
 				
