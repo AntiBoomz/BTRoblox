@@ -34,8 +34,11 @@ const BlogFeed = {
 				STORAGE.set({ cachedBlogFeedV2: this.cached })
 				SHARED_DATA.set("blogfeed", this.cached)
 				
-				this.fetching = null
 				return this.cached
+			})
+			
+			this.fetching.finally(() => {
+				this.fetching = null
 			})
 		}
 		
