@@ -112,13 +112,8 @@ const RBXBinaryParser = {
 		const typeName = this.DataTypes[dataType]
 		const instCount = group.Objects.length
 
-		if(!typeName) {
-			THROW_DEV_WARNING(`[ParseRBXBin] Unknown dataType 0x${dataType.toString(16).toUpperCase()} (${dataType}) for ${group.ClassName}.${prop}`)
-			return
-		}
-
 		let values = new Array(instCount)
-		let resultTypeName = typeName
+		let resultTypeName = typeName || "Unknown"
 
 		switch(typeName) {
 		case "string":
@@ -396,12 +391,18 @@ const RBXBinaryParser = {
 			break
 		}
 		default:
-			THROW_DEV_WARNING(`[ParseRBXBin] Unimplemented dataType '${typeName}' for ${group.ClassName}.${prop}`)
+			if(IS_DEV_MODE) {
+				if(!typeName) {
+					console.warn(`[ParseRBXBin] Unknown dataType 0x${dataType.toString(16).toUpperCase()} (${dataType}) for ${group.ClassName}.${prop}`)
+				} else {
+					console.warn(`[ParseRBXBin] Unimplemented dataType '${typeName}' for ${group.ClassName}.${prop}`)
+				}
+			}
 			// break omitted
 		case "WorldPivotData":
 		case "UnknownScriptFormat":
 			for(let i = 0; i < instCount; i++) {
-				values[i] = `<${typeName}>`
+				values[i] = `<${typeName || "Unknown"}>`
 			}
 			break
 		}
