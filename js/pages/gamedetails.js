@@ -584,10 +584,11 @@ pageInit.gamedetails = placeId => {
 			})
 		})
 		.$watch("#carousel-game-details", details => details.setAttribute("data-is-video-autoplayed-on-ready", "false"))
-		.$watch(".game-play-button-container", cont => {
-			const makeBox = (rootPlaceId, rootPlaceName) => {
-				if(+rootPlaceId === +placeId) { return }
-
+		.$watch("#game-detail-meta-data", dataCont => {
+			if(dataCont.dataset.placeId !== dataCont.dataset.rootPlaceId) {
+				const rootPlaceId = dataCont.dataset.rootPlaceId
+				const rootPlaceName = dataCont.dataset.placeName
+				
 				const box = html`
 				<div class="btr-universe-box">
 					This place is part of 
@@ -598,37 +599,7 @@ pageInit.gamedetails = placeId => {
 				</div>`
 
 				newContainer.prepend(box)
-
-				if(!rootPlaceName) {
-					const anchor = box.$find(".btr-universe-name")
-					RobloxApi.api.getProductInfo(rootPlaceId).then(data => {
-						anchor.textContent = data.Name
-						anchor.href = `/games/${rootPlaceId}/${formatUrlName(data.Name)}`
-					})
-				}
 			}
-
-			const playButton = cont.$find("#MultiplayerVisitButton")
-			if(playButton) {
-				makeBox(playButton.getAttribute("placeid"))
-				return
-			}
-
-			const buyButton = cont.$find(".PurchaseButton")
-			if(buyButton) {
-				makeBox(buyButton.dataset.itemId, buyButton.dataset.itemName)
-				return
-			}
-
-			const url = `https://api.roblox.com/universes/get-universe-places?placeId=${placeId}`
-			$.fetch(url).then(async resp => {
-				const json = await resp.json()
-				const rootPlaceId = json.RootPlace
-				if(rootPlaceId === placeId) { return }
-
-				const rootPlace = json.Places.find(x => x.PlaceId === rootPlaceId)
-				makeBox(rootPlaceId, rootPlace ? rootPlace.Name : "")
-			})
 		})
 	
 	RobloxApi.api.getProductInfo(placeId).then(data => {

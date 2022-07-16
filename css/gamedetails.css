@@ -121,7 +121,7 @@ body .btr-game-main-container {
 }
 
 .btr-universe-visit-button {
-	display: inline-block;
+	float: right;
 	margin-top: -5px;
 }
 
