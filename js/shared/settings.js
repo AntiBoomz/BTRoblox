@@ -38,7 +38,9 @@ const DEFAULT_SETTINGS = {
 		elements: { value: "", hidden: true }
 	},
 	avatar: {
-		enabled: { value: true }
+		enabled: { value: true },
+		removeAccessoryLimits: { value: true },
+		removeLayeredLimits: { value: false }
 	},
 	catalog: {
 		enabled: { value: true },
