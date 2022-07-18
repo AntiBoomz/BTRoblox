@@ -7,19 +7,19 @@ const BlogFeed = {
 	cached: null,
 	
 	canRequest() {
-		return Date.now() > this.lastRequest + 10e3
+		return Date.now() > this.lastRequest + 15e3
 	},
 	
 	request() {
-		if(!this.fetching) {
+		if(!this.fetching && this.canRequest()) {
 			this.lastRequest = Date.now()
 			
 			const striphtml = html => html.replace(/<[^>]*>/g, "").replace(/\s+/g, " ")
 			const feedUrl = `https://blog.roblox.com/wp-json/wp/v2/posts?per_page=3&context=embed`
 
-			this.fetching = fetch(feedUrl).then(async response => {
+			this.fetching = fetch(feedUrl, { credentials: "include" }).then(async response => {
 				if(!response.ok) {
-					return
+					return Promise.reject()
 				}
 
 				const json = await response.json()
@@ -42,7 +42,7 @@ const BlogFeed = {
 			})
 		}
 		
-		return this.fetching
+		return this.fetching || Promise.reject()
 	}
 }
 
@@ -59,10 +59,9 @@ MESSAGING.listen({
 			respond(BlogFeed.cached, true)
 		}
 		
-		if(BlogFeed.canRequest()) {
-			BlogFeed.request().then(data => respond(data))
-		} else {
-			respond.cancel()
-		}
+		BlogFeed.request().then(
+			data => respond(data),
+			() => respond.cancel()
+		)
 	}
 })
