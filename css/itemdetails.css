@@ -590,11 +590,18 @@ body .btr-bundle-animations .btr-bundle-btn-alt {
 
 .btr-owner-item:last-child:nth-child(3n + 1) {
 	width: 100%;
+	padding-left: 33.333%;
+	padding-right: 33.333%;
 }
 
-.btr-owner-item:last-child:nth-child(3n + 2),
 .btr-owner-item:nth-last-child(2):nth-child(3n + 1) {
 	width: 50%;
+	padding-left: 16.666%;
+}
+
+.btr-owner-item:last-child:nth-child(3n + 2) {
+	width: 50%;
+	padding-right: 16.666%;
 }
 
 .btr-owner-item:nth-child(3n + 1):not(:nth-last-child(-n + 3))::before,
