@@ -7,7 +7,7 @@ const BlogFeed = {
 	cached: null,
 	
 	canRequest() {
-		return Date.now() > this.lastRequest + 3e3
+		return Date.now() > this.lastRequest + 10e3
 	},
 	
 	request() {
