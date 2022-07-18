@@ -499,7 +499,7 @@ pageInit.itemdetails = (category, assetIdString) => {
 			const owners = html`
 			<div class=btr-owners-container style=display:none>
 				<div class=container-header>
-					<h3>Owners</h3>
+					<h2>Owners</h2>
 				</div>
 				<div class=section-content>
 				</div>

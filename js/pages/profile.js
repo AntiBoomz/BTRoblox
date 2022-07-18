@@ -7,7 +7,7 @@ pageInit.profile = userId => {
 	<div class=btr-profile-container>
 		<div class=btr-profile-left>
 			<div class="btr-profile-about profile-about">
-				<div class=container-header><h3>About</h3></div>
+				<div class=container-header><h2>About</h2></div>
 				<div class=section-content>
 					<div class=placeholder-status style=display:none></div>
 					<div class=placeholder-avatar style=display:none></div>
@@ -26,20 +26,20 @@ pageInit.profile = userId => {
 				</div>
 			</div>
 			<div class=placeholder-robloxbadges style=display:none>
-				<div class=container-header><h3>Roblox Badges</h3></div>
+				<div class=container-header><h2>Roblox Badges</h2></div>
 				<div class=section-content>
 					<div class="section-content-off btr-section-content-off">This user has no Roblox Badges</div>
 				</div>
 			</div>
 			<div class=btr-profile-playerbadges>
-				<div class=container-header><h3>Player Badges</h3></div>
+				<div class=container-header><h2>Player Badges</h2></div>
 				<div class=section-content>
 					<ul class=hlist>
 					</ul>
 				</div>
 			</div>
 			<div class=btr-profile-groups>
-				<div class=container-header><h3>Groups</h3></div>
+				<div class=container-header><h2>Groups</h2></div>
 				<div class=section-content>
 					<ul class=hlist>
 						<div class="section-content-off btr-section-content-off">This user is not in any Groups</div>
@@ -50,20 +50,20 @@ pageInit.profile = userId => {
 
 		<div class=btr-profile-right>
 			<div class=placeholder-games>
-				<div class=container-header><h3>Games</h3></div>
+				<div class=container-header><h2>Games</h2></div>
 				<div class=section-content>
 					<div class="section-content-off btr-section-content-off">This user has no active Games</div>
 				</div>
 			</div>
 			<div class=placeholder-friends>
-				<div class=container-header><h3>Friends</h3></div>
+				<div class=container-header><h2>Friends</h2></div>
 				<div class=section-content>
 					<div class="section-content-off btr-section-content-off">This user has no Friends</div>
 				</div>
 			</div>
 			<div class=btr-profile-favorites>
 				<div class=container-header>
-					<h3>Favorites</h3>
+					<h2>Favorites</h2>
 					<a href=./favorites class="btn-secondary-xs btn-fixed-width btn-more see-all-link-icon">See All</a>
 				</div>
 				<div class=section-content>
