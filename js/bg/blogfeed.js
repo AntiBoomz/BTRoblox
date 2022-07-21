@@ -47,7 +47,7 @@ const BlogFeed = {
 }
 
 STORAGE.get(["cachedBlogFeedV2"], data => {
-	if(data.cachedBlogFeedV2 && BlogFeed.cached) {
+	if(data.cachedBlogFeedV2 && !BlogFeed.cached) {
 		BlogFeed.cached = data.cachedBlogFeedV2
 		SHARED_DATA.set("blogfeed", BlogFeed.cached)
 	}
