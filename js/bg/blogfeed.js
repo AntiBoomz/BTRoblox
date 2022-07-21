@@ -17,7 +17,7 @@ const BlogFeed = {
 			const striphtml = html => html.replace(/<[^>]*>/g, "").replace(/\s+/g, " ")
 			const feedUrl = `https://blog.roblox.com/wp-json/wp/v2/posts?per_page=3&context=embed`
 
-			this.fetching = fetch(feedUrl, { credentials: "include" }).then(async response => {
+			this.fetching = fetch(feedUrl).then(async response => {
 				if(!response.ok) {
 					return Promise.reject()
 				}
