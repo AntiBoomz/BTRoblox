@@ -36,20 +36,26 @@ pageInit.gamedetails = placeId => {
 				throw new Error("Failed to load")
 			}
 			
-			const maxPage = Math.floor(((largePageIndex - 1) * largePageSize + json.data.length - 1) / pageSize) + 1
+			const maxServer = (largePageIndex - 1) * largePageSize + json.data.length
 			
 			if(json.nextPageCursor) {
 				cursors[largePageIndex - 1] = json.nextPageCursor
 				
-				if(btrPager.maxPage < maxPage + 1) {
-					btrPager.maxPage = maxPage + 1
+				const maxPage = Math.max(1, Math.ceil(maxServer / pageSize))
+				
+				if(btrPager.maxPage < maxPage) {
+					btrPager.maxPage = maxPage
 					btrPager.foundMaxPage = false
 					btrPagerState.update()
 				}
 			} else {
-				btrPager.maxPage = Math.max(1, maxPage)
-				btrPager.foundMaxPage = json.data.length > 0 || largePageIndex === 1
-				btrPagerState.update()
+				const maxPage = Math.max(1, Math.floor((maxServer - 1) / pageSize) + 1)
+				
+				if(json.data.length > 0 || largePageIndex === 1 || btrPager.maxPage === maxPage) {
+					btrPager.maxPage = maxPage
+					btrPager.foundMaxPage = true
+					btrPagerState.update()
+				}
 			}
 			
 			return json
