@@ -37,25 +37,20 @@ pageInit.gamedetails = placeId => {
 			}
 			
 			const maxServer = (largePageIndex - 1) * largePageSize + json.data.length
+			const maxPage = Math.max(1, Math.floor((maxServer - 1) / pageSize) + 1)
 			
 			if(json.nextPageCursor) {
 				cursors[largePageIndex - 1] = json.nextPageCursor
 				
-				const maxPage = Math.max(1, Math.ceil(maxServer / pageSize))
-				
-				if(btrPager.maxPage < maxPage) {
+				if(btrPager.maxPage <= maxPage) {
 					btrPager.maxPage = maxPage
 					btrPager.foundMaxPage = false
 					btrPagerState.update()
 				}
 			} else {
-				const maxPage = Math.max(1, Math.floor((maxServer - 1) / pageSize) + 1)
-				
-				if(json.data.length > 0 || largePageIndex === 1 || btrPager.maxPage === maxPage) {
-					btrPager.maxPage = maxPage
-					btrPager.foundMaxPage = true
-					btrPagerState.update()
-				}
+				btrPager.maxPage = maxPage
+				btrPager.foundMaxPage = json.data.length > 0 || largePageIndex === 1
+				btrPagerState.update()
 			}
 			
 			return json
@@ -72,7 +67,7 @@ pageInit.gamedetails = placeId => {
 				const serversTo = serversFrom + pageSize - 1
 				
 				const largeFrom = Math.min(cursors.length + 1, Math.floor((serversFrom - 1) / largePageSize) + 1)
-				const largeTo = Math.floor((serversTo - 1) / largePageSize) + 1
+				let largeTo = Math.floor((serversTo - 1) / largePageSize) + 1
 				
 				for(let pageIndex = largeFrom; pageIndex <= largeTo; pageIndex++) {
 					const json = servers[pageIndex]
@@ -91,6 +86,9 @@ pageInit.gamedetails = placeId => {
 							btrPagerState.update()
 							continue outer
 						}
+						
+						largeTo = pageIndex
+						break
 					}
 				}
 				
