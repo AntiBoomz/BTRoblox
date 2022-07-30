@@ -491,17 +491,8 @@ pageInit.gamedetails = placeId => {
 		.$watch("#about", about => {
 			about.classList.remove("active")
 
-			about.append(
-				html`
-				<div class="section btr-compat-rtrack">
-					<div class=container-header><h3></h3></div>
-					<div class="section-content remove-panel"><pre class="text game-description"></pre></div>
-				</div>`,
-				html`<div class="ng-scope btr-compat-rtrack"></div>`
-			)
-			
 			about.$watchAll("*", x => {
-				if(!x.matches("#rbx-private-servers, #private-server-container-about-tab, #my-recommended-games, #recommended-games-container, .btr-compat-rtrack")) {
+				if(!x.matches("#rbx-private-servers, #private-server-container-about-tab, #my-recommended-games, #recommended-games-container")) {
 					midContainer.append(x)
 				}
 			})
