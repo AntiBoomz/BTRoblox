@@ -133,6 +133,24 @@ body .btr-game-main-container {
 	clear: both;
 }
 
+.btr-gamedetails .server-list-section .card-list {
+	display: grid;
+	grid-template-columns: repeat(4, 25%);
+	grid-auto-rows: auto;
+}
+
+.btr-gamedetails .server-list-section .card-list > li {
+	width: 100%;
+	display: flex;
+}
+
+.btr-gamedetails .server-list-section .card-list .card-item {
+	min-height: unset; /* we do scaling on the grid level now, no need for this */
+	width: 100%;
+	
+	row-gap: 12px; /* looked a bit bad with no gap at all */
+}
+
 .btr-gamedetails .rbx-game-status {
 	white-space: pre-line;
 }
