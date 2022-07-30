@@ -55,27 +55,6 @@ pageInit.gamedetails = placeId => {
 			return json
 		}
 		
-		const findMaxPage = async () => {
-			const findStarted = btrPager.maxPage
-			
-			const attemptFindMaxPage = () => {
-				if(btrPager.maxPage >= findStarted + 1000) {
-					return
-				}
-				
-				const largePageIndex = Math.floor((btrPager.maxPage * pageSize) / largePageSize) + 1
-				return loadLargePage(largePageIndex).then(() => !btrPager.foundMaxPage && attemptFindMaxPage())
-			}
-			
-			btrPager.updatingMaxPage = true
-			btrPagerState.update()
-			
-			return attemptFindMaxPage().finally(() => {
-				btrPager.updatingMaxPage = false
-				btrPagerState.update()
-			})
-		}
-		
 		const loadServers = async () => {
 			const servers = {}
 			
@@ -247,18 +226,7 @@ pageInit.gamedetails = placeId => {
 							
 							React.createElement(
 								"span", {
-									className: "btr-pager-total",
-									title: (!btrPager.foundMaxPage && !btrPager.updatingMaxPage) ? "Click to load more" : null,
-									style: {
-										opacity: (!btrPager.foundMaxPage && !btrPager.updatingMaxPage) ? "0.7" : null,
-										cursor: (!btrPager.foundMaxPage && !btrPager.updatingMaxPage) ? "pointer" : null
-									},
-									
-									onClick() {
-										if(!btrPager.updatingMaxPage && !btrPager.foundMaxPage) {
-											findMaxPage()
-										}
-									}
+									className: "btr-pager-total"
 								},
 								btrPager.foundMaxPage ? `${btrPager.maxPage}` : btrPager.maxPage > 1 ? `${btrPager.maxPage}+` : "1"
 							)
