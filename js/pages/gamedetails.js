@@ -56,6 +56,21 @@ pageInit.gamedetails = placeId => {
 			return json
 		}
 		
+		const updateMaxPage = async () => {
+			const attemptFindMaxPage = () => {
+				const largePageIndex = Math.floor((btrPager.maxPage * pageSize) / largePageSize) + 1
+				return loadLargePage(largePageIndex).then(() => !btrPager.foundMaxPage && attemptFindMaxPage())
+			}
+			
+			btrPager.updatingMaxPage = true
+			btrPagerState.update()
+			
+			return attemptFindMaxPage().finally(() => {
+				btrPager.updatingMaxPage = false
+				btrPagerState.update()
+			})
+		}
+		
 		const loadServers = async () => {
 			const servers = {}
 			
@@ -102,6 +117,14 @@ pageInit.gamedetails = placeId => {
 					const startIndex = (pageIndex - 1) * largePageSize
 					
 					result.push(...json.data.slice(Math.max(0, (serversFrom - 1) - startIndex), Math.max(0, serversTo - startIndex)))
+				}
+				
+				if(btrPager.foundMaxPage && !btrPager.updatingMaxPage) {
+					const maxLargePage = Math.floor((btrPager.maxPage * pageSize - 1) / largePageSize) + 1 // index of last item on maxPage
+					
+					if(!servers[maxLargePage]) { // we dont want to update max page twice
+						updateMaxPage()
+					}
 				}
 				
 				return result
