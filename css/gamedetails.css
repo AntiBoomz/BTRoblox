@@ -127,12 +127,10 @@ body .btr-game-main-container {
 
 /* Servers */
 
-.btr-gamedetails #game-instances .stack-list .stack-row {
-	border: 1px solid #E3E3E3;
-}
-
-.dark-theme.btr-gamedetails #game-instances .stack-list .stack-row {
-	border-color: #656668;
+.btr-gamedetails .server-list-section .card-list::after {
+	content: "";
+	display: table;
+	clear: both;
 }
 
 .btr-gamedetails .rbx-game-status {

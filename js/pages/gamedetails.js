@@ -7,145 +7,147 @@ pageInit.gamedetails = placeId => {
 		const { settings, reactHook } = window.BTRoblox
 		const placeId = BTRoblox.currentPage.matches[0]
 		
-		const btrPager = { currentPage: 1, targetPage: 1, loading: false }
-		const cursors = []
+		const largePageSize = 100
+		const pageSize = 12
 		
-		const findMaxPage = async largePageIndex => {
-			if(largePageIndex * 10 >= Math.max(btrPager.targetPage, btrPager.currentPage, btrPager.startingMaxPage ?? 1) + 200) {
-				btrPager.updatingMaxPage = false
-				btrPagerState.update()
-				return null
-			}
-			
-			const cursor = cursors[largePageIndex - 2] ?? ""
-			const url = `https://games.roblox.com/v1/games/${placeId}/servers/Public?sortOrder=Desc&limit=100&cursor=${cursor}`
-			
-			await new Promise(resolve => setTimeout(resolve, 100))
-			
-			return fetch(url, { credentials: "include" }).then(async res => {
-				if(!res.ok) {
-					return Promise.reject()
-				}
-				
-				const json = await res.json()
-				const numSmallPages = Math.floor((json.data.length - 1) / 10) + 1
-				
-				if(numSmallPages === 0 && largePageIndex > 1) {
-					cursors.splice(largePageIndex - 2, cursors.length)
-					return findMaxPage(largePageIndex - 1)
-				}
-				
-				if(json.nextPageCursor) {
-					cursors[largePageIndex - 1] = json.nextPageCursor
-					
-					btrPager.maxPage = largePageIndex * 10 + 1
-					btrPagerState.update()
-					
-					return findMaxPage(largePageIndex + 1)
-				}
-				
-				btrPager.maxPage = (largePageIndex - 1) * 10 + Math.max(1, numSmallPages)
-				btrPager.updatingMaxPage = false
-				btrPager.foundMaxPage = true
-				btrPagerState.update()
-			}).catch(async () => {
-				await new Promise(resolve => setTimeout(resolve, 400))
-				return findMaxPage(cursors.length + 1)
-			})
-		}
+		const btrPager = { currentPage: 1, targetPage: 1, maxPage: 1, loading: false }
+		const promises = {}
+		const cursors = []
 		
 		const btrPagerState = reactHook.createGlobalState(btrPager)
 		
-		const btrGetPublicGameInstances = () => {
-			let updatedMaxPage = false
+		const loadLargePage = async largePageIndex => {
+			if(largePageIndex >= cursors.length + 2) {
+				throw new Error("Tried to load page with no cursor")
+			}
 			
-			btrPager.targetPage = Math.max(1, btrPager.targetPage)
-			btrPager.loading = true
+			const cursor = cursors[largePageIndex - 2] ?? ""
 			
-			const loadServers = targetPage => {
-				let largePageIndex = Math.floor((targetPage - 1) / 10) + 1
-				let smallPageIndex = (targetPage - 1) % 10 + 1
+			const url = `https://games.roblox.com/v1/games/${placeId}/servers/Public?sortOrder=Desc&limit=${largePageSize}&cursor=${cursor}`
+			let promise = promises[url]
+			
+			if(!promise) {
+				promise = promises[url] = fetch(url, { credentials: "include" }).then(res => (res.ok ? res.json() : null)).catch(() => null).finally(() => delete promises[url])
+			}
+			
+			const json = await promise
+			
+			if(!json) {
+				throw new Error("Failed to load")
+			}
+			
+			const maxPage = Math.floor(((largePageIndex - 1) * largePageSize + json.data.length - 1) / pageSize) + 1
+			
+			if(json.nextPageCursor) {
+				cursors[largePageIndex - 1] = json.nextPageCursor
 				
-				let cursor
-				let limit
-				
-				if(targetPage <= 1 && btrPager.maxPage == null) {
-					cursor = ""
-					limit = 10
-				} else {
-					if(largePageIndex - 2 >= cursors.length) {
-						largePageIndex = cursors.length + 1
-						smallPageIndex = 10
-					}
-					
-					cursor = cursors[largePageIndex - 2] ?? ""
-					limit = 100
+				if(btrPager.maxPage < maxPage + 1) {
+					btrPager.maxPage = maxPage + 1
+					btrPager.foundMaxPage = false
+					btrPagerState.update()
+				}
+			} else {
+				btrPager.maxPage = Math.max(1, maxPage)
+				btrPager.foundMaxPage = json.data.length > 0 || largePageIndex === 1
+				btrPagerState.update()
+			}
+			
+			return json
+		}
+		
+		const findMaxPage = async () => {
+			const findStarted = btrPager.maxPage
+			
+			const attemptFindMaxPage = () => {
+				if(btrPager.maxPage >= findStarted + 1000) {
+					return
 				}
 				
-				const url = `https://games.roblox.com/v1/games/${placeId}/servers/Public?sortOrder=Desc&limit=${limit}&cursor=${cursor}`
+				const largePageIndex = Math.floor((btrPager.maxPage * pageSize) / largePageSize) + 1
+				return loadLargePage(largePageIndex).then(() => !btrPager.foundMaxPage && attemptFindMaxPage())
+			}
+			
+			btrPager.updatingMaxPage = true
+			btrPagerState.update()
+			
+			return attemptFindMaxPage().finally(() => {
+				btrPager.updatingMaxPage = false
+				btrPagerState.update()
+			})
+		}
+		
+		const loadServers = async () => {
+			const servers = {}
+			
+			outer:
+			while(true) {
+				const targetPage = btrPager.targetPage
 				
-				return fetch(url, { credentials: "include" }).then(async res => {
-					if(!res.ok) {
-						return Promise.reject()
+				const serversFrom = (targetPage - 1) * pageSize + 1
+				const serversTo = serversFrom + pageSize - 1
+				
+				const largeFrom = Math.min(cursors.length + 1, Math.floor((serversFrom - 1) / largePageSize) + 1)
+				const largeTo = Math.floor((serversTo - 1) / largePageSize) + 1
+				
+				for(let pageIndex = largeFrom; pageIndex <= largeTo; pageIndex++) {
+					const json = servers[pageIndex]
+					
+					if(!json) {
+						servers[pageIndex] = await loadLargePage(pageIndex)
+						continue outer
 					}
 					
-					const json = await res.json()
-					const numSmallPages = Math.floor((json.data.length - 1) / 10) + 1
+					if(!json.nextPageCursor) {
+						const maxServer = (pageIndex - 1) * largePageSize + json.data.length
+						const maxPage = Math.max(1, Math.floor((maxServer - 1) / pageSize) + 1)
 						
-					if(numSmallPages === 0 && largePageIndex > 1) {
-						cursors.splice(largePageIndex - 2, cursors.length)
-						return loadServers((largePageIndex - 1) * 10)
-					} else {
-						const largestKnownPage = (largePageIndex - 1) * 10 + Math.max(1, numSmallPages)
-						
-						if(json.nextPageCursor) {
-							if((btrPager.maxPage ?? -1) < largestKnownPage + 1) {
-								btrPager.maxPage = largestKnownPage + 1
-								btrPagerState.update()
-							}
-						} else {
-							btrPager.maxPage = largestKnownPage
-							btrPager.foundMaxPage = true
+						if(maxPage < targetPage) {
+							btrPager.targetPage = maxPage
 							btrPagerState.update()
-							updatedMaxPage = true
+							continue outer
 						}
 					}
+				}
+				
+				btrPager.currentPage = targetPage
+				btrPagerState.update()
+				
+				const result = []
+				
+				for(let pageIndex = largeFrom; pageIndex <= largeTo; pageIndex++) {
+					const json = servers[pageIndex]
+					const startIndex = (pageIndex - 1) * largePageSize
 					
-					if(limit === 100) {
-						if(json.nextPageCursor) {
-							cursors[largePageIndex - 1] = json.nextPageCursor
-							
-							if(targetPage > largePageIndex * 10) {
-								return loadServers(targetPage)
-							}
+					result.push(...json.data.slice(Math.max(0, (serversFrom - 1) - startIndex), Math.max(0, serversTo - startIndex)))
+				}
+				
+				return result
+			}
+		}
+		
+		let getGameInstancesPromise
+		const btrGetPublicGameInstances = () => {
+			if(!getGameInstancesPromise) {
+				btrPager.loading = true
+				btrPagerState.update()
+				
+				getGameInstancesPromise = loadServers().then(
+					servers => ({
+						data: {
+							nextPageCursor: btrPager.currentPage < btrPager.maxPage ? "idk" : null,
+							data: servers
 						}
-						
-						if(smallPageIndex > numSmallPages) {
-							smallPageIndex = Math.max(1, numSmallPages)
-						}
-						
-						json.nextPageCursor = (json.nextPageCursor || smallPageIndex < numSmallPages) ? "idk" : ""
-						json.data = json.data.slice((smallPageIndex - 1) * 10, smallPageIndex * 10)
-						
-						if(!updatedMaxPage && !btrPager.updatingMaxPage) {
-							btrPager.updatingMaxPage = true
-							btrPagerState.update()
-							
-							findMaxPage(cursors.length + 1)
-						}
-					}
-					
-					btrPager.currentPage = (largePageIndex - 1) * 10 + smallPageIndex
+					}),
+					() => null
+				).finally(() => {
 					btrPager.loading = false
+					btrPagerState.update()
 					
-					return { data: json }
-				}).catch(() => {
-					btrPager.loading = false
-					return null
+					getGameInstancesPromise = null
 				})
 			}
 			
-			return loadServers(btrPager.targetPage)
+			return getGameInstancesPromise
 		}
 		
 		const btrPagerConstructor = ({ refreshGameInstances }) => {
@@ -194,7 +196,7 @@ pageInit.gamedetails = placeId => {
 								disabled: !canPrev,
 								onClick() {
 									if(!canPrev) { return }
-									btrPager.targetPage = btrPager.currentPage - 1
+									btrPager.targetPage = Math.max(1, btrPager.currentPage - 1)
 									refreshGameInstances()
 								}
 							},
@@ -230,8 +232,8 @@ pageInit.gamedetails = placeId => {
 								onBlur(e) {
 									const num = parseInt(e.target.value, 10)
 	
-									if(!Number.isNaN(num)) {
-										btrPager.targetPage = num
+									if(Number.isSafeInteger(num)) {
+										btrPager.targetPage = Math.max(1, num)
 										refreshGameInstances()
 									} else {
 										e.target.value = btrPager.currentPage
@@ -254,13 +256,11 @@ pageInit.gamedetails = placeId => {
 									
 									onClick() {
 										if(!btrPager.updatingMaxPage && !btrPager.foundMaxPage) {
-											btrPager.updatingMaxPage = true
-											btrPager.startingMaxPage = btrPager.maxPage ?? 1
-											findMaxPage(cursors.length + 1)
+											findMaxPage()
 										}
 									}
 								},
-								btrPager.foundMaxPage ? `${btrPager.maxPage}` : btrPager.maxPage ? `${btrPager.maxPage}+` : "1"
+								btrPager.foundMaxPage ? `${btrPager.maxPage}` : btrPager.maxPage > 1 ? `${btrPager.maxPage}+` : "1"
 							)
 						)
 					),
