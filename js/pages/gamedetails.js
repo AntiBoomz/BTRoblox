@@ -15,6 +15,7 @@ pageInit.gamedetails = placeId => {
 		const cursors = []
 		
 		const btrPagerState = reactHook.createGlobalState(btrPager)
+		let lastServerParams = {}
 		
 		const loadLargePage = async largePageIndex => {
 			if(largePageIndex >= cursors.length + 2) {
@@ -23,7 +24,7 @@ pageInit.gamedetails = placeId => {
 			
 			const cursor = cursors[largePageIndex - 2] ?? ""
 			
-			const url = `https://games.roblox.com/v1/games/${placeId}/servers/Public?sortOrder=Desc&limit=${largePageSize}&cursor=${cursor}`
+			const url = `https://games.roblox.com/v1/games/${placeId}/servers/Public?sortOrder=${lastServerParams.sortOrder === "Asc" ? "Asc" : "Desc"}&excludeFullGames=${lastServerParams.excludeFullGames ? "true" : "false"}&limit=${largePageSize}&cursor=${cursor}`
 			let promise = promises[url]
 			
 			if(!promise) {
@@ -132,10 +133,12 @@ pageInit.gamedetails = placeId => {
 		}
 		
 		let getGameInstancesPromise
-		const btrGetPublicGameInstances = () => {
+		const btrGetPublicGameInstances = (placeId, cursor, params) => {
 			if(!getGameInstancesPromise) {
 				btrPager.loading = true
 				btrPagerState.update()
+				
+				lastServerParams = params || {}
 				
 				getGameInstancesPromise = loadServers().then(
 					servers => ({
