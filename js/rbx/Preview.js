@@ -482,7 +482,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 					</div>
 					<div class=btr-body-outfit-btn data-outfit=default>
 						<div class=btr-body-outfit-icon>
-							<img src="https://tr.rbxcdn.com/e8df9019b5f1b064128d7797ceaaf759/150/150/Avatar/Png">
+							<img src="https://tr.rbxcdn.com/cd6c66bb06aa97e00e4d79169e6d74e5/150/150/Avatar/Png">
 						</div>
 						<span class=btr-body-outfit-title>Default</span>
 					</div>
