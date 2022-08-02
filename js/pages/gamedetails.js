@@ -174,6 +174,10 @@ pageInit.gamedetails = placeId => {
 			
 			React.useEffect(updateInputWidth, [])
 			
+			React.useEffect(() => {
+				inputRef.current.value = btrPager.currentPage
+			}, [btrPager.currentPage])
+			
 			return React.createElement(
 				"div", { className: "btr-pager-holder btr-server-pager" },
 				React.createElement(
