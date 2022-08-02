@@ -15,7 +15,7 @@ pageInit.gamedetails = placeId => {
 		const cursors = []
 		
 		const btrPagerState = reactHook.createGlobalState(btrPager)
-		let lastServerParams = {}
+		const serverParams = { sortOrder: "Desc", excludeFullGames: false }
 		
 		const loadLargePage = async largePageIndex => {
 			if(largePageIndex >= cursors.length + 2) {
@@ -24,7 +24,7 @@ pageInit.gamedetails = placeId => {
 			
 			const cursor = cursors[largePageIndex - 2] ?? ""
 			
-			const url = `https://games.roblox.com/v1/games/${placeId}/servers/Public?sortOrder=${lastServerParams.sortOrder === "Asc" ? "Asc" : "Desc"}&excludeFullGames=${lastServerParams.excludeFullGames ? "true" : "false"}&limit=${largePageSize}&cursor=${cursor}`
+			const url = `https://games.roblox.com/v1/games/${placeId}/servers/Public?sortOrder=${serverParams.sortOrder}&excludeFullGames=${serverParams.excludeFullGames}&limit=${largePageSize}&cursor=${cursor}`
 			let promise = promises[url]
 			
 			if(!promise) {
@@ -134,13 +134,23 @@ pageInit.gamedetails = placeId => {
 		
 		let getGameInstancesPromise
 		const btrGetPublicGameInstances = (placeId, cursor, params) => {
+			const sortOrder = params?.sortOrder === "Asc" ? "Asc" : "Desc"
+			const excludeFullGames = params?.excludeFullGames ? true : false
+			
+			if(serverParams.sortOrder !== sortOrder || serverParams.excludeFullGames !== excludeFullGames) {
+				getGameInstancesPromise = null
+				
+				serverParams.sortOrder = sortOrder
+				serverParams.excludeFullGames = excludeFullGames
+				
+				btrPager.targetPage = 1
+			}
+			
 			if(!getGameInstancesPromise) {
 				btrPager.loading = true
 				btrPagerState.update()
 				
-				lastServerParams = params || {}
-				
-				getGameInstancesPromise = loadServers().then(
+				const thisPromise = getGameInstancesPromise = loadServers().then(
 					servers => ({
 						data: {
 							nextPageCursor: btrPager.currentPage < btrPager.maxPage ? "idk" : null,
@@ -149,10 +159,12 @@ pageInit.gamedetails = placeId => {
 					}),
 					() => null
 				).finally(() => {
-					btrPager.loading = false
-					btrPagerState.update()
-					
-					getGameInstancesPromise = null
+					if(getGameInstancesPromise === thisPromise) {
+						btrPager.loading = false
+						btrPagerState.update()
+						
+						getGameInstancesPromise = null
+					}
 				})
 			}
 			
