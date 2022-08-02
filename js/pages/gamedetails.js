@@ -134,16 +134,18 @@ pageInit.gamedetails = placeId => {
 		
 		let getGameInstancesPromise
 		const btrGetPublicGameInstances = (placeId, cursor, params) => {
-			const sortOrder = params?.sortOrder === "Asc" ? "Asc" : "Desc"
-			const excludeFullGames = params?.excludeFullGames ? true : false
-			
-			if(serverParams.sortOrder !== sortOrder || serverParams.excludeFullGames !== excludeFullGames) {
-				getGameInstancesPromise = null
+			if(!params?.btrRefresh) {
+				const sortOrder = params?.sortOrder === "Asc" ? "Asc" : "Desc"
+				const excludeFullGames = params?.excludeFullGames ? true : false
 				
-				serverParams.sortOrder = sortOrder
-				serverParams.excludeFullGames = excludeFullGames
-				
-				btrPager.targetPage = 1
+				if(serverParams.sortOrder !== sortOrder || serverParams.excludeFullGames !== excludeFullGames) {
+					getGameInstancesPromise = null
+					
+					serverParams.sortOrder = sortOrder
+					serverParams.excludeFullGames = excludeFullGames
+					
+					btrPager.targetPage = 1
+				}
 			}
 			
 			if(!getGameInstancesPromise) {
@@ -204,7 +206,7 @@ pageInit.gamedetails = placeId => {
 								onClick() {
 									if(!canPrev) { return }
 									btrPager.targetPage = 1
-									refreshGameInstances()
+									refreshGameInstances({ btrRefresh: true })
 								}
 							},
 							React.createElement(
@@ -222,7 +224,7 @@ pageInit.gamedetails = placeId => {
 								onClick() {
 									if(!canPrev) { return }
 									btrPager.targetPage = Math.max(1, btrPager.currentPage - 1)
-									refreshGameInstances()
+									refreshGameInstances({ btrRefresh: true })
 								}
 							},
 							React.createElement(
@@ -241,7 +243,6 @@ pageInit.gamedetails = placeId => {
 							"input", {
 								className: "btr-pager-cur",
 								type: "text",
-								defaultValue: btrPager.currentPage,
 								ref: inputRef,
 								
 								onChange() {
@@ -259,7 +260,7 @@ pageInit.gamedetails = placeId => {
 	
 									if(Number.isSafeInteger(num)) {
 										btrPager.targetPage = Math.max(1, num)
-										refreshGameInstances()
+										refreshGameInstances({ btrRefresh: true })
 									} else {
 										e.target.value = btrPager.currentPage
 									}
@@ -288,7 +289,7 @@ pageInit.gamedetails = placeId => {
 								onClick() {
 									if(!canNext) { return }
 									btrPager.targetPage = btrPager.currentPage + 1
-									refreshGameInstances()
+									refreshGameInstances({ btrRefresh: true })
 								}
 							},
 							React.createElement(
@@ -306,7 +307,7 @@ pageInit.gamedetails = placeId => {
 								onClick() {
 									if(!canNext) { return }
 									btrPager.targetPage = Math.max(btrPager.maxPage ?? 1, btrPager.currentPage + 50)
-									refreshGameInstances()
+									refreshGameInstances({ btrRefresh: true })
 								}
 							},
 							React.createElement(
