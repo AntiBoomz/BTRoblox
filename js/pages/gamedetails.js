@@ -374,44 +374,6 @@ pageInit.gamedetails = placeId => {
 			}
 		)
 		
-		reactHook.hijackConstructor( // GameInstance
-			args => args[1]?.gameServerStatus,
-			(target, thisArg, args) => {
-				const result = target.apply(thisArg, args)
-				
-				try {
-					const list = reactHook.queryElement(result, x => x.props?.className?.includes("game-server-players"))
-					let entries = list?.props?.children
-					
-					if(entries) {
-						if(!Array.isArray(entries)) { entries = [entries] }
-						
-						for(const entry of entries) {
-							const thumb = reactHook.queryElement(entry, x => x.props?.type === "AvatarHeadshot")
-							
-							if(thumb && thumb.props.token?.startsWith("btr/")) {
-								const token = thumb.props.token
-								thumb.type = "span"
-								
-								for(const key of Object.keys(thumb.props)) {
-									delete thumb.props[key]
-								}
-								
-								thumb.props.className = "thumbnail-2d-container avatar-card-image"
-								thumb.props.children = React.createElement(
-									"img", { src: token.slice(4) }
-								)
-							}
-						}
-					}
-				} catch(ex) {
-					console.error(ex)
-				}
-				
-				return result
-			}
-		)
-		
 		reactHook.hijackConstructor( // App (serverList)
 			args => args[0].toString().includes("getPublicGameInstances"),
 			(target, thisArg, args) => {
