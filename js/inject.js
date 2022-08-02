@@ -248,6 +248,9 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 		}
 	}
 	
+	
+	const reactHandlerCacheSymbol = Symbol("btrReactHandlerCache")
+	
 	const reactHook = {
 		constructorReplaces: [],
 		injectedContent: [],
@@ -343,7 +346,7 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 		
 		hijackConstructor(filter, handler) {
 			this.constructorReplaces.push({
-				filter, handler
+				filter, handler, index: this.constructorReplaces.length
 			})
 		},
 		
@@ -438,15 +441,26 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 			const props = args[1]
 			
 			if(typeof args[0] === "function") {
-				let handler = args[0]
+				const handlers = this.constructorReplaces.filter(info => info.filter(args))
 				
-				for(const info of this.constructorReplaces) {
-					if(info.filter(args)) {
-						handler = new Proxy(handler, { apply: info.handler })
+				if(handlers.length > 0) {
+					const cache = args[0][reactHandlerCacheSymbol] = args[0][reactHandlerCacheSymbol] ?? {}
+					const key = handlers.map(x => x.index).join("_")
+					
+					let handler = cache[key]
+					
+					if(!handler) {
+						handler = args[0]
+						
+						for(const info of handlers) {
+							handler = new Proxy(handler, { apply: info.handler })
+						}
+						
+						cache[key] = handler
 					}
+					
+					args[0] = handler
 				}
-				
-				args[0] = handler
 			}
 			
 			//
