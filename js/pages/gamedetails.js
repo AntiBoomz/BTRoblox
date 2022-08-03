@@ -501,10 +501,10 @@ pageInit.gamedetails = placeId => {
 				ev.target.before(link)
 				link.append(ev.target)
 				
-				setTimeout(() => {
+				requestAnimationFrame(() => {
 					link.before(ev.target)
 					link.remove()
-				}, 0)
+				})
 			})
 		})
 		.$watch(".game-main-content", mainCont => {
