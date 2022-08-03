@@ -266,7 +266,7 @@ const btrNavigation = {
 			name: "Show Trade",
 			
 			selector: "#nav-trade",
-			enabled: false,
+			enabled: true,
 			
 			update(node) {
 				node.parentNode.style.display = this.enabled ? "" : "none"
@@ -275,6 +275,7 @@ const btrNavigation = {
 		
 		btrNavigation.register("sidebar_money", {
 			name: "Show Money",
+			enabled: false,
 			
 			reactInject: {
 				selector: ".left-col-list",
