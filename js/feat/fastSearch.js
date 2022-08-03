@@ -362,13 +362,11 @@ const btrFastSearch = {
 
 			if(search.length >= 3 && usernameRegex.test(search)) {
 				if(!userCache[search]) {
-					const temp = {
+					const temp = userCache[search] = {
 						Temporary: true,
 						Hidden: search.length > 20 || search.includes(" "), // Uncommon parts of a name
 						Username: search
 					}
-
-					userCache[search] = temp
 					
 					const url = `https://users.roblox.com/v1/usernames/users`
 					$.fetch(url, {
