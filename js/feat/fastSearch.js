@@ -134,24 +134,26 @@ const btrFastSearch = {
 						name, user, isAlias: name !== user.Username.toLowerCase()
 					}
 					
-					if(name === search) {
-						x.display = user.Username
-						x.index = 0
-						x.sort = 0
-					} else if(!x.user.Hidden && x.user.IsFriend && !x.isAlias) {
-						const display = user.DisplayName.toLowerCase()
-						
-						const nameIndex = name.indexOf(search)
-						const displayIndex = display.indexOf(search)
-						
-						if(nameIndex !== -1 && (displayIndex === -1 || nameIndex < displayIndex)) {
+					if(!x.user.Hidden) {
+						if(name === search) {
 							x.display = user.Username
-							x.index = nameIndex
-							x.sort = nameIndex + x.display.length / 200
-						} else if(displayIndex !== -1) {
-							x.display = user.DisplayName
-							x.index = displayIndex
-							x.sort = displayIndex + x.display.length / 200
+							x.index = 0
+							x.sort = 0
+						} else if(x.user.IsFriend && !x.isAlias) {
+							const display = user.DisplayName.toLowerCase()
+							
+							const nameIndex = name.indexOf(search)
+							const displayIndex = display.indexOf(search)
+							
+							if(nameIndex !== -1 && (displayIndex === -1 || nameIndex < displayIndex)) {
+								x.display = user.Username
+								x.index = nameIndex
+								x.sort = nameIndex + x.display.length / 200
+							} else if(displayIndex !== -1) {
+								x.display = user.DisplayName
+								x.index = displayIndex
+								x.sort = displayIndex + x.display.length / 200
+							}
 						}
 					}
 					
