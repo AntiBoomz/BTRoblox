@@ -492,10 +492,12 @@ pageInit.gamedetails = placeId => {
 			games.classList.add("active")
 			
 			games.$on("contextmenu", ".game-server-join-btn", ev => {
+				if(ev.target.parentNode.matches(".btr-context-item")) { return }
+				
 				const instanceId = ev.target.dataset.btrInstanceId
 				if(!instanceId) { return }
 				
-				const link = html`<a style="display:contents">`
+				const link = html`<a class="btr-context-item" style="display:contents">`
 				link.href = `/btr_context/?btr_instanceId=${instanceId}`
 				
 				ev.target.before(link)
