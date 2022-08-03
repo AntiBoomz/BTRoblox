@@ -21,7 +21,7 @@ const btrFastSearch = {
 		try {
 			const data = JSON.parse(localStorage.getItem("btr-fastsearch-cache"))
 
-			Object.entries(data.friends).forEach(([key, id]) => {
+			Object.entries(data.friendsDict).forEach(([key, id]) => {
 				const pieces = key.split("|")
 				
 				userCache[pieces[0].toLowerCase()] = {
