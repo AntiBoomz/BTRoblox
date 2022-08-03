@@ -547,7 +547,7 @@ const btrFastSearch = {
 			}, 0)
 		}
 		
-		document.$watch("#header").$then().$watch("#navbar-universal-search, .navbar-search", search => {
+		document.$watch("#header").$then().$watch("#navbar-universal-search, .navbar-search, #navbar-search-input", search => {
 			search.$on("keydown", "input", keyDown)
 			search.$on("keyup", "input", keyUp, { capture: true })
 			search.$on("input", "input", update)
