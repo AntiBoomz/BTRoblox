@@ -347,6 +347,20 @@ pageInit.gamedetails = placeId => {
 			}
 		)
 		
+		reactHook.hijackConstructor( // GameInstanceCard
+			args => args[1]?.gameServerStatus,
+			(target, thisArg, args) => {
+				const result = target.apply(thisArg, args)
+				
+				const joinBtn = reactHook.queryElement(result, x => x.props.className?.includes("game-server-join-btn"))
+				if(joinBtn) {
+					joinBtn.props["data-btr-instance-id"] = args[0].id
+				}
+				
+				return result
+			}
+		)
+		
 		reactHook.hijackConstructor( // GameSection
 			args => args[1]?.loadMoreGameInstances,
 			(target, thisArg, args) => {
@@ -476,6 +490,22 @@ pageInit.gamedetails = placeId => {
 		})
 		.$watch("#game-instances", games => {
 			games.classList.add("active")
+			
+			games.$on("contextmenu", ".game-server-join-btn", ev => {
+				const instanceId = ev.target.dataset.btrInstanceId
+				if(!instanceId) { return }
+				
+				const link = html`<a style="display:contents">`
+				link.href = `/btr_context/?btr_instanceId=${instanceId}`
+				
+				ev.target.before(link)
+				link.append(ev.target)
+				
+				setTimeout(() => {
+					link.before(ev.target)
+					link.remove()
+				}, 0)
+			})
 		})
 		.$watch(".game-main-content", mainCont => {
 			mainCont.classList.remove("section-content")

@@ -66,6 +66,14 @@ const ContextMenu = {
 			]
 		},
 		{
+			id: "instanceId",
+			title: "Copy instance id",
+			contexts: ["link"],
+			targetUrlPatterns: [
+				"*://*.roblox.com/btr_context/*btr_instanceId=*"
+			]
+		},
+		{
 			id: "universeLink",
 			title: "Copy universe id",
 			contexts: ["link"],
@@ -161,6 +169,11 @@ const ContextMenu = {
 			case "universeLink": {
 				const universeId = info.linkUrl.replace(/^.*(?:[&?]id=)(\d+).*$/i, "$1")
 				copyToClipboard(universeId)
+				break
+			}
+			case "instanceId": {
+				const instanceId = info.linkUrl.replace(/^.*(?:[&?]btr_instanceId=)([^&]+).*$/i, "$1")
+				copyToClipboard(instanceId)
 				break
 			}
 			case "roleId": {
