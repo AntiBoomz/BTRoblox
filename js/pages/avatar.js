@@ -18,26 +18,31 @@ pageInit.avatar = () => {
 			
 			onSet(window, "Roblox", Roblox => {
 				onSet(Roblox, "AvatarAccoutrementService", AvatarAccoutrementService => {
-					if(settings.avatar.removeLayeredLimits) {
-						hijackAngular("avatar", {
-							avatarController(handler, args, argsMap) {
-								const result = handler.apply(this, args)
+					hijackAngular("avatar", {
+						avatarController(handler, args, argsMap) {
+							const result = handler.apply(this, args)
+							
+							try {
+								const { $scope } = argsMap
 								
-								try {
-									const { $scope } = argsMap
-									
-									hijackFunction($scope, "validateAdvancedAccessories", (target, thisArg, args) => {
+								hijackFunction($scope, "validateAdvancedAccessories", (target, thisArg, args) => {
+									if(settings.avatar.removeLayeredLimits) {
 										return true
-									})
-								} catch(ex) {
-									console.error(ex)
-									if(IS_DEV_MODE) { alert("hijackAngular Error") }
-								}
-								
-								return result
+									}
+									
+									// filter out all hairs so they dont throw errors
+									args[0] = args[0].filter(x => x.assetType !== 41)
+									
+									return target.apply(thisArg, args)
+								})
+							} catch(ex) {
+								console.error(ex)
+								if(IS_DEV_MODE) { alert("hijackAngular Error") }
 							}
-						})
-					}
+							
+							return result
+						}
+					})
 					
 					hijackFunction(AvatarAccoutrementService, "getAdvancedAccessoryLimit", (target, thisArg, args) => {
 						if(accessoryAssetTypeIds.includes(+args[0]) || layeredAssetTypeIds.includes(+args[0])) {
