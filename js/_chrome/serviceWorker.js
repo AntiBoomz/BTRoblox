@@ -1,6 +1,8 @@
 "use strict"
 
 importScripts(
+	"/js/rbx/Constants.js",
+	
 	"/js/shared/common.js",
 	"/js/shared/utility.js",
 	

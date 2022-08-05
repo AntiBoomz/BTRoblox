@@ -24,6 +24,8 @@
 	
 	"background": {
 		"scripts": [
+			"js/rbx/Constants.js",
+			
 			"js/shared/common.js",
 			"js/shared/utility.js",
 			
@@ -65,6 +67,8 @@
 				"*://*/build/upload"
 			],
 			"js": [
+				"js/rbx/Constants.js",
+				
 				"js/shared/common.js",
 				"js/shared/utility.js",
 				
