@@ -967,10 +967,10 @@ const HoverPreview = (() => {
 				const self = thumbCont.closest(selector)
 				if(!self || currentTarget === self) { return }
 
-				const anchor = self.$find(`a[href*="/catalog/"],a[href*="/bundles/"]`)
+				const anchor = self.$find(`a[href*="/catalog/"],a[href*="/library/"],a[href*="/bundles/"]`)
 				if(!anchor) { return }
 
-				const assetId = anchor.href.replace(/^.*\/(?:bundles|catalog)\/(\d+)\/?.*$/, "$1")
+				const assetId = anchor.href.replace(/^.*\/(?:bundles|catalog|library)\/(\d+)\/?.*$/, "$1")
 				if(!Number.isSafeInteger(+assetId)) { return }
 
 				clearTarget()
@@ -978,6 +978,8 @@ const HoverPreview = (() => {
 
 				const img = thumbCont.$find("img")
 				if(img && invalidThumbnails.includes(img.src)) { return }
+				
+				const isLibraryItem = anchor.href.includes("/library/")
 
 				const debounce = ++debounceCounter
 				const assetPromises = []
@@ -1154,6 +1156,10 @@ const HoverPreview = (() => {
 						lastPreviewedAssets.push(asset)
 						assetPromises.push(asset.loadPromise)
 					}
+					
+					if(isLibraryItem) {
+						thumbCont.classList.add("btr-preview-loading")
+					}
 
 					preview.setEnabled(true)
 				}
@@ -1212,7 +1218,9 @@ const HoverPreview = (() => {
 					finalizeLoad()
 				}
 				
-				thumbCont.classList.add("btr-preview-loading")
+				if(!isLibraryItem) {
+					thumbCont.classList.add("btr-preview-loading")
+				}
 				
 				if(isBundle) {
 					const details = await RobloxApi.catalog.getBundleDetails(assetId)
