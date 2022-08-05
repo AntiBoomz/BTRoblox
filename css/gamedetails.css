@@ -127,24 +127,32 @@ body .btr-game-main-container {
 
 /* Servers */
 
+.btr-gamedetails .server-list-section#rbx-private-running-games .card-list > li:not(:first-child) {
+	border-top: 1px solid #bdbebe;
+}
+
+.dark-theme.btr-gamedetails .server-list-section#rbx-private-running-games .card-list > li:not(:first-child) {
+	border-top: 1px solid #656668;
+}
+
 .btr-gamedetails .server-list-section .card-list::after {
 	content: "";
 	display: table;
 	clear: both;
 }
 
-.btr-gamedetails .server-list-section .card-list {
+.btr-gamedetails .server-list-section:not(#rbx-private-running-games) .card-list {
 	display: grid;
 	grid-template-columns: repeat(4, 25%);
 	grid-auto-rows: auto;
 }
 
-.btr-gamedetails .server-list-section .card-list > li {
+.btr-gamedetails .server-list-section:not(#rbx-private-running-games) .card-list > li {
 	width: 100%;
 	display: flex;
 }
 
-.btr-gamedetails .server-list-section .card-list .card-item {
+.btr-gamedetails .server-list-section:not(#rbx-private-running-games) .card-list .card-item {
 	min-height: unset; /* we do scaling on the grid level now, no need for this */
 	width: 100%;
 	
