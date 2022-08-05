@@ -26,6 +26,7 @@ const RBXBinaryParser = {
 
 		const parser = {
 			result: [],
+			meta: {},
 			sharedStrings: [],
 			groups: new Array(groupsCount),
 			instances: new Array(instancesCount)
@@ -52,8 +53,10 @@ const RBXBinaryParser = {
 			case "SSTR":
 				this.parseSSTR(parser, chunkReader)
 				break
-
-			case "META": break
+			case "META":
+				this.parseMETA(parser, chunkReader)
+				break
+				
 			case "SIGN": break
 
 			default:
@@ -64,10 +67,21 @@ const RBXBinaryParser = {
 		if(reader.GetRemaining() > 0) {
 			THROW_DEV_WARNING("[ParseRBXBin] Unexpected data after END")
 		}
-
+		
+		parser.result.meta = parser.meta
 		return parser.result
 	},
 
+	parseMETA(parser, chunk) {
+		const numEntries = chunk.UInt32LE()
+
+		for(let i = 0; i < numEntries; i++) {
+			const key = chunk.String(chunk.UInt32LE())
+			const value = chunk.String(chunk.UInt32LE())
+			parser.meta[key] = value
+		}
+	},
+	
 	parseSSTR(parser, chunk) {
 		chunk.UInt32LE() // version
 		const stringCount = chunk.UInt32LE()
