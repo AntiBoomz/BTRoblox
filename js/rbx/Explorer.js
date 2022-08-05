@@ -16,26 +16,6 @@ const Explorer = (() => {
 		MeshID: "MeshId"
 	}
 
-	const HiddenProperties = $.toDict(null,
-		"Tags", "AttributesSerialize", "SourceAssetId", // Instance
-		"FormFactor", "Elasticity", "Friction", "Velocity", "RotVelocity", // Parts
-		"PhysicsData", "MeshData", "ChildData", "InitialSize", "PhysicalConfigData", // Meshparts / Unions
-		"HasJointOffset", "HasSkinnedMesh", "JointOffset", "LODData", // Meshparts
-		"ModelInPrimary", // Model
-		"LODX", "LODY", // Mesh
-		"ScriptGuid", // Script
-		"InternalHeadScale", "InternalBodyScale", // Humanoid
-		"PlayCount", // Sound
-		"UnionOperation.AssetId", "UnionOperation.InitialSize", // Unions
-		"Terrain.PhysicsGrid", "Terrain.SmoothGrid", "Terrain.MaterialColors", // Terrain
-		"IsAutoJoint", // Joints
-		"WrapTarget.HSRData", // WrapTarget
-
-		// Super legacy stuff
-		"Model.Controller", "Part.Controller",
-		"ControllerFlagShown", "DraggingV1"
-	)
-
 	function fixNum(v) { return Math.round(v * 1e3) / 1e3 }
 	function fixNums(arr) {
 		const copy = arr.slice(0)
@@ -248,9 +228,7 @@ const Explorer = (() => {
 			const groupMap = {}
 			Object.entries(target.Properties).forEach(([name, prop]) => {
 				if(RenamedProperties[name] && RenamedProperties[name] in target.Properties) { return }
-				
 				name = RenamedProperties[name] || name
-				if(HiddenProperties[name] || HiddenProperties[`${target.ClassName}.${name}`]) { return }
 
 				const group = ApiDump.getPropertyGroup(target.ClassName, name)
 				if(group === "HIDDEN") { return }
