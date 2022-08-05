@@ -40,23 +40,18 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 	
 	const contentScript = {
 		messageListeners: {},
-		listening: false,
 		
 		send(action, ...args) {
-			BTRoblox.element.dispatchEvent(new CustomEvent(`content`, { detail: { action, args } }))
+			BTRoblox.element.dispatchEvent(new CustomEvent(`content_${action}`, { detail: args }))
 		},
 		listen(action, callback) {
-			this.messageListeners[action] = this.messageListeners[action] || []
-			this.messageListeners[action].push(callback)
+			let listeners = this.messageListeners[action]
 			
-			if(!this.listening) {
-				this.listening = true
+			if(!listeners) {
+				listeners = this.messageListeners[action] = []
 				
-				BTRoblox.element.addEventListener(`inject`, ev => {
-					const { action, args } = ev.detail
-					
-					const listeners = this.messageListeners[action]
-					if(!listeners) { return }
+				BTRoblox.element.addEventListener(`inject_${action}`, ev => {
+					const args = Array.isArray(ev.detail) ? ev.detail : []
 					
 					for(let i = listeners.length; i--;) {
 						try { listeners[i].apply(null, args) }
@@ -64,6 +59,8 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 					}
 				})
 			}
+			
+			listeners.push(callback)
 		}
 	}
 
