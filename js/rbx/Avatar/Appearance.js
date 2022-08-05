@@ -27,10 +27,12 @@ const RBXAppearance = (() => {
 	}
 
 	class Asset extends EventEmitter {
-		constructor(assetId) {
+		constructor(assetId, assetTypeId = null) {
 			super()
 
 			this.id = assetId
+			this.assetTypeId = assetTypeId
+			
 			this.active = true
 			this.enabled = true
 			this.loaded = false
@@ -51,8 +53,8 @@ const RBXAppearance = (() => {
 			return !(this.accessories.length || this.bodyparts.length || this.joints.length || this.attachments.length || this.clothing.length)
 		}
 
-		load() {
-			if(this.loaded || this.loading) { return }
+		async load() {
+			if(this.loaded || this.loading) { return this.loadPromise }
 			this.loading = true
 
 			const finish = success => {
@@ -64,80 +66,91 @@ const RBXAppearance = (() => {
 				this.trigger("update")
 				this.loadPromise.resolve()
 			}
-
-			AssetCache.loadModel(this.id, model => {
+			
+			let request = this.id
+			
+			if(!this.assetTypeId) {
+				const json = await RobloxApi.api.getProductInfo(this.id)
+				this.assetTypeId = json.AssetTypeId
+			}
+			
+			if(this.assetTypeId === 17) { // head
+				request = {
+					id: this.id,
+					accept: "rbx-format/avatar_meshpart_head"
+				}
+			}
+			
+			AssetCache.loadModel(request, model => {
 				if(!this.active) { return }
 				if(!model) { return finish(false) }
-
-				let R15Folders
-
-				model.forEach(child => {
-					switch(child.ClassName) {
-					case "Folder":
-						switch(child.Name) {
-						case "R15ArtistIntent":
-						case "R15Fixed":
-						case "R15":
-							if(!R15Folders) { R15Folders = [] }
-							R15Folders.push(child)
-							break
-
-						case "R6":
-							this.loadBodyPartR6(child)
-							break
+				
+				switch(this.assetTypeId) {
+				case AssetType.TShirt:
+					this.addClothing({
+						target: "tshirt",
+						texId: model[0].Graphic
+					})
+					break
+				case AssetType.Shirt:
+					this.addClothing({
+						target: "shirt",
+						texId: model[0].ShirtTemplate
+					})
+					break
+				case AssetType.Pants:
+					this.addClothing({
+						target: "pants",
+						texId: model[0].PantsTemplate
+					})
+					break
+				case AssetType.Face:
+					this.addClothing({
+						target: "face",
+						texId: model[0].Texture
+					})
+					break
+					
+				case AssetType.Head:
+					this.loadHead(model[0])
+					break
+				
+				case AssetType.Torso:
+				case AssetType.RightArm:
+				case AssetType.LeftArm:
+				case AssetType.LeftLeg:
+				case AssetType.RightLeg: {
+					const R15Folders = []
+					
+					for(const folder of model) {
+						if(folder.Name === "R6") {
+							this.loadBodyPartsR6(folder.Children)
+							
+						} else if(R15FolderPriority.includes(folder.Name)) {
+							R15Folders.push(folder)
 						}
-						break
-
-					case "SpecialMesh":
-						this.loadHead(child)
-						break
-
-					case "Accessory":
-					case "Hat":
-						this.loadAccessory(child)
-						break
-
-					case "Decal":
-						if(child.Name.toLowerCase() === "face") {
-							this.addClothing({
-								target: "face",
-								texId: child.Texture
-							})
-						}
-						break
-
-					case "Shirt":
-						this.addClothing({
-							target: "shirt",
-							texId: child.ShirtTemplate
-						})
-						break
-
-					case "Pants":
-						this.addClothing({
-							target: "pants",
-							texId: child.PantsTemplate
-						})
-						break
-
-					case "ShirtGraphic":
-						this.addClothing({
-							target: "tshirt",
-							texId: child.Graphic
-						})
-						break
 					}
-				})
-
-				// Load the R15 folder with highest priority
-				if(R15Folders) {
-					R15Folders.sort((a, b) => R15FolderPriority.indexOf(a.Name) - R15FolderPriority.indexOf(b.Name))
-					this.loadBodyPartR15(R15Folders[0])
+					
+					if(R15Folders.length > 0) {
+						R15Folders.sort((a, b) => R15FolderPriority.indexOf(a.Name) - R15FolderPriority.indexOf(b.Name))
+						this.loadBodyPartsR15(R15Folders[0].Children)
+					}
+					
+					break
+				}
+				
+				default:
+					if(this.assetTypeId === 8 || Object.entries(AssetType).find(x => x[1] === this.assetTypeId)?.[0]?.includes("Accessory")) {
+						this.loadAccessory(model[0])
+					}
+					
 				}
 
 				SyncPromise.allSettled(this.loaders).then(() => finish(true))
 				delete this.loaders
 			})
+
+			return this.loadPromise
 		}
 
 		setEnabled(enabled) {
@@ -162,7 +175,6 @@ const RBXAppearance = (() => {
 			if(data.meshId) { this.addLoader(AssetCache.loadMesh(true, data.meshId)) }
 			if(data.baseTexId) { this.addLoader(AssetCache.loadImage(true, data.baseTexId)) }
 			if(data.overTexId) { this.addLoader(AssetCache.loadImage(true, data.overTexId)) }
-			if(data.overrideFaceTexId) { this.addLoader(AssetCache.loadImage(true, data.overrideFaceTexId)) }
 		}
 		addClothing(data) {
 			this.clothing.push(data)
@@ -186,77 +198,125 @@ const RBXAppearance = (() => {
 			}
 		}
 		
-		loadHead(mesh) {
-			const scaleTypeValue = mesh.Children.find(x => x.Name === "AvatarPartScaleType")
-			const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
-			
-			this.addBodyPart({
-				target: "Head",
-				meshId: HeadMeshes[mesh.MeshId] || mesh.MeshId,
-				overrideFaceTexId: mesh.TextureId,
-				scale: [...mesh.Scale],
-				scaleType
-			})
-
-			mesh.Children.filter(x => x.ClassName === "Vector3Value" && x.Name.endsWith("Attachment")).forEach(inst => {
-				const cframe = new THREE.Matrix4().setPosition(...inst.Value)
+		loadHead(part) {
+			if(part.ClassName === "SpecialMesh") {
+				const scaleTypeValue = part.Children.find(x => x.Name === "AvatarPartScaleType")
+				const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
 				
-				if(inst.Name.endsWith("RigAttachment")) {
-					const jointName = inst.Name.substring(0, inst.Name.length - 13)
+				this.addBodyPart({
+					target: "Head",
+					
+					meshId: HeadMeshes[part.MeshId] || part.MeshId,
+					baseTexId: part.TextureId,
+					
+					disableFace: part.Tags?.includes("NoFace") || false,
+					
+					scale: [...part.Scale],
+					scaleType: scaleType
+				})
 
-					this.addJoint({
-						target: jointName,
+				for(const inst of part.Children) {
+					if(inst.ClassName !== "Vector3Value" || !x.Name.endsWith("Attachment")) { continue }
+					const cframe = new THREE.Matrix4().setPosition(...inst.Value)
+					
+					if(inst.Name.endsWith("RigAttachment")) {
+						const jointName = inst.Name.substring(0, inst.Name.length - 13)
+
+						this.addJoint({
+							target: jointName,
+							cframe: cframe,
+
+							part: "Head",
+							scaleType: scaleType
+						})
+					}
+
+					this.addAttachment({
+						target: inst.Name,
 						cframe: cframe,
 
 						part: "Head",
-						scaleType
+						scaleType: scaleType
 					})
 				}
-
-				this.addAttachment({
-					target: inst.Name,
-					cframe: cframe,
-
-					part: "Head",
-					scaleType
-				})
-			})
+			} else if(part.ClassName === "MeshPart") {
+				this.loadBodyPartsR15([part])
+			}
 		}
 
-		loadBodyPartR6(folder) {
-			folder.Children.filter(x => x.ClassName === "CharacterMesh").forEach(charmesh => {
+		loadBodyPartsR6(charmeshes) {
+			for(const charmesh of charmeshes) {
 				const target = BodyPartEnum[charmesh.BodyPart]
-				if(!target) { return }
+				if(!target) { continue }
 				
 				this.addBodyPart({
 					playerType: "R6",
-					target,
+					target: target,
 
 					meshId: +charmesh.MeshId ? AssetCache.toAssetUrl(charmesh.MeshId) : null,
 					baseTexId: +charmesh.BaseTextureId ? AssetCache.toAssetUrl(charmesh.BaseTextureId) : null,
 					overTexId: +charmesh.OverlayTextureId ? AssetCache.toAssetUrl(charmesh.OverlayTextureId) : null
 				})
-			})
+			}
 		}
 
-		loadBodyPartR15(folder) {
-			folder.Children.filter(x => x.ClassName === "MeshPart").forEach(part => {
+		loadBodyPartsR15(parts) {
+			for(const part of parts) {
+				if(part.ClassName !== "MeshPart") { continue }
+				
 				const scaleTypeValue = part.Children.find(x => x.Name === "AvatarPartScaleType")
 				const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
-
-				this.addBodyPart({
+				
+				let meshId = part.MeshID
+				let texId = part.TextureID
+				
+				let pbrEnabled
+				let normalMapId
+				let roughnessMapId
+				let metalnessMapId
+				
+				const surfaceAppearance = part.Children.find(x => x.ClassName === "SurfaceAppearance")
+				
+				if(surfaceAppearance) {
+					// we can ignore alphamode for bodyparts, it doesnt seem to work?
+					pbrEnabled = true
+					texId = surfaceAppearance.ColorMap
+					normalMapId = surfaceAppearance.NormalMap
+					roughnessMapId = surfaceAppearance.RoughnessMap
+					metalnessMapId = surfaceAppearance.MetalnessMap
+				}
+				
+				const bp = {
 					playerType: "R15",
 					target: part.Name,
 
-					meshId: part.MeshID,
-					overTexId: part.TextureID,
+					pbrEnabled: pbrEnabled,
+					normalMapId: normalMapId,
+					roughnessMapId: roughnessMapId,
+					metalnessMapId: metalnessMapId,
+					
+					meshId: meshId,
+					overTexId: texId,
+					
 					opacity: 1 - (part.Transparency || 0),
 					size: [...(part.size || part.Size)],
 
-					scaleType
-				})
+					scaleType: scaleType
+				}
+				
+				if(this.assetTypeId === AssetType.Head) {
+					delete bp.playerType
+					bp.disableFace = !part.Children.find(x => x.ClassName === "Decal" && x.Name.toLowerCase() === "face")
+					
+					bp.baseTexId = bp.overTexId
+					delete bp.overTexId
+				}
 
-				part.Children.filter(x => x.ClassName === "Attachment").forEach(inst => {
+				this.addBodyPart(bp)
+				
+				for(const inst of part.Children) {
+					if(inst.ClassName !== "Attachment") { continue }
+					
 					const cframe = CFrame(...inst.CFrame)
 					
 					if(inst.Name.endsWith("RigAttachment")) {
@@ -267,7 +327,7 @@ const RBXAppearance = (() => {
 							cframe: cframe,
 
 							part: part.Name,
-							scaleType
+							scaleType: scaleType
 						})
 					}
 
@@ -276,10 +336,10 @@ const RBXAppearance = (() => {
 						cframe: cframe,
 
 						part: part.Name,
-						scaleType
+						scaleType: scaleType
 					})
-				})
-			})
+				}
+			}
 		}
 
 		loadAccessory(accInst) {
@@ -289,11 +349,38 @@ const RBXAppearance = (() => {
 			let vertexColor
 			let offset
 			let scale
+			let attName
+			let attCFrame
 			let meshId
 			let texId
 			
+			let pbrEnabled
+			let pbrAlphaMode
+			let normalMapId
+			let roughnessMapId
+			let metalnessMapId
+			
 			if(hanInst.ClassName === "MeshPart") {
-				return // unimplemented
+				const wrapLayer = hanInst.Children.find(x => x.ClassName === "WrapLayer")
+				const surfaceAppearance = hanInst.Children.find(x => x.ClassName === "SurfaceAppearance")
+				
+				if(wrapLayer) { return } // unimplemented
+				
+				const size = hanInst.size
+				const initialSize = hanInst.InitialSize
+				
+				scale = [size[0] / initialSize[0], size[1] / initialSize[1], size[2] / initialSize[2]]
+				meshId = hanInst.MeshID
+				texId = hanInst.TextureID
+				
+				if(surfaceAppearance) {
+					pbrEnabled = true
+					pbrAlphaMode = surfaceAppearance.AlphaMode
+					texId = surfaceAppearance.ColorMap
+					normalMapId = surfaceAppearance.NormalMap
+					roughnessMapId = surfaceAppearance.RoughnessMap
+					metalnessMapId = surfaceAppearance.MetalnessMap
+				}
 			} else {
 				const meshInst = hanInst.Children.find(x => x.ClassName === "SpecialMesh")
 				if(!meshInst) { return }
@@ -304,27 +391,37 @@ const RBXAppearance = (() => {
 				meshId = meshInst.MeshId
 				texId = meshInst.TextureId
 			}
-
+			
 			const attInst = hanInst.Children.find(x => x.ClassName === "Attachment")
+			
+			if(attInst) {
+				attName = attInst.Name
+				attCFrame = attInst.CFrame ? InvertCFrame(...attInst.CFrame) : new THREE.Matrix4()
+			}
 
 			const scaleTypeValue = hanInst.Children.find(x => x.Name === "AvatarPartScaleType")
 			const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
 			
 			const baseColor = hanInst.Color || hanInst.Color3uint8 // ugh
-
+			
 			this.addAccessory({
 				vertexColor: vertexColor,
 				offset: offset,
 				scale: scale,
+				attName: attName,
+				attCFrame: attCFrame,
+				
+				pbrEnabled: pbrEnabled,
+				pbrAlphaMode: pbrAlphaMode,
+				normalMapId: normalMapId,
+				roughnessMapId: roughnessMapId,
+				metalnessMapId: metalnessMapId,
 				
 				meshId: meshId,
 				texId: texId,
 				
 				baseColor: baseColor ? [...baseColor] : null,
 				opacity: 1 - (hanInst.Transparency || 0),
-
-				attName: attInst ? attInst.Name : null,
-				attCFrame: attInst ? (attInst.CFrame ? InvertCFrame(...attInst.CFrame) : new THREE.Matrix4()) : null,
 				
 				legacyHatCFrame: accInst.AttachmentPoint ? InvertCFrame(...accInst.AttachmentPoint) : new THREE.Matrix4(),
 				scaleType: scaleType
@@ -343,8 +440,8 @@ const RBXAppearance = (() => {
 			this.assets.forEach(asset => asset.load())
 		}
 		
-		addAsset(assetId) {
-			const asset = new Asset(assetId)
+		addAsset(assetId, assetTypeId = null) {
+			const asset = new Asset(assetId, assetTypeId)
 			this.assets.add(asset)
 
 			const onUpdate = () => this.trigger("update")

@@ -74,6 +74,22 @@ const RBXAvatar = (() => {
 
 		return img
 	}
+	
+	function createSourceFunction(fn, filter) {
+		return {
+			fn: fn,
+			filter: filter,
+			onUpdateListeners: [],
+
+			update() {
+				this.onUpdateListeners.forEach(fn => fn())
+			},
+
+			onUpdate(fn) {
+				this.onUpdateListeners.push(fn)
+			}
+		}
+	}
 
 	function createSource(image) {
 		return {
@@ -94,6 +110,7 @@ const RBXAvatar = (() => {
 
 	const emptyImage = createImage("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=")
 	const grayImage = createImage(solidColorDataURL(163, 162, 165))
+	const whiteImage = createImage(solidColorDataURL(255, 255, 255))
 
 	const R6BodyPartNames = ["Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
 	const R15BodyPartNames = [
@@ -156,6 +173,7 @@ const RBXAvatar = (() => {
 	}
 
 	const texturesToMerge = new Set()
+	
 	function mergeTexture(width, height, ...sources) {
 		width = 2 ** Math.ceil(Math.log2(width))
 		height = 2 ** Math.ceil(Math.log2(height))
@@ -178,21 +196,23 @@ const RBXAvatar = (() => {
 			texturesToMerge.delete(updateFinal)
 
 			const isDirty = stack.some(entry => entry.dirty)
-			if(!isDirty) {
-				return
-			}
-
-			ctx.clearRect(0, 0, width, height)
-			stack.forEach(entry => {
-				const img = entry.source.canvas || entry.source.image
-
-				entry._lastImage = img
+			if(!isDirty) { return }
+			
+			for(const entry of stack) {
 				entry.dirty = false
+				
+				if(entry.source.fn) {
+					entry.source.fn(ctx)
+				} else {
+					const img = entry.source.canvas || entry.source.image
 
-				if(img !== emptyImage) {
-					ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, width, height)
+					entry._lastImage = img
+
+					if(img !== emptyImage) {
+						ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, width, height)
+					}
 				}
-			})
+			}
 
 			texture.needsUpdate = true
 		}
@@ -200,6 +220,7 @@ const RBXAvatar = (() => {
 		const requestUpdateFinal = () => {
 			if(needsUpdate) { return }
 			needsUpdate = true
+			
 			texturesToMerge.add(updateFinal)
 
 			$.setImmediate(() => {
@@ -208,26 +229,42 @@ const RBXAvatar = (() => {
 				updateFinal()
 			})
 		}
-
-		sources.forEach(source => {
+		
+		const background = createSourceFunction(ctx => {
+			if(texture.background) {
+				ctx.fillStyle = texture.background
+				ctx.fillRect(0, 0, width, height)
+			} else {
+				ctx.clearRect(0, 0, width, height)
+			}
+		})
+		
+		sources.unshift(background)
+		
+		texture.setBackground = color => {
+			texture.background = color || null
+			background.update()
+		}
+		
+		for(const source of sources) {
 			const entry = { source, dirty: true }
 			stack.push(entry)
 
 			source.onUpdate(() => {
-				if(source.canvas) {
-					entry.dirty = true
+				if(source.canvas || source.fn) {
+					entry.dirty = source.filter ? source.filter(source) : true
 				} else {
 					entry.dirty = source.image !== entry._lastImage
 				}
 
 				requestUpdateFinal()
 			})
-		})
+		}
 
-		updateFinal()
+		requestUpdateFinal()
+		
 		return texture
 	}
-	
 	
 	const tempMatrix = new THREE.Matrix4()
 	const oneVector = new THREE.Vector3(1, 1, 1)
@@ -269,21 +306,56 @@ const RBXAvatar = (() => {
 			this.hasInit = true
 
 			const sources = this.sources = {
-				clothing: {
-					pants: createSource(),
-					shirt: createSource(),
-					tshirt: createSource(),
-					face: createSource()
-				},
+				pants: createSource(),
+				shirt: createSource(),
+				tshirt: createSource(),
+				face: createSource(),
+				
+				bodyColorsR6: createSourceFunction(ctx => {
+					if(!this.bodyColors) { return }
+					
+					ctx.fillStyle = this.bodyColors.torso
+					ctx.fillRect(0, 0, 192, 448)
+					ctx.fillRect(194, 322, 272, 76)
+					ctx.fillRect(272, 401, 148, 104)
+			
+					ctx.fillStyle = this.bodyColors.rightarm
+					ctx.fillRect(200, 0, 192, 320)
+					ctx.fillRect(420, 400, 148, 104)
+					ctx.fillRect(758, 322, 76, 76)
+					ctx.fillRect(898, 322, 76, 76)
+			
+					ctx.fillStyle = this.bodyColors.leftarm
+					ctx.fillRect(400, 0, 192, 320)
+					ctx.fillRect(568, 400, 148, 104)
+					ctx.fillRect(828, 322, 76, 76)
+					ctx.fillRect(194, 394, 76, 76)
+			
+					ctx.fillStyle = this.bodyColors.rightleg
+					ctx.fillRect(600, 0, 192, 320)
+					ctx.fillRect(716, 400, 148, 104)
+					ctx.fillRect(466, 322, 76, 76)
+					ctx.fillRect(610, 322, 76, 76)
+			
+					ctx.fillStyle = this.bodyColors.leftleg
+					ctx.fillRect(800, 0, 192, 320)
+					ctx.fillRect(864, 400, 148, 104)
+					ctx.fillRect(542, 322, 76, 76)
+					ctx.fillRect(684, 322, 76, 76)
+				}),
 
 				base: {},
 				over: {}
 			}
+			
+			sources.face.defaultImage = getURL("res/previewer/face.png")
 
-			const textures = this.textures = {}
-
+			for(const partName of ["Head", ...R6BodyPartNames, ...R15BodyPartNames]) {
+				sources.base[partName] = createSource()
+				sources.over[partName] = createSource()
+			}
+			
 			const composites = this.composites = {
-				head: new RBXComposites.HeadComposite(sources),
 				r6: new RBXComposites.R6Composite(sources),
 				torso: new RBXComposites.R15TorsoComposite(sources),
 				leftarm: new RBXComposites.R15LeftArmComposite(sources),
@@ -292,35 +364,28 @@ const RBXAvatar = (() => {
 				rightleg: new RBXComposites.R15RightLegComposite(sources)
 			}
 			
-			sources.base.Head = createSource()
-			sources.over.Head = createSource()
-			textures.Head = mergeTexture(256, 256, composites.head, sources.base.Head, sources.over.Head, sources.clothing.face)
-
-			R6BodyPartNames.forEach(name => {
-				const base = sources.base[name] = createSource()
-				const over = sources.over[name] = createSource()
-
-				textures[name] = mergeTexture(1024, 512, composites.r6, base, over)
-			})
-
-			R15BodyPartNames.forEach(name => {
-				const compositeName = name.toLowerCase().replace(/upper|lower/g, "").replace(/hand/g, "arm").replace(/foot/g, "leg")
-				const composite = composites[compositeName]
-
-				const over = sources.over[name] = createSource()
-				textures[name] = mergeTexture(composite.canvas.width, composite.canvas.height, composite, over)
-			})
-
+			const textures = this.textures = {
+				Head: mergeTexture(256, 256, sources.base.Head, sources.face, sources.over.Head)
+			}
+			
+			for(const name of R6BodyPartNames) {
+				textures[name] = mergeTexture(1024, 512, sources.bodyColorsR6, sources.base[name], composites.r6, sources.over[name])
+			}
+			
+			for(const name of R15BodyPartNames) {
+				const limb = name.toLowerCase().replace(/upper|lower/g, "").replace(/hand/g, "arm").replace(/foot/g, "leg")
+				const composite = composites[limb]
+				
+				textures[name] = mergeTexture(composite.canvas.width, composite.canvas.height, sources.base[name], composite, sources.over[name])
+			}
+			
+			//
 
 			const loaders = []
 
 			loaders.push(
 				RBXAvatarRigs.load().then(() => {
 					this.shouldRefreshRig = true
-				}),
-				AssetCache.loadImage(true, getURL("res/previewer/face.png"), img => {
-					sources.clothing.face.defaultImage = img
-					this.shouldRefreshBodyParts = true
 				})
 			)
 
@@ -377,30 +442,21 @@ const RBXAvatar = (() => {
 				}
 			}
 
-			//
+			// Update composites
 
 			const activeComposites = this.playerType === "R6"
-				? [this.composites.head, this.composites.r6]
-				: [this.composites.head, this.composites.torso, this.composites.leftarm, this.composites.rightarm, this.composites.leftleg, this.composites.rightleg]
+				? [this.composites.r6]
+				: [this.composites.torso, this.composites.leftarm, this.composites.rightarm, this.composites.leftleg, this.composites.rightleg]
 
-			while(true) {
-				let updated = false
-
-				activeComposites.forEach(comp => {
-					if(comp.needsUpdate) {
-						comp.update()
-						updated = true
-					}
-				})
-
-				texturesToMerge.forEach(update => {
-					update()
-					updated = true
-				})
-
-				if(!updated) {
-					break
+			for(const comp of activeComposites) {
+				if(comp.needsUpdate) {
+					comp.update()
 				}
+			}
+			
+			
+			while(texturesToMerge.size > 0) {
+				texturesToMerge.forEach(fn => fn())
 			}
 		}
 
@@ -428,10 +484,13 @@ const RBXAvatar = (() => {
 		setBodyColors(bodyColors) {
 			this.bodyColors = bodyColors
 			if(!this.hasInit) { return }
-
-			Object.values(this.composites).forEach(comp => {
-				comp.setBodyColors(bodyColors)
-			})
+			
+			this.sources.bodyColorsR6.update()
+			
+			for(const name of ["Head", ...R15BodyPartNames]) {
+				const limb = name.toLowerCase().replace(/upper|lower/g, "").replace(/hand/g, "arm").replace(/foot/g, "leg")
+				this.textures[name].setBackground(this.bodyColors?.[limb])
+			}
 		}
 
 		setPlayerType(playerType) {
@@ -556,12 +615,15 @@ const RBXAvatar = (() => {
 				let obj
 				
 				if(tree.name !== "HumanoidRootPart") {
-					const mat = new THREE.MeshLambertMaterial({ map: this.textures[tree.name], transparent: false })
+					const mat = new THREE.MeshStandardMaterial({ map: this.textures[tree.name], transparent: false })
 					obj = new THREE.Mesh(undefined, mat)
 					obj.frustumCulled = false
 					obj.castShadow = true
 					
-					obj.rbxDefaultMesh = tree.meshid
+					obj.rbxDefaultBodypart = {
+						meshId: tree.meshid
+					}
+					
 					obj.rbxMesh = obj
 				} else {
 					obj = new THREE.Group()
@@ -647,38 +709,36 @@ const RBXAvatar = (() => {
 			const attachmentOverride = {}
 			const jointOverride = {}
 			const accessories = []
+			const bodyparts = {}
 			const clothing = {}
-			const parts = {}
 			
-			assets.forEach(asset => {
-				asset.bodyparts.forEach(bp => {
-					bp.obj = null
-
-					if(bp.playerType && bp.playerType !== this.playerType) { return }
-					parts[bp.target] = Object.assign(parts[bp.target] || {}, bp, { source: bp })
-				})
-
-				asset.attachments.forEach(att => {
-					const realAtt = this.attachments[att.target]
-					if(!realAtt || att.part !== realAtt.parent.name) { return }
+			for(const asset of assets) {
+				for(const bodypart of asset.bodyparts) {
+					bodypart.obj = null
 					
-					if(att.part === realAtt.parent.name) {
+					if(!bodypart.playerType || bodypart.playerType === this.playerType) {
+						bodyparts[bodypart.target] = bodypart
+					}
+				}
+				
+				for(const att of asset.attachments) {
+					const realAtt = this.attachments[att.target]
+					
+					if(realAtt && att.part === realAtt.parent.name) {
 						attachmentOverride[att.target] = att.cframe
 					}
-				})
-
-				asset.clothing.forEach(cloth => {
+				}
+				
+				for(const cloth of asset.clothing) {
 					clothing[cloth.target] = cloth.texId
-				})
-
-				asset.accessories.forEach(acc => {
-					accessories.push(acc)
-				})
+				}
+				
+				accessories.push(...asset.accessories)
 
 				if(this.playerType === "R15") {
-					asset.joints.forEach(joint => {
+					for(const joint of asset.joints) {
 						const realJoint = this.joints[joint.target]
-						if(!realJoint) { return }
+						if(!realJoint) { continue }
 						
 						const data = jointOverride[joint.target] || (jointOverride[joint.target] = {})
 						
@@ -687,127 +747,144 @@ const RBXAvatar = (() => {
 						} else if(joint.part === realJoint.part1.name) {
 							data.c1 = joint.cframe
 						}
-					})
-				}
-			})
-
-			Object.entries(this.sources.clothing).forEach(([name, source]) => {
-				let texId = clothing[name]
-
-				if(name === "face" && parts.Head && parts.Head.overrideFaceTexId) {
-					texId = parts.Head.overrideFaceTexId
-				}
-
-				if(!texId) {
-					delete source.rbxTexId
-					source.setImage(source.defaultImage || emptyImage)
-				} else if(texId !== source.rbxTexId) {
-					source.rbxTexId = texId
-					let gotAsync = false
-
-					AssetCache.loadImage(true, texId, img => {
-						if(source.rbxTexId === texId) {
-							gotAsync = true
-							source.setImage(img)
-						}
-					})
-					
-					if(!gotAsync) {
-						source.setImage(source.defaultImage || emptyImage)
 					}
 				}
-			})
+			}
+			
+			for(const name of ["shirt", "pants", "tshirt", "face"]) {
+				const source = this.sources[name]
+				let texId = clothing[name] || source.defaultImage || ""
 
-			Object.entries(this.parts).forEach(([partName, part]) => {
-				const changes = parts[partName]
+				if(name === "face" && bodyparts.Head && bodyparts.Head.disableFace) {
+					texId = ""
+				}
+				
+				if(source.rbxTexId !== texId) {
+					source.rbxTexId = texId
+					source.setImage(emptyImage)
+					
+					if(texId) {
+						AssetCache.loadImage(true, texId, img => {
+							if(source.rbxTexId === texId) {
+								source.setImage(img)
+							}
+						})
+					}
+				}
+			}
+			
+			for(const [partName, part] of Object.entries(this.parts)) {
+				const bodypart = bodyparts[partName] || part.rbxDefaultBodypart
 
 				if(this.playerType === "R15") {
-					part.rbxScaleType = changes && changes.scaleType
+					part.rbxScaleType = bodypart?.scaleType
 					part.rbxScaleMod = this.getScaleMod(part.name, part.rbxScaleType)
 				}
-
-				if(part.rbxMesh) {
-					if(changes && changes.source) {
-						changes.source.obj = part.rbxMesh
-					}
+				
+				if(!bodypart) {
+					continue
+				}
+				
+				// Mark bodypart as active
+				bodypart.obj = part.rbxMesh
 					
-					// Update opacity
-					const opacity = (changes && "opacity" in changes) ? changes.opacity : 1
+				// Update material
+				const material = part.rbxMesh.material
+				
+				if(bodypart.pbrEnabled) {
+					const maps = [
+						["normalMap", bodypart.normalMapId],
+						["roughnessMap", bodypart.roughnessMapId],
+						["metalnessMap", bodypart.metalnessMapId],
+					]
 					
-					if(part.rbxMeshOpacity !== opacity) {
-						part.rbxMeshOpacity = opacity
-						part.rbxMesh.material.opacity = opacity
-						part.rbxMesh.material.transparent = opacity < 1
-						part.rbxMesh.material.needsUpdate = true
-					}
-					
-					// Update mesh
-					const meshId = changes && changes.meshId || part.rbxDefaultMesh
-					if(part.rbxMeshId !== meshId) {
-						part.rbxMeshId = meshId
-						clearGeometry(part.rbxMesh)
-						AssetCache.loadMesh(true, meshId, mesh => part.rbxMeshId === meshId && applyMesh(part.rbxMesh, mesh))
-					}
-					
-					// Update textures
-					const baseSource = this.sources.base[partName]
-					const baseTexId = changes && changes.baseTexId || ""
-					if(baseSource && baseSource.rbxTexId !== baseTexId) {
-						baseSource.rbxTexId = baseTexId
-
-						if(baseTexId) {
-							let gotAsync = false
-
-							AssetCache.loadImage(true, baseTexId, img => {
-								if(baseSource.rbxTexId === baseTexId) {
-									gotAsync = true
-									baseSource.setImage(img)
-								}
-							})
-
-							if(!gotAsync) {
-								baseSource.setImage(grayImage)
-							}
-						} else {
-							baseSource.setImage(emptyImage)
-						}
-					}
-
-					const overSource = this.sources.over[partName]
-					const overTexId = changes && changes.overTexId || ""
-					if(overSource && overSource.rbxTexId !== overTexId) {
-						overSource.rbxTexId = overTexId
+					for(const [key, id] of maps) {
+						let map = material[key]
 						
-						if(overTexId) {
-							let gotAsync = false
-
-							AssetCache.loadImage(true, overTexId, img => {
-								if(overSource.rbxTexId === overTexId) {
-									gotAsync = true
-									overSource.setImage(img)
-								}
-							})
-
-							if(!gotAsync) {
-								overSource.setImage(grayImage)
+						if(id) {
+							if(!map) {
+								map = material[key] = new THREE.Texture(whiteImage)
 							}
-						} else {
-							overSource.setImage(emptyImage)
+							
+							AssetCache.loadImage(true, id, img => {
+								map.image = img
+								map.needsUpdate = true
+							})
 						}
+					}
+				} else {
+					material.normalMap = null
+					material.roughnessMap = null
+					material.metalnessMap = null
+				}
+				
+				// Update opacity
+				const opacity = bodypart.opacity ?? 1
+				
+				if(material.opacity !== opacity) {
+					material.opacity = opacity
+					material.transparent = opacity < 1
+					material.needsUpdate = true
+				}
+				
+				// Update mesh
+				const meshId = bodypart.meshId
+				
+				if(part.rbxMeshId !== meshId) {
+					part.rbxMeshId = meshId
+					clearGeometry(part.rbxMesh)
+					AssetCache.loadMesh(true, meshId, mesh => part.rbxMeshId === meshId && applyMesh(part.rbxMesh, mesh))
+				}
+				
+				// Update textures
+				const baseSource = this.sources.base[partName]
+				const baseTexId = bodypart.baseTexId || ""
+				
+				if(baseSource.rbxTexId !== baseTexId) {
+					baseSource.rbxTexId = baseTexId
+					baseSource.setImage(emptyImage)
+					
+					if(baseTexId) {
+						AssetCache.loadImage(true, baseTexId, img => {
+							if(baseSource.rbxTexId === baseTexId) {
+								baseSource.setImage(img)
+							}
+						})
 					}
 				}
-			})
+
+				const overSource = this.sources.over[partName]
+				const overTexId = bodypart.overTexId || ""
+				
+				if(overSource.rbxTexId !== overTexId) {
+					overSource.rbxTexId = overTexId
+					overSource.setImage(emptyImage)
+					
+					if(overTexId) {
+						AssetCache.loadImage(true, overTexId, img => {
+							if(overSource.rbxTexId === overTexId) {
+								overSource.setImage(img)
+							}
+						})
+					}
+				}
+			}
+			
+			//
 			
 			const updateSizes = () => {
 				Object.entries(this.parts).forEach(([partName, part]) => {
-					const changes = parts[partName]
-					const scale = changes && changes.scale ? [...changes.scale] : [1, 1, 1]
-					const size = changes && changes.size || part.rbxOrigSize
+					const bodypart = bodyparts[partName] || part.rbxDefaultBodypart
+					
+					const size = bodypart?.size || part.rbxOrigSize
+					let scale = bodypart?.scale || [1, 1, 1]
 
 					if(this.playerType === "R15") {
-						scale[0] *= part.rbxScaleMod.x
-						scale[1] *= part.rbxScaleMod.y
-						scale[2] *= part.rbxScaleMod.z
+						scale = [
+							scale[0] * part.rbxScaleMod.x,
+							scale[1] * part.rbxScaleMod.y,
+							scale[2] * part.rbxScaleMod.z
+						]
 					}
 	
 					part.rbxSize = scale.map((x, i) => x * size[i])
@@ -820,8 +897,8 @@ const RBXAvatar = (() => {
 				Object.entries(this.joints).forEach(([jointName, joint]) => {
 					if(jointName !== "Root") {
 						const override = jointOverride[jointName]
-						const C0 = override && override.c0 || joint.origC0
-						const C1 = override && override.c1 || joint.origC1
+						const C0 = override?.c0 || joint.origC0
+						const C1 = override?.c1 || joint.origC1
 	
 						const scale0 = joint.part0.rbxScaleMod
 						const scale1 = joint.part1.rbxScaleMod
@@ -909,40 +986,81 @@ const RBXAvatar = (() => {
 			}
 
 			// Update accessories
-			accessories.forEach(acc => {
+			for(const acc of accessories) {
 				if(!acc.obj) {
 					const color = new THREE.Color(1, 1, 1)
-					let texture
+					const opacity = acc.opacity ?? 1
 					
-					if(acc.texId) {
-						if(acc.vertexColor) {
-							color.setRGB(...acc.vertexColor)
+					const source = createSource(emptyImage)
+					const texture = mergeTexture(256, 256, source)
+					
+					let metalnessTexture
+					let roughnessTexture
+					let normalTexture
+					
+					if(acc.pbrAlphaMode === 1) {
+						source.setImage(whiteImage)
+					} else {
+						const background = new THREE.Color(...acc.baseColor)
+						
+						if(!acc.pbrEnabled && acc.texId) {
+							background.setRGB(1, 1, 1)
 						}
 						
-						const source = createSource(grayImage)
-						
+						texture.setBackground("#" + background.getHexString())
+					}
+					
+					if(acc.vertexColor) {
+						color.setRGB(...acc.vertexColor)
+					}
+					
+					if(acc.texId) {
 						AssetCache.loadImage(true, acc.texId, img => {
 							source.setImage(img)
 						})
-						
-						texture = mergeTexture(256, 256, source)
-					} else {
-						if(acc.baseColor) {
-							color.setRGB(...acc.baseColor)
-						}
 					}
 					
-					const mat = new THREE.MeshLambertMaterial({ map: texture, transparent: false, color })
-					const obj = acc.obj = new THREE.Mesh(undefined, mat)
+					if(acc.normalMapId) {
+						normalTexture = new THREE.Texture(whiteImage)
+						
+						AssetCache.loadImage(true, acc.normalMapId, img => {
+							normalTexture.image = img
+							normalTexture.needsUpdate = true
+						})
+					}
+					
+					if(acc.metalnessMapId) {
+						metalnessTexture = new THREE.Texture(whiteImage)
+						
+						AssetCache.loadImage(true, acc.metalnessMapId, img => {
+							metalnessTexture.image = img
+							metalnessTexture.needsUpdate = true
+						})
+					}
+					
+					if(acc.roughnessMapId) {
+						roughnessTexture = new THREE.Texture(whiteImage)
+						
+						AssetCache.loadImage(true, acc.roughnessMapId, img => {
+							roughnessTexture.image = img
+							roughnessTexture.needsUpdate = true
+						})
+					}
+					
+					const material = new THREE.MeshStandardMaterial({
+						map: texture,
+						normalMap: normalTexture,
+						metalnessMap: metalnessTexture,
+						roughnessMap: roughnessTexture,
+						transparent: opacity < 1 || acc.pbrAlphaMode === 1,
+						opacity: opacity
+					})
+					
+					const obj = acc.obj = new THREE.Mesh(undefined, material)
 					obj.matrixAutoUpdate = false
 					obj.frustumCulled = false
 					obj.visible = false
 					obj.castShadow = true
-					
-					if("opacity" in acc && acc.opacity < 1) {
-						mat.opacity = acc.opacity
-						mat.transparency = acc.opacity < 1
-					}
 					
 					if(acc.meshId) {
 						AssetCache.loadMesh(true, acc.meshId, mesh => applyMesh(obj, mesh))
@@ -959,14 +1077,14 @@ const RBXAvatar = (() => {
 				if(parent) {
 					// Scale
 					
-					const scale = this.getScaleMod(parent.name, acc.scaleType, parent.rbxScaleType)
-					acc.obj.scale.set(...(acc.scale || [1, 1, 1])).multiply(scale)
+					const scaleMod = this.getScaleMod(parent.name, acc.scaleType, parent.rbxScaleType)
+					acc.obj.scale.set(...(acc.scale || [1, 1, 1])).multiply(scaleMod)
 					
 					// Position
 					
 					if(attachment) {
 						acc.bakedCFrame.copy(attachment.bakedCFrame).multiply(
-							scalePosition(tempMatrix.copy(acc.attCFrame), scale)
+							scalePosition(tempMatrix.copy(acc.attCFrame), scaleMod)
 						)
 					} else {
 						// Legacy hats, position is not scaled
@@ -1003,7 +1121,7 @@ const RBXAvatar = (() => {
 						acc.obj.parent.remove(acc.obj)
 					}
 				}
-			})
+			}
 		}
 	}
 

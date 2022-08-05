@@ -281,7 +281,7 @@ const RBXPreview = (() => {
 			
 			data.assets.forEach(asset => {
 				if(!SkippableAssetTypes.includes(asset.assetType.id)) {
-					this.addAsset(asset.id)
+					this.addAsset(asset.id, asset.assetType.id)
 				}
 			})
 
@@ -324,8 +324,8 @@ const RBXPreview = (() => {
 			return SyncPromise.all(promises)
 		}
 
-		addAsset(assetId) {
-			const asset = this.avatar.appearance.addAsset(assetId)
+		addAsset(assetId, assetTypeId = null) {
+			const asset = this.avatar.appearance.addAsset(assetId, assetTypeId)
 			if(!asset) { return }
 
 			asset.loadPromise.then(() => {
@@ -342,8 +342,8 @@ const RBXPreview = (() => {
 			return asset
 		}
 
-		addAssetPreview(assetId) {
-			const asset = this.avatar.appearance.addAsset(assetId)
+		addAssetPreview(assetId, assetTypeId = null) {
+			const asset = this.avatar.appearance.addAsset(assetId, assetTypeId)
 			if(!asset) { return }
 
 			asset.setPriority(2)
@@ -1142,14 +1142,13 @@ const HoverPreview = (() => {
 					})
 				}
 
-				const addAssetPreview = (itemId, isAnim) => {
-					if(debounceCounter !== debounce) { return }
+				const addAssetPreview = (assetId, assetTypeId) => {
 					if(!preview) { initPreview() }
 
-					if(isAnim) {
-						playingAnimId = itemId
+					if(assetTypeId === 24) {
+						playingAnimId = assetId
 					} else {
-						const asset = preview.addAssetPreview(itemId)
+						const asset = preview.addAssetPreview(assetId, assetTypeId)
 						if(!asset) { return }
 
 						lastPreviewedAssets.push(asset)
@@ -1169,7 +1168,8 @@ const HoverPreview = (() => {
 					let curAnim
 					items.forEach(item => {
 						if(WearableAssetTypeIds.includes(item.AssetTypeId)) {
-							addAssetPreview(item.AssetId)
+							addAssetPreview(item.AssetId, item.AssetTypeId, true)
+							
 						} else if(AnimationPreviewAssetTypeIds.includes(item.AssetTypeId)) {
 							if(!curAnim || item.AssetTypeId === 61 || item.AssetTypeId === 51 && curAnim.AssetTypeId !== 61) {
 								curAnim = item
@@ -1178,9 +1178,10 @@ const HoverPreview = (() => {
 					})
 
 					if(curAnim) {
-						if(curAnim.AssetTypeId === 24) {
-							addAssetPreview(curAnim.AssetId, true)
-						} else if(curAnim.AssetTypeId === 61) {
+						if(curAnim.AssetTypeId === 24) { // Animation
+							addAssetPreview(curAnim.AssetId, 24, true)
+							
+						} else if(curAnim.AssetTypeId === 61) { // EmoteAnimation
 							const model = await AssetCache.loadModel(curAnim.AssetId)
 							if(debounceCounter !== debounce) { return }
 
@@ -1188,8 +1189,9 @@ const HoverPreview = (() => {
 							const animId = anim && AssetCache.resolveAssetId(anim.AnimationId)
 
 							if(animId) {
-								addAssetPreview(animId, true)
+								addAssetPreview(animId, 24, true)
 							}
+							
 						} else {
 							const model = await AssetCache.loadModel(curAnim.AssetId)
 							if(debounceCounter !== debounce) { return }
@@ -1202,7 +1204,7 @@ const HoverPreview = (() => {
 								.reduce((prev, cur) => ((!prev || cur.weight > prev.weight) ? cur : prev))
 							
 							if(anim) {
-								addAssetPreview(anim.id, true)
+								addAssetPreview(anim.id, 24, true)
 							}
 						}
 					}

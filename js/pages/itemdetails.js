@@ -4,139 +4,151 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 	if(!SETTINGS.get("itemdetails.itemPreviewer")) { return }
 	
 	const isPreviewable = AnimationPreviewAssetTypeIds.includes(assetTypeId) || WearableAssetTypeIds.includes(assetTypeId)
-
-	if(isBundle || isPreviewable) {
-		const previewerMode = SETTINGS.get("itemdetails.itemPreviewerMode")
-		let autoLoading = false
-		
-		let currentOutfitId
-		let playedAnimation
-		let bundleType
-		let preview
-		
-		const setOutfit = outfitId => {
-			if(!preview) {
-				currentOutfitId = outfitId
-				return
-			}
-			
-			preview.setBundleOutfit(outfitId)
-			
-			if(bundleType !== "AvatarAnimations") {
-				preview.selectOutfit("bundle")
-			}
+	if(!isBundle && !isPreviewable) { return }
+	
+	const previewerMode = SETTINGS.get("itemdetails.itemPreviewerMode")
+	let autoLoading = false
+	
+	let currentOutfitId
+	let playedAnimation
+	let bundleType
+	let preview
+	
+	const setOutfit = outfitId => {
+		if(!preview) {
+			currentOutfitId = outfitId
+			return
 		}
 		
-		const loadPreview = $.onceFn(async () => {
-			await loadOptionalLibrary("previewer")
-			preview = new ItemPreviewer()
+		preview.setBundleOutfit(outfitId)
+		
+		if(bundleType !== "AvatarAnimations") {
+			preview.selectOutfit("bundle")
+		}
+	}
+	
+	const loadPreview = $.onceFn(async () => {
+		await loadOptionalLibrary("previewer")
+		preview = new ItemPreviewer()
+		
+		if(currentOutfitId) {
+			setOutfit(currentOutfitId)
+		}
+		
+		preview.waitForAppearance().then(() => {
+			let gotAnything = false
 			
-			if(currentOutfitId) {
-				setOutfit(currentOutfitId)
+			for(const asset of preview.previewAssets.values()) {
+				if(!asset.isEmpty()) {
+					gotAnything = true
+					break
+				}
+			}
+			
+			if(!gotAnything && !currentOutfitId && !playedAnimation) {
+				console.log("We've got nothing, let's just remove previewer")
+				preview.setEnabled(false)
+				preview.setVisible(false)
 			}
 		})
-		
-		const documentVisible = $.onceFn(async () => {
-			if(document.visibilityState === "hidden") {
-				return new Promise(resolve => {
-					document.$on("visibilitychange", () => resolve(), { once: true })
-				})
+	})
+	
+	const addAsset = async (assetId, assetTypeId, assetName) => {
+		if(AnimationPreviewAssetTypeIds.includes(assetTypeId)) {
+			await loadPreview()
+			preview.setVisible(true)
+			
+			if(!autoLoading && (previewerMode === "always" || previewerMode === "animations")) {
+				autoLoading = true
+				$.ready(() => preview.setEnabled(true))
 			}
-		})
-		
-		const addAsset = async (assetId, assetTypeId, assetName) => {
-			if(AnimationPreviewAssetTypeIds.includes(assetTypeId)) {
-				await documentVisible()
-				await loadPreview()
-				preview.setVisible(true)
+			
+			if(assetTypeId === 24) {
+				// Animation asset, no need to process
+				preview.addAnimation(assetId, assetName)
 				
-				if(!autoLoading && (previewerMode === "always" || previewerMode === "animations")) {
-					autoLoading = true
-					$.ready(() => preview.setEnabled(true))
+				if(!playedAnimation) {
+					playedAnimation = true
+					preview.playAnimation(assetId)
 				}
 				
-				if(assetTypeId === 24) {
-					// Animation asset, no need to process
-					preview.addAnimation(assetId, assetName)
+			} else if(assetTypeId === 61) {
+				// Emote asset, contains an Animation
+				const model = await AssetCache.loadModel(assetId)
+				const animation = model.find(x => x.ClassName === "Animation")
+				const animationId = AssetCache.resolveAssetId(animation.AnimationId)
+				
+				preview.addAnimation(animationId, assetName)
+				
+				if(!playedAnimation) {
+					playedAnimation = true
+					preview.playAnimation(animationId)
+				}
+				
+			} else {
+				// Avatar animation
+				const model = await AssetCache.loadModel(assetId)
+				const folder = model.find(x => x.Name === "R15Anim")
+				
+				for(const value of folder.Children) {
+					if(value.ClassName !== "StringValue") { continue }
 					
-					if(!playedAnimation) {
-						playedAnimation = true
-						preview.playAnimation(assetId)
-					}
-					
-				} else if(assetTypeId === 61) {
-					// Emote asset, contains an Animation
-					const model = await AssetCache.loadModel(assetId)
-					const animation = model.find(x => x.ClassName === "Animation")
-					const animationId = AssetCache.resolveAssetId(animation.AnimationId)
-					
-					preview.addAnimation(animationId, assetName)
-					
-					if(!playedAnimation) {
-						playedAnimation = true
-						preview.playAnimation(animationId)
-					}
-					
-				} else {
-					// Avatar animation
-					const model = await AssetCache.loadModel(assetId)
-					const folder = model.find(x => x.Name === "R15Anim")
-					
-					for(const value of folder.Children) {
-						if(value.ClassName !== "StringValue") { continue }
+					for(const animation of value.Children) {
+						if(animation.ClassName !== "Animation") { continue }
 						
-						for(const animation of value.Children) {
-							if(animation.ClassName !== "Animation") { continue }
-							
-							const animationId = AssetCache.resolveAssetId(animation.AnimationId)
-							
-							if(isBundle) {
-								preview.addBundleAnimation(animationId, value.Name, assetName)
+						const animationId = AssetCache.resolveAssetId(animation.AnimationId)
+						
+						if(isBundle) {
+							preview.addBundleAnimation(animationId, value.Name, assetName)
 
-								if(!playedAnimation && value.Name === "run") {
-									playedAnimation = true
-									preview.playAnimation(animationId)
-								}
-							} else {
-								preview.addAnimation(animationId, value.Name)
+							if(!playedAnimation && value.Name === "run") {
+								playedAnimation = true
+								preview.playAnimation(animationId)
+							}
+						} else {
+							preview.addAnimation(animationId, value.Name)
 
-								if(!playedAnimation) {
-									playedAnimation = true
-									preview.playAnimation(animationId)
-								}
+							if(!playedAnimation) {
+								playedAnimation = true
+								preview.playAnimation(animationId)
 							}
 						}
 					}
 				}
-				
-			} else if(WearableAssetTypeIds.includes(assetTypeId)) {
-				await documentVisible()
-				await loadPreview()
-				preview.setVisible(true)
-				
-				preview.addAssetPreview(assetId)
-				
-				if(!autoLoading && previewerMode === "always") {
-					autoLoading = true
-					$.ready(() => preview.setEnabled(true))
-				}
 			}
-		}
-		
-		if(isBundle) {
-			const details = await RobloxApi.catalog.getBundleDetails(assetId)
-			bundleType = details.bundleType
 			
-			for(const item of details.items) {
-				if(item.type === "Asset") {
-					RobloxApi.api.getProductInfo(item.id).then(info => addAsset(item.id, info.AssetTypeId, item.name))
-				} else if(item.type === "UserOutfit") {
-					setOutfit(item.id)
-				}
+		} else if(WearableAssetTypeIds.includes(assetTypeId)) {
+			await loadPreview()
+			
+			const asset = preview.addAssetPreview(assetId)
+			if(!asset) { return }
+			
+			preview.setVisible(true)
+			
+			if(!autoLoading && previewerMode === "always") {
+				autoLoading = true
+				$.ready(() => preview.setEnabled(true))
 			}
-		} else {
-			addAsset(assetId, assetTypeId, "Asset")
 		}
+	}
+	
+	if(document.visibilityState === "hidden") {
+		await new Promise(resolve => document.$on("visibilitychange", () => resolve(), { once: true }))
+	}
+	
+	if(isBundle) {
+		const details = await RobloxApi.catalog.getBundleDetails(assetId)
+		bundleType = details.bundleType
+		
+		for(const item of details.items) {
+			if(item.type === "Asset") {
+				RobloxApi.api.getProductInfo(item.id).then(info => addAsset(item.id, info.AssetTypeId, item.name))
+			} else if(item.type === "UserOutfit") {
+				setOutfit(item.id)
+			}
+		}
+	} else {
+		addAsset(assetId, assetTypeId, "Asset")
 	}
 }
 
