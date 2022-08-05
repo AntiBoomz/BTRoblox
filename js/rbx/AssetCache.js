@@ -77,21 +77,31 @@ const AssetCache = (() => {
 	function createMethod(constructor) {
 		const cache = {}
 
-		return (strict, url, cb) => {
+		return (strict, request, cb) => {
 			if(typeof strict !== "boolean") {
-				cb = url
-				url = strict
+				cb = request
+				request = strict
 				strict = false
 			}
-
-			if(!strict && Number.isSafeInteger(+url)) {
-				url = AssetCache.toAssetUrl(url)
+			
+			if(!(request instanceof Object)) {
+				request = { id: request }
 			}
 
-			const resolvedUrl = resolveAssetUrl(url)
-			const cachePromise = cache[resolvedUrl] = cache[resolvedUrl] || new SyncPromise(cacheResolve => {
-				const filePromise = fileCache[resolvedUrl] = fileCache[resolvedUrl] || new SyncPromise((fileResolve, fileReject) => {
-					$.fetch(resolvedUrl, { credentials: "include" }).then(async resp => {
+			if(!strict && Number.isSafeInteger(+request.id)) {
+				request.id = AssetCache.toAssetUrl(request.id)
+			}
+
+			const resolvedUrl = resolveAssetUrl(request.id)
+			let cacheKey = resolvedUrl
+			
+			if(request.accept) {
+				cacheKey += "@" + request.accept
+			}
+			
+			const cachePromise = cache[cacheKey] = cache[cacheKey] || new SyncPromise(cacheResolve => {
+				const filePromise = fileCache[cacheKey] = fileCache[cacheKey] || new SyncPromise((fileResolve, fileReject) => {
+					$.fetch(resolvedUrl, { headers: { accept: request.accept || "*/*" }, credentials: "include" }).then(async resp => {
 						if(resp.ok) {
 							fileResolve(await resp.arrayBuffer())
 						} else {
