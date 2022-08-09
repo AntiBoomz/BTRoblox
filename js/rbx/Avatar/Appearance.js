@@ -74,7 +74,7 @@ const RBXAppearance = (() => {
 				this.assetTypeId = json.AssetTypeId
 			}
 			
-			if(this.assetTypeId === 17) { // head
+			if(this.assetTypeId === AssetType.Head) { // head
 				request = {
 					id: this.id,
 					accept: "rbx-format/avatar_meshpart_head"
@@ -110,11 +110,8 @@ const RBXAppearance = (() => {
 						texId: model[0].Texture
 					})
 					break
-					
-				case AssetType.Head:
-					this.loadHead(model[0])
-					break
 				
+				case AssetType.Head:
 				case AssetType.Torso:
 				case AssetType.RightArm:
 				case AssetType.LeftArm:
@@ -122,12 +119,24 @@ const RBXAppearance = (() => {
 				case AssetType.RightLeg: {
 					const R15Folders = []
 					
-					for(const folder of model) {
-						if(folder.Name === "R6") {
-							this.loadBodyPartsR6(folder.Children)
+					for(const child of model) {
+						if(child.ClassName === "SpecialMesh") {
+							if(this.assetTypeId === AssetType.Head) {
+								this.loadHeadR6(child)
+							}
 							
-						} else if(R15FolderPriority.includes(folder.Name)) {
-							R15Folders.push(folder)
+						} else if(child.ClassName === "MeshPart") {
+							if(this.assetTypeId === AssetType.Head) {
+								this.loadBodyPartsR15([child])
+							}
+							
+						} else if(child.ClassName === "Folder") {
+							if(child.Name === "R6") {
+								this.loadBodyPartsR6(child.Children)
+								
+							} else if(R15FolderPriority.includes(child.Name)) {
+								R15Folders.push(child)
+							}
 						}
 					}
 					
@@ -198,49 +207,45 @@ const RBXAppearance = (() => {
 			}
 		}
 		
-		loadHead(part) {
-			if(part.ClassName === "SpecialMesh") {
-				const scaleTypeValue = part.Children.find(x => x.Name === "AvatarPartScaleType")
-				const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
+		loadHeadR6(mesh) {
+			const scaleTypeValue = mesh.Children.find(x => x.Name === "AvatarPartScaleType")
+			const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
+			
+			this.addBodyPart({
+				target: "Head",
 				
-				this.addBodyPart({
-					target: "Head",
-					
-					meshId: HeadMeshes[part.MeshId] || part.MeshId,
-					baseTexId: part.TextureId,
-					
-					disableFace: part.Tags?.includes("NoFace") || false,
-					
-					scale: [...part.Scale],
-					scaleType: scaleType
-				})
+				meshId: HeadMeshes[mesh.MeshId] || mesh.MeshId,
+				baseTexId: mesh.TextureId,
+				
+				disableFace: mesh.Tags?.includes("NoFace") || false,
+				
+				scale: [...mesh.Scale],
+				scaleType: scaleType
+			})
 
-				for(const inst of part.Children) {
-					if(inst.ClassName !== "Vector3Value" || !x.Name.endsWith("Attachment")) { continue }
-					const cframe = new THREE.Matrix4().setPosition(...inst.Value)
-					
-					if(inst.Name.endsWith("RigAttachment")) {
-						const jointName = inst.Name.substring(0, inst.Name.length - 13)
+			for(const inst of mesh.Children) {
+				if(inst.ClassName !== "Vector3Value" || !x.Name.endsWith("Attachment")) { continue }
+				const cframe = new THREE.Matrix4().setPosition(...inst.Value)
+				
+				if(inst.Name.endsWith("RigAttachment")) {
+					const jointName = inst.Name.substring(0, inst.Name.length - 13)
 
-						this.addJoint({
-							target: jointName,
-							cframe: cframe,
-
-							part: "Head",
-							scaleType: scaleType
-						})
-					}
-
-					this.addAttachment({
-						target: inst.Name,
+					this.addJoint({
+						target: jointName,
 						cframe: cframe,
 
 						part: "Head",
 						scaleType: scaleType
 					})
 				}
-			} else if(part.ClassName === "MeshPart") {
-				this.loadBodyPartsR15([part])
+
+				this.addAttachment({
+					target: inst.Name,
+					cframe: cframe,
+
+					part: "Head",
+					scaleType: scaleType
+				})
 			}
 		}
 
