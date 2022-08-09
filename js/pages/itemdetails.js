@@ -273,8 +273,11 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 				AssetCache.loadText(assetId, text => text.split(";").forEach(id => {
 					AssetCache.loadModel(id, model => explorer.addModel(id.toString(), model))
 				}))
+			} else if(assetTypeId === AssetType.Head) {
+				AssetCache.loadModel({ id: assetId, accept: "rbx-format/avatar_meshpart_head" }, model => explorer.addModel("MeshPart", model))
+				AssetCache.loadModel(assetId, model => explorer.addModel("SpecialMesh", model))
 			} else {
-				AssetCache.loadModel(assetId, model => explorer.addModel("Main", model))
+				AssetCache.loadModel(assetId, model => explorer.addModel("Default", model))
 			}
 		}
 
