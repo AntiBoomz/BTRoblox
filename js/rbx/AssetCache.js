@@ -110,7 +110,7 @@ const AssetCache = (() => {
 					})
 				})
 
-				cacheResolve(filePromise.then(constructor))
+				cacheResolve(filePromise.then(buffer => constructor(buffer, request)))
 			}).catch(ex => {
 				console.error(ex)
 				return null
