@@ -407,7 +407,12 @@ const RBXAppearance = (() => {
 			const scaleTypeValue = hanInst.Children.find(x => x.Name === "AvatarPartScaleType")
 			const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
 			
-			const baseColor = hanInst.Color || hanInst.Color3uint8 // ugh
+			let baseColor = hanInst.Color || hanInst.Color3uint8
+			
+			if(!baseColor) {
+				const brickColor = BrickColor[hanInst.BrickColor] || BrickColor[194]
+				baseColor = brickColor.color.map(x => x / 255)
+			}
 			
 			this.addAccessory({
 				vertexColor: vertexColor,
@@ -425,7 +430,7 @@ const RBXAppearance = (() => {
 				meshId: meshId,
 				texId: texId,
 				
-				baseColor: baseColor ? [...baseColor] : null,
+				baseColor: [...baseColor],
 				opacity: 1 - (hanInst.Transparency || 0),
 				
 				legacyHatCFrame: accInst.AttachmentPoint ? InvertCFrame(...accInst.AttachmentPoint) : new THREE.Matrix4(),
