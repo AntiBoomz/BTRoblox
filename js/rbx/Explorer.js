@@ -349,7 +349,7 @@ const Explorer = (() => {
 						break
 					}
 					case "BrickColor":
-						valueItem.textContent = ApiDump.getBrickColorName(value) || String(value) + " (Unknown BrickColor)"
+						valueItem.textContent = BrickColor[value]?.name || String(value) + " (Unknown BrickColor)"
 						break
 					case "Enum":
 						valueItem.textContent = `${ApiDump.getPropertyEnumName(target.ClassName, name, value) || value}`
