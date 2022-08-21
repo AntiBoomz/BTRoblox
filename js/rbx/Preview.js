@@ -1041,36 +1041,45 @@ const HoverPreview = (() => {
 						const animator = preview.avatar.animator
 						const addedObjects = new Set()
 						let cameraDir
+						
+						for(const asset of lastPreviewedAssets) {
+							for(const acc of asset.accessories) {
+								if(!acc.obj) { continue }
+								
+								addedObjects.add(acc.obj)
 
-						lastPreviewedAssets.forEach(asset => {
-							asset.accessories.forEach(acc => {
-								if(acc.obj) {
-									addedObjects.add(acc.obj)
-
-									if(acc.attName.endsWith("BackAttachment")) {
-										if(!cameraDir) {
-											cameraDir = "Back"
-										}
-									} else {
-										cameraDir = "Front"
+								if(acc.attName.endsWith("BackAttachment")) {
+									if(!cameraDir) {
+										cameraDir = "Back"
 									}
-								}
-							})
-
-							asset.bodyparts.forEach(bp => {
-								if(bp.obj) {
-									addedObjects.add(bp.obj)
+								} else {
 									cameraDir = "Front"
 								}
-							})
-
-							asset.clothing.forEach(clothing => {
-								const parts = ClothingParts[clothing.target]
-								if(parts) {
-									parts.forEach(name => (avatarParts[name] && avatarParts[name].rbxMesh && addedObjects.add(avatarParts[name].rbxMesh)))
+							}
+							
+							for(const bp of asset.bodyparts) {
+								const partMesh = avatarParts[bp.target]?.rbxMesh
+								
+								if(partMesh) {
+									addedObjects.add(partMesh)
+									cameraDir = "Front"
 								}
-							})
-						})
+							}
+							
+							for(const clothing of asset.clothing) {
+								const parts = ClothingParts[clothing.target]
+								
+								if(parts) {
+									for(const partName of parts) {
+										const partMesh = avatarParts[partName]?.rbxMesh
+										
+										if(partMesh) {
+											addedObjects.add(partMesh)
+										}
+									}
+								}
+							}
+						}
 
 						if(!addedObjects.size) {
 							addedObjects.add(preview.avatar.root)

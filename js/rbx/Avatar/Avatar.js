@@ -710,8 +710,6 @@ const RBXAvatar = (() => {
 			
 			for(const asset of assets) {
 				for(const bodypart of asset.bodyparts) {
-					bodypart.obj = null
-					
 					if(!bodypart.playerType || bodypart.playerType === this.playerType) {
 						bodyparts[bodypart.target] = bodypart
 					}
@@ -777,12 +775,9 @@ const RBXAvatar = (() => {
 					part.rbxScaleMod = this.getScaleMod(part.name, part.rbxScaleType)
 				}
 				
-				if(!bodypart) {
+				if(!part.rbxMesh) {
 					continue
 				}
-				
-				// Mark bodypart as active
-				bodypart.obj = part.rbxMesh
 					
 				// Update material
 				const material = part.rbxMesh.material
