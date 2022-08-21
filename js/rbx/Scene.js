@@ -4,7 +4,6 @@ const RBXScene = (() => {
 	class Scene {
 		constructor() {
 			this._prevRes = { width: -1, height: -1 }
-
 			this.cameraControlsEnabled = true
 
 			this.cameraMinZoom = 3

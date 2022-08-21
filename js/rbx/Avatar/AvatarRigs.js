@@ -17,21 +17,21 @@ const RBXAvatarRigs = (() => {
 
 			part.Children.forEach(item => {
 				if(item.ClassName === "Attachment" && !item.Name.endsWith("RigAttachment")) {
-					partData.attachments[item.Name] = RBXAvatar.CFrame(...item.CFrame)
+					partData.attachments[item.Name] = RBXAvatar.CFrameToMatrix4(...item.CFrame)
 				} else if(item.ClassName === "Motor6D") {
 					const part0Data = recursePart(item.Part0)
 					const part1Data = recursePart(item.Part1)
 
 					part1Data.JointName = item.Name
-					part1Data.C0 = RBXAvatar.CFrame(...item.C0)
-					part1Data.C1 = RBXAvatar.CFrame(...item.C1)
+					part1Data.C0 = RBXAvatar.CFrameToMatrix4(...item.C0)
+					part1Data.C1 = RBXAvatar.CFrameToMatrix4(...item.C1)
 
 					part0Data.children.push(part1Data)
 
 					if(item.Name === "Root" || item.Name === "Neck") {
-						part0Data.attachments[`${item.Name}RigAttachment`] = RBXAvatar.CFrame(...item.C0)
+						part0Data.attachments[`${item.Name}RigAttachment`] = RBXAvatar.CFrameToMatrix4(...item.C0)
 					} else {
-						part1Data.attachments[`${item.Name}RigAttachment`] = RBXAvatar.CFrame(...item.C1)
+						part1Data.attachments[`${item.Name}RigAttachment`] = RBXAvatar.CFrameToMatrix4(...item.C1)
 					}
 				}
 			})

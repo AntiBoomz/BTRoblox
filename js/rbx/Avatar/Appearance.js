@@ -1,9 +1,6 @@
 "use strict"
 
 const RBXAppearance = (() => {
-	const CFrame = RBXAvatar.CFrame
-	const InvertCFrame = RBXAvatar.InvertCFrame
-	
 	const BodyPartEnum = [null, "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
 	const R15FolderPriority = ["R15ArtistIntent", "R15", "R15Fixed"]
 	const HeadMeshes = {
@@ -322,7 +319,7 @@ const RBXAppearance = (() => {
 				for(const inst of part.Children) {
 					if(inst.ClassName !== "Attachment") { continue }
 					
-					const cframe = CFrame(...inst.CFrame)
+					const cframe = RBXAvatar.CFrameToMatrix4(...inst.CFrame)
 					
 					if(inst.Name.endsWith("RigAttachment")) {
 						const jointName = inst.Name.substring(0, inst.Name.length - 13)
@@ -401,7 +398,7 @@ const RBXAppearance = (() => {
 			
 			if(attInst) {
 				attName = attInst.Name
-				attCFrame = attInst.CFrame ? InvertCFrame(...attInst.CFrame) : new THREE.Matrix4()
+				attCFrame = attInst.CFrame ? RBXAvatar.CFrameToMatrix4(...attInst.CFrame).invert() : new THREE.Matrix4()
 			}
 
 			const scaleTypeValue = hanInst.Children.find(x => x.Name === "AvatarPartScaleType")
@@ -433,7 +430,7 @@ const RBXAppearance = (() => {
 				baseColor: [...baseColor],
 				opacity: 1 - (hanInst.Transparency || 0),
 				
-				legacyHatCFrame: accInst.AttachmentPoint ? InvertCFrame(...accInst.AttachmentPoint) : new THREE.Matrix4(),
+				legacyHatCFrame: accInst.AttachmentPoint ? RBXAvatar.CFrameToMatrix4(...accInst.AttachmentPoint).invert() : new THREE.Matrix4(),
 				scaleType: scaleType
 			})
 		}

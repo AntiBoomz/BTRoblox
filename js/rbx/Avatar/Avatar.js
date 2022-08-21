@@ -41,17 +41,13 @@ const RBXAvatar = (() => {
 		obj.visible = false
 	}
 
-	function CFrame(x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22) {
+	function CFrameToMatrix4(x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22) {
 		return new THREE.Matrix4().set(
 			r00, r01, r02, x,
 			r10, r11, r12, y,
 			r20, r21, r22, z,
 			0, 0, 0, 1
 		)
-	}
-
-	function InvertCFrame(...args) {
-		return new THREE.Matrix4().getInverse(args[0] instanceof THREE.Matrix4 ? args[0] : CFrame(...args))
 	}
 	
 	const scalePosition = (matrix, scale) => {
@@ -904,7 +900,7 @@ const RBXAvatar = (() => {
 						const scale1 = joint.part1.rbxScaleMod
 						
 						scalePosition(joint.bakedC0.copy(C0), scale0)
-						scalePosition(joint.bakedC1.getInverse(C1), scale1)
+						scalePosition(joint.bakedC1.copy(C1).invert(), scale1)
 					}
 				})
 				
@@ -1131,8 +1127,7 @@ const RBXAvatar = (() => {
 		R6BodyPartNames,
 		R15BodyPartNames,
 
-		CFrame,
-		InvertCFrame,
+		CFrameToMatrix4,
 		applyMesh
 	}
 })()
