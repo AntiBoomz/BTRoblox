@@ -164,6 +164,12 @@ const AssetCache = (() => {
 		toAssetUrl(id) {
 			return `https://assetdelivery.roblox.com/v1/asset/?id=${+id}`
 		},
+		
+		isValidAssetUrl(url) {
+			try { resolveAssetUrl(url) }
+			catch(ex) { return false }
+			return true
+		},
 
 		resolveAssetId(url) {
 			const params = resolveAssetUrlParams(url)

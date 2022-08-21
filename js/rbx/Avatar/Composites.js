@@ -1,37 +1,20 @@
 "use strict"
 
 const RBXComposites = (() => {
-	const textureCache = new WeakMap()
-	const renderers = {}
-
-	function createTextureFromSource(source) {
-		const cached = textureCache.get(source)
-		if(cached) {
-			return cached
-		}
-
-		const texture = new THREE.Texture(source.image)
-		texture.minFilter = THREE.LinearFilter
-
+	const applySourceToMaterial = (source, material) => {
+		material.map = source.toTexture()
+		
 		source.onUpdate(() => {
-			texture.image = source.image
-			texture.needsUpdate = true
+			material.map = source.toTexture()
 		})
-
-		textureCache.set(source, texture)
-		return texture
 	}
-
+	
 	class CompositeTexture {
 		constructor(width, height) {
 			this.canvas = document.createElement("canvas")
 			this.context = this.canvas.getContext("2d")
 			
 			this.scene = new THREE.Scene()
-			this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100)
-
-			const ambient = new THREE.AmbientLight(0xFFFFFF)
-			this.scene.add(ambient)
 
 			this.updateListeners = []
 			this.loaders = []
@@ -41,49 +24,29 @@ const RBXComposites = (() => {
 
 			this.canvas.width = this.width
 			this.canvas.height = this.height
-
-			// const key = `${this.width}x${this.height}`
-			const key = `default`
-
-			if(!renderers[key]) {
-				renderers[key] = new THREE.WebGLRenderer({ alpha: true })
-				// renderers[key].setSize(this.width, this.height, false)
-			}
-
-			this.compositeRenderer = renderers[key]
-			this.camera.updateProjectionMatrix()
-
+			
+			document.body.append(this.canvas)
+			
 			this.requestUpdate()
 		}
-
-		setBodyColors() { }
 
 		beforeComposite() { }
 		afterComposite() { }
 
 		requestUpdate() {
-			if(this.needsUpdate) { return }
 			this.needsUpdate = true
-
-			$.setImmediate(() => {
-				if(!this.needsUpdate) { return }
-				this.update()
-			})
 		}
 
-		update() {
+		update(renderer) {
 			this.needsUpdate = false
-			const ctx = this.context
 			
-			ctx.clearRect(0, 0, this.width, this.height)
-			
+			this.context.clearRect(0, 0, this.width, this.height)
 			this.beforeComposite()
 
-			this.compositeRenderer.setSize(this.width, this.height, false)
-			this.camera.updateProjectionMatrix()
-
-			this.compositeRenderer.render(this.scene, this.camera)
-			ctx.drawImage(this.compositeRenderer.domElement, 0, 0, this.width, this.height, 0, 0, this.width, this.height)
+			renderer.setSize(this.width, this.height, false)
+			renderer.render(this.scene, this.camera)
+			
+			this.context.drawImage(renderer.domElement, 0, 0, this.width, this.height, 0, 0, this.width, this.height)
 
 			this.afterComposite()
 			this.updateListeners.forEach(fn => fn())
@@ -105,34 +68,36 @@ const RBXComposites = (() => {
 			this.scene.scale.set(size / 1024, size / 1024, size / 1024)
 			this.camera.position.set(size / 2, size / 4, 10)
 			this.camera.rotation.set(0, 0, 0)
+			this.camera.updateProjectionMatrix()
 	
-			const pantsmesh = this.pantsmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
-				transparent: true,
-				map: createTextureFromSource(this.sources.pants)
+			const pantsmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
+				transparent: true
 			}))
-			pantsmesh.visible = false
+			pantsmesh.frustumCulled = false
 			pantsmesh.renderOrder = 1
 			this.scene.add(pantsmesh)
 	
-			const shirtmesh = this.shirtmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
-				transparent: true,
-				map: createTextureFromSource(this.sources.shirt)
+			const shirtmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
+				transparent: true
 			}))
-			shirtmesh.visible = false
+			shirtmesh.frustumCulled = false
 			shirtmesh.renderOrder = 2
 			this.scene.add(shirtmesh)
 	
-			const tshirtmesh = this.tshirtmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
-				transparent: true,
-				map: createTextureFromSource(this.sources.tshirt)
+			const tshirtmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
+				transparent: true
 			}))
-			tshirtmesh.visible = false
+			tshirtmesh.frustumCulled = false
 			tshirtmesh.renderOrder = 3
 			this.scene.add(tshirtmesh)
 	
-			this.sources.tshirt.onUpdate(() => this.requestUpdate())
-			this.sources.shirt.onUpdate(() => this.requestUpdate())
+			applySourceToMaterial(this.sources.pants, pantsmesh.material)
+			applySourceToMaterial(this.sources.shirt, shirtmesh.material)
+			applySourceToMaterial(this.sources.tshirt, tshirtmesh.material)
+			
 			this.sources.pants.onUpdate(() => this.requestUpdate())
+			this.sources.shirt.onUpdate(() => this.requestUpdate())
+			this.sources.tshirt.onUpdate(() => this.requestUpdate())
 	
 			let meshUrl = getURL("res/previewer/compositing/CompositShirtTemplate.mesh")
 			this.loaders.push(AssetCache.loadMesh(true, meshUrl, mesh => RBXAvatar.applyMesh(shirtmesh, mesh)))
@@ -151,29 +116,31 @@ const RBXComposites = (() => {
 			super(388, 272)
 			this.sources = sources
 			
-			this.camera = new THREE.OrthographicCamera(-this.width / 2, this.width / 2, this.height / 2, -this.height / 2, 0.1, 100)
+			this.camera = new THREE.OrthographicCamera(-this.width / 2, this.width / 2, this.height / 2, -this.height / 2, 0.1, 1000)
 			this.camera.position.set(this.width / 2, this.height / 2, 10)
 			this.camera.rotation.set(0, 0, 0)
+			this.camera.updateProjectionMatrix()
 	
 			const pantsmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
-				transparent: true,
-				map: createTextureFromSource(this.sources.pants)
+				transparent: true
 			}))
-			pantsmesh.visible = false
-			pantsmesh.renderOrder = 0
+			pantsmesh.frustumCulled = false
+			pantsmesh.renderOrder = 1
 			this.scene.add(pantsmesh)
 	
 			const shirtmesh = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
-				transparent: true,
-				map: createTextureFromSource(this.sources.shirt)
+				transparent: true
 			}))
-			shirtmesh.visible = false
-			shirtmesh.renderOrder = 1
+			shirtmesh.frustumCulled = false
+			shirtmesh.renderOrder = 2
 			this.scene.add(shirtmesh)
-	
-			this.sources.tshirt.onUpdate(() => this.requestUpdate())
-			this.sources.shirt.onUpdate(() => this.requestUpdate())
+			
+			applySourceToMaterial(this.sources.pants, pantsmesh.material)
+			applySourceToMaterial(this.sources.shirt, shirtmesh.material)
+			
 			this.sources.pants.onUpdate(() => this.requestUpdate())
+			this.sources.shirt.onUpdate(() => this.requestUpdate())
+			this.sources.tshirt.onUpdate(() => this.requestUpdate())
 	
 			const meshUrl = getURL("res/previewer/compositing/R15CompositTorsoBase.mesh")
 			this.loaders.push(AssetCache.loadMesh(true, meshUrl, mesh => {
@@ -195,14 +162,15 @@ const RBXComposites = (() => {
 			this.camera = new THREE.OrthographicCamera(-this.width / 2, this.width / 2, this.height / 2, -this.height / 2, 0.1, 100)
 			this.camera.position.set(this.width / 2, this.height / 2, 10)
 			this.camera.rotation.set(0, 0, 0)
+			this.camera.updateProjectionMatrix()
 
 			const obj = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({
-				transparent: true,
-				map: createTextureFromSource(source)
+				transparent: true
 			}))
-			obj.visible = false
+			obj.frustumCulled = false
 			this.scene.add(obj)
-
+			
+			applySourceToMaterial(source, obj.material)
 			source.onUpdate(() => this.requestUpdate())
 
 			this.loaders.push(

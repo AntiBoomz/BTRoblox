@@ -86,25 +86,25 @@ const RBXAppearance = (() => {
 				case AssetType.TShirt:
 					this.addClothing({
 						target: "tshirt",
-						texId: model[0].Graphic
+						texId: this.validateAndPreload("Image", model[0].Graphic)
 					})
 					break
 				case AssetType.Shirt:
 					this.addClothing({
 						target: "shirt",
-						texId: model[0].ShirtTemplate
+						texId: this.validateAndPreload("Image", model[0].ShirtTemplate)
 					})
 					break
 				case AssetType.Pants:
 					this.addClothing({
 						target: "pants",
-						texId: model[0].PantsTemplate
+						texId: this.validateAndPreload("Image", model[0].PantsTemplate)
 					})
 					break
 				case AssetType.Face:
 					this.addClothing({
 						target: "face",
-						texId: model[0].Texture
+						texId: this.validateAndPreload("Image", model[0].Texture)
 					})
 					break
 				
@@ -167,26 +167,11 @@ const RBXAppearance = (() => {
 		}
 
 		addLoader(promise) { this.loaders.push(promise) }
-
+		
 		addAttachment(data) { this.attachments.push(data) }
-		addAccessory(data) {
-			this.accessories.push(data)
-
-			if(data.meshId) { this.addLoader(AssetCache.loadMesh(true, data.meshId)) }
-			if(data.texId) { this.addLoader(AssetCache.loadImage(true, data.texId)) }
-		}
-		addBodyPart(data) {
-			this.bodyparts.push(data)
-
-			if(data.meshId) { this.addLoader(AssetCache.loadMesh(true, data.meshId)) }
-			if(data.baseTexId) { this.addLoader(AssetCache.loadImage(true, data.baseTexId)) }
-			if(data.overTexId) { this.addLoader(AssetCache.loadImage(true, data.overTexId)) }
-		}
-		addClothing(data) {
-			this.clothing.push(data)
-
-			if(data.texId) { this.addLoader(AssetCache.loadImage(true, data.texId)) }
-		}
+		addAccessory(data) { this.accessories.push(data) }
+		addBodyPart(data) { this.bodyparts.push(data) }
+		addClothing(data) { this.clothing.push(data) }
 		addJoint(data) { this.joints.push(data) }
 
 		setPriority(priority) {
@@ -204,6 +189,25 @@ const RBXAppearance = (() => {
 			}
 		}
 		
+		validateAndPreload(assetType, assetUrl) {
+			if(!assetUrl || !AssetCache.isValidAssetUrl(assetUrl)) {
+				return null
+			}
+			
+			switch(assetType) {
+			case "Mesh":
+				this.addLoader(AssetCache.loadMesh(true, assetUrl))
+				break
+			case "Image":
+				this.addLoader(AssetCache.loadImage(true, assetUrl))
+				break
+			default:
+				throw new Error("Invalid assetType")
+			}
+			
+			return assetUrl
+		}
+		
 		loadHeadR6(mesh) {
 			const scaleTypeValue = mesh.Children.find(x => x.Name === "AvatarPartScaleType")
 			const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
@@ -211,8 +215,8 @@ const RBXAppearance = (() => {
 			this.addBodyPart({
 				target: "Head",
 				
-				meshId: HeadMeshes[mesh.MeshId] || mesh.MeshId,
-				baseTexId: mesh.TextureId,
+				meshId: this.validateAndPreload("Mesh", HeadMeshes[mesh.MeshId] || mesh.MeshId),
+				overTexId: this.validateAndPreload("Image", mesh.TextureId),
 				
 				disableFace: mesh.Tags?.includes("NoFace") || false,
 				
@@ -255,9 +259,9 @@ const RBXAppearance = (() => {
 					playerType: "R6",
 					target: target,
 
-					meshId: +charmesh.MeshId ? AssetCache.toAssetUrl(charmesh.MeshId) : null,
-					baseTexId: +charmesh.BaseTextureId ? AssetCache.toAssetUrl(charmesh.BaseTextureId) : null,
-					overTexId: +charmesh.OverlayTextureId ? AssetCache.toAssetUrl(charmesh.OverlayTextureId) : null
+					meshId: this.validateAndPreload("Mesh", +charmesh.MeshId ? AssetCache.toAssetUrl(charmesh.MeshId) : null),
+					baseTexId: this.validateAndPreload("Image", +charmesh.BaseTextureId ? AssetCache.toAssetUrl(charmesh.BaseTextureId) : null),
+					overTexId: this.validateAndPreload("Image", +charmesh.OverlayTextureId ? AssetCache.toAssetUrl(charmesh.OverlayTextureId) : null)
 				})
 			}
 		}
@@ -269,36 +273,11 @@ const RBXAppearance = (() => {
 				const scaleTypeValue = part.Children.find(x => x.Name === "AvatarPartScaleType")
 				const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
 				
-				let meshId = part.MeshID
-				let texId = part.TextureID
-				
-				let pbrEnabled
-				let normalMapId
-				let roughnessMapId
-				let metalnessMapId
-				
-				const surfaceAppearance = part.Children.find(x => x.ClassName === "SurfaceAppearance")
-				
-				if(surfaceAppearance) {
-					// we can ignore alphamode for bodyparts, it doesnt seem to work?
-					pbrEnabled = true
-					texId = surfaceAppearance.ColorMap
-					normalMapId = surfaceAppearance.NormalMap
-					roughnessMapId = surfaceAppearance.RoughnessMap
-					metalnessMapId = surfaceAppearance.MetalnessMap
-				}
-				
 				const bp = {
-					playerType: "R15",
+					playerType: this.assetTypeId === AssetType.Head ? null : "R15",
 					target: part.Name,
-
-					pbrEnabled: pbrEnabled,
-					normalMapId: normalMapId,
-					roughnessMapId: roughnessMapId,
-					metalnessMapId: metalnessMapId,
 					
-					meshId: meshId,
-					overTexId: texId,
+					meshId: this.validateAndPreload("Mesh", part.MeshID || part.MeshId),
 					
 					opacity: 1 - (part.Transparency || 0),
 					size: [...(part.size || part.Size)],
@@ -307,13 +286,23 @@ const RBXAppearance = (() => {
 				}
 				
 				if(this.assetTypeId === AssetType.Head) {
-					delete bp.playerType
 					bp.disableFace = !part.Children.find(x => x.ClassName === "Decal" && x.Name.toLowerCase() === "face")
-					
-					bp.baseTexId = bp.overTexId
-					delete bp.overTexId
 				}
-
+				
+				const surfaceAppearance = part.Children.find(x => x.ClassName === "SurfaceAppearance")
+				
+				if(surfaceAppearance) {
+					// alpha mode doesnt seem to do anything for bodyparts, we can ignore it
+					
+					bp.pbrEnabled = true
+					bp.colorMapId = this.validateAndPreload("Image", surfaceAppearance.ColorMap)
+					bp.normalMapId = this.validateAndPreload("Image", surfaceAppearance.NormalMap)
+					bp.roughnessMapId = this.validateAndPreload("Image", surfaceAppearance.RoughnessMap)
+					bp.metalnessMapId = this.validateAndPreload("Image", surfaceAppearance.MetalnessMap)
+				} else {
+					bp.overTexId = this.validateAndPreload("Image", part.TextureID || part.TextureId)
+				}
+				
 				this.addBodyPart(bp)
 				
 				for(const inst of part.Children) {
@@ -348,62 +337,10 @@ const RBXAppearance = (() => {
 			const hanInst = accInst.Children.find(x => x.Name === "Handle")
 			if(!hanInst) { return }
 			
-			let vertexColor
-			let offset
-			let scale
-			let attName
-			let attCFrame
-			let meshId
-			let texId
-			
-			let pbrEnabled
-			let pbrAlphaMode
-			let normalMapId
-			let roughnessMapId
-			let metalnessMapId
-			
-			if(hanInst.ClassName === "MeshPart") {
-				const wrapLayer = hanInst.Children.find(x => x.ClassName === "WrapLayer")
-				const surfaceAppearance = hanInst.Children.find(x => x.ClassName === "SurfaceAppearance")
-				
-				if(wrapLayer) { return } // unimplemented
-				
-				const size = hanInst.size
-				const initialSize = hanInst.InitialSize
-				
-				scale = [size[0] / initialSize[0], size[1] / initialSize[1], size[2] / initialSize[2]]
-				meshId = hanInst.MeshID
-				texId = hanInst.TextureID
-				
-				if(surfaceAppearance) {
-					pbrEnabled = true
-					pbrAlphaMode = surfaceAppearance.AlphaMode
-					texId = surfaceAppearance.ColorMap
-					normalMapId = surfaceAppearance.NormalMap
-					roughnessMapId = surfaceAppearance.RoughnessMap
-					metalnessMapId = surfaceAppearance.MetalnessMap
-				}
-			} else {
-				const meshInst = hanInst.Children.find(x => x.ClassName === "SpecialMesh")
-				if(!meshInst) { return }
-				
-				vertexColor = meshInst.VertexColor ? [...meshInst.VertexColor] : null
-				offset = meshInst.Offset ? [...meshInst.Offset] : null
-				scale = meshInst.Scale ? [...meshInst.Scale] : null
-				meshId = meshInst.MeshId
-				texId = meshInst.TextureId
-			}
-			
-			const attInst = hanInst.Children.find(x => x.ClassName === "Attachment")
-			
-			if(attInst) {
-				attName = attInst.Name
-				attCFrame = attInst.CFrame ? RBXAvatar.CFrameToMatrix4(...attInst.CFrame).invert() : new THREE.Matrix4()
-			}
-
 			const scaleTypeValue = hanInst.Children.find(x => x.Name === "AvatarPartScaleType")
+			const attInst = hanInst.Children.find(x => x.ClassName === "Attachment")
+
 			const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
-			
 			let baseColor = hanInst.Color || hanInst.Color3uint8
 			
 			if(!baseColor) {
@@ -411,28 +348,53 @@ const RBXAppearance = (() => {
 				baseColor = brickColor.color.map(x => x / 255)
 			}
 			
-			this.addAccessory({
-				vertexColor: vertexColor,
-				offset: offset,
-				scale: scale,
-				attName: attName,
-				attCFrame: attCFrame,
-				
-				pbrEnabled: pbrEnabled,
-				pbrAlphaMode: pbrAlphaMode,
-				normalMapId: normalMapId,
-				roughnessMapId: roughnessMapId,
-				metalnessMapId: metalnessMapId,
-				
-				meshId: meshId,
-				texId: texId,
+			const acc = {
+				attName: attInst ? attInst.Name : null,
+				attCFrame: attInst ? RBXAvatar.CFrameToMatrix4(...attInst.CFrame).invert() : new THREE.Matrix4(),
 				
 				baseColor: [...baseColor],
 				opacity: 1 - (hanInst.Transparency || 0),
 				
 				legacyHatCFrame: accInst.AttachmentPoint ? RBXAvatar.CFrameToMatrix4(...accInst.AttachmentPoint).invert() : new THREE.Matrix4(),
 				scaleType: scaleType
-			})
+			}
+			
+			if(hanInst.ClassName === "MeshPart") {
+				const wrapLayer = hanInst.Children.find(x => x.ClassName === "WrapLayer")
+				if(wrapLayer) { return } // unimplemented
+				
+				const size = hanInst.Size || hanInst.size
+				const initialSize = hanInst.InitialSize
+				
+				acc.scale = [size[0] / initialSize[0], size[1] / initialSize[1], size[2] / initialSize[2]]
+				acc.meshId = this.validateAndPreload("Mesh", hanInst.MeshID || hanInst.MeshId)
+				
+				const surfaceAppearance = hanInst.Children.find(x => x.ClassName === "SurfaceAppearance")
+				
+				if(surfaceAppearance) {
+					acc.pbrEnabled = true
+					acc.pbrAlphaMode = surfaceAppearance.AlphaMode
+					
+					acc.colorMapId = this.validateAndPreload("Image", surfaceAppearance.ColorMap)
+					acc.normalMapId = this.validateAndPreload("Image", surfaceAppearance.NormalMap)
+					acc.roughnessMapId = this.validateAndPreload("Image", surfaceAppearance.RoughnessMap)
+					acc.metalnessMapId = this.validateAndPreload("Image", surfaceAppearance.MetalnessMap)
+				} else {
+					acc.texId = this.validateAndPreload("Image", hanInst.TextureID || hanInst.TextureId)
+				}
+			} else {
+				const meshInst = hanInst.Children.find(x => x.ClassName === "SpecialMesh")
+				if(!meshInst) { return }
+				
+				acc.meshId = this.validateAndPreload("Mesh", meshInst.MeshId)
+				acc.texId = this.validateAndPreload("Image", meshInst.TextureId)
+				
+				acc.vertexColor = meshInst.VertexColor ? [...meshInst.VertexColor] : null
+				acc.offset = meshInst.Offset ? [...meshInst.Offset] : null
+				acc.scale = meshInst.Scale ? [...meshInst.Scale] : null
+			}
+			
+			this.addAccessory(acc)
 		}
 	}
 

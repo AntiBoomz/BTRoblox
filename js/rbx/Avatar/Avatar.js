@@ -71,6 +71,16 @@ const RBXAvatar = (() => {
 		return img
 	}
 	
+	function createTexture(img) {
+		const texture = new THREE.Texture(img)
+		texture.minFilter = THREE.LinearFilter
+		texture.wrapS = THREE.RepeatWrapping
+		texture.wrapT = THREE.RepeatWrapping
+		texture.needsUpdate = true
+		
+		return texture
+	}
+	
 	function createSourceFunction(fn, filter) {
 		return {
 			fn: fn,
@@ -100,6 +110,10 @@ const RBXAvatar = (() => {
 
 			onUpdate(fn) {
 				this.onUpdateListeners.push(fn)
+			},
+			
+			toTexture() {
+				return createTexture(this.image)
 			}
 		}
 	}
@@ -171,18 +185,12 @@ const RBXAvatar = (() => {
 	const texturesToMerge = new Set()
 	
 	function mergeTexture(width, height, ...sources) {
-		width = 2 ** Math.ceil(Math.log2(width))
-		height = 2 ** Math.ceil(Math.log2(height))
-
 		const canvas = document.createElement("canvas")
 		const ctx = canvas.getContext("2d")
 		canvas.width = width
 		canvas.height = height
 
-		const texture = new THREE.Texture(canvas)
-		texture.minFilter = THREE.LinearFilter
-		texture.wrapS = THREE.RepeatWrapping
-		texture.wrapT = THREE.RepeatWrapping
+		const texture = createTexture(canvas)
 
 		const stack = []
 		let needsUpdate = false
@@ -213,17 +221,11 @@ const RBXAvatar = (() => {
 			texture.needsUpdate = true
 		}
 
-		const requestUpdateFinal = () => {
+		const requestUpdate = () => {
 			if(needsUpdate) { return }
 			needsUpdate = true
 			
 			texturesToMerge.add(updateFinal)
-
-			$.setImmediate(() => {
-				if(!needsUpdate) { return }
-				needsUpdate = false
-				updateFinal()
-			})
 		}
 		
 		const background = createSourceFunction(ctx => {
@@ -253,17 +255,18 @@ const RBXAvatar = (() => {
 					entry.dirty = source.image !== entry._lastImage
 				}
 
-				requestUpdateFinal()
+				requestUpdate()
 			})
 		}
 
-		requestUpdateFinal()
-		
+		requestUpdate()
 		return texture
 	}
 	
 	const tempMatrix = new THREE.Matrix4()
 	const oneVector = new THREE.Vector3(1, 1, 1)
+	
+	let compositeRenderer
 
 	class Avatar {
 		constructor() {
@@ -292,6 +295,10 @@ const RBXAvatar = (() => {
 				head: 1,
 				proportion: 0,
 				bodyType: 0
+			}
+			
+			if(!compositeRenderer) {
+				compositeRenderer = new THREE.WebGLRenderer({ alpha: true })
 			}
 
 			this.appearance.on("update", () => this.shouldRefreshBodyParts = true)
@@ -361,7 +368,7 @@ const RBXAvatar = (() => {
 			}
 			
 			const textures = this.textures = {
-				Head: mergeTexture(256, 256, sources.base.Head, sources.face, sources.over.Head)
+				Head: mergeTexture(256, 256, sources.base.Head, sources.over.Head, sources.face)
 			}
 			
 			for(const name of R6BodyPartNames) {
@@ -437,7 +444,7 @@ const RBXAvatar = (() => {
 					acc.obj.matrixWorldNeedsUpdate = true
 				}
 			}
-
+			
 			// Update composites
 
 			const activeComposites = this.playerType === "R6"
@@ -446,10 +453,9 @@ const RBXAvatar = (() => {
 
 			for(const comp of activeComposites) {
 				if(comp.needsUpdate) {
-					comp.update()
+					comp.update(compositeRenderer)
 				}
 			}
-			
 			
 			while(texturesToMerge.size > 0) {
 				texturesToMerge.forEach(fn => fn())
@@ -621,6 +627,7 @@ const RBXAvatar = (() => {
 					}
 					
 					obj.rbxMesh = obj
+					obj.rbxMat = mat
 				} else {
 					obj = new THREE.Group()
 				}
@@ -780,34 +787,50 @@ const RBXAvatar = (() => {
 				}
 					
 				// Update material
-				const material = part.rbxMesh.material
+				let material = part.rbxMat
 				
 				if(bodypart.pbrEnabled) {
+					material = part.rbxPbrMat = part.rbxPbrMat ?? new THREE.MeshStandardMaterial({
+						transparent: false
+					})
+					
 					const maps = [
+						["map", bodypart.colorMapId],
 						["normalMap", bodypart.normalMapId],
 						["roughnessMap", bodypart.roughnessMapId],
 						["metalnessMap", bodypart.metalnessMapId],
 					]
 					
+					const setImage = (key, img) => {
+						if(material[key]) {
+							material[key].dispose()
+							material[key] = null
+						}
+						
+						if(img) {
+							material[key] = createTexture(img)
+						}
+						
+						material.needsUpdate = true // just updating the texture doesnt trigger an update
+					}
+					
 					for(const [key, id] of maps) {
-						let map = material[key]
+						if(material["_last" + key] === id) { continue }
+						material["_last" + key] = id
+						
+						setImage(key, null)
 						
 						if(id) {
-							if(!map) {
-								map = material[key] = new THREE.Texture(whiteImage)
-							}
-							
 							AssetCache.loadImage(true, id, img => {
-								map.image = img
-								map.needsUpdate = true
+								if(material["_last" + key] === id) {
+									setImage(key, img)
+								}
 							})
 						}
 					}
-				} else {
-					material.normalMap = null
-					material.roughnessMap = null
-					material.metalnessMap = null
 				}
+				
+				part.rbxMesh.material = material
 				
 				// Update opacity
 				const opacity = bodypart.opacity ?? 1
@@ -824,12 +847,22 @@ const RBXAvatar = (() => {
 				if(part.rbxMeshId !== meshId) {
 					part.rbxMeshId = meshId
 					clearGeometry(part.rbxMesh)
-					AssetCache.loadMesh(true, meshId, mesh => part.rbxMeshId === meshId && applyMesh(part.rbxMesh, mesh))
+					
+					if(meshId) {
+						AssetCache.loadMesh(true, meshId, mesh => {
+							if(part.rbxMeshId === meshId) {
+								applyMesh(part.rbxMesh, mesh)
+							}
+						})
+					}
 				}
 				
 				// Update textures
 				const baseSource = this.sources.base[partName]
-				const baseTexId = bodypart.baseTexId || ""
+				const overSource = this.sources.over[partName]
+				
+				const baseTexId = bodypart.baseTexId
+				const overTexId = bodypart.overTexId
 				
 				if(baseSource.rbxTexId !== baseTexId) {
 					baseSource.rbxTexId = baseTexId
@@ -844,9 +877,6 @@ const RBXAvatar = (() => {
 					}
 				}
 
-				const overSource = this.sources.over[partName]
-				const overTexId = bodypart.overTexId || ""
-				
 				if(overSource.rbxTexId !== overTexId) {
 					overSource.rbxTexId = overTexId
 					overSource.setImage(emptyImage)
@@ -979,73 +1009,81 @@ const RBXAvatar = (() => {
 			// Update accessories
 			for(const acc of accessories) {
 				if(!acc.obj) {
-					const color = new THREE.Color(1, 1, 1)
 					const opacity = acc.opacity ?? 1
+					let material
 					
-					const source = createSource(emptyImage)
-					const texture = mergeTexture(256, 256, source)
-					
-					let metalnessTexture
-					let roughnessTexture
-					let normalTexture
-					
-					if(acc.pbrAlphaMode === 1) {
-						source.setImage(whiteImage)
-					} else {
-						const background = new THREE.Color(...acc.baseColor)
+					if(acc.pbrEnabled) {
+						material = new THREE.MeshStandardMaterial({
+							transparent: opacity < 1,
+							opacity: opacity,
+						})
 						
-						if(!acc.pbrEnabled && acc.texId) {
-							background.setRGB(1, 1, 1)
+						const source = createSource(emptyImage)
+						const texture = material.map = mergeTexture(1024, 1024, source)
+						
+						if(acc.pbrAlphaMode === 0) { // Overlay
+							const baseColor = new THREE.Color(...acc.baseColor)
+							texture.setBackground("#" + baseColor.getHexString())
+						} else { // Transparent
+							material.transparent = true
 						}
 						
-						texture.setBackground("#" + background.getHexString())
-					}
-					
-					if(acc.vertexColor) {
-						color.setRGB(...acc.vertexColor)
-					}
-					
-					if(acc.texId) {
-						AssetCache.loadImage(true, acc.texId, img => {
-							source.setImage(img)
-						})
-					}
-					
-					if(acc.normalMapId) {
-						normalTexture = new THREE.Texture(whiteImage)
+						if(acc.colorMapId) {
+							if(acc.pbrAlphaMode === 1) {
+								source.setImage(whiteImage)
+							}
+							
+							AssetCache.loadImage(true, acc.colorMapId, img => {
+								source.setImage(img)
+								material.needsUpdate = true
+							})
+						}
 						
-						AssetCache.loadImage(true, acc.normalMapId, img => {
-							normalTexture.image = img
-							normalTexture.needsUpdate = true
-						})
-					}
-					
-					if(acc.metalnessMapId) {
-						metalnessTexture = new THREE.Texture(whiteImage)
+						if(acc.normalMapId) {
+							AssetCache.loadImage(true, acc.normalMapId, img => {
+								material.normalMap = createTexture(img)
+								material.needsUpdate = true
+							})
+						}
 						
-						AssetCache.loadImage(true, acc.metalnessMapId, img => {
-							metalnessTexture.image = img
-							metalnessTexture.needsUpdate = true
-						})
-					}
-					
-					if(acc.roughnessMapId) {
-						roughnessTexture = new THREE.Texture(whiteImage)
+						if(acc.metalnessMapId) {
+							AssetCache.loadImage(true, acc.metalnessMapId, img => {
+								material.metalnessMap = createTexture(img)
+								material.needsUpdate = true
+							})
+						}
 						
-						AssetCache.loadImage(true, acc.roughnessMapId, img => {
-							roughnessTexture.image = img
-							roughnessTexture.needsUpdate = true
+						if(acc.roughnessMapId) {
+							AssetCache.loadImage(true, acc.roughnessMapId, img => {
+								material.roughnessMap = createTexture(img)
+								material.needsUpdate = true
+							})
+						}
+					} else {
+						material = new THREE.MeshStandardMaterial({
+							transparent: opacity < 1,
+							opacity: opacity,
 						})
+						
+						if(acc.texId) {
+							const source = createSource(emptyImage)
+							
+							const texture = material.map = mergeTexture(256, 256, source)
+							texture.setBackground("#000000")
+							
+							AssetCache.loadImage(true, acc.texId, img => {
+								source.setImage(img)
+								material.needsUpdate = true
+							})
+							
+							if(acc.vertexColor) {
+								material.color = new THREE.Color(...acc.vertexColor)
+							}
+						} else {
+							material.map = createTexture(img)
+							material.color = new THREE.Color(...acc.baseColor)
+						}
 					}
-					
-					const material = new THREE.MeshStandardMaterial({
-						map: texture,
-						normalMap: normalTexture,
-						metalnessMap: metalnessTexture,
-						roughnessMap: roughnessTexture,
-						transparent: opacity < 1 || acc.pbrAlphaMode === 1,
-						opacity: opacity
-					})
 					
 					const obj = acc.obj = new THREE.Mesh(undefined, material)
 					obj.matrixAutoUpdate = false
