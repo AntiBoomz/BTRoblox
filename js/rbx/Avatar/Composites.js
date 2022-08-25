@@ -25,8 +25,6 @@ const RBXComposites = (() => {
 			this.canvas.width = this.width
 			this.canvas.height = this.height
 			
-			document.body.append(this.canvas)
-			
 			this.requestUpdate()
 		}
 
