@@ -598,6 +598,15 @@ pageInit.common = () => {
 	
 	//
 	
+	if(SETTINGS.get("general.disableDesktopApp")) {
+		bodyWatcher.$watch("#PlaceLauncherStatusPanel", launcher => {
+			launcher.dataset.isDuarAutoOptInEnabled = false
+			launcher.dataset.protocolNameForClient += `:1+LaunchExp:InBrowser+`
+			// Roblox.ProtocolHandlerClientInterface.isDuarAutoOptInEnabled = false
+			// Roblox.ProtocolHandlerClientInterface.protocolNameForClient += `:1+LaunchExp:InBrowser+`
+		})
+	}
+	
 	if(SETTINGS.get("general.fixFirefoxLocalStorageIssue")) {
 		InjectJS.inject(() => {
 			const { onSet, hijackFunction } = window.BTRoblox
