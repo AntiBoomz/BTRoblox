@@ -22,9 +22,7 @@ const DEFAULT_SETTINGS = {
 		enableContextMenus: { value: true },
 		
 		useNativeAudioPlayer: { value: false },
-		fixFirefoxLocalStorageIssue: { value: false },
-		
-		disableDesktopApp: { value: false }
+		fixFirefoxLocalStorageIssue: { value: false }
 	},
 	home: {
 		friendsShowUsername: { value: false },
