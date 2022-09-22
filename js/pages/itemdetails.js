@@ -348,7 +348,10 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 				lines.push("")
 				
 				for(let i = 0, len = mesh.faces.length; i < len; i += 3) {
-					lines.push(`f ${mesh.faces[i] + 1} ${mesh.faces[i + 1] + 1} ${mesh.faces[i + 2] + 1}`)
+					const a = mesh.faces[i] + 1
+					const b = mesh.faces[i + 1] + 1
+					const c = mesh.faces[i + 2] + 1
+					lines.push(`f ${a}/${a}/${a} ${b}/${b}/${b} ${c}/${c}/${c}`)
 				}
 
 				download(lines.join("\n"), "obj")
