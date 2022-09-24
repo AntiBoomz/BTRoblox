@@ -1,7 +1,7 @@
 "use strict"
 
 const RBXMeshParser = {
-	parse(buffer) {
+	parse(buffer, params) {
 		const reader = new ByteReader(buffer)
 		assert(reader.String(8) === "version ", "Invalid mesh file")
 
@@ -9,19 +9,20 @@ const RBXMeshParser = {
 		switch(version) {
 		case "1.00":
 		case "1.01":
-			return this.parseText(bufferToString(buffer))
+			return this.parseText(bufferToString(buffer), params)
 		case "2.00":
 		case "3.00":
 		case "3.01":
 		case "4.00":
 		case "4.01":
-			return this.parseBin(buffer, version)
+		case "5.00":
+			return this.parseBin(buffer, version, params)
 		default:
 			throw new Error(`Unsupported mesh version '${version}'`)
 		}
 	},
 
-	parseText(str) {
+	parseText(str, params = {}) {
 		const lines = str.split(/\r?\n/)
 		assert(lines.length === 3, "Invalid mesh version 1 file (Wrong amount of lines)")
 
@@ -61,7 +62,7 @@ const RBXMeshParser = {
 		return { vertices, normals, uvs, faces }
 	},
 
-	parseBin(buffer, version = "2.00") {
+	parseBin(buffer, version, params) {
 		const reader = new ByteReader(buffer)
 		assert(reader.String(12) === `version ${version}`, "Bad header")
 
@@ -72,17 +73,16 @@ const RBXMeshParser = {
 		
 		let headerSize
 		let vertexSize
-		let faceSize
-		let lodSize
-		let nameTableSize
+		let faceSize = 12
+		let lodSize = 4
+		let nameTableSize = 0
+		let facsDataSize = 0
 
-		let meshCount
-		let lodCount
+		let lodCount = 0
 		let vertexCount
 		let faceCount
-		let boneCount
-		let envelopeCount
-		let skinDataCount
+		let boneCount = 0
+		let skinDataCount = 0
 
 		if(version === "2.00") {
 			headerSize = reader.UInt16LE()
@@ -90,71 +90,68 @@ const RBXMeshParser = {
 
 			vertexSize = reader.Byte()
 			faceSize = reader.Byte()
-			lodSize = 0
-			nameTableSize = 0
-
-			meshCount = 1
-			lodCount = 0
-			vertexCount = reader.Int32LE()
-			faceCount = reader.Int32LE()
-			envelopeCount = 0
-			skinDataCount = 0
-			boneCount = 0
+			vertexCount = reader.UInt32LE()
+			faceCount = reader.UInt32LE()
+			
 		} else if(version.startsWith("3.")) {
 			headerSize = reader.UInt16LE()
 			assert(headerSize >= 16, `Invalid header size ${headerSize}`)
 
-			meshCount = 1
 			vertexSize = reader.Byte()
 			faceSize = reader.Byte()
 			lodSize = reader.UInt16LE()
-			nameTableSize = 0
-
 			lodCount = reader.UInt16LE()
-			vertexCount = reader.Int32LE()
-			faceCount = reader.Int32LE()
-			envelopeCount = 0
-			skinDataCount = 0
-			boneCount = 0
+			vertexCount = reader.UInt32LE()
+			faceCount = reader.UInt32LE()
+			
 		} else if(version.startsWith("4.")) {
 			headerSize = reader.UInt16LE()
 			assert(headerSize >= 24, `Invalid header size ${headerSize}`)
 
-			vertexSize = 40
-			faceSize = 12
-			lodSize = 4
-
-			meshCount = reader.UInt16LE()
-			vertexCount = reader.Int32LE()
-			faceCount = reader.Int32LE()
-
+			reader.Jump(2) // uint16 lodType;
+			vertexCount = reader.UInt32LE()
+			faceCount = reader.UInt32LE()
 			lodCount = reader.UInt16LE()
 			boneCount = reader.UInt16LE()
-
-			nameTableSize = reader.Int32LE()
+			nameTableSize = reader.UInt32LE()
 			skinDataCount = reader.UInt16LE()
-			reader.Jump(2)
+			reader.Jump(2) // byte numHighQualiyLODs, unused;
+			
+			vertexSize = 40
+			
+		} else if(version.startsWith("5.")) {
+			headerSize = reader.UInt16LE()
+			assert(headerSize >= 32, `Invalid header size ${headerSize}`)
 
-			if(boneCount > 0) {
-				envelopeCount = vertexCount
-			} else {
-				envelopeCount = 0
-			}
+			reader.Jump(2) // uint16 meshCount;
+			vertexCount = reader.UInt32LE()
+			faceCount = reader.UInt32LE()
+			lodCount = reader.UInt16LE()
+			boneCount = reader.UInt16LE()
+			nameTableSize = reader.UInt32LE()
+			skinDataCount = reader.UInt16LE()
+			reader.Jump(2) // byte numHighQualiyLODs, unused;
+			reader.Jump(4) // uint32 facsDataFormat;
+			facsDataSize = reader.UInt32LE()
+			
+			vertexSize = 40
 		}
 
-		assert(vertexSize >= 32, `Invalid vertex size ${vertexSize}`)
+		reader.SetIndex(begin + headerSize)
+		
+		assert(vertexSize >= 36, `Invalid vertex size ${vertexSize}`)
 		assert(faceSize >= 12, `Invalid face size ${faceSize}`)
-		assert(lodCount === 0 || lodSize === 4, `Invalid lod size ${lodSize}`)
+		assert(lodSize >= 4, `Invalid lod size ${lodSize}`)
 
-		const fileEnd = begin
-			+ headerSize
+		const fileEnd = reader.GetIndex()
 			+ (vertexCount * vertexSize)
-			+ (envelopeCount * 8)
+			+ (boneCount > 0 ? vertexCount * 8 : 0)
 			+ (faceCount * faceSize)
-			+ (lodCount * 4)
+			+ (lodCount * lodSize)
 			+ (boneCount * 60)
 			+ (nameTableSize)
 			+ (skinDataCount * 72)
+			+ (facsDataSize)
 		
 		assert(fileEnd === reader.GetLength(), `Invalid file size (expected ${reader.GetLength()}, got ${fileEnd})`)
 		
@@ -162,10 +159,12 @@ const RBXMeshParser = {
 		const vertices = new Float32Array(vertexCount * 3)
 		const normals = new Float32Array(vertexCount * 3)
 		const uvs = new Float32Array(vertexCount * 2)
+		const tangents = !params?.excludeTangents ? new Uint8Array(vertexCount * 4) : null
+		const vertexColors = vertexSize >= 40 && !params?.excludeVertexColors ? new Uint8Array(vertexCount * 4) : null
 		const lodLevels = []
 
-		reader.SetIndex(begin + headerSize)
-
+		// Vertex[vertexCount]
+		
 		for(let i = 0; i < vertexCount; i++) {
 			vertices[i * 3] = reader.FloatLE()
 			vertices[i * 3 + 1] = reader.FloatLE()
@@ -178,19 +177,45 @@ const RBXMeshParser = {
 			uvs[i * 2] = reader.FloatLE()
 			uvs[i * 2 + 1] = 1 - reader.FloatLE()
 			
-			// next 4 bytes determine tangent
-			// source: https://twitter.com/zeuxcg/status/1435019076611444740
-			// 4 bytes [...] store tangent as 1 byte per XYZ component,
-			// remapped from -1..1 to 0..254, with the fourth component
-			// storing +1/-1 (254/0) to indicate CW/CCW.
-
-			reader.Jump(vertexSize - 32)
+			if(tangents) {
+				// tangents are mapped from [0, 254] to [-1, 1]
+				// byte tx, ty, tz, ts;
+				
+				tangents[i * 4] = reader.Byte()
+				tangents[i * 4 + 1] = reader.Byte()
+				tangents[i * 4 + 2] = reader.Byte()
+				tangents[i * 4 + 3] = reader.Byte()
+			} else {
+				reader.Jump(4)
+			}
+			
+			if(vertexSize < 40) {
+				reader.Jump(vertexSize - 36)
+				continue
+			}
+			
+			if(vertexColors) {
+				// byte r, g, b, a
+				
+				vertexColors[i * 4] = reader.Byte()
+				vertexColors[i * 4 + 1] = reader.Byte()
+				vertexColors[i * 4 + 2] = reader.Byte()
+				vertexColors[i * 4 + 3] = reader.Byte()
+			} else {
+				reader.Jump(4)
+			}
+			
+			reader.Jump(vertexSize - 40)
 		}
-
-		if(envelopeCount > 0) {
-			reader.Jump(envelopeCount * 8)
+		
+		// Envelope[vertexCount]
+		
+		if(boneCount > 0) {
+			reader.Jump(vertexCount * 8)
 		}
-
+		
+		// Face[faceCount]
+		
 		for(let i = 0; i < faceCount; i++) {
 			faces[i * 3] = reader.UInt32LE()
 			faces[i * 3 + 1] = reader.UInt32LE()
@@ -198,69 +223,95 @@ const RBXMeshParser = {
 
 			reader.Jump(faceSize - 12)
 		}
-
-		if(lodCount === 0) {
+		
+		// LodLevel[lodCount]
+		
+		if(lodCount <= 2) {
+			// Lod levels are pretty much ignored if lodCount
+			// is not at least 3, so we can just skip reading
+			// them completely.
+			
 			lodLevels.push(0, faceCount)
+			reader.Jump(lodCount * lodSize)
 		} else {
 			for(let i = 0; i < lodCount; i++) {
-				lodLevels.push(reader.Int32LE())
+				lodLevels.push(reader.UInt32LE())
 				reader.Jump(lodSize - 4)
 			}
 		}
+		
+		// Bone[boneCount]
 
 		if(boneCount > 0) {
 			reader.Jump(boneCount * 60)
 		}
+		
+		// byte[nameTableSize]
 
 		if(nameTableSize > 0) {
 			reader.Jump(nameTableSize)
 		}
+		
+		// SkinData[skinDataCount]
 
 		if(skinDataCount > 0) {
 			reader.Jump(skinDataCount * 72)
 		}
-
-		// Okay, idk what's happening here, but some v4 meshes don't have valid lodLevels?
-		// Possibly related to skinned meshes as I've only seen this happen with the skinned
-		// LNX bundles.
-		if(version.startsWith("4.") && meshCount === 0 && lodCount === 2 && lodLevels[1] === 0) {
-			lodLevels[0] = 0
-			lodLevels[1] = faceCount
+		
+		// byte[facsDataSize]
+		
+		if(facsDataSize > 0) {
+			reader.Jump(facsDataSize)
 		}
+
 		//
-
-		const newFaces = faces.slice(lodLevels[0] * 3, lodLevels[1] * 3)
-		let minFaceIndex = faceCount
-		let maxFaceIndex = 0
-
-		for(let i = 0; i < newFaces.length; i++) {
-			const index = newFaces[i]
-
-			if(index < minFaceIndex) {
-				minFaceIndex = index
-			}
-
-			if(index >= maxFaceIndex) {
-				maxFaceIndex = index + 1
-			}
-		}
-
-		if(minFaceIndex > 0) {
-			for(let i = 0; i < newFaces.length; i++) {
-				newFaces[i] -= minFaceIndex
-			}
-		}
-
-		const newVertices = vertices.slice(minFaceIndex * 3, maxFaceIndex * 3)
-		const newNormals = normals.slice(minFaceIndex * 3, maxFaceIndex * 3)
-		const newUVs = uvs.slice(minFaceIndex * 2, maxFaceIndex * 2)
-
+		
 		const mesh = {
-			vertices: newVertices,
-			normals: newNormals,
-			uvs: newUVs,
-			faces: newFaces
+			vertices: vertices,
+			normals: normals,
+			uvs: uvs,
+			faces: faces,
+			
+			lodLevels: lodLevels,
+			tangents: tangents,
+			vertexColors: vertexColors
 		}
+		
+		//
+		
+		if(params?.excludeLods) {
+			// Extract only the first Lod (unless we only have one)
+			
+			if(!(lodLevels[0] === 0 && lodLevels[1] === faceCount)) {
+				const minFaceIndex = lodLevels[0] * 3
+				const maxFaceIndex = lodLevels[1] * 3
+				
+				let minVertexIndex = vertexCount
+				let maxVertexIndex = 0
+
+				for(let i = maxFaceIndex; i-- > minFaceIndex;) {
+					if(faces[i] < minVertexIndex) { minVertexIndex = faces[i] }
+					if(faces[i] >= maxVertexIndex) { maxVertexIndex = faces[i] + 1 }
+				}
+				
+				if(!(minVertexIndex === 0 && maxVertexIndex === vertexCount)) {
+					mesh.vertices = vertices.slice(minVertexIndex * 3, maxVertexIndex * 3)
+					mesh.normals = normals.slice(minVertexIndex * 3, maxVertexIndex * 3)
+					mesh.uvs = uvs.slice(minVertexIndex * 2, maxVertexIndex * 2)
+					mesh.faces = faces.slice(minFaceIndex, maxFaceIndex)
+					
+					if(minVertexIndex > 0) {
+						for(let i = mesh.faces.length; i--;) {
+							mesh.faces[i] -= minVertexIndex
+						}
+					}
+				}
+			}
+
+			delete mesh.lodLevels
+		}
+		
+		//
 
 		return mesh
 	}

@@ -12,8 +12,8 @@ const RBXParser = {
 		return RBXXmlParser.parse(buffer)
 	},
 
-	parseMesh(buffer) {
-		return RBXMeshParser.parse(buffer)
+	parseMesh(buffer, params) {
+		return RBXMeshParser.parse(buffer, params)
 	},
 
 	parseAnimation(sequence) {
