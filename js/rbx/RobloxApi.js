@@ -200,6 +200,18 @@ const RobloxApi = {
 				.then(res => res.json())
 		)
 	},
+	develop: {
+		userCanManage: backgroundCall((userId, assetId) =>
+			backgroundFetch(`https://develop.roblox.com/v1/user/${userId}/canmanage/${assetId}`)
+				.then(res => res.json())
+		)
+	},
+	economy: {
+		getAssetDetails: backgroundCall(assetId =>
+			backgroundFetch(`https://economy.roblox.com/v2/assets/${assetId}/details`)
+				.then(res => res.json())
+		)
+	},
 	friends: {
 		getFriends: backgroundCall(userId =>
 			backgroundFetch(`https://friends.roblox.com/v1/users/${userId}/friends`)

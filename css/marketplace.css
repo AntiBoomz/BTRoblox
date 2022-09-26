@@ -1,0 +1,82 @@
+.btr-explorer-button-container,
+.btr-download-button-container,
+.btr-content-button-container {
+	display: inline;
+	margin-right: 12px;
+}
+
+.btr-explorer-button,
+.btr-download-button,
+.btr-content-button {
+	position: relative;
+	display: block;
+	padding: 10px;
+}
+
+.btr-explorer-button:hover,
+.btr-download-button:hover,
+.btr-content-button:hover {
+	background-color: rgba(237, 237, 237, 0.04);
+	border-radius: 50%;
+}
+
+.btr-icon-explorer,
+.btr-icon-download,
+.btr-icon-content {
+	background-position-x: 0px !important;
+}
+
+.btr-icon-download,
+.btr-icon-content {
+	filter: invert(100%);
+}
+
+a.disabled > .btr-icon-download,
+a.disabled > .btr-icon-content {
+	filter: invert(70%);
+}
+
+/* just gonna try to replicate the button riple effect */
+
+.btr-explorer-button:hover::before,
+.btr-download-button:hover::before,
+.btr-content-button:hover::before {
+	content: "";
+	display: block;
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	height: 100%;
+	width: 100%;
+	border-radius: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.btr-replica-ripple {
+	display: block;
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	border-radius: 50%;
+	background-color: rgba(237, 237, 237, 1);
+	transform: translate(-50%, -50%);
+	animation: 0.4s ease-out ripple-anim;
+	
+	height: 0%;
+	width: 0%;
+	opacity: 0;
+}
+
+@keyframes ripple-anim {
+	10% {
+		opacity: 0.2;
+	}
+	50% {
+		opacity: 0.2;
+	}
+	100% {
+		width: 100%;
+		height: 100%;
+		opacity: 0;
+	}
+}

@@ -390,6 +390,77 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 
 /* Explorer */
 
+.btr-explorer-button-container {
+	position: relative;
+	display: inline-block;
+}
+
+.btr-explorer-popover {
+	position: absolute;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity ease-in-out .2s;
+	z-index: 10000;
+	margin-left: 50%;
+	margin-top: 10px;
+}
+
+.btr-explorer-popover.visible {
+	pointer-events: initial;
+	display: block;
+	opacity: 1;
+}
+
+.btr-explorer-button,
+.btr-download-button,
+.btr-content-button {
+	cursor: pointer;
+	user-select: none;
+}
+
+.btr-explorer-button.disabled,
+.btr-download-button.disabled,
+.btr-content-button.disabled {
+	cursor: default;
+}
+
+.btr-icon-explorer,
+.btr-icon-download,
+.btr-icon-content {
+	display: inline-block;
+	background-image: url(/res/icon_itemdetails.svg);
+	background-repeat: no-repeat;
+	background-size: auto auto;
+	width: 28px;
+	height: 28px;
+	vertical-align: middle;
+}
+
+a.disabled > .btr-icon-explorer,
+a.disabled > .btr-icon-download,
+a.disabled > .btr-icon-content {
+	filter: invert(75%);
+}
+
+.dark-theme .btr-icon-download,
+.dark-theme .btr-icon-content {
+	filter: invert(75%);
+}
+
+.dark-theme a.disabled > .btr-icon-download,
+.dark-theme a.disabled > .btr-icon-content {
+	filter: invert(40%);
+}
+
+.btr-icon-download { background-position-y: -28px; }
+.btr-icon-content { background-position-y: -56px; }
+
+a:not(.disabled):hover > .btr-icon-explorer,
+a:not(.disabled):hover > .btr-icon-download,
+a:not(.disabled):hover > .btr-icon-content {
+	background-position-x: -28px;
+}
+
 .btr-explorer-parent {
 	width: 276px;
 	position: relative;

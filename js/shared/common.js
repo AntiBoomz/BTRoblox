@@ -70,6 +70,12 @@ const PAGE_INFO = {
 		js: ["pages/inventory.js"],
 		css: ["inventory.css"]
 	},
+	marketplace: {
+		domainMatches: ["create.roblox.com"],
+		matches: ["^/marketplace/"],
+		js: ["pages/itemdetails.js"],
+		css: ["marketplace.css"]
+	},
 	itemdetails: {
 		matches: ["^/(catalog|library|game-pass|badges|bundles)/(\\d+)/"],
 		js: ["pages/itemdetails.js"],
@@ -110,6 +116,11 @@ const PAGE_INFO = {
 if(IS_CONTENT_SCRIPT) {
 	const currentPage = (() => {
 		for(const [name, page] of Object.entries(PAGE_INFO)) {
+			const domainMatches = page.domainMatches ?? ["www.roblox.com", "web.roblox.com"]
+			if(!domainMatches.includes(location.hostname)) {
+				continue
+			}
+			
 			for(const pattern of page.matches) {
 				const matches = location.pathname.match(new RegExp(pattern, "i"))
 				if(matches) {

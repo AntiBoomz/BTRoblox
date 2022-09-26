@@ -51,6 +51,14 @@
 	--btr-content-visible: 1;
 }
 
+.btr-explorer-button-container,
+.btr-download-button,
+.btr-content-button {
+	position: absolute;
+	top: 12px;
+	right: 12px;
+}
+
 #item-container .item-name-container h1 {
 	padding-right: calc((
 		var(--btr-menu-visible, 0) +
@@ -60,7 +68,7 @@
 	) * 38px + 12px);
 }
 
-#item-container .btr-explorer-button {
+#item-container .btr-explorer-button-container {
 	right: calc((
 		var(--btr-menu-visible, 0)
 	) * 38px + 12px);
@@ -79,58 +87,6 @@
 		var(--btr-explorer-visible, 0) +
 		var(--btr-download-visible, 0)
 	) * 38px + 12px);
-}
-
-.btr-explorer-button,
-.btr-download-button,
-.btr-content-button {
-	position: absolute;
-	top: 12px;
-	right: 12px;
-	cursor: pointer;
-}
-
-.btr-explorer-button.disabled,
-.btr-download-button.disabled,
-.btr-content-button.disabled {
-	cursor: default;
-}
-
-.btr-icon-explorer,
-.btr-icon-download,
-.btr-icon-content {
-	display: inline-block;
-	background-image: url(/res/icon_itemdetails.svg);
-	background-repeat: no-repeat;
-	background-size: auto auto;
-	width: 28px;
-	height: 28px;
-	vertical-align: middle;
-}
-
-a.disabled > .btr-icon-explorer,
-a.disabled > .btr-icon-download,
-a.disabled > .btr-icon-content {
-	filter: invert(75%);
-}
-
-.dark-theme .btr-icon-download,
-.dark-theme .btr-icon-content {
-	filter: invert(75%);
-}
-
-.dark-theme a.disabled > .btr-icon-download,
-.dark-theme a.disabled > .btr-icon-content {
-	filter: invert(40%);
-}
-
-.btr-icon-download { background-position-y: -28px; }
-.btr-icon-content { background-position-y: -56px; }
-
-a:not(.disabled) > .btr-icon-explorer:hover,
-a:not(.disabled) > .btr-icon-download:hover,
-a:not(.disabled) > .btr-icon-content:hover {
-	background-position-x: -28px;
 }
 
 /* */
