@@ -26,6 +26,17 @@ const AssetCache = (() => {
 	}
 
 	function resolveAssetUrlParams(url) {
+		if(url.startsWith(resourcePrefixUrl)) {
+			const resourcePath = url.slice(resourcePrefixUrl.length)
+			const mappedAssetUrl = resourceToAsset[resourcePath]
+
+			if(!mappedAssetUrl) {
+				return null
+			}
+
+			url = mappedAssetUrl
+		}
+		
 		if(url.startsWith("rbxassetid://")) {
 			url = `https://assetdelivery.roblox.com/v1/asset/?id=${url.slice(13)}`
 		} else if(url.startsWith("rbxhttp://")) {
@@ -42,36 +53,6 @@ const AssetCache = (() => {
 		} catch(ex) {}
 
 		return null
-	}
-
-	function resolveAssetUrl(url) {
-		if(url.startsWith(resourcePrefixUrl)) {
-			const resourcePath = url.slice(resourcePrefixUrl.length)
-			const mappedAssetUrl = resourceToAsset[resourcePath]
-
-			if(!mappedAssetUrl) {
-				throw new Error(`Invalid Asset Url: '${url}'`)
-			}
-
-			url = mappedAssetUrl
-		}
-
-		try { new URL(url) }
-		catch(ex) { throw new TypeError(`Invalid URL: '${String(url)}'`) }
-
-		if(url.match(/https?:\/\/..\.rbxcdn\.com/)) {
-			return url.replace(/^http:/, "https:")
-		}
-
-		const params = resolveAssetUrlParams(url)
-		if(!params) {
-			throw new Error(`Invalid Asset Url: '${url}'`)
-		}
-
-		params.sort() // not sure if sorting will affect functionality, but meh
-
-		const paramString = params.toString()
-		return `https://assetdelivery.roblox.com/v1/asset/?${paramString.toString()}`
 	}
 
 	function createMethod(constructor) {
@@ -92,20 +73,27 @@ const AssetCache = (() => {
 				request.id = AssetCache.toAssetUrl(request.id)
 			}
 
-			const resolvedUrl = resolveAssetUrl(request.id)
-			let cacheKey = resolvedUrl
+			const params = resolveAssetUrlParams(request.id)
 			
-			if(request.accept) {
-				cacheKey += "@" + request.accept
+			if(!params) {
+				throw new Error("Invalid url passed to AssetCache")
+			}
+			
+			params.sort()
+			
+			let cacheKey = params.toString()
+			
+			if(request.format) {
+				cacheKey += "@" + request.format
 			}
 			
 			const cachePromise = cache[cacheKey] = cache[cacheKey] || new SyncPromise(cacheResolve => {
 				const filePromise = fileCache[cacheKey] = fileCache[cacheKey] || new SyncPromise((fileResolve, fileReject) => {
-					$.fetch(resolvedUrl, { headers: { accept: request.accept || "*/*" }, credentials: "include" }).then(async resp => {
-						if(resp.ok) {
-							fileResolve(await resp.arrayBuffer())
+					RobloxApi.assetdelivery.requestAssetV1(params, { format: request.format }).then(buffer => {
+						if(buffer) {
+							fileResolve(buffer)
 						} else {
-							fileReject(new Error(`Failed to download asset (${resp.status} ${resp.statusText})`))
+							fileReject(new Error(`Failed to download asset "${cacheKey}"`))
 						}
 					})
 				})
@@ -166,19 +154,11 @@ const AssetCache = (() => {
 		},
 		
 		isValidAssetUrl(url) {
-			try { resolveAssetUrl(url) }
-			catch(ex) { return false }
-			return true
+			return !!resolveAssetUrlParams(url)
 		},
 
 		resolveAssetId(url) {
-			const params = resolveAssetUrlParams(url)
-
-			if(params) {
-				return params.get("id")
-			}
-
-			return null
+			return resolveAssetUrlParams(url)?.get("id")
 		}
 	}
 })()

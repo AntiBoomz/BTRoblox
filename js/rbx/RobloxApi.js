@@ -148,6 +148,35 @@ const RobloxApi = {
 		),
 		getProductInfo: cacheResult(assetId => RobloxApi.api.getUncachedProductInfo(assetId))
 	},
+	assetdelivery: {
+		requestAssetV1: backgroundCall((urlParams, params) => {
+			if(typeof urlParams === "string" || typeof urlParams === "number") { urlParams = { id: urlParams } }
+			if(!(urlParams instanceof URLSearchParams)) { urlParams = new URLSearchParams(urlParams) }
+			
+			const headers = {}
+			if(params?.format) { headers["Roblox-AssetFormat"] = params.format }
+			if(params?.browserAssetRequest !== false) { headers["Roblox-Browser-Asset-Request"] = "true" }
+			
+			return backgroundFetch(`https://assetdelivery.roblox.com/v1/asset/?${urlParams.toString()}`, {
+				credentials: "include",
+				headers: headers
+			}).then(res => (res.ok ? res.arrayBuffer() : null))
+		}),
+		
+		requestAssetV2: backgroundCall((urlParams, params) => {
+			if(typeof urlParams === "string" || typeof urlParams === "number") { urlParams = { id: urlParams } }
+			if(!(urlParams instanceof URLSearchParams)) { urlParams = new URLSearchParams(urlParams) }
+			
+			const headers = {}
+			if(params?.format) { headers["Roblox-AssetFormat"] = params.format }
+			if(params?.browserAssetRequest !== false) { headers["Roblox-Browser-Asset-Request"] = "true" }
+			
+			return backgroundFetch(`https://assetdelivery.roblox.com/v2/asset/?${urlParams.toString()}`, {
+				credentials: "include",
+				headers: headers
+			}).then(res => res.json())
+		}),
+	},
 	badges: {
 		deleteBadge: backgroundCall(badgeId =>
 			backgroundFetch(`https://badges.roblox.com/v1/user/badges/${badgeId}`, {

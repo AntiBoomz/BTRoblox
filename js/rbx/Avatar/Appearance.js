@@ -72,10 +72,7 @@ const RBXAppearance = (() => {
 			}
 			
 			if(this.assetTypeId === AssetType.Head) { // head
-				request = {
-					id: this.id,
-					accept: "rbx-format/avatar_meshpart_head"
-				}
+				request = { id: this.id, format: "avatar_meshpart_head" }
 			}
 			
 			AssetCache.loadModel(request, model => {
