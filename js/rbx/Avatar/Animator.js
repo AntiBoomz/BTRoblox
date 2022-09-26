@@ -37,6 +37,16 @@ const RBXAnimator = (() => {
 			x => (x < .5 ? 0.5 - 0.5 * bounce(1 - 2 * x) : 1 - 0.5 * bounce(2 - 2 * x))
 		]
 	]
+	
+	const nextQuat = new THREE.Quaternion()
+	const nextPos = new THREE.Vector3()
+	
+	const emptyFrame = {
+		time: 0,
+		weight: 0,
+		pos: [0, 0, 0],
+		rot: [0, 0, 0, 1]
+	}
 
 	class Animator {
 		constructor(joints) {
@@ -107,7 +117,7 @@ const RBXAnimator = (() => {
 
 			if(this.timePosition > this.anim.length) {
 				if(this.anim.loop) {
-					this.timePosition = this.timePosition % this.anim.length
+					this.timePosition %= this.anim.length
 					if(this.onloop) { this.onloop() }
 				} else {
 					this.playing = false
@@ -118,11 +128,6 @@ const RBXAnimator = (() => {
 			}
 
 			const currentTime = this.timePosition
-			const emptyFrame = {
-				time: 0,
-				pos: [0, 0, 0],
-				rot: [0, 0, 0]
-			}
 
 			let fadeIn = 0
 			if(this.fadeIn) {
@@ -134,34 +139,38 @@ const RBXAnimator = (() => {
 				}
 			}
 
-			const nextQuat = new THREE.Quaternion()
 			Object.entries(this.anim.keyframes).forEach(([name, keyframes]) => {
 				const joint = this.joints[name]
 				if(!joint) { return }
 
 				const next = keyframes.find(x => x.time >= currentTime)
+				let weight
 
 				if(!next) {
 					const last = keyframes[keyframes.length - 1]
+					weight = last.weight
+					
 					joint.position.set(...last.pos)
 					joint.quaternion.set(...last.rot)
 				} else {
 					const prev = keyframes[keyframes.indexOf(next) - 1] || emptyFrame
 					const length = next.time - prev.time
 					const easing = (EasingStyles[prev.easingstyle] || EasingStyles[0])[prev.easingdir || 0]
-					const alpha = length === 0 ? 1 : easing((currentTime - prev.time) / length)
-
-					joint.position.set(
-						prev.pos[0] + (next.pos[0] - prev.pos[0]) * alpha,
-						prev.pos[1] + (next.pos[1] - prev.pos[1]) * alpha,
-						prev.pos[2] + (next.pos[2] - prev.pos[2]) * alpha,
-					)
-
-					joint.quaternion.set(...prev.rot).slerp(nextQuat.set(...next.rot), alpha)
+					const theta = length === 0 ? 1 : easing((currentTime - prev.time) / length)
+					
+					weight = prev.weight * (1 - theta) + next.weight * theta
+					
+					joint.position.set(...prev.pos).lerp(nextPos.set(...next.pos), theta)
+					joint.quaternion.set(...prev.rot).slerp(nextQuat.set(...next.rot), theta)
 				}
 
 				if(name === "LowerTorso" && this.rootScale !== 1) {
 					joint.position.multiplyScalar(this.rootScale)
+				}
+				
+				if(weight < 1) {
+					joint.position.lerp(nextPos.set(0, 0, 0), 1 - weight)
+					joint.quaternion.slerp(nextQuat.set(0, 0, 0, 1), 1 - weight)
 				}
 
 				if(fadeIn) {
