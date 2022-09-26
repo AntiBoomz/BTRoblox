@@ -12,6 +12,70 @@ const cacheResult = callback => {
 
 const cacheBackgroundCall = callback => cacheResult(backgroundCall(callback))
 
+const wrapArgs = async args => {
+	if(IS_CHROME) {
+		const asyncValues = []
+		
+		args = JSON.stringify(args, (key, value) => {
+			if(value instanceof Blob) {
+				value = {
+					__btrType: "Blob",
+					body: `$btr_async_value_${asyncValues.push(value) - 1}$`
+				}
+			} else if(value instanceof ArrayBuffer) {
+				value = {
+					__btrType: "ArrayBuffer",
+					body: Array.from(new Uint8Array(value))
+				}
+			} else if(value instanceof URLSearchParams) {
+				value = {
+					__btrType: "URLSearchParams",
+					body: value.toString()
+				}
+			}
+			
+			return value
+		})
+		
+		if(asyncValues.length > 0) {
+			for(let i = asyncValues.length; i--;) {
+				let value = asyncValues[i]
+				
+				if(value instanceof Blob) {
+					value = Array.from(new Uint8Array(await value.arrayBuffer()))
+				}
+				
+				asyncValues[i] = JSON.stringify(value)
+			}
+			
+			args = args.replace(/"\$btr_async_value_(\d+)\$"/g, asyncValues)
+		}
+	}
+	
+	return args
+}
+
+const unwrapArgs = async args => {
+	if(IS_CHROME) {
+		args = JSON.parse(args, (key, value) => {
+			const valueType = value?.__btrType
+			
+			if(valueType === "Blob") {
+				value = new Blob([new Uint8Array(value.body)], { type: value.type })
+			} else if(valueType === "ArrayBuffer") {
+				value = new Uint8Array(value.body).buffer
+			} else if(valueType === "URLSearchParams") {
+				value = new URLSearchParams(value.body)
+			}
+			
+			return value
+		})
+	}
+	
+	return args
+}
+
+
 const backgroundCall = callback => {
 	const messageId = `RobloxApi.${backgroundCallCounter}`
 	backgroundCallCounter++
@@ -24,9 +88,9 @@ const backgroundCall = callback => {
 				}
 				
 				Promise.resolve()
-					.then(() => callback(...args))
+					.then(async () => callback(...(await unwrapArgs(args))))
 					.then(
-						result => respond({ success: true, result: result }),
+						async result => respond({ success: true, result: await wrapArgs(result) }),
 						err => respond({ success: false, result: err.message })
 					)
 			}
@@ -35,10 +99,10 @@ const backgroundCall = callback => {
 		return callback
 	}
 	
-	return (...args) => new Promise((resolve, reject) => {
-		MESSAGING.send(messageId, { args: args, xsrf: getXsrfToken() }, result => {
+	return (...args) => new Promise(async (resolve, reject) => {
+		MESSAGING.send(messageId, { args: await wrapArgs(args), xsrf: getXsrfToken() }, async result => {
 			if(result.success) {
-				resolve(result.result)
+				resolve(await unwrapArgs(result.result))
 			} else {
 				reject(result.result)
 			}
@@ -46,7 +110,7 @@ const backgroundCall = callback => {
 	})
 }
 
-const btrFetch = (url, init = {}) => {
+const backgroundFetch = (url, init = {}) => {
 	init = { ...init }
 	
 	const usingXsrf = init.xsrf
@@ -79,14 +143,14 @@ const btrFetch = (url, init = {}) => {
 const RobloxApi = {
 	api: {
 		getUncachedProductInfo: backgroundCall(assetId =>
-			btrFetch(`https://api.roblox.com/marketplace/productinfo?assetId=${assetId}`)
+			backgroundFetch(`https://api.roblox.com/marketplace/productinfo?assetId=${assetId}`)
 				.then(res => res.json())
 		),
 		getProductInfo: cacheResult(assetId => RobloxApi.api.getUncachedProductInfo(assetId))
 	},
 	badges: {
 		deleteBadge: backgroundCall(badgeId =>
-			btrFetch(`https://badges.roblox.com/v1/user/badges/${badgeId}`, {
+			backgroundFetch(`https://badges.roblox.com/v1/user/badges/${badgeId}`, {
 				method: "DELETE",
 				credentials: "include",
 				xsrf: true
@@ -95,7 +159,7 @@ const RobloxApi = {
 	},
 	catalog: {
 		getItemDetails: backgroundCall(items =>
-			btrFetch(`https://catalog.roblox.com/v1/catalog/items/details`, {
+			backgroundFetch(`https://catalog.roblox.com/v1/catalog/items/details`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ items }),
@@ -103,25 +167,25 @@ const RobloxApi = {
 			}).then(res => res.json())
 		),
 		getBundleDetails: cacheBackgroundCall(bundleId =>
-			btrFetch(`https://catalog.roblox.com/v1/bundles/${bundleId}/details`)
+			backgroundFetch(`https://catalog.roblox.com/v1/bundles/${bundleId}/details`)
 				.then(res => res.json())
 		)
 	},
 	friends: {
 		getFriends: backgroundCall(userId =>
-			btrFetch(`https://friends.roblox.com/v1/users/${userId}/friends`)
+			backgroundFetch(`https://friends.roblox.com/v1/users/${userId}/friends`)
 				.then(async res => (await res.json()).data)
 		)
 	},
 	games: {
 		getPlaceDetails: backgroundCall(placeIds =>
-			btrFetch(`https://games.roblox.com/v1/games/multiget-place-details?placeIds=${placeIds.join("&placeIds=")}`)
+			backgroundFetch(`https://games.roblox.com/v1/games/multiget-place-details?placeIds=${placeIds.join("&placeIds=")}`)
 				.then(res => res.json())
 		)
 	},
 	inventory: {
 		toggleInCollection: backgroundCall((assetType, assetId, addToCollection = true) =>
-			btrFetch(`https://inventory.roblox.com/v1/collections/items/${assetType}/${assetId}`, {
+			backgroundFetch(`https://inventory.roblox.com/v1/collections/items/${assetType}/${assetId}`, {
 				method: addToCollection ? "POST" : "DELETE",
 				credentials: "include",
 				xsrf: true
@@ -143,25 +207,25 @@ const RobloxApi = {
 	},
 	thumbnails: {
 		getAvatarHeadshots: backgroundCall((userIds, size = "150x150") =>
-			btrFetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userIds.join(",")}&size=${size}&format=Png`)
+			backgroundFetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userIds.join(",")}&size=${size}&format=Png`)
 				.then(async res => (await res.json()).data)
 		),
 		getAvatarThumbnails: backgroundCall((userIds, size = "150x150") =>
-			btrFetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userIds.join(",")}&size=${size}&format=Png`)
+			backgroundFetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userIds.join(",")}&size=${size}&format=Png`)
 				.then(async res => (await res.json()).data)
 		),
 		getAssetThumbnails: backgroundCall((assetIds, size) =>
-			btrFetch(`https://thumbnails.roblox.com/v1/assets?assetIds=${assetIds.join(",")}&size=${size}&format=Png`)
+			backgroundFetch(`https://thumbnails.roblox.com/v1/assets?assetIds=${assetIds.join(",")}&size=${size}&format=Png`)
 				.then(async res => (await res.json()).data)
 		)
 	},
 	www: {
 		getProfilePlayerGames: backgroundCall(userId =>
-			btrFetch(`https://www.roblox.com/users/profile/playergames-json?userId=${userId}`)
+			backgroundFetch(`https://www.roblox.com/users/profile/playergames-json?userId=${userId}`)
 				.then(res => res.json())
 		),
 		deleteAssetFromInventory: backgroundCall(assetId =>
-			btrFetch(`https://www.roblox.com/asset/delete-from-inventory`, {
+			backgroundFetch(`https://www.roblox.com/asset/delete-from-inventory`, {
 				method: "POST",
 				credentials: "include",
 				body: new URLSearchParams({ assetId }),
