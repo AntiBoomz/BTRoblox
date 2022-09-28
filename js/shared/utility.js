@@ -902,8 +902,9 @@ const html = function(...args) {
 	return elem
 }
 
-const assert = (bool, ...msg) => {
-	if(!bool) { throw new Error(...msg) }
+const assert = (bool, ...args) => {
+	if(!bool) { throw new Error(...args) }
+	return bool
 }
 
 const stringToBuffer = str => {
