@@ -223,7 +223,7 @@ const RBXAppearance = (() => {
 			})
 
 			for(const inst of mesh.Children) {
-				if(inst.ClassName !== "Vector3Value" || !x.Name.endsWith("Attachment")) { continue }
+				if(inst.ClassName !== "Vector3Value" || !inst.Name.endsWith("Attachment")) { continue }
 				const cframe = new THREE.Matrix4().setPosition(...inst.Value)
 				
 				if(inst.Name.endsWith("RigAttachment")) {
