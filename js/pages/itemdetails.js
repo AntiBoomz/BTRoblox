@@ -69,6 +69,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 				
 				if(!playedAnimation) {
 					playedAnimation = true
+					preview.applyAnimationPlayerType = true
 					preview.playAnimation(assetId)
 				}
 				
@@ -82,6 +83,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 				
 				if(!playedAnimation) {
 					playedAnimation = true
+					preview.applyAnimationPlayerType = true
 					preview.playAnimation(animationId)
 				}
 				
@@ -103,6 +105,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 
 							if(!playedAnimation && value.Name === "run") {
 								playedAnimation = true
+								preview.applyAnimationPlayerType = true
 								preview.playAnimation(animationId)
 							}
 						} else {
@@ -110,6 +113,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 
 							if(!playedAnimation) {
 								playedAnimation = true
+								preview.applyAnimationPlayerType = true
 								preview.playAnimation(animationId)
 							}
 						}
