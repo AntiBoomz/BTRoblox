@@ -55,6 +55,10 @@ const AssetType = {
 	LeftShoeAccessory: 70,
 	RightShoeAccessory: 71,
 	DressSkirtAccessory: 72,
+	EyebrowAccessory: 76,
+	EyelashAccessory: 77,
+	MoodAnimation: 78,
+	DynamicHead: 79
 }
 
 const BrickColor = {
