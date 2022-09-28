@@ -265,6 +265,10 @@ const RBXAvatar = (() => {
 	
 	const tempMatrix = new THREE.Matrix4()
 	const oneVector = new THREE.Vector3(1, 1, 1)
+	const zeroVector = new THREE.Vector3()
+	const identQuat = new THREE.Quaternion()
+	
+	const tempPos = new THREE.Vector3()
 	
 	let compositeRenderer
 
@@ -283,6 +287,7 @@ const RBXAvatar = (() => {
 			this.parts = {}
 
 			this.playerType = null
+			this.animRootScale = 1
 			
 			this.hipOffset = new THREE.Vector3()
 			this.offset = new THREE.Vector3()
@@ -424,19 +429,31 @@ const RBXAvatar = (() => {
 				this._refreshBodyParts()
 			}
 			
-			this.animator.update()
-			
 			//
+			
+			this.animator.update()
 			
 			this.root.position.copy(this.hipOffset).add(this.offset)
 			this.root.rotation.copy(this.offsetRot)
 			
 			for(const joint of this.jointsArray) {
-				tempMatrix.compose(joint.position, joint.quaternion, oneVector)
+				const transform = this.animator.getJointTransform(joint.part1.name)
+				
+				let position = transform?.position || zeroVector
+				let quaternion = transform?.quaternion || identQuat
+				
+				if(this.playerType === "R15" && joint.part1.name === "LowerTorso") {
+					position = tempPos.copy(position).multiplyScalar(this.animRootScale)
+				}
+				
+				tempMatrix.compose(position, quaternion, oneVector)
+				
 				joint.part1.matrixNoScale.multiplyMatrices(joint.part0.matrixNoScale, joint.bakedC0).multiply(tempMatrix).multiply(joint.bakedC1)
 				joint.part1.matrix.copy(joint.part1.matrixNoScale).scale(joint.part1.scale)
 				joint.part1.matrixWorldNeedsUpdate = true
 			}
+			
+			//
 			
 			for(const acc of this.accessories) {
 				if(acc.parent) {
@@ -474,11 +491,11 @@ const RBXAvatar = (() => {
 		}
 
 		setScales(scales) {
-			Object.keys(this.scales).forEach(name => {
+			for(const name of Object.keys(this.scales)) {
 				if(name in scales) {
 					this.scales[name] = scales[name]
 				}
-			})
+			}
 
 			this.shouldRefreshBodyParts = true
 		}
@@ -594,8 +611,10 @@ const RBXAvatar = (() => {
 					if(tar.geometry) { tar.geometry.dispose() }
 					if(tar.material) { tar.material.dispose() }
 				}
-
-				tar.children.forEach(recDispose)
+				
+				for(const child of tar.children) {
+					recDispose(child)
+				}
 			}
 			
 			for(let i = this.root.children.length; i--;) {
@@ -611,7 +630,6 @@ const RBXAvatar = (() => {
 			const attachments = this.attachments = {}
 			const joints = this.joints = {}
 			const parts = this.parts = {}
-			const animJoints = {}
 
 			const CreateModel = tree => {
 				let obj
@@ -644,22 +662,19 @@ const RBXAvatar = (() => {
 				
 				this.root.add(obj)
 				parts[tree.name] = obj
-
-				Object.entries(tree.attachments).forEach(([name, cframe]) => {
+				
+				for(const [name, cframe] of Object.entries(tree.attachments)) {
 					attachments[name] = {
 						origCFrame: cframe.clone(),
 						bakedCFrame: cframe,
 						parent: obj
 					}
-				})
+				}
 
-				tree.children.forEach(child => {
+				for(const child of tree.children) {
 					const childObj = CreateModel(child)
 
-					const joint = joints[child.JointName] = animJoints[child.name] = {
-						position: new THREE.Vector3(),
-						quaternion: new THREE.Quaternion(),
-						
+					const joint = joints[child.JointName] = {
 						origC0: child.C0,
 						origC1: child.C1,
 						bakedC0: child.C0.clone(),
@@ -670,7 +685,7 @@ const RBXAvatar = (() => {
 					}
 					
 					this.jointsArray.push(joint)
-				})
+				}
 
 				return obj
 			}
@@ -684,8 +699,6 @@ const RBXAvatar = (() => {
 			}
 			
 			this.jointsArray.reverse()
-			
-			this.animator.setJoints(animJoints)
 			this._refreshBodyParts()
 		}
 
@@ -894,7 +907,7 @@ const RBXAvatar = (() => {
 			//
 			
 			const updateSizes = () => {
-				Object.entries(this.parts).forEach(([partName, part]) => {
+				for(const [partName, part] of Object.entries(this.parts)) {
 					const bodypart = bodyparts[partName] || part.rbxDefaultBodypart
 					
 					const size = bodypart?.size || part.rbxOrigSize
@@ -913,9 +926,9 @@ const RBXAvatar = (() => {
 					if(part.rbxMesh) {
 						part.rbxMesh.scale.set(...scale)
 					}
-				})
+				}
 				
-				Object.entries(this.joints).forEach(([jointName, joint]) => {
+				for(const [jointName, joint] of Object.entries(this.joints)) {
 					if(jointName !== "Root") {
 						const override = jointOverride[jointName]
 						const C0 = override?.c0 || joint.origC0
@@ -927,7 +940,7 @@ const RBXAvatar = (() => {
 						scalePosition(joint.bakedC0.copy(C0), scale0)
 						scalePosition(joint.bakedC1.copy(C1).invert(), scale1)
 					}
-				})
+				}
 				
 				if(this.playerType === "R15") {
 					const rootJoint = this.joints.Root
@@ -984,7 +997,7 @@ const RBXAvatar = (() => {
 				const hipHeight = min >= max * 0.95 ? min : max
 
 				this.hipOffset.setY(hipHeight + rootHeight / 2)
-				this.animator.setRootScale(hipHeight / 2)
+				this.animRootScale = hipHeight / 2
 			}
 			
 			// Update attachments

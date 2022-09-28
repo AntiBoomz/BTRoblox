@@ -44,8 +44,11 @@ const RBXAnimationParser = {
 			.filter(x => x.ClassName === "Keyframe")
 			.sort((a, b) => a.Time - b.Time)
 		
+		const priority = sequence.Priority ?? 1000 // 1000 is Core, the lowest priority
+			
 		const result = {
-			authoredHipHeight: sequence.AuthoredHipHeight || null,
+			authoredHipHeight: sequence.AuthoredHipHeight ?? null,
+			priority: (priority === 1000 ? -1 : priority) + 1,
 			length: keyframes[keyframes.length - 1].Time,
 			loop: !!sequence.Loop,
 			keyframes: {}
@@ -67,18 +70,20 @@ const RBXAnimationParser = {
 	parsePose(result, pose, keyframe) {
 		if(pose.ClassName !== "Pose") { return }
 		
-		if(pose.Weight > 1e-3) {
+		if(pose.Weight > 0) {
 			const name = pose.Name
 			const cf = pose.CFrame
-			if(!result.keyframes[name]) { result.keyframes[name] = [] }
+			
+			if(!result.keyframes[name]) {
+				result.keyframes[name] = []
+			}
 			
 			result.keyframes[name].push({
 				time: keyframe.Time,
 				pos: [cf[0], cf[1], cf[2]],
 				rot: this.CFrameToQuat(cf),
 				easingdir: pose.EasingDirection,
-				easingstyle: pose.EasingStyle,
-				weight: pose.Weight
+				easingstyle: pose.EasingStyle
 			})
 		}
 		

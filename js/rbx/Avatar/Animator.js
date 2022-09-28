@@ -15,9 +15,9 @@ const RBXAnimator = (() => {
 			x => x // InOut
 		],
 		[ // Constant
-			() => 1,
-			() => 0,
-			x => (x >= .5 ? 1 : 0)
+			x => (x > 0 ? 1 : 0),
+			x => (x >= 1 ? 1 : 0),
+			x => (x >= 0.5 ? 1 : 0)
 		],
 		[ // Elastic
 			x => -(2 ** (-10 * (1 - x))) * Math.sin(20.944 * (0.925 - x)),
@@ -38,146 +38,242 @@ const RBXAnimator = (() => {
 		]
 	]
 	
-	const nextQuat = new THREE.Quaternion()
-	const nextPos = new THREE.Vector3()
+	const tempPos = new THREE.Vector3()
+	const tempQuat = new THREE.Quaternion()
 	
-	const emptyFrame = {
-		time: 0,
-		weight: 0,
-		pos: [0, 0, 0],
-		rot: [0, 0, 0, 1]
-	}
+	const tempPos2 = new THREE.Vector3()
+	const tempQuat2 = new THREE.Quaternion()
 
 	class Animator {
-		constructor(joints) {
-			this.playing = false
-			this.anim = null
-			this.speed = 1
+		constructor() {
 			this.rootScale = 1
-
-			this.setJoints(joints)
+			this.animations = []
+			this.transforms = new Map()
 		}
-
-		setJoints(joints) {
-			this.joints = joints
-
-			if(this.fadeIn) {
-				Object.values(this.joints).forEach(joint => {
-					joint.pfadeIn = joint.position.clone()
-					joint.qfadeIn = joint.quaternion.clone()
-				})
+		
+		stop(info, fadeOut) {
+			const index = this.animations.indexOf(info)
+			if(index === -1) { return }
+			
+			if(fadeOut && fadeOut > 0) {
+				info.fadeOut = {
+					duration: fadeOut,
+					elapsed: 0
+				}
+			} else {
+				info.removed = true
+				this.animations.splice(index, 1)
+			}
+			
+			if(info.playing) {
+				info.playing = false
+				
+				info.onstop?.(info.anim)
+				this.onstop?.(info.anim)
 			}
 		}
 
-		setRootScale(rootScale) {
-			this.rootScale = rootScale
-		}
-
-		play(anim, fadeIn) {
-			if(anim) { this.anim = anim }
-
-			this.fadeIn = fadeIn
-			this.fadeInCounter = 0
-
-			this.playing = true
-			this.timePosition = 0
-			this.previousUpdate = performance.now()
-
-			if(this.fadeIn) {
-				Object.values(this.joints).forEach(joint => {
-					joint.pfadeIn = joint.position.clone()
-					joint.qfadeIn = joint.quaternion.clone()
-				})
+		play(anim, params) {
+			if(typeof params === "number") {
+				params = { fadeIn: params }
 			}
+			
+			const info = {
+				playing: true,
+				anim: anim,
+				
+				loop: params?.loop ?? anim.loop,
+				priority: params?.priority ?? anim.priority,
+				
+				weight: params?.weight ?? 1,
+				speed: params?.speed ?? 1,
+				
+				fadeOutDuration: params?.fadeOut ?? 0,
+				
+				timePosition: 0,
+				previousUpdate: performance.now()
+			}
+			
+			if(params?.onstop) { info.onstop = params.onstop }
+			if(params?.onloop) { info.onloop = params.onloop }
+			
+			if(params?.fadeIn && params.fadeIn > 0) {
+				info.fadeIn = {
+					duration: params?.fadeIn,
+					elapsed: 0
+				}
+			}
+			
+			const index = this.animations.findIndex(x => x.priority >= info.priority)
+			
+			if(index !== -1) {
+				this.animations.splice(index, 0, info)
+			} else {
+				this.animations.push(info)
+			}
+			
+			return info
 		}
-
-		pause() {
-			this.playing = false
-		}
-
-		resume() {
-			this.playing = true
-			this.previousUpdate = performance.now()
-		}
-
-		reset() {
-			Object.values(this.joints).forEach(joint => {
-				joint.position.set(0, 0, 0)
-				joint.quaternion.set(0, 0, 0, 1)
-			})
+		
+		getJointTransform(name) {
+			return this.transforms.get(name)
 		}
 
 		update() {
-			if(!this.playing || !this.anim || !this.joints) { return }
-
 			const time = performance.now()
-			const delta = (time - this.previousUpdate) / 1000
-			this.previousUpdate = time
-			this.timePosition += delta * this.speed
-
-			if(this.timePosition > this.anim.length) {
-				if(this.anim.loop) {
-					this.timePosition %= this.anim.length
-					if(this.onloop) { this.onloop() }
-				} else {
-					this.playing = false
-					this.timePosition = 0
-					if(this.onstop) { this.onstop() }
-					return
-				}
-			}
-
-			const currentTime = this.timePosition
-
-			let fadeIn = 0
-			if(this.fadeIn) {
-				this.fadeInCounter += delta
-				fadeIn = 1 - this.fadeInCounter / this.fadeIn
-				if(fadeIn <= 0) {
-					fadeIn = 0
-					this.fadeIn = 0
-				}
-			}
-
-			Object.entries(this.anim.keyframes).forEach(([name, keyframes]) => {
-				const joint = this.joints[name]
-				if(!joint) { return }
-
-				const next = keyframes.find(x => x.time >= currentTime)
-				let weight
-
-				if(!next) {
-					const last = keyframes[keyframes.length - 1]
-					weight = last.weight
+			
+			// taking a slice of animations so callbacks can modify animations without breaking stuff
+			for(const info of this.animations.slice()) {
+				if(info.removed) { continue }
+				
+				const delta = (time - info.previousUpdate) / 1e3
+				info.previousUpdate = time
+				
+				if(!info.playing) {
+					if(info.fadeOut) {
+						info.fadeOut.elapsed += delta
+						
+						if(info.fadeOut.elapsed >= info.fadeOut.duration) {
+							this.stop(info, 0)
+						}
+					}
 					
-					joint.position.set(...last.pos)
-					joint.quaternion.set(...last.rot)
-				} else {
-					const prev = keyframes[keyframes.indexOf(next) - 1] || emptyFrame
-					const length = next.time - prev.time
-					const easing = (EasingStyles[prev.easingstyle] || EasingStyles[0])[prev.easingdir || 0]
-					const theta = length === 0 ? 1 : easing((currentTime - prev.time) / length)
-					
-					weight = prev.weight * (1 - theta) + next.weight * theta
-					
-					joint.position.set(...prev.pos).lerp(nextPos.set(...next.pos), theta)
-					joint.quaternion.set(...prev.rot).slerp(nextQuat.set(...next.rot), theta)
-				}
-
-				if(name === "LowerTorso" && this.rootScale !== 1) {
-					joint.position.multiplyScalar(this.rootScale)
+					continue
 				}
 				
-				if(weight < 1) {
-					joint.position.lerp(nextPos.set(0, 0, 0), 1 - weight)
-					joint.quaternion.slerp(nextQuat.set(0, 0, 0, 1), 1 - weight)
+				info.timePosition += delta * info.speed
+	
+				if(info.timePosition > info.anim.length) {
+					if(info.loop) {
+						info.timePosition %= info.anim.length
+						info.onloop?.(info.anim)
+						this.onloop?.(info.anim)
+					} else {
+						this.stop(info, info.fadeOutDuration)
+						continue
+					}
 				}
-
-				if(fadeIn) {
-					joint.position.lerp(joint.pfadeIn, fadeIn)
-					joint.quaternion.slerp(joint.qfadeIn, fadeIn)
+				
+				if(info.fadeIn) {
+					info.fadeIn.elapsed += delta
+					
+					if(info.fadeIn.elapsed >= info.fadeIn.duration) {
+						delete info.fadeIn
+					}
 				}
-			})
+			}
+			
+			const transforms = {}
+			
+			for(const info of this.animations) {
+				const weight = Math.max(0, Math.min(1, info.weight))
+					* (info.fadeIn ? info.fadeIn.elapsed / info.fadeIn.duration : 1)
+					* (info.fadeOut ? 1 - info.fadeOut.elapsed / info.fadeOut.duration : 1)
+					
+				if(weight === 0) {
+					continue
+				}
+				
+				for(const [name, keyframes] of Object.entries(info.anim.keyframes)) {
+					let transform = transforms[name]
+					
+					if(transform && (transform.weight >= 1 || transform.working.weight >= 1 && transform.working.priority !== info.priority)) {
+						continue
+					}
+					
+					const index = keyframes.findIndex(x => x.time > info.timePosition)
+					
+					if(index === 0) {
+						continue
+					}
+					
+					if(!transform) {
+						transform = this.transforms.get(name)
+						
+						if(transform) {
+							transform.position.set(0, 0, 0)
+							transform.quaternion.set(0, 0, 0, 1)
+							transform.weight = 0
+						} else {
+							transform = {
+								position: new THREE.Vector3(0, 0, 0),
+								quaternion: new THREE.Quaternion(0, 0, 0, 1),
+								weight: 0,
+								
+								working: {
+									position: new THREE.Vector3(0, 0, 0),
+									quaternion: new THREE.Quaternion(0, 0, 0, 1),
+									weight: 0,
+									priority: -1
+								}
+							}
+						}
+						
+						transforms[name] = transform
+					}
+					
+					if(transform.working.priority !== info.priority) {
+						if(transform.working.weight > 0) {
+							const newWeight = 1 - (1 - transform.weight) * (1 - Math.min(1, transform.working.weight))
+							const theta = (newWeight - transform.weight) / newWeight
+							
+							transform.position.lerp(transform.working.position, theta)
+							transform.quaternion.slerp(transform.working.quaternion, theta)
+							transform.weight = newWeight
+							
+							transform.working.position.set(0, 0, 0)
+							transform.working.quaternion.set(0, 0, 0, 1)
+							transform.working.weight = 0
+						}
+						
+						transform.working.priority = info.priority
+					}
+					
+					const prev = index === -1 ? keyframes[keyframes.length - 1] : keyframes[index - 1]
+					const next = index === -1 ? null : keyframes[index]
+					
+					if(!next || info.timePosition === prev.time) {
+						tempPos.set(...prev.pos)
+						tempQuat.set(...prev.rot)
+					} else {
+						const easing = (EasingStyles[prev.easingstyle] || EasingStyles[0])[prev.easingdir || 0]
+						const theta = easing((info.timePosition - prev.time) / (next.time - prev.time))
+						
+						tempPos.set(...prev.pos).lerp(tempPos2.set(...next.pos), theta)
+						tempQuat.set(...prev.rot).slerp(tempQuat2.set(...next.rot), theta)
+					}
+					
+					const newWeight = transform.working.weight + weight
+					const theta = (newWeight - transform.working.weight) / newWeight
+					
+					transform.working.position.lerp(tempPos, theta)
+					transform.working.quaternion.slerp(tempQuat, theta)
+					transform.working.weight = newWeight
+				}
+			}
+			
+			this.transforms.clear()
+			
+			for(const [name, transform] of Object.entries(transforms)) {
+				if(transform.working.weight > 0) {
+					const newWeight = 1 - (1 - transform.weight) * (1 - Math.min(1, transform.working.weight))
+					const theta = (newWeight - transform.weight) / newWeight
+					
+					transform.position.lerp(transform.working.position, theta)
+					transform.quaternion.slerp(transform.working.quaternion, theta)
+					transform.weight = newWeight
+					
+					transform.working.position.set(0, 0, 0)
+					transform.working.quaternion.set(0, 0, 0, 1)
+					transform.working.weight = 0
+					transform.working.priority = -1
+				}
+				
+				transform.position.lerp(tempPos.set(0, 0, 0), 1 - transform.weight)
+				transform.quaternion.slerp(tempQuat.set(0, 0, 0, 1), 1 - transform.weight)
+				
+				this.transforms.set(name, transform)
+			}
 		}
 	}
 

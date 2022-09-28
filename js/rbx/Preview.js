@@ -94,11 +94,11 @@ const RBXPreview = (() => {
 	const SkippableAssetTypes = [
 		19, // Gear
 		24, // Animation
-		48, 49, 50, 51, 52, 53, 54, 55, 56 // Avatar Animations
+		48, 49, 50, 51, 52, 53, 54, 55, 56, 61, 78 // Avatar Animations
 	]
 
 	const R15Anims = [507766388, 507766951, 507766666]
-	const R6Anims = [180435792, 180435571]
+	const R6Anims = [180435571, 180435792]
 	
 	const R6AnimParts = ["Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
 
@@ -133,34 +133,6 @@ const RBXPreview = (() => {
 			this.currentAnim = null
 			this.loadingAnim = null
 			this.playingAnim = null
-
-			//
-
-			const animator = this.avatar.animator
-			
-			animator.onloop = () => {
-				if(this.playingAnim === this.currentAnim) {
-					return
-				}
-
-				if(R15Anims.includes(this.playingAnim)) {
-					const roll = Math.random()
-					const animId = roll < 9 / 11 ? R15Anims[0] : roll < 10 / 11 ? R15Anims[1] : R15Anims[2]
-
-					if(this.currentAnim !== animId) {
-						this.loadAnimation(animId, .5)
-					}
-				} else if(R6Anims.includes(this.playingAnim)) {
-					const roll = Math.random()
-					const animId = roll < 9 / 10 ? R6Anims[0] : R6Anims[1]
-
-					if(this.currentAnim !== animId) {
-						this.loadAnimation(animId, .5)
-					}
-				}
-			}
-
-			animator.onstop = () => setTimeout(() => animator.play(), 2000)
 		}
 
 		//
@@ -360,15 +332,42 @@ const RBXPreview = (() => {
 
 		loadAnimation(assetId, fadeIn) {
 			this.loadingAnim = assetId
-
+			
 			AssetCache.loadAnimation(assetId, data => {
 				if(this.loadingAnim !== assetId) {
 					return
 				}
+				
+				if(this.playingAnim) {
+					this.scene.avatar.animator.stop(this.playingAnim.track, this.playingAnim.fadeSwitch)
+					this.playingAnim = null
+				}
 
 				this.loadingAnim = null
-				this.playingAnim = assetId
-				this.scene.avatar.animator.play(data, fadeIn || 0)
+				this.playingAnim = { id: assetId, data: data }
+				
+				this.playingAnim.track = this.scene.avatar.animator.play(data, {
+					fadeIn: fadeIn ?? 0,
+					loop: true,
+					onloop: !this.currentAnim && (() => {
+						if(this.loadingAnim) { return }
+						let animId
+						
+						if(R15Anims.includes(this.playingAnim.id)) {
+							const roll = Math.random()
+							animId = roll < 9 / 11 ? R15Anims[0] : roll < 10 / 11 ? R15Anims[1] : R15Anims[2]
+			
+						} else if(R6Anims.includes(this.playingAnim.id)) {
+							const roll = Math.random()
+							animId = roll < 9 / 10 ? R6Anims[0] : R6Anims[1]
+						}
+						
+						if(animId && animId !== this.playingAnim.id) {
+							this.playingAnim.fadeSwitch = 0.15
+							this.loadAnimation(animId, 0.15)
+						}
+					})
+				})
 
 				if(this.currentAnim && this.applyAnimationPlayerType) {
 					this.applyAnimationPlayerType = false
@@ -383,8 +382,10 @@ const RBXPreview = (() => {
 			this.currentAnim = null
 			this.loadingAnim = null
 
-			this.scene.avatar.animator.pause()
-			this.playingAnim = null
+			if(this.playingAnim) {
+				this.scene.avatar.animator.stop(this.playingAnim.track)
+				this.playingAnim = null
+			}
 
 			if(this.enabled) {
 				this.loadAnimation(this.playerType === "R15" ? R15Anims[0] : R6Anims[0])
@@ -395,8 +396,10 @@ const RBXPreview = (() => {
 			this.currentAnim = animId
 			this.loadingAnim = null
 
-			this.scene.avatar.animator.pause()
-			this.playingAnim = null
+			if(this.playingAnim) {
+				this.scene.avatar.animator.stop(this.playingAnim.track)
+				this.playingAnim = null
+			}
 
 			if(this.enabled) {
 				this.loadAnimation(animId)
@@ -1037,8 +1040,6 @@ const HoverPreview = (() => {
 							}
 						}
 
-						const avatarParts = preview.avatar.parts
-						const animator = preview.avatar.animator
 						const addedObjects = new Set()
 						let cameraDir
 						
@@ -1058,7 +1059,7 @@ const HoverPreview = (() => {
 							}
 							
 							for(const bp of asset.bodyparts) {
-								const partMesh = avatarParts[bp.target]?.rbxMesh
+								const partMesh = preview.avatar.parts[bp.target]?.rbxMesh
 								
 								if(partMesh) {
 									addedObjects.add(partMesh)
@@ -1071,7 +1072,7 @@ const HoverPreview = (() => {
 								
 								if(parts) {
 									for(const partName of parts) {
-										const partMesh = avatarParts[partName]?.rbxMesh
+										const partMesh = preview.avatar.parts[partName]?.rbxMesh
 										
 										if(partMesh) {
 											addedObjects.add(partMesh)
@@ -1115,18 +1116,7 @@ const HoverPreview = (() => {
 							}
 						}
 
-						// if(playingAnimId && animator.anim) {
-						// 	// Making sure the entire animation fits on the screen
-							
-						// 	const numSteps = Math.max(animator.anim.length / 0.1, 3)
-						// 	for(let i = 0; i <= numSteps; i++) {
-						// 		animator.timePosition = i / numSteps * animator.anim.length
-						// 		preview.scene.update()
-						// 		expandBox()
-						// 	}
-						// }
-						
-						animator.reset()
+						preview.scene.update()
 						expandBox()
 						
 						if(box.isEmpty()) {
@@ -1147,9 +1137,6 @@ const HoverPreview = (() => {
 						const thumb = self.$find(thumbContSelector)
 						thumb.append(preview.container)
 						thumb.classList.add("btr-preview-container-parent")
-
-						preview.scene.update()
-						preview.scene.render()
 					})
 				}
 
