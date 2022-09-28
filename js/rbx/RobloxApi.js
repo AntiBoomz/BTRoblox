@@ -198,6 +198,11 @@ const RobloxApi = {
 		getBundleDetails: cacheBackgroundCall(bundleId =>
 			backgroundFetch(`https://catalog.roblox.com/v1/bundles/${bundleId}/details`)
 				.then(res => res.json())
+		),
+		getUserBundles: backgroundCall((userId, urlParams) =>
+			backgroundFetch(`https://catalog.roblox.com/v1/users/${userId}/bundles?${new URLSearchParams(urlParams).toString()}`, {
+				credentials: "include"
+			}).then(res => assert(res.ok, "Request failed") && res.json())
 		)
 	},
 	develop: {
@@ -225,6 +230,11 @@ const RobloxApi = {
 		)
 	},
 	inventory: {
+		getUserInventory: backgroundCall((userId, urlParams) =>
+			backgroundFetch(`https://inventory.roblox.com/v2/users/${userId}/inventory?${new URLSearchParams(urlParams).toString()}`, {
+				credentials: "include"
+			}).then(res => assert(res.ok, "Request failed") && res.json())
+		),
 		toggleInCollection: backgroundCall((assetType, assetId, addToCollection = true) =>
 			backgroundFetch(`https://inventory.roblox.com/v1/collections/items/${assetType}/${assetId}`, {
 				method: addToCollection ? "POST" : "DELETE",

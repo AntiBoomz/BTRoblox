@@ -3,11 +3,18 @@
 const OwnerAssetCache = {
 	assetTypes: ["bundles", "assets"],
 	requestedAssetTypes: [
-		"Hat", "Shirt", "Pants", "Head", "Face", "Gear",
-		"HairAccessory", "FaceAccessory", "NeckAccessory", "ShoulderAccessory",
-		"FrontAccessory", "BackAccessory", "WaistAccessory", "EmoteAnimation",
-		"TShirtAccessory", "ShirtAccessory", "PantsAccessory", "JacketAccessory", "SweaterAccessory",
-		"ShortsAccessory", "LeftShoeAccessory", "RightShoeAccessory", "DressSkirtAccessory",
+		// had to split these into two batches because we were hitting max url length
+		// with how big the cursor was
+		[
+			"Hat", "Shirt", "Pants", "Head", "Face", "Gear", "HairAccessory",
+			"FaceAccessory", "NeckAccessory", "ShoulderAccessory", "FrontAccessory",
+			"BackAccessory", 
+		],
+		[
+			"WaistAccessory", "EmoteAnimation", "TShirtAccessory", "ShirtAccessory",
+			"PantsAccessory", "JacketAccessory", "SweaterAccessory", "ShortsAccessory",
+			"LeftShoeAccessory", "RightShoeAccessory", "DressSkirtAccessory",
+		]
 	],
 	assetMap: {},
 	data: null,
@@ -20,7 +27,7 @@ const OwnerAssetCache = {
 			types: {},
 		}
 
-		this.assetTypes.forEach(assetType => {
+		for(const assetType of this.assetTypes) {
 			const typeData = this.data.types[assetType] = {
 				list: new Set(),
 				lastPopulate: 0
@@ -31,7 +38,7 @@ const OwnerAssetCache = {
 				lastUpdate: { configurable: true, value: 0, writable: true },
 				currentOperation: { configurable: true, value: null, writable: true }
 			})
-		})
+		}
 
 		this.assetMap = {}
 	},
@@ -59,25 +66,45 @@ const OwnerAssetCache = {
 			setTimeout(() => {
 				this.markedDirty = false
 				localStorage.setItem("btr-ownerAssetCache", JSON.stringify(this.data, (k, v) => (v instanceof Set ? Array.from(v) : v)))
-			}, 10e3)
+			}, 1e3)
 		}
 	},
 
-	async request(next, populate = false, cursor = "") {
-		const cursorParam = populate ? `&cursor=${cursor}` : ""
-		const url = next.type === "bundles"
-			? `https://catalog.roblox.com/v1/users/${this.data.lastUserId}/bundles?sortOrder=Desc&limit=${populate ? 100 : 10}${cursorParam}`
-			: `https://inventory.roblox.com/v2/users/${this.data.lastUserId}/inventory?assetTypes=${this.requestedAssetTypes.join(",")}&sortOrder=Desc&limit=${populate ? 100 : 10}${cursorParam}`
-
-		const resp = await fetch(url, { credentials: "include" })
-		if(!resp.ok) { throw new Error("Response not ok") }
-
-		const json = await resp.json()
-		const newItems = next.type === "bundles"
-			? json.data.map(x => x.id)
-			: json.data.map(x => x.assetId)
-
-		return [newItems, json.nextPageCursor]
+	async request(next, populate = false, cursor) {
+		let nextPageCursor
+		let newItems
+		
+		if(next.type === "bundles") {
+			const json = await RobloxApi.catalog.getUserBundles(this.data.lastUserId, {
+				sortOrder: "Desc", limit: populate ? 100 : 10, cursor: populate ? cursor || "" : ""
+			})
+			
+			newItems = json.data.map(x => x.id)
+			nextPageCursor = json.nextPageCursor
+		} else {
+			newItems = []
+			nextPageCursor = []
+			
+			for(const [index, assetTypes] of Object.entries(this.requestedAssetTypes)) {
+				if(cursor && !cursor[index]) { continue }
+				
+				const json = await RobloxApi.inventory.getUserInventory(this.data.lastUserId, {
+					assetTypes: assetTypes.join(","), sortOrder: "Desc", limit: populate ? 100 : 10, cursor: populate ? cursor[index] || "" : ""
+				})
+				
+				newItems.push(...json.data.map(x => x.assetId))
+				
+				if(json.nextPageCursor) {
+					nextPageCursor[index] = json.nextPageCursor
+				}
+			}
+			
+			if(nextPageCursor.length === 0) {
+				nextPageCursor = null
+			}
+		}
+		
+		return [newItems, nextPageCursor]
 	},
 
 	async update(onchange) {
@@ -92,14 +119,14 @@ const OwnerAssetCache = {
 		const list = Object.values(this.data.types)
 		const promises = []
 		
-		list.forEach(async next => {
+		for(const next of list) {
 			let operation = next.currentOperation
 
 			if(!operation) {
 				const timeUntilPopulate = 300e3 - (Date.now() - next.lastPopulate)
 				const timeUntilUpdate = 5e3 - (Date.now() - next.lastUpdate)
 
-				if(timeUntilPopulate > 0 && timeUntilUpdate > 0) { return }
+				if(timeUntilPopulate > 0 && timeUntilUpdate > 0) { continue }
 
 				operation = next.currentOperation = {
 					onchange: [],
@@ -138,22 +165,22 @@ const OwnerAssetCache = {
 								resolve(false)
 								break
 							}
-
-							newItems.forEach(id => {
+							
+							for(const id of newItems) {
 								removedSet.delete(id)
 		
 								next.list.add(id)
 								this.markAsset(next, id, true, changes)
-							})
+							}
 		
 							if(!newCursor) { break }
 							cursor = newCursor
 							pushChanges()
 						}
 						
-						removedSet.forEach(id => {
+						for(const id of removedSet) {
 							this.markAsset(next, id, false, changes)
-						})
+						}
 
 						next.currentOperation = null
 						next.lastPopulate = Date.now()
@@ -167,11 +194,11 @@ const OwnerAssetCache = {
 					operation.promise = new SyncPromise(async resolve => {
 						try {
 							const [newItems] = await this.request(next, false)
-			
-							newItems.forEach(id => {
+							
+							for(const id of newItems) {
 								next.list.add(id)
 								this.markAsset(next, id, true, changes)
-							})
+							}
 						} catch(ex) {
 							console.error(ex)
 							next.currentOperation = null
@@ -191,7 +218,7 @@ const OwnerAssetCache = {
 
 			if(onchange) { operation.onchange.push(onchange) }
 			promises.push(operation.promise)
-		})
+		}
 
 		return SyncPromise.all(promises)
 	},
@@ -209,20 +236,20 @@ const OwnerAssetCache = {
 			const parsed = JSON.parse(savedCache)
 
 			if(parsed.types) {
-				Object.entries(this.data.types).forEach(([type, next]) => {
+				for(const [type, next] of Object.entries(this.data.types)) {
 					const savedNext = parsed.types[type]
-					if(!savedNext) { return }
+					if(!savedNext) { continue }
 
 					Object.assign(next, savedNext)
 
 					if(Array.isArray(next.list)) {
 						next.list = new Set(next.list)
 					}
-
-					next.list.forEach(id => {
+					
+					for(const id of next.list) {
 						this.markAsset(next, id, true)
-					})
-				})
+					}
+				}
 
 				delete parsed.types
 			}
