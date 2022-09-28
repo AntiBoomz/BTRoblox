@@ -64,18 +64,19 @@ const RBXAppearance = (() => {
 				this.loadPromise.resolve()
 			}
 			
-			let request = this.id
 			
 			if(!this.assetTypeId) {
 				const json = await RobloxApi.api.getProductInfo(this.id)
 				this.assetTypeId = json.AssetTypeId
 			}
 			
+			let format
+			
 			if(this.assetTypeId === AssetType.Head) { // head
-				request = { id: this.id, format: "avatar_meshpart_head" }
+				format = "avatar_meshpart_head"
 			}
 			
-			AssetCache.loadModel(request, model => {
+			AssetCache.loadModel(this.id, { format: format }, model => {
 				if(!this.active) { return }
 				if(!model) { return finish(false) }
 				

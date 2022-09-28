@@ -267,7 +267,7 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 			
 			if(!explorerInitialized) {
 				explorerInitialized = true
-
+				
 				if(isBundle) {
 					RobloxApi.catalog.getBundleDetails(assetId).then(async details => {
 						details.items.forEach(item => {
@@ -278,7 +278,7 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 					})
 					
 				} else if(assetTypeId === AssetType.Head) {
-					AssetCache.loadModel({ id: assetId, format: "avatar_meshpart_head" }, model => explorer.addModel("MeshPart", model))
+					AssetCache.loadModel(assetId, { format: "avatar_meshpart_head" }, model => explorer.addModel("MeshPart", model))
 					AssetCache.loadModel(assetId, model => explorer.addModel("SpecialMesh", model))
 					
 				} else {

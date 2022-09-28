@@ -45,6 +45,7 @@ const AssetCache = (() => {
 
 		try {
 			const urlInfo = new URL(url)
+			
 			if(!urlInfo.pathname.match(/\/*asset\/*$/i)) {
 				return null
 			}
@@ -58,38 +59,46 @@ const AssetCache = (() => {
 	function createMethod(constructor) {
 		const cache = {}
 
-		return (strict, request, cb) => {
+		return (strict, request, params, cb) => {
 			if(typeof strict !== "boolean") {
-				cb = request
+				cb = params
+				params = request
 				request = strict
 				strict = false
 			}
 			
-			if(!(request instanceof Object)) {
+			if(typeof params === "function") {
+				cb = params
+				params = null
+			}
+			
+			if(!strict && Number.isSafeInteger(+request)) {
 				request = { id: request }
 			}
-
-			if(!strict && Number.isSafeInteger(+request.id)) {
-				request.id = AssetCache.toAssetUrl(request.id)
-			}
-
-			const params = resolveAssetUrlParams(request.id)
 			
-			if(!params) {
-				throw new Error("Invalid url passed to AssetCache")
+			let urlParams
+			
+			if(typeof request === "string") {
+				urlParams = resolveAssetUrlParams(request)
+			} else if(request instanceof Object) {
+				urlParams = new URLSearchParams(request)
 			}
 			
-			params.sort()
+			if(!urlParams) {
+				throw new TypeError(`Invalid request '${request}'`)
+			}
 			
-			let cacheKey = params.toString()
+			urlParams.sort()
 			
-			if(request.format) {
-				cacheKey += "@" + request.format
+			let cacheKey = urlParams.toString()
+			
+			if(params?.format) {
+				cacheKey += "@" + params.format
 			}
 			
 			const cachePromise = cache[cacheKey] = cache[cacheKey] || new SyncPromise(cacheResolve => {
 				const filePromise = fileCache[cacheKey] = fileCache[cacheKey] || new SyncPromise((fileResolve, fileReject) => {
-					RobloxApi.assetdelivery.requestAssetV1(params, { format: request.format }).then(buffer => {
+					RobloxApi.assetdelivery.requestAssetV1(urlParams, params).then(buffer => {
 						if(buffer) {
 							fileResolve(buffer)
 						} else {
