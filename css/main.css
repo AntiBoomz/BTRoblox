@@ -400,7 +400,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	pointer-events: none;
 	opacity: 0;
 	transition: opacity ease-in-out .2s;
-	z-index: 10000;
+	z-index: 1;
 	margin-left: 50%;
 	margin-top: 10px;
 }
