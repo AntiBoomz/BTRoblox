@@ -73,7 +73,7 @@ const Explorer = (() => {
 			})
 
 			dropdownBtn.$on("click", () => {
-				dropdownMenu.style.display = dropdownMenu.style.display ? "" : "none"
+				dropdownMenu.style.display = dropdownMenu.style.display ? "block" : "none"
 			})
 
 			document.$on("click", ev => {
