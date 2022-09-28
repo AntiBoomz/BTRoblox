@@ -277,7 +277,7 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 						})
 					})
 					
-				} else if(assetTypeId === AssetType.Head) {
+				} else if(assetTypeId === AssetType.Head || assetTypeId === AssetType.DynamicHead) {
 					AssetCache.loadModel(assetId, { format: "avatar_meshpart_head" }, model => explorer.addModel("MeshPart", model))
 					AssetCache.loadModel(assetId, model => explorer.addModel("SpecialMesh", model))
 					

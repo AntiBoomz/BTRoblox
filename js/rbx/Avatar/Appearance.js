@@ -73,6 +73,10 @@ const RBXAppearance = (() => {
 			let format
 			
 			if(this.assetTypeId === AssetType.Head) { // head
+				// we only want to load regular heads as meshparts here
+				// because dynamicheads have wraptargets and we cant do
+				// those
+				
 				format = "avatar_meshpart_head"
 			}
 			
@@ -106,6 +110,7 @@ const RBXAppearance = (() => {
 					})
 					break
 				
+				case AssetType.DynamicHead:
 				case AssetType.Head:
 				case AssetType.Torso:
 				case AssetType.RightArm:
@@ -116,12 +121,12 @@ const RBXAppearance = (() => {
 					
 					for(const child of model) {
 						if(child.ClassName === "SpecialMesh") {
-							if(this.assetTypeId === AssetType.Head) {
+							if(this.assetTypeId === AssetType.Head || this.assetTypeId === AssetType.DynamicHead) {
 								this.loadHeadR6(child)
 							}
 							
 						} else if(child.ClassName === "MeshPart") {
-							if(this.assetTypeId === AssetType.Head) {
+							if(this.assetTypeId === AssetType.Head || this.assetTypeId === AssetType.DynamicHead) {
 								this.loadBodyPartsR15([child])
 							}
 							
@@ -272,7 +277,7 @@ const RBXAppearance = (() => {
 				const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
 				
 				const bp = {
-					playerType: this.assetTypeId === AssetType.Head ? null : "R15",
+					playerType: this.assetTypeId === AssetType.Head || this.assetTypeId === AssetType.DynamicHead ? null : "R15",
 					target: part.Name,
 					
 					meshId: this.validateAndPreload("Mesh", part.MeshID || part.MeshId),
@@ -283,7 +288,7 @@ const RBXAppearance = (() => {
 					scaleType: scaleType
 				}
 				
-				if(this.assetTypeId === AssetType.Head) {
+				if(this.assetTypeId === AssetType.Head || this.assetTypeId === AssetType.DynamicHead) {
 					bp.disableFace = !part.Children.find(x => x.ClassName === "Decal" && x.Name.toLowerCase() === "face")
 				}
 				
