@@ -8,7 +8,7 @@ const OwnerAssetCache = {
 		[
 			"Hat", "Shirt", "Pants", "Head", "Face", "Gear", "HairAccessory",
 			"FaceAccessory", "NeckAccessory", "ShoulderAccessory", "FrontAccessory",
-			"BackAccessory", 
+			"BackAccessory",
 		],
 		[
 			"WaistAccessory", "EmoteAnimation", "TShirtAccessory", "ShirtAccessory",
