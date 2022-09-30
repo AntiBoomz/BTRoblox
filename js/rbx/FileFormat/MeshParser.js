@@ -115,7 +115,7 @@ const RBXMeshParser = {
 			boneCount = reader.UInt16LE()
 			nameTableSize = reader.UInt32LE()
 			skinDataCount = reader.UInt16LE()
-			reader.Jump(2) // byte numHighQualiyLODs, unused;
+			reader.Jump(2) // byte numHighQualityLODs, unused;
 			
 			vertexSize = 40
 			
@@ -130,7 +130,7 @@ const RBXMeshParser = {
 			boneCount = reader.UInt16LE()
 			nameTableSize = reader.UInt32LE()
 			skinDataCount = reader.UInt16LE()
-			reader.Jump(2) // byte numHighQualiyLODs, unused;
+			reader.Jump(2) // byte numHighQualityLODs, unused;
 			reader.Jump(4) // uint32 facsDataFormat;
 			facsDataSize = reader.UInt32LE()
 			
@@ -279,35 +279,8 @@ const RBXMeshParser = {
 		
 		//
 		
-		if(params?.excludeLods) {
-			// Extract only the first Lod (unless we only have one)
-			
-			if(!(lodLevels[0] === 0 && lodLevels[1] === faceCount)) {
-				const minFaceIndex = lodLevels[0] * 3
-				const maxFaceIndex = lodLevels[1] * 3
-				
-				let minVertexIndex = vertexCount
-				let maxVertexIndex = 0
-
-				for(let i = maxFaceIndex; i-- > minFaceIndex;) {
-					if(faces[i] < minVertexIndex) { minVertexIndex = faces[i] }
-					if(faces[i] >= maxVertexIndex) { maxVertexIndex = faces[i] + 1 }
-				}
-				
-				if(!(minVertexIndex === 0 && maxVertexIndex === vertexCount)) {
-					mesh.vertices = vertices.slice(minVertexIndex * 3, maxVertexIndex * 3)
-					mesh.normals = normals.slice(minVertexIndex * 3, maxVertexIndex * 3)
-					mesh.uvs = uvs.slice(minVertexIndex * 2, maxVertexIndex * 2)
-					mesh.faces = faces.slice(minFaceIndex, maxFaceIndex)
-					
-					if(minVertexIndex > 0) {
-						for(let i = mesh.faces.length; i--;) {
-							mesh.faces[i] -= minVertexIndex
-						}
-					}
-				}
-			}
-
+		if(params?.excludeLods && lodCount >= 3) {
+			mesh.faces = faces.slice(lodLevels[0] * 3, lodLevels[1] * 3 - 2)
 			delete mesh.lodLevels
 		}
 		
