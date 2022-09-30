@@ -25,7 +25,7 @@ const RBXBinaryParser = {
 		reader.Jump(8)
 
 		const parser = {
-			result: [],
+			result: new RBXInstanceRoot(),
 			meta: {},
 			sharedStrings: [],
 			groups: new Array(groupsCount),

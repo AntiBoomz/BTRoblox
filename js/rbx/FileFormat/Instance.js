@@ -1,5 +1,68 @@
 "use strict"
 
+const RBXInstanceUtils = {
+	findFirstChild(target, name, recursive = false) {
+		const children = target instanceof RBXInstance ? target.Children : target
+		
+		for(const child of children) {
+			if(child.getProperty("Name") === name) {
+				return child
+			}
+		}
+		
+		if(recursive) {
+			const arrays = [children]
+			
+			while(arrays.length) {
+				for(const desc of arrays.shift()) {
+					if(desc.getProperty("Name") === name) {
+						return desc
+					}
+					
+					if(desc.Children.length) {
+						arrays.push(desc.Children)
+					}
+				}
+			}
+		}
+		
+		return null
+	},
+	
+	findFirstChildOfClass(target, className, recursive = false) {
+		const children = target instanceof RBXInstance ? target.Children : target
+		
+		for(const child of children) {
+			if(child.getProperty("ClassName") === className) {
+				return child
+			}
+		}
+		
+		if(recursive) {
+			const arrays = [children]
+			
+			while(arrays.length) {
+				for(const desc of arrays.shift()) {
+					if(desc.getProperty("ClassName") === className) {
+						return desc
+					}
+					
+					if(desc.Children.length) {
+						arrays.push(desc.Children)
+					}
+				}
+			}
+		}
+		
+		return null
+	}
+}
+
+class RBXInstanceRoot extends Array {
+	findFirstChild(...args) { return RBXInstanceUtils.findFirstChild(this, ...args) }
+	findFirstChildOfClass(...args) { return RBXInstanceUtils.findFirstChildOfClass(this, ...args) }
+}
+
 class RBXInstance {
 	static new(className) {
 		assert(typeof className === "string", "className is not a string")
@@ -8,8 +71,9 @@ class RBXInstance {
 
 	constructor(className) {
 		assert(typeof className === "string", "className is not a string")
+		
 		this.Children = []
-		this.Properties = []
+		this.Properties = {}
 
 		this.setProperty("ClassName", className, "string")
 		this.setProperty("Name", "Instance", "string")
@@ -53,13 +117,16 @@ class RBXInstance {
 			this[name] = value
 		}
 	}
-
-	getProperty(name) {
-		const descriptor = this.Properties[name]
+	
+	getProperty(name, caseInsensitive = false) {
+		const descriptor = this.Properties[name] || caseInsensitive && Object.entries(this.Properties).find(x => x[0].toLowerCase() === name.toLowerCase())?.[1]
 		return descriptor ? descriptor.value : undefined
 	}
 
-	hasProperty(name) {
-		return name in this.Properties
+	hasProperty(name, caseInsensitive = false) {
+		return name in this.Properties || caseInsensitive && !Object.entries(this.Properties).find(x => x[0].toLowerCase() === name.toLowerCase())
 	}
+	
+	findFirstChild(...args) { return RBXInstanceUtils.findFirstChild(this, ...args) }
+	findFirstChildOfClass(...args) { return RBXInstanceUtils.findFirstChildOfClass(this, ...args) }
 }

@@ -26,7 +26,7 @@ const RBXXmlParser = {
 		const xml = new DOMParser().parseFromString(this.escapeXml(bufferToString(buffer)), "text/xml").documentElement
 
 		const parser = {
-			result: [],
+			result: new RBXInstanceRoot(),
 			refs: {},
 			refWait: [],
 			sharedStrings: {}
