@@ -163,11 +163,11 @@ const AssetCache = (() => {
 		},
 		
 		isValidAssetUrl(url) {
-			return !!resolveAssetUrlParams(url)
+			return typeof url === "string" ? !!resolveAssetUrlParams(url) : false
 		},
 
 		resolveAssetId(url) {
-			return resolveAssetUrlParams(url)?.get("id")
+			return typeof url === "string" ? resolveAssetUrlParams(url)?.get("id") : null
 		}
 	}
 })()
