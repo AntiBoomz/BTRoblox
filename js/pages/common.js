@@ -11,13 +11,13 @@ const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34,
 const InvalidDownloadableAssetTypeIds = [21, 32, 34]
 
 const ContainerAssetTypeIds = {
-	2: { filter: x => x.ClassName === "ShirtGraphic", prop: "Graphic" },
-	11: { filter: x => x.ClassName === "Shirt", prop: "ShirtTemplate" },
-	12: { filter: x => x.ClassName === "Pants", prop: "PantsTemplate" },
-	13: { filter: x => x.ClassName === "Decal", prop: "Texture" },
-	18: { filter: x => x.ClassName === "Decal", prop: "Texture" },
-	40: { filter: x => x.ClassName === "MeshPart", prop: "MeshID" },
-	61: { filter: x => x.ClassName === "Animation", prop: "AnimationId" }
+	[AssetType.EmoteAnimation]: x => x.findFirstChildOfClass("Animation")?.getProperty("AnimationId"),
+	[AssetType.MeshPart]: x => x.findFirstChildOfClass("MeshPart")?.getProperty("MeshID", true),
+	[AssetType.TShirt]: x => x.findFirstChildOfClass("ShirtGraphic")?.getProperty("Graphic"),
+	[AssetType.Shirt]: x => x.findFirstChildOfClass("Shirt")?.getProperty("ShirtTemplate"),
+	[AssetType.Pants]: x => x.findFirstChildOfClass("Pants")?.getProperty("PantsTemplate"),
+	[AssetType.Decal]: x => x.findFirstChildOfClass("Decal")?.getProperty("Texture"),
+	[AssetType.Face]: x => x.findFirstChildOfClass("Decal")?.getProperty("Texture"),
 }
 
 const WearableAssetTypeIds = [2, 8, 11, 12, 17, 18, 27, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47, 79]

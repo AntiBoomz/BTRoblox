@@ -409,9 +409,12 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 }
 
 const initContentButton = async (assetId, assetTypeId) => {
-	const assetTypeContainer = ContainerAssetTypeIds[assetTypeId]
+	if(!SETTINGS.get("itemdetails.contentButton")) {
+		return
+	}
 	
-	if(!SETTINGS.get("itemdetails.contentButton") || !assetTypeContainer) {
+	const getAssetUrl = ContainerAssetTypeIds[assetTypeId]
+	if(!getAssetUrl) {
 		return
 	}
 
@@ -428,14 +431,13 @@ const initContentButton = async (assetId, assetTypeId) => {
 	</div>`
 
 	AssetCache.loadModel(assetId, model => {
-		const inst = model.find(assetTypeContainer.filter)
-		if(!inst) { return }
-
-		const actId = AssetCache.resolveAssetId(inst[assetTypeContainer.prop])
-		if(!actId) { return }
+		const contentUrl = getAssetUrl(model)
+		const contentId = AssetCache.resolveAssetId(contentUrl)
 		
-		btnCont.$find(">a").href = `https://www.roblox.com/library/${actId}/` // marketplace needs full domain
-		btnCont.$find(">a").classList.remove("disabled")
+		if(contentId) {
+			btnCont.$find(">a").href = `https://www.roblox.com/library/${contentId}/` // marketplace needs full domain
+			btnCont.$find(">a").classList.remove("disabled")
+		}
 	})
 	
 	return btnCont
