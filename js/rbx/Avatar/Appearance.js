@@ -219,7 +219,7 @@ const RBXAppearance = (() => {
 				target: "Head",
 				
 				meshId: this.validateAndPreload("Mesh", HeadMeshes[mesh.MeshId] || mesh.MeshId),
-				overTexId: this.validateAndPreload("Image", mesh.TextureId),
+				texId: this.validateAndPreload("Image", mesh.TextureId),
 				
 				disableFace: mesh.Tags?.includes("NoFace") || false,
 				
@@ -263,8 +263,9 @@ const RBXAppearance = (() => {
 					target: target,
 
 					meshId: this.validateAndPreload("Mesh", +charmesh.MeshId ? AssetCache.toAssetUrl(charmesh.MeshId) : null),
-					baseTexId: this.validateAndPreload("Image", +charmesh.BaseTextureId ? AssetCache.toAssetUrl(charmesh.BaseTextureId) : null),
-					overTexId: this.validateAndPreload("Image", +charmesh.OverlayTextureId ? AssetCache.toAssetUrl(charmesh.OverlayTextureId) : null)
+					texId: this.validateAndPreload("Image", +charmesh.OverlayTextureId ? AssetCache.toAssetUrl(charmesh.OverlayTextureId) : null),
+					
+					baseTexId: this.validateAndPreload("Image", +charmesh.BaseTextureId ? AssetCache.toAssetUrl(charmesh.BaseTextureId) : null)
 				})
 			}
 		}
@@ -295,15 +296,15 @@ const RBXAppearance = (() => {
 				const surfaceAppearance = part.Children.find(x => x.ClassName === "SurfaceAppearance")
 				
 				if(surfaceAppearance) {
-					// alpha mode doesnt seem to do anything for bodyparts, we can ignore it
-					
 					bp.pbrEnabled = true
+					bp.pbrAlphaMode = surfaceAppearance.AlphaMode ?? 0
+					
 					bp.colorMapId = this.validateAndPreload("Image", surfaceAppearance.ColorMap)
 					bp.normalMapId = this.validateAndPreload("Image", surfaceAppearance.NormalMap)
 					bp.roughnessMapId = this.validateAndPreload("Image", surfaceAppearance.RoughnessMap)
 					bp.metalnessMapId = this.validateAndPreload("Image", surfaceAppearance.MetalnessMap)
 				} else {
-					bp.overTexId = this.validateAndPreload("Image", part.TextureID || part.TextureId)
+					bp.texId = this.validateAndPreload("Image", part.TextureID || part.TextureId)
 				}
 				
 				this.addBodyPart(bp)
@@ -376,7 +377,7 @@ const RBXAppearance = (() => {
 				
 				if(surfaceAppearance) {
 					acc.pbrEnabled = true
-					acc.pbrAlphaMode = surfaceAppearance.AlphaMode
+					acc.pbrAlphaMode = surfaceAppearance.AlphaMode ?? 0
 					
 					acc.colorMapId = this.validateAndPreload("Image", surfaceAppearance.ColorMap)
 					acc.normalMapId = this.validateAndPreload("Image", surfaceAppearance.NormalMap)

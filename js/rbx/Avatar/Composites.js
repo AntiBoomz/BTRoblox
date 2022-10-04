@@ -47,9 +47,13 @@ const RBXComposites = (() => {
 			this.context.drawImage(renderer.domElement, 0, 0, this.width, this.height, 0, 0, this.width, this.height)
 
 			this.afterComposite()
-			this.updateListeners.forEach(fn => fn())
+			this.updateListeners.forEach(fn => fn(this))
 		}
-
+		
+		drawImage(ctx, canvas) {
+			ctx.drawImage(this.canvas, 0, 0, this.width, this.height, 0, 0, canvas.width, canvas.height)
+		}
+		
 		onUpdate(fn) {
 			this.updateListeners.push(fn)
 		}
@@ -148,7 +152,7 @@ const RBXComposites = (() => {
 		}
 
 		afterComposite() {
-			this.context.drawImage(this.sources.tshirt.image, 2, 74, 128, 128)
+			this.context.drawImage(this.sources.tshirt.getImage(), 2, 74, 128, 128)
 		}
 	}
 
@@ -191,6 +195,7 @@ const RBXComposites = (() => {
 	}
 
 	return {
+		CompositeTexture,
 		R6Composite,
 
 		R15TorsoComposite,
