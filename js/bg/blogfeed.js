@@ -19,7 +19,7 @@ const BlogFeed = {
 				return data.replace(/<!\[CDATA\[([^]*?)\]\]>/g, "$1").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").replace(/&(amp|gt|lt|apos|quot);/g, (_, x) => escape[x]).trim()
 			}
 			
-			const feedUrl = `https://blog.roblox.com/feed`
+			const feedUrl = `https://blog.roblox.com/feed/`
 
 			this.fetching = fetch(feedUrl).then(async response => {
 				if(!response.ok) {
