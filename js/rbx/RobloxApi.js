@@ -14,13 +14,31 @@ const cacheBackgroundCall = callback => cacheResult(backgroundCall(callback))
 
 const wrapArgs = async args => {
 	if(IS_CHROME) {
-		const asyncValues = []
+		const didCheck = new Set()
 		
-		args = JSON.stringify(args, (key, value) => {
-			if(value instanceof Blob) {
+		const wrapValue = async value => {
+			if(Array.isArray(value) || value?.constructor === Object) {
+				if(didCheck.has(value)) { return null }
+				didCheck.add(value)
+				
+				let didModify = false
+				
+				for(const [key, oldValue] of Object.entries(value)) {
+					const newValue = await wrapValue(oldValue)
+					
+					if(oldValue !== newValue) {
+						if(!didModify) {
+							didModify = true
+							value = Array.isArray(value) ? [...value] : { ...value }
+						}
+						
+						value[key] = newValue
+					}
+				}
+			} else if(value instanceof Blob) {
 				value = {
 					__btrType: "Blob",
-					body: `$btr_async_value_${asyncValues.push(value) - 1}$`
+					body: Array.from(new Uint8Array(await value.arrayBuffer()))
 				}
 			} else if(value instanceof ArrayBuffer) {
 				value = {
@@ -35,21 +53,9 @@ const wrapArgs = async args => {
 			}
 			
 			return value
-		})
-		
-		if(asyncValues.length > 0) {
-			for(let i = asyncValues.length; i--;) {
-				let value = asyncValues[i]
-				
-				if(value instanceof Blob) {
-					value = Array.from(new Uint8Array(await value.arrayBuffer()))
-				}
-				
-				asyncValues[i] = JSON.stringify(value)
-			}
-			
-			args = args.replace(/"\$btr_async_value_(\d+)\$"/g, asyncValues)
 		}
+		
+		args = await wrapValue(args)
 	}
 	
 	return args
@@ -57,7 +63,9 @@ const wrapArgs = async args => {
 
 const unwrapArgs = async args => {
 	if(IS_CHROME) {
-		args = JSON.parse(args, (key, value) => {
+		const didCheck = new Set()
+		
+		const unwrapValue = async value => {
 			const valueType = value?.__btrType
 			
 			if(valueType === "Blob") {
@@ -66,10 +74,24 @@ const unwrapArgs = async args => {
 				value = new Uint8Array(value.body).buffer
 			} else if(valueType === "URLSearchParams") {
 				value = new URLSearchParams(value.body)
+				
+			} else if(Array.isArray(value) || value?.constructor === Object) {
+				if(didCheck.has(value)) { return }
+				didCheck.add(value)
+				
+				for(const [key, oldValue] of Object.entries(value)) {
+					const newValue = await unwrapValue(oldValue)
+					
+					if(oldValue !== newValue) {
+						value[key] = newValue
+					}
+				}
 			}
 			
 			return value
-		})
+		}
+		
+		args = await unwrapValue(args)
 	}
 	
 	return args
