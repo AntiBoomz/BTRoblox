@@ -280,7 +280,7 @@ const RBXMeshParser = {
 		//
 		
 		if(params?.excludeLods && lodCount >= 3) {
-			mesh.faces = faces.slice(lodLevels[0] * 3, lodLevels[1] * 3 - 2)
+			mesh.faces = faces.slice(lodLevels[0] * 3, lodLevels[1] * 3)
 			delete mesh.lodLevels
 		}
 		
