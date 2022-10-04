@@ -14,22 +14,39 @@ const BlogFeed = {
 		if(!this.fetching && this.canRequest()) {
 			this.lastRequest = Date.now()
 			
-			const striphtml = html => html.replace(/<[^>]*>/g, "").replace(/\s+/g, " ")
-			const feedUrl = `https://blog.roblox.com/wp-json/wp/v2/posts?per_page=3&context=embed`
+			const escape = { amp: "&", gt: ">", lt: "<", apos: "'", quot: "\"" }
+			const content = data => {
+				return data.replace(/<!\[CDATA\[([^]*?)\]\]>/g, "$1").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").replace(/&(amp|gt|lt|apos|quot);/g, (_, x) => escape[x]).trim()
+			}
+			
+			const feedUrl = `https://blog.roblox.com/feed`
 
 			this.fetching = fetch(feedUrl).then(async response => {
 				if(!response.ok) {
 					return Promise.reject()
 				}
-
-				const json = await response.json()
 				
-				this.cached = json.map(post => ({
-					url: post.link,
-					date: post.date,
-					title: striphtml(post.title.rendered).trim(),
-					desc: striphtml(post.excerpt.rendered).trim()
-				}))
+				const text = await response.text()
+				const regex = /<item>[^]*?<\/item>/g
+				
+				const posts = []
+				
+				for(let i = 0; i < 3; i++) {
+					const match = regex.exec(text)
+					if(!match) { break }
+					
+					const [, title, link, date, desc] = match[0].match(/<title>([^]*?)<\/title>[^]*?<link>([^]*?)<\/link>[^]*?<pubDate>([^]*?)<\/pubDate>[^]*?<description>([^]*?)<\/description>/) || []
+					if(!link) { continue }
+					
+					posts.push({
+						url: content(link),
+						date: content(date),
+						title: content(title),
+						desc: content(desc)
+					})
+				}
+				
+				this.cached = posts
 
 				STORAGE.set({ cachedBlogFeedV2: this.cached })
 				SHARED_DATA.set("blogfeed", this.cached)
