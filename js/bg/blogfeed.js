@@ -16,7 +16,11 @@ const BlogFeed = {
 			
 			const escape = { amp: "&", gt: ">", lt: "<", apos: "'", quot: "\"" }
 			const content = data => {
-				return data.replace(/<!\[CDATA\[([^]*?)\]\]>/g, "$1").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").replace(/&(amp|gt|lt|apos|quot);/g, (_, x) => escape[x]).trim()
+				return data.replace(/<!\[CDATA\[([^]*?)\]\]>/g, "$1").replace(/<[^>]*>/g, "").replace(/\s+/g, " ")
+					.replace(/&(?:(amp|gt|lt|apos|quot)|(?:#x([a-fA-F0-9]+))|(?:#([0-9]+)));/g, (_, name, hex, dec) =>
+						(name ? escape[name] : hex ? String.fromCodePoint(parseInt(hex, 16)) : String.fromCodePoint(parseInt(dec, 10)))
+					)
+					.trim()
 			}
 			
 			const feedUrl = `https://blog.roblox.com/feed/`
