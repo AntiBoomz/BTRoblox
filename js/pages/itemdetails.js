@@ -1037,7 +1037,11 @@ pageInit.itemdetails = (category, assetIdString) => {
 	}
 	
 	document.$watch("#item-container", itemCont => {
-		const assetTypeId = parseInt(itemCont.dataset.assetTypeId, 10)
+		let assetTypeId = parseInt(itemCont.dataset.assetTypeId, 10)
+		
+		if(category === "game-pass") {
+			assetTypeId = AssetType.GamePass
+		}
 		
 		if(!Number.isSafeInteger(assetTypeId)) {
 			if(IS_DEV_MODE) { alert(`Invalid assetTypeId for ${itemCont.dataset.assetType}`) }
