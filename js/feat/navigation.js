@@ -15,89 +15,155 @@ const btrNavigation = {
 	},
 	
 	register(name, elementInfo) {
-		const selector = `[btr-name="${name}"]`
+		const selector = `.btr-nav-${name}`
 		const enabledByDefault = elementInfo.enabled !== false
 		
-		elementInfo = this.elements[name] = {
+		const element = this.elements[name] = {
+			settings: [],
+			
+			update(node) {
+				node.style.display = this.enabled ? "" : "none"
+			},
+			
 			...elementInfo,
+			name: name,
 			
 			enabledByDefault: enabledByDefault,
 			enabled: enabledByDefault,
 			isDefault: true,
 			
-			_update(node) {
-				node.style.display = this.enabled ? "" : "none"
-				this.update?.(node)
-			},
-			
 			saveState() {
 				const states = btrNavigation.getElementStates()
-				if(this.isDefault) {
-					if(name in states) {
-						delete states[name]
-						SETTINGS.set("navigation.elements", JSON.stringify(states))
+				const prevState = states[this.name]
+				let state
+				
+				if(!this.isDefault) {
+					if(!state) { state = {} }
+					state.enabled = this.enabled
+				}
+				
+				for(const setting of this.settings) {
+					if(!setting.isDefault) {
+						if(!state) { state = {} }
+						if(!state.settings) { state.settings = {} }
+						state.settings[setting.name] = setting.enabled
 					}
+				}
+				
+				if(JSON.stringify(prevState) !== JSON.stringify(state)) {
+					states[this.name] = state
+					SETTINGS.set("navigation.elements", JSON.stringify(states))
+				}
+			},
+			
+			getSetting(name) {
+				return this.settings.find(x => x.name === name)
+			},
+			
+			setSettingEnabled(name, enabled) {
+				const setting = assert(this.getSetting(name), "invalid setting")
+				
+				if(typeof enabled === "boolean") {
+					setting.enabled = enabled
+					setting.isDefault = false
 				} else {
-					if(states[name] !== this.enabled) {
-						states[name] = this.enabled
-						SETTINGS.set("navigation.elements", JSON.stringify(states))
-					}
+					setting.enabled = setting.enabledByDefault
+					setting.isDefault = true
+				}
+				
+				this.saveState()
+				
+				for(const node of document.querySelectorAll(selector)) {
+					this.updateNodeSetting(node, setting)
 				}
 			},
 			
 			setEnabled(enabled) {
-				if(this.enabled === !!enabled) { return }
-				this.enabled = !!enabled
-				this.isDefault = false
-				this.saveState()
-				this.updateAll()
-			},
-			
-			resetEnabled() {
-				if(this.isDefault) { return }
-				this.enabled = this.enabledByDefault
-				this.isDefault = true
+				if(typeof enabled === "boolean") {
+					this.enabled = enabled
+					this.isDefault = false
+				} else {
+					this.enabled = this.enabledByDefault
+					this.isDefault = true
+				}
+				
 				this.saveState()
 				this.updateAll()
 			},
 			
 			updateAll() {
-				for(const node of document.body?.querySelectorAll(selector)) {
-					this._update(node)
+				for(const node of document.querySelectorAll(selector)) {
+					this.update(node)
 				}
 			},
 			
+			updateNodeSetting(node, setting) {
+				let className = setting.class || setting.name
+				let enabled = setting.enabled
+				
+				if(className[0] === "!") {
+					className = className.slice(1)
+					enabled = !enabled
+				}
+				
+				node.classList.toggle(`btr-nav-${className}`, enabled)
+			},
+			
 			addNode(node) {
-				node.setAttribute("btr-name", name)
+				node.classList.add(`btr-nav-${this.name}`)
+				
+				for(const setting of this.settings) {
+					this.updateNodeSetting(node, setting)
+				}
+				
 				this.nodeAdded?.(node)
-				this._update(node)
+				this.update(node)
 			}
 		}
 		
-		const state = this.getElementStates()[name]
-		if(typeof state === "boolean") {
-			elementInfo.enabled = state
-			elementInfo.isDefault = false
+		for(const setting of element.settings) {
+			const enabledByDefault = setting.enabled === true
+			
+			setting.enabledByDefault = enabledByDefault
+			setting.enabled = enabledByDefault
+			setting.isDefault = true
 		}
 		
-		// TODO: Load enabled from settings
+		let state = this.getElementStates()[element.name]
+		if(typeof state === "boolean") { state = { enabled: state } }
 		
-		if(elementInfo.selector) {
-			document.$watch(elementInfo.selector, node => {
-				elementInfo.addNode(node)
+		if(typeof state?.enabled === "boolean") {
+			element.enabled = state.enabled
+			element.isDefault = false
+		}
+		
+		if(state?.settings) {
+			for(const [name, enabled] of Object.entries(state.settings)) {
+				const setting = element.getSetting(name)
+				
+				if(setting) {
+					setting.enabled = enabled
+					setting.isDefault = false
+				}
+			}
+		}
+		
+		if(element.selector) {
+			document.$watch(element.selector, node => {
+				element.addNode(node)
 			})
 		}
 		
-		if(elementInfo.reactInject) {
+		if(element.reactInject) {
 			reactInject({
-				...elementInfo.reactInject,
+				...element.reactInject,
 				callback(node) {
-					elementInfo.addNode(node)
+					element.addNode(node)
 				}
 			})
 		}
 		
-		try { elementInfo.init?.() }
+		try { element.init?.() }
 		catch(ex) { console.error(ex) }
 	},
 	
@@ -112,7 +178,7 @@ const btrNavigation = {
 		
 		// Left header buttons are not react, apparently?
 		btrNavigation.register("header_home", {
-			name: "Show Home",
+			label: "Show Home",
 			
 			init() {
 				document.$watch("#header").$then().$watch("ul.rbx-navbar", navbar => {
@@ -124,7 +190,7 @@ const btrNavigation = {
 		})
 		
 		btrNavigation.register("header_robux", {
-			name: "Show Robux",
+			label: "Show Robux",
 			enabled: false,
 			
 			init() {
@@ -143,41 +209,29 @@ const btrNavigation = {
 		
 		// Header
 		
-		btrNavigation.register("header_messages", {
-			name: "Show Messages",
+		btrNavigation.register("header_agebracket", {
+			label: "Show Age Bracket",
+			selector: ".age-bracket-label",
+			enabled: false
+		})
+		
+		btrNavigation.register("header_notifications", {
+			label: "Show Notifications",
 			
-			update(node) {
-				node.style.display = this.enabled ? "" : "none"
-				if(!this.enabled) { return }
-				
-				const orig = $("#nav-message")
-				const origNotif = orig?.$find(".notification")
-				
-				if(origNotif) {
-					const notif = node.$find(".btr-nav-notif")
-					const link = node.$find("a")
-					
-					link.href = orig.href
-					notif.textContent = origNotif ? origNotif.textContent.trim() : ""
-					notif.style.display = origNotif ? "" : "none"
-				}
-			},
+			settings: [
+				{ name: "reduce_margins", label: "Reduce Margin", enabled: false }
+			],
 			
-			reactInject: {
-				selector: "ul.navbar-right",
-				index: { selector: { hasProps: ["robuxAmount"] }, offset: -1 },
-				html: `
-				<li id="btr-navbar-messages" class="navbar-icon-item">
-					<a class="rbx-menu-item" href="/My/Messages#!/inbox">
-						<span class="icon-nav-message-btr"></span>
-						<span class="btr-nav-notif rbx-text-navbar-right" style="display:none;"></span>
-					</a>
-				</li>`
-			}
+			selector: "#navbar-stream",
+			enabled: true
 		})
 		
 		btrNavigation.register("header_friends", {
-			name: "Show Friends",
+			label: "Show Friends",
+			
+			settings: [
+				{ name: "show_notifs", label: "Show Requests", enabled: true, class: "!hide_notifs" }
+			],
 			
 			update(node) {
 				node.style.display = this.enabled ? "" : "none"
@@ -209,16 +263,47 @@ const btrNavigation = {
 			}
 		})
 		
-		btrNavigation.register("header_agebracket", {
-			name: "Show Age Bracket",
-			selector: ".age-bracket-label",
-			enabled: false
+		btrNavigation.register("header_messages", {
+			label: "Show Messages",
+			
+			settings: [
+				{ name: "show_notifs", label: "Show Unread", enabled: true, class: "!hide_notifs" }
+			],
+			
+			update(node) {
+				node.style.display = this.enabled ? "" : "none"
+				if(!this.enabled) { return }
+				
+				const orig = $("#nav-message")
+				const origNotif = orig?.$find(".notification")
+				
+				if(origNotif) {
+					const notif = node.$find(".btr-nav-notif")
+					const link = node.$find("a")
+					
+					link.href = orig.href
+					notif.textContent = origNotif ? origNotif.textContent.trim() : ""
+					notif.style.display = origNotif ? "" : "none"
+				}
+			},
+			
+			reactInject: {
+				selector: "ul.navbar-right",
+				index: { selector: { hasProps: ["robuxAmount"] }, offset: -1 },
+				html: `
+				<li id="btr-navbar-messages" class="navbar-icon-item">
+					<a class="rbx-menu-item" href="/My/Messages#!/inbox">
+						<span class="icon-nav-message-btr"></span>
+						<span class="btr-nav-notif rbx-text-navbar-right" style="display:none;"></span>
+					</a>
+				</li>`
+			}
 		})
 		
 		// Sidebar
 		
 		btrNavigation.register("sidebar_home", {
-			name: "Show Home",
+			label: "Show Home",
 			
 			selector: "#nav-home",
 			enabled: false,
@@ -229,7 +314,11 @@ const btrNavigation = {
 		})
 		
 		btrNavigation.register("sidebar_messages", {
-			name: "Show Messages",
+			label: "Show Messages",
+			
+			settings: [
+				{ name: "show_notifs", label: "Show Unread", enabled: true, class: "!hide_notifs" }
+			],
 			
 			selector: "#nav-message",
 			enabled: false,
@@ -246,7 +335,11 @@ const btrNavigation = {
 		})
 		
 		btrNavigation.register("sidebar_friends", {
-			name: "Show Friends",
+			label: "Show Friends",
+			
+			settings: [
+				{ name: "show_notifs", label: "Show Requests", enabled: true, class: "!hide_notifs" }
+			],
 			
 			selector: "#nav-friends",
 			enabled: false,
@@ -263,7 +356,7 @@ const btrNavigation = {
 		})
 		
 		btrNavigation.register("sidebar_trade", {
-			name: "Show Trade",
+			label: "Show Trade",
 			
 			selector: "#nav-trade",
 			enabled: true,
@@ -274,7 +367,7 @@ const btrNavigation = {
 		})
 		
 		btrNavigation.register("sidebar_money", {
-			name: "Show Money",
+			label: "Show Money",
 			enabled: false,
 			
 			reactInject: {
@@ -291,7 +384,7 @@ const btrNavigation = {
 		})
 		
 		btrNavigation.register("sidebar_blogfeed", {
-			name: "Show Blog Feed",
+			label: "Show Blog Feed",
 			
 			update(node) {
 				node.style.display = this.enabled ? "" : "none"
@@ -332,7 +425,7 @@ const btrNavigation = {
 		})
 		
 		btrNavigation.register("sidebar_premium", {
-			name: "Show Premium",
+			label: "Show Premium",
 			
 			reactInject: {
 				selector: ".left-col-list",
@@ -348,7 +441,7 @@ const btrNavigation = {
 		})
 		
 		btrNavigation.register("sidebar_premium_2", {
-			name: "Show Premium Button",
+			label: "Show Premium Button",
 			
 			selector: ".left-col-list > .rbx-upgrade-now",
 			enabled: false

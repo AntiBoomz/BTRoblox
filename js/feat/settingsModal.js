@@ -102,9 +102,9 @@ const btrSettingsModal = (() => {
 					<h4>Navigation Buttons</h4>
 				</div>
 				<div style="display:flex">
-					<group label="Header">
+					<group label="Sidebar" style="width:50%">
 					</group>
-					<group label="Sidebar">
+					<group label="Header" style="width:50%">
 					</group>
 				</div>
 			</div>
@@ -445,47 +445,58 @@ const btrSettingsModal = (() => {
 			const header = navButtons.$find(`group[label="Header"]`)
 			const sidebar = navButtons.$find(`group[label="Sidebar"]`)
 			
-			const checkboxes = {}
+			const onUpdate = []
 			
-			for(const name in btrNavigation.elements) {
-				const element = btrNavigation.elements[name]
-				
-				const parent = name.startsWith("header") ? header : sidebar
+			const createCheckbox = (labelText, callback) => {
 				const checkbox = html`<checkbox></checkbox>`
-
 				checkbox.classList.add("btr-settings-checkbox")
-
-				const input = html`<input type=checkbox>`
-				checkbox.prepend(input)
-
+				
 				const labelIndex = labelCounter++
-				input.id = `btr-settings-input-${labelIndex}`
-
-				const labelText = element.name || name
-				const label = html`<label for=btr-settings-input-${labelIndex}>${labelText}</label>`
-				checkbox.append(label)
-
-				input.$on("change", () => {
-					element.setEnabled(input.checked)
-				})
-
+				const label = html`<label for="btr-settings-input-${labelIndex}">${labelText}</label>`
+				
+				const input = html`<input type=checkbox id="btr-settings-input-${labelIndex}">`
 				const resetButton = html`<span class=btr-setting-reset-button></span>`
-				label.after(resetButton)
 				
-				resetButton.$on("click", () => {
-					element.resetEnabled()
+				input.$on("change", () => callback(input.checked))
+				resetButton.$on("click", () => callback(null))
+				
+				checkbox.append(input, label, resetButton)
+				return { elem: checkbox, input, resetButton }
+			}
+			
+			for(const element of Object.values(btrNavigation.elements)) {
+				const checkbox = createCheckbox(element.label || element.name, enabled => {
+					element.setEnabled(enabled)
 				})
 				
-				parent.append(checkbox)
+				const parent = element.name.startsWith("header") ? header : sidebar
+				parent.append(checkbox.elem)
 				
-				checkboxes[name] = { element, input, resetButton }
+				onUpdate.push(() => {
+					checkbox.input.checked = element.enabled
+					checkbox.resetButton.classList.toggle("disabled", element.isDefault)
+				})
+				
+				if(element.settings) {
+					for(const setting of element.settings) {
+						const settingCheckbox = createCheckbox(setting.label || setting.name, enabled => {
+							element.setSettingEnabled(setting.name, enabled)
+						})
+						
+						settingCheckbox.elem.style.paddingLeft = "20px"
+						parent.append(settingCheckbox.elem)
+						
+						onUpdate.push(() => {
+							settingCheckbox.input.checked = setting.enabled
+							settingCheckbox.resetButton.classList.toggle("disabled", setting.isDefault)
+						})
+					}
+				}
 			}
 			
 			const update = () => {
-				for(const name in checkboxes) {
-					const { element, input, resetButton } = checkboxes[name]
-					input.checked = element.enabled
-					resetButton.classList.toggle("disabled", element.isDefault)
+				for(const fn of onUpdate) {
+					fn()
 				}
 			}
 			

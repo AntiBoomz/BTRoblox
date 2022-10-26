@@ -95,6 +95,15 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	border-color: #232527;
 }
 
+.btr-nav-hide_notifs .btr-nav-notif,
+.btr-nav-hide_notifs .notification-blue {
+	display: none !important;
+}
+
+#navbar-stream.btr-nav-reduce_margins {
+	margin-right: 0;
+}
+
 /* btr-no-hamburger */
 
 @media (min-width: 1200px) {
