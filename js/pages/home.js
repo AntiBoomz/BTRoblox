@@ -3,12 +3,11 @@
 pageInit.home = () => {
 	if(SETTINGS.get("home.friendsShowUsername")) {
 		modifyTemplate("people", card => {
-			const nameLabel = card.$find(".friend-name")
-			const parent = nameLabel?.closest("a")
+			const container = card.$find(".friend-parent-container")
 			
-			if(nameLabel && parent && nameLabel.getAttribute("ng-bind") === "friend.nameToDisplay") {
+			if(container) {
 				document.body.classList.add("btr-home-showUsername")
-				nameLabel.after(html`<div class="text-overflow xsmall text-label btr-people-username" title="@{{friend.name}}">@{{friend.name}}</div>`)
+				container.after(html`<div class="text-overflow xsmall text-label btr-people-username" title="@{{friend.name}}">@{{friend.name}}</div>`)
 			}
 		})
 	}
