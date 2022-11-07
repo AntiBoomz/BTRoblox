@@ -2,26 +2,90 @@
 
 const RobuxToCash = {
 	// cash is in cents
-
-	RegularPurchaseAmounts: [400, 800, 1700, 4500, 10000],
-	PremiumPurchaseAmounts: [440, 880, 1870, 4950, 11000],
 	
 	UpdateDate: "October 4, 2022",
 	
 	Currencies: {
-		None: { symbol: "", rates: [] },
+		None: { symbol: "" },
 		
-		USD: { symbol: "$", rates: [499, 999, 1999, 4999, 9999] },
-		EUR: { symbol: "€", rates: [499, 999, 2099, 4999, 9999] },
-		GBP: { symbol: "£", rates: [459, 899, 1849, 4649, 9299] },
-		CAD: { symbol: "CAD", rates: [649, 1299, 2599, 6499, 12999] },
-		AUD: { symbol: "AU$", rates: [699, 1399, 2899, 7199, 14499] },
-		NZD: { symbol: "NZ$", rates: [799, 1599, 3199, 8999, 16999] },
-		MXN: { symbol: "MX$", rates: [8900, 18500, 36500, 91900, 184900] },
-		HKD: { symbol: "HK$", rates: [3800, 7800, 15800, 38900, 77900] },
-		TWD: { symbol: "NT$", rates: [15000, 30000, 59000, 161000, 321000] },
-		CLP: { symbol: "CLP", rates: [330000, 650000, 1290000, 3330000, 6700000] },
-		COP: { symbol: "COP", rates: [1490000, 2990000, 5790000, 15500000, 30900000] },
+		USD: {
+			symbol: "$",
+			robuxRates: [[499, 400], [999, 800], [1999, 1700], [4999, 4500], [9999, 10000], [19999, 22500]],
+			robuxRatesPremium: [[499, 440], [999, 880], [1999, 1870], [4999, 4950], [9999, 11000], [19999, 25000]],
+			subscriptionRates: [[499, 450], [999, 1000], [1999, 2200]]
+		},
+		CAD: {
+			symbol: "CAD",
+			robuxRates: [[699, 440], [1399, 880], [2799, 1870], [6999, 4950], [13999, 11000], [27999, 24750]],
+			robuxRatesPremium: [[699, 480], [1399, 970], [2799, 2050], [6999, 5450], [13999, 12100], [27999, 25000]],
+			subscriptionRates: [[699, 450], [1399, 1000], [2799, 2200]]
+		},
+		GBP: {
+			symbol: "£",
+			robuxRates: [[449, 400], [899, 800], [1799, 1700], [4499, 4500], [8999, 10000]],
+			robuxRatesPremium: [[449, 440], [899, 880], [1799, 1870], [4499, 4950], [8999, 11000]],
+			subscriptionRates: [[449, 450], [899, 1000], [1799, 2200]]
+		},
+		EUR: {
+			symbol: "€",
+			robuxRates: [[599, 400], [1199, 800], [2399, 1700], [5999, 4500], [11999, 10000], [23999, 22500]],
+			robuxRatesPremium: [[599, 440], [1199, 880], [2399, 1870], [5999, 4950], [11999, 11000], [23999, 25000]],
+			subscriptionRates: [[599, 450], [1199, 1000], [2399, 2200]]
+		},
+		AUD: {
+			symbol: "AU$",
+			robuxRates: [[799, 400], [1499, 800], [3099, 1700], [7999, 4500], [15999, 10000], [31999, 22500]],
+			robuxRatesPremium: [[799, 440], [1499, 880], [3099, 1870], [7999, 4950], [15999, 11000], [31999, 25000]],
+			subscriptionRates: [[799, 450], [1499, 1000], [3099, 2200]]
+		},
+		BRL: {
+			symbol: "R$",
+			robuxRates: [[2790, 400], [5490, 800], [10990, 1700], [27990, 4500], [54990, 10000]],
+			robuxRatesPremium: [[2790, 440], [5490, 880], [10990, 1870], [27990, 4950], [54990, 11000]],
+			subscriptionRates: [[2790, 450], [5490, 1000], [10990, 2200]]
+		},
+		CLP: {
+			symbol: "CLP",
+			robuxRates: [[550000, 400], [1090000, 800], [2190000, 1700], [5490000, 4500], [10990000, 10000], [21990000, 22500]],
+			robuxRatesPremium: [[550000, 440], [1090000, 880], [2190000, 1870], [5490000, 4950], [10990000, 11000], [21990000, 25000]],
+			subscriptionRates: [[550000, 450], [1090000, 1000], [2190000, 2200]]
+		},
+		HKD: {
+			symbol: "HK$",
+			robuxRates: [[3800, 400], [7800, 800], [15800, 1700], [39800, 4500], [78800, 10000], [158800, 22500]],
+			robuxRatesPremium: [[3800, 440], [7800, 880], [15800, 1870], [39800, 4950], [78800, 11000], [158800, 25000]],
+			subscriptionRates: [[3800, 450], [7800, 1000], [15800, 2200]]
+		},
+		JPY: {
+			symbol: "JP¥",
+			robuxRates: [[80000, 400], [160000, 800], [320000, 1700], [800000, 4500], [1580000, 10000], [3180000, 22500]],
+			robuxRatesPremium: [[80000, 440], [160000, 880], [320000, 1870], [800000, 4950], [1580000, 11000], [3180000, 25000]],
+			subscriptionRates: [[80000, 450], [160000, 1000], [320000, 2200]]
+		},
+		MXN: {
+			symbol: "MX$",
+			robuxRates: [[12900, 400], [24900, 800], [49900, 1700], [129900, 4500], [249900, 10000], [499900, 22500]],
+			robuxRatesPremium: [[12900, 440], [24900, 880], [49900, 1870], [129900, 4950], [249900, 11000], [499900, 25000]],
+			subscriptionRates: [[12900, 450], [24900, 1000], [49900, 2200]]
+		},
+		NZD: {
+			symbol: "NZ$",
+			robuxRates: [[899, 400], [1699, 800], [3499, 1700], [8999, 4500], [16999, 10000], [34999, 22500]],
+			robuxRatesPremium: [[899, 440], [1699, 880], [3499, 1870], [8999, 4950], [16999, 11000], [34999, 25000]],
+			subscriptionRates: [[899, 450], [1699, 1000], [3499, 2200]]
+		},
+		KRW: {
+			symbol: "₩",
+			robuxRates: [[750000, 400], [1500000, 800], [3000000, 1700], [7900000, 4500], [14900000, 10000], [29900000, 22500]],
+			robuxRatesPremium: [[750000, 440], [1500000, 880], [3000000, 1870], [7900000, 4950], [14900000, 11000], [29900000, 25000]],
+			subscriptionRates: [[750000, 450], [1500000, 1000], [3000000, 2200]]
+		},
+		TWD: {
+			symbol: "NT$",
+			robuxRates: [[17000, 400], [33000, 800], [67000, 1700], [169000, 4500], [329000, 10000], [659000, 22500]],
+			robuxRatesPremium: [[17000, 440], [33000, 880], [67000, 1870], [169000, 4950], [329000, 11000], [659000, 25000]],
+			subscriptionRates: [[17000, 450], [33000, 1000], [67000, 2200]]
+		},
 		
 		// Currency has a fixed usd exchange rate
 		
@@ -60,7 +124,6 @@ const RobuxToCash = {
 		BIF: { symbol: "FBu ", usdRate: 2054.0198110904 },
 		BND: { symbol: "", usdRate: 1.4297064644 },
 		BOB: { symbol: "", usdRate: 6.8891036988 },
-		BRL: { symbol: "R$", usdRate: 5.1652739086 },
 		BTN: { symbol: "", usdRate: 81.5653448716 },
 		BWP: { symbol: "P ", usdRate: 13.2590543994 },
 		BYN: { symbol: "", usdRate: 2.5263986919 },
@@ -68,6 +131,7 @@ const RobuxToCash = {
 		CHF: { symbol: "", usdRate: 0.9871555558 },
 		CLF: { symbol: "", usdRate: 0.0380809882 },
 		CNY: { symbol: "CN¥", usdRate: 7.1159422008 },
+		COP: { symbol: "COP", usdRate: 1.1234567 },
 		CRC: { symbol: "", usdRate: 624.2382680412 },
 		CUP: { symbol: "", usdRate: 23.9002332384 },
 		CVE: { symbol: "", usdRate: 111.3839754268 },
@@ -97,13 +161,11 @@ const RobuxToCash = {
 		IRR: { symbol: "", usdRate: 42393.7208251129 },
 		ISK: { symbol: "", usdRate: 143.6398019064 },
 		JMD: { symbol: "$", usdRate: 150.9619219155 },
-		JPY: { symbol: "¥", usdRate: 144.7101732399 },
 		KES: { symbol: "Ksh", usdRate: 120.8296846207 },
 		KGS: { symbol: "", usdRate: 80.1880602821 },
 		KHR: { symbol: "", usdRate: 4095.620482441 },
 		KMF: { symbol: "", usdRate: 496.9377326268 },
 		KPW: { symbol: "", usdRate: 900.030138651 },
-		KRW: { symbol: "₩", usdRate: 1427.1697409913 },
 		KWD: { symbol: "", usdRate: 0.3099593203 },
 		KZT: { symbol: "", usdRate: 472.1466304352 },
 		LAK: { symbol: "", usdRate: 16474.7134407864 },
@@ -198,49 +260,75 @@ const RobuxToCash = {
 	convertAngular(expr) {
 		const option = this.getSelectedOption()
 
-		return `${option.currency.symbol}{{((${expr})*${option.cash}/${option.robux} + 0.4999)/100 | number: 2}}`
+		return `${option.currency.symbol}{{((${expr})*${option.cash}/${option.robux} + 0.4999)/100 | number: ${option.currency.numFractions}}}`
 	},
 
 	convert(robux) {
 		const option = this.getSelectedOption()
 
 		const cash = Math.round((robux * option.cash) / option.robux + 0.4999) / 100
-		const cashString = formatNumber(cash.toFixed(2))
+		const cashString = formatNumber(cash.toFixed(option.currency.numFractions))
 
 		return `${option.currency.symbol}${cashString}`
 	}
 }
 
 
-Object.entries(RobuxToCash.Currencies).forEach(([name, currency]) => {
+for(const [name, currency] of Object.entries(RobuxToCash.Currencies)) {
 	currency.name = name
+	currency.numFractions = 2
 	
 	if(!currency.symbol || (currency.usdRate && (currency.symbol === "$" || currency.symbol === "£"))) {
 		currency.symbol = `${name} `
 	}
 	
-	if(currency.usdRate) {
-		currency.rates = RobuxToCash.Currencies.USD.rates.map(x => x * currency.usdRate)
-	}
+	if(name === "None") { continue }
+	
+	try { currency.numFractions = new Intl.NumberFormat("en-US", { style: "currency", currency: name }).resolvedOptions().maximumFractionDigits }
+	catch(ex) {}
 
-	const list = RobuxToCash.OptionLists[name] = RobuxToCash.OptionLists[name] || []
-	currency.rates.forEach((cash, index) => {
-		const regular = { name: `${name.toLowerCase()}Regular${index}`, cash: cash, robux: RobuxToCash.RegularPurchaseAmounts[index] }
-		const premium = { name: `${name.toLowerCase()}Premium${index}`, cash: cash, robux: RobuxToCash.PremiumPurchaseAmounts[index] }
+	const options = RobuxToCash.OptionLists[name] = RobuxToCash.OptionLists[name] || []
+	const refCurrency = currency.usdRate ? RobuxToCash.Currencies.USD : currency
+	
+	for(const [index, rate] of Object.entries(refCurrency.robuxRates)) {
+		const option = { name: `${name.toLowerCase()}Regular${index}`, cash: rate[0], robux: rate[1] }
 		
 		if(currency.usdRate) {
-			regular.usdCash = premium.usdCash = RobuxToCash.Currencies.USD.rates[index]
+			option.usdCash = option.cash
+			option.cash *= currency.usdRate
 		}
 		
-		list.push(regular, premium)
-	})
-})
+		options.push(option)
+	}
+	
+	for(const [index, rate] of Object.entries(refCurrency.robuxRatesPremium)) {
+		const option = { name: `${name.toLowerCase()}Premium${index}`, cash: rate[0], robux: rate[1] }
+		
+		if(currency.usdRate) {
+			option.usdCash = option.cash
+			option.cash *= currency.usdRate
+		}
+		
+		options.push(option)
+	}
+	
+	for(const [index, rate] of Object.entries(refCurrency.subscriptionRates)) {
+		const option = { name: `${name.toLowerCase()}Subscription${index}`, cash: rate[0], robux: rate[1] }
+		
+		if(currency.usdRate) {
+			option.usdCash = option.cash
+			option.cash *= currency.usdRate
+		}
+		
+		options.push(option)
+	}
+}
 
-Object.entries(RobuxToCash.OptionLists).forEach(([name, list]) => {
+for(const [name, options] of Object.entries(RobuxToCash.OptionLists)) {
 	const currency = RobuxToCash.Currencies[name]
-
-	list.forEach(option => {
+	
+	for(const option of options) {
 		option.currency = currency
 		RobuxToCash.Options[option.name] = option
-	})
-})
+	}
+}
