@@ -1,20 +1,20 @@
 /* Navigation */
 
 #btr-navbar-messages > a,
-#btr-navbar-friends  > a {
+#btr-navbar-friends > a {
 	padding: 4px;
 	border-radius: 8px;
 }
 
-.light-theme #btr-navbar-messages:hover > a,
-.light-theme #btr-navbar-friends:hover  > a {
+.light-theme #btr-navbar-messages > a:hover,
+.light-theme #btr-navbar-friends > a:hover {
 	background: rgba(0, 0, 0, 0.1);
 	border-color: rgba(0, 0, 0, 0.6);
 	color: #393b3d;
 }
 
-.dark-theme #btr-navbar-messages:hover > a,
-.dark-theme #btr-navbar-friends:hover  > a {
+.dark-theme #btr-navbar-messages > a:hover,
+.dark-theme #btr-navbar-friends > a:hover {
 	background-color: hsla(0,0%,100%,.1);
 	border-color: hsla(0,0%,100%,.7);
 	color: #fff;
