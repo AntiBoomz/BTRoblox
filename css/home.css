@@ -4,6 +4,11 @@
 
 /* Friend stuff */
 
+#people-list-container .people-list-container {
+	float: none;
+	overflow: hidden;
+}
+
 .btr-home-showUsername .people-list-container,
 .btr-home-secondRow .people-list-container {
 	--btr-friend-height: 148px;

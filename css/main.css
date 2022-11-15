@@ -4,6 +4,8 @@
 #btr-navbar-friends > a {
 	padding: 4px;
 	border-radius: 8px;
+	background: none;
+	border: none;
 }
 
 .light-theme #btr-navbar-messages > a:hover,
