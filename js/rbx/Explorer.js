@@ -295,8 +295,11 @@ const Explorer = (() => {
 				if(RenamedProperties[name] && RenamedProperties[name] in target.Properties) { return }
 				name = RenamedProperties[name] || name
 
-				const group = ApiDump.getPropertyGroup(target.ClassName, name)
-				if(group === "HIDDEN") { return }
+				let group = ApiDump.getPropertyGroup(target.ClassName, name)
+				
+				if(group === "Unknown") {
+					group = "Data"
+				}
 				
 				let groupData = groupMap[group]
 				if(!groupData) {

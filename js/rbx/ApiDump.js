@@ -88,7 +88,7 @@ const ApiDump = (() => {
 		getPropertyGroup(className, prop) {
 			prepare()
 			const propInfo = getPropInfo(className, prop)
-			return propInfo ? propInfo.Group : IS_DEV_MODE ? "Unknown" : "Data"
+			return propInfo ? propInfo.Group : "Unknown"
 		},
 		getPropertyEnumName(className, prop, value) {
 			prepare()
