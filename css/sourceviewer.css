@@ -144,7 +144,7 @@
 	top: 100%;
 	right: -1px;
 	
-	width: 300px;
+	width: 240px;
 	z-index: 2;
 	
 	
@@ -162,6 +162,7 @@
 	font-size: 12px !important;
 	color: black !important;
 	font-weight: 300 !important;
+	font-family: "Source Sans Pro",Arial,Helvetica,sans-serif !important;
 }
 
 .btr-sourceviewer-header .btr-sourceviewer-settings-button.active + .btr-sourceviewer-settings {
