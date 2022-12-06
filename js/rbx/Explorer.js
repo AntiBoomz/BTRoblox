@@ -16,8 +16,8 @@ const Explorer = (() => {
 		MeshID: "MeshId"
 	}
 
-	function fixNum(v) { return Math.round(v * 1e3) / 1e3 }
-	function fixNums(arr) {
+	const fixNum = v => { return Math.round(v * 1e3) / 1e3 }
+	const fixNums = arr => {
 		const copy = arr.slice(0)
 		copy.forEach((v, i) => copy[i] = fixNum(v))
 		return copy
