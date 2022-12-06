@@ -293,6 +293,9 @@
 .btr-sourceviewer-source-container .btr-sourceviewer-string { color: rgb(127, 0, 127); }
 .btr-sourceviewer-source-container .btr-sourceviewer-comment { color: rgb(0, 127, 9); }
 .btr-sourceviewer-source-container .btr-sourceviewer-keyword { color: rgb(0, 0, 127); font-weight: bold; }
-.btr-sourceviewer-source-container .btr-sourceviewer-global { color: rgb(0, 0, 127); font-weight: bold; }
+.btr-sourceviewer-source-container .btr-sourceviewer-global { color: rgb(0, 0, 127); text-shadow: 0px 0px 0.1px rgba(0, 0, 127, 0.5); }
+.btr-sourceviewer-source-container .btr-sourceviewer-property { color: rgb(72, 92, 142); }
+.btr-sourceviewer-source-container .btr-sourceviewer-method { color: rgb(0, 116, 189); }
 .btr-sourceviewer-source-container .btr-sourceviewer-number { color: rgb(0, 127, 127); }
 .btr-sourceviewer-source-container .btr-sourceviewer-operator { color: rgb(127, 127, 0); }
+.btr-sourceviewer-source-container .btr-sourceviewer-nilbool { color: rgb(0, 127, 127); font-weight: bold; }

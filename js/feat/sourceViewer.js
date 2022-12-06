@@ -17,8 +17,8 @@ const btrSourceViewer = (() => {
 	)
 
 	const Keywords = new Set([
-		"function", "true", "false", "local", "end", "if", "elseif", "else", "then", "repeat", "until", "while", "do",
-		"for", "not", "and", "or", "break", "in", "nil", "return", "continue"
+		"function", "local", "end", "if", "elseif", "else", "then", "repeat", "until", "while", "do", "for",
+		"not", "and", "or", "break", "in", "return", "continue"
 	])
 
 	const Globals = new Set([
@@ -38,20 +38,20 @@ const btrSourceViewer = (() => {
 	])
 
 	const Tables = {
-		bit32: new Set(["band", "extract", "bor", "bnot", "arshift", "rshift", "rrotate", "replace", "lshift", "lrotate", "btest", "bxor"]),
-		coroutine: new Set(["resume", "yield", "running", "status", "wrap", "create", "isyieldable"]),
-		debug: new Set(["traceback", "profileend", "profilebegin"]),
+		bit32: new Set(["band", "extract", "bor", "bnot", "countrz", "bxor", "arshift", "rshift", "rrotate", "replace", "lshift", "lrotate", "btest", "countlz"]),
+		coroutine: new Set(["resume", "running", "yield", "close", "status", "wrap", "create", "isyieldable"]),
+		debug: new Set(["loadmodule", "traceback", "info", "dumpheap", "resetmemorycategory", "setmemorycategory", "profileend", "profilebegin"]),
 		math: new Set([
-			"abs", "acos", "asin", "atan", "atan2", "ceil", "clamp", "cos", "cosh", "deg", "exp", "floor", "fmod",
-			"frexp", "huge", "ldexp", "log", "log10", "max", "min", "modf", "noise", "pi", "pow", "rad", "random",
-			"randomseed", "sign", "sin", "sinh", "sqrt", "tan", "tanh"
+			"log", "ldexp", "rad", "cosh", "round", "random", "frexp", "tanh", "floor", "max", "sqrt", "modf", "huge", "pow", "atan", "tan", "cos", "pi",
+			"noise", "log10", "sign", "acos", "abs", "clamp", "sinh", "asin", "min", "deg", "fmod", "randomseed", "atan2", "ceil", "sin", "exp"
 		]),
-		os: new Set(["difftime", "time", "date", "clock"]),
-		string: new Set(["sub", "split", "upper", "len", "find", "match", "char", "rep", "gmatch", "reverse", "byte", "format", "gsub", "lower"]),
-		table: new Set(["pack", "move", "insert", "getn", "foreachi", "foreach", "concat", "unpack", "find", "create", "sort", "remove"]),
-		utf8: new Set(["offset", "codepoint", "nfdnormalize", "char", "codes", "len", "graphemes", "nfcnormalize", "charpattern"])
+		os: new Set(["clock", "difftime", "time", "date"]),
+		string: new Set(["split", "match", "gmatch", "upper", "gsub", "format", "lower", "sub", "pack", "find", "char", "packsize", "reverse", "byte", "unpack", "rep", "len"]),
+		table: new Set(["getn", "foreachi", "foreach", "sort", "unpack", "freeze", "clear", "pack", "move", "insert", "create", "maxn", "isfrozen", "concat", "clone", "find", "remove"]),
+		utf8: new Set(["offset", "codepoint", "nfdnormalize", "char", "codes", "len", "graphemes", "nfcnormalize", "charpattern"]),
+		task: new Set(["defer", "cancel", "wait", "desynchronize", "synchronize", "delay", "spawn"]),
 	}
-
+	
 	const Operators = new Set([
 		"+", "-", "*", "/", "%", "^", ">", "<", "=",
 		"+=", "-=", "*=", "/=", "%=", "^=", ">=", "<=", "==", "~=",
@@ -63,8 +63,7 @@ const btrSourceViewer = (() => {
 	const ScopeInOut = new Set(["else"])
 
 	async function parseSource(source, parent) {
-		let tableSelector = null
-		let tableSelectorState = false
+		const indexState = { depth: 0, parent: "root", state: false }
 		let textBuffer = ""
 		let lineN = 0
 		let depth = 0
@@ -94,6 +93,8 @@ const btrSourceViewer = (() => {
 			if(!current) {
 				return
 			}
+			
+			flushText()
 
 			current.elem.dataset.depth = current.depth
 			
@@ -178,17 +179,15 @@ const btrSourceViewer = (() => {
 				appendUntil(newLine)
 			}
 		}
+		
+		const flushText = () => {
+			if(textBuffer.length) {
+				current.list.append(textBuffer)
+				textBuffer = ""
+			}
+		}
 
 		const appendText = textInput => {
-			if(textInput === true) {
-				if(textBuffer.length) {
-					current.list.append(textBuffer)
-					textBuffer = ""
-				}
-
-				return
-			}
-
 			textBuffer += textInput
 		}
 
@@ -205,14 +204,14 @@ const btrSourceViewer = (() => {
 			parent.append(content)
 
 			let loadingLineN = 0
-
-			allLines.forEach(lineText => {
+			
+			for(const lineText of allLines) {
 				loadingLinesParent.append(html`
 				<div class=btr-line-container>
 					<div class=btr-linenumber contenteditable=false>${++loadingLineN}</div>
 					<span class=btr-linetext>${lineText + "\n"}</span>
 				</div>`)
-			})
+			}
 		}
 
 		while(true) {
@@ -229,7 +228,6 @@ const btrSourceViewer = (() => {
 			text = match[0]
 			if(text === "\n") {
 				appendText("\n")
-				appendText(true)
 				createLine()
 				continue
 			}
@@ -250,14 +248,12 @@ const btrSourceViewer = (() => {
 			} else if(text === "\"" || text === "'") {
 				textType = "string"
 				genericAppend(text)
-			} else if(Keywords.has(text)) {
-				textType = "keyword"
-			} else if(Globals.has(text)) {
-				textType = "global"
 			} else if(Operators.has(text)) {
 				textType = "operator"
 			} else if(NumberRegex.test(text)) {
 				textType = "number"
+			} else if(/[^\n\S]+/.test(text)) {
+				textType = "whitespace"
 			}
 
 			if(ScopeIn.has(text)) {
@@ -274,35 +270,58 @@ const btrSourceViewer = (() => {
 				}
 			}
 			
-			if(text in Tables) {
-				textType = "global"
-				
-				tableSelector = Tables[text]
-				tableSelectorState = false
-			} else if(tableSelector) {
-				if(tableSelectorState) {
-					if(tableSelector.has(text)) {
-						textType = "global"
+			if(textType !== "whitespace" && textType !== "comment") {
+				if(indexState.state && (text === "." || text === ":")) {
+					indexState.depth += 1
+					indexState.state = false
+					
+				} else if(textType === "text") {
+					if(indexState.state) {
+						indexState.depth = 0
+						indexState.state = false
 					}
-
-					tableSelector = null
-				} else {
-					if(text === ".") {
-						textType = "global"
-						tableSelectorState = true
+					
+					if(indexState.depth === 0) {
+						if(Keywords.has(text) || text === "self") {
+							textType = "keyword"
+						} else if(Globals.has(text) || text in Tables) {
+							textType = "global"
+						} else if(text === "true" || text === "false" || text === "nil") {
+							textType = "nilbool"
+						}
 					} else {
-						tableSelector = null
+						textType = "property"
+						
+						if(indexState.depth === 1 && Tables[indexState.parent]?.has(text)) {
+							textType = "global"
+						}
 					}
+					
+					if(textType === "text" || textType === "property") {
+						const lastIndex = ParseRegex.lastIndex
+						const peek = ParseRegex.exec(source)?.[0]
+						ParseRegex.lastIndex = lastIndex
+						
+						if(peek === "(" || peek === "\"" || peek === "'" || peek === "{") {
+							textType = "method"
+						}
+					}
+					
+					indexState.parent = text
+					indexState.state = true
+					
+				} else {
+					indexState.depth = 0
+					indexState.state = false
 				}
 			}
 
-			const textLines = text.split("\n")
+			const textLines = text.split(/\n/)
 			const multiline = (textType === "comment" || textType === "string") && textLines.length > 1
-
-			textLines.forEach((line, index) => {
+			
+			for(const [index, line] of Object.entries(textLines)) {
 				if(index > 0) {
 					appendText("\n")
-					appendText(true)
 					createLine()
 				}
 
@@ -316,17 +335,37 @@ const btrSourceViewer = (() => {
 				}
 
 				if(textType === "text") {
-					appendText(line)
+					appendText(text)
+					
+				} else if(textType === "whitespace") {
+					flushText()
+					
+					for(let i = 0; i < line.length; i++) {
+						if(line[i] === "\t") {
+							const span = html`<span></span>`
+							span.className = "btr-sourceviewer-tab"
+							span.textContent = line[i]
+			
+							current.list.append(span)
+						} else {
+							const span = html`<span></span>`
+							span.className = "btr-sourceviewer-space"
+							span.textContent = line[i]
+			
+							current.list.append(span)
+						}
+					}
+					
 				} else {
-					appendText(true)
-
+					flushText()
+					
 					const span = html`<span></span>`
 					span.className = "btr-sourceviewer-" + textType
 					span.textContent = line
 	
 					current.list.append(span)
 				}
-			})
+			}
 		}
 
 		finishLine()
