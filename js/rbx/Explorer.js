@@ -113,6 +113,12 @@ const Explorer = (() => {
 				<div class=btr-sourceviewer-modal>
 					<div class=btr-sourceviewer-container>
 						<div class=btr-sourceviewer-header>
+							<div class=btr-sourceviewer-settings-button></div>
+							<div class=btr-sourceviewer-settings>
+								<div class=btr-sourceviewer-setting-label>Tab Width</div><div class=btr-sourceviewer-setting-value><input data-sv-setting=tabwidth type=number></input></div>
+								<div class=btr-sourceviewer-setting-label>Text Wrapping</div><div class=btr-sourceviewer-setting-value><input data-sv-setting=wrapping type=checkbox></input></div>
+								<div class=btr-sourceviewer-setting-label>Show Whitespace</div><div class=btr-sourceviewer-setting-value><input data-sv-setting=whitespace type=checkbox></input></div>
+							</div>
 						</div>
 						<div class=btr-sourceviewer-content>
 						</div>
@@ -129,8 +135,67 @@ const Explorer = (() => {
 					this.closeSourceViewer()
 				})
 
-				this.sourceViewerModal.$find(".btr-sourceviewer-container").$on("click", ev => {
+				this.sourceViewerModal.$find(".btr-sourceviewer-settings-button").$on("click", ev => {
 					ev.preventDefault()
+					ev.stopPropagation()
+					ev.stopImmediatePropagation()
+					
+					ev.target.classList.toggle("active")
+				})
+				
+				const svSettings = {
+					tabwidth: 4,
+					wrapping: true,
+					whitespace: true
+				}
+				
+				try {
+					const savedSettings = JSON.parse(localStorage.getItem("btr-sv-settings"))
+					
+					if(savedSettings) {
+						for(const [key, value] of Object.entries(savedSettings)) {
+							if(key in svSettings && typeof value === typeof svSettings[key]) {
+								svSettings[key] = value
+							}
+						}
+					}
+				} catch(ex) {}
+				
+				const update = () => {
+					try { localStorage.setItem("btr-sv-settings", JSON.stringify(svSettings)) }
+					catch(ex) {}
+					
+					this.sourceViewerModal.$find(".btr-sourceviewer-content").style = `
+					--sv-tabwidth:${svSettings.tabwidth};
+					${svSettings.wrapping ? "" : "--sv-wrapping:pre;"}
+					${svSettings.whitespace ? "" : "--sv-whitespace:none;"};`
+				}
+				
+				for(const setting of Object.keys(svSettings)) {
+					update(setting)
+				}
+				
+				for(const input of this.sourceViewerModal.$findAll(".btr-sourceviewer-setting-value input")) {
+					const setting = input.dataset.svSetting
+					
+					if(input.type === "checkbox") {
+						input.checked = svSettings[setting]
+						
+						input.$on("change", () => {
+							svSettings[setting] = input.checked
+							update(setting)
+						})
+					} else {
+						input.value = svSettings[setting]
+						
+						input.$on("change", () => {
+							svSettings[setting] = input.value
+							update(setting)
+						})
+					}
+				}
+				
+				this.sourceViewerModal.$find(".btr-sourceviewer-container").$on("click", ev => {
 					ev.stopPropagation()
 					ev.stopImmediatePropagation()
 				})

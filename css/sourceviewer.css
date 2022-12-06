@@ -38,6 +38,12 @@
 }
 
 .btr-sourceviewer-header {
+	position: relative;
+	padding-right: 25px;
+	
+	color: #000;
+	font-size: 12px;
+	
 	grid-area: header;
 	background: #F2F2F2;
 	border: 1px solid #B6B6B6;
@@ -96,6 +102,106 @@
 	color: #C7C7C7;
 }
 
+/* */
+
+.btr-sourceviewer-header .btr-sourceviewer-settings-button {
+	position: absolute;
+	right: 0;
+	top: 0;
+	width: 25px;
+	height: 100%;
+	border-left: 1px solid #B6B6B6;
+	
+	user-select: none;
+	cursor: pointer;
+}
+
+.btr-sourceviewer-header .btr-sourceviewer-settings-button:hover {
+	background: #E4EEFE;
+}
+
+.btr-sourceviewer-header .btr-sourceviewer-settings-button.active {
+	background: white;
+}
+
+.btr-sourceviewer-header .btr-sourceviewer-settings-button::before {
+	display: block;
+	content: "\2699";
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	text-align: center;
+	font-size: 18px;
+	left: 0;
+	top: 2px;
+	
+	user-select: none;
+	pointer-events: none;
+}
+
+.btr-sourceviewer-settings {
+	position: absolute;
+	top: 100%;
+	right: -1px;
+	
+	width: 300px;
+	z-index: 2;
+	
+	
+	background: white;
+	border: 1px solid #B6B6B6;
+	
+	display: none;
+	grid: auto-flow / max-content auto;
+	
+	cursor: default;
+	user-select: none;
+}
+
+.btr-sourceviewer-settings, .btr-sourceviewer-settings * {
+	font-size: 12px !important;
+	color: black !important;
+	font-weight: 300 !important;
+}
+
+.btr-sourceviewer-header .btr-sourceviewer-settings-button.active + .btr-sourceviewer-settings {
+	display: grid;
+}
+
+.btr-sourceviewer-setting-label {
+	border-right: 1px solid #B6B6B6;
+	padding: 4px 8px;
+}
+
+.btr-sourceviewer-setting-value {
+	padding: 0;
+}
+
+.btr-sourceviewer-setting-label:not(:nth-child(-n + 2)),
+.btr-sourceviewer-setting-value:not(:nth-child(-n + 2)) {
+	border-top: 1px solid #B6B6B6;
+}
+
+.btr-sourceviewer-setting-value input[type="number"] {
+	display: block;
+	width: 100%;
+	height: 100%;
+	border: none;
+	padding-left: 8px;
+	background: none;
+	color: black;
+}
+
+.btr-sourceviewer-setting-value input[type="checkbox"] {
+	display: block;
+	margin: 0;
+	padding: 0;
+	margin-left: 5px;
+	height: 100%;
+	
+}
+
+/* */
 
 .btr-sourceviewer-content {
 	grid-area: content;
@@ -140,22 +246,21 @@
 	font-family: "Courier New" !important;
 	font-size: 14px !important;
 	font-weight: 300;
-
 	line-height: 18px;
-
-	tab-size: 4;
-	-moz-tab-size: 4;
 
 	color: #000;
 }
 
 .btr-sourceviewer-source-container {
-	white-space: break-spaces;
+	white-space: var(--sv-wrapping, break-spaces);
 	word-break: break-word;
 
 	position: relative;
 	min-height: 100%;
 
+	tab-size: var(--sv-tabwidth, 4);
+	-moz-tab-size: var(--sv-tabwidth, 4);
+	
 	display: flex;
 	flex-direction: row;
 
@@ -288,6 +393,37 @@
 
 .btr-sourceviewer-source-container .btr-linetext {
 	padding: 1px 0;
+}
+
+.btr-sourceviewer-source-container .btr-sourceviewer-tab,
+.btr-sourceviewer-source-container .btr-sourceviewer-space {
+	position: relative;
+}
+
+.btr-sourceviewer-source-container .btr-sourceviewer-tab::before {
+	position: absolute;
+	display: var(--sv-whitespace, "inline");
+	width: 100%;
+	
+	text-align: center;
+	content: "\2192";
+	opacity: 0.25;
+	
+	user-select: none;
+	pointer-events: none;
+}
+
+.btr-sourceviewer-source-container .btr-sourceviewer-space::before {
+	position: absolute;
+	display: var(--sv-whitespace, "inline");
+	width: 100%;
+	
+	text-align: center;
+	content: "\B7";
+	opacity: 0.4;
+	
+	user-select: none;
+	pointer-events: none;
 }
 
 .btr-sourceviewer-source-container .btr-sourceviewer-string { color: rgb(127, 0, 127); }
