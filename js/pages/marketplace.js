@@ -120,7 +120,7 @@ pageInit.marketplace = () => {
 		
 		if(nextPage) {
 			currPageParams = nextPageParams
-			currPageObj = new nextPage(currPageParams)
+			currPageObj = new nextPage(...currPageParams)
 			currPage = nextPage
 		}
 	}
