@@ -735,6 +735,203 @@ pageInit.common = () => {
 		})
 	}
 	
+	if(SETTINGS.get("groups.shoutAlerts") && SETTINGS.get("groups.shoutAlertsInNotifStream")) {
+		const streamItems = document.getElementsByClassName("notification-stream-item")
+		const groupShoutInfo = {}
+		
+		const groupIconRequest = []
+		let groupIconRequestPromise
+		
+		const requestGroupIcon = groupId => {
+			if(!groupIconRequest.includes(groupId)) {
+				groupIconRequest.push(groupId)
+			}
+			
+			if(!groupIconRequestPromise) {
+				groupIconRequestPromise = new Promise(resolve => {
+					setTimeout(() => {
+						RobloxApi.thumbnails.getGroupIcons(groupIconRequest.splice(0, groupIconRequest.length))
+							.then(resolve)
+					}, 0)
+				})
+			}
+			
+			return groupIconRequestPromise.then(data => data.find(x => x.targetId === groupId))
+		}
+		
+		new MutationObserver(() => {
+			for(const streamItem of streamItems) {
+				const groupId = parseInt(streamItem.id.match(/btr-groupshout-(\d+)/)?.[1], 10)
+				if(!Number.isSafeInteger(groupId)) { continue }
+				
+				const shout = groupShoutInfo[groupId]
+				if(shout && !streamItem.dataset.btrPopulated) {
+					streamItem.dataset.btrPopulated = true
+					streamItem.style.padding = "0"
+					
+					const url = `/groups/${shout.groupId}/${formatUrlName(shout.groupName)}`
+					
+					streamItem.append(html`
+					<div class=legacy-notif-base>
+						<div class="notif-content-container">
+							<a href="${url}" style=display:contents>
+								<span class="thumbnail-2d-container game-icon-container shimmer">
+									<img class="loading" src="" alt="" title="">
+								</span>
+							</a>
+							<div class="small text text-content">
+								<span>
+									<a href="${url}" style=display:contents>
+										<b style=display:block><span class=btr-notif-title>${shout.groupName}</span></b>
+									</a>
+									<span class=btr-notif-desc>${shout.body}</span>
+								</span>
+								<span class=btr-notif-date>${new Date(shout.updated).$format("MMM D, YYYY | hh:mm A")}</span>
+							</div>
+						</div>
+					</div>`)
+					
+					robloxLinkify(streamItem.$find(".btr-notif-desc"))
+					
+					requestGroupIcon(shout.groupId).then(icon => {
+						const thumbnail = streamItem.$find(".thumbnail-2d-container")
+						const img = thumbnail.$find("img")
+						
+						img.src = icon.imageUrl
+						thumbnail.classList.remove("shimmer")
+						img.classList.remove("loading")
+					})
+				}
+			}
+		}).observe(document.documentElement, { childList: true, subtree: true })
+		
+		InjectJS.listen("getRecentShouts", () => {
+			MESSAGING.send("getRecentShouts", shouts => {
+				for(const shout of shouts) {
+					groupShoutInfo[shout.groupId] = shout
+				}
+				
+				InjectJS.send("setRecentShouts", shouts)
+			})
+		})
+		
+		InjectJS.listen("markShoutsAsInteracted", () => {
+			MESSAGING.send("markShoutsAsInteracted")
+		})
+		
+		InjectJS.inject(() => {
+			const { hijackAngular, hijackFunction, onSet, IS_DEV_MODE, contentScript } = window.BTRoblox
+			const shoutNotifications = []
+			const shoutListeners = []
+			
+			contentScript.listen("setRecentShouts", notifs => {
+				shoutNotifications.splice(0, shoutNotifications.length, ...notifs)
+				
+				for(const fn of shoutListeners.splice(0, shoutListeners.length)) {
+					fn(shoutNotifications)
+				}
+			})
+			
+			hijackAngular("notificationStream", {
+				notificationStreamController(handler, args, argsMap) {
+					try {
+						const { $scope, notificationStreamService } = argsMap
+						let addShoutsToNotifs = false
+						
+						onSet($scope, "getRecentNotifications", () => {
+							hijackFunction($scope, "getRecentNotifications", (target, thisArg, args) => {
+								addShoutsToNotifs = true
+								const result = target.apply(thisArg, args)
+								addShoutsToNotifs = false
+								
+								return result
+							})
+						})
+						
+						hijackFunction(notificationStreamService, "getRecentNotifications", (target, thisArg, args) => {
+							const result = target.apply(thisArg, args)
+							
+							if(addShoutsToNotifs) {
+								const promise = new Promise(resolve => shoutListeners.push(resolve))
+								contentScript.send("getRecentShouts")
+								
+								return result.then(async data => {
+									const shouts = await promise
+									
+									try {
+										for(const shout of shouts) {
+											const entry = {
+												id: `btr-groupshout-${shout.groupId}`,
+												notificationSourceType: "BTRobloxGroupShout",
+												eventDate: shout.updated,
+												isInteracted: shout.interacted,
+												metadataCollection: [],
+												eventCount: 1,
+												content: null
+											}
+											
+											$scope.notifications[entry.id] = entry
+											
+											if($scope.notificationIds.indexOf(entry.id) === -1) {
+												$scope.notificationIds.push(entry.id)
+											}
+										}
+									} catch(ex) {}
+									
+									return data
+								})
+							}
+							
+							return result
+						})
+						
+					} catch(ex) {
+						console.error(ex)
+						if(IS_DEV_MODE) { alert("hijackAngular Error") }
+					}
+					
+					const result = handler.apply(this, args)
+					return result
+				},
+				
+				notificationStreamService(handler, args, argsMap) {
+					const result = handler.apply(this, args)
+					
+					try {
+						hijackFunction(result, "unreadCount", (target, thisArg, args) => {
+							const result = target.apply(thisArg, args)
+							const promise = new Promise(resolve => shoutListeners.push(resolve))
+							
+							contentScript.send("getRecentShouts")
+							
+							return result.then(async data => {
+								const shouts = await promise
+								
+								for(const shout of shouts) {
+									if(!shout.interacted) {
+										data.unreadNotifications += 1
+									}
+								}
+								
+								return data
+							})
+						})
+						
+						hijackFunction(result, "clearUnread", (target, thisArg, args) => {
+							contentScript.send("markShoutsAsInteracted")
+							return target.apply(thisArg, args)
+						})
+					} catch(ex) {
+						console.error(ex)
+						if(IS_DEV_MODE) { alert("hijackAngular Error") }
+					}
+					
+					return result
+				}
+			})
+		})
+	}
+	
 	// Chat
 	
 	if(SETTINGS.get("general.hideChat")) {

@@ -113,6 +113,13 @@ const btrSettingsModal = (() => {
 					<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
 					<h4>Group Shout Filters</h4>
 				</div>
+				<group path=groups>
+					<div>
+						<checkbox label="Group Shout Notifications" path=shoutAlerts></checkbox>
+					</div>
+					<checkbox label="Browser Notifications" path=shoutAlertBrowserNotifs require=shoutAlerts></checkbox>
+					<checkbox label="Show In Notification Stream" path=shoutAlertsInNotifStream require=shoutAlerts></checkbox>
+				</group>
 				<div class=btr-filter-lists>
 					<div class=btr-filter-list>
 						<h5 class=btr-filter-list-header>Enabled</h5>

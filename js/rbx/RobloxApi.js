@@ -290,6 +290,10 @@ const RobloxApi = {
 		getAssetThumbnails: backgroundCall((assetIds, size) =>
 			backgroundFetch(`https://thumbnails.roblox.com/v1/assets?assetIds=${assetIds.join(",")}&size=${size}&format=Png`)
 				.then(async res => (await res.json()).data)
+		),
+		getGroupIcons: backgroundCall((groupIds, size = "150x150", isCircular = false) =>
+			backgroundFetch(`https://thumbnails.roblox.com/v1/groups/icons?groupIds=${groupIds.join(",")}&size=${size}&format=Png&isCircular=${isCircular}`)
+				.then(async res => (await res.json()).data)
 		)
 	},
 	www: {

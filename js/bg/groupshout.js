@@ -27,8 +27,8 @@
 		savingShoutCache = true
 		setTimeout(async () => {
 			const shoutCache = await getShoutCache()
+			
 			STORAGE.set({ shoutCache: shoutCache })
-
 			savingShoutCache = false
 		}, 1000)
 	}
@@ -150,58 +150,59 @@
 			}
 			
 			// Checking for time difference of > 100 because the updated timestamp seems to fluctuate slightly randomly
-			if(!hadShout || shoutEntry.hash !== hash || Math.abs((shoutEntry.ts ?? -1) - ts) > 100) {
-				let canShowNotif = true
-				
-				if(!shoutEntry) {
-					shoutEntry = shoutCache.groups[groupId] = {}
-					canShowNotif = false // do not show a notification the first time we get a shout
-				}
+			if(!hadShout || shoutEntry.hash !== hash || Math.abs((shoutEntry.ts ?? -1) - ts) > 1000) {
+				shoutEntry = shoutCache.groups[groupId] = {}
 				
 				if(hasShout) {
 					shoutEntry.hash = hash
 					shoutEntry.ts = ts
-				} else {
-					delete shoutEntry.hash
-					delete shoutEntry.ts
-				}
-				
-				if(hasShout && canShowNotif) {
-					shoutEntry.visible = true
-				} else {
-					delete shoutEntry.visible
+					
+					if(hadShout) { // do not show a notification the first time we get a shout
+						shoutEntry.visible = true
+					}
 				}
 				
 				saveShoutCache()
 			}
 			
-			if(shoutEntry.visible) {
-				const notifId = `groupshout-${groupId}-${shoutEntry.hash}`
+			if(hasShout) {
+				const details = { ...data.shout, groupName: data.name }
 				
-				isNotifVisible(notifId).then(async isVisible => {
-					if(isVisible) {
-						if(IS_CHROME) { chrome.notifications.update(notifId, {}) } // Re-push on chrome if broken
-						return
-					}
+				if(JSON.stringify(shoutEntry.details) !== JSON.stringify(details)) {
+					shoutEntry.details = details
+					saveShoutCache()
+				}
+			}
+			
+			if(SETTINGS.get("groups.shoutAlertBrowserNotifs")) {
+				if(shoutEntry.visible) {
+					const notifId = `groupshout-${groupId}-${shoutEntry.hash}`
 					
-					const thumbUrl = await getGroupThumbUrl(groupId)
-					if(await isNotifVisible(notifId)) { return }
-					
-					const params = {
-						type: "basic",
-						title: data.name,
-						iconUrl: thumbUrl || getURL("res/icon_128.png"),
-						message: data.shout.body,
-						contextMessage: data.shout.poster.username,
+					isNotifVisible(notifId).then(async isVisible => {
+						if(isVisible) {
+							if(IS_CHROME) { chrome.notifications.update(notifId, {}) } // Re-push on chrome if broken
+							return
+						}
+						
+						const thumbUrl = await getGroupThumbUrl(groupId)
+						if(await isNotifVisible(notifId)) { return }
+						
+						const params = {
+							type: "basic",
+							title: data.name,
+							iconUrl: thumbUrl || getURL("res/icon_128.png"),
+							message: data.shout.body,
+							contextMessage: data.shout.poster.username,
 
-						priority: 2,
-						requireInteraction: true,
-						eventTime: shoutEntry.ts
-					}
+							priority: 2,
+							requireInteraction: true,
+							eventTime: shoutEntry.ts
+						}
 
-					if(IS_FIREFOX) { delete params.requireInteraction }
-					chrome.notifications.create(notifId, params)
-				})
+						if(IS_FIREFOX) { delete params.requireInteraction }
+						chrome.notifications.create(notifId, params)
+					})
+				}
 			}
 		}).finally(() => {
 			numAvailableShoutCheckers++
@@ -245,7 +246,7 @@
 	
 	let checkInterval
 	const onUpdate = () => {
-		const shouldCheck = !!SETTINGS.get("groups.shoutAlerts")
+		const shouldCheck = SETTINGS.get("groups.shoutAlerts")
 
 		if(shouldCheck) {
 			if(IS_CHROME) {
@@ -271,15 +272,22 @@
 	}
 	
 	chrome.notifications.onClosed.addListener(async (notifId, byUser) => {
-		if(notifId.startsWith("groupshout-") && (byUser || IS_FIREFOX)) {
+		if(notifId.startsWith("groupshout-") && (IS_CHROME && byUser || IS_FIREFOX)) {
 			const [, id, hash] = notifId.split("-")
 			
 			const shoutCache = await getShoutCache()
 			const shoutEntry = shoutCache.groups[+id]
 			
-			if(shoutEntry && shoutEntry.hash === hash && shoutEntry.visible) {
-				delete shoutEntry.visible
-				saveShoutCache()
+			if(shoutEntry && shoutEntry.hash === hash) {
+				if(shoutEntry.visible) {
+					delete shoutEntry.visible
+					saveShoutCache()
+				}
+				
+				if(IS_CHROME && byUser) {
+					shoutEntry.interacted = true
+					saveShoutCache()
+				}
 			}
 		}
 	})
@@ -287,6 +295,14 @@
 	chrome.notifications.onClicked.addListener(async notifId => {
 		if(notifId.startsWith("groupshout-")) {
 			const [, id, hash] = notifId.split("-")
+			
+			const shoutCache = await getShoutCache()
+			const shoutEntry = shoutCache.groups[+id]
+			
+			if(shoutEntry && shoutEntry.hash === hash) {
+				shoutEntry.interacted = true
+				saveShoutCache()
+			}
 			
 			chrome.tabs.create({ url: `https://www.roblox.com/groups/${id}/group` })
 			chrome.notifications.clear(notifId)
@@ -297,6 +313,45 @@
 	SETTINGS.onChange("groups.shoutAlerts", onUpdate)
 
 	MESSAGING.listen({
+		async getRecentShouts(data, respond) {
+			const shoutCache = await getShoutCache()
+			const shoutFilters = await getShoutFilters()
+			const shouts = []
+			
+			for(const [groupIdString, shout] of Object.entries(shoutCache.groups)) {
+				const groupId = +groupIdString
+				
+				const blacklist = shoutFilters.mode === "blacklist"
+				const includes = shoutFilters[shoutFilters.mode].includes(groupId)
+				if((blacklist && includes) || (!blacklist && !includes)) { continue }
+				
+				if(shout.details && Date.now() - Date.parse(shout.details.updated) < 31 * 24 * 3600 * 1000) {
+					const details = {
+						...shout.details,
+						interacted: shout.interacted || false,
+						groupId: groupId
+					}
+					
+					shouts.push(details)
+				}
+			}
+			
+			respond(shouts)
+		},
+		
+		async markShoutsAsInteracted(data, respond) {
+			const shoutCache = await getShoutCache()
+			
+			for(const shout of Object.values(shoutCache.groups)) {
+				if(!shout.interacted) {
+					shout.interacted = true
+					saveShoutCache()
+				}
+			}
+			
+			respond()
+		},
+		
 		getShoutFilters(data, respond) {
 			getShoutFilters().then(shoutFilters => {
 				respond(shoutFilters)

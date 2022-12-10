@@ -73,6 +73,8 @@ const DEFAULT_SETTINGS = {
 	},
 	groups: {
 		shoutAlerts: { value: false },
+		shoutAlertBrowserNotifs: { value: true },
+		shoutAlertsInNotifStream: { value: false },
 		redesign: { value: true },
 		modifyLayout: { value: true },
 		selectedRoleCount: { value: true },
@@ -348,5 +350,19 @@ if(IS_BACKGROUND_PAGE) {
 	SHARED_DATA.load(() => {
 		if(!SHARED_DATA.get("settings")) { return }
 		SETTINGS._load(SHARED_DATA.get("settings"))
+		
+		// We always want to have at least one group alerts setting enabled
+		
+		SETTINGS.onChange("groups.shoutAlertBrowserNotifs", () => {
+			if(!SETTINGS.get("groups.shoutAlertBrowserNotifs") && !SETTINGS.get("groups.shoutAlertsInNotifStream")) {
+				SETTINGS.set("groups.shoutAlertsInNotifStream", true)
+			}
+		})
+		
+		SETTINGS.onChange("groups.shoutAlertsInNotifStream", () => {
+			if(!SETTINGS.get("groups.shoutAlertBrowserNotifs") && !SETTINGS.get("groups.shoutAlertsInNotifStream")) {
+				SETTINGS.set("groups.shoutAlertBrowserNotifs", true)
+			}
+		})
 	})
 }
