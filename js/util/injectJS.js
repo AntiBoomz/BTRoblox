@@ -31,7 +31,7 @@ const InjectJS = {
 		
 		BTRoblox.element.append(injector)
 		
-		injector.click()
+		injector.dispatchEvent(new CustomEvent("click"))
 		injector.remove()
 		
 		return result
