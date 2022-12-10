@@ -383,7 +383,7 @@ const Explorer = (() => {
 						} else {
 							const id = AssetCache.resolveAssetId(value)
 							if(id) {
-								const more = html`<a class=more href="/library/${id}/Redirect" target=_blank>🔗</a>`
+								const more = html`<a class=more href="https://www.roblox.com/library/${id}/Redirect" target=_blank>🔗</a>`
 								more.title = "Go to asset"
 								valueItem.append(more)
 							}
