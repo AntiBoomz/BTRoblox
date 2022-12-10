@@ -56,7 +56,7 @@ pageInit.marketplace = () => {
 				this.explorerPromise.then(elem => this.addButton("explorer", elem))
 			}
 			
-			this.anchor.prepend(...[
+			this.anchor?.prepend(...[
 				this.buttons.content,
 				this.buttons.download,
 				this.buttons.explorer
