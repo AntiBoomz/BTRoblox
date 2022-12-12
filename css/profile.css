@@ -394,6 +394,7 @@ html .dark-theme.btr-profile .btr-section-content-off {
 .btr-profile .btr-games-list .btr-game-button .btr-game-title {
 	user-select: initial;
 	-moz-user-select: none;
+	overflow-wrap: break-word;
 }
 
 .btr-profile .btr-games-list .btr-game-content {
