@@ -1054,6 +1054,12 @@ a:not(.disabled):hover > .btr-icon-content {
 	filter: invert(30%);
 }
 
+/* groups.shoutAlertsInNotifStream */
+
+.btr-notif-desc {
+	overflow-wrap: anywhere;
+}
+
 /* Ew */
 
 #downloadInstallerIFrame {
