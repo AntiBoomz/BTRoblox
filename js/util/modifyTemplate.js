@@ -56,6 +56,9 @@ function modifyTemplate(keyArray, callback) {
 }
 
 InjectJS.listen("initTemplate", (key, html) => {
+	// self closing tag support
+	html = html.replace(/<([\w-:]+)([^>]*)\/>/gi, "<$1$2></$1>")
+	
 	const cacheEntry = templateCache[key]
 	cacheEntry.body = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html").body
 	
