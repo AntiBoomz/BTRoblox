@@ -31,8 +31,8 @@ body .btr-game-main-container {
 	padding-right: 0;
 }
 
-.btr-game-main-container .game-calls-to-action .game-title-container {
-	padding-right: 30px;
+.btr-game-main-container .game-title-container {
+	overflow-wrap: break-word;
 }
 
 .btr-description {
