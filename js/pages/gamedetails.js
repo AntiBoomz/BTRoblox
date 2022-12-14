@@ -641,6 +641,21 @@ pageInit.gamedetails = placeId => {
 					URL.revokeObjectURL(blobUrl)
 				})
 			})
+			
+			initExplorer(placeId, AssetType.Place).then(btnCont => {
+				if(!btnCont) { return }
+				
+				btnCont.$find(".btr-explorer-button").style.display = "none"
+				$("#game-context-menu").append(btnCont)
+				
+				placeEdit.parentNode.parentNode.append(
+					html`<li><a class=btr-open-in-explorer><div>Open in Explorer</div></a></li>`
+				)
+				
+				document.$on("click", ".btr-open-in-explorer", () => {
+					btnCont.$find(".btr-explorer-button").click()
+				})
+			})
 		}
 	})
 }
