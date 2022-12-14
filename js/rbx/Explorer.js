@@ -30,7 +30,17 @@ const Explorer = (() => {
 		const bo = ApiDump.getExplorerOrder(b.ClassName)
 		return ao !== bo ? ao - bo : (a.Name < b.Name ? -1 : 1)
 	}
-
+	
+	const instToItemSymbol = Symbol("btrInstanceToItem")
+	
+	const widthCalcCanvas = document.createElement("canvas")
+	const ctx = widthCalcCanvas.getContext("2d")
+	ctx.font = `300 12px "Source Sans Pro", Arial, Helvetica, sans-serif`
+	
+	const getLineWidth = (text, depth) => {
+		return ctx.measureText(text).width + 47 + depth * 20
+	}
+	
 	return class {
 		constructor() {
 			this.models = []
@@ -39,45 +49,88 @@ const Explorer = (() => {
 			this.sourceViewerTabs = []
 			this.selectedSourceViewerTab = null
 			this.sourceViewerModal = null
+			
+			this.modelCounter = 0
+			this.lineHeight = 20
+			this.active = false
+			
+			this.currentFilter = ""
+			this.lines = []
+			
+			window.explorer = this
+			
+			this.filterView = {
+				query: "",
+				model: null,
+				matches: new Set(),
+				visible: new Set(),
+				numOpenDescendants: new Map(),
+				maxOpenWidth: new Map()
+			}
+			
+			this.defaultView = {
+				numOpenDescendants: new Map(),
+				maxOpenWidth: new Map()
+			}
 
 			const element = this.element = html`
-			<div class="btr-explorer-parent">
-				<div class="btr-explorer">
-					<div class="btr-explorer-header">Explorer</div>
-					<div class="input-group-btn btr-dropdown-container" style="display: none">
-						<button type=button class=input-dropdown-btn>
-							<span class=rbx-selection-label style="font-size:14px;line-height:20px"></span>
-							<span class=icon-down-16x16 style="margin-left:8px"></span>
-						</button>
-						<ul class=dropdown-menu style="position:absolute;display:none">
-						</ul>
+			<div class=btr-explorer-parent>
+				<div class=btr-explorer>
+					<div class=btr-explorer-header>
+						Explorer
+						<div class=btr-dropdown-container style="display: none">
+							<button class=btr-dropdown-btn>
+								<span class=btr-dropdown-label></span>
+								<span class=icon-down-16x16 style=vertical-align:initial></span>
+							</button>
+							<ul class=btr-dropdown-menu style="position:absolute;display:none">
+							</ul>
+						</div>
 					</div>
-					<div class="btr-explorer-loading" style="text-align:center;margin-top:12px;">Loading</div>
+					<div class=btr-explorer-filter>
+						<input class=btr-explorer-filter-input type=text placeholder="Filter model">
+					</div>
+					<div class=btr-explorer-list style=display:none>
+						<div class=btr-explorer-inner-list></div>
+						<div class=btr-explorer-list-status style=display:none></div>
+					</div>
+					<div class=btr-explorer-loading style="text-align:center;margin-top:12px;">Loading</div>
 				</div>
-				<div class="btr-properties">
-					<div class="btr-properties-header"></div>
-					<div class="btr-properties-container">
+				<div class=btr-properties>
+					<div class=btr-properties-header></div>
+					<div class=btr-properties-container>
 					</div>
 				</div>
 			</div>"`
 			
-			const dropdownBtn = element.$find(".input-dropdown-btn")
-			const dropdownMenu = element.$find(".dropdown-menu")
+			this.dropdown = this.element.$find(".btr-dropdown-container")
+			this.innerList = this.element.$find(".btr-explorer-inner-list")
+			this.listStatus = this.element.$find(".btr-explorer-list-status")
+			
+			const dropdownBtn = element.$find(".btr-dropdown-btn")
+			const dropdownMenu = element.$find(".btr-dropdown-menu")
 
-			element.$on("click", ".btr-explorer", () => {
+			element.$find(".btr-explorer-list").$on("click", () => {
 				this.select([])
 			})
 
 			element.$on("click", ev => {
 				ev.stopPropagation()
 			})
+			
+			this.filterInput = element.$find(".btr-explorer-filter-input")
+			
+			this.filterInput.$on("input", () => {
+				this.setFilter(this.filterInput.value)
+			})
 
-			dropdownBtn.$on("click", () => {
-				dropdownMenu.style.display = dropdownMenu.style.display ? "block" : "none"
+			dropdownBtn.$on("click", ev => {
+				ev.stopPropagation()
+				dropdownMenu.style.display = dropdownMenu.style.display === "none" ? "block" : "none"
 			})
 
 			document.$on("click", ev => {
-				if(!dropdownMenu.style.display && !dropdownMenu.parentNode.contains(ev.target)) {
+				if(dropdownMenu.style.display !== "none" && !dropdownMenu.parentNode.contains(ev.target)) {
 					dropdownMenu.style.display = "none"
 				}
 			}, { capture: true })
@@ -266,19 +319,13 @@ const Explorer = (() => {
 			this.sourceViewerModal.$find(".btr-sourceviewer-content").scrollTop = 0
 		}
 
-		select(items) {
-			const oldItems = this.selection
-			this.selection = items
-
-			oldItems.forEach(item => { item.element.classList.remove("selected") })
-			items.forEach(item => { item.element.classList.add("selected") })
-
+		updateProperties() {
 			const properties = this.element.$find(".btr-properties")
 			const header = properties.$find(".btr-properties-header")
 			const propertyContainer = properties.$find(".btr-properties-container")
 			propertyContainer.$empty()
 
-			if(!items.length) {
+			if(!this.selection.length) {
 				header.textContent = "Properties"
 				properties.classList.add("closed")
 				return
@@ -286,11 +333,12 @@ const Explorer = (() => {
 
 			properties.classList.remove("closed")
 
-			const target = items[0]
+			const target = this.selection[0].inst
 			header.textContent = `Properties - ${target.ClassName} "${target.Name}"`
 
 			const groups = []
 			const groupMap = {}
+			
 			Object.entries(target.Properties).forEach(([name, prop]) => {
 				if(RenamedProperties[name] && RenamedProperties[name] in target.Properties) { return }
 				name = RenamedProperties[name] || name
@@ -468,99 +516,486 @@ const Explorer = (() => {
 				})
 			})
 		}
-
-		addModel(title, model) {
-			const lists = this.element.$find(".btr-explorer")
-			const dropdown = this.element.$find(".btr-dropdown-container")
-
-			const element = html`<div class="btr-explorer-list hidden"></div>`
-			const btn = html`<li><a title="${title}" style="text-overflow:ellipsis;overflow:hidden;padding:8px 12px;">${title}</a></li>`
-
-			btn.$on("click", () => {
-				dropdown.$find(".dropdown-menu").style.display = "none"
-				dropdown.$find(".input-dropdown-btn .rbx-selection-label").textContent = title
-
-				lists.$findAll(">.btr-explorer-list").forEach(x => x.classList.add("hidden"))
-				element.classList.remove("hidden")
-
-				dropdown.$findAll(".dropdown-menu > li a").forEach(x => x.classList.remove("selected"))
-				btn.$find("a").classList.add("selected")
-
-				this.select([])
-			})
+		
+		select(instances) {
+			for(const item of this.selection) {
+				item.selected = false
+			}
 			
-			if(model) {
-				const inner = html`<div class=btr-explorer-inner-list>`
-				element.append(inner)
+			this.selection.splice(0, this.selection.length)
+			
+			for(const inst of instances) {
+				const item = inst[instToItemSymbol]
+				if(!item) { continue }
 				
-				const create = (inst, parent) => {
-					const icon = ApiDump.getExplorerIconIndex(inst.ClassName)
-					const item = html`
-					<div class=btr-explorer-item-container>
-						<div class=btr-explorer-more></div>
-						<div class=btr-explorer-item>
-							<div class=btr-explorer-icon style="background-position:-${icon * 16}px 0"></div>
-							${inst.Name}
-						</div>
-					</div>`
+				item.selected = true
+				this.selection.push(item)
+			}
+			
+			this.updateProperties()
+		}
 
-					const itemBtn = inst.element = item.$find(".btr-explorer-item")
-					let lastClick
-
-					itemBtn.$on("click", ev => {
-						this.select([inst])
-						ev.stopPropagation()
-
-						if(lastClick && Date.now() - lastClick < 500) {
-							lastClick = null
-
-							switch(inst.ClassName) {
-							case "Script":
-							case "LocalScript":
-							case "ModuleScript":
-								this.openSourceViewer(inst, "Source")
-								break
-							default:
-								item.classList.toggle("closed")
-							}
-						} else {
-							lastClick = Date.now()
-						}
-					})
-
-					parent.append(item)
-
-					if(inst.Children.length) {
-						item.classList.add("btr-explorer-has-children")
-						const childList = html`<div class=btr-explorer-childlist></div>`
+		setFilter(filter) {
+			this.filterInput.value = filter // we want leading spaces here so writing isnt jank
+			this.currentFilter = filter.trim()
+		}
+		
+		selectModel(model) {
+			this.selectedModel = model
+			
+			this.dropdown.$find(".btr-dropdown-menu").style.display = "none"
+			this.dropdown.$find(".btr-dropdown-label").textContent = model.title
+			
+			this.element.$find(".btr-explorer-list").style.display = ""
+			this.element.$find(".btr-explorer-loading").style.display = "none"
+			
+			for(const li of this.dropdown.$findAll(`.btr-dropdown-menu > li`)) {
+				li.classList.toggle("selected", +li.getAttribute("btr-model-id") === model.id)
+			}
+			
+			this.setFilter("")
+			this.select([])
+		}
+		
+		isItemVisible(item, view) {
+			if(view === this.defaultView) {
+				return true
+			}
+			
+			return view.visible.has(item)
+		}
+		
+		bubbleItem(item, view, canBubble = true) {
+			if(!this.isItemVisible(item, view)) { return }
+			
+			let numOpenDescendants = 0
+			let maxOpenWidth = item
+			let shouldBubble = false
+			
+			if(item.open) {
+				for(const child of item.children) {
+					if(this.isItemVisible(child, view)) {
+						numOpenDescendants += (view.numOpenDescendants.get(child) ?? 0) + 1
 						
-						const children = [...inst.Children]
-						children.sort(sortChildren).forEach(child => create(child, childList))
-						item.after(childList)
-
-						item.$find(".btr-explorer-more").$on("click", ev => {
-							item.classList.toggle("closed")
-							ev.stopPropagation()
-						})
+						if(item.width && child.width) {
+							const childMaxOpenWidth = view.maxOpenWidth.get(child) ?? child
+							
+							if(childMaxOpenWidth.width > maxOpenWidth.width) {
+								maxOpenWidth = childMaxOpenWidth
+							}
+						}
 					}
 				}
-
-				model.forEach(inst => create(inst, inner))
-			} else {
-				element.textContent = "Failed to load model"
 			}
-
-			dropdown.$find(".dropdown-menu").append(btn)
-			lists.append(element)
-
+			
+			const oldNumOpenDescendants = view.numOpenDescendants.get(item) ?? 0
+			
+			if(numOpenDescendants !== oldNumOpenDescendants) {
+				view.numOpenDescendants.set(item, numOpenDescendants)
+				shouldBubble = true
+			}
+			
+			if(item.width) {
+				const oldMaxOpenWidth = view.maxOpenWidth.get(item) ?? item
+				
+				if(oldMaxOpenWidth !== maxOpenWidth) {
+					view.maxOpenWidth.set(item, maxOpenWidth)
+					shouldBubble = true
+				}
+			}
+			
+			if(canBubble && shouldBubble && item.parent) {
+				this.bubbleItem(item.parent, view)
+			}
+		}
+		
+		createItem(children) {
+			const item = {
+				numDescendants: 0,
+				children: [],
+				selected: false,
+				open: true
+			}
+			
+			for(const childInst of children) {
+				const grandChildren = [...childInst.Children].sort(sortChildren)
+				const child = this.createItem(grandChildren)
+				
+				childInst[instToItemSymbol] = child
+				child.inst = childInst
+				child.parent = item
+				
+				item.numDescendants += child.numDescendants + 1
+				item.children.push(child)
+			}
+			
+			this.bubbleItem(item, this.defaultView)
+			
+			return item
+		}
+		
+		setIsItemOpen(item, bool) {
+			if(item.open === !!bool) { return }
+			item.open = !!bool
+			
+			this.bubbleItem(item, this.defaultView)
+			this.bubbleItem(item, this.filterView)
+		}
+		
+		addModel(title, modelContents) {
+			const modelId = this.modelCounter++
+			
+			const btn = html`<li btr-model-id="${modelId}"><a title="${title}">${title}</a></li>`
+			const didModelLoad = Array.isArray(modelContents)
+			
+			const model = this.createItem(didModelLoad ? modelContents : [])
+			model.id = modelId
+			model.didLoad = didModelLoad
+			model.isRoot = true
+			model.title = title
+			
+			btn.$on("click", () => this.selectModel(model))
+			
+			this.dropdown.$find(".btr-dropdown-menu").append(btn)
 			this.models.push(model)
 
 			if(this.models.length === 1) {
-				this.element.$find(".btr-explorer-loading").remove()
-				btn.click()
+				this.selectModel(model)
 			} else {
-				dropdown.style.display = ""
+				this.dropdown.style.display = ""
 			}
 		}
+		
+		update() {
+			const model = this.selectedModel
+			
+			if(!model) {
+				this.innerList.style.display = "none"
+				this.listStatus.style.display = ""
+				
+				this.listStatus.textContent = `No model selected`
+				return
+			}
+			
+			if(!model.didLoad) {
+				this.innerList.style.display = "none"
+				this.listStatus.style.display = ""
+				
+				this.listStatus.textContent = `Failed to load model`
+				return
+			}
+			
+			this.listStatus.style.display = "none"
+			this.innerList.style.display = ""
+			
+			const visibleHeightPx = this.innerList.parentNode.clientHeight
+			const visibleOffsetPx = this.innerList.parentNode.scrollTop
+			
+			const visibleStartOffset = Math.max(0, Math.floor(visibleOffsetPx / this.lineHeight))
+			const visibleEndOffset = visibleStartOffset + Math.ceil(visibleHeightPx / this.lineHeight) + 1
+			
+			const numVisibleLines = visibleEndOffset - visibleStartOffset
+			
+			if(this.lines.length < numVisibleLines) {
+				for(let i = this.lines.length; i < numVisibleLines; i++) {
+					const elem = html`
+					<div class=btr-explorer-item-container>
+						<div class=btr-explorer-item>
+							<div class=btr-explorer-more></div>
+							<div class=btr-explorer-icon></div>
+							<span class=btr-explorer-item-name></span>
+						</div>
+					</div>`
+					
+					const line = {
+						elem: elem,
+						btn: elem.$find(".btr-explorer-item"),
+						item: null
+					}
+					
+					let lastClick
+	
+					line.btn.$on("click", ev => {
+						ev.stopPropagation()
+						ev.stopImmediatePropagation()
+						ev.preventDefault()
+						
+						if(line.item) {
+							const inst = line.item.inst
+							this.select([inst])
+		
+							if(lastClick && Date.now() - lastClick < 500) {
+								lastClick = null
+		
+								switch(inst.ClassName) {
+								case "Script":
+								case "LocalScript":
+								case "ModuleScript":
+									this.openSourceViewer(inst, "Source")
+									break
+								default:
+									item.classList.toggle("closed")
+								}
+							} else {
+								lastClick = Date.now()
+							}
+						}
+					})
+					
+					elem.$find(".btr-explorer-more").$on("click", ev => {
+						ev.stopPropagation()
+						ev.stopImmediatePropagation()
+						ev.preventDefault()
+						
+						if(line.item) {
+							this.setIsItemOpen(line.item, !line.item.open)
+						}
+					})
+					
+					this.innerList.append(elem)
+					this.lines.push(line)
+				}
+			} else if(this.lines.length > numVisibleLines) {
+				for(let i = numVisibleLines; i <= this.lines.length; i++) {
+					const line = this.lines.pop()
+					line.elem.remove()
+				}
+			}
+			
+			const filterView = this.filterView
+			
+			if(filterView.query !== this.currentFilter || filterView.model !== model) {
+				filterView.query = this.currentFilter
+				filterView.model = model
+				filterView.matches.clear()
+				filterView.visible.clear()
+				filterView.numOpenDescendants.clear()
+				filterView.maxOpenWidth.clear()
+				
+				if(filterView.query) {
+					this.filterInput.parentNode.classList.add("loading")
+					
+					filterView.running = {
+						words: filterView.query.split(" ").filter(x => x).map(x => x.toLowerCase()),
+						current: model,
+						stack: [],
+						index: 0
+					}
+				} else {
+					this.filterInput.parentNode.classList.remove("loading")
+					
+					delete filterView.running
+				}
+			}
+			
+			const view = filterView.query ? filterView : this.defaultView
+			
+			const setLineItem = (line, item, depth = 0) => {
+				if(item !== line.item) {
+					line.item = item
+					
+					if(item) {
+						const icon = ApiDump.getExplorerIconIndex(item.inst.ClassName)
+						
+						line.elem.$find(".btr-explorer-icon").style.backgroundPosition = `-${icon * 16}px 0`
+						line.elem.$find(".btr-explorer-item-name").textContent = item.inst.Name
+						
+						line.btn.classList.toggle("btr-explorer-has-children", item ? item.children.length > 0 : false)
+						
+						line.btn.style.paddingLeft = `${depth * 20}px`
+						line.btn.style.display = ""
+					} else {
+						line.btn.style.display = "none"
+					}
+				}
+				
+				line.elem.$find(".btr-explorer-item-name").style.opacity = view.query && !view.matches.has(item) ? (!view.visible.has(item) ? "0.2" : "0.5") : ""
+				line.btn.classList.toggle("closed", item ? !item.open : false)
+				line.btn.classList.toggle("selected", item ? item.selected : false)
+			}
+			
+			if(!model.calculatedWidths) {
+				if(!model.widthCalc) {
+					model.widthCalc = {
+						stack: [],
+						current: model,
+						index: 0
+					}
+					
+					model.width = 50
+					model.maxWidth = 50
+				}
+				
+				const startTime = performance.now()
+				const endTime = startTime + 4
+				
+				const running = model.widthCalc
+				
+				outer:
+				while(performance.now() < endTime) {
+					while(running.index >= running.current.children.length) {
+						this.bubbleItem(running.current, this.defaultView, false)
+						
+						if(!running.stack.length) {
+							delete model.widthCalc
+							model.calculatedWidths = true
+							break outer
+						}
+						
+						running.index = running.stack.pop()
+						running.current = running.current.parent
+					}
+					
+					const item = running.current.children[running.index]
+					running.index += 1
+
+					item.width = getLineWidth(item.inst.Name, running.stack.length)
+					
+					if(item.width > model.maxWidth) {
+						model.maxWidth = item.width
+					}
+					
+					if(item.children.length > 0) {
+						running.stack.push(running.index)
+						running.current = item
+						running.index = 0
+					}
+				}
+			}
+			
+			if(view.running) {
+				const startTime = performance.now()
+				const endTime = startTime + 4
+				
+				const running = view.running
+				
+				while(performance.now() < endTime) {
+					while(running.stack.length && running.index >= running.current.children.length) {
+						running.index = running.stack.pop()
+						running.current = running.current.parent
+					}
+					
+					const item = running.current.children[running.index]
+					
+					if(!item) {
+						delete view.running
+						this.filterInput.parentNode.classList.remove("loading")
+						break
+					}
+					
+					running.index += 1
+					
+					const name = item.inst.Name.toLowerCase()
+					const className = item.inst.ClassName.toLowerCase()
+					let matches = true
+					
+					for(const word of running.words) {
+						if(!name.includes(word) && !className.includes(word)) {
+							matches = false
+							break
+						}
+					}
+					
+					if(matches) {
+						view.matches.add(item)
+						
+						let bubble = item
+						while(bubble && !view.visible.has(bubble)) {
+							view.visible.add(bubble)
+							this.bubbleItem(bubble, view, false)
+							
+							bubble = bubble.parent
+						}
+						
+						if(bubble) {
+							this.bubbleItem(bubble, view, true)
+						}
+					}
+					
+					if(item.children.length > 0) {
+						running.stack.push(running.index)
+						running.current = item
+						running.index = 0
+					}
+				}
+			}
+
+			//
+			
+			this.innerList.style.paddingTop = `${visibleStartOffset * this.lineHeight}px`
+			this.innerList.style.height = `${(view.numOpenDescendants.get(model) ?? 0) * this.lineHeight + 4}px`
+			this.innerList.style.width = `${model.calculatedWidths ? (view.maxOpenWidth.get(model) ?? model).width : model.maxWidth}px`
+			
+			//
+			
+			const stack = []
+			let counter = 0
+			
+			let current = model
+			let currentIndex = 0
+			
+			for(let i = 0; i < numVisibleLines; i++) {
+				const itemIndex = visibleStartOffset + i
+				const line = this.lines[i]
+				let selectedItem
+				
+				while(true) {
+					while(stack.length && currentIndex >= current.children.length) {
+						currentIndex = stack.pop()
+						current = current.parent
+					}
+					
+					const item = current.children[currentIndex]
+					if(!item) { break }
+					
+					if(!this.isItemVisible(item, view)) {
+						currentIndex += 1
+						continue
+					}
+					
+					if(counter >= itemIndex) {
+						selectedItem = item
+						break
+					}
+					
+					currentIndex += 1
+					counter += 1
+					
+					// const numOpenDescendants = view.numOpenDescendants.get(item) ?? 0
+					
+					if(item.open) {
+					// if(item.open && numOpenDescendants > 0) {
+						// if(counter + numOpenDescendants <= itemIndex) {
+						// 	counter += numOpenDescendants
+						// } else {
+							stack.push(currentIndex)
+							current = item
+							currentIndex = 0
+						// }
+					}
+				}
+				
+				setLineItem(line, selectedItem, stack.length)
+			}
+		}
+		
+		setActive(bool) {
+			if(this.active !== !!bool) {
+				this.active = !!bool
+				
+				if(this.active) {
+					const updateLoop = () => {
+						this.raf = requestAnimationFrame(updateLoop)
+						this.update()
+					}
+					
+					this.raf = requestAnimationFrame(updateLoop)
+				} else {
+					cancelAnimationFrame(this.raf)
+					this.raf = null
+				}
+			}
+		}
+		
 	}
 })()

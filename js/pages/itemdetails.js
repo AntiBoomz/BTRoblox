@@ -264,9 +264,13 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 		popover.$find(".btr-explorer-parent").replaceWith(explorer.element)
 		
 		btnCont.$on("click", ".btr-explorer-button", () => {
-			popover.classList.toggle("visible")
-			if(!popover.classList.contains("visible")) { return }
+			if(popover.classList.contains("visible")) {
+				popover.classList.remove("visible")
+				explorer.setActive(false)
+				return
+			}
 			
+			popover.classList.add("visible")
 			popover.style.left = `${-popover.clientWidth / 2}px`
 			
 			if(!explorerInitialized) {
@@ -274,11 +278,11 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 				
 				if(isBundle) {
 					RobloxApi.catalog.getBundleDetails(assetId).then(async details => {
-						details.items.forEach(item => {
+						for(const item of details.items) {
 							if(item.type === "Asset") {
 								AssetCache.loadModel(item.id, model => explorer.addModel(item.name, model))
 							}
-						})
+						}
 					})
 					
 				} else if(assetTypeId === AssetType.Head || assetTypeId === AssetType.DynamicHead) {
@@ -291,6 +295,7 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 			}
 			
 			explorer.select([])
+			explorer.setActive(true)
 
 			const popLeft = explorer.element.getBoundingClientRect().right + 276 >= document.documentElement.clientWidth
 			explorer.element.$find(".btr-properties").classList.toggle("left", popLeft)
@@ -298,7 +303,8 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 		
 		document.body.$on("click", ev => {
 			if(popover.classList.contains("visible") && !btnCont.contains(ev.target)) {
-				popover.classList.toggle("visible")
+				popover.classList.remove("visible")
+				explorer.setActive(false)
 			}
 		})
 	})

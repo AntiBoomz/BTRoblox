@@ -519,15 +519,6 @@ a:not(.disabled):hover > .btr-icon-content {
 	white-space: nowrap;
 }
 
-.btr-explorer .btr-dropdown-container.input-group-btn {
-	padding: 0;
-	margin-top: 3px;
-}
-
-.btr-explorer .btr-dropdown-container.input-group-btn .input-dropdown-btn {
-	border-color: #B8B8B8;
-}
-
 .btr-explorer-list,
 .btr-properties-container {
 	width: 100%;
@@ -562,8 +553,109 @@ a:not(.disabled):hover > .btr-icon-content {
 }
 
 .btr-explorer-header {
+	overflow: visible;
+	user-select: none;
+}
+
+.btr-explorer-header .btr-dropdown-container {
+	position: absolute;
+	right: 0;
+	user-select: none;
+	height: 22px;
+	margin-top: 1px;
+	margin-right: 4px;
+	padding: 1px 0;
+}
+
+.btr-explorer-header .btr-dropdown-container .btr-dropdown-btn {
+	background: white;
+	border: 1px solid #BBB;
+	border: none;
+	border-radius: 2px;
+	padding: 2px 3px;
+	font-size: 11px;
+	text-align: left;
+	height: 100%;
+}
+
+.btr-explorer-header .btr-dropdown-container .btr-dropdown-btn .btr-dropdown-label {
+	display: inline-block;
+	width: 70px;
+	overflow: hidden;
+	white-space: nowrap;
+	margin-right: 2px;
+	font-weight: 500;
+}
+
+.btr-explorer-header .btr-dropdown-container .btr-dropdown-btn:hover {
+	background: #f0f0f0;
+}
+
+.btr-explorer-header .btr-dropdown-container .btr-dropdown-menu {
+	background: #fff;
+	border: 1px solid #BBB;
+	margin-top: -3px;
+	right: -2px;
+	max-width: 200px;
+	max-height: 200px;
+	border-radius: 2px;
+	
+	z-index: 2;
+	
+	overflow: hidden;
+	overflow-y: scroll;
+	white-space: nowrap;
+}
+
+.btr-explorer-header .btr-dropdown-container .btr-dropdown-menu > li a {
+	display: block;
+	padding: 4px 8px;
+	padding-right: 12px;
+	text-align: left;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+
+.btr-explorer-header .btr-dropdown-container .btr-dropdown-menu > li.selected a {
+	font-weight: bold;
+	background: #f0f0f0;
+}
+
+.btr-explorer-header .btr-dropdown-container .btr-dropdown-menu > li:hover a {
+	background: #f0f0f0;
+}
+
+.btr-explorer-filter {
+	position: relative;
 	width: 100%;
-	display: flex;
+	padding: 0 2px;
+	border: 1px solid #C8C8C8;
+	border-top: none;
+}
+
+.btr-explorer-filter input.btr-explorer-filter-input {
+	width: 100%;
+	height: 20px;
+	border: none;
+	background: #fff;
+	color: #000;
+	outline: none;
+}
+
+.btr-explorer-filter input.btr-explorer-filter-input::placeholder {
+	color: #000;
+}
+
+.btr-explorer-filter.loading::after {
+	content: "";
+	background-image: url(/res/icon_loading.gif);
+	background-size: 100%;
+	display: block;
+	position: absolute;
+	width: 15px;
+	height: 15px;
+	right: 4px;
+	top: 3px;
 }
 
 .btr-explorer-view-btn {
@@ -585,15 +677,6 @@ a:not(.disabled):hover > .btr-icon-content {
 
 .btr-explorer-view-btn.selected {
 	background: #D9D9D9;
-}
-
-.btr-explorer-header .input-group-btn .input-dropdown-btn .rbx-selection-label {
-	max-width: calc(100% - 24px);
-	white-space: pre-line;
-}
-
-.dark-theme .btr-explorer-header .input-group-btn .input-dropdown-btn {
-	background-color: #393b3d !important;
 }
 
 .btr-explorer-childlist {
@@ -653,35 +736,36 @@ a:not(.disabled):hover > .btr-icon-content {
 	margin: 0;
 }
 
-.btr-explorer-has-children > .btr-explorer-more::before,
+.btr-explorer-has-children .btr-explorer-more::before,
 .btr-properties .btr-property-group .btr-property-group-more::before {
 	content: "";
 	position: absolute;
 
-	width: 7px;
-	height: 7px;
-
-	top: 4px;
-	left: 4px;
-
-	transform: rotate(45deg);
-	transform-origin: center center;
-
-	border-color: #979797;
-	border-style: solid;
-	border-width: 0 1px 1px 0;
+	width: 0;
+	height: 0;
+	
+	left: 5px;
+	top: 2px;
+	
+	border-left: 5px solid #000;
+	border-top: 5px solid transparent;
+	border-bottom: 5px solid transparent;
+	border-radius: 2px;
 }
 
 .btr-properties .btr-property-group .btr-property-group-more::before {
-	left: 5px;
+	left: 7px;
 	top: 5px;
 }
 
-.btr-explorer-has-children.closed > .btr-explorer-more::before,
+.btr-explorer-has-children.closed .btr-explorer-more::before,
 .btr-properties .btr-property-group.closed .btr-property-group-more::before {
-	transform: rotate(-45deg);
-	margin-left: -1px;
+	transform: rotate(90deg);
 	margin-top: 1px;
+}
+
+.selected .btr-explorer-more::before {
+	border-left-color: #fff;
 }
 
 .btr-explorer-icon {
@@ -693,10 +777,6 @@ a:not(.disabled):hover > .btr-icon-content {
 	background-image: url(/res/icon_explorer.png);
 	background-repeat: no-repeat;
 	background-size: auto 16px;
-}
-
-.btr-explorer-item-container.closed + .btr-explorer-childlist {
-	display: none;
 }
 
 
