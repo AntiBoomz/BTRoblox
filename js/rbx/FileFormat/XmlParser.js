@@ -112,11 +112,12 @@ const RBXXmlParser = {
 					return
 				}
 				
+				propNode = cframeNode
 				// break omitted
 			case "coordinateframe": {
 				const cframe = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
 				
-				for(const x of Object.values((cframeNode || propNode).children)) {
+				for(const x of Object.values(propNode.children)) {
 					const index = this.Transforms.CFrame.indexOf(x.nodeName.toUpperCase())
 					if(index !== -1) {
 						cframe[index] = +x.textContent
