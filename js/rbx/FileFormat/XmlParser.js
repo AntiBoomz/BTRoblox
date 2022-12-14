@@ -105,14 +105,23 @@ const RBXXmlParser = {
 			case "token": return inst.setProperty(name, +value, "Enum")
 			case "color3":
 			case "color3uint8": return inst.setProperty(name, [(+value >>> 16 & 255) / 255, (+value >>> 8 & 255) / 255, (+value & 255) / 255], "Color3")
+			case "optionalcoordinateframe":
+				const cframeNode = Object.values(propNode.children).find(x => x.nodeName.toLowerCase() === "cframe")
+				
+				if(!cframeNode) {
+					return
+				}
+				
+				// break omitted
 			case "coordinateframe": {
 				const cframe = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
-				Object.values(propNode.children).forEach(x => {
+				
+				for(const x of Object.values((cframeNode || propNode).children)) {
 					const index = this.Transforms.CFrame.indexOf(x.nodeName.toUpperCase())
 					if(index !== -1) {
 						cframe[index] = +x.textContent
 					}
-				})
+				}
 
 				return inst.setProperty(name, cframe, "CFrame")
 			}
@@ -181,6 +190,9 @@ const RBXXmlParser = {
 				const sharedString = parser.sharedStrings[md5].value
 
 				return inst.setProperty(name, sharedString, "SharedString")
+			}
+			case "uniqueid": {
+				return inst.setProperty(name, value.trim(), "UniqueId")
 			}
 			case "colorsequence":
 			case "numberrange":

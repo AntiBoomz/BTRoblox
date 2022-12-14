@@ -368,6 +368,7 @@ const Explorer = (() => {
 						valueItem.textContent = fixNum(value)
 						break
 					}
+					case "UniqueId":
 					case "SharedString":
 					case "string": {
 						const input = html`<input type=text readonly>`
@@ -450,7 +451,7 @@ const Explorer = (() => {
 						valueItem.textContent = Object.entries(value).filter(x => x[1]).map(x => x[0]).join(", ")
 						break
 					default:
-						console.log("Unknown property type", name, prop)
+						console.log("Unknown property type", type, name, prop)
 						valueItem.textContent = String(value)
 					}
 

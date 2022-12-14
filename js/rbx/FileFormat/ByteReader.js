@@ -165,6 +165,24 @@ class ByteReader extends Uint8Array {
 	RBXFloatLE() { return ByteReader.ParseRBXFloat(this.UInt32LE()) }
 	RBXFloatBE() { return ByteReader.ParseRBXFloat(this.UInt32BE()) }
 
+	RBXInterleaved(byteCount, width) {
+		assert(byteCount % width === 0, "byteCount is not divisible by width")
+		const result = []
+		const count = byteCount / width
+		
+		for(let i = 0; i < count; i++) {
+			const value = []
+			
+			for(let j = 0; j < width; j++) {
+				value[j] = this[this.index + j * count + i]
+			}
+			
+			result.push(value)
+		}
+		
+		return result
+	}
+	
 	RBXInterleavedUint32(count, fn) {
 		const result = new Array(count)
 		const byteCount = count * 4

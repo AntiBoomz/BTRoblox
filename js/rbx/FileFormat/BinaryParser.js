@@ -10,7 +10,7 @@ const RBXBinaryParser = {
 		"Ray", "Faces", "Axes", "BrickColor", "Color3", "Vector2", "Vector3", "Vector2int16", // 15
 		"CFrame", "Quaternion", "Enum", "Instance", "Vector3int16", "NumberSequence", "ColorSequence", // 22
 		"NumberRange", "Rect2D", "PhysicalProperties", "Color3uint8", "int64", "SharedString", "UnknownScriptFormat", // 29
-		"WorldPivotData"
+		"Optional", "UniqueId"
 	],
 
 	parse(buffer) {
@@ -122,10 +122,18 @@ const RBXBinaryParser = {
 			return // empty chunk?
 		}
 
-		const dataType = chunk.Byte()
-		const typeName = this.DataTypes[dataType]
 		const instCount = group.Objects.length
-
+		
+		let dataType = chunk.Byte()
+		let typeName = this.DataTypes[dataType]
+		
+		let isOptional = typeName === "Optional"
+		
+		if(isOptional) {
+			dataType = chunk.Byte()
+			typeName = this.DataTypes[dataType]
+		}
+		
 		let values = new Array(instCount)
 		let resultTypeName = typeName || "Unknown"
 
@@ -404,6 +412,15 @@ const RBXBinaryParser = {
 			}
 			break
 		}
+		case "UniqueId": {
+			const bytes = chunk.RBXInterleaved(chunk.GetRemaining(), 16)
+			
+			for(let i = 0; i < instCount; i++) {
+				values[i] = bytes[i].map(x => ("0" + x.toString(16)).slice(-2)).join("")
+			}
+			
+			break
+		}
 		default:
 			if(IS_DEV_MODE) {
 				if(!typeName) {
@@ -413,17 +430,33 @@ const RBXBinaryParser = {
 				}
 			}
 			// break omitted
-		case "WorldPivotData":
 		case "UnknownScriptFormat":
 			for(let i = 0; i < instCount; i++) {
 				values[i] = `<${typeName || "Unknown"}>`
 			}
 			break
 		}
-
-		values.forEach((value, i) => {
-			group.Objects[i].setProperty(prop, value, resultTypeName)
-		})
+		
+		if(isOptional) {
+			if(this.DataTypes[chunk.Byte()] !== "bool" || chunk.GetRemaining() !== instCount) {
+				console.warn(`[ParseRBXBin] Missing byte array at end of optional`)
+				
+				isOptional = false
+				for(let i = 0; i < instCount; i++) {
+					values[i] = `<Optional>`
+				}
+			}
+		}
+		
+		for(const [index, value] of Object.entries(values)) {
+			if(isOptional) {
+				if(chunk.Byte() === 0) {
+					continue
+				}
+			}
+			
+			group.Objects[index].setProperty(prop, value, resultTypeName)
+		}
 	},
 
 	parsePRNT(parser, chunk) {
