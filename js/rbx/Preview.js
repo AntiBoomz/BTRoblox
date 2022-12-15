@@ -1059,10 +1059,10 @@ const HoverPreview = (() => {
 							}
 							
 							for(const bp of asset.bodyparts) {
-								const partMesh = preview.avatar.parts[bp.target]?.rbxMesh
+								const part = preview.avatar.parts[bp.target]
 								
-								if(partMesh) {
-									addedObjects.add(partMesh)
+								if(part?.isMesh) {
+									addedObjects.add(part)
 									cameraDir = "Front"
 								}
 							}
@@ -1072,10 +1072,10 @@ const HoverPreview = (() => {
 								
 								if(parts) {
 									for(const partName of parts) {
-										const partMesh = preview.avatar.parts[partName]?.rbxMesh
+										const part = preview.avatar.parts[partName]
 										
-										if(partMesh) {
-											addedObjects.add(partMesh)
+										if(part?.isMesh) {
+											addedObjects.add(part)
 										}
 									}
 								}
