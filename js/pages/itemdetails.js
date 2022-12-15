@@ -394,8 +394,8 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 	if(assetTypeId === 4) {
 		btn.dataset.toggle = "popover"
 		btn.dataset.bind = "popover-btr-download"
-
-		btn.after(html`
+		
+		const popoverTemplate = html`
 		<div class=rbx-popover-content data-toggle=popover-btr-download>
 			<ul class=dropdown-menu role=menu>
 				<li>
@@ -405,9 +405,22 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 					<a class=btr-download-obj>Download as .obj</a>
 				</li>
 			</ul>
-		</div>
-		`)
-
+		</div>`
+		
+		if(IS_DEV_MODE) {
+			popoverTemplate.$find("ul").append(html`
+			<li>
+				<a class=btr-log-mesh>Print to console</a>
+			</li>`)
+			
+			btnCont.$on("click", ".btr-log-mesh", () => {
+				AssetCache.loadMesh(assetUrl, mesh => {
+					console.log(mesh)
+				})
+			})
+		}
+		
+		btn.after(popoverTemplate)
 		btnCont.$on("click", ".btr-download-mesh, .btr-download-obj", doNamedDownload)
 	} else {
 		btn.href = assetUrl
