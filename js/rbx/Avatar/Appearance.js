@@ -38,7 +38,6 @@ const RBXAppearance = (() => {
 
 			this.accessories = []
 			this.bodyparts = []
-			this.joints = []
 			this.attachments = []
 			this.clothing = []
 			this.loaders = []
@@ -47,7 +46,7 @@ const RBXAppearance = (() => {
 		}
 
 		isEmpty() {
-			return !(this.accessories.length || this.bodyparts.length || this.joints.length || this.attachments.length || this.clothing.length)
+			return !(this.accessories.length || this.bodyparts.length || this.attachments.length || this.clothing.length)
 		}
 
 		async load() {
@@ -175,7 +174,6 @@ const RBXAppearance = (() => {
 		addAccessory(data) { this.accessories.push(data) }
 		addBodyPart(data) { this.bodyparts.push(data) }
 		addClothing(data) { this.clothing.push(data) }
-		addJoint(data) { this.joints.push(data) }
 
 		setPriority(priority) {
 			this.priority = priority
@@ -229,23 +227,10 @@ const RBXAppearance = (() => {
 
 			for(const inst of mesh.Children) {
 				if(inst.ClassName !== "Vector3Value" || !inst.Name.endsWith("Attachment")) { continue }
-				const cframe = new THREE.Matrix4().setPosition(...inst.Value)
-				
-				if(inst.Name.endsWith("RigAttachment")) {
-					const jointName = inst.Name.substring(0, inst.Name.length - 13)
-
-					this.addJoint({
-						target: jointName,
-						cframe: cframe,
-
-						part: "Head",
-						scaleType: scaleType
-					})
-				}
 
 				this.addAttachment({
 					target: inst.Name,
-					cframe: cframe,
+					cframe: new THREE.Matrix4().setPosition(...inst.Value),
 
 					part: "Head",
 					scaleType: scaleType
@@ -311,24 +296,10 @@ const RBXAppearance = (() => {
 				
 				for(const inst of part.Children) {
 					if(inst.ClassName !== "Attachment") { continue }
-					
-					const cframe = RBXAvatar.CFrameToMatrix4(...inst.CFrame)
-					
-					if(inst.Name.endsWith("RigAttachment")) {
-						const jointName = inst.Name.substring(0, inst.Name.length - 13)
-						
-						this.addJoint({
-							target: jointName,
-							cframe: cframe,
-
-							part: part.Name,
-							scaleType: scaleType
-						})
-					}
 
 					this.addAttachment({
 						target: inst.Name,
-						cframe: cframe,
+						cframe: RBXAvatar.CFrameToMatrix4(...inst.CFrame),
 
 						part: part.Name,
 						scaleType: scaleType

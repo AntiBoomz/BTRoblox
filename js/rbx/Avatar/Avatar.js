@@ -5,7 +5,7 @@ const RBXAvatar = (() => {
 	
 	function applyMesh(obj, mesh) {
 		const geom = obj.geometry
-
+		
 		geom.setAttribute("position", new THREE.BufferAttribute(mesh.vertices, 3))
 		geom.setAttribute("normal", new THREE.BufferAttribute(mesh.normals, 3))
 		geom.setAttribute("uv", new THREE.BufferAttribute(mesh.uvs, 2))
@@ -42,12 +42,12 @@ const RBXAvatar = (() => {
 	}
 
 	function CFrameToMatrix4(x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22) {
-		return new THREE.Matrix4().set(
-			r00, r01, r02, x,
-			r10, r11, r12, y,
-			r20, r21, r22, z,
-			0, 0, 0, 1
-		)
+		return new THREE.Matrix4().fromArray([
+			r00, r01, r02, 0,
+			r10, r11, r12, 0,
+			r20, r21, r22, 0,
+			x, y, z, 1
+		])
 	}
 	
 	const scalePosition = (matrix, scale) => {
@@ -302,10 +302,12 @@ const RBXAvatar = (() => {
 	}
 	
 	const tempMatrix = new THREE.Matrix4()
+	const tempMatrix2 = new THREE.Matrix4()
+	const tempVector = new THREE.Vector3()
+	
 	const oneVector = new THREE.Vector3(1, 1, 1)
 	const zeroVector = new THREE.Vector3()
 	const identQuat = new THREE.Quaternion()
-	const tempPos = new THREE.Vector3()
 	
 	let compositeRenderer
 
@@ -318,7 +320,7 @@ const RBXAvatar = (() => {
 			this.baseLoadedPromise = new SyncPromise()
 			
 			this.activeMaterials = []
-			this.jointsArray = []
+			this.sortedJointsArray = []
 			this.accessories = []
 			this.attachments = {}
 			this.joints = {}
@@ -498,20 +500,22 @@ const RBXAvatar = (() => {
 			this.root.position.copy(this.hipOffset).add(this.offset)
 			this.root.rotation.copy(this.offsetRot)
 			
-			for(const joint of this.jointsArray) {
+			for(const joint of this.sortedJointsArray) {
 				const transform = this.animator.getJointTransform(joint.part1.name)
 				
 				let position = transform?.position || zeroVector
 				let quaternion = transform?.quaternion || identQuat
 				
 				if(this.playerType === "R15" && joint.part1.name === "LowerTorso") {
-					position = tempPos.copy(position).multiplyScalar(this.animRootScale)
+					position = tempVector.copy(position).multiplyScalar(this.animRootScale)
 				}
 				
 				tempMatrix.compose(position, quaternion, oneVector)
 				
-				joint.part1.matrixNoScale.multiplyMatrices(joint.part0.matrixNoScale, joint.bakedC0).multiply(tempMatrix).multiply(joint.bakedC1)
-				joint.part1.matrix.copy(joint.part1.matrixNoScale).scale(joint.part1.scale)
+				joint.part1.matrixNoScale.multiplyMatrices(joint.part0.matrixNoScale, joint.bakedC0).multiply(tempMatrix).multiply(tempMatrix2.copy(joint.bakedC1).invert())
+				joint.part1.rbxUnscaledMatrix.multiplyMatrices(joint.part0.rbxUnscaledMatrix, joint.C0).multiply(tempMatrix).multiply(tempMatrix2.copy(joint.C1).invert())
+				
+				joint.part1.matrix.copy(joint.part1.matrixNoScale).scale(tempVector.set(...joint.part1.rbxScale))
 				joint.part1.matrixWorldNeedsUpdate = true
 			}
 			
@@ -696,7 +700,7 @@ const RBXAvatar = (() => {
 			
 			//
 			
-			this.jointsArray = []
+			this.sortedJointsArray = []
 			
 			const attachments = this.attachments = {}
 			const joints = this.joints = {}
@@ -706,16 +710,11 @@ const RBXAvatar = (() => {
 				let obj
 				
 				if(tree.name !== "HumanoidRootPart") {
-					obj = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial({ map: this.textures[tree.name], transparent: false }))
+					obj = new THREE.SkinnedMesh(undefined, new THREE.MeshStandardMaterial({ map: this.textures[tree.name], transparent: false }))
+					obj.isSkinnedMesh = false
+					obj.bindMode = "detached"
 					obj.frustumCulled = false
 					obj.castShadow = true
-					
-					obj.rbxDefaultBodypart = {
-						meshId: tree.meshid
-					}
-					
-					obj.rbxMesh = obj
-					
 				} else {
 					obj = new THREE.Group()
 				}
@@ -724,10 +723,15 @@ const RBXAvatar = (() => {
 				obj.name = tree.name
 				
 				// Custom stuff
+				obj.rbxDefaultBodypart = {
+					meshId: tree.meshid
+				}
+				
 				obj.rbxOrigSize = tree.origSize
 				obj.rbxScaleMod = new Vector3(1, 1, 1)
-				obj.rbxScaleModPure = new Vector3(1, 1, 1)
 				obj.matrixNoScale = new THREE.Matrix4()
+				obj.rbxPoseMatrix = new THREE.Matrix4()
+				obj.rbxUnscaledMatrix = new THREE.Matrix4()
 				//
 				
 				this.root.add(obj)
@@ -735,8 +739,9 @@ const RBXAvatar = (() => {
 				
 				for(const [name, cframe] of Object.entries(tree.attachments)) {
 					attachments[name] = {
-						origCFrame: cframe.clone(),
-						bakedCFrame: cframe,
+						origCFrame: cframe,
+						cframe: cframe.clone(),
+						bakedCFrame: cframe.clone(),
 						parent: obj
 					}
 				}
@@ -747,14 +752,26 @@ const RBXAvatar = (() => {
 					const joint = joints[child.JointName] = {
 						origC0: child.C0,
 						origC1: child.C1,
+						
+						C0: child.C0.clone(),
+						C1: child.C1.clone(),
+						
 						bakedC0: child.C0.clone(),
 						bakedC1: child.C1.clone(),
 						
 						part0: obj,
-						part1: childObj
+						part1: childObj,
+						
+						name: child.JointName
 					}
 					
-					this.jointsArray.push(joint)
+					joint.bone = new THREE.Bone()
+					joint.bone.matrix.copy(joint.origC1)
+					joint.bone.matrixWorldNeedsUpdate = true
+					childObj.add(joint.bone)
+					// bone.matrix.copy(joint.bakedC0)
+					
+					this.sortedJointsArray.push(joint)
 				}
 
 				return obj
@@ -768,14 +785,20 @@ const RBXAvatar = (() => {
 				this.hipOffset.set(0, 2.35, 0)
 			}
 			
-			this.jointsArray.reverse()
+			this.sortedJointsArray.reverse()
 			this._refreshBodyParts()
 		}
 
 		_refreshBodyParts() {
 			if(!RBXAvatarRigs.loaded) { return }
-			this.shouldRefreshBodyParts = false
 			
+			this.shouldRefreshBodyParts = false
+			this.activeMaterials = []
+			
+			const attachmentOverride = {}
+			const clothingOverride = {}
+			const bodypartOverride = {}
+			const accessories = []
 			const assets = []
 			
 			for(const asset of this.appearance.assets) {
@@ -793,56 +816,31 @@ const RBXAvatar = (() => {
 
 			assets.sort((a, b) => (a.priority === b.priority ? a.lastIndex - b.lastIndex : a.priority - b.priority))
 			
-			this.activeMaterials = []
-			
-			const attachmentOverride = {}
-			const jointOverride = {}
-			const accessories = []
-			const bodyparts = {}
-			const clothing = {}
-			
 			for(const asset of assets) {
 				for(const bodypart of asset.bodyparts) {
 					if(!bodypart.playerType || bodypart.playerType === this.playerType) {
-						bodyparts[bodypart.target] = bodypart
+						bodypartOverride[bodypart.target] = bodypart
 					}
 				}
 				
 				for(const att of asset.attachments) {
-					const realAtt = this.attachments[att.target]
-					
-					if(realAtt && att.part === realAtt.parent.name) {
-						attachmentOverride[att.target] = att.cframe
-					}
+					const override = attachmentOverride[att.part] = attachmentOverride[att.part] || {}
+					override[att.target] = att
 				}
 				
 				for(const cloth of asset.clothing) {
-					clothing[cloth.target] = cloth.texId
+					clothingOverride[cloth.target] = cloth.texId
 				}
 				
 				accessories.push(...asset.accessories)
-
-				if(this.playerType === "R15") {
-					for(const joint of asset.joints) {
-						const realJoint = this.joints[joint.target]
-						if(!realJoint) { continue }
-						
-						const data = jointOverride[joint.target] || (jointOverride[joint.target] = {})
-						
-						if(joint.part === realJoint.part0.name) {
-							data.c0 = joint.cframe
-						} else if(joint.part === realJoint.part1.name) {
-							data.c1 = joint.cframe
-						}
-					}
-				}
 			}
 			
+			// Update clothing
 			for(const name of ["shirt", "pants", "tshirt", "face"]) {
 				const source = this.sources[name]
-				let texId = clothing[name] || source.defaultImage || ""
+				let texId = clothingOverride[name] || source.defaultImage || ""
 
-				if(name === "face" && bodyparts.Head && bodyparts.Head.disableFace) {
+				if(name === "face" && bodypartOverride.Head?.disableFace) {
 					texId = ""
 				}
 				
@@ -860,15 +858,34 @@ const RBXAvatar = (() => {
 				}
 			}
 			
+			// Update attachments
+			for(const [attName, att] of Object.entries(this.attachments)) {
+				const override = attachmentOverride[att.parent.name]?.[attName]
+				att.cframe.copy(override?.cframe || att.origCFrame)
+			}
+			
+			// Update joints
+			for(const joint of this.sortedJointsArray) {
+				const overrideC0 = attachmentOverride[joint.part0.name]?.[`${joint.name}RigAttachment`]
+				const overrideC1 = attachmentOverride[joint.part1.name]?.[`${joint.name}RigAttachment`]
+				
+				joint.C0.copy(overrideC0?.cframe || joint.origC0)
+				joint.C1.copy(overrideC1?.cframe || joint.origC1)
+				
+				joint.part1.rbxPoseMatrix.copy(joint.part0.rbxPoseMatrix).multiply(joint.C0).multiply(tempMatrix.copy(joint.C1).invert())
+			}
+			
+			// Update parts
 			for(const [partName, part] of Object.entries(this.parts)) {
-				const bodypart = bodyparts[partName] || part.rbxDefaultBodypart
+				const bodypart = bodypartOverride[partName] || part.rbxDefaultBodypart
+				part.rbxBodypart = bodypart
 
 				if(this.playerType === "R15") {
 					part.rbxScaleType = bodypart?.scaleType
 					part.rbxScaleMod = this.getScaleMod(part.name, part.rbxScaleType)
 				}
 				
-				if(!part.rbxMesh) {
+				if(!part.isMesh) {
 					continue
 				}
 				
@@ -886,12 +903,72 @@ const RBXAvatar = (() => {
 				
 				if(part.rbxMeshId !== meshId) {
 					part.rbxMeshId = meshId
-					clearGeometry(part.rbxMesh)
+					clearGeometry(part)
 					
 					if(meshId) {
 						AssetCache.loadMesh(true, meshId, mesh => {
 							if(part.rbxMeshId === meshId) {
-								applyMesh(part.rbxMesh, mesh)
+								applyMesh(part, mesh)
+								
+								if(part.skeleton) {
+									part.skeleton.dispose()
+									delete part.skeleton
+								}
+								
+								if(mesh.bones) {
+									part.isSkinnedMesh = true
+									
+									const indices = mesh.skinIndices
+									const weights = mesh.skinWeights
+									const inverses = []
+									const bones = []
+									
+									for(const bone of mesh.bones) {
+										const inverse = new THREE.Matrix4()
+										
+										bones.push({ matrixWorld: new THREE.Matrix4(), inverse: inverse })
+										inverses.push(inverse)
+									}
+									
+									part.geometry.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(indices, 4))
+									part.geometry.setAttribute("skinWeight", new THREE.Float32BufferAttribute(weights, 4))
+									
+									part.skeleton = new THREE.Skeleton(bones, inverses)
+									part.bind(part.skeleton, new THREE.Matrix4())
+									
+									const real_update = part.skeleton.update
+									
+									part.skeleton.update = () => {
+										for(let i = 0; i < mesh.bones.length; i++) {
+											const bone = mesh.bones[i]
+											const out = bones[i]
+											
+											const ref = this.parts[bone.name] || part
+											
+											const scale = new THREE.Vector3(
+												1 / part.rbxScaleMod.x,
+												1 / part.rbxScaleMod.y,
+												1 / part.rbxScaleMod.z
+											)
+											
+											out.matrixWorld.copy(ref.rbxUnscaledMatrix)
+											
+											out.matrixWorld.elements[12] = part.matrix.elements[12] + (ref.rbxUnscaledMatrix.elements[12] - part.rbxUnscaledMatrix.elements[12]) / scale.x
+											out.matrixWorld.elements[13] = part.matrix.elements[13] + (ref.rbxUnscaledMatrix.elements[13] - part.rbxUnscaledMatrix.elements[13]) / scale.y
+											out.matrixWorld.elements[14] = part.matrix.elements[14] + (ref.rbxUnscaledMatrix.elements[14] - part.rbxUnscaledMatrix.elements[14]) / scale.z
+											
+											out.matrixWorld.premultiply(tempMatrix.copy(part.matrix).invert())
+											out.inverse.copy(ref.rbxPoseMatrix).multiply(part.rbxPoseMatrix.clone().invert()).scale(scale).invert()
+										}
+										
+										return real_update.call(part.skeleton)
+									}
+								} else {
+									part.isSkinnedMesh = false
+									
+									part.geometry.deleteAttribute("skinIndex")
+									part.geometry.deleteAttribute("skinWeight")
+								}
 							}
 						})
 					}
@@ -953,44 +1030,48 @@ const RBXAvatar = (() => {
 				this.activeMaterials.push(material)
 			}
 			
-			//
-			
+			// Humanoid scaling
 			const updateSizes = () => {
-				for(const [partName, part] of Object.entries(this.parts)) {
-					const bodypart = bodyparts[partName] || part.rbxDefaultBodypart
+				// Scale parts
+				for(const part of Object.values(this.parts)) {
+					const scaleMod = part.rbxScaleMod
 					
-					const size = bodypart?.size || part.rbxOrigSize
-					let scale = bodypart?.scale || [1, 1, 1]
+					part.rbxSize = part.rbxBodypart.size || part.rbxOrigSize
+					part.rbxScale = part.rbxBodypart.scale || [1, 1, 1]
 
 					if(this.playerType === "R15") {
-						scale = [
-							scale[0] * part.rbxScaleMod.x,
-							scale[1] * part.rbxScaleMod.y,
-							scale[2] * part.rbxScaleMod.z
+						part.rbxSize = [
+							part.rbxSize[0] * scaleMod.x,
+							part.rbxSize[1] * scaleMod.y,
+							part.rbxSize[2] * scaleMod.z
+						]
+						
+						part.rbxScale = [
+							part.rbxScale[0] * scaleMod.x,
+							part.rbxScale[1] * scaleMod.y,
+							part.rbxScale[2] * scaleMod.z
 						]
 					}
-	
-					part.rbxSize = scale.map((x, i) => x * size[i])
 					
-					if(part.rbxMesh) {
-						part.rbxMesh.scale.set(...scale)
+					if(part.isMesh) {
+						part.scale.set(...part.rbxScale)
 					}
 				}
 				
+				// Scale joints
 				for(const [jointName, joint] of Object.entries(this.joints)) {
 					if(jointName !== "Root") {
-						const override = jointOverride[jointName]
-						const C0 = override?.c0 || joint.origC0
-						const C1 = override?.c1 || joint.origC1
-	
-						const scale0 = joint.part0.rbxScaleMod
-						const scale1 = joint.part1.rbxScaleMod
-						
-						scalePosition(joint.bakedC0.copy(C0), scale0)
-						scalePosition(joint.bakedC1.copy(C1).invert(), scale1)
+						scalePosition(joint.bakedC0.copy(joint.C0), joint.part0.rbxScaleMod)
+						scalePosition(joint.bakedC1.copy(joint.C1), joint.part1.rbxScaleMod)
 					}
 				}
 				
+				// Scale attachments
+				for(const att of Object.values(this.attachments)) {
+					scalePosition(att.bakedCFrame.copy(att.cframe), att.parent.rbxScaleMod)
+				}
+				
+				// Scale rootjoint
 				if(this.playerType === "R15") {
 					const rootJoint = this.joints.Root
 					const rightHip = this.joints.RightHip
@@ -1001,7 +1082,7 @@ const RBXAvatar = (() => {
 					const minHipOffset = Math.min(rightHip.bakedC0.elements[13], leftHip.bakedC0.elements[13])
 					
 					rootJoint.bakedC0.makeTranslation(0, -rootHeight / 2 - lowerTorsoHeight / 2 - minHipOffset, 0)
-					rootJoint.bakedC1.makeTranslation(0, lowerTorsoHeight / 2, 0)
+					rootJoint.bakedC1.makeTranslation(0, -lowerTorsoHeight / 2, 0)
 				}
 			}
 
@@ -1011,17 +1092,17 @@ const RBXAvatar = (() => {
 			if(this.playerType === "R15") {
 				const calcHeight = name => {
 					const joint = this.joints[name]
-					return -joint.bakedC1.elements[13] - joint.bakedC0.elements[13]
+					return joint.bakedC1.elements[13] - joint.bakedC0.elements[13]
 				}
 
 				// Stretch legs to same level
-				let leftLegHeight = -this.joints.LeftHip.bakedC1.elements[13] + calcHeight("LeftKnee") + calcHeight("LeftAnkle") + this.parts.LeftFoot.rbxSize[1] / 2
-				let rightLegHeight = -this.joints.RightHip.bakedC1.elements[13] + calcHeight("RightKnee") + calcHeight("RightAnkle") + this.parts.RightFoot.rbxSize[1] / 2
+				let leftLegHeight = this.joints.LeftHip.bakedC1.elements[13] + calcHeight("LeftKnee") + calcHeight("LeftAnkle") + this.parts.LeftFoot.rbxSize[1] / 2
+				let rightLegHeight = this.joints.RightHip.bakedC1.elements[13] + calcHeight("RightKnee") + calcHeight("RightAnkle") + this.parts.RightFoot.rbxSize[1] / 2
 
 				if(leftLegHeight >= 0.1 && rightLegHeight >= 0.1) {
 					const scale = new Vector3(1, rightLegHeight / leftLegHeight, 1)
 
-					if(scale > 1) {
+					if(scale.y > 1) {
 						this.parts.LeftUpperLeg.rbxScaleMod.multiply(scale)
 						this.parts.LeftLowerLeg.rbxScaleMod.multiply(scale)
 						this.parts.LeftFoot.rbxScaleMod.multiply(scale)
@@ -1048,12 +1129,6 @@ const RBXAvatar = (() => {
 				this.hipOffset.setY(hipHeight + rootHeight / 2)
 				this.animRootScale = hipHeight / 2
 			}
-			
-			// Update attachments
-			Object.entries(this.attachments).forEach(([attName, att]) => {
-				const origCFrame = attachmentOverride[attName] || att.origCFrame
-				scalePosition(att.bakedCFrame.copy(origCFrame), att.parent.rbxScaleMod)
-			})
 
 			// Remove old accessories
 			for(let i = this.accessories.length; i--;) {
@@ -1143,18 +1218,15 @@ const RBXAvatar = (() => {
 				}
 
 				// Attach to correct attachment
-				
 				const attachment = this.attachments[acc.attName]
 				const parent = attachment ? attachment.parent : this.parts.Head
 				
 				if(parent) {
 					// Scale
-					
 					const scaleMod = this.getScaleMod(parent.name, acc.scaleType, parent.rbxScaleType)
 					acc.obj.scale.set(...(acc.scale || [1, 1, 1])).multiply(scaleMod)
 					
 					// Position
-					
 					if(attachment) {
 						acc.bakedCFrame.copy(attachment.bakedCFrame).multiply(
 							scalePosition(tempMatrix.copy(acc.attCFrame), scaleMod)
@@ -1169,13 +1241,11 @@ const RBXAvatar = (() => {
 					}
 					
 					// Mesh offset (not scaled)
-					
 					if(acc.offset) {
 						acc.bakedCFrame.multiply(tempMatrix.makeTranslation(...acc.offset))
 					}
 					
 					// Apply scale to bakedCFrame
-					
 					acc.bakedCFrame.scale(acc.obj.scale)
 					
 					//
@@ -1194,8 +1264,6 @@ const RBXAvatar = (() => {
 						acc.obj.parent.remove(acc.obj)
 					}
 				}
-				
-				//
 				
 				this.activeMaterials.push(acc.obj.material)
 			}
