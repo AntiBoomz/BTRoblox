@@ -6,6 +6,43 @@ const RBXAvatar = (() => {
 	function applyMesh(obj, mesh) {
 		const geom = obj.geometry
 		
+		if(obj instanceof THREE.SkinnedMesh) {
+			if(obj.skeleton) {
+				obj.skeleton.dispose()
+				delete obj.skeleton
+			}
+			
+			if(mesh.bones) {
+				const bones = []
+				
+				obj.isSkinnedMesh = true
+				obj.rbxBones = bones
+				
+				geom.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(mesh.skinIndices, 4))
+				geom.setAttribute("skinWeight", new THREE.Float32BufferAttribute(mesh.skinWeights, 4))
+				
+				for(const meshBone of mesh.bones) {
+					const bone = {
+						name: meshBone.name,
+						matrixWorld: new THREE.Matrix4(),
+						inverse: new THREE.Matrix4()
+					}
+					
+					bones.push(bone)
+				}
+				
+				obj.skeleton = new THREE.Skeleton(bones, bones.map(x => x.inverse))
+				obj.bind(obj.skeleton, new THREE.Matrix4())
+				
+			} else {
+				obj.isSkinnedMesh = false
+				delete obj.rbxBones
+				
+				geom.deleteAttribute("skinIndex")
+				geom.deleteAttribute("skinWeight")
+			}
+		}
+		
 		geom.setAttribute("position", new THREE.BufferAttribute(mesh.vertices, 3))
 		geom.setAttribute("normal", new THREE.BufferAttribute(mesh.normals, 3))
 		geom.setAttribute("uv", new THREE.BufferAttribute(mesh.uvs, 2))
@@ -25,6 +62,19 @@ const RBXAvatar = (() => {
 	function clearGeometry(obj) {
 		const geom = obj.geometry
 
+		if(obj instanceof THREE.SkinnedMesh) {
+			if(obj.skeleton) {
+				obj.skeleton.dispose()
+				delete obj.skeleton
+			}
+			
+			obj.isSkinnedMesh = false
+			delete obj.rbxBones
+			
+			geom.deleteAttribute("skinIndex")
+			geom.deleteAttribute("skinWeight")
+		}
+		
 		geom.deleteAttribute("position")
 		geom.deleteAttribute("normal")
 		geom.deleteAttribute("uv")
@@ -493,13 +543,12 @@ const RBXAvatar = (() => {
 				this._refreshBodyParts()
 			}
 			
-			//
-			
 			this.animator.update()
 			
 			this.root.position.copy(this.hipOffset).add(this.offset)
 			this.root.rotation.copy(this.offsetRot)
 			
+			// Update joints
 			for(const joint of this.sortedJointsArray) {
 				const transform = this.animator.getJointTransform(joint.part1.name)
 				
@@ -519,17 +568,53 @@ const RBXAvatar = (() => {
 				joint.part1.matrixWorldNeedsUpdate = true
 			}
 			
-			//
+			// Update accessories
+			for(const acc of this.accessories) {
+				if(!acc.parent) { continue }
+				
+				acc.obj.rbxUnscaledMatrix.copy(acc.parent.rbxUnscaledMatrix).multiply(acc.bakedCFrame)
+				
+				acc.obj.matrix.multiplyMatrices(acc.parent.matrixNoScale, acc.bakedCFrame).scale(acc.obj.scale)
+				acc.obj.matrixWorldNeedsUpdate = true
+			}
+			
+			// Update bones
+			const updateBones = obj => {
+				const scale = new THREE.Vector3(
+					1 / obj.rbxScaleMod.x,
+					1 / obj.rbxScaleMod.y,
+					1 / obj.rbxScaleMod.z
+				)
+				
+				const inversePoseMatrix = obj.rbxPoseMatrix.clone().invert()
+				
+				for(const bone of obj.rbxBones) {
+					const ref = this.parts[bone.name] || obj
+					
+					bone.matrixWorld.copy(ref.rbxUnscaledMatrix)
+					
+					bone.matrixWorld.elements[12] = obj.matrix.elements[12] + (ref.rbxUnscaledMatrix.elements[12] - obj.rbxUnscaledMatrix.elements[12]) / scale.x
+					bone.matrixWorld.elements[13] = obj.matrix.elements[13] + (ref.rbxUnscaledMatrix.elements[13] - obj.rbxUnscaledMatrix.elements[13]) / scale.y
+					bone.matrixWorld.elements[14] = obj.matrix.elements[14] + (ref.rbxUnscaledMatrix.elements[14] - obj.rbxUnscaledMatrix.elements[14]) / scale.z
+					
+					bone.matrixWorld.premultiply(tempMatrix.copy(obj.matrix).invert())
+					bone.inverse.copy(ref.rbxPoseMatrix).multiply(inversePoseMatrix).scale(scale).invert()
+				}
+			}
+			
+			for(const part of Object.values(this.parts)) {
+				if(part.rbxBones) {
+					updateBones(part)
+				}
+			}
 			
 			for(const acc of this.accessories) {
-				if(acc.parent) {
-					acc.obj.matrix.multiplyMatrices(acc.parent.matrixNoScale, acc.bakedCFrame)
-					acc.obj.matrixWorldNeedsUpdate = true
+				if(acc.parent && acc.obj.rbxBones) {
+					updateBones(acc.obj)
 				}
 			}
 			
 			// Update composites
-
 			const activeComposites = this.playerType === "R6"
 				? [this.composites.r6]
 				: [this.composites.torso, this.composites.leftarm, this.composites.rightarm, this.composites.leftleg, this.composites.rightleg]
@@ -540,7 +625,7 @@ const RBXAvatar = (() => {
 				}
 			}
 			
-			
+			// Update materials
 			for(const material of this.activeMaterials) {
 				if(!material) { continue }
 				
@@ -593,10 +678,12 @@ const RBXAvatar = (() => {
 			this.shouldRefreshRig = true
 		}
 
-		getScaleMod(partName, scaleType, partScaleType) { // Only use partScaleType with accessories! C:
-			if(this.playerType !== "R15") { return new Vector3(1, 1, 1) }
-
-			const result = new Vector3()
+		getScaleMod(partName, scaleType, partScaleType, result) { // Only use partScaleType with accessories! C:
+			if(!result) { result = new THREE.Vector3() }
+			
+			if(this.playerType !== "R15") {
+				return result.set(1, 1, 1)
+			}
 
 			if(partName === "Head") {
 				result.setScalar(this.scales.head)
@@ -613,22 +700,22 @@ const RBXAvatar = (() => {
 			const rthroMod = ScaleMods.Rthro[partName]
 			const propMod = ScaleMods.Proportion[partName]
 
-			const startScale = new Vector3()
-			const endScale = new Vector3()
+			const startScale = new THREE.Vector3()
+			const endScale = new THREE.Vector3()
 
 			if(scaleType === "ProportionsNormal") {
 				startScale.copy(rthroMod)
 
 				if(partScaleType && partScaleType !== "ProportionsNormal" && partScaleType !== "ProportionsSlender") {
 					endScale.multiply(rthroMod).multiply(defaultMod).multiply(
-						new Vector3(1, 1, 1).lerp(
-							new Vector3(1, 1, 1).divide(propMod),
+						new THREE.Vector3(1, 1, 1).lerp(
+							new THREE.Vector3(1, 1, 1).divide(propMod),
 							this.scales.proportion
 						)
 					)
 				} else {
 					endScale.set(1, 1, 1).lerp(
-						new Vector3(1, 1, 1).divide(propMod),
+						new THREE.Vector3(1, 1, 1).divide(propMod),
 						this.scales.proportion
 					)
 				}
@@ -637,14 +724,14 @@ const RBXAvatar = (() => {
 
 				if(partScaleType && partScaleType !== "ProportionsNormal" && partScaleType !== "ProportionsSlender") {
 					endScale.copy(rthroMod).multiply(defaultMod).multiply(propMod).multiply(
-						new Vector3(1, 1, 1).lerp(
-							new Vector3(1, 1, 1).divide(propMod),
+						new THREE.Vector3(1, 1, 1).lerp(
+							new THREE.Vector3(1, 1, 1).divide(propMod),
 							this.scales.proportion
 						)
 					)
 				} else {
 					endScale.copy(propMod).lerp(
-						new Vector3(1, 1, 1),
+						new THREE.Vector3(1, 1, 1),
 						this.scales.proportion
 					)
 				}
@@ -653,15 +740,15 @@ const RBXAvatar = (() => {
 
 				if(partScaleType && (partScaleType === "ProportionsNormal" || partScaleType === "ProportionsSlender")) {
 					endScale.set(1, 1, 1).divide(rthroMod).multiply(
-						new Vector3(1, 1, 1).lerp(
-							new Vector3(1, 1, 1).divide(propMod),
+						new THREE.Vector3(1, 1, 1).lerp(
+							new THREE.Vector3(1, 1, 1).divide(propMod),
 							this.scales.proportion
 						)
 					)
 				} else {
 					endScale.copy(defaultMod).multiply(
-						new Vector3(1, 1, 1).lerp(
-							new Vector3(1, 1, 1).divide(propMod),
+						new THREE.Vector3(1, 1, 1).lerp(
+							new THREE.Vector3(1, 1, 1).divide(propMod),
 							this.scales.proportion
 						)
 					)
@@ -724,7 +811,7 @@ const RBXAvatar = (() => {
 				
 				// Custom stuff
 				obj.rbxDefaultBodypart = {
-					meshId: tree.meshid
+					meshId: tree.meshId
 				}
 				
 				obj.rbxOrigSize = tree.origSize
@@ -876,13 +963,13 @@ const RBXAvatar = (() => {
 			}
 			
 			// Update parts
-			for(const [partName, part] of Object.entries(this.parts)) {
-				const bodypart = bodypartOverride[partName] || part.rbxDefaultBodypart
+			for(const part of Object.values(this.parts)) {
+				const bodypart = bodypartOverride[part.name] || part.rbxDefaultBodypart
 				part.rbxBodypart = bodypart
 
 				if(this.playerType === "R15") {
 					part.rbxScaleType = bodypart?.scaleType
-					part.rbxScaleMod = this.getScaleMod(part.name, part.rbxScaleType)
+					this.getScaleMod(part.name, part.rbxScaleType, null, part.rbxScaleMod)
 				}
 				
 				if(!part.isMesh) {
@@ -909,66 +996,6 @@ const RBXAvatar = (() => {
 						AssetCache.loadMesh(true, meshId, mesh => {
 							if(part.rbxMeshId === meshId) {
 								applyMesh(part, mesh)
-								
-								if(part.skeleton) {
-									part.skeleton.dispose()
-									delete part.skeleton
-								}
-								
-								if(mesh.bones) {
-									part.isSkinnedMesh = true
-									
-									const indices = mesh.skinIndices
-									const weights = mesh.skinWeights
-									const inverses = []
-									const bones = []
-									
-									for(const bone of mesh.bones) {
-										const inverse = new THREE.Matrix4()
-										
-										bones.push({ matrixWorld: new THREE.Matrix4(), inverse: inverse })
-										inverses.push(inverse)
-									}
-									
-									part.geometry.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(indices, 4))
-									part.geometry.setAttribute("skinWeight", new THREE.Float32BufferAttribute(weights, 4))
-									
-									part.skeleton = new THREE.Skeleton(bones, inverses)
-									part.bind(part.skeleton, new THREE.Matrix4())
-									
-									const real_update = part.skeleton.update
-									
-									part.skeleton.update = () => {
-										for(let i = 0; i < mesh.bones.length; i++) {
-											const bone = mesh.bones[i]
-											const out = bones[i]
-											
-											const ref = this.parts[bone.name] || part
-											
-											const scale = new THREE.Vector3(
-												1 / part.rbxScaleMod.x,
-												1 / part.rbxScaleMod.y,
-												1 / part.rbxScaleMod.z
-											)
-											
-											out.matrixWorld.copy(ref.rbxUnscaledMatrix)
-											
-											out.matrixWorld.elements[12] = part.matrix.elements[12] + (ref.rbxUnscaledMatrix.elements[12] - part.rbxUnscaledMatrix.elements[12]) / scale.x
-											out.matrixWorld.elements[13] = part.matrix.elements[13] + (ref.rbxUnscaledMatrix.elements[13] - part.rbxUnscaledMatrix.elements[13]) / scale.y
-											out.matrixWorld.elements[14] = part.matrix.elements[14] + (ref.rbxUnscaledMatrix.elements[14] - part.rbxUnscaledMatrix.elements[14]) / scale.z
-											
-											out.matrixWorld.premultiply(tempMatrix.copy(part.matrix).invert())
-											out.inverse.copy(ref.rbxPoseMatrix).multiply(part.rbxPoseMatrix.clone().invert()).scale(scale).invert()
-										}
-										
-										return real_update.call(part.skeleton)
-									}
-								} else {
-									part.isSkinnedMesh = false
-									
-									part.geometry.deleteAttribute("skinIndex")
-									part.geometry.deleteAttribute("skinWeight")
-								}
 							}
 						})
 					}
@@ -976,22 +1003,22 @@ const RBXAvatar = (() => {
 				
 				// Update textures
 				const textures = [
-					[this.sources.base[partName], null, bodypart.baseTexId],
-					[this.sources[partName], null, bodypart.texId],
+					[this.sources.base[part.name], null, bodypart.baseTexId],
+					[this.sources[part.name], null, bodypart.texId],
 					
-					[this.sources.pbr[partName], null, bodypart.colorMapId],
+					[this.sources.pbr[part.name], null, bodypart.colorMapId],
 					[material, "normalMap", bodypart.normalMapId],
 					[material, "roughnessMap", bodypart.roughnessMapId],
 					[material, "metalnessMap", bodypart.metalnessMapIdId],
 				]
 				
 				if(bodypart.pbrEnabled) {
-					material.map = this.textures.pbr[partName]
+					material.map = this.textures.pbr[part.name]
 					
 					// only draw bodycolor if alphamode = 0
 					material.map.setSourceEnabled(0, bodypart.pbrAlphaMode === 0)
 				} else {
-					material.map = this.textures[partName]
+					material.map = this.textures[part.name]
 				}
 				
 				for(const [target, prop, texId] of textures) {
@@ -1204,11 +1231,17 @@ const RBXAvatar = (() => {
 						}
 					}
 					
-					const obj = acc.obj = new THREE.Mesh(undefined, material)
+					const obj = acc.obj = new THREE.SkinnedMesh(undefined, material)
+					obj.isSkinnedMesh = false
 					obj.matrixAutoUpdate = false
 					obj.frustumCulled = false
 					obj.visible = false
 					obj.castShadow = true
+					
+					obj.isRbxAccessory = true
+					obj.rbxPoseMatrix = new THREE.Matrix4()
+					obj.rbxUnscaledMatrix = new THREE.Matrix4()
+					obj.rbxScaleMod = new THREE.Vector3()
 					
 					if(acc.meshId) {
 						AssetCache.loadMesh(true, acc.meshId, mesh => applyMesh(obj, mesh))
@@ -1216,20 +1249,20 @@ const RBXAvatar = (() => {
 					
 					acc.bakedCFrame = new THREE.Matrix4()
 				}
-
+				
 				// Attach to correct attachment
 				const attachment = this.attachments[acc.attName]
 				const parent = attachment ? attachment.parent : this.parts.Head
 				
 				if(parent) {
 					// Scale
-					const scaleMod = this.getScaleMod(parent.name, acc.scaleType, parent.rbxScaleType)
-					acc.obj.scale.set(...(acc.scale || [1, 1, 1])).multiply(scaleMod)
+					this.getScaleMod(parent.name, acc.scaleType, parent.rbxScaleType, acc.obj.rbxScaleMod)
+					acc.obj.scale.set(...(acc.scale || [1, 1, 1])).multiply(acc.obj.rbxScaleMod)
 					
 					// Position
 					if(attachment) {
 						acc.bakedCFrame.copy(attachment.bakedCFrame).multiply(
-							scalePosition(tempMatrix.copy(acc.attCFrame), scaleMod)
+							scalePosition(tempMatrix.copy(acc.attCFrame), acc.obj.rbxScaleMod)
 						)
 					} else {
 						// Legacy hats, position is not scaled
@@ -1245,11 +1278,9 @@ const RBXAvatar = (() => {
 						acc.bakedCFrame.multiply(tempMatrix.makeTranslation(...acc.offset))
 					}
 					
-					// Apply scale to bakedCFrame
-					acc.bakedCFrame.scale(acc.obj.scale)
-					
 					//
 					
+					acc.obj.rbxPoseMatrix.copy(parent.rbxPoseMatrix).multiply(acc.bakedCFrame)
 					acc.parent = parent
 					
 					if(!acc.obj.parent) {
@@ -1257,6 +1288,7 @@ const RBXAvatar = (() => {
 					}
 					
 					this.accessories.push(acc)
+					this.activeMaterials.push(acc.obj.material)
 				} else {
 					acc.parent = null
 					
@@ -1264,8 +1296,6 @@ const RBXAvatar = (() => {
 						acc.obj.parent.remove(acc.obj)
 					}
 				}
-				
-				this.activeMaterials.push(acc.obj.material)
 			}
 		}
 	}

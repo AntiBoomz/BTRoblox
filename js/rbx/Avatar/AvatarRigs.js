@@ -6,6 +6,7 @@ const RBXAvatarRigs = (() => {
 
 		const recursePart = part => {
 			if(part.Name in parts) { return parts[part.Name] }
+			
 			const partData = {
 				name: part.Name,
 				children: [],
@@ -14,8 +15,8 @@ const RBXAvatarRigs = (() => {
 			}
 
 			parts[part.Name] = partData
-
-			part.Children.forEach(item => {
+			
+			for(const item of part.Children) {
 				if(item.ClassName === "Attachment" && !item.Name.endsWith("RigAttachment")) {
 					partData.attachments[item.Name] = RBXAvatar.CFrameToMatrix4(...item.CFrame)
 				} else if(item.ClassName === "Motor6D") {
@@ -34,25 +35,25 @@ const RBXAvatarRigs = (() => {
 						part1Data.attachments[`${item.Name}RigAttachment`] = RBXAvatar.CFrameToMatrix4(...item.C1)
 					}
 				}
-			})
+			}
 
 			if(part.ClassName === "MeshPart") {
-				partData.meshid = part.MeshID
+				partData.meshId = part.MeshID ?? part.MeshId
 			} else if(part.Name === "Head") {
-				partData.meshid = getURL(`res/previewer/heads/head.mesh`)
+				partData.meshId = getURL(`res/previewer/heads/head.mesh`)
 			} else if(RBXAvatar.R6BodyPartNames.indexOf(part.Name) !== -1) {
 				const fname = part.Name.toLowerCase().replace(/\s/g, "")
-				partData.meshid = getURL(`res/previewer/meshes/${fname}.mesh`)
+				partData.meshId = getURL(`res/previewer/meshes/${fname}.mesh`)
 			}
 
 			return partData
 		}
-
-		model.Children.forEach(item => {
+		
+		for(const item of model.Children) {
 			if(item.ClassName === "Part" || item.ClassName === "MeshPart") {
 				recursePart(item)
 			}
-		})
+		}
 
 		return parts.HumanoidRootPart
 	}
