@@ -7,7 +7,7 @@ const AssetCache = (() => {
 
 	const resourcePrefixUrl = getURL("")
 	const resourceToAsset = {
-		"res/previewer/characterModels.rbxm": "rbxassetid://2957693598&version=3",
+		"res/previewer/characterModels.rbxm": "rbxassetid://11829118051&version=1",
 		"res/previewer/face.png": "rbxassetid://2957705858",
 		
 		"res/previewer/meshes/leftarm.mesh": "rbxassetid://2957740508",
@@ -91,18 +91,20 @@ const AssetCache = (() => {
 			urlParams.sort()
 			
 			let cacheKey = urlParams.toString()
+			let fileCacheKey = urlParams.toString()
 			
 			if(params?.format) {
 				cacheKey += "@" + params.format
+				fileCacheKey += "@" + params.format
 			}
 			
 			const cachePromise = cache[cacheKey] = cache[cacheKey] || new SyncPromise(cacheResolve => {
-				const filePromise = fileCache[cacheKey] = fileCache[cacheKey] || new SyncPromise((fileResolve, fileReject) => {
+				const filePromise = fileCache[fileCacheKey] = fileCache[fileCacheKey] || new SyncPromise((fileResolve, fileReject) => {
 					RobloxApi.assetdelivery.requestAssetV1(urlParams, params).then(buffer => {
 						if(buffer) {
 							fileResolve(buffer)
 						} else {
-							fileReject(new Error(`Failed to download asset "${cacheKey}"`))
+							fileReject(new Error(`Failed to download asset "${fileCacheKey}"`))
 						}
 					})
 				})

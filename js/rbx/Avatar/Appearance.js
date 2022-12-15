@@ -63,7 +63,6 @@ const RBXAppearance = (() => {
 				this.loadPromise.resolve()
 			}
 			
-			
 			if(!this.assetTypeId) {
 				const json = await RobloxApi.api.getProductInfo(this.id)
 				this.assetTypeId = json.AssetTypeId
@@ -71,7 +70,7 @@ const RBXAppearance = (() => {
 			
 			let format
 			
-			if(this.assetTypeId === AssetType.Head) { // head
+			if(this.assetTypeId === AssetType.Head) {
 				// we only want to load regular heads as meshparts here
 				// because dynamicheads have wraptargets and we cant do
 				// those
@@ -292,6 +291,16 @@ const RBXAppearance = (() => {
 					bp.texId = this.validateAndPreload("Image", part.TextureID || part.TextureId)
 				}
 				
+				const wrapTarget = part.Children.find(x => x.ClassName === "WrapTarget")
+				
+				if(wrapTarget) {
+					bp.wrapTarget = {
+						cageMeshId: wrapTarget.CageMeshId ?? "",
+						cageOrigin: RBXAvatar.CFrameToMatrix4(...wrapTarget.CageOrigin),
+						stiffness: wrapTarget.Stiffness ?? 0
+					}
+				}
+				
 				this.addBodyPart(bp)
 				
 				for(const inst of part.Children) {
@@ -335,9 +344,6 @@ const RBXAppearance = (() => {
 			}
 			
 			if(hanInst.ClassName === "MeshPart") {
-				const wrapLayer = hanInst.Children.find(x => x.ClassName === "WrapLayer")
-				if(wrapLayer) { return } // unimplemented
-				
 				const size = hanInst.Size || hanInst.size
 				const initialSize = hanInst.InitialSize
 				
@@ -345,7 +351,6 @@ const RBXAppearance = (() => {
 				acc.meshId = this.validateAndPreload("Mesh", hanInst.MeshID || hanInst.MeshId)
 				
 				const surfaceAppearance = hanInst.Children.find(x => x.ClassName === "SurfaceAppearance")
-				
 				if(surfaceAppearance) {
 					acc.pbrEnabled = true
 					acc.pbrAlphaMode = surfaceAppearance.AlphaMode ?? 0
@@ -356,6 +361,18 @@ const RBXAppearance = (() => {
 					acc.metalnessMapId = this.validateAndPreload("Image", surfaceAppearance.MetalnessMap)
 				} else {
 					acc.texId = this.validateAndPreload("Image", hanInst.TextureID || hanInst.TextureId)
+				}
+				
+				const wrapLayer = hanInst.Children.find(x => x.ClassName === "WrapLayer")
+				if(wrapLayer) {
+					acc.wrapLayer = {
+						cageMeshId: wrapLayer.CageMeshId ?? "",
+						cageOrigin: RBXAvatar.CFrameToMatrix4(...wrapLayer.CageOrigin),
+						refMeshId: wrapLayer.ReferenceMeshId ?? "",
+						refOrigin: RBXAvatar.CFrameToMatrix4(...wrapLayer.ReferenceOrigin),
+						puffiness: wrapLayer.Puffiness ?? 0,
+						order: wrapLayer.Order ?? 0
+					}
 				}
 			} else {
 				const meshInst = hanInst.Children.find(x => x.ClassName === "SpecialMesh")

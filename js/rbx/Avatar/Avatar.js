@@ -814,7 +814,9 @@ const RBXAvatar = (() => {
 					meshId: tree.meshId
 				}
 				
+				obj.rbxOrigWrapTarget = tree.wrapTarget
 				obj.rbxOrigSize = tree.origSize
+				
 				obj.rbxScaleMod = new Vector3(1, 1, 1)
 				obj.matrixNoScale = new THREE.Matrix4()
 				obj.rbxPoseMatrix = new THREE.Matrix4()

@@ -19,6 +19,14 @@ const RBXAvatarRigs = (() => {
 			for(const item of part.Children) {
 				if(item.ClassName === "Attachment" && !item.Name.endsWith("RigAttachment")) {
 					partData.attachments[item.Name] = RBXAvatar.CFrameToMatrix4(...item.CFrame)
+					
+				} else if(item.ClassName === "WrapTarget") {
+					partData.wrapTarget = {
+						cageMeshId: item.CageMeshId ?? "",
+						cageOrigin: RBXAvatar.CFrameToMatrix4(...item.CageOrigin),
+						stiffness: item.Stiffness ?? 0
+					}
+					
 				} else if(item.ClassName === "Motor6D") {
 					const part0Data = recursePart(item.Part0)
 					const part1Data = recursePart(item.Part1)
