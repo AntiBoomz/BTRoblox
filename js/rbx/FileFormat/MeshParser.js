@@ -59,7 +59,7 @@ const RBXMeshParser = {
 			faces[i] = i
 		}
 
-		return { vertices, normals, uvs, faces }
+		return { vertices, normals, uvs, faces, lods: [0, faceCount] }
 	},
 
 	parseBin(buffer, version) {
