@@ -32,13 +32,13 @@ class ByteReader extends Uint8Array {
 		return neg ? -double : double
 	}
 
-	constructor(buffer) {
-		if(buffer instanceof Uint8Array) {
-			super(buffer.buffer)
-		} else {
-			assert(buffer instanceof ArrayBuffer, "buffer is not an ArrayBuffer")
-			super(buffer)
+	constructor(...args) {
+		if(args[0] instanceof Uint8Array) {
+			args[0] = args[0].buffer
 		}
+		
+		assert(args[0] instanceof ArrayBuffer, "buffer is not an ArrayBuffer")
+		super(...args)
 
 		this.index = 0
 	}
