@@ -9,8 +9,8 @@ const RBXAvatar = (() => {
 		geom.setAttribute("position", new THREE.BufferAttribute(mesh.vertices, 3))
 		geom.setAttribute("normal", new THREE.BufferAttribute(mesh.normals, 3))
 		geom.setAttribute("uv", new THREE.BufferAttribute(mesh.uvs, 2))
-		geom.setIndex(new THREE.BufferAttribute(mesh.faces, 1))
-
+		geom.setIndex(new THREE.BufferAttribute(mesh.faces.subarray(mesh.lods[0] * 3, mesh.lods[1] * 3), 1))
+		
 		// geom.computeBoundingSphere()
 
 		geom.verticesNeedUpdate = true

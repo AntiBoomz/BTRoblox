@@ -1,7 +1,7 @@
 "use strict"
 
 const RBXMeshParser = {
-	parse(buffer, params) {
+	parse(buffer) {
 		const reader = new ByteReader(buffer)
 		assert(reader.String(8) === "version ", "Invalid mesh file")
 
@@ -9,20 +9,20 @@ const RBXMeshParser = {
 		switch(version) {
 		case "1.00":
 		case "1.01":
-			return this.parseText(bufferToString(buffer), params)
+			return this.parseText(bufferToString(buffer))
 		case "2.00":
 		case "3.00":
 		case "3.01":
 		case "4.00":
 		case "4.01":
 		case "5.00":
-			return this.parseBin(buffer, version, params)
+			return this.parseBin(buffer, version)
 		default:
 			throw new Error(`Unsupported mesh version '${version}'`)
 		}
 	},
 
-	parseText(str, params = {}) {
+	parseText(str) {
 		const lines = str.split(/\r?\n/)
 		assert(lines.length === 3, "Invalid mesh version 1 file (Wrong amount of lines)")
 
@@ -62,7 +62,7 @@ const RBXMeshParser = {
 		return { vertices, normals, uvs, faces }
 	},
 
-	parseBin(buffer, version, params) {
+	parseBin(buffer, version) {
 		const reader = new ByteReader(buffer)
 		assert(reader.String(12) === `version ${version}`, "Bad header")
 
@@ -136,7 +136,7 @@ const RBXMeshParser = {
 			
 			vertexSize = 40
 		}
-
+		
 		reader.SetIndex(begin + headerSize)
 		
 		assert(vertexSize >= 36, `Invalid vertex size ${vertexSize}`)
@@ -159,19 +159,18 @@ const RBXMeshParser = {
 		const vertices = new Float32Array(vertexCount * 3)
 		const normals = new Float32Array(vertexCount * 3)
 		const uvs = new Float32Array(vertexCount * 2)
-		const tangents = !params?.excludeTangents ? new Uint8Array(vertexCount * 4) : null
-		const vertexColors = vertexSize >= 40 && !params?.excludeVertexColors ? new Uint8Array(vertexCount * 4) : null
-		const lodLevels = []
+		const tangents = new Uint8Array(vertexCount * 4)
+		const vertexColors = vertexSize >= 40 ? new Uint8Array(vertexCount * 4) : null
+		const lods = []
 
 		const mesh = {
+			vertexColors: vertexColors,
 			vertices: vertices,
-			normals: normals,
-			uvs: uvs,
-			faces: faces,
-			
-			lodLevels: lodLevels,
 			tangents: tangents,
-			vertexColors: vertexColors
+			normals: normals,
+			faces: faces,
+			lods: lods,
+			uvs: uvs
 		}
 		
 		// Vertex[vertexCount]
@@ -188,56 +187,42 @@ const RBXMeshParser = {
 			uvs[i * 2] = reader.FloatLE()
 			uvs[i * 2 + 1] = 1 - reader.FloatLE()
 			
-			if(tangents) {
-				// tangents are mapped from [0, 254] to [-1, 1]
-				// byte tx, ty, tz, ts;
-				
-				tangents[i * 4] = reader.Byte()
-				tangents[i * 4 + 1] = reader.Byte()
-				tangents[i * 4 + 2] = reader.Byte()
-				tangents[i * 4 + 3] = reader.Byte()
-			} else {
-				reader.Jump(4)
-			}
+			// tangents are mapped from [0, 254] to [-1, 1]
+			// byte tx, ty, tz, ts;
 			
-			if(vertexSize < 40) {
-				reader.Jump(vertexSize - 36)
-				continue
-			}
+			tangents[i * 4] = reader.Byte() / 127 - 1
+			tangents[i * 4 + 1] = reader.Byte() / 127 - 1
+			tangents[i * 4 + 2] = reader.Byte() / 127 - 1
+			tangents[i * 4 + 3] = reader.Byte() / 127 - 1
 			
 			if(vertexColors) {
 				// byte r, g, b, a
-				
 				vertexColors[i * 4] = reader.Byte()
 				vertexColors[i * 4 + 1] = reader.Byte()
 				vertexColors[i * 4 + 2] = reader.Byte()
 				vertexColors[i * 4 + 3] = reader.Byte()
+				
+				reader.Jump(vertexSize - 40)
 			} else {
-				reader.Jump(4)
+				reader.Jump(vertexSize - 36)
 			}
-			
-			reader.Jump(vertexSize - 40)
 		}
 		
 		// Envelope[vertexCount]
 		
 		if(boneCount > 0) {
-			if(params?.excludeBones) {
-				reader.Jump(vertexCount * 8)
-			} else {
-				mesh.skinIndices = new Uint8Array(vertexCount * 4)
-				mesh.skinWeights = new Float32Array(vertexCount * 4)
-				
-				for(let i = 0; i < vertexCount; i++) {
-					mesh.skinIndices[i * 4 + 0] = reader.Byte()
-					mesh.skinIndices[i * 4 + 1] = reader.Byte()
-					mesh.skinIndices[i * 4 + 2] = reader.Byte()
-					mesh.skinIndices[i * 4 + 3] = reader.Byte()
-					mesh.skinWeights[i * 4 + 0] = reader.Byte() / 255
-					mesh.skinWeights[i * 4 + 1] = reader.Byte() / 255
-					mesh.skinWeights[i * 4 + 2] = reader.Byte() / 255
-					mesh.skinWeights[i * 4 + 3] = reader.Byte() / 255
-				}
+			mesh.skinIndices = new Uint8Array(vertexCount * 4)
+			mesh.skinWeights = new Float32Array(vertexCount * 4)
+			
+			for(let i = 0; i < vertexCount; i++) {
+				mesh.skinIndices[i * 4 + 0] = reader.Byte()
+				mesh.skinIndices[i * 4 + 1] = reader.Byte()
+				mesh.skinIndices[i * 4 + 2] = reader.Byte()
+				mesh.skinIndices[i * 4 + 3] = reader.Byte()
+				mesh.skinWeights[i * 4 + 0] = reader.Byte() / 255
+				mesh.skinWeights[i * 4 + 1] = reader.Byte() / 255
+				mesh.skinWeights[i * 4 + 2] = reader.Byte() / 255
+				mesh.skinWeights[i * 4 + 3] = reader.Byte() / 255
 			}
 		}
 		
@@ -258,11 +243,11 @@ const RBXMeshParser = {
 			// is not at least 3, so we can just skip reading
 			// them completely.
 			
-			lodLevels.push(0, faceCount)
+			lods.push(0, faceCount)
 			reader.Jump(lodCount * lodSize)
 		} else {
 			for(let i = 0; i < lodCount; i++) {
-				lodLevels.push(reader.UInt32LE())
+				lods.push(reader.UInt32LE())
 				reader.Jump(lodSize - 4)
 			}
 		}
@@ -270,35 +255,31 @@ const RBXMeshParser = {
 		// Bone[boneCount]
 
 		if(boneCount > 0) {
-			if(params?.excludeBones) {
-				reader.Jump(boneCount * 60)
-			} else {
-				const nameTableStart = reader.GetIndex() + boneCount * 60
+			const nameTableStart = reader.GetIndex() + boneCount * 60
+			
+			mesh.bones = new Array(boneCount)
+			
+			for(let i = 0; i < boneCount; i++) {
+				const bone = {}
 				
-				mesh.bones = new Array(boneCount)
+				const nameStart = nameTableStart + reader.UInt32LE()
+				const nameEnd = reader.indexOf(0, nameStart)
 				
-				for(let i = 0; i < boneCount; i++) {
-					const bone = {}
-					
-					const nameStart = nameTableStart + reader.UInt32LE()
-					const nameEnd = reader.indexOf(0, nameStart)
-					
-					bone.name = bufferToString(reader.subarray(nameStart, nameEnd))
-					bone.parent = mesh.bones[reader.UInt16LE()]
-					bone.lodParent = mesh.bones[reader.UInt16LE()]
-					bone.culling = reader.FloatLE()
-					bone.cframe = new Array(12)
-					
-					for(let i = 0; i < 9; i++) {
-						bone.cframe[i + 3] = reader.FloatLE()
-					}
-					
-					for(let i = 0; i < 3; i++) {
-						bone.cframe[i] = reader.FloatLE()
-					}
-					
-					mesh.bones[i] = bone
+				bone.name = bufferToString(reader.subarray(nameStart, nameEnd))
+				bone.parent = mesh.bones[reader.UInt16LE()]
+				bone.lodParent = mesh.bones[reader.UInt16LE()]
+				bone.culling = reader.FloatLE()
+				bone.cframe = new Array(12)
+				
+				for(let i = 0; i < 9; i++) {
+					bone.cframe[i + 3] = reader.FloatLE()
 				}
+				
+				for(let i = 0; i < 3; i++) {
+					bone.cframe[i] = reader.FloatLE()
+				}
+				
+				mesh.bones[i] = bone
 			}
 		}
 		
@@ -311,29 +292,25 @@ const RBXMeshParser = {
 		// MeshSubset[subsetCount]
 
 		if(subsetCount > 0) {
-			if(params?.excludeBones) {
-				reader.Jump(subsetCount * 72)
-			} else {
-				const boneIndices = []
+			const boneIndices = []
+			
+			for(let i = 0; i < subsetCount; i++) {
+				reader.UInt32LE() // facesBegin
+				reader.UInt32LE() // facesLength
+				const vertsBegin = reader.UInt32LE()
+				const vertsLength = reader.UInt32LE()
+				reader.UInt32LE() // numBoneIndices
 				
-				for(let i = 0; i < subsetCount; i++) {
-					reader.UInt32LE() // facesBegin
-					reader.UInt32LE() // facesLength
-					const vertsBegin = reader.UInt32LE()
-					const vertsLength = reader.UInt32LE()
-					reader.UInt32LE() // numBoneIndices
-					
-					for(let i = 0; i < 26; i++) {
-						boneIndices[i] = reader.UInt16LE()
-					}
-					
-					const vertsEnd = vertsBegin + vertsLength
-					for(let i = vertsBegin; i < vertsEnd; i++) {
-						mesh.skinIndices[i * 4 + 0] = boneIndices[mesh.skinIndices[i * 4 + 0]]
-						mesh.skinIndices[i * 4 + 1] = boneIndices[mesh.skinIndices[i * 4 + 1]]
-						mesh.skinIndices[i * 4 + 2] = boneIndices[mesh.skinIndices[i * 4 + 2]]
-						mesh.skinIndices[i * 4 + 3] = boneIndices[mesh.skinIndices[i * 4 + 3]]
-					}
+				for(let i = 0; i < 26; i++) {
+					boneIndices[i] = reader.UInt16LE()
+				}
+				
+				const vertsEnd = vertsBegin + vertsLength
+				for(let i = vertsBegin; i < vertsEnd; i++) {
+					mesh.skinIndices[i * 4 + 0] = boneIndices[mesh.skinIndices[i * 4 + 0]]
+					mesh.skinIndices[i * 4 + 1] = boneIndices[mesh.skinIndices[i * 4 + 1]]
+					mesh.skinIndices[i * 4 + 2] = boneIndices[mesh.skinIndices[i * 4 + 2]]
+					mesh.skinIndices[i * 4 + 3] = boneIndices[mesh.skinIndices[i * 4 + 3]]
 				}
 			}
 		}
@@ -344,16 +321,6 @@ const RBXMeshParser = {
 			reader.Jump(facsDataSize)
 		}
 
-		//
-		
-		
-		//
-		
-		if(params?.excludeLods && lodCount >= 3) {
-			mesh.faces = faces.slice(lodLevels[0] * 3, lodLevels[1] * 3)
-			delete mesh.lodLevels
-		}
-		
 		//
 
 		return mesh

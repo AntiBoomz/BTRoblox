@@ -141,7 +141,7 @@ const AssetCache = (() => {
 			return RBXParser.parseAnimation(findSequence(RBXParser.parseModel(buffer)))
 		}),
 		loadModel: createMethod(buffer => RBXParser.parseModel(buffer)),
-		loadMesh: createMethod(buffer => RBXParser.parseMesh(buffer, { excludeLods: true, excludeTangents: true, excludeVertexColors: true })),
+		loadMesh: createMethod(buffer => RBXParser.parseMesh(buffer)),
 		loadImage: createMethod(buffer => new SyncPromise((resolve, reject) => {
 			const src = URL.createObjectURL(new Blob([new Uint8Array(buffer)], { type: "image/png" }))
 			
