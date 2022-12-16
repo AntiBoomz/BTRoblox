@@ -636,195 +636,200 @@ const RBXAvatar = (() => {
 				}
 				
 				if(this.layeredRequestState !== "fetching" && this.layeredRequestId !== this.layeredFinishedId && performance.now() - (this.lastLayeredChange || 0) > 2e-3) {
-					this.layeredRequestState = "fetching"
-					this.trigger("layeredRequestStateChanged", this.layeredRequestState)
-					
-					const body = {
-						avatarDefinition: {
-							assets: [
-								{ id: 11187668197 } // anchor
-							],
-							bodyColors: request.bodyColors,
-							scales: request.scales,
-							playerAvatarType: {
-								playerAvatarType: "R15"
-							}
-						},
-						thumbnailConfig: {
-							size: "420x420",
-							thumbnailId: 3,
-							thumbnailType: "3d"
-						}
-					}
-					
-					const requestedAccessories = Object.values(accessories)
-				
-					for(const acc of requestedAccessories) {
-						if(!body.avatarDefinition.assets.find(x => x.id === acc.asset.id)) {
-							body.avatarDefinition.assets.push({ id: acc.asset.id, meta: acc.asset.meta })
-						}
-					}
-					
-					for(const bp of Object.values(bodyparts)) {
-						if(!body.avatarDefinition.assets.find(x => x.id === bp.asset.id)) {
-							body.avatarDefinition.assets.push({ id: bp.asset.id })
-						}
-					}
-					
-					const requestId = this.layeredRequestId
-					
-					RobloxApi.avatar.renderAvatar(body).then(async json => {
-						if(this.layeredRequestId !== requestId) { return }
-						if(!json.imageUrl) { return }
+					if(Object.values(request.accessories).length === 0) {
+						this.layeredRequestState = null
+						this.layeredFinishedId = this.layeredRequestId
+					} else {
+						this.layeredRequestState = "fetching"
+						this.trigger("layeredRequestStateChanged", this.layeredRequestState)
 						
-						const render = await fetch(json.imageUrl).then(res => res.json())
-						if(this.layeredRequestId !== requestId) { return }
-						
-						const obj = await fetch(AssetCache.getHashUrl(render.obj)).then(res => res.text())
-						if(this.layeredRequestId !== requestId) { return }
-						
-						// Ultra hacky code ahead
-						
-						const lines = obj.split("\n")
-						const groups = []
-						
-						let group
-						for(const line of lines) {
-							switch(line[0]) {
-							case "g":
-								if(line[1] === " ") {
-									const name = line.slice(2)
-									
-									if(name.startsWith("Handle")) {
-										group = { name: line.slice(2), numFaces: 0, verts: [], uvs: [] }
-										groups.push(group)
-									} else {
-										group = null
-									}
+						const body = {
+							avatarDefinition: {
+								assets: [
+									{ id: 11187668197 } // anchor
+								],
+								bodyColors: request.bodyColors,
+								scales: request.scales,
+								playerAvatarType: {
+									playerAvatarType: "R15"
 								}
-								break
-							case "f":
-								if(group && line[1] === " ") {
-									group.numFaces += 1
-								}
-								break
-							case "v":
-								if(group) {
-									if(line[1] === " ") {
-										const pieces = line.split(" ")
-										group.verts.push(+pieces[1], +pieces[2], +pieces[3])
-									} else if(line[1] === "t" && line[2] === " ") {
-										const pieces = line.split(" ")
-										group.uvs.push(+pieces[1], +pieces[2])
-									}
-								}
+							},
+							thumbnailConfig: {
+								size: "420x420",
+								thumbnailId: 3,
+								thumbnailType: "3d"
 							}
 						}
 						
-						// Calculate anchor
-						const anchor = groups.find(x => x.name.startsWith("Handle") && x.numFaces === 12)
-						const anchorMat = new THREE.Matrix4()
-						
-						for(let i = 0; i < anchor.verts.length; i += 3) {
-							anchorMat.elements[12] += anchor.verts[i]
-							anchorMat.elements[13] += anchor.verts[i + 1]
-							anchorMat.elements[14] += anchor.verts[i + 2]
-						}
-						
-						anchorMat.elements[12] /= anchor.verts.length / 3
-						anchorMat.elements[13] /= anchor.verts.length / 3
-						anchorMat.elements[14] /= anchor.verts.length / 3
-						
-						const attachment = this.attachments.HatAttachment
-						const scaleMod = this.getScaleMod(attachment.parent.name, "Classic", attachment.parent.rbxScaleType)
-						const attCFrame = new THREE.Matrix4().makeTranslation(-0.013, -0.554, -0.657)
-						
-						const bakedCFrame = attachment.bakedCFrame.clone().multiply(
-							scalePosition(tempMatrix.copy(attCFrame), scaleMod)
-						)
-						
-						// Calculate layeredMatrix
-						if(!this.parts.HumanoidRootPart.layeredMatrix) {
-							this.parts.HumanoidRootPart.layeredMatrix = new THREE.Matrix4()
-						}
-						
-						for(const joint of this.sortedJointsArray) {
-							if(!joint.part1.layeredMatrix) {
-								joint.part1.layeredMatrix = new THREE.Matrix4()
-							}
-							
-							joint.part1.layeredMatrix.multiplyMatrices(joint.part0.layeredMatrix, joint.bakedC0).multiply(tempMatrix2.copy(joint.bakedC1).invert())
-						}
-						
-						// Calculate targets
+						const requestedAccessories = Object.values(accessories)
+					
 						for(const acc of requestedAccessories) {
-							const faceCount = acc.obj.geometry.index.count / 3
+							if(!body.avatarDefinition.assets.find(x => x.id === acc.asset.id)) {
+								body.avatarDefinition.assets.push({ id: acc.asset.id, meta: acc.asset.meta })
+							}
+						}
+						
+						for(const bp of Object.values(bodyparts)) {
+							if(!body.avatarDefinition.assets.find(x => x.id === bp.asset.id)) {
+								body.avatarDefinition.assets.push({ id: bp.asset.id })
+							}
+						}
+						
+						const requestId = this.layeredRequestId
+						
+						RobloxApi.avatar.renderAvatar(body).then(async json => {
+							if(this.layeredRequestId !== requestId) { return }
+							if(!json.imageUrl) { return }
 							
-							const possibleTargets = groups.filter(x => x !== anchor && x.numFaces <= faceCount).sort((a, b) => b.numFaces - a.numFaces)
-							let target
+							const render = await fetch(json.imageUrl).then(res => res.json())
+							if(this.layeredRequestId !== requestId) { return }
 							
-							if(possibleTargets.length >= 2) {
-								const origUvs = acc.obj.geometry.attributes.uv.array
+							const obj = await fetch(AssetCache.getHashUrl(render.obj)).then(res => res.text())
+							if(this.layeredRequestId !== requestId) { return }
+							
+							// Ultra hacky code ahead
+							
+							const lines = obj.split("\n")
+							const groups = []
+							
+							let group
+							for(const line of lines) {
+								switch(line[0]) {
+								case "g":
+									if(line[1] === " ") {
+										const name = line.slice(2)
+										
+										if(name.startsWith("Handle")) {
+											group = { name: line.slice(2), numFaces: 0, verts: [], uvs: [] }
+											groups.push(group)
+										} else {
+											group = null
+										}
+									}
+									break
+								case "f":
+									if(group && line[1] === " ") {
+										group.numFaces += 1
+									}
+									break
+								case "v":
+									if(group) {
+										if(line[1] === " ") {
+											const pieces = line.split(" ")
+											group.verts.push(+pieces[1], +pieces[2], +pieces[3])
+										} else if(line[1] === "t" && line[2] === " ") {
+											const pieces = line.split(" ")
+											group.uvs.push(+pieces[1], +pieces[2])
+										}
+									}
+								}
+							}
+							
+							// Calculate anchor
+							const anchor = groups.find(x => x.name.startsWith("Handle") && x.numFaces === 12)
+							const anchorMat = new THREE.Matrix4()
+							
+							for(let i = 0; i < anchor.verts.length; i += 3) {
+								anchorMat.elements[12] += anchor.verts[i]
+								anchorMat.elements[13] += anchor.verts[i + 1]
+								anchorMat.elements[14] += anchor.verts[i + 2]
+							}
+							
+							anchorMat.elements[12] /= anchor.verts.length / 3
+							anchorMat.elements[13] /= anchor.verts.length / 3
+							anchorMat.elements[14] /= anchor.verts.length / 3
+							
+							const attachment = this.attachments.HatAttachment
+							const scaleMod = this.getScaleMod(attachment.parent.name, "Classic", attachment.parent.rbxScaleType)
+							const attCFrame = new THREE.Matrix4().makeTranslation(-0.013, -0.554, -0.657)
+							
+							const bakedCFrame = attachment.bakedCFrame.clone().multiply(
+								scalePosition(tempMatrix.copy(attCFrame), scaleMod)
+							)
+							
+							// Calculate layeredMatrix
+							if(!this.parts.HumanoidRootPart.layeredMatrix) {
+								this.parts.HumanoidRootPart.layeredMatrix = new THREE.Matrix4()
+							}
+							
+							for(const joint of this.sortedJointsArray) {
+								if(!joint.part1.layeredMatrix) {
+									joint.part1.layeredMatrix = new THREE.Matrix4()
+								}
 								
-								for(const group of possibleTargets) {
-									let invalid = false
+								joint.part1.layeredMatrix.multiplyMatrices(joint.part0.layeredMatrix, joint.bakedC0).multiply(tempMatrix2.copy(joint.bakedC1).invert())
+							}
+							
+							// Calculate targets
+							for(const acc of requestedAccessories) {
+								const faceCount = acc.obj.geometry.index.count / 3
+								
+								const possibleTargets = groups.filter(x => x !== anchor && x.numFaces <= faceCount).sort((a, b) => b.numFaces - a.numFaces)
+								let target
+								
+								if(possibleTargets.length >= 2) {
+									const origUvs = acc.obj.geometry.attributes.uv.array
 									
-									for(let i = 0; i < group.uvs.length; i++) {
-										if(Math.abs(group.uvs[i] - origUvs[i]) > 0.01) {
-											invalid = true
+									for(const group of possibleTargets) {
+										let invalid = false
+										
+										for(let i = 0; i < group.uvs.length; i++) {
+											if(Math.abs(group.uvs[i] - origUvs[i]) > 0.01) {
+												invalid = true
+												break
+											}
+										}
+										
+										if(!invalid) {
+											target = group
 											break
 										}
 									}
-									
-									if(!invalid) {
-										target = group
-										break
-									}
+								} else {
+									target = possibleTargets[0]
 								}
-							} else {
-								target = possibleTargets[0]
-							}
-							
-							if(!target) {
-								console.log(groups)
-								console.log(acc.asset.id, faceCount, possibleTargets)
-								alert("some asset was not in render")
-								continue
-							}
-							
-							const layeredPreviewMatrix = acc.parent.layeredMatrix.clone().multiply(acc.bakedCFrame)
-							const layeredAnchorMatrix = attachment.parent.layeredMatrix.clone().multiply(bakedCFrame)
-							
-							const transform = layeredPreviewMatrix.clone().invert().multiply(layeredAnchorMatrix).multiply(anchorMat.clone().invert())
-							
-							if(!acc.origVertices) { acc.origVertices = acc.obj.geometry.attributes.position.array }
-							const newVertices = acc.origVertices.slice()
-							
-							const vertex = new THREE.Matrix4()
-							for(let i = 0; i < target.verts.length; i += 3) {
-								vertex.makeTranslation(target.verts[i + 0], target.verts[i + 1], target.verts[i + 2]).premultiply(transform)
 								
-								newVertices[i + 0] = vertex.elements[12]
-								newVertices[i + 1] = vertex.elements[13]
-								newVertices[i + 2] = vertex.elements[14]
+								if(!target) {
+									console.log(groups)
+									console.log(acc.asset.id, faceCount, possibleTargets)
+									alert("some asset was not in render")
+									continue
+								}
+								
+								const layeredPreviewMatrix = acc.parent.layeredMatrix.clone().multiply(acc.bakedCFrame)
+								const layeredAnchorMatrix = attachment.parent.layeredMatrix.clone().multiply(bakedCFrame)
+								
+								const transform = layeredPreviewMatrix.clone().invert().multiply(layeredAnchorMatrix).multiply(anchorMat.clone().invert())
+								
+								if(!acc.origVertices) { acc.origVertices = acc.obj.geometry.attributes.position.array }
+								const newVertices = acc.origVertices.slice()
+								
+								const vertex = new THREE.Matrix4()
+								for(let i = 0; i < target.verts.length; i += 3) {
+									vertex.makeTranslation(target.verts[i + 0], target.verts[i + 1], target.verts[i + 2]).premultiply(transform)
+									
+									newVertices[i + 0] = vertex.elements[12]
+									newVertices[i + 1] = vertex.elements[13]
+									newVertices[i + 2] = vertex.elements[14]
+								}
+								
+								acc.obj.rbxLayeredPreview = true
+								acc.obj.geometry.setAttribute("position", new THREE.BufferAttribute(newVertices, 3))
 							}
 							
-							acc.obj.rbxLayeredPreview = true
-							acc.obj.geometry.setAttribute("position", new THREE.BufferAttribute(newVertices, 3))
-						}
-						
-						this.layeredRequestState = "done"
-						this.layeredFinishedId = requestId
-						this.trigger("layeredRequestStateChanged", this.layeredRequestState)
-						
-					}).finally(() => {
-						if(this.layeredRequestState === "fetching") {
-							setTimeout(() => {
-								this.layeredRequestState = null
-								this.trigger("layeredRequestStateChanged", this.layeredRequestState)
-							}, 2000)
-						}
-					})
+							this.layeredRequestState = "done"
+							this.layeredFinishedId = requestId
+							this.trigger("layeredRequestStateChanged", this.layeredRequestState)
+							
+						}).finally(() => {
+							if(this.layeredRequestState === "fetching") {
+								setTimeout(() => {
+									this.layeredRequestState = null
+									this.trigger("layeredRequestStateChanged", this.layeredRequestState)
+								}, 2000)
+							}
+						})
+					}
 				}
 			}
 			
