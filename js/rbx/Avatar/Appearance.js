@@ -24,11 +24,12 @@ const RBXAppearance = (() => {
 	}
 
 	class Asset extends EventEmitter {
-		constructor(assetId, assetTypeId = null) {
+		constructor(assetId, assetTypeId = null, meta = null) {
 			super()
 
 			this.id = assetId
 			this.assetTypeId = assetTypeId
+			this.meta = meta
 			
 			this.active = true
 			this.enabled = true
@@ -170,8 +171,8 @@ const RBXAppearance = (() => {
 		addLoader(promise) { this.loaders.push(promise) }
 		
 		addAttachment(data) { this.attachments.push(data) }
-		addAccessory(data) { this.accessories.push(data) }
-		addBodyPart(data) { this.bodyparts.push(data) }
+		addAccessory(data) { data.asset = this; this.accessories.push(data) }
+		addBodyPart(data) { data.asset = this; this.bodyparts.push(data) }
 		addClothing(data) { this.clothing.push(data) }
 
 		setPriority(priority) {
@@ -401,8 +402,8 @@ const RBXAppearance = (() => {
 			this.assets.forEach(asset => asset.load())
 		}
 		
-		addAsset(assetId, assetTypeId = null) {
-			const asset = new Asset(assetId, assetTypeId)
+		addAsset(assetId, assetTypeId = null, meta = null) {
+			const asset = new Asset(assetId, assetTypeId, meta)
 			this.assets.add(asset)
 
 			const onUpdate = () => this.trigger("update")

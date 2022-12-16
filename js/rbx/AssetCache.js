@@ -160,14 +160,21 @@ const AssetCache = (() => {
 		loadBuffer: createMethod(buffer => buffer),
 		loadText: createMethod(buffer => bufferToString(buffer)),
 
+		getHashUrl(hash) {
+			let t = 31
+			
+			for(let n = 0; n < 32; n++) {
+				t ^= hash.charCodeAt(n)
+			}
+			
+			return `https://t${t % 8}.rbxcdn.com/${hash}`
+		},
 		toAssetUrl(id) {
 			return `https://assetdelivery.roblox.com/v1/asset/?id=${+id}`
 		},
-		
 		isValidAssetUrl(url) {
 			return typeof url === "string" ? !!resolveAssetUrlParams(url) : false
 		},
-
 		resolveAssetId(url) {
 			return typeof url === "string" ? resolveAssetUrlParams(url)?.get("id") : null
 		}

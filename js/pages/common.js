@@ -84,19 +84,6 @@ const robloxLinkify = target => {
 
 //
 
-let cachedPageXsrfToken = null
-
-const getXsrfToken = () => {
-	if(cachedPageXsrfToken === null) {
-		const matches = document.documentElement.innerHTML.match(/XsrfToken\.setToken\('([^']+)'\)/)
-		cachedPageXsrfToken = matches?.[1] ?? false
-	}
-	
-	return cachedPageXsrfToken || null
-}
-
-//
-
 function startDownload(blob, fileName) {
 	const link = document.createElement("a")
 	link.setAttribute("download", fileName || "file")

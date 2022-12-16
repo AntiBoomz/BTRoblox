@@ -296,7 +296,7 @@ const RBXAvatar = (() => {
 		"LeftFoot", "LeftHand", "LeftLowerArm", "LeftLowerLeg", "LeftUpperArm", "LeftUpperLeg", "LowerTorso",
 		"RightFoot", "RightHand", "RightLowerArm", "RightLowerLeg", "RightUpperArm", "RightUpperLeg", "UpperTorso"
 	]
-
+	
 	const ScaleMods = {
 		Default: {
 			LeftHand: new Vector3(1.066, 1.174, 1.231),
@@ -395,10 +395,10 @@ const RBXAvatar = (() => {
 			this.bodyColors = {
 				head: "#A3A2A5",
 				torso: "#A3A2A5",
-				leftarm: "#A3A2A5",
-				rightarm: "#A3A2A5",
-				leftleg: "#A3A2A5",
-				rightleg: "#A3A2A5"
+				leftArm: "#A3A2A5",
+				rightArm: "#A3A2A5",
+				leftLeg: "#A3A2A5",
+				rightLeg: "#A3A2A5"
 			}
 			
 			if(!compositeRenderer) {
@@ -425,25 +425,25 @@ const RBXAvatar = (() => {
 						ctx.fillRect(194, 322, 272, 76)
 						ctx.fillRect(272, 401, 148, 104)
 				
-						ctx.fillStyle = this.bodyColors.rightarm
+						ctx.fillStyle = this.bodyColors.rightArm
 						ctx.fillRect(200, 0, 192, 320)
 						ctx.fillRect(420, 400, 148, 104)
 						ctx.fillRect(758, 322, 76, 76)
 						ctx.fillRect(898, 322, 76, 76)
 				
-						ctx.fillStyle = this.bodyColors.leftarm
+						ctx.fillStyle = this.bodyColors.leftArm
 						ctx.fillRect(400, 0, 192, 320)
 						ctx.fillRect(568, 400, 148, 104)
 						ctx.fillRect(828, 322, 76, 76)
 						ctx.fillRect(194, 394, 76, 76)
 				
-						ctx.fillStyle = this.bodyColors.rightleg
+						ctx.fillStyle = this.bodyColors.rightLeg
 						ctx.fillRect(600, 0, 192, 320)
 						ctx.fillRect(716, 400, 148, 104)
 						ctx.fillRect(466, 322, 76, 76)
 						ctx.fillRect(610, 322, 76, 76)
 				
-						ctx.fillStyle = this.bodyColors.leftleg
+						ctx.fillStyle = this.bodyColors.leftLeg
 						ctx.fillRect(800, 0, 192, 320)
 						ctx.fillRect(864, 400, 148, 104)
 						ctx.fillRect(542, 322, 76, 76)
@@ -452,10 +452,10 @@ const RBXAvatar = (() => {
 					
 					head: MergeSource.fromHex("#A3A2A5"),
 					torso: MergeSource.fromHex("#A3A2A5"),
-					leftarm: MergeSource.fromHex("#A3A2A5"),
-					leftleg: MergeSource.fromHex("#A3A2A5"),
-					rightarm: MergeSource.fromHex("#A3A2A5"),
-					rightleg: MergeSource.fromHex("#A3A2A5")
+					leftArm: MergeSource.fromHex("#A3A2A5"),
+					leftLeg: MergeSource.fromHex("#A3A2A5"),
+					rightArm: MergeSource.fromHex("#A3A2A5"),
+					rightLeg: MergeSource.fromHex("#A3A2A5")
 				},
 				
 				pbr: {},
@@ -469,10 +469,10 @@ const RBXAvatar = (() => {
 			const composites = this.composites = {
 				r6: new RBXComposites.R6Composite(sources),
 				torso: new RBXComposites.R15TorsoComposite(sources),
-				leftarm: new RBXComposites.R15LeftArmComposite(sources),
-				leftleg: new RBXComposites.R15LeftLegComposite(sources),
-				rightarm: new RBXComposites.R15RightArmComposite(sources),
-				rightleg: new RBXComposites.R15RightLegComposite(sources)
+				leftArm: new RBXComposites.R15LeftArmComposite(sources),
+				leftLeg: new RBXComposites.R15LeftLegComposite(sources),
+				rightArm: new RBXComposites.R15RightArmComposite(sources),
+				rightLeg: new RBXComposites.R15RightLegComposite(sources)
 			}
 			
 			sources.face.defaultImage = getURL("res/previewer/face.png")
@@ -487,7 +487,7 @@ const RBXAvatar = (() => {
 			}
 
 			for(const name of R15BodyPartNames) {
-				const limb = name.toLowerCase().replace(/upper|lower|\s/g, "").replace(/hand/g, "arm").replace(/foot/g, "leg")
+				const limb = name.replace(/\s|Lower|Upper/g, "").replace(/Hand|Foot/, x => ({ Hand: "Arm", Foot: "Leg" })[x]).replace(/^./, x => x.toLowerCase())
 				const composite = composites[limb]
 				
 				sources[name] = new MergeSource()
@@ -495,7 +495,7 @@ const RBXAvatar = (() => {
 			}
 			
 			for(const name of ["Head", ...R6BodyPartNames, ...R15BodyPartNames]) {
-				const limb = name.toLowerCase().replace(/upper|lower|\s/g, "").replace(/hand/g, "arm").replace(/foot/g, "leg")
+				const limb = name.replace(/\s|Lower|Upper/g, "").replace(/Hand|Foot/, x => ({ Hand: "Arm", Foot: "Leg" })[x]).replace(/^./, x => x.toLowerCase())
 				
 				sources.pbr[name] = new MergeSource()
 				textures.pbr[name] = new MergeTexture(1024, 1024, sources.bodyColors[limb], sources.pbr[name])
@@ -571,11 +571,223 @@ const RBXAvatar = (() => {
 			// Update accessories
 			for(const acc of this.accessories) {
 				if(!acc.parent) { continue }
-				
+
 				acc.obj.rbxUnscaledMatrix.copy(acc.parent.rbxUnscaledMatrix).multiply(acc.bakedCFrame)
-				
 				acc.obj.matrix.multiplyMatrices(acc.parent.matrixNoScale, acc.bakedCFrame).scale(acc.obj.scale)
+				
 				acc.obj.matrixWorldNeedsUpdate = true
+			}
+			
+			// Update layered clothing
+			if(this.playerType === "R15" && performance.now() - (this.lastUpdatedLayeredPreview ?? 0) > 2e3) {
+				this.lastUpdatedLayeredPreview = performance.now()
+				
+				const request = {
+					avatarDefinition: {
+						assets: [
+							{ id: 11187668197 } // anchor
+						],
+						bodyColors: {},
+						scales: this.scales,
+						playerAvatarType: {
+							playerAvatarType: "R15"
+						}
+					},
+					thumbnailConfig: {
+						size: "420x420",
+						thumbnailId: 3,
+						thumbnailType: "3d"
+					}
+				}
+				
+				const requestedAccessories = []
+				const bodyparts = {}
+				
+				for(const acc of this.accessories) {
+					if(!acc.parent) { continue }
+					
+					if(acc.wrapLayer) {
+						requestedAccessories.push(acc)
+						
+						if(!request.avatarDefinition.assets.find(x => x.id === acc.asset.id)) {
+							request.avatarDefinition.assets.push({ id: acc.asset.id, meta: acc.asset.meta })
+						}
+					}
+				}
+				
+				for(const [name, color] of Object.entries(this.bodyColors)) {
+					request.avatarDefinition.bodyColors[name + "Color"] = color
+				}
+				
+				for(const asset of this.appearance.assets) {
+					for(const bp of asset.bodyparts) {
+						bodyparts[bp.target] = bp
+					}
+				}
+				
+				for(const bp of Object.values(bodyparts)) {
+					if(!request.avatarDefinition.assets.find(x => x.id === bp.asset.id)) {
+						request.avatarDefinition.assets.push({ id: bp.asset.id })
+					}
+				}
+				
+				const requestString = JSON.stringify(request)
+				this.layeredRequestString = requestString
+				
+				if(this.layeredRequestState !== "fetching" && this.layeredLastApplied !== requestString) {
+					this.layeredRequestState = "fetching"
+					
+					RobloxApi.avatar.renderAvatar(request).then(async json => {
+						if(this.layeredRequestString !== requestString) { return }
+						if(!json.imageUrl) { return }
+						
+						const render = await fetch(json.imageUrl).then(res => res.json())
+						if(this.layeredRequestString !== requestString) { return }
+						
+						const obj = await fetch(AssetCache.getHashUrl(render.obj)).then(res => res.text())
+						if(this.layeredRequestString !== requestString) { return }
+						
+						// Ultra hacky code ahead
+						
+						const lines = obj.split("\n")
+						const groups = []
+						
+						let group
+						for(const line of lines) {
+							switch(line[0]) {
+							case "g":
+								if(line[1] === " ") {
+									const name = line.slice(2)
+									
+									if(name.startsWith("Handle")) {
+										group = { name: line.slice(2), numFaces: 0, verts: [], uvs: [] }
+										groups.push(group)
+									} else {
+										group = null
+									}
+								}
+								break
+							case "f":
+								if(group && line[1] === " ") {
+									group.numFaces += 1
+								}
+								break
+							case "v":
+								if(group) {
+									if(line[1] === " ") {
+										const pieces = line.split(" ")
+										group.verts.push(+pieces[1], +pieces[2], +pieces[3])
+									} else if(line[1] === "t" && line[2] === " ") {
+										const pieces = line.split(" ")
+										group.uvs.push(+pieces[1], +pieces[2])
+									}
+								}
+							}
+						}
+						
+						// Calculate anchor
+						const anchor = groups.find(x => x.name.startsWith("Handle") && x.numFaces === 12)
+						const anchorMat = new THREE.Matrix4()
+						
+						for(let i = 0; i < anchor.verts.length; i += 3) {
+							anchorMat.elements[12] += anchor.verts[i]
+							anchorMat.elements[13] += anchor.verts[i + 1]
+							anchorMat.elements[14] += anchor.verts[i + 2]
+						}
+						
+						anchorMat.elements[12] /= anchor.verts.length / 3
+						anchorMat.elements[13] /= anchor.verts.length / 3
+						anchorMat.elements[14] /= anchor.verts.length / 3
+						
+						const attachment = this.attachments.HatAttachment
+						const scaleMod = this.getScaleMod(attachment.parent.name, "Classic", attachment.parent.rbxScaleType)
+						const attCFrame = new THREE.Matrix4().makeTranslation(-0.013, -0.554, -0.657)
+						
+						const bakedCFrame = attachment.bakedCFrame.clone().multiply(
+							scalePosition(tempMatrix.copy(attCFrame), scaleMod)
+						)
+						
+						// Calculate layeredMatrix
+						if(!this.parts.HumanoidRootPart.layeredMatrix) {
+							this.parts.HumanoidRootPart.layeredMatrix = new THREE.Matrix4()
+						}
+						
+						for(const joint of this.sortedJointsArray) {
+							if(!joint.part1.layeredMatrix) {
+								joint.part1.layeredMatrix = new THREE.Matrix4()
+							}
+							
+							joint.part1.layeredMatrix.multiplyMatrices(joint.part0.layeredMatrix, joint.bakedC0).multiply(tempMatrix2.copy(joint.bakedC1).invert())
+						}
+						
+						// Calculate targets
+						for(const acc of requestedAccessories) {
+							const faceCount = acc.obj.geometry.index.count / 3
+							
+							const possibleTargets = groups.filter(x => x !== anchor && x.numFaces <= faceCount).sort((a, b) => b.numFaces - a.numFaces)
+							let target
+							
+							console.log(acc.asset.id, faceCount, possibleTargets)
+							
+							if(possibleTargets.length >= 2) {
+								const origUvs = acc.obj.geometry.attributes.uv.array
+								
+								for(const group of possibleTargets) {
+									let invalid = false
+									
+									for(let i = 0; i < group.uvs.length; i++) {
+										if(Math.abs(group.uvs[i] - origUvs[i]) > 0.01) {
+											invalid = true
+											break
+										}
+									}
+									
+									if(!invalid) {
+										target = group
+										break
+									}
+								}
+							} else {
+								target = possibleTargets[0]
+							}
+							
+							if(!target) {
+								console.log(groups)
+								console.log(acc.asset.id, faceCount, possibleTargets)
+								alert("some asset was not in render")
+								continue
+							}
+							
+							const layeredPreviewMatrix = acc.parent.layeredMatrix.clone().multiply(acc.bakedCFrame)
+							const layeredAnchorMatrix = attachment.parent.layeredMatrix.clone().multiply(bakedCFrame)
+							
+							const transform = layeredPreviewMatrix.clone().invert().multiply(layeredAnchorMatrix).multiply(anchorMat.clone().invert())
+							
+							if(!acc.origVertices) { acc.origVertices = acc.obj.geometry.attributes.position.array }
+							const newVertices = acc.origVertices.slice()
+							
+							const vertex = new THREE.Matrix4()
+							for(let i = 0; i < target.verts.length; i += 3) {
+								vertex.makeTranslation(target.verts[i + 0], target.verts[i + 1], target.verts[i + 2]).premultiply(transform)
+								
+								newVertices[i + 0] = vertex.elements[12]
+								newVertices[i + 1] = vertex.elements[13]
+								newVertices[i + 2] = vertex.elements[14]
+							}
+							
+							acc.obj.rbxLayeredPreview = true
+							acc.obj.geometry.setAttribute("position", new THREE.BufferAttribute(newVertices, 3))
+						}
+						
+						this.layeredLastApplied = requestString
+						this.layeredRequestState = "done"
+						
+					}).finally(() => {
+						if(this.layeredRequestState === "fetching") {
+							setTimeout(() => this.layeredRequestState = null, 2000)
+						}
+					})
+				}
 			}
 			
 			// Update bones
@@ -585,6 +797,10 @@ const RBXAvatar = (() => {
 					1 / obj.rbxScaleMod.y,
 					1 / obj.rbxScaleMod.z
 				)
+				
+				if(obj.rbxLayeredPreview) {
+					scale.set(1, 1, 1)
+				}
 				
 				const inversePoseMatrix = obj.rbxPoseMatrix.clone().invert()
 				
@@ -603,13 +819,13 @@ const RBXAvatar = (() => {
 			}
 			
 			for(const part of Object.values(this.parts)) {
-				if(part.rbxBones) {
+				if(part.rbxBones && part.visible) {
 					updateBones(part)
 				}
 			}
 			
 			for(const acc of this.accessories) {
-				if(acc.parent && acc.obj.rbxBones) {
+				if(acc.parent && acc.obj.rbxBones && acc.obj.visible) {
 					updateBones(acc.obj)
 				}
 			}
@@ -617,7 +833,7 @@ const RBXAvatar = (() => {
 			// Update composites
 			const activeComposites = this.playerType === "R6"
 				? [this.composites.r6]
-				: [this.composites.torso, this.composites.leftarm, this.composites.rightarm, this.composites.leftleg, this.composites.rightleg]
+				: [this.composites.torso, this.composites.leftArm, this.composites.rightArm, this.composites.leftLeg, this.composites.rightLeg]
 
 			for(const comp of activeComposites) {
 				if(comp.needsUpdate) {
@@ -1234,6 +1450,7 @@ const RBXAvatar = (() => {
 					}
 					
 					const obj = acc.obj = new THREE.SkinnedMesh(undefined, material)
+					obj.bindMode = "detached"
 					obj.isSkinnedMesh = false
 					obj.matrixAutoUpdate = false
 					obj.frustumCulled = false

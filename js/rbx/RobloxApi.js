@@ -122,7 +122,11 @@ const backgroundCall = callback => {
 	}
 	
 	return (...args) => new Promise(async (resolve, reject) => {
-		MESSAGING.send(messageId, { args: await wrapArgs(args), xsrf: getXsrfToken() }, async result => {
+		if(!cachedXsrfToken) {
+			cachedXsrfToken = document.querySelector("meta[name='csrf-token']")?.dataset.token ?? (document.readyState === "loading" ? null : false)
+		}
+
+		MESSAGING.send(messageId, { args: await wrapArgs(args), xsrf: cachedXsrfToken }, async result => {
 			if(result.success) {
 				resolve(await unwrapArgs(result.result))
 			} else {
@@ -132,7 +136,7 @@ const backgroundCall = callback => {
 	})
 }
 
-const backgroundFetch = (url, init = {}) => {
+const backgroundFetch = !IS_BACKGROUND_PAGE ? null : (url, init = {}) => {
 	init = { ...init }
 	
 	const usingXsrf = init.xsrf
@@ -198,6 +202,33 @@ const RobloxApi = {
 				headers: headers
 			}).then(res => res.json())
 		}),
+	},
+	avatar: {
+		getAvatarRules: backgroundCall(() =>
+			backgroundFetch(`https://avatar.roblox.com/v1/avatar-rules`)
+				.then(res => res.json())
+		),
+		getOutfitDetails: backgroundCall(outfitId =>
+			backgroundFetch(`https://avatar.roblox.com/v1/outfits/${outfitId}/details`)
+				.then(res => res.json())
+		),
+		getUserAvatar: backgroundCall(userId =>
+			backgroundFetch(`https://avatar.roblox.com/v1/users/${userId}/avatar`)
+				.then(res => res.json())
+		),
+		getCurrentAvatar: backgroundCall(() =>
+			backgroundFetch(`https://avatar.roblox.com/v1/avatar`)
+				.then(res => res.json())
+		),
+		
+		renderAvatar: backgroundCall(request =>
+			backgroundFetch(`https://avatar.roblox.com/v1/avatar/render`, {
+				method: "POST",
+				credentials: "include",
+				body: JSON.stringify(request),
+				xsrf: true
+			}).then(res => res.json())
+		)
 	},
 	badges: {
 		deleteBadge: backgroundCall(badgeId =>

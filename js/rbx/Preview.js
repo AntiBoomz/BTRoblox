@@ -3,30 +3,10 @@
 const RBXPreview = (() => {
 	const outfitCache = {}
 	let avatarRulePromise
-
-	function tryGet(url) {
-		let retries = 0
-
-		const callback = async resp => {
-			if(!resp.ok) {
-				if(++retries > 5) {
-					console.warn(`[RBXPreview] Failed to load '${url}'`)
-					return
-				}
-
-				await new SyncPromise(res => setTimeout(res, 1e3))
-				return $.fetch(url, { credentials: "include" }).then(callback)
-			}
-
-			return resp.json()
-		}
-
-		return $.fetch(url, { credentials: "include" }).then(callback)
-	}
-
+	
 	function getAvatarRules() {
 		if(!avatarRulePromise) {
-			avatarRulePromise = tryGet(`https://avatar.roblox.com/v1/avatar-rules`)
+			avatarRulePromise = RobloxApi.avatar.getAvatarRules()
 		}
 
 		return avatarRulePromise
@@ -36,18 +16,18 @@ const RBXPreview = (() => {
 		const bodyColors = {}
 		if(!origColors) { return bodyColors }
 
-		Object.entries(origColors).forEach(([name, value]) => {
-			const index = name.toLowerCase().replace(/colorid$/, "")
+		for(const [name, value] of Object.entries(origColors)) {
+			const index = name.slice(0, -7) // remove ColorId from the end
 			const bodyColor = rules.bodyColorsPalette.find(x => x.brickColorId === value)
 			bodyColors[index] = bodyColor.hexColor
-		})
+		}
 
 		return bodyColors
 	}
 
 	function getOutfitData(id) {
 		if(!outfitCache[id]) {
-			const outfitPromise = tryGet(`https://avatar.roblox.com/v1/outfits/${id}/details`)
+			const outfitPromise = RobloxApi.avatar.getOutfitDetails(id)
 
 			return outfitCache[id] = SyncPromise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
 				data = { ...data }
@@ -65,7 +45,7 @@ const RBXPreview = (() => {
 
 	function getPlayerAppearance(userId) {
 		if(!outfitCache["user" + userId]) {
-			const outfitPromise = tryGet(`https://avatar.roblox.com/v1/users/${userId}/avatar`)
+			const outfitPromise = RobloxApi.avatar.getUserAvatar(userId)
 
 			return outfitCache["user" + userId] = SyncPromise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
 				data = { ...data }
@@ -79,7 +59,7 @@ const RBXPreview = (() => {
 
 	function getDefaultAppearance() {
 		if(!outfitCache.default) {
-			const outfitPromise = tryGet(`https://avatar.roblox.com/v1/avatar`)
+			const outfitPromise = RobloxApi.avatar.getCurrentAvatar()
 
 			return outfitCache.default = SyncPromise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
 				data = { ...data }
@@ -251,11 +231,11 @@ const RBXPreview = (() => {
 
 			this.outfitAssets.forEach(asset => asset.remove())
 			
-			data.assets.forEach(asset => {
+			for(const asset of data.assets) {
 				if(!SkippableAssetTypes.includes(asset.assetType.id)) {
-					this.addAsset(asset.id, asset.assetType.id)
+					this.addAsset(asset.id, asset.assetType.id, asset.meta)
 				}
-			})
+			}
 
 			this.outfitLoaded = true
 			this.trigger("appearanceLoaded")
@@ -296,8 +276,8 @@ const RBXPreview = (() => {
 			return SyncPromise.all(promises)
 		}
 
-		addAsset(assetId, assetTypeId = null) {
-			const asset = this.avatar.appearance.addAsset(assetId, assetTypeId)
+		addAsset(assetId, assetTypeId = null, meta = null) {
+			const asset = this.avatar.appearance.addAsset(assetId, assetTypeId, meta)
 			if(!asset) { return }
 
 			asset.loadPromise.then(() => {
@@ -315,7 +295,7 @@ const RBXPreview = (() => {
 		}
 
 		addAssetPreview(assetId, assetTypeId = null) {
-			const asset = this.avatar.appearance.addAsset(assetId, assetTypeId)
+			const asset = this.avatar.appearance.addAsset(assetId, assetTypeId, { order: 10, version: 1 })
 			if(!asset) { return }
 
 			asset.setPriority(2)
