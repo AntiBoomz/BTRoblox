@@ -1134,6 +1134,20 @@ a:not(.disabled):hover > .btr-icon-content {
 	filter: invert(30%);
 }
 
+.btr-layered-loading .btr-preview-container::before,
+.btr-layered-loading.btr-preview-container::before {
+	content: "";
+	background-image: url(/res/icon_loading.gif);
+	background-size: 100%;
+	display: block;
+	position: absolute;
+	width: 16px;
+	height: 16px;
+	left: 4px;
+	top: 4px;
+	z-index: 2;
+}
+
 /* groups.shoutAlertsInNotifStream */
 
 .btr-notif-desc {

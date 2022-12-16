@@ -361,8 +361,9 @@ const RBXAvatar = (() => {
 	
 	let compositeRenderer
 
-	class Avatar {
+	class Avatar extends EventEmitter {
 		constructor() {
+			super()
 			this.root = new THREE.Group()
 			this.animator = new RBXAnimator()
 			this.appearance = new RBXAppearance()
@@ -579,73 +580,108 @@ const RBXAvatar = (() => {
 			}
 			
 			// Update layered clothing
-			if(this.playerType === "R15" && performance.now() - (this.lastUpdatedLayeredPreview ?? 0) > 2e3) {
+			if(this.playerType === "R15" && performance.now() - (this.lastUpdatedLayeredPreview ?? 0) > 0.5e3) {
 				this.lastUpdatedLayeredPreview = performance.now()
 				
-				const request = {
-					avatarDefinition: {
-						assets: [
-							{ id: 11187668197 } // anchor
-						],
-						bodyColors: {},
-						scales: this.scales,
-						playerAvatarType: {
-							playerAvatarType: "R15"
-						}
-					},
-					thumbnailConfig: {
-						size: "420x420",
-						thumbnailId: 3,
-						thumbnailType: "3d"
-					}
-				}
-				
-				const requestedAccessories = []
+				const scales = { ...this.scales }
+				const accessories = {}
+				const bodyColors = {}
 				const bodyparts = {}
-				
-				for(const acc of this.accessories) {
-					if(!acc.parent) { continue }
-					
-					if(acc.wrapLayer) {
-						requestedAccessories.push(acc)
-						
-						if(!request.avatarDefinition.assets.find(x => x.id === acc.asset.id)) {
-							request.avatarDefinition.assets.push({ id: acc.asset.id, meta: acc.asset.meta })
-						}
-					}
-				}
-				
-				for(const [name, color] of Object.entries(this.bodyColors)) {
-					request.avatarDefinition.bodyColors[name + "Color"] = color
-				}
 				
 				for(const asset of this.appearance.assets) {
 					for(const bp of asset.bodyparts) {
 						bodyparts[bp.target] = bp
 					}
-				}
-				
-				for(const bp of Object.values(bodyparts)) {
-					if(!request.avatarDefinition.assets.find(x => x.id === bp.asset.id)) {
-						request.avatarDefinition.assets.push({ id: bp.asset.id })
+					
+					for(const acc of asset.accessories) {
+						if(acc.parent && acc.wrapLayer) {
+							accessories[asset.id] = acc
+						}
 					}
 				}
 				
-				const requestString = JSON.stringify(request)
-				this.layeredRequestString = requestString
+				for(const [name, color] of Object.entries(this.bodyColors)) {
+					bodyColors[name + "Color"] = color
+				}
 				
-				if(this.layeredRequestState !== "fetching" && this.layeredLastApplied !== requestString) {
-					this.layeredRequestState = "fetching"
+				const request = { scales, accessories, bodyColors, bodyparts }
+				const lastRequest = this.lastLayeredRequest
+				let changed = true
+				
+				if(lastRequest) {
+					changed = false
 					
-					RobloxApi.avatar.renderAvatar(request).then(async json => {
-						if(this.layeredRequestString !== requestString) { return }
+					outer:
+					for(const [key, dict] of Object.entries(request)) {
+						const lastDict = lastRequest[key]
+						
+						if(Object.keys(dict).length !== Object.keys(lastDict).length) {
+							changed = true
+							break
+						}
+						
+						for(const [key, value] of Object.entries(dict)) {
+							if(lastDict[key] !== value) {
+								changed = true
+								break outer
+							}
+						}
+					}
+				}
+				
+				if(changed) {
+					this.lastLayeredRequest = request
+					this.lastLayeredChange = performance.now()
+					this.layeredRequestId = (this.layeredRequestId || 0) + 1
+				}
+				
+				if(this.layeredRequestState !== "fetching" && this.layeredRequestId !== this.layeredFinishedId && performance.now() - (this.lastLayeredChange || 0) > 2e-3) {
+					this.layeredRequestState = "fetching"
+					this.trigger("layeredRequestStateChanged", this.layeredRequestState)
+					
+					const body = {
+						avatarDefinition: {
+							assets: [
+								{ id: 11187668197 } // anchor
+							],
+							bodyColors: request.bodyColors,
+							scales: request.scales,
+							playerAvatarType: {
+								playerAvatarType: "R15"
+							}
+						},
+						thumbnailConfig: {
+							size: "420x420",
+							thumbnailId: 3,
+							thumbnailType: "3d"
+						}
+					}
+					
+					const requestedAccessories = Object.values(accessories)
+				
+					for(const acc of requestedAccessories) {
+						if(!body.avatarDefinition.assets.find(x => x.id === acc.asset.id)) {
+							body.avatarDefinition.assets.push({ id: acc.asset.id, meta: acc.asset.meta })
+						}
+					}
+					
+					for(const bp of Object.values(bodyparts)) {
+						if(!body.avatarDefinition.assets.find(x => x.id === bp.asset.id)) {
+							body.avatarDefinition.assets.push({ id: bp.asset.id })
+						}
+					}
+					
+					const requestId = this.layeredRequestId
+					
+					RobloxApi.avatar.renderAvatar(body).then(async json => {
+						if(this.layeredRequestId !== requestId) { return }
 						if(!json.imageUrl) { return }
 						
 						const render = await fetch(json.imageUrl).then(res => res.json())
-						if(this.layeredRequestString !== requestString) { return }
+						if(this.layeredRequestId !== requestId) { return }
 						
 						const obj = await fetch(AssetCache.getHashUrl(render.obj)).then(res => res.text())
-						if(this.layeredRequestString !== requestString) { return }
+						if(this.layeredRequestId !== requestId) { return }
 						
 						// Ultra hacky code ahead
 						
@@ -727,8 +763,6 @@ const RBXAvatar = (() => {
 							const possibleTargets = groups.filter(x => x !== anchor && x.numFaces <= faceCount).sort((a, b) => b.numFaces - a.numFaces)
 							let target
 							
-							console.log(acc.asset.id, faceCount, possibleTargets)
-							
 							if(possibleTargets.length >= 2) {
 								const origUvs = acc.obj.geometry.attributes.uv.array
 								
@@ -779,12 +813,16 @@ const RBXAvatar = (() => {
 							acc.obj.geometry.setAttribute("position", new THREE.BufferAttribute(newVertices, 3))
 						}
 						
-						this.layeredLastApplied = requestString
 						this.layeredRequestState = "done"
+						this.layeredFinishedId = requestId
+						this.trigger("layeredRequestStateChanged", this.layeredRequestState)
 						
 					}).finally(() => {
 						if(this.layeredRequestState === "fetching") {
-							setTimeout(() => this.layeredRequestState = null, 2000)
+							setTimeout(() => {
+								this.layeredRequestState = null
+								this.trigger("layeredRequestStateChanged", this.layeredRequestState)
+							}, 2000)
 						}
 					})
 				}

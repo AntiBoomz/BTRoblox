@@ -113,6 +113,10 @@ const RBXPreview = (() => {
 			this.currentAnim = null
 			this.loadingAnim = null
 			this.playingAnim = null
+			
+			this.avatar.on("layeredRequestStateChanged", state => {
+				this.container.classList.toggle("btr-layered-loading", state === "fetching")
+			})
 		}
 
 		//
@@ -404,7 +408,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		const container = html`<div class=btr-preview-container-itempage></div>`
 		container.append(this.container)
 		this.container = container
-
+		
 		const typeSwitch = this.typeSwitch = html`
 		<div class="btr-switch btr-playertype-switch" style="position:absolute;top:6px;right:6px">
 			<div class=btr-switch-off>R6</div>
@@ -885,6 +889,110 @@ const HoverPreview = (() => {
 			preview.scene.cameraRotation.set(...frontCameraRotation)
 		}
 	}
+	
+	const updatePreviewCamera = () => {
+		const addedObjects = new Set()
+		let cameraDir
+		
+		for(const asset of lastPreviewedAssets) {
+			for(const acc of asset.accessories) {
+				if(!acc.obj) { continue }
+				
+				if(acc.obj.rbxLayeredPreview && acc.obj.rbxBones) {
+					for(const bone of acc.obj.rbxBones) {
+						const part = preview.avatar.parts[bone.name]
+						
+						if(part?.isMesh) {
+							addedObjects.add(part)
+						}
+					}
+				} else {
+					addedObjects.add(acc.obj)
+				}
+				
+				if(acc.attName.endsWith("BackAttachment")) {
+					if(!cameraDir) {
+						cameraDir = "Back"
+					}
+				} else {
+					cameraDir = "Front"
+				}
+			}
+			
+			for(const bp of asset.bodyparts) {
+				const part = preview.avatar.parts[bp.target]
+				
+				if(part?.isMesh) {
+					addedObjects.add(part)
+					cameraDir = "Front"
+				}
+			}
+			
+			for(const clothing of asset.clothing) {
+				const parts = ClothingParts[clothing.target]
+				
+				if(parts) {
+					for(const partName of parts) {
+						const part = preview.avatar.parts[partName]
+						
+						if(part?.isMesh) {
+							addedObjects.add(part)
+						}
+					}
+				}
+			}
+		}
+
+		if(!addedObjects.size) {
+			addedObjects.add(preview.avatar.root)
+		}
+
+		//
+		
+		const box = new THREE.Box3()
+		const box2 = new THREE.Box3()
+
+		const expandBox = () => {
+			preview.avatar.root.updateWorldMatrix(true, true)
+			
+			const expandBy = object => {
+				if(object.geometry instanceof THREE.BufferGeometry && object.geometry.getAttribute("position")) {
+					if(!object.geometry.boundingBox) {
+						object.geometry.computeBoundingBox()
+					}
+
+					box2.copy(object.geometry.boundingBox)
+					box2.applyMatrix4(object.matrixWorld)
+
+					box.union(box2)
+				}
+				
+				for(const child of object.children) {
+					expandBy(child)
+				}
+			}
+			
+			for(const object of addedObjects) {
+				expandBy(object)
+			}
+		}
+
+		preview.scene.update()
+		expandBox()
+		
+		if(box.isEmpty()) {
+			box.set(
+				new THREE.Vector3(-2, 0, -0.5),
+				new THREE.Vector3(2, 5, 0.5),
+			)
+		}
+
+		preview.scene.cameraFocus.copy(box.max).add(box.min).multiplyScalar(0.5)
+		preview.scene.cameraFocus.y += (box.max.y - box.min.y) * 0.01
+		preview.scene.cameraZoom = Math.max(2.5, box.max.clone().sub(box.min).length() * 0.9)
+
+		setCameraDir(cameraDir || "Front")
+	}
 
 	const initPreview = () => {
 		preview = this.preview = new RBXPreview.AvatarPreviewer()
@@ -899,6 +1007,12 @@ const HoverPreview = (() => {
 		const rotBtn = html`<span class="btr-hover-preview-camera-rotate"></span>`
 		preview.container.append(rotBtn)
 
+		preview.avatar.on("layeredRequestStateChanged", state => {
+			if(state === "done" && preview.enabled) {
+				updatePreviewCamera()
+			}
+		})
+		
 		rotBtn.$on("mousedown", ev => {
 			if(ev.button !== 0) { return }
 			let reqId
@@ -1007,7 +1121,6 @@ const HoverPreview = (() => {
 
 					preview.waitForAppearance().then(() => {
 						if(debounceCounter !== debounce) { return }
-
 						thumbCont.classList.remove("btr-preview-loading")
 
 						if(!playingAnimId) {
@@ -1019,104 +1132,11 @@ const HoverPreview = (() => {
 								return
 							}
 						}
-
-						const addedObjects = new Set()
-						let cameraDir
 						
-						for(const asset of lastPreviewedAssets) {
-							for(const acc of asset.accessories) {
-								if(!acc.obj) { continue }
-								
-								addedObjects.add(acc.obj)
+						updatePreviewCamera()
 
-								if(acc.attName.endsWith("BackAttachment")) {
-									if(!cameraDir) {
-										cameraDir = "Back"
-									}
-								} else {
-									cameraDir = "Front"
-								}
-							}
-							
-							for(const bp of asset.bodyparts) {
-								const part = preview.avatar.parts[bp.target]
-								
-								if(part?.isMesh) {
-									addedObjects.add(part)
-									cameraDir = "Front"
-								}
-							}
-							
-							for(const clothing of asset.clothing) {
-								const parts = ClothingParts[clothing.target]
-								
-								if(parts) {
-									for(const partName of parts) {
-										const part = preview.avatar.parts[partName]
-										
-										if(part?.isMesh) {
-											addedObjects.add(part)
-										}
-									}
-								}
-							}
-						}
-
-						if(!addedObjects.size) {
-							addedObjects.add(preview.avatar.root)
-						}
-
-						//
-						
-						const box = new THREE.Box3()
-						const box2 = new THREE.Box3()
-
-						const expandBox = () => {
-							preview.avatar.root.updateWorldMatrix(true, true)
-							
-							const expandBy = object => {
-								if(object.geometry instanceof THREE.BufferGeometry && object.geometry.getAttribute("position")) {
-									if(!object.geometry.boundingBox) {
-										object.geometry.computeBoundingBox()
-									}
-
-									box2.copy(object.geometry.boundingBox)
-									box2.applyMatrix4(object.matrixWorld)
-
-									box.union(box2)
-								}
-								
-								for(const child of object.children) {
-									expandBy(child)
-								}
-							}
-							
-							for(const object of addedObjects) {
-								expandBy(object)
-							}
-						}
-
-						preview.scene.update()
-						expandBox()
-						
-						if(box.isEmpty()) {
-							box.set(
-								new THREE.Vector3(-2, 0, -0.5),
-								new THREE.Vector3(2, 5, 0.5),
-							)
-						}
-
-						preview.scene.cameraFocus.copy(box.max).add(box.min).multiplyScalar(0.5)
-						preview.scene.cameraFocus.y += (box.max.y - box.min.y) * 0.01
-						preview.scene.cameraZoom = Math.max(2.5, box.max.clone().sub(box.min).length() * 0.9)
-
-						setCameraDir(cameraDir || "Front")
-
-						//
-
-						const thumb = self.$find(thumbContSelector)
-						thumb.append(preview.container)
-						thumb.classList.add("btr-preview-container-parent")
+						thumbCont.append(preview.container)
+						thumbCont.classList.add("btr-preview-container-parent")
 					})
 				}
 
