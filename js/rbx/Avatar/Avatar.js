@@ -615,7 +615,7 @@ const RBXAvatar = (() => {
 			}
 			
 			// Update layered clothing
-			if(this.playerType === "R15") {
+			if(this.playerType === "R15" && SETTINGS.get("general.previewLayeredClothing")) {
 				this._refreshLayeredClothing()
 			}
 			
@@ -1215,6 +1215,10 @@ const RBXAvatar = (() => {
 
 			// Update accessories
 			for(const acc of accessories) {
+				if(acc.wrapLayer && !SETTINGS.get("general.previewLayeredClothing")) {
+					continue
+				}
+				
 				if(!acc.obj) {
 					const opacity = acc.opacity ?? 1
 					let material

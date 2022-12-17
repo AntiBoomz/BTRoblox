@@ -16,6 +16,7 @@ const DEFAULT_SETTINGS = {
 
 		hoverPreview: { value: true },
 		hoverPreviewMode: { value: "always", validValues: ["always", "never"] },
+		previewLayeredClothing: { value: true },
 		
 		cacheRobuxAmount: { value: true },
 		higherRobuxPrecision: { value: true },
