@@ -383,6 +383,24 @@ const RBXAvatar = (() => {
 	const identQuat = new THREE.Quaternion()
 	
 	let compositeRenderer
+	
+	try {
+		for(let i = localStorage.length; i--;) {
+			const key = localStorage.key(i)
+			
+			if(key.startsWith("btrLayeredCache-")) {
+				try {
+					const json = JSON.parse(localStorage.getItem(key))
+					
+					if(Date.now() > json.expires) {
+						localStorage.removeItem(key)
+					}
+				} catch(ex) {
+					localStorage.removeItem(key)
+				}
+			}
+		}
+	} catch(ex) {}
 
 	class Avatar extends EventEmitter {
 		constructor() {
@@ -1403,15 +1421,9 @@ const RBXAvatar = (() => {
 		
 		_refreshLayeredClothing() {
 			if(this.layeredRequestState === "fetching") { return }
-			
 			const request = this.getLayeredRequest()
 			
-			if(!requestsMatch(request, this.lastLayeredRequest)) {
-				this.lastLayeredRequest = request
-				this.lastLayeredChange = performance.now()
-			}
-			
-			if(!requestsMatch(request, this.layeredFinishedRequest) && performance.now() - (this.lastLayeredChange || 0) > 1e-3) {
+			if(!requestsMatch(request, this.layeredFinishedRequest)) {
 				if(!request) {
 					this.layeredRequestState = null
 					this.layeredFinishedRequest = request
@@ -1483,17 +1495,36 @@ const RBXAvatar = (() => {
 				}
 			}
 			
-			const json = await RobloxApi.avatar.renderAvatar(body)
-			if(!requestsMatch(request, this.getLayeredRequest())) { return }
+			body.avatarDefinition.assets.sort((a, b) => a.id - b.id) // sort assets for hashing
 			
-			if(!json?.imageUrl) {
-				return
+			const bodyHash = $.hashString(JSON.stringify(body))
+			let objHash
+			
+			try {
+				objHash = JSON.parse(localStorage.getItem(`btrLayeredCache-${bodyHash}`)).objHash
+			} catch(ex) {}
+			
+			if(!objHash) {
+				const json = await RobloxApi.avatar.renderAvatar(body)
+				if(!requestsMatch(request, this.getLayeredRequest())) { return }
+				
+				if(!json?.imageUrl) {
+					return
+				}
+				
+				const render = await fetch(json.imageUrl).then(res => res.json())
+				if(!requestsMatch(request, this.getLayeredRequest())) { return }
+				
+				objHash = render.obj
+				
+				if(objHash) {
+					try {
+						localStorage.setItem(`btrLayeredCache-${bodyHash}`, JSON.stringify({ expires: Date.now() + 5 * 60e3, objHash: objHash }))
+					} catch(ex) {}
+				}
 			}
 			
-			const render = await fetch(json.imageUrl).then(res => res.json())
-			if(!requestsMatch(request, this.getLayeredRequest())) { return }
-			
-			const obj = await fetch(AssetCache.getHashUrl(render.obj)).then(res => res.text())
+			const obj = await fetch(AssetCache.getHashUrl(objHash)).then(res => res.text())
 			if(!requestsMatch(request, this.getLayeredRequest())) { return }
 			
 			// Read obj file
@@ -1583,40 +1614,35 @@ const RBXAvatar = (() => {
 				[760 / 1024, 456 / 1024, 264 / 1024, 284 / 1024],
 			]
 			
-			const findMatchingBox = (obj, group) => {
+			const doesGroupMatch = (obj, group, box = uvBoxes[0]) => {
 				if(group.uvs.length > obj.rbxMesh.uvs.length) {
-					return null
+					return false
 				}
 				
-				boxLoop:
-				for(const box of uvBoxes) {
-					const [x0, y0, width, height] = box
-					let search = 0
+				const [x0, y0, width, height] = box
+				let search = 0
+				
+				for(let i = 0; i < group.uvs.length; i += 2) {
+					const u = (group.uvs[i] - x0) / width
+					const v = (group.uvs[i + 1] - y0) / height
 					
-					for(let i = 0; i < group.uvs.length; i += 2) {
-						const u = (group.uvs[i] - x0) / width
-						const v = (group.uvs[i + 1] - y0) / height
+					while(true) {
+						if(search >= obj.rbxMesh.uvs.length) {
+							return false
+						}
 						
-						while(true) {
-							if(search >= obj.rbxMesh.uvs.length) {
-								continue boxLoop
-							}
-							
-							const u2 = obj.rbxMesh.uvs[search]
-							const v2 = obj.rbxMesh.uvs[search + 1]
-							
-							search += 2
-							
-							if(Math.abs(u2 - u) < 0.01 && Math.abs(v2 - v) < 0.01) {
-								break
-							}
+						const u2 = obj.rbxMesh.uvs[search]
+						const v2 = obj.rbxMesh.uvs[search + 1]
+						
+						search += 2
+						
+						if(Math.abs(u2 - u) < 0.01 && Math.abs(v2 - v) < 0.01) {
+							break
 						}
 					}
-					
-					return box
 				}
-				
-				return null
+					
+				return true
 			}
 			
 			const playerGroups = groups.filter(x => x.name.startsWith("Player")).sort((a, b) => b.uvs.length - a.uvs.length)
@@ -1627,10 +1653,10 @@ const RBXAvatar = (() => {
 				const matches = []
 				
 				for(const group of playerGroups) {
-					const box = findMatchingBox(part, group)
-					
-					if(box) {
-						matches.push({ group, box })
+					for(const box of uvBoxes) {
+						if(doesGroupMatch(part, group, box)) {
+							matches.push({ group, box })
+						}
 					}
 				}
 				
@@ -1705,10 +1731,8 @@ const RBXAvatar = (() => {
 				const matches = []
 				
 				for(const group of handleGroups) {
-					const box = findMatchingBox(acc.obj, group)
-					
-					if(box) {
-						matches.push({ group, box })
+					if(doesGroupMatch(acc.obj, group)) {
+						matches.push({ group })
 					}
 				}
 				
@@ -1725,7 +1749,7 @@ const RBXAvatar = (() => {
 					continue
 				}
 				
-				const { group: target, box } = matches[0]
+				const { group: target } = matches[0]
 				
 				const layeredAccMatrix = acc.parent.layeredMatrix.clone().multiply(acc.bakedCFrame)
 				const newVertices = acc.obj.rbxMesh.vertices.slice()
