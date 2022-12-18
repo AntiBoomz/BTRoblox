@@ -1638,6 +1638,12 @@ const RBXAvatar = (() => {
 					if(matches.length === 0 && numEmptyAccepted > 0) {
 						// If the whole part was hidden by HSR, it doesn't get added into the render
 						numEmptyAccepted -= 1
+						
+						part.geometry.deleteAttribute("position")
+						part.geometry.deleteAttribute("normal")
+						part.geometry.deleteAttribute("uv")
+						part.geometry.setIndex(null)
+						
 					} else {
 						console.log("Failed to find match")
 						console.log(part.name, part.rbxMesh)
@@ -1647,10 +1653,10 @@ const RBXAvatar = (() => {
 						if(IS_DEV_MODE) {
 							setTimeout(() => alert("Failed to find match for bodypart"), 0)
 						}
-					}
-					
-					if(part.rbxLayered) {
-						applyMesh(part, part.rbxMesh)
+						
+						if(part.rbxLayered) {
+							applyMesh(part, part.rbxMesh)
+						}
 					}
 					
 					continue
