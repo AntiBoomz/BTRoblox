@@ -114,6 +114,22 @@ const RBXPreview = (() => {
 			this.loadingAnim = null
 			this.playingAnim = null
 			
+			this.scene.cameraSlide = 0
+			
+			this.scene.on("update", () => {
+				if(this.avatar.parts.Head) {
+					let minSlide = 2
+					let maxSlide = 5.5
+					
+					if(this.avatar.playerType === "R15") {
+						maxSlide = -this.avatar.joints.Neck.bakedC1.elements[13] + this.avatar.joints.Neck.bakedC0.elements[13] + this.avatar.hipOffset.y + 1
+					}
+					
+					this.scene.cameraMinSlide = minSlide - this.scene.cameraFocus.y
+					this.scene.cameraMaxSlide = maxSlide - this.scene.cameraFocus.y
+				}
+			})
+			
 			this.avatar.on("layeredRequestStateChanged", state => {
 				this.container.classList.toggle("btr-layered-loading", state === "fetching")
 			})

@@ -1,14 +1,18 @@
 "use strict"
 
 const RBXScene = (() => {
-	class Scene {
+	class Scene extends EventEmitter {
 		constructor() {
+			super()
 			this._prevRes = { width: -1, height: -1 }
 			this.cameraControlsEnabled = true
 
 			this.cameraMinZoom = 2
 			this.cameraMaxZoom = 25
 			this.cameraZoom = 10
+			this.cameraMinSlide = 0
+			this.cameraMaxSlide = 0
+			this.cameraSlide = 0
 			this.cameraFocus = new THREE.Vector3(0, 4.5, 0)
 			this.cameraOffset = new THREE.Vector3(0, 0, 0)
 			this.cameraRotation = new THREE.Euler(.05, 0, 0, "YXZ")
@@ -69,7 +73,7 @@ const RBXScene = (() => {
 						mousedown(event) {
 							if(!this.cameraControlsEnabled) { return }
 
-							if(!this.isDragging && (event.button === 0 || event.button === 2)) {
+							if(!this.isDragging && (event.button >= 0 && event.button <= 2)) {
 								this.prevDragEvent = event
 								this.isDragging = true
 								this.dragButton = event.button
@@ -110,10 +114,16 @@ const RBXScene = (() => {
 							const moveX = event.clientX - this.prevDragEvent.clientX
 							const moveY = event.clientY - this.prevDragEvent.clientY
 							this.prevDragEvent = event
-
-							const rotX = this.cameraRotation.x + 2 * Math.PI * moveY / this.canvas.clientHeight
-							this.cameraRotation.x = Math.max(-1.4, Math.min(1.4, rotX))
-							this.cameraRotation.y -= 2 * Math.PI * moveX / this.canvas.clientWidth
+							
+							if(this.dragButton === 1) {
+								this.cameraSlide += this.cameraZoom * moveY / this.canvas.clientHeight
+								this.cameraSlide = Math.max(this.cameraMinSlide, Math.min(this.cameraMaxSlide, this.cameraSlide))
+								
+							} else {
+								const rotX = this.cameraRotation.x + 2 * Math.PI * moveY / this.canvas.clientHeight
+								this.cameraRotation.x = Math.max(-1.4, Math.min(1.4, rotX))
+								this.cameraRotation.y -= 2 * Math.PI * moveX / this.canvas.clientWidth
+							}
 						},
 						mouseup(event) {
 							if(this.isDragging && event.button === this.dragButton) {
@@ -161,8 +171,11 @@ const RBXScene = (() => {
 			this.camera.position.copy(this.cameraFocus).addScaledVector(this.cameraDir, -this.cameraZoom)
 			this.camera.lookAt(this.cameraFocus)
 			this.camera.position.add(this.cameraOffset)
+			
+			this.cameraSlide = Math.max(this.cameraMinSlide, Math.min(this.cameraMaxSlide, this.cameraSlide))
+			this.camera.position.y += this.cameraSlide
 
-			const groundDiff = .05 - this.camera.position.y
+			const groundDiff = 0.2 - this.camera.position.y
 			if(this.cameraDir.y > 0 && groundDiff > 0) {
 				this.camera.position.addScaledVector(this.cameraDir, groundDiff / this.cameraDir.y)
 			}
@@ -249,6 +262,7 @@ const RBXScene = (() => {
 			this.avatar.offsetRot.copy(this.avatarOffset.rotation)
 			
 			this.avatar.update()
+			this.trigger("update")
 		}
 
 		start() {
