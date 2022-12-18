@@ -890,7 +890,7 @@ const HoverPreview = (() => {
 		}
 	}
 	
-	const updatePreviewCamera = () => {
+	const updatePreviewCamera = secondary => {
 		const addedObjects = new Set()
 		let cameraDir
 		
@@ -990,8 +990,10 @@ const HoverPreview = (() => {
 		preview.scene.cameraFocus.copy(box.max).add(box.min).multiplyScalar(0.5)
 		preview.scene.cameraFocus.y += (box.max.y - box.min.y) * 0.01
 		preview.scene.cameraZoom = Math.max(2.5, box.max.clone().sub(box.min).length() * 0.9)
-
-		setCameraDir(cameraDir || "Front")
+		
+		if(!secondary) {
+			setCameraDir(cameraDir || "Front")
+		}
 	}
 
 	const initPreview = () => {
@@ -1009,7 +1011,7 @@ const HoverPreview = (() => {
 
 		preview.avatar.on("layeredRequestStateChanged", state => {
 			if(state === "done" && preview.enabled) {
-				updatePreviewCamera()
+				updatePreviewCamera(true)
 			}
 		})
 		
