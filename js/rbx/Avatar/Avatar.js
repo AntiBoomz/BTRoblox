@@ -6,6 +6,33 @@ const RBXAvatar = (() => {
 	function applyMesh(obj, mesh) {
 		const geom = obj.geometry
 		
+		let skinIndices = mesh.skinIndices
+		let skinWeights = mesh.skinWeights
+		let vertices = mesh.vertices
+		let normals = mesh.normals
+		let faces = mesh.faces
+		let uvs = mesh.uvs
+		
+		if(mesh.lods.length > 2) {
+			faces = faces.subarray(mesh.lods[0] * 3, mesh.lods[1] * 3)
+			
+			let maxVertex = 0
+			
+			for(let i = faces.length; i--;) {
+				maxVertex = Math.max(maxVertex, faces[i])
+			}
+			
+			maxVertex += 1
+			
+			if(maxVertex < vertices.length / 3) {
+				skinIndices = skinIndices.subarray(0, maxVertex * 4)
+				skinWeights = skinWeights.subarray(0, maxVertex * 4)
+				vertices = vertices.subarray(0, maxVertex * 3)
+				normals = normals.subarray(0, maxVertex * 3)
+				uvs = uvs.subarray(0, maxVertex * 2)
+			}
+		}
+		
 		if(obj instanceof THREE.SkinnedMesh) {
 			if(obj.skeleton) {
 				obj.skeleton.dispose()
@@ -18,8 +45,8 @@ const RBXAvatar = (() => {
 				obj.isSkinnedMesh = true
 				obj.rbxBones = bones
 				
-				geom.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(mesh.skinIndices, 4))
-				geom.setAttribute("skinWeight", new THREE.Float32BufferAttribute(mesh.skinWeights, 4))
+				geom.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(skinIndices, 4))
+				geom.setAttribute("skinWeight", new THREE.Float32BufferAttribute(skinWeights, 4))
 				
 				for(const meshBone of mesh.bones) {
 					const bone = {
@@ -46,10 +73,10 @@ const RBXAvatar = (() => {
 		obj.rbxMesh = mesh
 		delete obj.rbxLayered
 		
-		geom.setAttribute("position", new THREE.BufferAttribute(mesh.vertices, 3))
-		geom.setAttribute("normal", new THREE.BufferAttribute(mesh.normals, 3))
-		geom.setAttribute("uv", new THREE.BufferAttribute(mesh.uvs, 2))
-		geom.setIndex(new THREE.BufferAttribute(mesh.faces.subarray(mesh.lods[0] * 3, mesh.lods[1] * 3), 1))
+		geom.setAttribute("position", new THREE.BufferAttribute(vertices, 3))
+		geom.setAttribute("normal", new THREE.BufferAttribute(normals, 3))
+		geom.setAttribute("uv", new THREE.BufferAttribute(uvs, 2))
+		geom.setIndex(new THREE.BufferAttribute(faces, 1))
 		
 		// geom.computeBoundingSphere()
 
@@ -382,6 +409,9 @@ const RBXAvatar = (() => {
 	const zeroVector = new THREE.Vector3()
 	const identQuat = new THREE.Quaternion()
 	
+	const inversePoseMatrix = new THREE.Matrix4()
+	const inverseMatrix = new THREE.Matrix4()
+	
 	let compositeRenderer
 	
 	try {
@@ -630,18 +660,21 @@ const RBXAvatar = (() => {
 					const scale = obj.rbxScaleMod.clone().divide(obj.rbxLayered.scaleMod)
 					
 					for(const joint of this.sortedJointsArray) {
-						joint.part1.test2 = (joint.part0.test2 ?? tempMatrix.identity()).clone()
-							.multiply(joint.bakedC0)
+						if(!joint.part1.test2) { joint.part1.test2 = new THREE.Matrix4() }
+						
+						joint.part1.test2.multiplyMatrices(joint.part0.test2 ?? tempMatrix.identity(), joint.bakedC0)
 							.multiply(tempMatrix.copy(joint.bakedC1).invert())
 					}
 					
 					for(const acc of this.accessories) {
 						if(acc.obj !== obj) { continue }
-						acc.obj.test2 = acc.parent.test2.clone().multiply(acc.bakedCFrame)
+						
+						if(!acc.obj.test2) { acc.obj.test2 = new THREE.Matrix4() }
+						acc.obj.test2.multiplyMatrices(acc.parent.test2, acc.bakedCFrame)
 					}
 					
-					const inversePoseMatrix = obj.test2.clone().invert()
-					const inverseMatrix = obj.matrix.clone().invert().multiply(obj.matrixNoScale).multiply(tempMatrix.copy(obj.matrixNoScale).invert())
+					inversePoseMatrix.copy(obj.test2).invert()
+					inverseMatrix.copy(obj.matrix).invert().multiply(obj.matrixNoScale).multiply(tempMatrix.copy(obj.matrixNoScale).invert())
 					
 					for(const bone of obj.rbxBones) {
 						const ref = this.parts[bone.name] || obj
@@ -656,19 +689,23 @@ const RBXAvatar = (() => {
 				}
 				
 				for(const joint of this.sortedJointsArray) {
-					joint.part1.test = (joint.part0.test ?? tempMatrix.identity()).clone()
-						.multiply(scalePosition(tempMatrix.copy(joint.C0), obj.rbxScaleMod))
+					if(!joint.part1.test) { joint.part1.test = new THREE.Matrix4() }
+					
+					joint.part1.test
+						.multiplyMatrices(joint.part0.test ?? tempMatrix.identity(), scalePosition(tempMatrix.copy(joint.C0), obj.rbxScaleMod))
 						.multiply(joint.transform)
 						.multiply(scalePosition(tempMatrix.copy(joint.C1).invert(), obj.rbxScaleMod))
 				}
 				
 				for(const acc of this.accessories) {
 					if(acc.obj !== obj) { continue }
-					acc.obj.test = acc.parent.test.clone().multiply(acc.bakedCFrame)
+					
+					if(!acc.obj.test) { acc.obj.test = new THREE.Matrix4() }
+					acc.obj.test.multiplyMatrices(acc.parent.test, acc.bakedCFrame)
 				}
 				
-				const inversePoseMatrix = obj.rbxPoseMatrix.clone().invert()
-				const inverseMatrix = obj.matrix.clone().invert().multiply(obj.matrixNoScale).multiply(tempMatrix.copy(obj.test).invert())
+				inversePoseMatrix.copy(obj.rbxPoseMatrix).invert()
+				inverseMatrix.copy(obj.matrix).invert().multiply(obj.matrixNoScale).multiply(tempMatrix.copy(obj.test).invert())
 				
 				for(const bone of obj.rbxBones) {
 					const ref = this.parts[bone.name] || obj
