@@ -298,8 +298,8 @@ const RBXPreview = (() => {
 			return asset
 		}
 
-		addAssetPreview(assetId, assetTypeId = null) {
-			const asset = this.avatar.appearance.addAsset(assetId, assetTypeId, { order: 10, version: 1 })
+		addAssetPreview(assetId, assetTypeId = null, meta = null) {
+			const asset = this.avatar.appearance.addAsset(assetId, assetTypeId, { version: 1, ...(meta || {}), order: (meta?.order || 0) + 10 })
 			if(!asset) { return }
 
 			asset.setPriority(2)
@@ -308,7 +308,7 @@ const RBXPreview = (() => {
 			asset.once("remove", () => {
 				this.previewAssets.delete(asset)
 			})
-
+			
 			return asset
 		}
 
@@ -898,7 +898,7 @@ const HoverPreview = (() => {
 			for(const acc of asset.accessories) {
 				if(!acc.obj) { continue }
 				
-				if(acc.obj.rbxLayeredPreview && acc.obj.rbxBones) {
+				if(acc.obj.rbxLayered?.wrapLayer && acc.obj.rbxBones) {
 					for(const bone of acc.obj.rbxBones) {
 						const part = preview.avatar.parts[bone.name]
 						
@@ -1140,13 +1140,13 @@ const HoverPreview = (() => {
 					})
 				}
 
-				const addAssetPreview = (assetId, assetTypeId) => {
+				const addAssetPreview = (assetId, assetTypeId, meta) => {
 					if(!preview) { initPreview() }
 
 					if(assetTypeId === 24) {
 						playingAnimId = assetId
 					} else {
-						const asset = preview.addAssetPreview(assetId, assetTypeId)
+						const asset = preview.addAssetPreview(assetId, assetTypeId, meta)
 						if(!asset) { return }
 
 						lastPreviewedAssets.push(asset)
@@ -1160,28 +1160,31 @@ const HoverPreview = (() => {
 					preview.setEnabled(true)
 				}
 				
-				const addItems = async (items, outfitId) => {
+				const addItems = async items => {
 					if(debounceCounter !== debounce) { return }
-					
-					if(outfitId) {
-						targetOutfitId = outfitId
-					}
 
+					const outfit = items.find(x => x.outfitType === "Avatar")
+					if(outfit) {
+						targetOutfitId = outfit.id
+					}
+					
 					let curAnim
-					items.forEach(item => {
+					for(const item of items) {
+						if(item.outfitType) { continue }
+						
 						if(WearableAssetTypeIds.includes(item.AssetTypeId)) {
-							addAssetPreview(item.AssetId, item.AssetTypeId, true)
+							addAssetPreview(item.AssetId, item.AssetTypeId, outfit?.assets.find(x => x.id === item.AssetId)?.meta)
 							
 						} else if(AnimationPreviewAssetTypeIds.includes(item.AssetTypeId)) {
 							if(!curAnim || item.AssetTypeId === 61 || item.AssetTypeId === 51 && curAnim.AssetTypeId !== 61) {
 								curAnim = item
 							}
 						}
-					})
+					}
 
 					if(curAnim) {
 						if(curAnim.AssetTypeId === 24) { // Animation
-							addAssetPreview(curAnim.AssetId, 24, true)
+							addAssetPreview(curAnim.AssetId, 24)
 							
 						} else if(curAnim.AssetTypeId === 61) { // EmoteAnimation
 							const model = await AssetCache.loadModel(curAnim.AssetId)
@@ -1191,7 +1194,7 @@ const HoverPreview = (() => {
 							const animId = anim && AssetCache.resolveAssetId(anim.AnimationId)
 
 							if(animId) {
-								addAssetPreview(animId, 24, true)
+								addAssetPreview(animId, 24)
 							}
 							
 						} else {
@@ -1206,7 +1209,7 @@ const HoverPreview = (() => {
 								.reduce((prev, cur) => ((!prev || cur.weight > prev.weight) ? cur : prev))
 							
 							if(anim) {
-								addAssetPreview(anim.id, 24, true)
+								addAssetPreview(anim.id, 24)
 							}
 						}
 					}
@@ -1220,15 +1223,18 @@ const HoverPreview = (() => {
 				
 				if(isBundle) {
 					const details = await RobloxApi.catalog.getBundleDetails(assetId)
+					const promises = []
 					
-					const outfit = details.items.find(x => x.type === "UserOutfit")
-					const assets = details.items.filter(x => x.type === "Asset")
+					for(const item of details.items) {
+						if(item.type === "Asset") {
+							promises.push(RobloxApi.api.getProductInfo(item.id))
+							
+						} else if(item.type === "UserOutfit") {
+							promises.push(RobloxApi.avatar.getOutfitDetails(item.id))
+						}
+					}
 					
-					const items = await SyncPromise.all(
-						assets.map(x => RobloxApi.api.getProductInfo(x.id))
-					)
-					
-					addItems(items, outfit ? outfit.id : null)
+					addItems(await SyncPromise.all(promises))
 				} else {
 					const info = await RobloxApi.api.getProductInfo(assetId)
 					

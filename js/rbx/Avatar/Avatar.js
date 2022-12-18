@@ -53,12 +53,6 @@ const RBXAvatar = (() => {
 		
 		// geom.computeBoundingSphere()
 
-		geom.verticesNeedUpdate = true
-		geom.elementsNeedUpdate = true
-		geom.uvsNeedUpdate = true
-		geom.normalsNeedUpdate = true
-		geom.groupsNeedUpdate = true
-
 		obj.visible = true
 	}
 	
@@ -87,12 +81,6 @@ const RBXAvatar = (() => {
 		geom.setIndex(null)
 
 		// geom.computeBoundingSphere()
-
-		geom.verticesNeedUpdate = true
-		geom.elementsNeedUpdate = true
-		geom.uvsNeedUpdate = true
-		geom.normalsNeedUpdate = true
-		geom.groupsNeedUpdate = true
 
 		obj.visible = false
 	}
@@ -595,12 +583,11 @@ const RBXAvatar = (() => {
 					position = tempVector.copy(position).multiplyScalar(this.animRootScale)
 				}
 				
-				tempMatrix.compose(position, quaternion, oneVector)
+				joint.transform.compose(position, quaternion, oneVector)
 				
-				joint.part1.matrixNoScale.multiplyMatrices(joint.part0.matrixNoScale, joint.bakedC0).multiply(tempMatrix).multiply(tempMatrix2.copy(joint.bakedC1).invert())
-				joint.part1.rbxUnscaledMatrix.multiplyMatrices(joint.part0.rbxUnscaledMatrix, joint.C0).multiply(tempMatrix).multiply(tempMatrix2.copy(joint.C1).invert())
-				
+				joint.part1.matrixNoScale.multiplyMatrices(joint.part0.matrixNoScale, joint.bakedC0).multiply(joint.transform).multiply(tempMatrix.copy(joint.bakedC1).invert())
 				joint.part1.matrix.copy(joint.part1.matrixNoScale).scale(tempVector.set(...joint.part1.rbxScale))
+				
 				joint.part1.matrixWorldNeedsUpdate = true
 			}
 			
@@ -608,8 +595,8 @@ const RBXAvatar = (() => {
 			for(const acc of this.accessories) {
 				if(!acc.parent) { continue }
 
-				acc.obj.rbxUnscaledMatrix.copy(acc.parent.rbxUnscaledMatrix).multiply(acc.bakedCFrame)
-				acc.obj.matrix.multiplyMatrices(acc.parent.matrixNoScale, acc.bakedCFrame).scale(acc.obj.scale)
+				acc.obj.matrixNoScale.multiplyMatrices(acc.parent.matrixNoScale, acc.bakedCFrame)
+				acc.obj.matrix.copy(acc.obj.matrixNoScale).scale(acc.obj.scale)
 				
 				acc.obj.matrixWorldNeedsUpdate = true
 			}
@@ -621,36 +608,68 @@ const RBXAvatar = (() => {
 			
 			// Update bones
 			const updateBones = obj => {
-				const scale = new THREE.Vector3(
-					1 / obj.rbxScaleMod.x,
-					1 / obj.rbxScaleMod.y,
-					1 / obj.rbxScaleMod.z
-				)
+				if(obj.rbxLayered?.wrapLayer) {
+					const scale = obj.rbxScaleMod.clone().divide(obj.rbxLayered.scaleMod)
+					
+					for(const joint of this.sortedJointsArray) {
+						joint.part1.test2 = (joint.part0.test2 ?? tempMatrix.identity()).clone()
+							.multiply(joint.bakedC0)
+							.multiply(tempMatrix.copy(joint.bakedC1).invert())
+					}
+					
+					for(const acc of this.accessories) {
+						if(acc.obj !== obj) { continue }
+						acc.obj.test2 = acc.parent.test2.clone().multiply(acc.bakedCFrame)
+					}
+					
+					const inversePoseMatrix = obj.test2.clone().invert()
+					const inverseMatrix = obj.matrix.clone().invert().multiply(obj.matrixNoScale).multiply(tempMatrix.copy(obj.matrixNoScale).invert())
+					
+					for(const bone of obj.rbxBones) {
+						const ref = this.parts[bone.name] || obj
+						
+						bone.matrixWorld.copy(ref.matrixNoScale).scale(scale)
+						
+						bone.matrixWorld.premultiply(inverseMatrix)
+						bone.inverse.copy(ref.test2).premultiply(inversePoseMatrix).invert()
+					}
+					
+					return
+				}
+				
+				for(const joint of this.sortedJointsArray) {
+					joint.part1.test = (joint.part0.test ?? tempMatrix.identity()).clone()
+						.multiply(scalePosition(tempMatrix.copy(joint.C0), obj.rbxScaleMod))
+						.multiply(joint.transform)
+						.multiply(scalePosition(tempMatrix.copy(joint.C1).invert(), obj.rbxScaleMod))
+				}
+				
+				for(const acc of this.accessories) {
+					if(acc.obj !== obj) { continue }
+					acc.obj.test = acc.parent.test.clone().multiply(acc.bakedCFrame)
+				}
 				
 				const inversePoseMatrix = obj.rbxPoseMatrix.clone().invert()
+				const inverseMatrix = obj.matrix.clone().invert().multiply(obj.matrixNoScale).multiply(tempMatrix.copy(obj.test).invert())
 				
 				for(const bone of obj.rbxBones) {
 					const ref = this.parts[bone.name] || obj
 					
-					bone.matrixWorld.copy(ref.rbxUnscaledMatrix)
+					bone.matrixWorld.copy(ref.test).scale(obj.rbxScaleMod)
 					
-					bone.matrixWorld.elements[12] = obj.matrix.elements[12] + (ref.rbxUnscaledMatrix.elements[12] - obj.rbxUnscaledMatrix.elements[12]) / scale.x
-					bone.matrixWorld.elements[13] = obj.matrix.elements[13] + (ref.rbxUnscaledMatrix.elements[13] - obj.rbxUnscaledMatrix.elements[13]) / scale.y
-					bone.matrixWorld.elements[14] = obj.matrix.elements[14] + (ref.rbxUnscaledMatrix.elements[14] - obj.rbxUnscaledMatrix.elements[14]) / scale.z
-					
-					bone.matrixWorld.premultiply(tempMatrix.copy(obj.matrix).invert())
-					bone.inverse.copy(ref.rbxPoseMatrix).multiply(inversePoseMatrix).scale(scale).invert()
+					bone.matrixWorld.premultiply(inverseMatrix)
+					bone.inverse.copy(ref.rbxPoseMatrix).premultiply(inversePoseMatrix).invert()
 				}
 			}
 			
 			for(const part of Object.values(this.parts)) {
-				if(part.rbxBones && part.visible) {
+				if(part.rbxBones) {
 					updateBones(part)
 				}
 			}
 			
 			for(const acc of this.accessories) {
-				if(acc.parent && acc.obj.rbxBones && acc.obj.visible) {
+				if(acc.parent && acc.obj.rbxBones) {
 					updateBones(acc.obj)
 				}
 			}
@@ -861,7 +880,6 @@ const RBXAvatar = (() => {
 				obj.rbxScaleMod = new Vector3(1, 1, 1)
 				obj.matrixNoScale = new THREE.Matrix4()
 				obj.rbxPoseMatrix = new THREE.Matrix4()
-				obj.rbxUnscaledMatrix = new THREE.Matrix4()
 				//
 				
 				this.root.add(obj)
@@ -888,6 +906,8 @@ const RBXAvatar = (() => {
 						
 						bakedC0: child.C0.clone(),
 						bakedC1: child.C1.clone(),
+						
+						transform: new THREE.Matrix4(),
 						
 						part0: obj,
 						part1: childObj,
@@ -928,7 +948,7 @@ const RBXAvatar = (() => {
 			const attachmentOverride = {}
 			const clothingOverride = {}
 			const bodypartOverride = {}
-			const accessories = []
+			const accessories = {}
 			const assets = []
 			
 			for(const asset of this.appearance.assets) {
@@ -962,7 +982,9 @@ const RBXAvatar = (() => {
 					clothingOverride[cloth.target] = cloth.texId
 				}
 				
-				accessories.push(...asset.accessories)
+				if(asset.accessories.length) {
+					accessories[asset.id] = asset.accessories[0]
+				}
 			}
 			
 			// Update clothing
@@ -1129,11 +1151,9 @@ const RBXAvatar = (() => {
 				}
 				
 				// Scale joints
-				for(const [jointName, joint] of Object.entries(this.joints)) {
-					if(jointName !== "Root") {
-						scalePosition(joint.bakedC0.copy(joint.C0), joint.part0.rbxScaleMod)
-						scalePosition(joint.bakedC1.copy(joint.C1), joint.part1.rbxScaleMod)
-					}
+				for(const joint of Object.values(this.joints)) {
+					scalePosition(joint.bakedC0.copy(joint.C0), joint.part0.rbxScaleMod)
+					scalePosition(joint.bakedC1.copy(joint.C1), joint.part1.rbxScaleMod)
 				}
 				
 				// Scale attachments
@@ -1141,18 +1161,16 @@ const RBXAvatar = (() => {
 					scalePosition(att.bakedCFrame.copy(att.cframe), att.parent.rbxScaleMod)
 				}
 				
-				// Scale rootjoint
+				// Scale rootjoint so that the lowest hip joint aligns with bottom of rootpart
 				if(this.playerType === "R15") {
 					const rootJoint = this.joints.Root
 					const rightHip = this.joints.RightHip
 					const leftHip = this.joints.LeftHip
 					
 					const rootHeight = rootJoint.part0.rbxSize[1]
-					const lowerTorsoHeight = rootJoint.part1.rbxSize[1]
 					const minHipOffset = Math.min(rightHip.bakedC0.elements[13], leftHip.bakedC0.elements[13])
 					
-					rootJoint.bakedC0.makeTranslation(0, -rootHeight / 2 - lowerTorsoHeight / 2 - minHipOffset, 0)
-					rootJoint.bakedC1.makeTranslation(0, -lowerTorsoHeight / 2, 0)
+					rootJoint.bakedC0.elements[13] = rootJoint.bakedC1.elements[13] - rootHeight / 2 - minHipOffset
 				}
 			}
 
@@ -1201,20 +1219,25 @@ const RBXAvatar = (() => {
 			}
 
 			// Remove old accessories
+			const accArray = Object.values(accessories)
+			
 			for(let i = this.accessories.length; i--;) {
-				const acc = this.accessories.pop()
+				const acc = this.accessories[i]
 				
-				if(!accessories.includes(acc)) {
+				if(!accArray.includes(acc)) {
+					this.accessories.splice(i, 1)
+					
 					if(acc.obj && acc.obj.parent) {
 						acc.obj.parent.remove(acc.obj)
 					}
 					
-					acc.att = null
+					acc.attachment = null
+					acc.parent = null
 				}
 			}
 
 			// Update accessories
-			for(const acc of accessories) {
+			for(const acc of accArray) {
 				if(acc.wrapLayer && !SETTINGS.get("general.previewLayeredClothing")) {
 					continue
 				}
@@ -1286,9 +1309,9 @@ const RBXAvatar = (() => {
 					obj.visible = false
 					obj.castShadow = true
 					
+					obj.rbxScaleMod = new THREE.Vector3(1, 1, 1)
+					obj.matrixNoScale = new THREE.Matrix4()
 					obj.rbxPoseMatrix = new THREE.Matrix4()
-					obj.rbxUnscaledMatrix = new THREE.Matrix4()
-					obj.rbxScaleMod = new THREE.Vector3()
 					
 					if(acc.meshId) {
 						AssetCache.loadMesh(true, acc.meshId, mesh => applyMesh(obj, mesh))
@@ -1328,6 +1351,7 @@ const RBXAvatar = (() => {
 					//
 					
 					acc.obj.rbxPoseMatrix.copy(parent.rbxPoseMatrix).multiply(acc.bakedCFrame)
+					acc.attachment = attachment
 					acc.parent = parent
 					
 					if(!acc.obj.parent) {
@@ -1520,21 +1544,18 @@ const RBXAvatar = (() => {
 				
 				joint.part1.layeredMatrix.multiplyMatrices(joint.part0.layeredMatrix, joint.bakedC0).multiply(tempMatrix2.copy(joint.bakedC1).invert())
 			}
-			
+
 			// Find and locate anchor
 			const anchors = groups.filter(x => x.name.startsWith("Handle") && x.faces.length === 36)
 			const anchor = anchors.length >= 2 ? anchors.find(x => $.hashString(JSON.stringify([x.faces, x.uvs, x.vertices])) === "BFA7D679") : anchors[0]
 			
 			const attachment = this.attachments.HatAttachment
 			const scaleMod = this.getScaleMod(attachment.parent.name, "Classic", attachment.parent.rbxScaleType)
-			const attCFrame = new THREE.Matrix4().makeTranslation(-0.013, -0.554, -0.657)
+			const bakedCFrame = scalePosition(new THREE.Matrix4().makeTranslation(-0.013, -0.554, -0.657), scaleMod)
 			
-			const bakedCFrame = attachment.bakedCFrame.clone().multiply(
-				scalePosition(tempMatrix.copy(attCFrame), scaleMod)
-			)
-			
-			const layeredAnchorMatrix = attachment.parent.layeredMatrix.clone().multiply(bakedCFrame)
+			const layeredAnchorMatrix = attachment.parent.layeredMatrix.clone().multiply(attachment.bakedCFrame).multiply(bakedCFrame)
 			const inverseRenderMatrix = new THREE.Matrix4()
+			
 			
 			for(let i = 0; i < anchor.vertices.length; i += 3) {
 				inverseRenderMatrix.elements[12] += anchor.vertices[i]
@@ -1562,46 +1583,54 @@ const RBXAvatar = (() => {
 				[760 / 1024, 456 / 1024, 264 / 1024, 284 / 1024],
 			]
 			
-			const available = groups.filter(x => x.name.startsWith("Player")).sort((a, b) => a.uvs.length - b.uvs.length)
-			let numEmptyAccepted = 15 - available.length
+			const findMatchingBox = (obj, group) => {
+				if(group.uvs.length > obj.rbxMesh.uvs.length) {
+					return null
+				}
+				
+				boxLoop:
+				for(const box of uvBoxes) {
+					const [x0, y0, width, height] = box
+					let search = 0
+					
+					for(let i = 0; i < group.uvs.length; i += 2) {
+						const u = (group.uvs[i] - x0) / width
+						const v = (group.uvs[i + 1] - y0) / height
+						
+						while(true) {
+							if(search >= obj.rbxMesh.uvs.length) {
+								continue boxLoop
+							}
+							
+							const u2 = obj.rbxMesh.uvs[search]
+							const v2 = obj.rbxMesh.uvs[search + 1]
+							
+							search += 2
+							
+							if(Math.abs(u2 - u) < 0.01 && Math.abs(v2 - v) < 0.01) {
+								break
+							}
+						}
+					}
+					
+					return box
+				}
+				
+				return null
+			}
+			
+			const playerGroups = groups.filter(x => x.name.startsWith("Player")).sort((a, b) => b.uvs.length - a.uvs.length)
+			let numEmptyAccepted = 15 - playerGroups.length
 			
 			for(const part of Object.values(this.parts)) {
 				if(!part.isMesh) { continue }
 				const matches = []
 				
-				groupLoop:
-				for(const group of available) {
-					if(group.uvs.length > part.rbxMesh.uvs.length) {
-						continue
-					}
+				for(const group of playerGroups) {
+					const box = findMatchingBox(part, group)
 					
-					boxLoop:
-					for(const box of uvBoxes) {
-						const [x0, y0, width, height] = box
-						let search = 0
-						
-						for(let i = 0; i < group.uvs.length; i += 2) {
-							const u = (group.uvs[i] - x0) / width
-							const v = (group.uvs[i + 1] - y0) / height
-							
-							while(true) {
-								if(search >= part.rbxMesh.uvs.length) {
-									continue boxLoop
-								}
-								
-								const u2 = part.rbxMesh.uvs[search]
-								const v2 = part.rbxMesh.uvs[search + 1]
-								
-								search += 2
-								
-								if(Math.abs(u2 - u) < 0.01 && Math.abs(v2 - v) < 0.01) {
-									break
-								}
-							}
-						}
-						
+					if(box) {
 						matches.push({ group, box })
-						break groupLoop
 					}
 				}
 				
@@ -1610,7 +1639,6 @@ const RBXAvatar = (() => {
 						// If the whole part was hidden by HSR, it doesn't get added into the render
 						numEmptyAccepted -= 1
 					} else {
-						// not much we can do if we match multiple different groups :/
 						console.log("Failed to find match")
 						console.log(part.name, part.rbxMesh)
 						console.log(matches)
@@ -1629,7 +1657,7 @@ const RBXAvatar = (() => {
 				}
 				
 				const { group, box: [x0, y0, width, height] } = matches[0]
-				available.splice(available.indexOf(group), 1) // only match each group once
+				playerGroups.splice(playerGroups.indexOf(group), 1) // only match each group once
 				
 				const vertices = new Float32Array(group.vertices)
 				const normals = new Float32Array(group.normals)
@@ -1659,34 +1687,22 @@ const RBXAvatar = (() => {
 				part.geometry.setAttribute("normal", new THREE.BufferAttribute(normals, 3))
 				part.geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2))
 				part.geometry.setIndex(new THREE.BufferAttribute(faces, 1))
-				part.rbxLayered = true
+				
+				part.rbxLayered = { wrapTarget: part.rbxBodypart.wrapTarget || part.rbxOrigWrapTarget }
 			}
 			
 			// Resolve accessories
-			for(const acc of Object.values(request.accessories)) {
-				const matches = groups.filter(x => x.name.startsWith("Handle") && x.faces.length === acc.obj.rbxMesh.lods[1] * 3)
+			const handleGroups = groups.filter(x => x.name.startsWith("Handle")).sort((a, b) => b.uvs.length - a.uvs.length)
+			
+			for(const acc of Object.values(this.accessories)) {
+				if(!request.accessories[acc.asset.id]) { continue } // in case we have multiple copies of an asset
+				const matches = []
 				
-				if(matches.length >= 2) {
-					for(let j = matches.length; j--;) {
-						const group = matches[j]
-						const uvs0 = group.uvs
-						const uvs1 = acc.obj.rbxMesh.uvs
-						let isValid = true
-						
-						if(uvs0.length !== uvs1.length) {
-							isValid = false
-						} else {
-							for(let i = 0; i < uvs0.length; i++) {
-								if(Math.abs(uvs0[i] - uvs1[i]) > 0.01) {
-									isValid = false
-									break
-								}
-							}
-						}
-						
-						if(!isValid) {
-							matches.splice(j, 1)
-						}
+				for(const group of handleGroups) {
+					const box = findMatchingBox(acc.obj, group)
+					
+					if(box) {
+						matches.push({ group, box })
 					}
 				}
 				
@@ -1703,7 +1719,7 @@ const RBXAvatar = (() => {
 					continue
 				}
 				
-				const target = matches[0]
+				const { group: target, box } = matches[0]
 				
 				const layeredAccMatrix = acc.parent.layeredMatrix.clone().multiply(acc.bakedCFrame)
 				const newVertices = acc.obj.rbxMesh.vertices.slice()
@@ -1713,13 +1729,13 @@ const RBXAvatar = (() => {
 				for(let i = 0; i < target.vertices.length; i += 3) {
 					vertex.makeTranslation(target.vertices[i + 0], target.vertices[i + 1], target.vertices[i + 2]).premultiply(transform)
 					
-					newVertices[i + 0] = vertex.elements[12] / acc.obj.rbxScaleMod.x
-					newVertices[i + 1] = vertex.elements[13] / acc.obj.rbxScaleMod.y
-					newVertices[i + 2] = vertex.elements[14] / acc.obj.rbxScaleMod.z
+					newVertices[i + 0] = vertex.elements[12]
+					newVertices[i + 1] = vertex.elements[13]
+					newVertices[i + 2] = vertex.elements[14]
 				}
 				
 				acc.obj.geometry.setAttribute("position", new THREE.BufferAttribute(newVertices, 3))
-				acc.obj.rbxLayered = true
+				acc.obj.rbxLayered = { wrapLayer: acc.wrapLayer, scaleMod: acc.obj.rbxScaleMod.clone() }
 			}
 			
 			return true

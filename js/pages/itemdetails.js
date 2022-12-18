@@ -53,7 +53,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 		})
 	})
 	
-	const addAsset = async (assetId, assetTypeId, assetName) => {
+	const addAsset = async (assetId, assetTypeId, assetName, meta) => {
 		if(AnimationPreviewAssetTypeIds.includes(assetTypeId)) {
 			await loadPreview()
 			preview.setVisible(true)
@@ -124,7 +124,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 		} else if(WearableAssetTypeIds.includes(assetTypeId)) {
 			await loadPreview()
 			
-			const asset = preview.addAssetPreview(assetId)
+			const asset = preview.addAssetPreview(assetId, assetTypeId, meta)
 			if(!asset) { return }
 			
 			preview.setVisible(true)
@@ -144,11 +144,34 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 		const details = await RobloxApi.catalog.getBundleDetails(assetId)
 		bundleType = details.bundleType
 		
+		const outfitPromise = new SyncPromise(resolve => {
+			const promises = []
+			
+			for(const item of details.items) {
+				if(item.type === "UserOutfit") {
+					promises.push(RobloxApi.avatar.getOutfitDetails(item.id).then(details => {
+						if(details.outfitType === "Avatar") {
+							resolve(details)
+						}
+					}))
+				}
+			}
+			
+			Promise.all(promises).then(() => resolve(null))
+		})
+		
+		outfitPromise.then(outfit => {
+			if(outfit) {
+				setOutfit(outfit.id)
+			}
+		})
+		
 		for(const item of details.items) {
 			if(item.type === "Asset") {
-				RobloxApi.api.getProductInfo(item.id).then(info => addAsset(item.id, info.AssetTypeId, item.name))
-			} else if(item.type === "UserOutfit") {
-				setOutfit(item.id)
+				RobloxApi.api.getProductInfo(item.id).then(async info => {
+					const outfit = await outfitPromise
+					addAsset(item.id, info.AssetTypeId, item.name, outfit?.assets.find(x => x.id === item.id)?.meta)
+				})
 			}
 		}
 	} else {
