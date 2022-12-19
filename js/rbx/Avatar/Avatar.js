@@ -25,8 +25,11 @@ const RBXAvatar = (() => {
 			maxVertex += 1
 			
 			if(maxVertex < vertices.length / 3) {
-				skinIndices = skinIndices.subarray(0, maxVertex * 4)
-				skinWeights = skinWeights.subarray(0, maxVertex * 4)
+				if(skinIndices) {
+					skinIndices = skinIndices.subarray(0, maxVertex * 4)
+					skinWeights = skinWeights.subarray(0, maxVertex * 4)
+				}
+				
 				vertices = vertices.subarray(0, maxVertex * 3)
 				normals = normals.subarray(0, maxVertex * 3)
 				uvs = uvs.subarray(0, maxVertex * 2)
