@@ -122,7 +122,14 @@ const RBXPreview = (() => {
 					let maxSlide = 5.5
 					
 					if(this.avatar.playerType === "R15") {
-						maxSlide = -this.avatar.joints.Neck.bakedC1.elements[13] + this.avatar.joints.Neck.bakedC0.elements[13] + this.avatar.hipOffset.y + 1
+						maxSlide =
+							this.avatar.hipHeight
+							+ this.avatar.parts.HumanoidRootPart.rbxSize[1] / 2
+							+ this.avatar.joints.Root.bakedC0.elements[13]
+							- this.avatar.joints.Root.bakedC1.elements[13]
+							+ this.avatar.joints.Neck.bakedC0.elements[13]
+							- this.avatar.joints.Neck.bakedC1.elements[13]
+							+ 1
 					}
 					
 					this.scene.cameraMinSlide = minSlide - this.scene.cameraFocus.y

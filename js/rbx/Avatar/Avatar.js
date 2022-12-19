@@ -352,65 +352,60 @@ const RBXAvatar = (() => {
 	
 	const ScaleMods = {
 		Default: {
-			LeftHand: new Vector3(1.066, 1.174, 1.231),
-			LeftLowerArm: new Vector3(1.129, 1.342, 1.132),
-			LeftUpperArm: new Vector3(1.129, 1.342, 1.132),
-			RightHand: new Vector3(1.066, 1.174, 1.231),
-			RightLowerArm: new Vector3(1.129, 1.342, 1.132),
-			RightUpperArm: new Vector3(1.129, 1.342, 1.132),
-			UpperTorso: new Vector3(1.033, 1.309, 1.14),
-			LeftFoot: new Vector3(1.079, 1.267, 1.129),
-			LeftLowerLeg: new Vector3(1.023, 1.506, 1.023),
-			LeftUpperLeg: new Vector3(1.023, 1.506, 1.023),
-			RightFoot: new Vector3(1.079, 1.267, 1.129),
-			RightLowerLeg: new Vector3(1.023, 1.506, 1.023),
-			RightUpperLeg: new Vector3(1.023, 1.506, 1.023),
-			LowerTorso: new Vector3(1.033, 1.309, 1.14),
-			Head: new Vector3(0.942, 0.942, 0.942)
+			LeftFoot: new THREE.Vector3(1.0789999961853027, 1.2669999599456787, 1.128999948501587),
+			LeftHand: new THREE.Vector3(1.065999984741211, 1.1740000247955322, 1.2309999465942383),
+			LeftLowerArm: new THREE.Vector3(1.128999948501587, 1.3420000076293945, 1.1319999694824219),
+			LeftLowerLeg: new THREE.Vector3(1.0230000019073486, 1.50600004196167, 1.0230000019073486),
+			LeftUpperArm: new THREE.Vector3(1.128999948501587, 1.3420000076293945, 1.1319999694824219),
+			LeftUpperLeg: new THREE.Vector3(1.0230000019073486, 1.50600004196167, 1.0230000019073486),
+			LowerTorso: new THREE.Vector3(1.0329999923706055, 1.309000015258789, 1.1399999856948853),
+			RightFoot: new THREE.Vector3(1.0789999961853027, 1.2669999599456787, 1.128999948501587),
+			RightHand: new THREE.Vector3(1.065999984741211, 1.1740000247955322, 1.2309999465942383),
+			RightLowerArm: new THREE.Vector3(1.128999948501587, 1.3420000076293945, 1.1319999694824219),
+			RightLowerLeg: new THREE.Vector3(1.0230000019073486, 1.50600004196167, 1.0230000019073486),
+			RightUpperArm: new THREE.Vector3(1.128999948501587, 1.3420000076293945, 1.1319999694824219),
+			RightUpperLeg: new THREE.Vector3(1.0230000019073486, 1.50600004196167, 1.0230000019073486),
+			UpperTorso: new THREE.Vector3(1.0329999923706055, 1.309000015258789, 1.1399999856948853),
+			Head: new THREE.Vector3(0.9419999718666077, 0.9419999718666077, 0.9419999718666077),
 		},
 		Rthro: {
-			LeftHand: new Vector3(1.39, 0.967, 1.201),
-			LeftLowerArm: new Vector3(1.121, 0.681, 0.968),
-			LeftUpperArm: new Vector3(1.121, 0.681, 0.968),
-			RightHand: new Vector3(1.39, 0.967, 1.201),
-			RightLowerArm: new Vector3(1.121, 0.681, 0.968),
-			RightUpperArm: new Vector3(1.121, 0.681, 0.968),
-			UpperTorso: new Vector3(1.014, 0.814, 0.924),
-			LeftFoot: new Vector3(1.404, 0.953, 0.931),
-			LeftLowerLeg: new Vector3(0.978, 0.814, 1.056),
-			LeftUpperLeg: new Vector3(0.978, 0.814, 1.056),
-			RightFoot: new Vector3(1.404, 0.953, 0.931),
-			RightLowerLeg: new Vector3(0.978, 0.814, 1.056),
-			RightUpperLeg: new Vector3(0.978, 0.814, 1.056),
-			LowerTorso: new Vector3(1.014, 0.814, 0.924),
-			Head: new Vector3(1.6, 1.6, 1.6)
+			LeftFoot: new THREE.Vector3(1.4040000438690186, 0.953000009059906, 0.9309999942779541),
+			LeftHand: new THREE.Vector3(1.3899999856948853, 0.9670000076293945, 1.2009999752044678),
+			LeftLowerArm: new THREE.Vector3(1.121000051498413, 0.6809999942779541, 0.968000054359436),
+			LeftLowerLeg: new THREE.Vector3(0.9779999852180481, 0.8140000104904175, 1.055999994277954),
+			LeftUpperArm: new THREE.Vector3(1.121000051498413, 0.6809999942779541, 0.968000054359436),
+			LeftUpperLeg: new THREE.Vector3(0.9779999852180481, 0.8140000104904175, 1.055999994277954),
+			LowerTorso: new THREE.Vector3(1.0140000581741333, 0.8140000104904175, 0.9240000247955322),
+			RightFoot: new THREE.Vector3(1.4040000438690186, 0.953000009059906, 0.9309999942779541),
+			RightHand: new THREE.Vector3(1.3899999856948853, 0.9670000076293945, 1.2009999752044678),
+			RightLowerArm: new THREE.Vector3(1.121000051498413, 0.6809999942779541, 0.968000054359436),
+			RightLowerLeg: new THREE.Vector3(0.9779999852180481, 0.8140000104904175, 1.055999994277954),
+			RightUpperArm: new THREE.Vector3(1.121000051498413, 0.6809999942779541, 0.968000054359436),
+			RightUpperLeg: new THREE.Vector3(0.9779999852180481, 0.8140000104904175, 1.055999994277954),
+			UpperTorso: new THREE.Vector3(1.0140000581741333, 0.8140000104904175, 0.9240000247955322),
+			Head: new THREE.Vector3(1.600000023841858, 1.600000023841858, 1.600000023841858)
 		},
 		Proportion: {
-			LeftHand: new Vector3(1.125, 1, 1.125),
-			LeftLowerArm: new Vector3(1.125, 1.111, 1.125),
-			LeftUpperArm: new Vector3(1.125, 1.111, 1.125),
-			RightHand: new Vector3(1.125, 1, 1.125),
-			RightLowerArm: new Vector3(1.125, 1.111, 1.125),
-			RightUpperArm: new Vector3(1.125, 1.111, 1.125),
-			UpperTorso: new Vector3(1.141, 1.087, 1.125),
-			LeftFoot: new Vector3(1.048, 1.118, 1.125),
-			LeftLowerLeg: new Vector3(1.048, 1.158, 1.125),
-			LeftUpperLeg: new Vector3(1.048, 1.075, 1.125),
-			RightFoot: new Vector3(1.048, 1.118, 1.125),
-			RightLowerLeg: new Vector3(1.048, 1.158, 1.125),
-			RightUpperLeg: new Vector3(1.048, 1.075, 1.125),
-			LowerTorso: new Vector3(1.048, 1.303, 1.125),
-			Head: new Vector3(1.051, 1, 1.051)
+			LeftFoot: new THREE.Vector3(0.9541984796524048, 0.8944543600082397, 0.8888888955116272),
+			LeftHand: new THREE.Vector3(0.8888888359069824, 1, 0.8888888955116272),
+			LeftLowerArm: new THREE.Vector3(0.8888888359069824, 0.9000899791717529, 0.8888888955116272),
+			LeftLowerLeg: new THREE.Vector3(0.9541985392570496, 0.8635578751564026, 0.8888888955116272),
+			LeftUpperArm: new THREE.Vector3(0.8888888359069824, 0.9000899791717529, 0.8888888955116272),
+			LeftUpperLeg: new THREE.Vector3(0.9541985392570496, 0.9302325248718262, 0.8888888955116272),
+			LowerTorso: new THREE.Vector3(0.9541985392570496, 0.7674597501754761, 0.8888888955116272),
+			RightFoot: new THREE.Vector3(0.9541984796524048, 0.8944543600082397, 0.8888888955116272),
+			RightHand: new THREE.Vector3(0.8888888359069824, 1, 0.8888888955116272),
+			RightLowerArm: new THREE.Vector3(0.8888888359069824, 0.9000899791717529, 0.8888888955116272),
+			RightLowerLeg: new THREE.Vector3(0.9541985392570496, 0.8635578751564026, 0.8888888955116272),
+			RightUpperArm: new THREE.Vector3(0.8888888359069824, 0.9000899791717529, 0.8888888955116272),
+			RightUpperLeg: new THREE.Vector3(0.9541985392570496, 0.9302325248718262, 0.8888888955116272),
+			UpperTorso: new THREE.Vector3(0.8764241933822632, 0.9199632406234741, 0.8888888955116272),
+			Head: new THREE.Vector3(0.9514747858047485, 1, 0.9514747858047485),
 		}
 	}
 	
 	const tempMatrix = new THREE.Matrix4()
-	const tempMatrix2 = new THREE.Matrix4()
 	const tempVector = new THREE.Vector3()
-	
-	const oneVector = new THREE.Vector3(1, 1, 1)
-	const zeroVector = new THREE.Vector3()
-	const identQuat = new THREE.Quaternion()
 	
 	const inversePoseMatrix = new THREE.Matrix4()
 	const inverseMatrix = new THREE.Matrix4()
@@ -452,9 +447,8 @@ const RBXAvatar = (() => {
 			this.parts = {}
 
 			this.playerType = null
-			this.animRootScale = 1
+			this.hipHeight = 2
 			
-			this.hipOffset = new THREE.Vector3()
 			this.offset = new THREE.Vector3()
 			this.offsetRot = new THREE.Euler()
 
@@ -620,25 +614,31 @@ const RBXAvatar = (() => {
 			
 			this.animator.update()
 			
-			this.root.position.copy(this.hipOffset).add(this.offset)
+			this.root.position.copy(this.offset)
 			this.root.rotation.copy(this.offsetRot)
+			
+			this.root.position.y += this.hipHeight + (this.parts.HumanoidRootPart?.rbxSize[1] ?? 0) / 2
 			
 			// Update joints
 			for(const joint of this.sortedJointsArray) {
 				const transform = this.animator.getJointTransform(joint.part1.name)
 				
-				let position = transform?.position || zeroVector
-				let quaternion = transform?.quaternion || identQuat
-				
-				if(this.playerType === "R15" && joint.part1.name === "LowerTorso") {
-					position = tempVector.copy(position).multiplyScalar(this.animRootScale)
+				if(transform) {
+					joint.transform.compose(transform.position, transform.quaternion, tempVector.set(1, 1, 1))
+				} else {
+					joint.transform.identity()
 				}
 				
-				joint.transform.compose(position, quaternion, oneVector)
+				if(this.playerType === "R15" && joint.part1.name === "LowerTorso") {
+					scalePosition(joint.transform, tempVector.setScalar(this.hipHeight / 2))
+				}
 				
-				joint.part1.matrixNoScale.multiplyMatrices(joint.part0.matrixNoScale, joint.bakedC0).multiply(joint.transform).multiply(tempMatrix.copy(joint.bakedC1).invert())
-				joint.part1.matrix.copy(joint.part1.matrixNoScale).scale(tempVector.set(...joint.part1.rbxScale))
+				joint.part1.matrixNoScale
+					.multiplyMatrices(joint.part0.matrixNoScale, joint.bakedC0)
+					.multiply(joint.transform)
+					.multiply(tempMatrix.copy(joint.bakedC1).invert())
 				
+				joint.part1.matrix.copy(joint.part1.matrixNoScale).scale(joint.part1.scale)
 				joint.part1.matrixWorldNeedsUpdate = true
 			}
 			
@@ -647,8 +647,8 @@ const RBXAvatar = (() => {
 				if(!acc.parent) { continue }
 
 				acc.obj.matrixNoScale.multiplyMatrices(acc.parent.matrixNoScale, acc.bakedCFrame)
-				acc.obj.matrix.copy(acc.obj.matrixNoScale).scale(acc.obj.scale)
 				
+				acc.obj.matrix.copy(acc.obj.matrixNoScale).scale(acc.obj.scale)
 				acc.obj.matrixWorldNeedsUpdate = true
 			}
 			
@@ -823,60 +823,29 @@ const RBXAvatar = (() => {
 
 			if(scaleType === "ProportionsNormal") {
 				startScale.copy(rthroMod)
+				endScale.set(1, 1, 1).lerp(propMod, this.scales.proportion)
 
 				if(partScaleType && partScaleType !== "ProportionsNormal" && partScaleType !== "ProportionsSlender") {
-					endScale.multiply(rthroMod).multiply(defaultMod).multiply(
-						new THREE.Vector3(1, 1, 1).lerp(
-							new THREE.Vector3(1, 1, 1).divide(propMod),
-							this.scales.proportion
-						)
-					)
-				} else {
-					endScale.set(1, 1, 1).lerp(
-						new THREE.Vector3(1, 1, 1).divide(propMod),
-						this.scales.proportion
-					)
+					endScale.multiply(tempVector.copy(rthroMod).multiply(defaultMod))
 				}
 			} else if(scaleType === "ProportionsSlender") {
-				startScale.copy(rthroMod).multiply(propMod)
+				startScale.copy(rthroMod).multiply(tempVector.set(1, 1, 1).divide(propMod))
+				endScale.set(1, 1, 1).divide(propMod).lerp(tempVector.set(1, 1, 1), this.scales.proportion)
 
 				if(partScaleType && partScaleType !== "ProportionsNormal" && partScaleType !== "ProportionsSlender") {
-					endScale.copy(rthroMod).multiply(defaultMod).multiply(propMod).multiply(
-						new THREE.Vector3(1, 1, 1).lerp(
-							new THREE.Vector3(1, 1, 1).divide(propMod),
-							this.scales.proportion
-						)
-					)
-				} else {
-					endScale.copy(propMod).lerp(
-						new THREE.Vector3(1, 1, 1),
-						this.scales.proportion
-					)
+					endScale.multiply(tempVector.copy(rthroMod).multiply(defaultMod))
 				}
 			} else {
 				startScale.set(1, 1, 1)
+				endScale.copy(defaultMod).multiply(tempVector.set(1, 1, 1).lerp(propMod, this.scales.proportion))
 
 				if(partScaleType && (partScaleType === "ProportionsNormal" || partScaleType === "ProportionsSlender")) {
-					endScale.set(1, 1, 1).divide(rthroMod).multiply(
-						new THREE.Vector3(1, 1, 1).lerp(
-							new THREE.Vector3(1, 1, 1).divide(propMod),
-							this.scales.proportion
-						)
-					)
-				} else {
-					endScale.copy(defaultMod).multiply(
-						new THREE.Vector3(1, 1, 1).lerp(
-							new THREE.Vector3(1, 1, 1).divide(propMod),
-							this.scales.proportion
-						)
-					)
+					endScale.divide(tempVector.copy(rthroMod).multiply(defaultMod))
 				}
 			}
 
-			result.multiply(
-				startScale.lerp(endScale, this.scales.bodyType)
-			)
-
+			result.multiply(startScale.lerp(endScale, this.scales.bodyType))
+			
 			return result
 		}
 
@@ -987,10 +956,8 @@ const RBXAvatar = (() => {
 
 			if(this.playerType === "R6") {
 				CreateModel(RBXAvatarRigs.R6Tree)
-				this.hipOffset.set(0, 3, 0)
 			} else if(this.playerType === "R15") {
 				CreateModel(RBXAvatarRigs.R15Tree)
-				this.hipOffset.set(0, 2.35, 0)
 			}
 			
 			this.sortedJointsArray.reverse()
@@ -1225,10 +1192,10 @@ const RBXAvatar = (() => {
 					const rightHip = this.joints.RightHip
 					const leftHip = this.joints.LeftHip
 					
-					const rootHeight = rootJoint.part0.rbxSize[1]
-					const minHipOffset = Math.min(rightHip.bakedC0.elements[13], leftHip.bakedC0.elements[13])
-					
-					rootJoint.bakedC0.elements[13] = rootJoint.bakedC1.elements[13] - rootHeight / 2 - minHipOffset
+					rootJoint.bakedC0.elements[13] =
+						rootJoint.bakedC1.elements[13]
+						- Math.min(rightHip.bakedC0.elements[13], leftHip.bakedC0.elements[13])
+						- Math.max(0.05, rootJoint.part0.rbxSize[1]) / 2
 				}
 			}
 
@@ -1236,44 +1203,52 @@ const RBXAvatar = (() => {
 
 			// HipHeight and leg stretching
 			if(this.playerType === "R15") {
-				const calcHeight = name => {
-					const joint = this.joints[name]
-					return joint.bakedC1.elements[13] - joint.bakedC0.elements[13]
-				}
-
-				// Stretch legs to same level
-				let leftLegHeight = this.joints.LeftHip.bakedC1.elements[13] + calcHeight("LeftKnee") + calcHeight("LeftAnkle") + this.parts.LeftFoot.rbxSize[1] / 2
-				let rightLegHeight = this.joints.RightHip.bakedC1.elements[13] + calcHeight("RightKnee") + calcHeight("RightAnkle") + this.parts.RightFoot.rbxSize[1] / 2
-
-				if(leftLegHeight >= 0.1 && rightLegHeight >= 0.1) {
-					const scale = new Vector3(1, rightLegHeight / leftLegHeight, 1)
-
-					if(scale.y > 1) {
-						this.parts.LeftUpperLeg.rbxScaleMod.multiply(scale)
-						this.parts.LeftLowerLeg.rbxScaleMod.multiply(scale)
-						this.parts.LeftFoot.rbxScaleMod.multiply(scale)
-						leftLegHeight = rightLegHeight
-					} else {
-						this.parts.RightUpperLeg.rbxScaleMod.divide(scale)
-						this.parts.RightLowerLeg.rbxScaleMod.divide(scale)
-						this.parts.RightFoot.rbxScaleMod.divide(scale)
-						rightLegHeight = leftLegHeight
+				let leftLegSize =
+					this.joints.LeftHip.bakedC1.elements[13]
+					- this.joints.LeftKnee.bakedC0.elements[13]
+					+ this.joints.LeftKnee.bakedC1.elements[13]
+					- this.joints.LeftAnkle.bakedC0.elements[13]
+					+ this.joints.LeftAnkle.bakedC1.elements[13]
+					+ Math.max(0.05, this.parts.LeftFoot.rbxSize[1]) / 2
+				
+				let rightLegSize =
+					this.joints.RightHip.bakedC1.elements[13]
+					- this.joints.RightKnee.bakedC0.elements[13]
+					+ this.joints.RightKnee.bakedC1.elements[13]
+					- this.joints.RightAnkle.bakedC0.elements[13]
+					+ this.joints.RightAnkle.bakedC1.elements[13]
+					+ Math.max(0.05, this.parts.RightFoot.rbxSize[1]) / 2
+				
+				if(leftLegSize >= 0.1 && rightLegSize >= 0.1) {
+					const scale = rightLegSize / leftLegSize
+					
+					if(scale > 1) {
+						this.parts.LeftUpperLeg.rbxScaleMod.y *= scale
+						this.parts.LeftLowerLeg.rbxScaleMod.y *= scale
+						this.parts.LeftFoot.rbxScaleMod.y *= scale
+						leftLegSize = rightLegSize
+					} else if(scale < 1) {
+						this.parts.RightUpperLeg.rbxScaleMod.y /= scale
+						this.parts.RightLowerLeg.rbxScaleMod.y /= scale
+						this.parts.RightFoot.rbxScaleMod.y /= scale
+						rightLegSize = leftLegSize
 					}
-
+					
 					updateSizes()
 				}
-
-				// Calculate hip height
-				const rootHeight = this.parts.HumanoidRootPart.rbxSize[1]
 				
-				let min = leftLegHeight
-				let max = rightLegHeight
-				if(max < min) { [max, min] = [min, max] }
-
-				const hipHeight = min >= max * 0.95 ? min : max
-
-				this.hipOffset.setY(hipHeight + rootHeight / 2)
-				this.animRootScale = hipHeight / 2
+				const rootHeight =
+					-this.joints.Root.bakedC0.elements[13]
+					+ this.joints.Root.bakedC1.elements[13]
+					- Math.max(0.05, this.parts.HumanoidRootPart.rbxSize[1]) / 2
+				
+				let min = rootHeight - this.joints.LeftHip.bakedC0.elements[13] + leftLegSize
+				let max = rootHeight - this.joints.RightHip.bakedC0.elements[13] + rightLegSize
+				if(min < max) { [min, max] = [max, min] }
+				
+				this.hipHeight = min >= max * 0.95 ? min : max
+			} else {
+				this.hipHeight = 2
 			}
 
 			// Remove old accessories
@@ -1613,7 +1588,7 @@ const RBXAvatar = (() => {
 					joint.part1.layeredMatrix = new THREE.Matrix4()
 				}
 				
-				joint.part1.layeredMatrix.multiplyMatrices(joint.part0.layeredMatrix, joint.bakedC0).multiply(tempMatrix2.copy(joint.bakedC1).invert())
+				joint.part1.layeredMatrix.multiplyMatrices(joint.part0.layeredMatrix, joint.bakedC0).multiply(tempMatrix.copy(joint.bakedC1).invert())
 			}
 
 			// Find and locate anchor
