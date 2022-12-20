@@ -59,7 +59,7 @@ const btrSettingsModal = (() => {
 				<group label=Groups path=groups toggleable=redesign>
 					<div>
 						<checkbox label="Group Shout Notifications" path=shoutAlerts require=false></checkbox>
-						<button btr-tab=shoutFilters class=btn-control-xs>Modify Shout Filters</button>
+						<button btr-tab=shoutFilters class=btn-control-xs>Modify Shout Notifications</button>
 					</div>
 					<div>
 						<empty></empty>
@@ -111,11 +111,11 @@ const btrSettingsModal = (() => {
 			<div class=btr-settings-content id=btr-settings-shout-filters data-name=shoutFilters>
 				<div class=btr-settings-content-header>
 					<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
-					<h4>Group Shout Filters</h4>
+					<h4>Group Shout Notifications</h4>
 				</div>
 				<group path=groups>
 					<div>
-						<checkbox label="Group Shout Notifications" path=shoutAlerts></checkbox>
+						<checkbox label="Enable Group Shout Notifications" path=shoutAlerts></checkbox>
 					</div>
 					<checkbox label="Browser Notifications" path=shoutAlertBrowserNotifs require=shoutAlerts></checkbox>
 					<checkbox label="Show In Notification Stream" path=shoutAlertsInNotifStream require=shoutAlerts></checkbox>
