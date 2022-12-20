@@ -633,12 +633,10 @@ const RBXAvatar = (() => {
 					scalePosition(joint.transform, tempVector.setScalar(this.hipHeight / 2))
 				}
 				
-				joint.part1.matrixNoScaleJoint
+				joint.part1.matrixNoScale
 					.multiplyMatrices(joint.part0.matrixNoScale, joint.bakedC0)
 					.multiply(joint.transform)
-				
-				joint.part1.matrixNoScale
-					.multiplyMatrices(joint.part1.matrixNoScaleJoint, tempMatrix.copy(joint.bakedC1).invert())
+					.multiply(tempMatrix.copy(joint.bakedC1).invert())
 				
 				joint.part1.matrix.copy(joint.part1.matrixNoScale).scale(joint.part1.scale)
 				joint.part1.matrixWorldNeedsUpdate = true
@@ -686,12 +684,10 @@ const RBXAvatar = (() => {
 				}
 				
 				for(const joint of this.sortedJointsArray) {
-					joint.part1.skinnedMatrixJoint
+					joint.part1.skinnedMatrix
 						.multiplyMatrices(joint.part0.skinnedMatrix, scalePosition(tempMatrix.copy(joint.C0), obj.rbxScaleMod))
 						.multiply(joint.transform)
-					
-					joint.part1.skinnedMatrix
-						.multiplyMatrices(joint.part1.skinnedMatrixJoint, scalePosition(tempMatrix.copy(joint.C1).invert(), obj.rbxScaleMod))
+						.multiply(scalePosition(tempMatrix.copy(joint.C1).invert(), obj.rbxScaleMod))
 				}
 				
 				if(acc) {
@@ -700,14 +696,14 @@ const RBXAvatar = (() => {
 				
 				inversePoseMatrix.copy(obj.rbxPoseMatrix).invert()
 				inverseMatrix.copy(obj.matrix).invert()
-					.multiply(obj.matrixNoScaleJoint ?? obj.matrixNoScale)
-					.multiply(tempMatrix.copy(obj.skinnedMatrixJoint ?? obj.skinnedMatrix).invert())
+					.multiply(obj.matrixNoScale)
+					.multiply(tempMatrix.copy(obj.skinnedMatrix).invert())
 				
 				for(const bone of obj.rbxBones) {
 					const ref = this.parts[bone.name] || obj
 					
-					bone.matrixWorld.multiplyMatrices(inverseMatrix, ref.skinnedMatrixJoint ?? ref.skinnedMatrix).scale(obj.rbxScaleMod)
-					bone.inverse.multiplyMatrices(inversePoseMatrix, ref.rbxPoseMatrixJoint ?? ref.rbxPoseMatrix).invert()
+					bone.matrixWorld.multiplyMatrices(inverseMatrix, ref.skinnedMatrix).scale(obj.rbxScaleMod)
+					bone.inverse.multiplyMatrices(inversePoseMatrix, ref.rbxPoseMatrix).invert()
 				}
 			}
 			
@@ -897,11 +893,8 @@ const RBXAvatar = (() => {
 				
 				obj.rbxScaleMod = new Vector3(1, 1, 1)
 				obj.matrixNoScale = new THREE.Matrix4()
-				obj.matrixNoScaleJoint = new THREE.Matrix4()
 				obj.rbxPoseMatrix = new THREE.Matrix4()
-				obj.rbxPoseMatrixJoint = new THREE.Matrix4()
 				obj.skinnedMatrix = new THREE.Matrix4()
-				obj.skinnedMatrixJoint = new THREE.Matrix4()
 				//
 				
 				this.root.add(obj)
@@ -1044,8 +1037,9 @@ const RBXAvatar = (() => {
 				joint.C0.copy(overrideC0?.cframe || joint.origC0)
 				joint.C1.copy(overrideC1?.cframe || joint.origC1)
 				
-				joint.part1.rbxPoseMatrixJoint.copy(joint.part0.rbxPoseMatrix).multiply(joint.C0)
-				joint.part1.rbxPoseMatrix.multiplyMatrices(joint.part1.rbxPoseMatrixJoint, tempMatrix.copy(joint.C1).invert())
+				joint.part1.rbxPoseMatrix
+					.multiplyMatrices(joint.part0.rbxPoseMatrix, joint.C0)
+					.multiply(tempMatrix.copy(joint.C1).invert())
 			}
 			
 			// Update parts
