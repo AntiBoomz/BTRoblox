@@ -633,10 +633,12 @@ const RBXAvatar = (() => {
 					scalePosition(joint.transform, tempVector.setScalar(this.hipHeight / 2))
 				}
 				
-				joint.part1.matrixNoScale
+				joint.part1.matrixNoScaleJoint
 					.multiplyMatrices(joint.part0.matrixNoScale, joint.bakedC0)
 					.multiply(joint.transform)
-					.multiply(tempMatrix.copy(joint.bakedC1).invert())
+				
+				joint.part1.matrixNoScale
+					.multiplyMatrices(joint.part1.matrixNoScaleJoint, tempMatrix.copy(joint.bakedC1).invert())
 				
 				joint.part1.matrix.copy(joint.part1.matrixNoScale).scale(joint.part1.scale)
 				joint.part1.matrixWorldNeedsUpdate = true
@@ -658,65 +660,54 @@ const RBXAvatar = (() => {
 			}
 			
 			// Update bones
-			const updateBones = obj => {
-				if(obj.rbxLayered?.wrapLayer) {
+			const updateBones = (obj, acc) => {
+				if(acc && obj.rbxLayered?.wrapLayer) {
 					const scale = obj.rbxScaleMod.clone().divide(obj.rbxLayered.scaleMod)
 					
 					for(const joint of this.sortedJointsArray) {
-						if(!joint.part1.test2) { joint.part1.test2 = new THREE.Matrix4() }
-						
-						joint.part1.test2.multiplyMatrices(joint.part0.test2 ?? tempMatrix.identity(), joint.bakedC0)
+						joint.part1.skinnedMatrix
+							.multiplyMatrices(joint.part0.skinnedMatrix, joint.bakedC0)
 							.multiply(tempMatrix.copy(joint.bakedC1).invert())
 					}
 					
-					for(const acc of this.accessories) {
-						if(acc.obj !== obj) { continue }
-						
-						if(!acc.obj.test2) { acc.obj.test2 = new THREE.Matrix4() }
-						acc.obj.test2.multiplyMatrices(acc.parent.test2, acc.bakedCFrame)
-					}
+					acc.obj.skinnedMatrix.multiplyMatrices(acc.parent.skinnedMatrix, acc.bakedCFrame)
 					
-					inversePoseMatrix.copy(obj.test2).invert()
+					inversePoseMatrix.copy(obj.skinnedMatrix).invert()
 					inverseMatrix.copy(obj.matrix).invert().multiply(obj.matrixNoScale).multiply(tempMatrix.copy(obj.matrixNoScale).invert())
 					
 					for(const bone of obj.rbxBones) {
 						const ref = this.parts[bone.name] || obj
 						
-						bone.matrixWorld.copy(ref.matrixNoScale).scale(scale)
-						
-						bone.matrixWorld.premultiply(inverseMatrix)
-						bone.inverse.copy(ref.test2).premultiply(inversePoseMatrix).invert()
+						bone.matrixWorld.multiplyMatrices(inverseMatrix, ref.matrixNoScale).scale(scale)
+						bone.inverse.multiplyMatrices(inversePoseMatrix, ref.skinnedMatrix).invert()
 					}
 					
 					return
 				}
 				
 				for(const joint of this.sortedJointsArray) {
-					if(!joint.part1.test) { joint.part1.test = new THREE.Matrix4() }
-					
-					joint.part1.test
-						.multiplyMatrices(joint.part0.test ?? tempMatrix.identity(), scalePosition(tempMatrix.copy(joint.C0), obj.rbxScaleMod))
+					joint.part1.skinnedMatrixJoint
+						.multiplyMatrices(joint.part0.skinnedMatrix, scalePosition(tempMatrix.copy(joint.C0), obj.rbxScaleMod))
 						.multiply(joint.transform)
-						.multiply(scalePosition(tempMatrix.copy(joint.C1).invert(), obj.rbxScaleMod))
+					
+					joint.part1.skinnedMatrix
+						.multiplyMatrices(joint.part1.skinnedMatrixJoint, scalePosition(tempMatrix.copy(joint.C1).invert(), obj.rbxScaleMod))
 				}
 				
-				for(const acc of this.accessories) {
-					if(acc.obj !== obj) { continue }
-					
-					if(!acc.obj.test) { acc.obj.test = new THREE.Matrix4() }
-					acc.obj.test.multiplyMatrices(acc.parent.test, acc.bakedCFrame)
+				if(acc) {
+					acc.obj.skinnedMatrix.multiplyMatrices(acc.parent.skinnedMatrix, acc.bakedCFrame)
 				}
 				
 				inversePoseMatrix.copy(obj.rbxPoseMatrix).invert()
-				inverseMatrix.copy(obj.matrix).invert().multiply(obj.matrixNoScale).multiply(tempMatrix.copy(obj.test).invert())
+				inverseMatrix.copy(obj.matrix).invert()
+					.multiply(obj.matrixNoScaleJoint ?? obj.matrixNoScale)
+					.multiply(tempMatrix.copy(obj.skinnedMatrixJoint ?? obj.skinnedMatrix).invert())
 				
 				for(const bone of obj.rbxBones) {
 					const ref = this.parts[bone.name] || obj
 					
-					bone.matrixWorld.copy(ref.test).scale(obj.rbxScaleMod)
-					
-					bone.matrixWorld.premultiply(inverseMatrix)
-					bone.inverse.copy(ref.rbxPoseMatrix).premultiply(inversePoseMatrix).invert()
+					bone.matrixWorld.multiplyMatrices(inverseMatrix, ref.skinnedMatrixJoint ?? ref.skinnedMatrix).scale(obj.rbxScaleMod)
+					bone.inverse.multiplyMatrices(inversePoseMatrix, ref.rbxPoseMatrixJoint ?? ref.rbxPoseMatrix).invert()
 				}
 			}
 			
@@ -728,7 +719,7 @@ const RBXAvatar = (() => {
 			
 			for(const acc of this.accessories) {
 				if(acc.parent && acc.obj.rbxBones) {
-					updateBones(acc.obj)
+					updateBones(acc.obj, acc)
 				}
 			}
 			
@@ -906,7 +897,11 @@ const RBXAvatar = (() => {
 				
 				obj.rbxScaleMod = new Vector3(1, 1, 1)
 				obj.matrixNoScale = new THREE.Matrix4()
+				obj.matrixNoScaleJoint = new THREE.Matrix4()
 				obj.rbxPoseMatrix = new THREE.Matrix4()
+				obj.rbxPoseMatrixJoint = new THREE.Matrix4()
+				obj.skinnedMatrix = new THREE.Matrix4()
+				obj.skinnedMatrixJoint = new THREE.Matrix4()
 				//
 				
 				this.root.add(obj)
@@ -1049,7 +1044,8 @@ const RBXAvatar = (() => {
 				joint.C0.copy(overrideC0?.cframe || joint.origC0)
 				joint.C1.copy(overrideC1?.cframe || joint.origC1)
 				
-				joint.part1.rbxPoseMatrix.copy(joint.part0.rbxPoseMatrix).multiply(joint.C0).multiply(tempMatrix.copy(joint.C1).invert())
+				joint.part1.rbxPoseMatrixJoint.copy(joint.part0.rbxPoseMatrix).multiply(joint.C0)
+				joint.part1.rbxPoseMatrix.multiplyMatrices(joint.part1.rbxPoseMatrixJoint, tempMatrix.copy(joint.C1).invert())
 			}
 			
 			// Update parts
@@ -1345,6 +1341,7 @@ const RBXAvatar = (() => {
 					obj.rbxScaleMod = new THREE.Vector3(1, 1, 1)
 					obj.matrixNoScale = new THREE.Matrix4()
 					obj.rbxPoseMatrix = new THREE.Matrix4()
+					obj.skinnedMatrix = new THREE.Matrix4()
 					
 					if(acc.meshId) {
 						AssetCache.loadMesh(true, acc.meshId, mesh => applyMesh(obj, mesh))
@@ -1383,9 +1380,10 @@ const RBXAvatar = (() => {
 					
 					//
 					
-					acc.obj.rbxPoseMatrix.copy(parent.rbxPoseMatrix).multiply(acc.bakedCFrame)
 					acc.attachment = attachment
 					acc.parent = parent
+					
+					acc.obj.rbxPoseMatrix.multiplyMatrices(parent.rbxPoseMatrix, attachment.bakedCFrame)
 					
 					if(!acc.obj.parent) {
 						this.root.add(acc.obj)
