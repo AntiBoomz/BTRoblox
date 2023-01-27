@@ -1583,8 +1583,7 @@ const RBXAvatar = (() => {
 			}
 
 			// Find and locate anchor
-			const anchors = groups.filter(x => x.name.startsWith("Handle") && x.faces.length === 36)
-			const anchor = anchors.length >= 2 ? anchors.find(x => $.hashString(JSON.stringify([x.faces, x.uvs, x.vertices])) === "BFA7D679") : anchors[0]
+			const anchor = groups.find(x => x.name.startsWith("Handle") && x.faces.length === 36 && $.hashString(JSON.stringify([x.faces, x.uvs])) === "4734F03A")
 			
 			const attachment = this.attachments.HatAttachment
 			const scaleMod = this.getScaleMod(attachment.parent.name, "Classic", attachment.parent.rbxScaleType)
@@ -1592,7 +1591,6 @@ const RBXAvatar = (() => {
 			
 			const layeredAnchorMatrix = attachment.parent.layeredMatrix.clone().multiply(attachment.bakedCFrame).multiply(bakedCFrame)
 			const inverseRenderMatrix = new THREE.Matrix4()
-			
 			
 			for(let i = 0; i < anchor.vertices.length; i += 3) {
 				inverseRenderMatrix.elements[12] += anchor.vertices[i]
@@ -1620,12 +1618,15 @@ const RBXAvatar = (() => {
 				[760 / 1024, 456 / 1024, 264 / 1024, 284 / 1024],
 			]
 			
-			const doesGroupMatch = (obj, group, box = uvBoxes[0]) => {
-				if(group.uvs.length > obj.rbxMesh.uvs.length) {
-					return false
+			const getGroupMatch = (obj, group, box) => {
+				const mesh = obj.rbxMesh.firstLod || obj.rbxMesh
+				
+				if(group.uvs.length > mesh.uvs.length) {
+					return null
 				}
 				
 				const [x0, y0, width, height] = box
+				const result = []
 				let search = 0
 				
 				for(let i = 0; i < group.uvs.length; i += 2) {
@@ -1633,12 +1634,12 @@ const RBXAvatar = (() => {
 					const v = (group.uvs[i + 1] - y0) / height
 					
 					while(true) {
-						if(search >= obj.rbxMesh.uvs.length) {
-							return false
+						if(search >= mesh.uvs.length) {
+							return null
 						}
 						
-						const u2 = obj.rbxMesh.uvs[search]
-						const v2 = obj.rbxMesh.uvs[search + 1]
+						const u2 = mesh.uvs[search]
+						const v2 = mesh.uvs[search + 1]
 						
 						search += 2
 						
@@ -1646,9 +1647,11 @@ const RBXAvatar = (() => {
 							break
 						}
 					}
+					
+					result.push(search / 2 - 1)
 				}
 					
-				return true
+				return result
 			}
 			
 			const playerGroups = groups.filter(x => x.name.startsWith("Player")).sort((a, b) => b.uvs.length - a.uvs.length)
@@ -1660,8 +1663,10 @@ const RBXAvatar = (() => {
 				
 				for(const group of playerGroups) {
 					for(const box of uvBoxes) {
-						if(doesGroupMatch(part, group, box)) {
-							matches.push({ group, box })
+						const match = getGroupMatch(part, group, box)
+						
+						if(match) {
+							matches.push({ group, box, match })
 						}
 					}
 				}
@@ -1737,8 +1742,10 @@ const RBXAvatar = (() => {
 				const matches = []
 				
 				for(const group of handleGroups) {
-					if(doesGroupMatch(acc.obj, group)) {
-						matches.push({ group })
+					const match = getGroupMatch(acc.obj, group, uvBoxes[0])
+					
+					if(match) {
+						matches.push({ group, match })
 					}
 				}
 				
@@ -1755,22 +1762,71 @@ const RBXAvatar = (() => {
 					continue
 				}
 				
-				const { group: target } = matches[0]
+				const { group, match } = matches[0]
+				const mesh = acc.obj.rbxMesh.firstLod || acc.obj.rbxMesh
+				
+				const vertices = mesh.vertices.slice()
+				const normals = mesh.normals.slice()
+				const faces = mesh.faces.slice()
 				
 				const layeredAccMatrix = acc.parent.layeredMatrix.clone().multiply(acc.bakedCFrame)
-				const newVertices = acc.obj.rbxMesh.vertices.slice()
-				
 				transform.copy(layeredAccMatrix).invert().multiply(inverseRenderMatrix)
-
-				for(let i = 0; i < target.vertices.length; i += 3) {
-					vertex.makeTranslation(target.vertices[i + 0], target.vertices[i + 1], target.vertices[i + 2]).premultiply(transform)
+				
+				// apply transformed vertices and normals
+				for(let i = 0, len = group.vertices.length / 3; i < len; i++) {
+					const index = match[i]
 					
-					newVertices[i + 0] = vertex.elements[12]
-					newVertices[i + 1] = vertex.elements[13]
-					newVertices[i + 2] = vertex.elements[14]
+					vertex.makeTranslation(
+						group.vertices[i * 3 + 0],
+						group.vertices[i * 3 + 1],
+						group.vertices[i * 3 + 2]
+					).premultiply(transform)
+					
+					vertices[index * 3 + 0] = vertex.elements[12]
+					vertices[index * 3 + 1] = vertex.elements[13]
+					vertices[index * 3 + 2] = vertex.elements[14]
+					
+					vertex.makeTranslation(
+						group.normals[i * 3 + 0] - transform.elements[12],
+						group.normals[i * 3 + 1] - transform.elements[13],
+						group.normals[i * 3 + 2] - transform.elements[14]
+					).premultiply(transform)
+					
+					normals[index * 3 + 0] = vertex.elements[12]
+					normals[index * 3 + 1] = vertex.elements[13]
+					normals[index * 3 + 2] = vertex.elements[14]
 				}
 				
-				acc.obj.geometry.setAttribute("position", new THREE.BufferAttribute(newVertices, 3))
+				// disable hidden faces
+				let search = 0
+				
+				outer:
+				for(let i = 0; i < group.faces.length; i += 3) {
+					const a = match[group.faces[i + 0]]
+					const b = match[group.faces[i + 1]]
+					const c = match[group.faces[i + 2]]
+					
+					while(true) {
+						if(search >= faces.length) {
+							break outer
+						}
+						
+						if(faces[search + 0] === a && faces[search + 1] === b && faces[search + 2] === c) {
+							search += 3
+							break
+						}
+						
+						faces[search + 0] = -1
+						faces[search + 1] = -1
+						faces[search + 2] = -1
+						search += 3
+					}
+				}
+				
+				acc.obj.geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3))
+				acc.obj.geometry.setAttribute("normal", new THREE.BufferAttribute(normals, 3))
+				acc.obj.geometry.setIndex(new THREE.BufferAttribute(faces, 1))
+				
 				acc.obj.rbxLayered = { wrapLayer: acc.wrapLayer, scaleMod: acc.obj.rbxScaleMod.clone() }
 			}
 			
