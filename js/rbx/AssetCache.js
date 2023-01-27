@@ -144,11 +144,11 @@ const AssetCache = (() => {
 		}),
 		loadModel: createMethod(buffer => RBXParser.parseModel(buffer)),
 		loadMesh: createMethod(buffer => RBXParser.parseMesh(buffer)),
-		loadImage: createMethod(buffer => new SyncPromise((resolve, reject) => {
+		loadImage: createMethod((buffer, request) => new SyncPromise((resolve, reject) => {
 			const src = URL.createObjectURL(new Blob([new Uint8Array(buffer)], { type: "image/png" }))
 			
 			const image = new Image()
-			image.onerror = () => reject(new Error("invalid image"))
+			image.onerror = () => reject(new Error(`invalid image ${JSON.stringify(request)}`))
 			image.onload = () => resolve(image)
 			image.src = src
 			
