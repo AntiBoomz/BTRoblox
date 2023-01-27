@@ -3,37 +3,36 @@
 const RBXAvatar = (() => {
 	const Vector3 = THREE.Vector3
 	
-	function applyMesh(obj, mesh) {
+	function applyMesh(obj, baseMesh) {
 		const geom = obj.geometry
+		let appliedMesh = baseMesh
 		
-		let skinIndices = mesh.skinIndices
-		let skinWeights = mesh.skinWeights
-		let vertices = mesh.vertices
-		let normals = mesh.normals
-		let faces = mesh.faces
-		let uvs = mesh.uvs
-		
-		if(mesh.lods.length > 2) {
-			faces = faces.subarray(mesh.lods[0] * 3, mesh.lods[1] * 3)
-			
-			let maxVertex = 0
-			
-			for(let i = faces.length; i--;) {
-				maxVertex = Math.max(maxVertex, faces[i])
-			}
-			
-			maxVertex += 1
-			
-			if(maxVertex < vertices.length / 3) {
-				if(skinIndices) {
-					skinIndices = skinIndices.subarray(0, maxVertex * 4)
-					skinWeights = skinWeights.subarray(0, maxVertex * 4)
+		if(baseMesh.lods.length > 2) {
+			if(!baseMesh.firstLod) {
+				const firstLod = baseMesh.firstLod = { ...baseMesh }
+				firstLod.faces = firstLod.faces.subarray(baseMesh.lods[0] * 3, baseMesh.lods[1] * 3)
+				
+				let maxVertex = 0
+				
+				for(let i = firstLod.faces.length; i--;) {
+					maxVertex = Math.max(maxVertex, firstLod.faces[i])
 				}
 				
-				vertices = vertices.subarray(0, maxVertex * 3)
-				normals = normals.subarray(0, maxVertex * 3)
-				uvs = uvs.subarray(0, maxVertex * 2)
+				maxVertex += 1
+				
+				if(maxVertex < firstLod.vertices.length / 3) {
+					if(firstLod.skinIndices) {
+						firstLod.skinIndices = firstLod.skinIndices.subarray(0, maxVertex * 4)
+						firstLod.skinWeights = firstLod.skinWeights.subarray(0, maxVertex * 4)
+					}
+					
+					firstLod.vertices = firstLod.vertices.subarray(0, maxVertex * 3)
+					firstLod.normals = firstLod.normals.subarray(0, maxVertex * 3)
+					firstLod.uvs = firstLod.uvs.subarray(0, maxVertex * 2)
+				}
 			}
+			
+			appliedMesh = baseMesh.firstLod
 		}
 		
 		if(obj instanceof THREE.SkinnedMesh) {
@@ -42,16 +41,16 @@ const RBXAvatar = (() => {
 				delete obj.skeleton
 			}
 			
-			if(mesh.bones) {
+			if(baseMesh.bones) {
 				const bones = []
 				
 				obj.isSkinnedMesh = true
 				obj.rbxBones = bones
 				
-				geom.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(skinIndices, 4))
-				geom.setAttribute("skinWeight", new THREE.Float32BufferAttribute(skinWeights, 4))
+				geom.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(appliedMesh.skinIndices, 4))
+				geom.setAttribute("skinWeight", new THREE.Float32BufferAttribute(appliedMesh.skinWeights, 4))
 				
-				for(const meshBone of mesh.bones) {
+				for(const meshBone of baseMesh.bones) {
 					const bone = {
 						name: meshBone.name,
 						matrixWorld: new THREE.Matrix4(),
@@ -73,13 +72,13 @@ const RBXAvatar = (() => {
 			}
 		}
 		
-		obj.rbxMesh = mesh
+		obj.rbxMesh = baseMesh
 		delete obj.rbxLayered
 		
-		geom.setAttribute("position", new THREE.BufferAttribute(vertices, 3))
-		geom.setAttribute("normal", new THREE.BufferAttribute(normals, 3))
-		geom.setAttribute("uv", new THREE.BufferAttribute(uvs, 2))
-		geom.setIndex(new THREE.BufferAttribute(faces, 1))
+		geom.setAttribute("position", new THREE.BufferAttribute(appliedMesh.vertices, 3))
+		geom.setAttribute("normal", new THREE.BufferAttribute(appliedMesh.normals, 3))
+		geom.setAttribute("uv", new THREE.BufferAttribute(appliedMesh.uvs, 2))
+		geom.setIndex(new THREE.BufferAttribute(appliedMesh.faces, 1))
 		
 		// geom.computeBoundingSphere()
 
