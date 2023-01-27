@@ -1377,7 +1377,7 @@ const RBXAvatar = (() => {
 					acc.attachment = attachment
 					acc.parent = parent
 					
-					acc.obj.rbxPoseMatrix.multiplyMatrices(parent.rbxPoseMatrix, attachment.bakedCFrame)
+					acc.obj.rbxPoseMatrix.multiplyMatrices(parent.rbxPoseMatrix, acc.bakedCFrame)
 					
 					if(!acc.obj.parent) {
 						this.root.add(acc.obj)
