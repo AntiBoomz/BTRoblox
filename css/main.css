@@ -69,8 +69,8 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	box-sizing: content-box;
 	position: absolute;
 	display: flex;
-	top: 2px;
-	right: 2px;
+	top: -2px;
+	right: -2px;
 
 	background: white;
 	padding: 0px 4px;
@@ -80,8 +80,9 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	justify-content: center;
 
 	color: #191919;
-	font-size: 11px;
+	font-size: 10px;
 	font-weight: bold;
+	line-height: 1.4em;
 
 	border-radius: 10px;
 	border: 2px solid #0074bd;
@@ -89,7 +90,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 
 .light-theme #header .btr-nav-notif {
 	background-color: #393b3d;
-	border: 1px solid #393b3d;
+	border-color: #393b3d;
 	color: #fff;
 }
 
