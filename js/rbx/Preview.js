@@ -933,7 +933,7 @@ const HoverPreview = (() => {
 					addedObjects.add(acc.obj)
 				}
 				
-				if(acc.attName.endsWith("BackAttachment")) {
+				if(acc.attName?.endsWith("BackAttachment")) {
 					if(!cameraDir) {
 						cameraDir = "Back"
 					}
