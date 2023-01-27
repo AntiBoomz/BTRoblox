@@ -239,21 +239,6 @@ User APIs
     ```
   </details>
 
-#### Get online status of an user
-* https://api.roblox.com/users/261/onlinestatus/
-    ```json
-    {
-        "GameId": null,
-        "IsOnline": false,
-        "LastLocation": "Offline",
-        "LastOnline": "2019-02-19T15:15:51.311703-06:00",
-        "LocationType": 2,
-        "PlaceId": null,
-        "VisitorId": 261,
-        "PresenceType": 0
-    }
-    ```
-
 Asset APIs
 -------------
 #### Get asset details
