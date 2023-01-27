@@ -51,7 +51,7 @@ const RBXAppearance = (() => {
 		getLoadState(playerType) {
 			const request = {}
 			
-			if(playerType === "R15") {
+			if(playerType !== "R6") {
 				if(this.assetTypeId === AssetType.Head || this.assetTypeId === AssetType.DynamicHead) {
 					request.format = "avatar_meshpart_head"
 				}
@@ -61,6 +61,7 @@ const RBXAppearance = (() => {
 			
 			if(!this._loadStates[requestKey]) {
 				this._loadStates[requestKey] = {
+					request: request,
 					loaded: false,
 					loading: false,
 					loadPromise: new SyncPromise()
@@ -89,7 +90,7 @@ const RBXAppearance = (() => {
 				state.loadPromise.resolve()
 			}
 			
-			AssetCache.loadModel(this.id, { format: state.format }, model => {
+			AssetCache.loadModel(this.id, state.request, model => {
 				if(!this.active) { return }
 				if(!model) { return finish(false) }
 				
