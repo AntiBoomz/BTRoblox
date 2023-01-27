@@ -145,6 +145,7 @@ const btrSettingsModal = (() => {
 						<checkbox label="Item Previewer" path=itemdetails.itemPreviewer></checkbox>
 						<checkbox label="Hover Previewer" path=general.hoverPreview></checkbox>
 						<br>
+						<checkbox label="Show Layered Clothing (WIP)" path=general.previewLayeredClothing></checkbox>
 						<br>
 						<select label="Automatically open previewer:" path=itemdetails.itemPreviewerMode>
 							<option value=never>Never</option>
