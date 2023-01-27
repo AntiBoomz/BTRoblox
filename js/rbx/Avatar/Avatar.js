@@ -590,16 +590,35 @@ const RBXAvatar = (() => {
 			SyncPromise.all(loaders).then(() => this.baseLoadedPromise.resolve())
 		}
 
-		waitForAppearance() {
-			const loaders = [this.baseLoadedPromise]
+		async waitForAppearance() {
+			await this.baseLoadedPromise
+			let finalCheck = false
 			
-			this.appearance.assets.forEach(asset => {
-				loaders.push(asset.loadPromise)
-			})
-
-			return SyncPromise.all(loaders).then(() => {
-				this.update()
-			})
+			while(true) {
+				let loaded = true
+				
+				for(const asset of this.appearance.assets) {
+					if(!asset.enabled) { continue }
+					
+					if(!asset.isLoaded(this.playerType)) {
+						loaded = false
+						break
+					}
+				}
+				
+				if(loaded) {
+					if(!finalCheck) {
+						finalCheck = true
+						this.update() // force load new accessories, if necessary
+						continue
+					}
+					
+					break
+				}
+				
+				finalCheck = false
+				await new Promise(resolve => requestAnimationFrame(resolve))
+			}
 		}
 
 		update() {
@@ -966,11 +985,9 @@ const RBXAvatar = (() => {
 			for(const asset of this.appearance.assets) {
 				if(!asset.enabled) { continue }
 				
-				if(!asset.loaded) {
-					asset.load()
-				}
-
-				if(asset.loaded && asset.enabled) {
+				const loadState = asset.load(this.playerType)
+				
+				if(loadState.loaded) {
 					asset.lastIndex = assets.length
 					assets.push(asset)
 				}

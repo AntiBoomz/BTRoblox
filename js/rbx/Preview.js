@@ -303,17 +303,18 @@ const RBXPreview = (() => {
 			return SyncPromise.all(promises)
 		}
 
-		addAsset(assetId, assetTypeId = null, meta = null) {
+		addAsset(assetId, assetTypeId, meta = null) {
 			const asset = this.avatar.appearance.addAsset(assetId, assetTypeId, meta)
 			if(!asset) { return }
 
-			asset.loadPromise.then(() => {
+			this.outfitAssets.add(asset)
+			
+			asset.on("update", () => {
 				if(asset.accessories.length) {
 					asset.setEnabled(this.outfitAccessoriesVisible)
 				}
 			})
-
-			this.outfitAssets.add(asset)
+			
 			asset.once("remove", () => {
 				this.outfitAssets.delete(asset)
 			})
@@ -321,7 +322,7 @@ const RBXPreview = (() => {
 			return asset
 		}
 
-		addAssetPreview(assetId, assetTypeId = null, meta = null) {
+		addAssetPreview(assetId, assetTypeId, meta = null) {
 			const asset = this.avatar.appearance.addAsset(assetId, assetTypeId, { version: 1, ...(meta || {}), order: (meta?.order || 0) + 10 })
 			if(!asset) { return }
 
@@ -1104,7 +1105,6 @@ const HoverPreview = (() => {
 				const isLibraryItem = anchor.href.includes("/library/")
 
 				const debounce = ++debounceCounter
-				const assetPromises = []
 				currentTarget = self
 
 				const mouseLeave = () => {
@@ -1124,7 +1124,7 @@ const HoverPreview = (() => {
 				const finalizeLoad = () => {
 					if(debounceCounter !== debounce) { return }
 
-					if(!assetPromises.length && !playingAnimId) {
+					if(!lastPreviewedAssets.length && !playingAnimId) {
 						invalidAssets[assetId] = true
 						thumbCont.classList.remove("btr-preview-loading")
 						clearTarget()
@@ -1175,7 +1175,6 @@ const HoverPreview = (() => {
 						if(!asset) { return }
 
 						lastPreviewedAssets.push(asset)
-						assetPromises.push(asset.loadPromise)
 					}
 					
 					if(isLibraryItem) {

@@ -24,7 +24,8 @@ const RBXAppearance = (() => {
 	}
 
 	class Asset extends EventEmitter {
-		constructor(assetId, assetTypeId = null, meta = null) {
+		constructor(assetId, assetTypeId, meta = null) {
+			assert(Number.isSafeInteger(assetTypeId), "no assetTypeId")
 			super()
 
 			this.id = assetId
@@ -33,55 +34,66 @@ const RBXAppearance = (() => {
 			
 			this.active = true
 			this.enabled = true
-			this.loaded = false
-			this.didLoadSucceed = false
 			this.priority = 1
+			
+			this._loadStates = {}
 
 			this.accessories = []
 			this.bodyparts = []
 			this.attachments = []
 			this.clothing = []
-			this.loaders = []
-			
-			this.loadPromise = new SyncPromise()
 		}
 
 		isEmpty() {
 			return !(this.accessories.length || this.bodyparts.length || this.attachments.length || this.clothing.length)
 		}
+		
+		getLoadState(playerType) {
+			const request = {}
+			
+			if(playerType === "R15") {
+				if(this.assetTypeId === AssetType.Head || this.assetTypeId === AssetType.DynamicHead) {
+					request.format = "avatar_meshpart_head"
+				}
+			}
+			
+			const requestKey = JSON.stringify(request)
+			
+			if(!this._loadStates[requestKey]) {
+				this._loadStates[requestKey] = {
+					loaded: false,
+					loading: false,
+					loadPromise: new SyncPromise()
+				}
+			}
+			
+			return this._loadStates[requestKey]
+		}
+		
+		isLoaded(...loadParams) {
+			return this.getLoadState(...loadParams).loaded
+		}
 
-		async load() {
-			if(this.loaded || this.loading) { return this.loadPromise }
-			this.loading = true
+		load(...loadParams) {
+			const state = this.getLoadState(...loadParams)
+			if(!state) { return null }
+			
+			if(state.loaded || state.loading) { return state }
+			state.loading = true
 
 			const finish = success => {
-				this.loading = false
-				this.loaded = true
-
-				this.didLoadSucceed = success
+				state.loading = false
+				state.loaded = true
 
 				this.trigger("update")
-				this.loadPromise.resolve()
+				state.loadPromise.resolve()
 			}
 			
-			if(!this.assetTypeId) {
-				const json = await RobloxApi.api.getProductInfo(this.id)
-				this.assetTypeId = json.AssetTypeId
-			}
-			
-			let format
-			
-			if(this.assetTypeId === AssetType.Head) {
-				// we only want to load regular heads as meshparts here
-				// because dynamicheads have wraptargets and we cant do
-				// those
-				
-				format = "avatar_meshpart_head"
-			}
-			
-			AssetCache.loadModel(this.id, { format: format }, model => {
+			AssetCache.loadModel(this.id, { format: state.format }, model => {
 				if(!this.active) { return }
 				if(!model) { return finish(false) }
+				
+				this.loaders = []
 				
 				switch(this.assetTypeId) {
 				case AssetType.TShirt:
@@ -158,7 +170,7 @@ const RBXAppearance = (() => {
 				delete this.loaders
 			})
 
-			return this.loadPromise
+			return state
 		}
 
 		setEnabled(enabled) {
@@ -167,8 +179,6 @@ const RBXAppearance = (() => {
 				this.trigger("update")
 			}
 		}
-
-		addLoader(promise) { this.loaders.push(promise) }
 		
 		addAttachment(data) { this.attachments.push(data) }
 		addAccessory(data) { data.asset = this; this.accessories.push(data) }
@@ -177,10 +187,7 @@ const RBXAppearance = (() => {
 
 		setPriority(priority) {
 			this.priority = priority
-
-			if(this.loaded && this.didLoadSucceed) {
-				this.trigger("update")
-			}
+			this.trigger("update")
 		}
 
 		remove() {
@@ -191,16 +198,16 @@ const RBXAppearance = (() => {
 		}
 		
 		validateAndPreload(assetType, assetUrl) {
-			if(!assetUrl || !AssetCache.isValidAssetUrl(assetUrl)) {
+			if(!assetUrl || !AssetCache.isValidAssetUrl(assetUrl) || !this.loaders) {
 				return null
 			}
 			
 			switch(assetType) {
 			case "Mesh":
-				this.addLoader(AssetCache.loadMesh(true, assetUrl))
+				this.loaders.push(AssetCache.loadMesh(true, assetUrl))
 				break
 			case "Image":
-				this.addLoader(AssetCache.loadImage(true, assetUrl))
+				this.loaders.push(AssetCache.loadImage(true, assetUrl))
 				break
 			default:
 				throw new Error("Invalid assetType")
@@ -402,7 +409,7 @@ const RBXAppearance = (() => {
 			this.assets.forEach(asset => asset.load())
 		}
 		
-		addAsset(assetId, assetTypeId = null, meta = null) {
+		addAsset(assetId, assetTypeId, meta = null) {
 			const asset = new Asset(assetId, assetTypeId, meta)
 			this.assets.add(asset)
 
