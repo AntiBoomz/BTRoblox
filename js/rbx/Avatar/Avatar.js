@@ -674,7 +674,7 @@ const RBXAvatar = (() => {
 					inverseMatrix.copy(obj.matrix).invert().multiply(obj.matrixNoScale).multiply(tempMatrix.copy(obj.matrixNoScale).invert())
 					
 					for(const bone of obj.rbxBones) {
-						const ref = this.parts[bone.name] || obj
+						const ref = bone.name.endsWith("_end") && this.parts[bone.name.slice(0, -4)] || this.parts[bone.name] || obj
 						
 						bone.matrixWorld.multiplyMatrices(inverseMatrix, ref.matrixNoScale).scale(scale)
 						bone.inverse.multiplyMatrices(inversePoseMatrix, ref.skinnedMatrix).invert()
@@ -700,7 +700,7 @@ const RBXAvatar = (() => {
 					.multiply(tempMatrix.copy(obj.skinnedMatrix).invert())
 				
 				for(const bone of obj.rbxBones) {
-					const ref = this.parts[bone.name] || obj
+					const ref = bone.name.endsWith("_end") && this.parts[bone.name.slice(0, -4)] || this.parts[bone.name] || obj
 					
 					bone.matrixWorld.multiplyMatrices(inverseMatrix, ref.skinnedMatrix).scale(obj.rbxScaleMod)
 					bone.inverse.multiplyMatrices(inversePoseMatrix, ref.rbxPoseMatrix).invert()
