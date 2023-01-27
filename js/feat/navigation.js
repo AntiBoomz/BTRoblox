@@ -240,14 +240,12 @@ const btrNavigation = {
 				const orig = $("#nav-friends")
 				const origNotif = orig?.$find(".notification")
 				
-				if(origNotif) {
-					const notif = node.$find(".btr-nav-notif")
-					const link = node.$find("a")
-					
-					link.href = orig.href
-					notif.textContent = origNotif ? origNotif.textContent.trim() : ""
-					notif.style.display = origNotif ? "" : "none"
-				}
+				const notif = node.$find(".btr-nav-notif")
+				const link = node.$find("a")
+				
+				link.href = orig.href
+				notif.textContent = origNotif ? origNotif.textContent.trim() : ""
+				notif.style.display = origNotif ? "" : "none"
 			},
 			
 			reactInject: {
@@ -277,14 +275,12 @@ const btrNavigation = {
 				const orig = $("#nav-message")
 				const origNotif = orig?.$find(".notification")
 				
-				if(origNotif) {
-					const notif = node.$find(".btr-nav-notif")
-					const link = node.$find("a")
-					
-					link.href = orig.href
-					notif.textContent = origNotif ? origNotif.textContent.trim() : ""
-					notif.style.display = origNotif ? "" : "none"
-				}
+				const notif = node.$find(".btr-nav-notif")
+				const link = node.$find("a")
+				
+				link.href = orig.href
+				notif.textContent = origNotif ? origNotif.textContent.trim() : ""
+				notif.style.display = origNotif ? "" : "none"
 			},
 			
 			reactInject: {
