@@ -80,7 +80,6 @@ pageInit.profile = userId => {
 		</div>
 	</div>`
 
-	const onlineStatus = SETTINGS.get("profile.lastOnline") && $.fetch(`https://api.roblox.com/users/${userId}/onlinestatus/`)
 	const bodyWatcher = document.$watch("body", body => body.classList.add("btr-profile")).$then()
 
 	bodyWatcher.$watch(".profile-container").$then()
@@ -226,23 +225,21 @@ pageInit.profile = userId => {
 					} else {
 						stats.prepend(label)
 					}
-
 					
-					onlineStatus.then(async resp => {
-						if(!resp.ok) {
+					if($(".profile-avatar-status")) {
+						label.$find(".text-lead").textContent = "Now"
+						return
+					}
+					
+					RobloxApi.presence.getLastOnline([userId]).then(json => {
+						if(!json?.length) {
 							label.$find(".text-lead").textContent = "Failed"
 							return
 						}
-
-						const presence = await resp.json()
-						const lastOnline = new Date(presence.LastOnline)
-
-						if(presence.PresenceType === 0) {
-							label.$find(".text-lead").textContent = `${lastOnline.$since()}`
-						} else {
-							label.$find(".text-lead").textContent = "Now"
-						}
-
+						
+						const lastOnline = new Date(json[0].lastOnline)
+						
+						label.$find(".text-lead").textContent = `${lastOnline.$since()}`
 						label.$find(".text-lead").title = lastOnline.$format("MMM D, YYYY | hh:mm A (T)")
 					})
 				})

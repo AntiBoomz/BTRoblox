@@ -309,6 +309,17 @@ const RobloxApi = {
 			)
 		)
 	},
+	presence: {
+		getLastOnline: backgroundCall(userIds =>
+			backgroundFetch(`https://presence.roblox.com/v1/presence/last-online`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify({ userIds })
+			}).then(async res => (await res.json()).lastOnlineTimestamps)
+		)
+	},
 	thumbnails: {
 		getAvatarHeadshots: backgroundCall((userIds, size = "150x150") =>
 			backgroundFetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userIds.join(",")}&size=${size}&format=Png`)
