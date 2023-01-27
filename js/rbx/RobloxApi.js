@@ -310,9 +310,20 @@ const RobloxApi = {
 		)
 	},
 	presence: {
+		getPresence: backgroundCall(userIds =>
+			backgroundFetch(`https://presence.roblox.com/v1/presence/users`, {
+				method: "POST",
+				credentials: "include",
+				headers: {
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify({ userIds })
+			}).then(async res => (await res.json()).userPresences)
+		),
 		getLastOnline: backgroundCall(userIds =>
 			backgroundFetch(`https://presence.roblox.com/v1/presence/last-online`, {
 				method: "POST",
+				credentials: "include",
 				headers: {
 					"Content-Type": "application/json"
 				},

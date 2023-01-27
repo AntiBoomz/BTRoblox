@@ -99,23 +99,14 @@ const btrFastSearch = {
 						presencePromise = null
 
 						lastPresenceRequest = Date.now()
-
-						const url = `https://presence.roblox.com/v1/presence/users`
-						$.fetch(url, {
-							method: "POST",
-							credentials: "include",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify({ userIds })
-						}).then(async resp => {
-							const json = resp.ok && await resp.json()
+						
+						RobloxApi.presence.getPresence(userIds).then(presences => {
 							const result = {}
-
-							if(json && json.userPresences) {
-								json.userPresences.forEach(info => {
-									result[info.userId] = info
-								})
+							
+							for(const info of presences) {
+								result[info.userId] = info
 							}
-
+							
 							resolve(result)
 						})
 					}, Math.max(200, 1000 - (Date.now() - lastPresenceRequest)))
