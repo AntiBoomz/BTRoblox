@@ -14,6 +14,7 @@ body.btr-embed #wrap>*:not(.container-main),
 body.btr-embed .SystemAlert,
 body.btr-embed .recommendations-container,
 body.btr-embed .alert-info,
+body.btr-embed .alert-container,
 body.btr-embed .page-content>h1 {
 	display: none !important;
 }
