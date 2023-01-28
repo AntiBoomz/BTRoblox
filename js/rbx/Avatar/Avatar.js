@@ -1001,17 +1001,12 @@ const RBXAvatar = (() => {
 						const previous = bodypartOverride[bodypart.target]
 						
 						if(previous?.asset === asset && bodypart.target === "Head" && !bodypart.playerType) {
-							// prioritize meshpart (playerType=R15) heads over specialmesh
+							// prioritize meshpart (playerType=R15) heads over specialmesh (playerType=null)
 							continue
 						}
 						
 						bodypartOverride[bodypart.target] = bodypart
 					}
-				}
-				
-				for(const att of asset.attachments) {
-					const override = attachmentOverride[att.part] = attachmentOverride[att.part] || {}
-					override[att.target] = att
 				}
 				
 				for(const cloth of asset.clothing) {
@@ -1022,6 +1017,7 @@ const RBXAvatar = (() => {
 					accessories[asset.id] = asset.accessories[0]
 				}
 			}
+			
 			
 			// Update clothing
 			for(const name of ["shirt", "pants", "tshirt", "face"]) {
@@ -1047,6 +1043,15 @@ const RBXAvatar = (() => {
 			}
 			
 			// Update attachments
+			if(this.playerType === "R15") {
+				for(const bodypart of Object.values(bodypartOverride)) {
+					for(const att of bodypart.attachments) {
+						const override = attachmentOverride[att.part] = attachmentOverride[att.part] || {}
+						override[att.target] = att
+					}
+				}
+			}
+			
 			for(const [attName, att] of Object.entries(this.attachments)) {
 				const override = attachmentOverride[att.parent.name]?.[attName]
 				att.cframe.copy(override?.cframe || att.origCFrame)
@@ -1284,8 +1289,14 @@ const RBXAvatar = (() => {
 
 			// Update accessories
 			for(const acc of accArray) {
-				if(acc.wrapLayer && !SETTINGS.get("general.previewLayeredClothing")) {
-					continue
+				if(acc.wrapLayer) {
+					if(!SETTINGS.get("general.previewLayeredClothing")) {
+						continue
+					}
+					
+					if(this.playerType !== "R15") {
+						continue
+					}
 				}
 				
 				if(!acc.obj) {

@@ -40,12 +40,11 @@ const RBXAppearance = (() => {
 
 			this.accessories = []
 			this.bodyparts = []
-			this.attachments = []
 			this.clothing = []
 		}
 
 		isEmpty() {
-			return !(this.accessories.length || this.bodyparts.length || this.attachments.length || this.clothing.length)
+			return !(this.accessories.length || this.bodyparts.length || this.clothing.length)
 		}
 		
 		getLoadState(playerType) {
@@ -181,7 +180,6 @@ const RBXAppearance = (() => {
 			}
 		}
 		
-		addAttachment(data) { this.attachments.push(data) }
 		addAccessory(data) { data.asset = this; this.accessories.push(data) }
 		addBodyPart(data) { data.asset = this; this.bodyparts.push(data) }
 		addClothing(data) { this.clothing.push(data) }
@@ -221,7 +219,8 @@ const RBXAppearance = (() => {
 			const scaleTypeValue = mesh.Children.find(x => x.Name === "AvatarPartScaleType")
 			const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
 			
-			this.addBodyPart({
+			const bp = {
+				attachments: [],
 				target: "Head",
 				
 				meshId: this.validateAndPreload("Mesh", HeadMeshes[mesh.MeshId] || mesh.MeshId),
@@ -231,12 +230,12 @@ const RBXAppearance = (() => {
 				
 				scale: [...mesh.Scale],
 				scaleType: scaleType
-			})
-
+			}
+			
 			for(const inst of mesh.Children) {
 				if(inst.ClassName !== "Vector3Value" || !inst.Name.endsWith("Attachment")) { continue }
-
-				this.addAttachment({
+				
+				bp.attachments.push({
 					target: inst.Name,
 					cframe: new THREE.Matrix4().setPosition(...inst.Value),
 
@@ -244,6 +243,8 @@ const RBXAppearance = (() => {
 					scaleType: scaleType
 				})
 			}
+			
+			this.addBodyPart(bp)
 		}
 
 		loadBodyPartsR6(charmeshes) {
@@ -253,6 +254,7 @@ const RBXAppearance = (() => {
 				
 				this.addBodyPart({
 					playerType: "R6",
+					attachments: [],
 					target: target,
 
 					meshId: this.validateAndPreload("Mesh", +charmesh.MeshId ? AssetCache.toAssetUrl(charmesh.MeshId) : null),
@@ -271,6 +273,7 @@ const RBXAppearance = (() => {
 				const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
 				
 				const bp = {
+					attachments: [],
 					playerType: "R15",
 					target: part.Name,
 					
@@ -310,12 +313,10 @@ const RBXAppearance = (() => {
 					}
 				}
 				
-				this.addBodyPart(bp)
-				
 				for(const inst of part.Children) {
 					if(inst.ClassName !== "Attachment") { continue }
-
-					this.addAttachment({
+					
+					bp.attachments.push({
 						target: inst.Name,
 						cframe: RBXAvatar.CFrameToMatrix4(...inst.CFrame),
 
@@ -323,6 +324,9 @@ const RBXAppearance = (() => {
 						scaleType: scaleType
 					})
 				}
+				
+				this.addBodyPart(bp)
+				
 			}
 		}
 
