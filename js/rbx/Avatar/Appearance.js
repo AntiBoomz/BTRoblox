@@ -271,7 +271,7 @@ const RBXAppearance = (() => {
 				const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
 				
 				const bp = {
-					playerType: this.assetTypeId === AssetType.Head || this.assetTypeId === AssetType.DynamicHead ? null : "R15",
+					playerType: "R15",
 					target: part.Name,
 					
 					meshId: this.validateAndPreload("Mesh", part.MeshID || part.MeshId),

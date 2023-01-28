@@ -998,6 +998,13 @@ const RBXAvatar = (() => {
 			for(const asset of assets) {
 				for(const bodypart of asset.bodyparts) {
 					if(!bodypart.playerType || bodypart.playerType === this.playerType) {
+						const previous = bodypartOverride[bodypart.target]
+						
+						if(previous?.asset === asset && bodypart.target === "Head" && !bodypart.playerType) {
+							// prioritize meshpart (playerType=R15) heads over specialmesh
+							continue
+						}
+						
 						bodypartOverride[bodypart.target] = bodypart
 					}
 				}
