@@ -646,6 +646,8 @@ pageInit.gamedetails = placeId => {
 				if(!btnCont) { return }
 				
 				btnCont.$find(".btr-explorer-button").style.display = "none"
+				btnCont.style.display = "contents"
+				
 				$("#game-context-menu").append(btnCont)
 				
 				placeEdit.parentNode.parentNode.append(
