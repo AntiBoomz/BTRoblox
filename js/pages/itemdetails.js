@@ -270,7 +270,7 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 	}
 	
 	const btnCont = html`
-	<div class=btr-explorer-button-container>
+	<div class="btr-explorer-button-container btr-temp-fixed">
 		<a class=btr-explorer-button>
 			<span class=btr-icon-explorer></span>
 		</a>
