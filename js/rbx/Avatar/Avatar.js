@@ -1878,6 +1878,10 @@ const RBXAvatar = (() => {
 					}
 				}
 				
+				for(; search < faces.length; search++) {
+					faces[search] = -1
+				}
+				
 				acc.obj.geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3))
 				acc.obj.geometry.setAttribute("normal", new THREE.BufferAttribute(normals, 3))
 				acc.obj.geometry.setIndex(new THREE.BufferAttribute(faces, 1))
