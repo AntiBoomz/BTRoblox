@@ -1506,10 +1506,12 @@ const RBXAvatar = (() => {
 		}
 		
 		async _fetchLayeredClothing(request) {
+			const anchorAssetId = 11187668197
+			
 			const body = {
 				avatarDefinition: {
 					assets: [
-						{ id: 11187668197 } // anchor
+						{ id: anchorAssetId } // anchor
 					],
 					bodyColors: request.bodyColors,
 					scales: request.scales,
@@ -1690,7 +1692,7 @@ const RBXAvatar = (() => {
 			}
 			
 			const playerGroups = groups.filter(x => x.name.startsWith("Player")).sort((a, b) => b.uvs.length - a.uvs.length)
-			let numEmptyAccepted = 15 - playerGroups.length
+			let numEmptyPartsAccepted = 15 - playerGroups.length
 			
 			for(const part of Object.values(this.parts)) {
 				if(!part.isMesh) { continue }
@@ -1707,9 +1709,9 @@ const RBXAvatar = (() => {
 				}
 				
 				if(matches.length !== 1) {
-					if(matches.length === 0 && numEmptyAccepted > 0) {
+					if(matches.length === 0 && numEmptyPartsAccepted > 0) {
 						// If the whole part was hidden by HSR, it doesn't get added into the render
-						numEmptyAccepted -= 1
+						numEmptyPartsAccepted -= 1
 						
 						part.geometry.deleteAttribute("position")
 						part.geometry.deleteAttribute("normal")
@@ -1770,7 +1772,10 @@ const RBXAvatar = (() => {
 			}
 			
 			// Resolve accessories
-			const handleGroups = groups.filter(x => x.name.startsWith("Handle")).sort((a, b) => b.uvs.length - a.uvs.length)
+			const handleGroups = groups.filter(x => x.name.startsWith("Handle") && x !== anchor).sort((a, b) => b.uvs.length - a.uvs.length)
+			let numEmptyAccessoriesAccepted = Object.values(request.accessories).length - handleGroups.length
+			
+			const emptyAccessories = []
 			
 			for(const acc of Object.values(this.accessories)) {
 				if(!request.accessories[acc.asset.id]) { continue } // in case we have multiple copies of an asset
@@ -1785,14 +1790,29 @@ const RBXAvatar = (() => {
 				}
 				
 				if(matches.length !== 1) {
-					console.log("Could not resolve asset in render")
-					console.log(acc.asset.id, acc.obj.rbxMesh)
-					console.log(matches)
-					console.log(groups)
-					
-					if(IS_DEV_MODE) {
-						setTimeout(() => alert("Could not resolve asset in render"), 0)
+					if(matches.length === 0 && numEmptyAccessoriesAccepted > 0) {
+						// If the whole accessory was hidden by HSR, it doesn't get added into the render
+						
+						if(!emptyAccessories.includes(acc.asset.id)) {
+							emptyAccessories.push(acc.asset.id)
+							numEmptyAccessoriesAccepted -= 1
+						}
+						
+					} else {
+						console.log("Could not resolve asset in render")
+						console.log(acc.asset.id, acc.obj.rbxMesh)
+						console.log(matches)
+						console.log(groups)
+						
+						if(IS_DEV_MODE) {
+							setTimeout(() => alert("Could not resolve asset in render"), 0)
+						}
 					}
+					
+					acc.obj.geometry.deleteAttribute("position")
+					acc.obj.geometry.deleteAttribute("normal")
+					acc.obj.geometry.deleteAttribute("uv")
+					acc.obj.geometry.setIndex(null)
 					
 					continue
 				}
