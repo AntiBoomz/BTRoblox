@@ -1135,6 +1135,14 @@ a:not(.disabled):hover > .btr-icon-content {
 	filter: invert(30%);
 }
 
+.dark-theme .btr-hover-preview-camera-rotate {
+	filter: invert(30%);
+}
+
+.dark-theme .btr-hover-preview-camera-rotate:hover {
+	filter: invert(50%);
+}
+
 .btr-layered-loading .btr-preview-container::before,
 .btr-layered-loading.btr-preview-container::before {
 	content: "";
