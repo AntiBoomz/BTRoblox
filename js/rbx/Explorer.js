@@ -309,7 +309,7 @@ const Explorer = (() => {
 			this.selectedSourceViewerTab = tab
 
 
-			const source = inst.Properties[propName].value
+			const source = inst.Properties[propName]?.value || ""
 
 			const content = this.sourceViewerModal.$find(".btr-sourceviewer-content")
 			content.$empty()
