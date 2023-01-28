@@ -864,40 +864,54 @@ class SyncPromise extends Promise {
 
 //
 
-const htmlstring = function(pieces, ...args) {
+const htmltemplate = function(pieces, ...args) {
 	if(!Array.isArray(pieces)) { pieces = [pieces] }
-
-	const escapeMap = {
-		"&": "&amp;",
-		"<": "&lt;",
-		">": "&gt;",
-		"\"": "&quot;",
-		"'": "&#39;",
-		"/": "&#x2F;"
-	}
-
-	const escapePiece = s => s.replace(/\b\n\s*\b/g, " ").replace(/\n[^\S ]*/g, "")
-	const escapeArg = s => String(s).replace(/[&<>"'/]/g, x => escapeMap[x])
-
-	let result = escapePiece(pieces[0])
+	
+	const trimWhitespace = s => s.replace(/\b\n\s*\b/g, " ").replace(/\n[^\S ]*/g, "")
+	
+	const replacePrefix = `_btrMarker_${1e10 + Math.floor(Math.random() * 9e10)}`
+	let result = trimWhitespace(pieces[0])
 
 	for(let i = 0, len = args.length; i < len; i++) {
-		result += escapeArg(args[i]) + escapePiece(pieces[i + 1])
+		result += `${replacePrefix}_${i}_` + trimWhitespace(pieces[i + 1])
 	}
+	
+	const template = document.createElement("template")
+	template.innerHTML = result
+	
+	const replaceRegex = new RegExp(`${replacePrefix}_(\\d+)_`, "g")
+	const replaceFn = (_, i) => args[parseInt(i, 10)]
+	
+	const replaceInserts = node => {
+		if(node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+			if(node.attributes) {
+				for(const attr of node.attributes) {
+					replaceInserts(attr)
+				}
+			}
+			
+			for(const child of node.childNodes) {
+				replaceInserts(child)
+			}
+		} else if(node.nodeType === Node.ATTRIBUTE_NODE || node.nodeType === Node.TEXT_NODE) {
+			node.nodeValue = node.nodeValue.replace(replaceRegex, replaceFn)
+		}
+	}
+	
+	replaceInserts(template.content)
+	
+	return template
+}
 
-	return result
+const htmlstring = function(...args) {
+	return htmltemplate(...args).innerHTML
 }
 
 const html = function(...args) {
-	const result = htmlstring.apply(this, args)
-	const template = document.createElement("template")
-	template.innerHTML = result
-
-	const elem = template.content.firstElementChild || template.content.firstChild
+	const template = htmltemplate(...args)
 	
-	if(elem) {
-		elem.remove()
-	}
+	const elem = template.content.firstElementChild || template.content.firstChild
+	if(elem) { elem.remove() }
 
 	return elem
 }
