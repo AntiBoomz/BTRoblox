@@ -178,13 +178,7 @@
 				if(shoutEntry.visible) {
 					const notifId = `groupshout-${groupId}-${shoutEntry.hash}`
 					
-					isNotifVisible(notifId).then(async isVisible => {
-						if(isVisible) {
-							if(IS_CHROME) { chrome.notifications.update(notifId, {}) } // Re-push on chrome if broken
-							return
-						}
-						
-						const thumbUrl = await getGroupThumbUrl(groupId)
+					getGroupThumbUrl(groupId).then(async thumbUrl => {
 						if(await isNotifVisible(notifId)) { return }
 						
 						const params = {
@@ -272,7 +266,7 @@
 	}
 	
 	chrome.notifications.onClosed.addListener(async (notifId, byUser) => {
-		if(notifId.startsWith("groupshout-") && (IS_CHROME && byUser || IS_FIREFOX)) {
+		if(notifId.startsWith("groupshout-")) {
 			const [, id, hash] = notifId.split("-")
 			
 			const shoutCache = await getShoutCache()
