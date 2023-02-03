@@ -273,15 +273,10 @@
 			const shoutEntry = shoutCache.groups[+id]
 			
 			if(shoutEntry && shoutEntry.hash === hash) {
-				if(shoutEntry.visible) {
-					delete shoutEntry.visible
-					saveShoutCache()
-				}
-				
-				if(IS_CHROME && byUser) {
-					shoutEntry.interacted = true
-					saveShoutCache()
-				}
+				delete shoutEntry.visible
+				if(IS_CHROME && byUser) { shoutEntry.interacted = true }
+
+				saveShoutCache()
 			}
 		}
 	})
@@ -294,6 +289,7 @@
 			const shoutEntry = shoutCache.groups[+id]
 			
 			if(shoutEntry && shoutEntry.hash === hash) {
+				delete shoutEntry.visible
 				shoutEntry.interacted = true
 				saveShoutCache()
 			}
