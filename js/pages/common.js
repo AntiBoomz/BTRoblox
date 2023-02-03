@@ -139,7 +139,7 @@ function createPager(noSelect, hideWhenEmpty) {
 				</button>
 			</li>
 			<li class=btr-pager-mid>
-				<span>Page </span><span class=btr-pager-cur type=text value></span>
+				<span>Page </span><span class=btr-pager-cur></span>
 			</li>
 			<li class=btr-pager-next>
 				<button class=btn-generic-right-sm>
@@ -150,8 +150,10 @@ function createPager(noSelect, hideWhenEmpty) {
 	</div>`
 
 	if(!noSelect) {
-		const mid = pager.$find(".btr-pager-mid")
-		mid.innerHTML = htmlstring`<span>Page</span><input class=btr-pager-cur type=text value=1><span>of <span class=btr-pager-total></span></span>`
+		pager.$find(".btr-pager-mid").replaceWith(html`
+		<li class=btr-pager-mid>
+			<span>Page</span><input class=btr-pager-cur type=text value=1><span>of <span class=btr-pager-total></span></span>
+		</li>`)
 	}
 
 	const prev = pager.$find(".btr-pager-prev")

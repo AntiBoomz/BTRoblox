@@ -903,10 +903,6 @@ const htmltemplate = function(pieces, ...args) {
 	return template
 }
 
-const htmlstring = function(...args) {
-	return htmltemplate(...args).innerHTML
-}
-
 const html = function(...args) {
 	const template = htmltemplate(...args)
 	
