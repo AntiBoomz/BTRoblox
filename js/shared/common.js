@@ -132,8 +132,14 @@ if(IS_CONTENT_SCRIPT) {
 		return null
 	})()
 	
+	const btrElement = document.createElement("btroblox")
+	const btrStyle = document.createElement("style")
+	btrStyle.type = "text/css"
+	btrStyle.textContent = "btroblox {display:none!important;}"
+	btrElement.append(btrStyle)
+	
 	window.BTRoblox = {
-		element: document.createElement("btroblox"),
+		element: btrElement,
 		currentPage
 	}
 }
