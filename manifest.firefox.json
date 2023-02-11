@@ -1,5 +1,5 @@
 {
-	"manifest_version": 2,
+	"manifest_version": 3,
 
 	"name": "BTRoblox - Making Roblox Better",
 	"short_name": "BTRoblox",
@@ -7,7 +7,7 @@
 	"version": "3.3.3",
 	"author": "AntiBoomz",
 
-	"browser_action": {
+	"action": {
 		"default_title": "Open BTRoblox Settings"
 	},
 
@@ -18,7 +18,7 @@
 	"browser_specific_settings": {
 		"gecko": {
 			"id": "btroblox@antiboomz.com",
-			"strict_min_version": "74.0"
+			"strict_min_version": "107.0"
 		}
 	},
 	
@@ -33,26 +33,35 @@
 			"js/shared/messaging.js",
 			"js/shared/settings.js",
 			
+			"js/bg/background.js",
 			"js/bg/groupshout.js",
 			"js/bg/blogfeed.js",
 			"js/bg/contextmenu.js",
 			
-			"js/rbx/RobloxApi.js",
-			"js/_firefox/background.js"
+			"js/rbx/RobloxApi.js"
 		]
 	},
+	
+	"host_permissions": [
+		"*://*.roblox.com/",
+		"*://*.rbxcdn.com/"
+	],
 
 	"permissions": [
-		"*://*.roblox.com/",
-		"*://*.rbxcdn.com/",
+		"webRequestBlocking",
 		"notifications",
 		"contextMenus",
-		"storage"
+		"webRequest",
+		"scripting",
+		"storage",
+		"alarms"
 	],
 
 	"web_accessible_resources": [
-		"res/*",
-		"css/*"
+		{
+			"resources": ["/res/*", "/css/*"],
+			"matches": ["*://*.roblox.com/*"]
+		}
 	],
 
 	"content_scripts": [

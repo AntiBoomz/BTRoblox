@@ -1,50 +1,71 @@
 "use strict"
 
-chrome.browserAction.onClicked.addListener(tab => {
+//
+
+const getRequiredPermissions = () => {
+	const manifest = chrome.runtime.getManifest()
+	
+	return {
+		origins: [
+			...manifest.host_permissions,
+			...manifest.content_scripts[0].matches
+		]
+	}
+}
+
+chrome.action.onClicked.addListener(tab => {
 	const callback = success => {
 		if(!success) {
 			chrome.tabs.create({ url: "https://www.roblox.com/home?btr_settings_open=true" })
 		}
 	}
 	
-	chrome.tabs.executeScript(
-		tab.id,
-		{
-			code: `(${
-				() => {
-					if(typeof toggleSettingsModal !== "undefined") {
-						SETTINGS.load(() => toggleSettingsModal(true))
-						return true
-					}
-				}
-			})()`,
-			runAt: "document_start"
-		},
-		x => callback(!!(!chrome.runtime.lastError && x && x[0]))
-	)
+	chrome.scripting.executeScript({
+		target: { tabId: tab.id },
+		func: () => {
+			if(typeof toggleSettingsModal === "function") {
+				SETTINGS.load(() => toggleSettingsModal(true))
+				return true
+			}
+		}
+	}).then(x => callback(!!x?.[0].result === true || false), () => callback(false))
+	
+	chrome.permissions.request(getRequiredPermissions(), () => {})
 })
+
+// Service worker wont run on browser startup unless these have listeners
+
+chrome.runtime.onStartup.addListener(() => {})
+chrome.runtime.onInstalled.addListener(() => {})
 
 //
 
 MESSAGING.listen({
-	async loadScripts(assets, respond, port) {
+	loadScripts(assets, respond, port) {
 		const scripts = assets.filter(file => file.endsWith(".js"))
 		
-		for(const file of scripts) {
-			await new Promise(resolve =>
-				chrome.tabs.executeScript(
-					port.sender.tab.id,
-					{
-						frameId: port.sender.frameId,
-						file: file,
-						runAt: "document_start"
-					},
-					resolve
-				)
-			)
+		chrome.scripting.executeScript({
+			target: { tabId: port.sender.tab.id, frameIds: [port.sender.frameId] },
+			files: scripts
+		}, () => respond())
+	},
+	
+	async checkPermissions(_, respond) {
+		// Can't check all at once because it doesn't handle overlapping permissions properly.
+		// i.e. checking for both *.roblox.com and www.roblox.com will return true even if
+		// we don't have www.roblox.com permission (which we explicitly need on Chrome to
+		// disable extension click-to-enable functionality).
+		
+		for(const host of getRequiredPermissions().origins) {
+			const contains = await new Promise(resolve => chrome.permissions.contains({ origins: [host] }, resolve))
+			if(!contains) { return respond(false) }
 		}
 		
-		respond()
+		respond(true)
+	},
+	
+	requestPermissions(_, respond) {
+		chrome.permissions.request(getRequiredPermissions(), respond)
 	},
 	
 	async fetch([url, init], respond) {

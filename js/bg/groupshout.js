@@ -243,27 +243,20 @@
 		const shouldCheck = SETTINGS.get("groups.shoutAlerts")
 
 		if(shouldCheck) {
-			if(IS_CHROME) {
-				chrome.alarms.create("ShoutCheck", { periodInMinutes: 1 })
-			}
+			chrome.alarms.create("ShoutCheck", { periodInMinutes: 1 })
 
 			clearInterval(checkInterval)
 			checkInterval = setInterval(checkForGroupShouts, 30e3)
 
 			checkForGroupShouts()
 		} else {
-			if(IS_CHROME) {
-				chrome.alarms.clearAll()
-			}
-
+			chrome.alarms.clearAll()
 			clearInterval(checkInterval)
 		}
 	}
 
-	if(IS_CHROME) {
-		chrome.alarms.onAlarm.addListener(() => {})
-		chrome.runtime.onInstalled.addListener(() => chrome.alarms.clearAll())
-	}
+	chrome.alarms.onAlarm.addListener(() => {})
+	chrome.runtime.onInstalled.addListener(() => chrome.alarms.clearAll())
 	
 	chrome.notifications.onClosed.addListener(async (notifId, byUser) => {
 		if(notifId.startsWith("groupshout-")) {

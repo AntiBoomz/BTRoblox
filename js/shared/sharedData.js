@@ -2,45 +2,30 @@
 
 const SHARED_DATA = {
 	_loadPromise: new SyncPromise(),
-	updating: false,
-	data: {},
+	_loaded: false,
 	
-	update() {
+	dataUrl: null,
+	data: { version: 1 },
+	
+	updateDataUrl() {
+		const dataString = JSON.stringify(this.data)
+		
+		const url = new URL(getURL("res/icon_128.png"))
+		url.searchParams.set("data", dataString)
+		
+		this.dataUrl = url.toString()
+		
 		if(IS_CHROME) {
-			const reader = new FileReader()
-			
-			reader.addEventListener("load", () => {
-				chrome.declarativeNetRequest.updateDynamicRules({
-					removeRuleIds: [9001],
-					addRules: [{
-						action: { type: "redirect", redirect: { url: reader.result } },
-						condition: { urlFilter: "roblox.com/btr/settings" },
-						id: 9001
-					}]
-				})
-			}, { once: true })
-			
-			reader.readAsDataURL(new Blob([JSON.stringify(this.data)], { type: "application/json" }))
-		} else {
-			if(this._csPromise) { this._csPromise.then(x => x.unregister()) }
-			
-			const manifest = chrome.runtime.getManifest()
-			this._csPromise = browser.contentScripts.register({
-				allFrames: true,
-				runAt: "document_start",
-				matches: manifest.content_scripts[0].matches,
-				excludeMatches: manifest.content_scripts[0].exclude_matches,
-				js: [{
-					code: `(${
-						data => {
-							SHARED_DATA_INIT = data
-							if(typeof SHARED_DATA !== "undefined") {
-								SHARED_DATA.init(SHARED_DATA_INIT)
-							}
-						}
-					})(${JSON.stringify(this.data)})`
+			chrome.declarativeNetRequest.updateDynamicRules({
+				removeRuleIds: [9001],
+				addRules: [{
+					action: { type: "redirect", redirect: { url: this.dataUrl } },
+					condition: { urlFilter: "https://btr_settings.roblox.com/" },
+					id: 9001
 				}]
 			})
+		} else {
+			localStorage.setItem("btrSharedData", dataString)
 		}
 	},
 	
@@ -51,12 +36,8 @@ const SHARED_DATA = {
 	set(key, value) {
 		this.data[key] = value
 		
-		if(IS_BACKGROUND_PAGE && !this.updating) {
-			this.updating = true
-			setTimeout(() => {
-				this.updating = false
-				this.update()
-			}, 10)
+		if(IS_BACKGROUND_PAGE && this._loaded) {
+			this.updateDataUrl()
 		}
 	},
 	
@@ -64,25 +45,62 @@ const SHARED_DATA = {
 		this._loadPromise.then(fn)
 	},
 	
-	init(object) {
-		for(const [key, value] of Object.entries(object)) {
-			this.set(key, value)
+	async initBackgroundScript() {
+		if(IS_CHROME) {
+			const rules = await chrome.declarativeNetRequest.getDynamicRules()
+			const rule = rules.find(x => x.id === 9001)
+			
+			if(rule) {
+				try {
+					const data = JSON.parse(new URL(rule.action.redirect.url).searchParams.get("data"))
+					
+					if(data.version === this.data.version) {
+						for(const key of Object.keys(data)) {
+							if(!(key in this.data)) {
+								this.data[key] = data[key]
+							}
+						}
+					}
+				} catch(ex) {}
+			}
+		} else {
+			try {
+				const data = JSON.parse(localStorage.getItem("btrSharedData"))
+				
+				if(data.version === this.data.version) {
+					Object.assign(this.data, data)
+				}
+			} catch(ex) {}
 		}
 		
+		this.updateDataUrl()
+		
+		if(IS_FIREFOX) {
+			chrome.webRequest.onBeforeRequest.addListener(
+				() => ({ redirectUrl: this.dataUrl }),
+				{ urls: ["https://btr_settings.roblox.com/"] },
+				["blocking"]
+			)
+		}
+		
+		this._loaded = true
 		this._loadPromise.resolve()
 	},
 	
-	start() {
-		if(IS_CHROME) {
-			const request = new XMLHttpRequest()
-			request.open("GET", `${location.origin}/btr/settings`, false)
-			request.send(null)
-			
-			SHARED_DATA.init(JSON.parse(request.responseText))
-		} else {
-			if(typeof SHARED_DATA_INIT !== "undefined") {
-				SHARED_DATA.init(SHARED_DATA_INIT)
-			}
-		}
+	initContentScript() {
+		const request = new XMLHttpRequest()
+		request.open("HEAD", `https://btr_settings.roblox.com/`, false)
+		
+		try {
+			request.send()
+			Object.assign(this.data, JSON.parse(new URL(request.responseURL).searchParams.get("data")))
+		} catch(ex) {}
+		
+		this._loaded = true
+		this._loadPromise.resolve()
 	}
+}
+
+if(IS_BACKGROUND_PAGE) {
+	SHARED_DATA.initBackgroundScript()
 }
