@@ -373,7 +373,14 @@ const RobloxApi = {
 					userIds: userIds
 				})
 			}).then(res => res.json())
-		)
+		),
+		getUsersByUsernames: backgroundCall((usernames, excludeBannedUsers=true) =>
+			backgroundFetch(`https://users.roblox.com/v1/usernames/users`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ usernames, excludeBannedUsers })
+			}).then(res => res.json())
+		),
 	},
 	www: {
 		getFavorites: backgroundCall((userId, assetTypeId, itemsPerPage, pageNumber, thumbWidth=150, thumbHeight=150) =>

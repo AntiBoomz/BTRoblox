@@ -359,29 +359,23 @@ const btrFastSearch = {
 						Username: search
 					}
 					
-					const url = `https://users.roblox.com/v1/usernames/users`
-					$.fetch(url, {
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ usernames: [search], excludeBannedUsers: false })
-					}).then(async resp => {
+					RobloxApi.users.getUsersByUsernames([search], false).then(json => {
 						if(userCache[search] !== temp) {
 							return
 						}
 
-						const result = resp.ok && await resp.json()
-						const json = result?.data?.[0]
+						const data = json?.data?.[0]
 						
-						if(!json?.name) {
+						if(!data?.name) {
 							temp.NotFound = true
 							reloadSearchResults(true)
 							return
 						}
 
 						const user = userCache[search] = {
-							Username: json.name,
-							DisplayName: json.displayName,
-							UserId: json.id
+							Username: data.name,
+							DisplayName: data.displayName,
+							UserId: data.id,
 						}
 
 						const name = user.Username.toLowerCase()
