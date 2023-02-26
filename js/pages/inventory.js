@@ -247,9 +247,9 @@ pageInit.inventory = () => {
 					if(item.assetType === "badges") {
 						RobloxApi.badges.deleteBadge(item.assetId).then(done)
 					} else {
-						RobloxApi.api.getProductInfo(item.assetId).then(info => {
-							if(validAssetTypes.indexOf(info.AssetTypeId) === -1) {
-								return console.log("Bad assetType", info)
+						RobloxApi.economy.getAssetDetails.then(data => {
+							if(validAssetTypes.indexOf(data.AssetTypeId) === -1) {
+								return console.log("Bad assetType", data)
 							}
 							
 							RobloxApi.www.deleteAssetFromInventory(item.assetId).then(done)

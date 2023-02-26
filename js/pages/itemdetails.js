@@ -168,9 +168,9 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 		
 		for(const item of details.items) {
 			if(item.type === "Asset") {
-				RobloxApi.api.getProductInfo(item.id).then(async info => {
+				RobloxApi.economy.getAssetDetails(item.id).then(async data => {
 					const outfit = await outfitPromise
-					addAsset(item.id, info.AssetTypeId, item.name, outfit?.assets.find(x => x.id === item.id)?.meta)
+					addAsset(item.id, data.AssetTypeId, item.name, outfit?.assets.find(x => x.id === item.id)?.meta)
 				})
 			}
 		}
@@ -871,8 +871,9 @@ pageInit.itemdetails = (category, assetIdString) => {
 				apply()
 			})
 		} else {
-			RobloxApi.api.getProductInfo(assetId).then(data => {
-				({ Created: createdTS, Updated: updatedTS } = data)
+			RobloxApi.economy.getAssetDetails(assetId).then(data => {
+				createdTS = data.Created
+				updatedTS = data.Updated
 				apply()
 			})
 		}
@@ -906,8 +907,8 @@ pageInit.itemdetails = (category, assetIdString) => {
 				}
 			})
 		} else if(category !== "bundles") {
-			RobloxApi.api.getProductInfo(assetId).then(info => {
-				const sales = info?.Sales
+			RobloxApi.economy.getAssetDetails(assetId).then(data => {
+				const sales = data?.Sales
 				
 				if(Number.isSafeInteger(sales) && sales > 0) {
 					apply(sales)

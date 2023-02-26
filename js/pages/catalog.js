@@ -310,7 +310,7 @@ pageInit.catalog = () => {
 			if(!Number.isSafeInteger(+assetId)) { return }
 	
 			if(assetType !== "bundles") {
-				RobloxApi.api.getProductInfo(assetId).then(data => {
+				RobloxApi.economy.getAssetDetails(assetId).then(data => {
 					const ulabel = self.$find(".btr-updated-label")
 					ulabel.textContent = `${$.dateSince(data.Updated)}`
 					ulabel.parentNode.title = ulabel.parentNode.textContent

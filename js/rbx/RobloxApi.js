@@ -167,13 +167,6 @@ const backgroundFetch = !IS_BACKGROUND_PAGE ? null : (url, init = {}) => {
 }
 
 const RobloxApi = {
-	api: {
-		getUncachedProductInfo: backgroundCall(assetId =>
-			backgroundFetch(`https://api.roblox.com/marketplace/productinfo?assetId=${assetId}`)
-				.then(res => res.json())
-		),
-		getProductInfo: cacheResult(assetId => RobloxApi.api.getUncachedProductInfo(assetId))
-	},
 	assetdelivery: {
 		requestAssetV1: backgroundCall((urlParams, params) => {
 			if(typeof urlParams === "string" || typeof urlParams === "number") { urlParams = { id: urlParams } }
@@ -265,10 +258,11 @@ const RobloxApi = {
 		)
 	},
 	economy: {
-		getAssetDetails: backgroundCall(assetId =>
+		getUncachedAssetDetails: backgroundCall(assetId =>
 			backgroundFetch(`https://economy.roblox.com/v2/assets/${assetId}/details`)
 				.then(res => res.json())
-		)
+		),
+		getAssetDetails: cacheResult(assetId => RobloxApi.economy.getUncachedAssetDetails(assetId))
 	},
 	friends: {
 		getFriends: backgroundCall(userId =>

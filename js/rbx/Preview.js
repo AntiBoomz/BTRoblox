@@ -1251,7 +1251,7 @@ const HoverPreview = (() => {
 					
 					for(const item of details.items) {
 						if(item.type === "Asset") {
-							promises.push(RobloxApi.api.getProductInfo(item.id))
+							promises.push(RobloxApi.economy.getAssetDetails(item.id))
 							
 						} else if(item.type === "UserOutfit") {
 							promises.push(RobloxApi.avatar.getOutfitDetails(item.id))
@@ -1260,7 +1260,7 @@ const HoverPreview = (() => {
 					
 					addItems(await SyncPromise.all(promises))
 				} else {
-					const info = await RobloxApi.api.getProductInfo(assetId)
+					const info = await RobloxApi.economy.getAssetDetails(assetId)
 					
 					addItems([info])
 				}

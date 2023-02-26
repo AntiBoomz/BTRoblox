@@ -602,7 +602,7 @@ pageInit.gamedetails = placeId => {
 			}
 		})
 	
-	RobloxApi.api.getProductInfo(placeId).then(data => {
+	RobloxApi.economy.getAssetDetails(placeId).then(data => {
 		watcher.$watch(".game-stats-container").$then()
 			.$watch(
 				".game-stat .text-lead",
