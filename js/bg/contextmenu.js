@@ -128,21 +128,11 @@ const ContextMenu = {
 				document.execCommand("copy", false, null)
 			}
 			
-			if(IS_MANIFEST_V3) {
-				chrome.scripting.executeScript({
-					target: { tabId: tab.id, frameIds: [info.frameId] },
-					func: copy,
-					args: [text]
-				})
-			} else {
-				chrome.tabs.executeScript(
-					tab.id,
-					{
-						frameId: info.frameId,
-						code: `(${copy})(${JSON.stringify(text)})`
-					}
-				)
-			}
+			chrome.scripting.executeScript({
+				target: { tabId: tab.id, frameIds: [info.frameId] },
+				func: copy,
+				args: [text]
+			})
 		}
 		
 		switch(info.menuItemId) {

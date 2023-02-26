@@ -7,13 +7,15 @@ const getRequiredPermissions = () => {
 	
 	return {
 		origins: [
-			...manifest.host_permissions,
+			...(IS_MANIFEST_V3 ? manifest.host_permissions : manifest.permissions.filter(x => x.includes("://"))),
 			...manifest.content_scripts[0].matches
 		]
 	}
 }
 
-chrome.action.onClicked.addListener(tab => {
+const browserAction = IS_MANIFEST_V3 ? chrome.action : chrome.browserAction
+
+browserAction.onClicked.addListener(tab => {
 	const callback = success => {
 		if(!success) {
 			chrome.tabs.create({ url: "https://www.roblox.com/home?btr_settings_open=true" })

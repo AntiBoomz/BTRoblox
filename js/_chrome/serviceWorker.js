@@ -5,9 +5,9 @@ importScripts(
 	
 	"/js/shared/common.js",
 	"/js/shared/utility.js",
+	"/js/shared/messaging.js",
 	
 	"/js/shared/sharedData.js",
-	"/js/shared/messaging.js",
 	"/js/shared/settings.js",
 	
 	"/js/bg/background.js",

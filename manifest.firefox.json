@@ -1,5 +1,5 @@
 {
-	"manifest_version": 3,
+	"manifest_version": 2,
 
 	"name": "BTRoblox - Making Roblox Better",
 	"short_name": "BTRoblox",
@@ -7,7 +7,7 @@
 	"version": "3.3.3",
 	"author": "AntiBoomz",
 
-	"action": {
+	"browser_action": {
 		"default_title": "Open BTRoblox Settings"
 	},
 
@@ -28,9 +28,9 @@
 			
 			"js/shared/common.js",
 			"js/shared/utility.js",
+			"js/shared/messaging.js",
 			
 			"js/shared/sharedData.js",
-			"js/shared/messaging.js",
 			"js/shared/settings.js",
 			
 			"js/bg/background.js",
@@ -39,29 +39,23 @@
 			"js/bg/contextmenu.js",
 			
 			"js/rbx/RobloxApi.js"
-		]
+		],
+		"persistent": false
 	},
-	
-	"host_permissions": [
-		"*://*.roblox.com/",
-		"*://*.rbxcdn.com/"
-	],
 
 	"permissions": [
-		"webRequestBlocking",
+		"*://*.roblox.com/",
+		"*://*.rbxcdn.com/",
 		"notifications",
 		"contextMenus",
-		"webRequest",
 		"scripting",
 		"storage",
 		"alarms"
 	],
 
 	"web_accessible_resources": [
-		{
-			"resources": ["/res/*", "/css/*"],
-			"matches": ["*://*.roblox.com/*"]
-		}
+		"/res/*",
+		"/css/*"
 	],
 
 	"content_scripts": [
@@ -69,7 +63,7 @@
 			"matches": [
 				"*://www.roblox.com/*",
 				"*://web.roblox.com/*",
-				"*://create.roblox.com/marketplace/*"
+				"*://create.roblox.com/*"
 			],
 			"exclude_matches": [
 				"*://*/userads/*",

@@ -4,28 +4,48 @@ const SHARED_DATA = {
 	_loadPromise: new SyncPromise(),
 	_loaded: false,
 	
-	dataUrl: null,
 	data: { version: 1 },
 	
-	updateDataUrl() {
+	updateData() {
 		const dataString = JSON.stringify(this.data)
-		
-		const url = new URL(getURL("res/icon_128.png"))
-		url.searchParams.set("data", dataString)
-		
-		this.dataUrl = url.toString()
+		localStorage.setItem("btrSharedData", dataString)
 		
 		if(IS_CHROME) {
+			const url = new URL("data:,")
+			url.searchParams.set("data", dataString)
+			
 			chrome.declarativeNetRequest.updateDynamicRules({
 				removeRuleIds: [9001],
 				addRules: [{
-					action: { type: "redirect", redirect: { url: this.dataUrl } },
-					condition: { urlFilter: "https://btr_settings.roblox.com/" },
+					action: { type: "redirect", redirect: { url: url.toString() } },
+					condition: { urlFilter: "https://www.roblox.com/?btr_settings" },
 					id: 9001
 				}]
 			})
 		} else {
-			localStorage.setItem("btrSharedData", dataString)
+			const thisIndex = this.payloadIndex = (this.payloadIndex || 0) + 1
+			
+			if(this.payloadScript) {
+				this.payloadScript.unregister()
+				this.payloadScript = null
+			}
+			
+			const details = chrome.runtime.getManifest().content_scripts[0]
+			
+			browser.contentScripts.register({
+				matches: details.matches,
+				excludeMatches: details.exclude_matches,
+				js: [{
+					code: `const SHARED_DATA_PAYLOAD = ${dataString}; if(typeof SHARED_DATA !== "undefined" && SHARED_DATA.payloadPromise) { SHARED_DATA.payloadPromise.resolve() }`
+				}],
+				runAt: details.run_at
+			}).then(payloadScript => {
+				if(this.payloadIndex === thisIndex) {
+					this.payloadScript = payloadScript
+				} else {
+					payloadScript.unregister()
+				}
+			})
 		}
 	},
 	
@@ -37,7 +57,7 @@ const SHARED_DATA = {
 		this.data[key] = value
 		
 		if(IS_BACKGROUND_PAGE && this._loaded) {
-			this.updateDataUrl()
+			this.updateData()
 		}
 	},
 	
@@ -46,58 +66,47 @@ const SHARED_DATA = {
 	},
 	
 	async initBackgroundScript() {
-		if(IS_CHROME) {
-			const rules = await chrome.declarativeNetRequest.getDynamicRules()
-			const rule = rules.find(x => x.id === 9001)
+		try {
+			const data = JSON.parse(localStorage.getItem("btrSharedData"))
 			
-			if(rule) {
-				try {
-					const data = JSON.parse(new URL(rule.action.redirect.url).searchParams.get("data"))
-					
-					if(data.version === this.data.version) {
-						for(const key of Object.keys(data)) {
-							if(!(key in this.data)) {
-								this.data[key] = data[key]
-							}
-						}
-					}
-				} catch(ex) {}
+			if(data.version === this.data.version) {
+				Object.assign(this.data, data)
 			}
-		} else {
-			try {
-				const data = JSON.parse(localStorage.getItem("btrSharedData"))
-				
-				if(data.version === this.data.version) {
-					Object.assign(this.data, data)
-				}
-			} catch(ex) {}
-		}
+		} catch(ex) {}
 		
-		this.updateDataUrl()
-		
-		if(IS_FIREFOX) {
-			chrome.webRequest.onBeforeRequest.addListener(
-				() => ({ redirectUrl: this.dataUrl }),
-				{ urls: ["https://btr_settings.roblox.com/"] },
-				["blocking"]
-			)
-		}
+		this.updateData()
 		
 		this._loaded = true
 		this._loadPromise.resolve()
 	},
 	
-	initContentScript() {
-		const request = new XMLHttpRequest()
-		request.open("HEAD", `https://btr_settings.roblox.com/`, false)
-		
-		try {
-			request.send()
-			Object.assign(this.data, JSON.parse(new URL(request.responseURL).searchParams.get("data")))
-		} catch(ex) {}
-		
-		this._loaded = true
-		this._loadPromise.resolve()
+	async initContentScript() {
+		if(IS_CHROME) {
+			const request = new XMLHttpRequest()
+			request.open("HEAD", "https://www.roblox.com/?btr_settings", false)
+			
+			try {
+				const a = performance.now()
+				request.send()
+				const b = performance.now()
+				
+				console.log("getting settings took", b - a)
+				Object.assign(this.data, JSON.parse(new URL(request.responseURL).searchParams.get("data")))
+			} catch(ex) {}
+			
+			this._loaded = true
+			this._loadPromise.resolve()
+		} else {
+			if(typeof SHARED_DATA_PAYLOAD === "undefined") {
+				this.payloadPromise = Promise.$defer()
+				await this.payloadPromise
+			}
+			
+			Object.assign(this.data, SHARED_DATA_PAYLOAD)
+			
+			this._loaded = true
+			this._loadPromise.resolve()
+		}
 	}
 }
 
