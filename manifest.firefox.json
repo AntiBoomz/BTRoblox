@@ -39,8 +39,7 @@
 			"js/bg/contextmenu.js",
 			
 			"js/rbx/RobloxApi.js"
-		],
-		"persistent": false
+		]
 	},
 
 	"permissions": [
