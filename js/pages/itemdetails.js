@@ -661,37 +661,29 @@ pageInit.itemdetails = (category, assetIdString) => {
 			}
 
 			const getNames = request => {
-				const keys = Object.keys(request)
-				if(!keys.length) { return SyncPromise.resolve() }
+				const userIds = Object.keys(request)
+				if(!userIds.length) { return SyncPromise.resolve() }
 
-				return $.fetch(`https://users.roblox.com/v1/users`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json"
-					},
-					body: JSON.stringify({
-						userIds: keys
-					})
-				}).then(async resp => {
-					const json = await resp.json()
-
-					json.data.forEach(user => {
+				return RobloxApi.users.getUserDetails(userIds).then(json => {
+					for(const user of json.data) {
 						const list = request[user.id]
-
-						list.forEach(x => {
-							x.userName = user.name
-						})
-					})
+						
+						if(list) {
+							for(const entry of list) {
+								entry.userName = user.name
+							}
+						}
+					}
 				})
 			}
 
 			const createElements = data => {
 				const request = {}
 				const elems = []
-
-				data.forEach(item => {
-					if(item.owner && (item.owner.type !== "User" || item.owner.id === 1)) { return }
-					if(!item.owner && !item.serialNumber) { return }
+				
+				for(const item of data) {
+					if(item.owner && (item.owner.type !== "User" || item.owner.id === 1)) { continue }
+					if(!item.owner && !item.serialNumber) { continue }
 
 					if(item.owner) {
 						const userId = item.owner.id
@@ -714,7 +706,7 @@ pageInit.itemdetails = (category, assetIdString) => {
 
 						elems.push(self)
 					}
-				})
+				}
 
 				getNames(request).finally(() => {
 					isLoading = false
@@ -734,44 +726,43 @@ pageInit.itemdetails = (category, assetIdString) => {
 				seeMore.textContent = "Loading..."
 				seeMore.setAttribute("disabled", "")
 
-				const url = `https://inventory.roblox.com/v2/assets/${ownerAssetId}/owners?limit=100&cursor=${cursor}`
 				const maxRetries = 10
 				let retriesLeft = maxRetries
 
-				const handler = async resp => {
-					if(!resp.ok) {
-						if(retriesLeft > 0) {
-							retriesLeft--
-							seeMore.textContent = `Loading... (${maxRetries - retriesLeft})`
-							setTimeout(() => $.fetch(url).then(handler), 2e3)
-						} else {
-							isLoading = false
-
-							const failText = seeMore.textContent = "Failed to load owners, try again later"
-							setTimeout(() => (seeMore.textContent === failText ? seeMore.textContent = "See More" : null), 2e3)
-
-							seeMore.removeAttribute("disabled")
+				const request = () => {
+					RobloxApi.inventory.getAssetOwners(ownerAssetId, 100, cursor).then(json => {
+						if(!json?.data) {
+							if(retriesLeft > 0) {
+								retriesLeft--
+								seeMore.textContent = `Loading... (${maxRetries - retriesLeft})`
+								setTimeout(request, 2e3)
+							} else {
+								isLoading = false
+	
+								const failText = seeMore.textContent = "Failed to load owners, try again later"
+								setTimeout(() => (seeMore.textContent === failText ? seeMore.textContent = "See More" : null), 2e3)
+	
+								seeMore.removeAttribute("disabled")
+							}
+							return
 						}
-						return
-					}
-
-					if(!firstLoaded) {
-						firstLoaded = true
-						ownersList.$empty()
-					}
-
-					const json = await resp.json()
-
-					if(json.nextPageCursor) {
-						cursor = json.nextPageCursor
-					} else {
-						seeMore.remove()
-					}
-
-					createElements(json.data)
+	
+						if(!firstLoaded) {
+							firstLoaded = true
+							ownersList.$empty()
+						}
+	
+						if(json.nextPageCursor) {
+							cursor = json.nextPageCursor
+						} else {
+							seeMore.remove()
+						}
+	
+						createElements(json.data)
+					})
 				}
-
-				$.fetch(url, { credentials: "include" }).then(handler)
+				
+				request()
 			}
 
 			if(initData) {

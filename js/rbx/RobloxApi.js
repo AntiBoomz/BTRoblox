@@ -296,6 +296,11 @@ const RobloxApi = {
 				credentials: "include"
 			}).then(res => assert(res.ok, "Request failed") && res.json())
 		),
+		getAssetOwners: backgroundCall((assetId, limit, cursor) => {
+			backgroundFetch(`https://inventory.roblox.com/v2/assets/${assetId}/owners?limit=${limit}&cursor=${cursor || ""}`, {
+				credentials: "include"
+			}).then(res => res.json())
+		}),
 		toggleInCollection: backgroundCall((assetType, assetId, addToCollection = true) =>
 			backgroundFetch(`https://inventory.roblox.com/v1/collections/items/${assetType}/${assetId}`, {
 				method: addToCollection ? "POST" : "DELETE",
@@ -355,6 +360,19 @@ const RobloxApi = {
 		getGroupIcons: backgroundCall((groupIds, size = "150x150", isCircular = false) =>
 			backgroundFetch(`https://thumbnails.roblox.com/v1/groups/icons?groupIds=${groupIds.join(",")}&size=${size}&format=Png&isCircular=${isCircular}`)
 				.then(async res => (await res.json()).data)
+		)
+	},
+	users: {
+		getUserDetails: backgroundCall(userIds =>
+			backgroundFetch(`https://users.roblox.com/v1/users`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify({
+					userIds: userIds
+				})
+			}).then(res => res.json())
 		)
 	},
 	www: {
