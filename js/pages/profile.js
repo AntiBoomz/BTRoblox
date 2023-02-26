@@ -777,85 +777,78 @@ pageInit.profile = userId => {
 
 		const dropdownLabel = dropdown.$find(".rbx-selection-label")
 		favorites.$find(".container-header .btn-more").after(dropdown)
-
-		function loadPage(category, page) {
+		
+		const favoriteData = {}
+		
+		const loadPage = async (category, page) => {
 			if(isLoading) { return }
-			isLoading = true
-
 			lastCategory = category
 			
-			const params = new URLSearchParams({
-				userId,
-				thumbWidth: 150,
-				thumbHeight: 150,
-				itemsPerPage: pageSize,
-				assetTypeId: category,
-				pageNumber: page
-			}).toString()
-
-			const url = `https://www.roblox.com/users/favorites/list-json?${params}`
-			$.fetch(url).then(async response => {
-				const json = await response.json()
-				isLoading = false
-
-				if(json && json.IsValid) {
-					pager.setPage(page)
-					pager.setMaxPage(Math.floor((json.Data.TotalItems - 1) / pageSize) + 1)
-					hlist.$empty()
-					
-					if(json.Data.TotalItems === 0) {
-						const categoryName = dropdownLabel.textContent
-						hlist.append(html`<div class='section-content-off btr-section-content-off'>This user has no favorite ${categoryName}</div>`)
-						return
-					}
-					
-					const items = json.Data.Items
-					const numItems = Math.min(pageSize, json.Data.TotalItems - (page - 1) * pageSize)
-
-					for(let i = 0; i < numItems; i++) {
-						const data = items[i]
-						let item
-						
-						if(data) {
-							item = html`
-							<li class="list-item game-card">
-								<div class="card-item game-card-container">
-									<a href="${data.Item.AbsoluteUrl}" title="${data.Item.Name}">
-										<div class="game-card-thumb-container">
-											<img class="game-card-thumb card-thumb" alt="${data.Item.Name}" src="${data.Thumbnail.Url || ""}">
-										</div>
-										<div class="text-overflow game-card-name" title="${data.Item.Name}" ng-non-bindable>${data.Item.Name}</div>
-									</a>
-									<div class="game-card-name-secondary btr-creator-link-container">
-										<span class="text-secondary">By </span>
-										<a class="text-link text-overflow btr-creator-link" title="${data.Creator.Name}" href="${data.Creator.CreatorProfileLink}">
-											${data.Creator.Name}
-										</a>
-									</div>
-								</div>
-							</li>`
-						} else {
-							item = html`
-							<li class="list-item game-card">
-								<div class="card-item game-card-container">
-									<a>
-										<div class="game-card-thumb-container icon-blocked"></div>
-										<div class="text-overflow game-card-name" title="[ Content Deleted ]" ng-non-bindable>[ Content Deleted ]</div>
-									</a>
-									<div class="game-card-name-secondary btr-creator-link-container">
-										<span class="text-secondary">By </span>
-										<a class="text-link text-overflow btr-creator-link" title="Unknown" href="#">
-										Unknown
-										</a>
-									</div>
-								</div>
-							</li>`
-						}
-
-						hlist.append(item)
-					}
+			let data = favoriteData[category]
+			
+			if(!data) {
+				data = {
+					items: [],
+					nextPage: 1,
+					hasMore: true
 				}
-			})
+				
+				favoriteData[category] = data
+			}
+			
+			const pageStart = (page - 1) * pageSize
+			const pageEnd = pageStart + pageSize
+			
+			while(data.hasMore && pageEnd > data.items.length) {
+				isLoading = true
+				const json = await RobloxApi.www.getFavorites(userId, category, 100, data.nextPage, 150, 150)
+				isLoading = false
+				
+				if(!json?.IsValid) {
+					return
+				}
+				
+				data.items.push(...json.Data.Items)
+				
+				const expectedTotalItems = json.Data.Start + 100
+				
+				data.nextPage += 1
+				data.hasMore = expectedTotalItems < json.Data.TotalItems
+				data.totalItems = data.hasMore ? json.Data.TotalItems - (expectedTotalItems - data.items.length) : data.items.length
+			}
+			
+			pager.setPage(page)
+			pager.setMaxPage(Math.floor((data.totalItems - 1) / pageSize) + 1)
+			hlist.$empty()
+			
+			if(data.items.length === 0) {
+				const categoryName = dropdownLabel.textContent
+				hlist.append(html`<div class='section-content-off btr-section-content-off'>This user has no favorite ${categoryName}</div>`)
+				return
+			}
+
+			for(let i = pageStart; i < pageEnd; i++) {
+				const item = data.items[i]
+				if(!item) { break }
+				
+				hlist.append(html`
+				<li class="list-item game-card">
+					<div class="card-item game-card-container">
+						<a href="${item.Item.AbsoluteUrl}" title="${item.Item.Name}">
+							<div class="game-card-thumb-container">
+								<img class="game-card-thumb card-thumb" alt="${item.Item.Name}" src="${item.Thumbnail.Url || ""}">
+							</div>
+							<div class="text-overflow game-card-name" title="${item.Item.Name}" ng-non-bindable>${item.Item.Name}</div>
+						</a>
+						<div class="game-card-name-secondary btr-creator-link-container">
+							<span class="text-secondary">By </span>
+							<a class="text-link text-overflow btr-creator-link" title="${item.Creator.Name}" href="${item.Creator.CreatorProfileLink}">
+								${item.Creator.Name}
+							</a>
+						</div>
+					</div>
+				</li>`)
+			}
 		}
 
 		const onclick = ev => {
@@ -864,8 +857,10 @@ pageInit.profile = userId => {
 				loadPage(cat, 1)
 			}
 		}
-
-		dropdown.$findAll(".dropdown-menu li").forEach(btn => btn.$on("click", onclick))
+		
+		for(const btn of dropdown.$findAll(".dropdown-menu li")) {
+			btn.$on("click", onclick)
+		}
 
 		pager.onsetpage = page => loadPage(lastCategory, page)
 		$.ready(() => loadPage(9, 1))

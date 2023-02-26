@@ -350,6 +350,10 @@ const RobloxApi = {
 		)
 	},
 	www: {
+		getFavorites: backgroundCall((userId, assetTypeId, itemsPerPage, pageNumber, thumbWidth=150, thumbHeight=150) =>
+			backgroundFetch(`https://www.roblox.com/users/favorites/list-json?userId=${userId}&assetTypeId=${assetTypeId}&itemsPerPage=${itemsPerPage}&pageNumber=${pageNumber}&thumbWidth=${thumbWidth}&thumbHeight=${thumbHeight}`)
+				.then(res => res.json())
+		),
 		getProfilePlayerGames: backgroundCall(userId =>
 			backgroundFetch(`https://www.roblox.com/users/profile/playergames-json?userId=${userId}`)
 				.then(res => res.json())
