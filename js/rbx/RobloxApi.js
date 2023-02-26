@@ -94,6 +94,11 @@ const unwrapArgs = async args => {
 		args = await unwrapValue(args)
 	}
 	
+	if(IS_FIREFOX && !IS_BACKGROUND_PAGE) {
+		try { args = cloneInto(args, window) }
+		catch(ex) {}
+	}
+	
 	return args
 }
 
