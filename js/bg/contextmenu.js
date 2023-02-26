@@ -10,7 +10,10 @@ const ContextMenu = {
 				"*://*.roblox.com/*-item?*id=*",
 				"*://*.roblox.com/catalog/*",
 				"*://*.roblox.com/library/*",
-				"*://*.roblox.com/My/Item.aspx*ID=*"
+				"*://*.roblox.com/My/Item.aspx*ID=*",
+				"*://create.roblox.com/creations/catalog/*",
+				"*://create.roblox.com/creations/marketplace/*",
+				"*://create.roblox.com/marketplace/asset/*",
 			]
 		},
 		{
@@ -78,7 +81,8 @@ const ContextMenu = {
 			title: "Copy universe id",
 			contexts: ["link"],
 			targetUrlPatterns: [
-				"*://*.roblox.com/universes/*id=*"
+				"*://*.roblox.com/universes/*id=*",
+				"*://create.roblox.com/creations/experiences/*"
 			]
 		},
 		{
@@ -137,7 +141,7 @@ const ContextMenu = {
 		
 		switch(info.menuItemId) {
 			case "assetLink": case "bundleLink": case "badgeLink": case "gamepassLink": case "pluginLink": {
-				const assetId = info.linkUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library|bundles|badges|game-pass|plugins)\/(?:refer\/)?)(\d+).*$/i, "$1")
+				const assetId = info.linkUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library|bundles|badges|game-pass|plugins|marketplace|marketplace\/asset)\/(?:refer\/)?)(\d+).*$/i, "$1")
 				copyToClipboard(assetId)
 				break
 			}
@@ -157,7 +161,7 @@ const ContextMenu = {
 				break
 			}
 			case "universeLink": {
-				const universeId = info.linkUrl.replace(/^.*(?:[&?]id=)(\d+).*$/i, "$1")
+				const universeId = info.linkUrl.replace(/^.*(?:[&?]id=|(?:experiences)\/)(\d+).*$/i, "$1")
 				copyToClipboard(universeId)
 				break
 			}

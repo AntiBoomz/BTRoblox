@@ -48,7 +48,7 @@
 			"matches": [
 				"*://www.roblox.com/*",
 				"*://web.roblox.com/*",
-				"*://create.roblox.com/marketplace/*"
+				"*://create.roblox.com/*"
 			],
 			"exclude_matches": [
 				"*://*/userads/*",
