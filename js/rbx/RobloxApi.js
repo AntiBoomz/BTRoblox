@@ -406,6 +406,14 @@ const RobloxApi = {
 				body: new URLSearchParams({ assetId }),
 				xsrf: true
 			}).then(res => res.json())
-		)
+		),
+		revertPlaceToVersion: backgroundCall(versionId =>
+			backgroundFetch(`https://www.roblox.com/places/revert`, {
+				method: "POST",
+				credentials: "include",
+				body: new URLSearchParams({ assetVersionID: versionId }),
+				xsrf: true
+			}).then(res => !!res.ok)
+		),
 	}
 }
