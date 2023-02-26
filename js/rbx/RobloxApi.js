@@ -296,11 +296,11 @@ const RobloxApi = {
 				credentials: "include"
 			}).then(res => assert(res.ok, "Request failed") && res.json())
 		),
-		getAssetOwners: backgroundCall((assetId, limit, cursor) => {
+		getAssetOwners: backgroundCall((assetId, limit, cursor) =>
 			backgroundFetch(`https://inventory.roblox.com/v2/assets/${assetId}/owners?limit=${limit}&cursor=${cursor || ""}`, {
 				credentials: "include"
 			}).then(res => res.json())
-		}),
+		),
 		toggleInCollection: backgroundCall((assetType, assetId, addToCollection = true) =>
 			backgroundFetch(`https://inventory.roblox.com/v1/collections/items/${assetType}/${assetId}`, {
 				method: addToCollection ? "POST" : "DELETE",

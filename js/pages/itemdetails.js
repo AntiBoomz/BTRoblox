@@ -677,7 +677,7 @@ pageInit.itemdetails = (category, assetIdString) => {
 				})
 			}
 
-			const createElements = data => {
+			const createElements = (data, isInitial) => {
 				const request = {}
 				const elems = []
 				
@@ -712,6 +712,11 @@ pageInit.itemdetails = (category, assetIdString) => {
 					isLoading = false
 					seeMore.textContent = "See More"
 					seeMore.removeAttribute("disabled")
+					
+					if(!firstLoaded && !isInitial) {
+						firstLoaded = true
+						ownersList.$empty()
+					}
 
 					elems.forEach(
 						x => ownersList.append(createElement(x))
@@ -747,11 +752,6 @@ pageInit.itemdetails = (category, assetIdString) => {
 							return
 						}
 	
-						if(!firstLoaded) {
-							firstLoaded = true
-							ownersList.$empty()
-						}
-	
 						if(json.nextPageCursor) {
 							cursor = json.nextPageCursor
 						} else {
@@ -766,7 +766,7 @@ pageInit.itemdetails = (category, assetIdString) => {
 			}
 
 			if(initData) {
-				createElements(initData.data)
+				createElements(initData.data, true)
 
 				if(!initData.nextPageCursor) {
 					seeMore.remove()
@@ -793,14 +793,10 @@ pageInit.itemdetails = (category, assetIdString) => {
 
 
 		itemIdPromise.then(itemId => {
-			const checkUrl = `https://inventory.roblox.com/v2/assets/${itemId}/owners?limit=10`
-
-			fetch(checkUrl, { credentials: "include" }).then(async resp => {
-				if(resp.status === 403) {
+			RobloxApi.inventory.getAssetOwners(itemId, 10).then(json => {
+				if(!json?.data) {
 					return
 				}
-
-				const initData = resp.ok && (await resp.json())
 
 				document.$watch("#item-container").$then()
 					.$watch(">asset-resale-pane, >#recommendations-container,>.bundle-items", parent => {
@@ -808,7 +804,7 @@ pageInit.itemdetails = (category, assetIdString) => {
 							: parent.classList.contains("bundle-items") ? "Included Items"
 								: "Resellers"
 						
-						setupOwnersList(parent, title, itemId, initData)
+						setupOwnersList(parent, title, itemId, json)
 					})
 			})
 		})
