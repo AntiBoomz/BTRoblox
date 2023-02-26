@@ -857,10 +857,9 @@ pageInit.itemdetails = (category, assetIdString) => {
 		)
 
 		if(category === "game-pass") {
-			$.fetch(`https://api.roblox.com/marketplace/game-pass-product-info?gamePassId=${assetId}`).then(async resp => {
-				if(!resp.ok) { return }
-
-				({ Created: createdTS, Updated: updatedTS } = await resp.json())
+			RobloxApi.gamepasses.getGamepassDetails(assetId).then(data => {
+				createdTS = data.Created
+				updatedTS = data.Updated
 				apply()
 			})
 		} else if(category === "badges") {
@@ -897,11 +896,10 @@ pageInit.itemdetails = (category, assetIdString) => {
 		}
 
 		if(category === "game-pass") {
-			$.fetch(`https://api.roblox.com/marketplace/game-pass-product-info?gamePassId=${assetId}`).then(async resp => {
-				if(!resp.ok) { return }
-
-				const sales = (await resp.json()).Sales
-				if(sales) {
+			RobloxApi.gamepasses.getGamepassDetails(assetId).then(data => {
+				const sales = data?.Sales
+				
+				if(Number.isSafeInteger(sales) && sales > 0) {
 					apply(sales)
 				}
 			})

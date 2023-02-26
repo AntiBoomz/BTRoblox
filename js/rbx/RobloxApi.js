@@ -278,6 +278,12 @@ const RobloxApi = {
 				.then(async res => (await res.json()).data)
 		)
 	},
+	gamepasses: {
+		getGamepassDetails: backgroundCall(gamepassId =>
+			backgroundFetch(`https://apis.roblox.com/game-passes/v1/game-passes/${gamepassId}/product-info `)
+				.then(res => res.json())
+		)
+	},
 	games: {
 		getPlaceDetails: backgroundCall(placeIds =>
 			backgroundFetch(`https://games.roblox.com/v1/games/multiget-place-details?placeIds=${placeIds.join("&placeIds=")}`)
