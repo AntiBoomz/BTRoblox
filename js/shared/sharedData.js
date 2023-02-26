@@ -4,10 +4,15 @@ const SHARED_DATA = {
 	_loadPromise: new Promise(),
 	_loaded: false,
 	
+	lastDataString: null,
 	data: { version: 1 },
 	
 	updateData() {
 		const dataString = JSON.stringify(this.data)
+		
+		if(this.lastDataString === dataString) { return }
+		this.lastDataString = dataString
+		
 		localStorage.setItem("btrSharedData", dataString)
 		
 		if(IS_CHROME) {
