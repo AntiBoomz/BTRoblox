@@ -38,6 +38,7 @@ const SHARED_DATA = {
 				js: [{
 					code: `const SHARED_DATA_PAYLOAD = ${dataString}; if(typeof SHARED_DATA !== "undefined" && SHARED_DATA.payloadPromise) { SHARED_DATA.payloadPromise.$resolve() }`
 				}],
+				allFrames: details.all_frames,
 				runAt: details.run_at
 			}).then(payloadScript => {
 				if(this.payloadIndex === thisIndex) {
