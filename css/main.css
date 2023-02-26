@@ -752,6 +752,8 @@ a:not(.disabled):hover > .btr-icon-content {
 	border-top: 5px solid transparent;
 	border-bottom: 5px solid transparent;
 	border-radius: 2px;
+	
+	transform: rotate(90deg);
 }
 
 .btr-properties .btr-property-group .btr-property-group-more::before {
@@ -761,7 +763,7 @@ a:not(.disabled):hover > .btr-icon-content {
 
 .btr-explorer-has-children.closed .btr-explorer-more::before,
 .btr-properties .btr-property-group.closed .btr-property-group-more::before {
-	transform: rotate(90deg);
+	transform: unset;
 	margin-top: 1px;
 }
 
