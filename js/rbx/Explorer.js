@@ -26,12 +26,10 @@ const Explorer = (() => {
 	const sortPropertyGroups = (a, b) => a.Order - b.Order
 	const sortProperties = (a, b) => (a[0] < b[0] ? -1 : 1)
 	const sortChildren = (a, b) => {
-		const ao = ApiDump.getExplorerOrder(a.ClassName)
-		const bo = ApiDump.getExplorerOrder(b.ClassName)
-		return ao !== bo ? ao - bo : (a.Name < b.Name ? -1 : 1)
+		const ao = ApiDump.getExplorerOrder(a.inst.ClassName)
+		const bo = ApiDump.getExplorerOrder(b.inst.ClassName)
+		return ao !== bo ? ao - bo : (a.inst.Name < b.inst.Name ? -1 : 1)
 	}
-	
-	const instToItemSymbol = Symbol("btrInstanceToItem")
 	
 	const widthCalcCanvas = document.createElement("canvas")
 	const ctx = widthCalcCanvas.getContext("2d")
@@ -64,13 +62,15 @@ const Explorer = (() => {
 				model: null,
 				matches: new Set(),
 				visible: new Set(),
+				open: new Set(),
 				numOpenDescendants: new Map(),
 				maxOpenWidth: new Map()
 			}
 			
 			this.defaultView = {
 				numOpenDescendants: new Map(),
-				maxOpenWidth: new Map()
+				maxOpenWidth: new Map(),
+				open: new Set(),
 			}
 
 			const element = this.element = html`
@@ -308,7 +308,6 @@ const Explorer = (() => {
 			tab.btn.classList.add("active")
 			this.selectedSourceViewerTab = tab
 
-
 			const source = inst.Properties[propName]?.value || ""
 
 			const content = this.sourceViewerModal.$find(".btr-sourceviewer-content")
@@ -517,18 +516,10 @@ const Explorer = (() => {
 			})
 		}
 		
-		select(instances) {
-			for(const item of this.selection) {
-				item.selected = false
-			}
-			
+		select(items) {
 			this.selection.splice(0, this.selection.length)
 			
-			for(const inst of instances) {
-				const item = inst[instToItemSymbol]
-				if(!item) { continue }
-				
-				item.selected = true
+			for(const item of items) {
 				this.selection.push(item)
 			}
 			
@@ -572,7 +563,7 @@ const Explorer = (() => {
 			let maxOpenWidth = item
 			let shouldBubble = false
 			
-			if(item.open) {
+			if(view.open.has(item)) {
 				for(const child of item.children) {
 					if(this.isItemVisible(child, view)) {
 						numOpenDescendants += (view.numOpenDescendants.get(child) ?? 0) + 1
@@ -609,50 +600,58 @@ const Explorer = (() => {
 			}
 		}
 		
-		createItem(children) {
+		createItem(children, open) {
 			const item = {
 				numDescendants: 0,
-				children: [],
-				selected: false,
-				open: true
+				children: []
+			}
+			
+			if(open) {
+				this.defaultView.open.add(item)
 			}
 			
 			for(const childInst of children) {
-				const grandChildren = [...childInst.Children].sort(sortChildren)
-				const child = this.createItem(grandChildren)
-				
-				childInst[instToItemSymbol] = child
+				const child = this.createItem(childInst.Children, open)
 				child.inst = childInst
 				child.parent = item
+				
+				this.bubbleItem(child, this.defaultView, false)
 				
 				item.numDescendants += child.numDescendants + 1
 				item.children.push(child)
 			}
 			
-			this.bubbleItem(item, this.defaultView)
+			item.children.sort(sortChildren)
 			
+			this.bubbleItem(item, this.defaultView, false)
 			return item
 		}
 		
-		setIsItemOpen(item, bool) {
-			if(item.open === !!bool) { return }
-			item.open = !!bool
+		setIsItemOpen(item, bool, view) {
+			if(view.open.has(item) === !!bool) { return }
 			
-			this.bubbleItem(item, this.defaultView)
-			this.bubbleItem(item, this.filterView)
+			if(bool) {
+				view.open.add(item)
+			} else {
+				view.open.delete(item)
+			}
+			
+			this.bubbleItem(item, view)
 		}
 		
-		addModel(title, modelContents) {
+		addModel(title, modelContents, params={}) {
 			const modelId = this.modelCounter++
 			
 			const btn = html`<li btr-model-id="${modelId}"><a title="${title}">${title}</a></li>`
 			const didModelLoad = Array.isArray(modelContents)
 			
-			const model = this.createItem(didModelLoad ? modelContents : [])
+			const model = this.createItem(didModelLoad ? modelContents : [], params?.open ?? true)
 			model.id = modelId
 			model.didLoad = didModelLoad
 			model.isRoot = true
 			model.title = title
+			
+			this.setIsItemOpen(model, true, this.defaultView)
 			
 			btn.$on("click", () => this.selectModel(model))
 			
@@ -691,8 +690,10 @@ const Explorer = (() => {
 			const visibleHeightPx = this.innerList.parentNode.clientHeight
 			const visibleOffsetPx = this.innerList.parentNode.scrollTop
 			
-			const visibleStartOffset = Math.max(0, Math.floor(visibleOffsetPx / this.lineHeight))
-			const visibleEndOffset = visibleStartOffset + Math.ceil(visibleHeightPx / this.lineHeight) + 1
+			const addedLines = 5
+			
+			const visibleStartOffset = Math.max(0, Math.floor(visibleOffsetPx / this.lineHeight) - addedLines)
+			const visibleEndOffset = visibleStartOffset + Math.ceil(visibleHeightPx / this.lineHeight) + 1 + addedLines
 			
 			const numVisibleLines = visibleEndOffset - visibleStartOffset
 			
@@ -710,6 +711,8 @@ const Explorer = (() => {
 					const line = {
 						elem: elem,
 						btn: elem.$find(".btr-explorer-item"),
+						icon: elem.$find(".btr-explorer-icon"),
+						nameLabel: elem.$find(".btr-explorer-item-name"),
 						item: null
 					}
 					
@@ -721,8 +724,7 @@ const Explorer = (() => {
 						ev.preventDefault()
 						
 						if(line.item) {
-							const inst = line.item.inst
-							this.select([inst])
+							this.select([line.item])
 		
 							if(lastClick && Date.now() - lastClick < 500) {
 								lastClick = null
@@ -748,7 +750,7 @@ const Explorer = (() => {
 						ev.preventDefault()
 						
 						if(line.item) {
-							this.setIsItemOpen(line.item, !line.item.open)
+							this.setIsItemOpen(line.item, !this.activeView.open.has(line.item), this.activeView)
 						}
 					})
 					
@@ -769,6 +771,8 @@ const Explorer = (() => {
 				filterView.model = model
 				filterView.matches.clear()
 				filterView.visible.clear()
+				filterView.open.clear()
+				filterView.open.add(model)
 				filterView.numOpenDescendants.clear()
 				filterView.maxOpenWidth.clear()
 				
@@ -789,6 +793,134 @@ const Explorer = (() => {
 			}
 			
 			const view = filterView.query ? filterView : this.defaultView
+			this.activeView = view
+			
+			if(!model.calculatedWidths && !model.doingStuff) {
+				model.doingStuff = true
+				
+				setTimeout(() => {
+					model.doingStuff = false
+					
+					if(!model.widthCalc) {
+						model.widthCalc = {
+							stack: [],
+							current: model,
+							index: 0
+						}
+						
+						model.width = 50
+						model.maxWidth = 50
+					}
+					
+					const startTime = performance.now()
+					const endTime = startTime + 4
+					
+					const running = model.widthCalc
+					
+					outer:
+					while(performance.now() < endTime) {
+						while(running.index >= running.current.children.length) {
+							this.bubbleItem(running.current, this.defaultView, false)
+							
+							if(!running.stack.length) {
+								delete model.widthCalc
+								model.calculatedWidths = true
+								break outer
+							}
+							
+							running.index = running.stack.pop()
+							running.current = running.current.parent
+						}
+						
+						const item = running.current.children[running.index]
+						running.index += 1
+
+						item.width = getLineWidth(item.inst.Name, running.stack.length)
+						
+						if(item.width > model.maxWidth) {
+							model.maxWidth = item.width
+						}
+						
+						if(item.children.length > 0) {
+							running.stack.push(running.index)
+							running.current = item
+							running.index = 0
+						}
+					}
+				}, 0)
+			}
+			
+			if(view.running && !view.doingStuff) {
+				view.doingStuff = true
+				
+				setTimeout(() => {
+					view.doingStuff = false
+					
+					const startTime = performance.now()
+					const endTime = startTime + 4
+					
+					const running = view.running
+					
+					while(performance.now() < endTime) {
+						while(running.stack.length && running.index >= running.current.children.length) {
+							running.index = running.stack.pop()
+							running.current = running.current.parent
+						}
+						
+						const item = running.current.children[running.index]
+						
+						if(!item) {
+							delete view.running
+							this.filterInput.parentNode.classList.remove("loading")
+							break
+						}
+						
+						running.index += 1
+						
+						const name = item.inst.Name.toLowerCase()
+						const className = item.inst.ClassName.toLowerCase()
+						let matches = true
+						
+						for(const word of running.words) {
+							if(!name.includes(word) && !className.includes(word)) {
+								matches = false
+								break
+							}
+						}
+						
+						if(matches) {
+							view.matches.add(item)
+							
+							let bubble = item
+							while(bubble && !view.visible.has(bubble)) {
+								view.visible.add(bubble)
+								view.open.add(bubble)
+								
+								this.bubbleItem(bubble, view, false)
+								bubble = bubble.parent
+							}
+							
+							if(bubble) {
+								this.bubbleItem(bubble, view, true)
+							}
+						}
+						
+						if(item.children.length > 0) {
+							running.stack.push(running.index)
+							running.current = item
+							running.index = 0
+						}
+					}
+				}, 0)
+			}
+
+			//
+			
+			this.innerList.style.paddingTop = `${visibleStartOffset * this.lineHeight}px`
+			this.innerList.style.height = `${(view.numOpenDescendants.get(model) ?? 0) * this.lineHeight + 4}px`
+			this.innerList.style.width = `${model.calculatedWidths ? (view.maxOpenWidth.get(model) ?? model).width : model.maxWidth}px`
+			
+			//
 			
 			const setLineItem = (line, item, depth = 0) => {
 				if(item !== line.item) {
@@ -797,8 +929,8 @@ const Explorer = (() => {
 					if(item) {
 						const icon = ApiDump.getExplorerIconIndex(item.inst.ClassName)
 						
-						line.elem.$find(".btr-explorer-icon").style.backgroundPosition = `-${icon * 16}px 0`
-						line.elem.$find(".btr-explorer-item-name").textContent = item.inst.Name
+						line.icon.style.backgroundPosition = `-${icon * 16}px 0`
+						line.nameLabel.textContent = item.inst.Name
 						
 						line.btn.classList.toggle("btr-explorer-has-children", item ? item.children.length > 0 : false)
 						
@@ -809,124 +941,10 @@ const Explorer = (() => {
 					}
 				}
 				
-				line.elem.$find(".btr-explorer-item-name").style.opacity = view.query && !view.matches.has(item) ? (!view.visible.has(item) ? "0.2" : "0.5") : ""
-				line.btn.classList.toggle("closed", item ? !item.open : false)
-				line.btn.classList.toggle("selected", item ? item.selected : false)
+				line.nameLabel.style.opacity = view.query && !view.matches.has(item) ? (!view.visible.has(item) ? "0.2" : "0.5") : ""
+				line.btn.classList.toggle("closed", item ? !this.activeView.open.has(item) : false)
+				line.btn.classList.toggle("selected", item ? this.selection.includes(item) : false)
 			}
-			
-			if(!model.calculatedWidths) {
-				if(!model.widthCalc) {
-					model.widthCalc = {
-						stack: [],
-						current: model,
-						index: 0
-					}
-					
-					model.width = 50
-					model.maxWidth = 50
-				}
-				
-				const startTime = performance.now()
-				const endTime = startTime + 4
-				
-				const running = model.widthCalc
-				
-				outer:
-				while(performance.now() < endTime) {
-					while(running.index >= running.current.children.length) {
-						this.bubbleItem(running.current, this.defaultView, false)
-						
-						if(!running.stack.length) {
-							delete model.widthCalc
-							model.calculatedWidths = true
-							break outer
-						}
-						
-						running.index = running.stack.pop()
-						running.current = running.current.parent
-					}
-					
-					const item = running.current.children[running.index]
-					running.index += 1
-
-					item.width = getLineWidth(item.inst.Name, running.stack.length)
-					
-					if(item.width > model.maxWidth) {
-						model.maxWidth = item.width
-					}
-					
-					if(item.children.length > 0) {
-						running.stack.push(running.index)
-						running.current = item
-						running.index = 0
-					}
-				}
-			}
-			
-			if(view.running) {
-				const startTime = performance.now()
-				const endTime = startTime + 4
-				
-				const running = view.running
-				
-				while(performance.now() < endTime) {
-					while(running.stack.length && running.index >= running.current.children.length) {
-						running.index = running.stack.pop()
-						running.current = running.current.parent
-					}
-					
-					const item = running.current.children[running.index]
-					
-					if(!item) {
-						delete view.running
-						this.filterInput.parentNode.classList.remove("loading")
-						break
-					}
-					
-					running.index += 1
-					
-					const name = item.inst.Name.toLowerCase()
-					const className = item.inst.ClassName.toLowerCase()
-					let matches = true
-					
-					for(const word of running.words) {
-						if(!name.includes(word) && !className.includes(word)) {
-							matches = false
-							break
-						}
-					}
-					
-					if(matches) {
-						view.matches.add(item)
-						
-						let bubble = item
-						while(bubble && !view.visible.has(bubble)) {
-							view.visible.add(bubble)
-							this.bubbleItem(bubble, view, false)
-							
-							bubble = bubble.parent
-						}
-						
-						if(bubble) {
-							this.bubbleItem(bubble, view, true)
-						}
-					}
-					
-					if(item.children.length > 0) {
-						running.stack.push(running.index)
-						running.current = item
-						running.index = 0
-					}
-				}
-			}
-
-			//
-			
-			this.innerList.style.paddingTop = `${visibleStartOffset * this.lineHeight}px`
-			this.innerList.style.height = `${(view.numOpenDescendants.get(model) ?? 0) * this.lineHeight + 4}px`
-			this.innerList.style.width = `${model.calculatedWidths ? (view.maxOpenWidth.get(model) ?? model).width : model.maxWidth}px`
-			
-			//
 			
 			const stack = []
 			let counter = 0
@@ -961,17 +979,16 @@ const Explorer = (() => {
 					currentIndex += 1
 					counter += 1
 					
-					// const numOpenDescendants = view.numOpenDescendants.get(item) ?? 0
+					const numOpenDescendants = view.numOpenDescendants.get(item) ?? 0
 					
-					if(item.open) {
-					// if(item.open && numOpenDescendants > 0) {
-						// if(counter + numOpenDescendants <= itemIndex) {
-						// 	counter += numOpenDescendants
-						// } else {
+					if(view.open.has(item) && numOpenDescendants > 0) {
+						if(counter + numOpenDescendants <= itemIndex) {
+							counter += numOpenDescendants
+						} else {
 							stack.push(currentIndex)
 							current = item
 							currentIndex = 0
-						// }
+						}
 					}
 				}
 				

@@ -313,7 +313,7 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 					AssetCache.loadModel(assetId, model => explorer.addModel("SpecialMesh", model))
 					
 				} else {
-					AssetCache.loadModel(assetId, model => explorer.addModel("Default", model))
+					AssetCache.loadModel(assetId, model => explorer.addModel("Default", model, { open: assetTypeId !== AssetType.Place }))
 				}
 			}
 			
