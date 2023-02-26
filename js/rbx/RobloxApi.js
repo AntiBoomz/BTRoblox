@@ -415,5 +415,13 @@ const RobloxApi = {
 				xsrf: true
 			}).then(res => !!res.ok)
 		),
+		shutdownAllInstances: backgroundCall((placeId, replaceInstances) =>
+			backgroundFetch(`https://www.roblox.com/games/shutdown-all-instances`, {
+				method: "POST",
+				credentials: "include",
+				body: new URLSearchParams({ placeId, replaceInstances: !!replaceInstances }),
+				xsrf: true
+			}).then(res => !!res.ok)
+		),
 	}
 }
