@@ -86,11 +86,7 @@ const SHARED_DATA = {
 			request.open("HEAD", "https://www.roblox.com/?btr_settings", false)
 			
 			try {
-				const a = performance.now()
 				request.send()
-				const b = performance.now()
-				
-				console.log("getting settings took", b - a)
 				Object.assign(this.data, JSON.parse(new URL(request.responseURL).searchParams.get("data")))
 			} catch(ex) {}
 		} else {
