@@ -592,8 +592,8 @@ pageInit.profile = userId => {
 				hlist.append(html`<div class="section-content-off btr-section-content-off">This user has no Player Badges</div>`)
 			} else {
 				hlist.after(pager)
-
-				badges.forEach(data => {
+				
+				for(const data of badges) {
 					const badgeUrl = `/badges/${data.id}/${formatUrlName(data.name)}`
 					const thumbUrl = data.thumb && data.thumb.imageUrl || "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
 					const thumbClass = data.thumb && thumbClasses[data.thumb.state] || ""
@@ -607,18 +607,17 @@ pageInit.profile = userId => {
 							<span class="font-header-2 text-overflow item-name">${data.name}</span>
 						</a>
 					</li>`)
-				})
+				}
 			}
 			
 			const needsThumbs = badges.filter(x => !x.thumbUrl && !x.gettingThumb)
 			if(needsThumbs.length) {
-				const thumbsUrl = `https://thumbnails.roblox.com/v1/badges/icons?badgeIds=${needsThumbs.map(x => x.id).join(",")}&size=150x150&format=Png`
-				needsThumbs.forEach(x => x.gettingThumb = true)
-
-				$.fetch(thumbsUrl).then(async resp => {
-					const thumbData = await resp.json()
-
-					thumbData.data.forEach(thumb => {
+				for(const thumb of needsThumbs) {
+					thumb.gettingThumb = true
+				}
+				
+				RobloxApi.thumbnails.getBadgeIcons(needsThumbs.map(x => x.id)).then(json => {
+					for(const thumb of json.data) {
 						const badge = badges.find(x => x.id === thumb.targetId)
 						badge.thumb = thumb
 
@@ -632,7 +631,7 @@ pageInit.profile = userId => {
 								img.classList.add(thumbClass)
 							}
 						}
-					})
+					}
 				})
 			}
 		}

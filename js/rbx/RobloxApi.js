@@ -366,6 +366,10 @@ const RobloxApi = {
 			backgroundFetch(`https://thumbnails.roblox.com/v1/groups/icons?groupIds=${groupIds.join(",")}&size=${size}&format=Png&isCircular=${isCircular}`)
 				.then(res => res.json())
 		),
+		getBadgeIcons: backgroundCall((badgeIds, size = "150x150") =>
+			backgroundFetch(`https://thumbnails.roblox.com/v1/badges/icons?badgeIds=${badgeIds.join(",")}&size=${size}&format=Png`)
+				.then(res => res.json())
+		),
 	},
 	users: {
 		getUserDetails: backgroundCall(userIds =>
