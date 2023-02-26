@@ -541,20 +541,14 @@ pageInit.gamedetails = placeId => {
 			const updateOwned = async () => {
 				const userId = await loggedInUserPromise
 				const badgeList = badgeQueue.splice(0, badgeQueue.length)
-				const url = `https://badges.roblox.com/v1/users/${userId}/badges/awarded-dates?badgeIds=${badgeList.map(x => x.badgeId).join(",")}`
-
-				$.fetch(url, { credentials: "include" }).then(async response => {
-					if(!response.ok) {
-						console.warn("[BTR] Failed to get badge data")
-						return
-					}
-
-					const ownedBadges = (await response.json()).data.map(x => +x.badgeId)
-
-					badgeList.forEach(({ row, badgeId }) => {
+				
+				RobloxApi.badges.getAwardedDates(userId, badgeList.map(x => x.badgeId)).then(json => {
+					const ownedBadges = json.data.map(x => +x.badgeId)
+					
+					for(const { row, badgeId } of badgeList) {
 						row.classList.toggle("btr-notowned", ownedBadges.indexOf(badgeId) === -1)
 						row.title = row.classList.contains("btr-notowned") ? "You do not own this badge" : ""
-					})
+					}
 				})
 			}
 

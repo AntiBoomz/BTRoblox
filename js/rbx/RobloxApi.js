@@ -224,6 +224,14 @@ const RobloxApi = {
 		)
 	},
 	badges: {
+		getBadgeDetails: backgroundCall(badgeId =>
+			backgroundFetch(`https://badges.roblox.com/v1/badges/${badgeId}`)
+				.then(res => res.json())
+		),
+		getAwardedDates: backgroundCall((userId, badgeIds) =>
+			backgroundFetch(`https://badges.roblox.com/v1/users/${userId}/badges/awarded-dates?badgeIds=${badgeIds.join(",")}`)
+				.then(res => res.json())
+		),
 		deleteBadge: backgroundCall(badgeId =>
 			backgroundFetch(`https://badges.roblox.com/v1/user/badges/${badgeId}`, {
 				method: "DELETE",

@@ -864,10 +864,9 @@ pageInit.itemdetails = (category, assetIdString) => {
 				apply()
 			})
 		} else if(category === "badges") {
-			$.fetch(`https://badges.roblox.com/v1/badges/${assetId}`).then(async resp => {
-				if(!resp.ok) { return }
-
-				({ created: createdTS, updated: updatedTS } = await resp.json())
+			RobloxApi.badges.getBadgeDetails(assetId).then(data => {
+				createdTS = data.created
+				updatedTS = data.updated
 				apply()
 			})
 		} else {
