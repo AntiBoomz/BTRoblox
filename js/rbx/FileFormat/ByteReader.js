@@ -34,6 +34,8 @@ class ByteReader extends Uint8Array {
 
 	constructor(...args) {
 		if(args[0] instanceof Uint8Array) {
+			args[1] = args[0].byteOffset
+			args[2] = args[0].byteLength
 			args[0] = args[0].buffer
 		}
 		
@@ -48,11 +50,6 @@ class ByteReader extends Uint8Array {
 	GetRemaining() { return this.length - this.index }
 	GetLength() { return this.length }
 	Jump(n) { this.index += n }
-	Clone() {
-		const clone = new ByteReader(this)
-		clone.SetIndex(this.index)
-		return clone
-	}
 
 	Array(n) {
 		const result = new Uint8Array(this.buffer, this.index, n)
@@ -91,13 +88,11 @@ class ByteReader extends Uint8Array {
 	DoubleBE() { return ByteReader.ParseDouble(this.UInt32BE(), this.UInt32BE()) }
 
 	String(n) {
-		const i = this.index
-		this.index += n
-		return bufferToString(new Uint8Array(this.buffer, i, n))
+		return bufferToString(this.Array(n))
 	}
 
 	// Custom stuff
-	LZ4() {
+	LZ4(buffer) {
 		const comLength = this.UInt32LE()
 		const decomLength = this.UInt32LE()
 		this.Jump(4)
@@ -108,10 +103,14 @@ class ByteReader extends Uint8Array {
 		}
 		
 		assert(this.GetRemaining() >= comLength, "[ByteReader.LZ4] unexpected eof")
+		
+		if(!buffer || buffer.length < decomLength) {
+			buffer = new Uint8Array(decomLength)
+		}
 
 		const start = this.index
 		const end = start + comLength
-		const data = new Uint8Array(decomLength)
+		const data = buffer.length === decomLength ? buffer : buffer.subarray(0, decomLength)
 		let index = 0
 
 		while(this.index < end) {
@@ -164,52 +163,37 @@ class ByteReader extends Uint8Array {
 
 	RBXFloatLE() { return ByteReader.ParseRBXFloat(this.UInt32LE()) }
 	RBXFloatBE() { return ByteReader.ParseRBXFloat(this.UInt32BE()) }
-
-	RBXInterleaved(byteCount, width) {
-		assert(byteCount % width === 0, "byteCount is not divisible by width")
-		const result = []
-		const count = byteCount / width
-		
-		for(let i = 0; i < count; i++) {
-			const value = []
-			
-			for(let j = 0; j < width; j++) {
-				value[j] = this[this.index + j * count + i]
-			}
-			
-			result.push(value)
-		}
-		
-		return result
-	}
 	
-	RBXInterleavedUint32(count, fn) {
-		const result = new Array(count)
-		const byteCount = count * 4
-
+	RBXInterleavedUint32(count, result) {
 		for(let i = 0; i < count; i++) {
-			const value = (this[this.index + i] << 24)
-				+ (this[this.index + (i + count) % byteCount] << 16)
-				+ (this[this.index + (i + count * 2) % byteCount] << 8)
-				+ this[this.index + (i + count * 3) % byteCount]
-
-			result[i] = fn ? fn(value) : value
+			result[i] = (this[this.index + i] << 24)
+				+ (this[this.index + i + count] << 16)
+				+ (this[this.index + i + count * 2] << 8)
+				+ (this[this.index + i + count * 3])
 		}
 
-		this.Jump(byteCount)
+		this.Jump(count * 4)
 		return result
 	}
 
-	RBXInterleavedInt32(count) {
-		return this.RBXInterleavedUint32(count, value =>
-			(value % 2 === 1 ? -(value + 1) / 2 : value / 2)
-		)
+	RBXInterleavedInt32(count, result) {
+		this.RBXInterleavedUint32(count, result)
+		
+		for(let i = 0; i < count; i++) {
+			result[i] = (result[i] % 2 === 1 ? -(result[i] + 1) / 2 : result[i] / 2)
+		}
+		
+		return result
 	}
 
-	RBXInterleavedFloat(count) {
-		return this.RBXInterleavedUint32(count, value =>
-			ByteReader.ParseRBXFloat(value)
-		)
+	RBXInterleavedFloat(count, result) {
+		this.RBXInterleavedUint32(count, result)
+		
+		for(let i = 0; i < count; i++) {
+			result[i] = ByteReader.ParseRBXFloat(result[i])
+		}
+		
+		return result
 	}
 }
 

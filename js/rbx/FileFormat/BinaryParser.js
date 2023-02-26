@@ -31,14 +31,44 @@ const RBXBinaryParser = {
 			groups: new Array(groupsCount),
 			instances: new Array(instancesCount)
 		}
+		
+		this.arrayIndex = 0
+		this.arrays = []
+		
+		for(let i = 0; i < 6; i++) {
+			this.arrays.push(new Array(256))
+		}
+		
+		const startIndex = reader.GetIndex()
+		let bufferSize = 0
+		
+		while(reader.GetRemaining() >= 4) {
+			const chunkType = reader.String(4)
+			const comLength = reader.UInt32LE()
+			const decomLength = reader.UInt32LE()
+			
+			if(comLength > 0) {
+				reader.Jump(4 + comLength)
+				
+				if(decomLength > bufferSize) {
+					bufferSize = decomLength
+				}
+			} else {
+				reader.Jump(4 + decomLength)
+			}
+		}
+		
+		const chunkBuffer = new Uint8Array(bufferSize)
+		reader.SetIndex(startIndex)
 
 		while(reader.GetRemaining() >= 4) {
 			const chunkType = reader.String(4)
-			const chunkData = reader.LZ4()
+			const chunkData = reader.LZ4(chunkBuffer)
 			
 			if(chunkType === "END\0") { break }
 			
 			const chunkReader = new ByteReader(chunkData)
+			this.arrayIndex = 0
 
 			switch(chunkType) {
 			case "INST":
@@ -57,7 +87,8 @@ const RBXBinaryParser = {
 				this.parseMETA(parser, chunkReader)
 				break
 				
-			case "SIGN": break
+			case "SIGN":
+				break
 
 			default:
 				THROW_DEV_WARNING(`[ParseRBXBin] Unknown chunk '${chunkType}'`)
@@ -67,6 +98,8 @@ const RBXBinaryParser = {
 		if(reader.GetRemaining() > 0) {
 			THROW_DEV_WARNING("[ParseRBXBin] Unexpected data after END")
 		}
+		
+		this.arrays = null
 		
 		parser.result.meta = parser.meta
 		return parser.result
@@ -100,7 +133,7 @@ const RBXBinaryParser = {
 		const className = chunk.String(chunk.UInt32LE())
 		chunk.Byte() // isService
 		const instCount = chunk.UInt32LE()
-		const instIds = chunk.RBXInterleavedInt32(instCount)
+		const instIds = chunk.RBXInterleavedInt32(instCount, this.arrays[this.arrayIndex++])
 
 		const group = parser.groups[groupId] = {
 			ClassName: className,
@@ -123,6 +156,7 @@ const RBXBinaryParser = {
 		}
 
 		const instCount = group.Objects.length
+		const values = this.arrays[this.arrayIndex++]
 		
 		let dataType = chunk.Byte()
 		let typeName = this.DataTypes[dataType]
@@ -134,7 +168,6 @@ const RBXBinaryParser = {
 			typeName = this.DataTypes[dataType]
 		}
 		
-		let values = new Array(instCount)
 		let resultTypeName = typeName || "Unknown"
 
 		switch(typeName) {
@@ -150,10 +183,10 @@ const RBXBinaryParser = {
 			}
 			break
 		case "int":
-			values = chunk.RBXInterleavedInt32(instCount)
+			chunk.RBXInterleavedInt32(instCount, values)
 			break
 		case "float":
-			values = chunk.RBXInterleavedFloat(instCount)
+			chunk.RBXInterleavedFloat(instCount, values)
 			break
 		case "double":
 			for(let i = 0; i < instCount; i++) {
@@ -161,18 +194,18 @@ const RBXBinaryParser = {
 			}
 			break
 		case "UDim": {
-			const scale = chunk.RBXInterleavedFloat(instCount)
-			const offset = chunk.RBXInterleavedInt32(instCount)
+			const scale = chunk.RBXInterleavedFloat(instCount, this.arrays[this.arrayIndex++])
+			const offset = chunk.RBXInterleavedInt32(instCount, this.arrays[this.arrayIndex++])
 			for(let i = 0; i < instCount; i++) {
 				values[i] = [scale[i], offset[i]]
 			}
 			break
 		}
 		case "UDim2": {
-			const scaleX = chunk.RBXInterleavedFloat(instCount)
-			const scaleY = chunk.RBXInterleavedFloat(instCount)
-			const offsetX = chunk.RBXInterleavedInt32(instCount)
-			const offsetY = chunk.RBXInterleavedInt32(instCount)
+			const scaleX = chunk.RBXInterleavedFloat(instCount, this.arrays[this.arrayIndex++])
+			const scaleY = chunk.RBXInterleavedFloat(instCount, this.arrays[this.arrayIndex++])
+			const offsetX = chunk.RBXInterleavedInt32(instCount, this.arrays[this.arrayIndex++])
+			const offsetY = chunk.RBXInterleavedInt32(instCount, this.arrays[this.arrayIndex++])
 			for(let i = 0; i < instCount; i++) {
 				values[i] = [
 					[scaleX[i], offsetX[i]],
@@ -215,29 +248,29 @@ const RBXBinaryParser = {
 			}
 			break
 		case "BrickColor":
-			values = chunk.RBXInterleavedUint32(instCount)
+			chunk.RBXInterleavedUint32(instCount, values)
 			break
 		case "Color3": {
-			const red = chunk.RBXInterleavedFloat(instCount)
-			const green = chunk.RBXInterleavedFloat(instCount)
-			const blue = chunk.RBXInterleavedFloat(instCount)
+			const red = chunk.RBXInterleavedFloat(instCount, this.arrays[this.arrayIndex++])
+			const green = chunk.RBXInterleavedFloat(instCount, this.arrays[this.arrayIndex++])
+			const blue = chunk.RBXInterleavedFloat(instCount, this.arrays[this.arrayIndex++])
 			for(let i = 0; i < instCount; i++) {
 				values[i] = [red[i], green[i], blue[i]]
 			}
 			break
 		}
 		case "Vector2": {
-			const vecX = chunk.RBXInterleavedFloat(instCount)
-			const vecY = chunk.RBXInterleavedFloat(instCount)
+			const vecX = chunk.RBXInterleavedFloat(instCount, this.arrays[this.arrayIndex++])
+			const vecY = chunk.RBXInterleavedFloat(instCount, this.arrays[this.arrayIndex++])
 			for(let i = 0; i < instCount; i++) {
 				values[i] = [vecX[i], vecY[i]]
 			}
 			break
 		}
 		case "Vector3": {
-			const vecX = chunk.RBXInterleavedFloat(instCount)
-			const vecY = chunk.RBXInterleavedFloat(instCount)
-			const vecZ = chunk.RBXInterleavedFloat(instCount)
+			const vecX = chunk.RBXInterleavedFloat(instCount, this.arrays[this.arrayIndex++])
+			const vecY = chunk.RBXInterleavedFloat(instCount, this.arrays[this.arrayIndex++])
+			const vecZ = chunk.RBXInterleavedFloat(instCount, this.arrays[this.arrayIndex++])
 			for(let i = 0; i < instCount; i++) {
 				values[i] = [vecX[i], vecY[i], vecZ[i]]
 			}
@@ -270,9 +303,9 @@ const RBXBinaryParser = {
 				}
 			}
 
-			const vecX = chunk.RBXInterleavedFloat(instCount)
-			const vecY = chunk.RBXInterleavedFloat(instCount)
-			const vecZ = chunk.RBXInterleavedFloat(instCount)
+			const vecX = chunk.RBXInterleavedFloat(instCount, this.arrays[this.arrayIndex++])
+			const vecY = chunk.RBXInterleavedFloat(instCount, this.arrays[this.arrayIndex++])
+			const vecZ = chunk.RBXInterleavedFloat(instCount, this.arrays[this.arrayIndex++])
 			for(let i = 0; i < instCount; i++) {
 				values[i][0] = vecX[i]
 				values[i][1] = vecY[i]
@@ -282,10 +315,10 @@ const RBXBinaryParser = {
 		}
 		// case "Quaternion": break // Not used anywhere?
 		case "Enum":
-			values = chunk.RBXInterleavedUint32(instCount)
+			chunk.RBXInterleavedUint32(instCount, values)
 			break
 		case "Instance": {
-			const refIds = chunk.RBXInterleavedInt32(instCount)
+			const refIds = chunk.RBXInterleavedInt32(instCount, this.arrays[this.arrayIndex++])
 
 			let refId = 0
 			for(let i = 0; i < instCount; i++) {
@@ -334,10 +367,10 @@ const RBXBinaryParser = {
 			}
 			break
 		case "Rect2D": {
-			const x0 = chunk.RBXInterleavedFloat(instCount)
-			const y0 = chunk.RBXInterleavedFloat(instCount)
-			const x1 = chunk.RBXInterleavedFloat(instCount)
-			const y1 = chunk.RBXInterleavedFloat(instCount)
+			const x0 = chunk.RBXInterleavedFloat(instCount, this.arrays[this.arrayIndex++])
+			const y0 = chunk.RBXInterleavedFloat(instCount, this.arrays[this.arrayIndex++])
+			const x1 = chunk.RBXInterleavedFloat(instCount, this.arrays[this.arrayIndex++])
+			const y1 = chunk.RBXInterleavedFloat(instCount, this.arrays[this.arrayIndex++])
 
 			for(let i = 0; i < instCount; i++) {
 				values[i] = [x0[i], y0[i], x1[i], y1[i]]
@@ -405,7 +438,7 @@ const RBXBinaryParser = {
 			break
 		}
 		case "SharedString": {
-			const indices = chunk.RBXInterleavedUint32(instCount)
+			const indices = chunk.RBXInterleavedUint32(instCount, this.arrays[this.arrayIndex++])
 
 			for(let i = 0; i < instCount; i++) {
 				values[i] = parser.sharedStrings[indices[i]].value
@@ -413,12 +446,18 @@ const RBXBinaryParser = {
 			break
 		}
 		case "UniqueId": {
-			const bytes = chunk.RBXInterleaved(chunk.GetRemaining(), 16)
+			const bytes = chunk.Array(instCount * 16)
 			
 			for(let i = 0; i < instCount; i++) {
-				values[i] = bytes[i].map(x => ("0" + x.toString(16)).slice(-2)).join("")
+				let result = ""
+				
+				for(let j = 0; j < 16; j++) {
+					const byte = bytes[j * instCount + i]
+					result += ("0" + byte.toString(16)).slice(-2)
+				}
+				
+				values[i] = result
 			}
-			
 			break
 		}
 		default:
@@ -448,22 +487,22 @@ const RBXBinaryParser = {
 			}
 		}
 		
-		for(const [index, value] of Object.entries(values)) {
+		for(let index = 0; index < instCount; index++) {
 			if(isOptional) {
 				if(chunk.Byte() === 0) {
 					continue
 				}
 			}
 			
-			group.Objects[index].setProperty(prop, value, resultTypeName)
+			group.Objects[index].setProperty(prop, values[index], resultTypeName)
 		}
 	},
 
 	parsePRNT(parser, chunk) {
 		chunk.Byte()
 		const parentCount = chunk.UInt32LE()
-		const childIds = chunk.RBXInterleavedInt32(parentCount)
-		const parentIds = chunk.RBXInterleavedInt32(parentCount)
+		const childIds = chunk.RBXInterleavedInt32(parentCount, this.arrays[this.arrayIndex++])
+		const parentIds = chunk.RBXInterleavedInt32(parentCount, this.arrays[this.arrayIndex++])
 
 		let childId = 0
 		let parentId = 0
