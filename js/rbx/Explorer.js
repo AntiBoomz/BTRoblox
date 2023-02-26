@@ -139,12 +139,21 @@ const Explorer = (() => {
 		}
 
 		closeSourceViewer() {
+			const list0 = this.element.$find(".btr-explorer-list")
+			const list1 = this.element.$find(".btr-properties-list")
+			
+			const top0 = list0.scrollTop
+			const top1 = list1.scrollTop
+			
 			if(this.originalParent && document.body.contains(this.originalParent)) {
 				this.originalParent.append(this.element)
 			} else {
 				this.element.remove()
 			}
 
+			list0.scrollTop = top0
+			list1.scrollTop = top1
+			
 			this.originalParent = null
 			this.selectedSourceViewerTab = null
 
@@ -255,11 +264,20 @@ const Explorer = (() => {
 
 				document.body.append(this.sourceViewerModal)
 				document.body.style.overflow = "hidden"
+				
+				this.element.$find(".btr-properties").classList.add("keepopen")
+				
+				const list0 = this.element.$find(".btr-explorer-list")
+				const list1 = this.element.$find(".btr-properties-list")
+				
+				const top0 = list0.scrollTop
+				const top1 = list1.scrollTop
 
 				this.originalParent = this.element.parentNode
 				this.sourceViewerModal.$find(".btr-sourceviewer-explorer").append(this.element)
-
-				this.element.$find(".btr-properties").classList.add("keepopen")
+				
+				list0.scrollTop = top0
+				list1.scrollTop = top1
 			}
 
 			let tab = this.sourceViewerTabs.find(x => x.inst === inst && x.propName === propName)
