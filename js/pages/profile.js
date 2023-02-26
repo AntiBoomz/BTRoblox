@@ -646,8 +646,7 @@ pageInit.profile = userId => {
 
 			const lastIndex = page * pageSize
 			while(playerBadges.length < lastIndex && hasMorePages) {
-				const url = `https://badges.roblox.com/v1/users/${userId}/badges?sortOrder=Desc&limit=100&cursor=${nextPageCursor || ""}`
-				const badges = await $.fetch(url).then(resp => resp.json())
+				const badges = await RobloxApi.badges.getBadges(userId, "Desc", 100, nextPageCursor || "")
 
 				nextPageCursor = badges.nextPageCursor
 				hasMorePages = !!nextPageCursor

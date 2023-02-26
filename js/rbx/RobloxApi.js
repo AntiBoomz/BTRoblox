@@ -224,6 +224,10 @@ const RobloxApi = {
 		)
 	},
 	badges: {
+		getBadges: backgroundCall((userId, sortOrder, limit, cursor) =>
+			backgroundFetch(`https://badges.roblox.com/v1/users/${userId}/badges?sortOrder=${sortOrder}&limit=${limit}&cursor=${cursor || ""}`)
+				.then(res => res.json())
+		),
 		getBadgeDetails: backgroundCall(badgeId =>
 			backgroundFetch(`https://badges.roblox.com/v1/badges/${badgeId}`)
 				.then(res => res.json())
