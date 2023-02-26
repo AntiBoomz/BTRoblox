@@ -180,6 +180,10 @@
 					
 					getGroupThumbUrl(groupId).then(async thumbUrl => {
 						if(await isNotifVisible(notifId)) { return }
+						if(shoutCache.groups[groupId] !== shoutEntry || !shoutEntry.visible) { return }
+						
+						delete shoutEntry.visible
+						saveShoutCache()
 						
 						const params = {
 							type: "basic",
@@ -238,25 +242,30 @@
 		})
 	}
 	
-	let checkInterval
 	const onUpdate = () => {
-		const shouldCheck = SETTINGS.get("groups.shoutAlerts")
-
-		if(shouldCheck) {
-			chrome.alarms.create("ShoutCheck", { periodInMinutes: 1 })
-
-			clearInterval(checkInterval)
-			checkInterval = setInterval(checkForGroupShouts, 30e3)
-
-			checkForGroupShouts()
-		} else {
-			chrome.alarms.clearAll()
-			clearInterval(checkInterval)
-		}
+		chrome.alarms.clearAll()
+		
+		SETTINGS.load(() => {
+			const shouldCheck = SETTINGS.get("groups.shoutAlerts")
+	
+			if(shouldCheck) {
+				chrome.alarms.create("GroupShoutCheck", { periodInMinutes: 0.5 })
+				checkForGroupShouts()
+			}
+		})
 	}
-
-	chrome.alarms.onAlarm.addListener(() => {})
-	chrome.runtime.onInstalled.addListener(() => chrome.alarms.clearAll())
+	
+	chrome.alarms.get("GroupShoutCheck", alarm => !alarm && onUpdate())
+	SETTINGS.onChange("groups.shoutAlerts", onUpdate)
+	
+	chrome.runtime.onInstalled.addListener(onUpdate)
+	chrome.runtime.onStartup.addListener(onUpdate)
+	
+	chrome.alarms.onAlarm.addListener(alarm => {
+		if(alarm.name === "GroupShoutCheck") {
+			checkForGroupShouts()
+		}
+	})
 	
 	chrome.notifications.onClosed.addListener(async (notifId, byUser) => {
 		if(notifId.startsWith("groupshout-")) {
@@ -266,10 +275,10 @@
 			const shoutEntry = shoutCache.groups[+id]
 			
 			if(shoutEntry && shoutEntry.hash === hash) {
-				delete shoutEntry.visible
-				if(IS_CHROME && byUser) { shoutEntry.interacted = true }
-
-				saveShoutCache()
+				if(IS_CHROME && byUser) {
+					shoutEntry.interacted = true
+					saveShoutCache()
+				}
 			}
 		}
 	})
@@ -282,7 +291,6 @@
 			const shoutEntry = shoutCache.groups[+id]
 			
 			if(shoutEntry && shoutEntry.hash === hash) {
-				delete shoutEntry.visible
 				shoutEntry.interacted = true
 				saveShoutCache()
 			}
@@ -291,9 +299,6 @@
 			chrome.notifications.clear(notifId)
 		}
 	})
-
-	SETTINGS.load(onUpdate)
-	SETTINGS.onChange("groups.shoutAlerts", onUpdate)
 
 	MESSAGING.listen({
 		async getRecentShouts(data, respond) {
