@@ -748,7 +748,7 @@ pageInit.common = () => {
 				})
 			}
 			
-			return groupIconRequestPromise.then(data => data.find(x => x.targetId === groupId))
+			return groupIconRequestPromise.then(json => json.data.find(x => x.targetId === groupId))
 		}
 		
 		new MutationObserver(() => {

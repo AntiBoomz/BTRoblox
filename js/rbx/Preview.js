@@ -538,8 +538,8 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		</div>`
 		
 		loggedInUserPromise.then(userId => {
-			RobloxApi.thumbnails.getAvatarThumbnails([userId]).then(thumbs => {
-				buttons.$find(`.btr-body-outfit-btn[data-outfit="current"] img`).src = thumbs[0].imageUrl
+			RobloxApi.thumbnails.getAvatarThumbnails([userId]).then(json => {
+				buttons.$find(`.btr-body-outfit-btn[data-outfit="current"] img`).src = json.data[0].imageUrl
 			})
 		})
 		

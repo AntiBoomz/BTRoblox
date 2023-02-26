@@ -256,7 +256,7 @@ const RobloxApi = {
 		getUserBundles: backgroundCall((userId, urlParams) =>
 			backgroundFetch(`https://catalog.roblox.com/v1/users/${userId}/bundles?${new URLSearchParams(urlParams).toString()}`, {
 				credentials: "include"
-			}).then(res => assert(res.ok, "Request failed") && res.json())
+			}).then(res => res.json())
 		)
 	},
 	develop: {
@@ -275,7 +275,7 @@ const RobloxApi = {
 	friends: {
 		getFriends: backgroundCall(userId =>
 			backgroundFetch(`https://friends.roblox.com/v1/users/${userId}/friends`)
-				.then(async res => (await res.json()).data)
+				.then(res => res.json())
 		)
 	},
 	gamepasses: {
@@ -294,7 +294,7 @@ const RobloxApi = {
 		getUserInventory: backgroundCall((userId, urlParams) =>
 			backgroundFetch(`https://inventory.roblox.com/v2/users/${userId}/inventory?${new URLSearchParams(urlParams).toString()}`, {
 				credentials: "include"
-			}).then(res => assert(res.ok, "Request failed") && res.json())
+			}).then(res => res.json())
 		),
 		getAssetOwners: backgroundCall((assetId, limit, cursor) =>
 			backgroundFetch(`https://inventory.roblox.com/v2/assets/${assetId}/owners?limit=${limit}&cursor=${cursor || ""}`, {
@@ -312,7 +312,7 @@ const RobloxApi = {
 					const errorCode = result?.errors?.[0]?.code
 					
 					if(res.ok || errorCode === 7 || errorCode === 8) {
-						// adding returns 7 if already in collection, delte returns 8 if not in collection
+						// adding returns 7 if already in collection, delete returns 8 if not in collection
 						return { inCollection: addToCollection }
 					}
 					
@@ -331,7 +331,7 @@ const RobloxApi = {
 					"Content-Type": "application/json"
 				},
 				body: JSON.stringify({ userIds })
-			}).then(async res => (await res.json()).userPresences)
+			}).then(res => res.json())
 		),
 		getLastOnline: backgroundCall(userIds =>
 			backgroundFetch(`https://presence.roblox.com/v1/presence/last-online`, {
@@ -341,26 +341,26 @@ const RobloxApi = {
 					"Content-Type": "application/json"
 				},
 				body: JSON.stringify({ userIds })
-			}).then(async res => (await res.json()).lastOnlineTimestamps)
+			}).then(res => res.json())
 		)
 	},
 	thumbnails: {
 		getAvatarHeadshots: backgroundCall((userIds, size = "150x150") =>
 			backgroundFetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userIds.join(",")}&size=${size}&format=Png`)
-				.then(async res => (await res.json()).data)
+				.then(res => res.json())
 		),
 		getAvatarThumbnails: backgroundCall((userIds, size = "150x150") =>
 			backgroundFetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userIds.join(",")}&size=${size}&format=Png`)
-				.then(async res => (await res.json()).data)
+				.then(res => res.json())
 		),
 		getAssetThumbnails: backgroundCall((assetIds, size) =>
 			backgroundFetch(`https://thumbnails.roblox.com/v1/assets?assetIds=${assetIds.join(",")}&size=${size}&format=Png`)
-				.then(async res => (await res.json()).data)
+				.then(res => res.json())
 		),
 		getGroupIcons: backgroundCall((groupIds, size = "150x150", isCircular = false) =>
 			backgroundFetch(`https://thumbnails.roblox.com/v1/groups/icons?groupIds=${groupIds.join(",")}&size=${size}&format=Png&isCircular=${isCircular}`)
-				.then(async res => (await res.json()).data)
-		)
+				.then(res => res.json())
+		),
 	},
 	users: {
 		getUserDetails: backgroundCall(userIds =>

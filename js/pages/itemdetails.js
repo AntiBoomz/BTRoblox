@@ -650,8 +650,8 @@ pageInit.itemdetails = (category, assetIdString) => {
 				</div>`
 
 				if(userId) {
-					RobloxApi.thumbnails.getAvatarHeadshots([userId]).then(thumbs => {
-						elem.$find(".avatar-card-image").src = thumbs[0].imageUrl
+					RobloxApi.thumbnails.getAvatarHeadshots([userId]).then(json => {
+						elem.$find(".avatar-card-image").src = json.data[0].imageUrl
 					})
 				} else {
 					elem.$findAll("a").forEach(x => x.removeAttribute("href"))

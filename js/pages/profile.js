@@ -232,12 +232,12 @@ pageInit.profile = userId => {
 					}
 					
 					RobloxApi.presence.getLastOnline([userId]).then(json => {
-						if(!json?.length) {
+						if(!json?.lastOnlineTimestamps?.length) {
 							label.$find(".text-lead").textContent = "Failed"
 							return
 						}
 						
-						const lastOnline = new Date(json[0].lastOnline)
+						const lastOnline = new Date(json.lastOnlineTimestamps[0].lastOnline)
 						
 						label.$find(".text-lead").textContent = `${lastOnline.$since()}`
 						label.$find(".text-lead").title = lastOnline.$format("MMM D, YYYY | hh:mm A (T)")
@@ -302,7 +302,7 @@ pageInit.profile = userId => {
 				
 				thumbnailRequest.placeIds.push(placeId)
 				
-				return thumbnailRequest.promise.then(json => json.find(x => +x.targetId === +placeId))
+				return thumbnailRequest.promise.then(json => json.data.find(x => +x.targetId === +placeId))
 			}
 			
 			let detailsRequest

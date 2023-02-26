@@ -51,10 +51,10 @@ const btrFastSearch = {
 							const userIds = thumbnailsToRequest.splice(0, thumbnailsToRequest.length)
 							thumbnailPromise = null
 							
-							RobloxApi.thumbnails.getAvatarHeadshots(userIds).then(thumbs => {
+							RobloxApi.thumbnails.getAvatarHeadshots(userIds).then(json => {
 								const result = {}
 								
-								for(const thumb of thumbs) {
+								for(const thumb of json.data) {
 									if(thumb.imageUrl) {
 										result[thumb.targetId] = thumb.imageUrl
 									}
@@ -102,10 +102,10 @@ const btrFastSearch = {
 
 						lastPresenceRequest = Date.now()
 						
-						RobloxApi.presence.getPresence(userIds).then(presences => {
+						RobloxApi.presence.getPresence(userIds).then(json => {
 							const result = {}
 							
-							for(const info of presences) {
+							for(const info of json.userPresences) {
 								result[info.userId] = info
 							}
 							
@@ -409,14 +409,14 @@ const btrFastSearch = {
 				friendsLoaded = true
 
 				loggedInUserPromise.then(userId => {
-					RobloxApi.friends.getFriends(userId).then(friendsArray => {
+					RobloxApi.friends.getFriends(userId).then(json => {
 						Object.entries(userCache).filter(x => x[1].IsFriend).forEach(([name]) => {
 							delete userCache[name]
 						})
 
 						const friendsCache = {}
 						
-						for(const friend of friendsArray) {
+						for(const friend of json.data) {
 							const cacheEntry = {
 								name: friend.name,
 								displayName: friend.displayName,
