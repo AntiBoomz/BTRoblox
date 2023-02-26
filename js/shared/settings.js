@@ -105,7 +105,7 @@ Object.values(DEFAULT_SETTINGS).forEach(list => {
 
 const SETTINGS = {
 	_onChangeListeners: [],
-	_loadPromise: new SyncPromise(),
+	_loadPromise: new Promise(),
 	
 	firstLoad: false,
 	loaded: false,
@@ -142,7 +142,7 @@ const SETTINGS = {
 		
 		if(!this.loaded) {
 			this.loaded = true
-			this._loadPromise.resolve(this.loadedSettings)
+			this._loadPromise.$resolve(this.loadedSettings)
 		}
 	},
 

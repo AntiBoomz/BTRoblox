@@ -46,7 +46,7 @@ const btrFastSearch = {
 				thumbnailsToRequest.push(userId)
 	
 				if(!thumbnailPromise) {
-					thumbnailPromise = new SyncPromise(resolve => {
+					thumbnailPromise = new Promise(resolve => {
 						setTimeout(() => {
 							const userIds = thumbnailsToRequest.splice(0, thumbnailsToRequest.length)
 							thumbnailPromise = null
@@ -77,7 +77,7 @@ const btrFastSearch = {
 						return null
 					}
 					
-					return new SyncPromise(resolve => setTimeout(resolve, 500))
+					return new Promise(resolve => setTimeout(resolve, 500))
 						.then(() => request(userId).then(checkForThumb))
 				}
 
@@ -95,7 +95,7 @@ const btrFastSearch = {
 			presencesToRequest.push(userId)
 
 			if(!presencePromise) {
-				presencePromise = new SyncPromise(resolve => {
+				presencePromise = new Promise(resolve => {
 					setTimeout(() => {
 						const userIds = presencesToRequest.splice(0, presencesToRequest.length)
 						presencePromise = null

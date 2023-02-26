@@ -143,7 +143,7 @@ const OwnerAssetCache = {
 				}
 				
 				if(timeUntilPopulate <= 0) {
-					operation.promise = new SyncPromise(async resolve => {
+					operation.promise = new Promise(async resolve => {
 						const removedSet = new Set(next.list)
 						let cursor = ""
 			
@@ -191,7 +191,7 @@ const OwnerAssetCache = {
 						resolve(true)
 					})
 				} else {
-					operation.promise = new SyncPromise(async resolve => {
+					operation.promise = new Promise(async resolve => {
 						try {
 							const [newItems] = await this.request(next, false)
 							
@@ -220,7 +220,7 @@ const OwnerAssetCache = {
 			promises.push(operation.promise)
 		}
 
-		return SyncPromise.all(promises)
+		return Promise.all(promises)
 	},
 
 	init() {

@@ -216,7 +216,7 @@ const btrSourceViewer = (() => {
 
 		while(true) {
 			if(performance.now() >= nextYield) {
-				await new SyncPromise(resolve => requestAnimationFrame(resolve))
+				await new Promise(resolve => requestAnimationFrame(resolve))
 				nextYield = performance.now() + 10
 			}
 

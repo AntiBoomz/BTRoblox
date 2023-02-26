@@ -436,7 +436,7 @@ const RBXAvatar = (() => {
 			this.animator = new RBXAnimator()
 			this.appearance = new RBXAppearance()
 
-			this.baseLoadedPromise = new SyncPromise()
+			this.baseLoadedPromise = new Promise()
 			
 			this.activeMaterials = []
 			this.sortedJointsArray = []
@@ -587,7 +587,7 @@ const RBXAvatar = (() => {
 				this.setBodyColors(this.bodyColors)
 			}
 			
-			SyncPromise.all(loaders).then(() => this.baseLoadedPromise.resolve())
+			Promise.all(loaders).then(() => this.baseLoadedPromise.$resolve())
 		}
 
 		async waitForAppearance() {

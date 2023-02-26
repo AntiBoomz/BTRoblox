@@ -459,7 +459,7 @@ const useNativeAudioPlayer = (mediaPlayer, bigPlayer) => {
 		
 		audio.$on("error", () => {
 			fetch(mediaUrl).then(async res => {
-				const toDataURL = blob => new SyncPromise((resolve, reject) => {
+				const toDataURL = blob => new Promise((resolve, reject) => {
 					const fileReader = new FileReader()
 					fileReader.onload = ev => resolve(ev.target.result)
 					fileReader.onerror = err => reject(err)
@@ -516,7 +516,7 @@ pageInit.common = () => {
 		}
 	}).$then()
 
-	loggedInUserPromise = new SyncPromise(resolve => {
+	loggedInUserPromise = new Promise(resolve => {
 		headWatcher.$watch(`meta[name="user-data"]`, meta => {
 			const userId = +meta.dataset.userid
 			loggedInUser = Number.isSafeInteger(userId) ? userId : -1

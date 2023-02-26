@@ -144,7 +144,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 		const details = await RobloxApi.catalog.getBundleDetails(assetId)
 		bundleType = details.bundleType
 		
-		const outfitPromise = new SyncPromise(resolve => {
+		const outfitPromise = new Promise(resolve => {
 			const promises = []
 			
 			for(const item of details.items) {
@@ -180,7 +180,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 }
 
 const validAssetUrlCache = {}
-const getCurrentValidAssetUrl = async (assetId, assetTypeId) => validAssetUrlCache[assetId] = validAssetUrlCache[assetId] || new SyncPromise(resolve => {
+const getCurrentValidAssetUrl = async (assetId, assetTypeId) => validAssetUrlCache[assetId] = validAssetUrlCache[assetId] || new Promise(resolve => {
 	if(InvalidDownloadableAssetTypeIds.includes(assetTypeId)) {
 		return resolve(null) // This asset is not a downloadable one (badge, gamepasses)
 	}
@@ -662,7 +662,7 @@ pageInit.itemdetails = (category, assetIdString) => {
 
 			const getNames = request => {
 				const userIds = Object.keys(request)
-				if(!userIds.length) { return SyncPromise.resolve() }
+				if(!userIds.length) { return Promise.resolve() }
 
 				return RobloxApi.users.getUserDetails(userIds).then(json => {
 					for(const user of json.data) {
@@ -776,7 +776,7 @@ pageInit.itemdetails = (category, assetIdString) => {
 			seeMore.$on("click", loadOwners)
 		}
 
-		const itemIdPromise = new SyncPromise(resolve => {
+		const itemIdPromise = new Promise(resolve => {
 			if(category === "bundles") {
 				document.$watch(
 					".bundle-items .item-card-link[href]",

@@ -29,7 +29,7 @@ const RBXPreview = (() => {
 		if(!outfitCache[id]) {
 			const outfitPromise = RobloxApi.avatar.getOutfitDetails(id)
 
-			return outfitCache[id] = SyncPromise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
+			return outfitCache[id] = Promise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
 				data = { ...data }
 
 				data.scales = data.scale
@@ -47,7 +47,7 @@ const RBXPreview = (() => {
 		if(!outfitCache["user" + userId]) {
 			const outfitPromise = RobloxApi.avatar.getUserAvatar(userId)
 
-			return outfitCache["user" + userId] = SyncPromise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
+			return outfitCache["user" + userId] = Promise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
 				data = { ...data }
 				data.bodyColors = solveBodyColors(data.bodyColors, rules)
 				return [rules, data]
@@ -61,7 +61,7 @@ const RBXPreview = (() => {
 		if(!outfitCache.default) {
 			const outfitPromise = RobloxApi.avatar.getCurrentAvatar()
 
-			return outfitCache.default = SyncPromise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
+			return outfitCache.default = Promise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
 				data = { ...data }
 				data.bodyColors = solveBodyColors(data.bodyColors, rules)
 				return [rules, data]
@@ -272,10 +272,10 @@ const RBXPreview = (() => {
 
 		waitForOutfit() {
 			if(this.outfitLoaded) {
-				return SyncPromise.resolve()
+				return Promise.resolve()
 			}
 
-			return new SyncPromise(resolve => this.once("appearanceLoaded", () => resolve()))
+			return new Promise(resolve => this.once("appearanceLoaded", () => resolve()))
 		}
 		
 		waitForAppearance() {
@@ -297,10 +297,10 @@ const RBXPreview = (() => {
 			}
 
 			if(!this.playingAnim && this.loadingAnim) {
-				promises.push(new SyncPromise(resolve => this.once("animationLoaded", () => resolve())))
+				promises.push(new Promise(resolve => this.once("animationLoaded", () => resolve())))
 			}
 
-			return SyncPromise.all(promises)
+			return Promise.all(promises)
 		}
 
 		addAsset(assetId, assetTypeId, meta = null) {
@@ -1258,7 +1258,7 @@ const HoverPreview = (() => {
 						}
 					}
 					
-					addItems(await SyncPromise.all(promises))
+					addItems(await Promise.all(promises))
 				} else {
 					const info = await RobloxApi.economy.getAssetDetails(assetId)
 					

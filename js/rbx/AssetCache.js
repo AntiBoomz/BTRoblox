@@ -98,8 +98,8 @@ const AssetCache = (() => {
 				fileCacheKey += "@" + params.format
 			}
 			
-			const cachePromise = cache[cacheKey] = cache[cacheKey] || new SyncPromise(cacheResolve => {
-				const filePromise = fileCache[fileCacheKey] = fileCache[fileCacheKey] || new SyncPromise((fileResolve, fileReject) => {
+			const cachePromise = cache[cacheKey] = cache[cacheKey] || new Promise(cacheResolve => {
+				const filePromise = fileCache[fileCacheKey] = fileCache[fileCacheKey] || new Promise((fileResolve, fileReject) => {
 					RobloxApi.assetdelivery.requestAssetV1(urlParams, params).then(buffer => {
 						if(buffer) {
 							fileResolve(buffer)
@@ -144,7 +144,7 @@ const AssetCache = (() => {
 		}),
 		loadModel: createMethod(buffer => RBXParser.parseModel(buffer)),
 		loadMesh: createMethod(buffer => RBXParser.parseMesh(buffer)),
-		loadImage: createMethod((buffer, request) => new SyncPromise((resolve, reject) => {
+		loadImage: createMethod((buffer, request) => new Promise((resolve, reject) => {
 			const src = URL.createObjectURL(new Blob([new Uint8Array(buffer)], { type: "image/png" }))
 			
 			const image = new Image()

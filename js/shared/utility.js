@@ -267,7 +267,7 @@ const $ = (() => {
 						catch(ex) { console.error(ex) }
 					})
 				} else {
-					const promises = selectors.map(selector => new SyncPromise(resolve => addWatch(target, selector, filter, props, resolve)))
+					const promises = selectors.map(selector => new Promise(resolve => addWatch(target, selector, filter, props, resolve)))
 
 					finishPromise = Promise.all(promises).then(elems => {
 						if(callback) {
@@ -497,7 +497,7 @@ const $ = (() => {
 				init.xsrf = cachedXsrfToken || true
 			}
 
-			return new SyncPromise((resolve, reject) => {
+			return new Promise((resolve, reject) => {
 				MESSAGING.send("fetch", [url, init], async respData => {
 					if(!respData.success) {
 						console.error("$.fetch Error:", respData.error)
@@ -663,202 +663,17 @@ const $ = (() => {
 
 //
 
-
-class SyncPromise extends Promise {
-	static resolve(value) {
-		return new SyncPromise(resolve => resolve(value))
-	}
-
-	static reject(value) {
-		return new SyncPromise((_, reject) => reject(value))
-	}
-
-	static race(list) {
-		return new SyncPromise((resolve, reject) => {
-			list.forEach(value => {
-				if(value instanceof Promise) {
-					value.then(
-						value2 => resolve(value2),
-						value2 => reject(value2)
-					)
-				} else {
-					resolve(value)
-				}
-			})
-		})
-	}
-
-	static all(list) {
-		return new SyncPromise((resolve, reject) => {
-			const result = new Array(list.length)
-			let promisesLeft = list.length
-
-			if(!promisesLeft) {
-				return resolve(result)
-			}
-
-			const finish = (index, value) => {
-				if(index === null) {
-					return reject(value)
-				}
-
-				result[index] = value
-				if(--promisesLeft === 0) {
-					resolve(result)
-				}
-			}
-
-			list.forEach((value, index) => {
-				if(value instanceof Promise) {
-					value.then(
-						value2 => finish(index, value2),
-						value2 => finish(null, value2)
-					)
-				} else {
-					finish(index, value)
-				}
-			})
-		})
-	}
-
-	static allSettled(list) {
-		return new SyncPromise(resolve => {
-			const result = new Array(list.length)
-			let promisesLeft = list.length
-
-			if(!promisesLeft) {
-				return resolve(result)
-			}
-
-			const finish = (index, value) => {
-				result[index] = value
-
-				if(--promisesLeft === 0) {
-					resolve(result)
-				}
-			}
-
-			list.forEach((value, index) => {
-				if(value instanceof Promise) {
-					value.then(
-						value2 => finish(index, { status: "fulfilled", value: value2 }),
-						value2 => finish(index, { status: "rejected", reason: value2 })
-					)
-				} else {
-					finish(index, { status: "fulfilled", value })
-				}
-			})
-		})
-	}
-
+Promise = class extends Promise {
 	constructor(fn) {
-		let res
-		let rej
-
-		super((resolve, reject) => {
-			res = resolve
-			rej = reject
+		let res, rej
+		
+		super((...args) => {
+			[res, rej] = args
+			if(fn) { fn(...args) }
 		})
-
-		this._resolveAsync = res
-		this._rejectAsync = rej
-
-		this._intState = "pending"
-		this._intOnFinish = []
-
-		if(fn) {
-			try { fn(value => { this.resolve(value) }, reason => { this.reject(reason) }) }
-			catch(ex) { this.reject(ex) }
-		}
-	}
-
-	_intThen(promise, onresolve, onreject) {
-		if(this._intState !== "resolved" && this._intState !== "rejected") {
-			this._intOnFinish.push([promise, onresolve, onreject])
-			return
-		}
-
-		try {
-			if(this._intState === "resolved") {
-				promise.resolve(onresolve ? onresolve(this._intValue) : this._intValue)
-			} else {
-				if(onreject) {
-					promise.resolve(onreject(this._intReason))
-				} else {
-					promise.reject(this._intReason)
-				}
-			}
-		}
-		catch(ex) {
-			promise.reject(ex)
-		}
-	}
-
-	_intResolve(value) {
-		if(this._intState === "resolved" || this._intState === "rejected") {
-			return
-		}
-
-		this._intState = "resolved"
-		this._intValue = value
-
-		this._resolveAsync(value)
-		delete this._resolveAsync
-		delete this._rejectAsync
-
-		this._intOnFinish.forEach(args => this._intThen(...args))
-		delete this._intOnFinish
-	}
-
-	_intReject(reason) {
-		if(this._intState === "resolved" || this._intState === "rejected") {
-			return
-		}
-
-		this._intState = "rejected"
-		this._intReason = reason
-
-		this._rejectAsync(reason)
-		delete this._resolveAsync
-		delete this._rejectAsync
-
-		this._intOnFinish.forEach(args => this._intThen(...args))
-		delete this._intOnFinish
-	}
-
-
-	resolve(value) {
-		if(this._intState === "pending") {
-			this._intState = "waiting"
-
-			if(value instanceof Promise) {
-				value.then(x => this._intResolve(x), x => this._intReject(x))
-			} else {
-				this._intResolve(value)
-			}
-		}
-	}
-
-	reject(reason) {
-		if(this._intState === "pending") {
-			this._intState = "waiting"
-			this._intReject(reason)
-		}
-	}
-
-	then(onresolve, onreject) {
-		const promise = new SyncPromise()
-		this._intThen(promise, onresolve, onreject)
-		return promise
-	}
-
-	catch(onreject) {
-		return this.then(null, onreject)
-	}
-
-	finally(onfinally) {
-		this.then(() => onfinally(), () => onfinally())
-		return this
+		
+		this.$resolve = res
+		this.$reject = rej
 	}
 }
 

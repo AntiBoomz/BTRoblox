@@ -63,7 +63,7 @@ const RBXAppearance = (() => {
 					request: request,
 					loaded: false,
 					loading: false,
-					loadPromise: new SyncPromise()
+					loadPromise: new Promise()
 				}
 			}
 			
@@ -86,7 +86,7 @@ const RBXAppearance = (() => {
 				state.loaded = true
 
 				this.trigger("update")
-				state.loadPromise.resolve()
+				state.loadPromise.$resolve()
 			}
 			
 			AssetCache.loadModel(this.id, state.request, model => {
@@ -166,7 +166,7 @@ const RBXAppearance = (() => {
 					
 				}
 
-				SyncPromise.allSettled(this.loaders).then(() => finish(true))
+				Promise.allSettled(this.loaders).then(() => finish(true))
 				delete this.loaders
 			})
 

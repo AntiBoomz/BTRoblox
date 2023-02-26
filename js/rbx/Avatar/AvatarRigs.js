@@ -78,7 +78,7 @@ const RBXAvatarRigs = (() => {
 				return this.loadPromise
 			}
 
-			return this.loadPromise = this.loadPromise || new SyncPromise(resolve => {
+			return this.loadPromise = this.loadPromise || new Promise(resolve => {
 				const path = getURL("res/previewer/characterModels.rbxm")
 
 				AssetCache.loadModel(true, path, model => {

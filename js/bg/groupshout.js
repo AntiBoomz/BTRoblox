@@ -6,7 +6,7 @@
 	let checkingForGroupShouts = false
 	let lastCheckedForGroups = 0
 	
-	const getShoutCache = $.onceFn(() => new SyncPromise(resolve => {
+	const getShoutCache = $.onceFn(() => new Promise(resolve => {
 		const result = { version: 9, groups: {} }
 
 		STORAGE.get("shoutCache", data => {
@@ -33,7 +33,7 @@
 		}, 1000)
 	}
 	
-	const getShoutFilters = $.onceFn(() => new SyncPromise(resolve => {
+	const getShoutFilters = $.onceFn(() => new Promise(resolve => {
 		STORAGE.get("shoutFilters", data => {
 			if("shoutFilters" in data) {
 				resolve(data.shoutFilters)
@@ -81,7 +81,7 @@
 	let gettingGroupThumbs = false
 	let groupThumbQueue = {}
 	const getGroupThumbUrl = groupId => {
-		const result = groupThumbQueue[groupId] = groupThumbQueue[groupId] ?? new SyncPromise()
+		const result = groupThumbQueue[groupId] = groupThumbQueue[groupId] ?? new Promise()
 		
 		if(!gettingGroupThumbs) {
 			gettingGroupThumbs = true
@@ -98,13 +98,13 @@
 					if(json) {
 						for(const item of json.data) {
 							if(item.state === "Completed" && item.imageUrl) {
-								queue[item.targetId]?.resolve(item.imageUrl)
+								queue[item.targetId]?.$resolve(item.imageUrl)
 							}
 						}
 					}
 					
 					for(const promise of Object.values(queue)) {
-						promise.resolve(null)
+						promise.$resolve(null)
 					}
 				}
 

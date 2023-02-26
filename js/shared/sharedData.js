@@ -1,7 +1,7 @@
 "use strict"
 
 const SHARED_DATA = {
-	_loadPromise: new SyncPromise(),
+	_loadPromise: new Promise(),
 	_loaded: false,
 	
 	data: { version: 1 },
@@ -36,7 +36,7 @@ const SHARED_DATA = {
 				matches: details.matches,
 				excludeMatches: details.exclude_matches,
 				js: [{
-					code: `const SHARED_DATA_PAYLOAD = ${dataString}; if(typeof SHARED_DATA !== "undefined" && SHARED_DATA.payloadPromise) { SHARED_DATA.payloadPromise.resolve() }`
+					code: `const SHARED_DATA_PAYLOAD = ${dataString}; if(typeof SHARED_DATA !== "undefined" && SHARED_DATA.payloadPromise) { SHARED_DATA.payloadPromise.$resolve() }`
 				}],
 				runAt: details.run_at
 			}).then(payloadScript => {
@@ -77,7 +77,7 @@ const SHARED_DATA = {
 		this.updateData()
 		
 		this._loaded = true
-		this._loadPromise.resolve()
+		this._loadPromise.$resolve()
 	},
 	
 	async initContentScript() {
@@ -93,20 +93,17 @@ const SHARED_DATA = {
 				console.log("getting settings took", b - a)
 				Object.assign(this.data, JSON.parse(new URL(request.responseURL).searchParams.get("data")))
 			} catch(ex) {}
-			
-			this._loaded = true
-			this._loadPromise.resolve()
 		} else {
 			if(typeof SHARED_DATA_PAYLOAD === "undefined") {
-				this.payloadPromise = Promise.$defer()
+				this.payloadPromise = new Promise()
 				await this.payloadPromise
 			}
 			
 			Object.assign(this.data, SHARED_DATA_PAYLOAD)
-			
-			this._loaded = true
-			this._loadPromise.resolve()
 		}
+		
+		this._loaded = true
+		this._loadPromise.$resolve()
 	}
 }
 
