@@ -105,7 +105,7 @@ const ApiDump = (() => {
 			prepare()
 			const data = Data.Classes[className]
 			if(data && data.ExplorerOrder !== undefined) { return data.ExplorerOrder }
-			return -1
+			return 2**53
 		}
 	}
 })()
