@@ -348,7 +348,7 @@ pageInit.create = () => {
 		})
 	})
 	
-	// Adjust context menu items	
+	// Adjust options menu items	
 	InjectJS.inject(() => {
 		BTRoblox.addReactHandler((args, result, objects) => {
 			if(result?.props?.["data-testid"] === "experience-options-menu") {
@@ -376,6 +376,45 @@ pageInit.create = () => {
 							href: `https://www.roblox.com/games/${args[0].creation.assetId}/`,
 							target: `_blank`,
 							style: { all: "unset", display: "contents" },
+							children: entry
+						})
+					}
+					
+					index = children.findIndex(x => x?.key === "Configure Localization")
+					if(index !== -1) {
+						const entry = children[index]
+						delete entry.props.onClick
+						
+						children[index] = objects.jsx("a", {
+							href: `/creations/experiences/${args[0].creation.universeId}/localization`,
+							style: { all: "unset", display: "contents" },
+							onClick: ev => { if(!ev.shiftKey && !ev.controlKey) { ev.preventDefault(); objects.NextRouter.router.push(ev.currentTarget.href); } },
+							children: entry
+						})
+					}
+					
+					index = children.findIndex(x => x?.key === "Developer Stats")
+					if(index !== -1) {
+						const entry = children[index]
+						delete entry.props.onClick
+						
+						children[index] = objects.jsx("a", {
+							href: `/creations/experiences/${args[0].creation.universeId}/stats`,
+							style: { all: "unset", display: "contents" },
+							onClick: ev => { if(!ev.shiftKey && !ev.controlKey) { ev.preventDefault(); objects.NextRouter.router.push(ev.currentTarget.href); } },
+							children: entry
+						})
+					}
+					
+					index = children.findIndex(x => x?.key === "Action.CreateBadge")
+					if(index !== -1) {
+						const entry = children[index]
+						delete entry.props.onClick
+						
+						children[index] = objects.jsx("a", {
+							href: `/creations/experiences/${args[0].creation.universeId}/badges/create`,
+							style: { all: "unset", display: "contents" },
+							onClick: ev => { if(!ev.shiftKey && !ev.controlKey) { ev.preventDefault(); objects.NextRouter.router.push(ev.currentTarget.href); } },
 							children: entry
 						})
 					}
@@ -472,46 +511,46 @@ pageInit.create = () => {
 		})
 	})
 	
-	if(SETTINGS.get("general.enableContextMenus")) {
-		// Add context menu items to item cards
-		InjectJS.inject(() => {
-			BTRoblox.addReactHandler((args, result, objects) => {
-				if(args[0]?.item?.assetType === "Place" && result?.props?.onMouseEnter && result?.props?.onMouseLeave) {
-					result.props["btr-context-url"] = `/btr_context/?btr_placeId=${args[0].item.assetId}&btr_universeId=${args[0].item.universeId}`
-				}
+	// if(SETTINGS.get("general.enableContextMenus")) {
+	// 	// Add context menu items to item cards
+	// 	InjectJS.inject(() => {
+	// 		BTRoblox.addReactHandler((args, result, objects) => {
+	// 			if(args[0]?.item?.assetType === "Place" && result?.props?.onMouseEnter && result?.props?.onMouseLeave) {
+	// 				result.props["btr-context-url"] = `/btr_context/?btr_placeId=${args[0].item.assetId}&btr_universeId=${args[0].item.universeId}`
+	// 			}
 				
-				return result
-			})
-		})
+	// 			return result
+	// 		})
+	// 	})
 		
-		document.$on("contextmenu", "[btr-context-url]", ev => {
-			const parent = ev.target.matches("a") ? ev.target : ev.target.closest("a")
+	// 	document.$on("contextmenu", "[btr-context-url]", ev => {
+	// 		const parent = ev.target.matches("a") ? ev.target : ev.target.closest("a")
 			
-			if(parent) {
-				const originalHref = parent.getAttribute("href")
-				parent.href = ev.currentTarget.getAttribute("btr-context-url")
+	// 		if(parent) {
+	// 			const originalHref = parent.getAttribute("href")
+	// 			parent.href = ev.currentTarget.getAttribute("btr-context-url")
 				
-				requestAnimationFrame(() => {
-					if(typeof originalHref === "string") {
-						parent.href = originalHref
-					} else {
-						parent.removeAttribute("href")
-					}
-				})
-			} else {
-				assert(!ev.target.$find("a"), "cant do context menu - link in target")
+	// 			requestAnimationFrame(() => {
+	// 				if(typeof originalHref === "string") {
+	// 					parent.href = originalHref
+	// 				} else {
+	// 					parent.removeAttribute("href")
+	// 				}
+	// 			})
+	// 		} else {
+	// 			assert(!ev.target.$find("a"), "cant do context menu - link in target")
 				
-				const link = html`<a style="display:contents">`
-				link.href = ev.currentTarget.getAttribute("btr-context-url")
+	// 			const link = html`<a style="display:contents">`
+	// 			link.href = ev.currentTarget.getAttribute("btr-context-url")
 				
-				ev.target.before(link)
-				link.append(ev.target)
+	// 			ev.target.before(link)
+	// 			link.append(ev.target)
 				
-				requestAnimationFrame(() => {
-					link.before(ev.target)
-					link.remove()
-				})
-			}
-		})
-	}
+	// 			requestAnimationFrame(() => {
+	// 				link.before(ev.target)
+	// 				link.remove()
+	// 			})
+	// 		}
+	// 	})
+	// }
 }
