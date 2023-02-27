@@ -21,11 +21,10 @@ pageInit.marketplace = () => {
 				this.updateButtons()
 			})
 			
-			this.observer = new MutationObserver(() => {
+			this.listener = $.onDomChanged(() => {
 				this.updateAnchor()
 			})
 			
-			this.observer.observe(document.body, { childList: true, subtree: true })
 			this.updateAnchor()
 		}
 		
@@ -72,12 +71,12 @@ pageInit.marketplace = () => {
 		}
 		
 		close() {
-			this.observer?.disconnect()
+			this.listener?.disconnect()
 			
 			this.assetId = null
 			this.assetTypeId = null
 			
-			this.observer = null
+			this.listener = null
 			this.anchor = null
 			
 			this.explorerPromise?.then(btn => btn?.remove())

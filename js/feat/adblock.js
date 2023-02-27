@@ -11,7 +11,7 @@ const btrAdblock = {
 		
 		const doneMap = new WeakMap()
 
-		new MutationObserver(() => {
+		$.onDomChanged(() => {
 			for(let i = iframes.length; i--;) {
 				const iframe = iframes[i]
 
@@ -66,7 +66,7 @@ const btrAdblock = {
 					}
 				}
 			}
-		}).observe(document.documentElement, { childList: true, subtree: true })
+		})
 		
 		InjectJS.inject(() => {
 			const { onReady } = window.BTRoblox

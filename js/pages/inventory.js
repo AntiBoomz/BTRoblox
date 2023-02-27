@@ -30,7 +30,7 @@ pageInit.inventory = () => {
 
 					$.ready(() => {
 						updateHeight()
-						new MutationObserver(updateHeight).observe(body, { childList: true, subtree: true })
+						$.onDomChanged(updateHeight)
 					})
 				}).$then()
 					.$watch("#chat-container", chat => chat.remove())
@@ -64,13 +64,11 @@ pageInit.inventory = () => {
 				}
 			}
 			
-			const observer = new MutationObserver(checkForScripts)
-			observer.observe(document.documentElement, { childList: true, subtree: true })
-			
+			const listener = $.onDomChanged(checkForScripts)
 			checkForScripts()
 			
 			$.ready(() => {
-				observer.disconnect()
+				listener.disconnect()
 				checkForScripts()
 			})
 		}

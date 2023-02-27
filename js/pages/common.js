@@ -751,7 +751,7 @@ pageInit.common = () => {
 			return groupIconRequestPromise.then(json => json.data.find(x => x.targetId === groupId))
 		}
 		
-		new MutationObserver(() => {
+		$.onDomChanged(() => {
 			for(const streamItem of streamItems) {
 				const groupId = parseInt(streamItem.id.match(/btr-groupshout-(\d+)/)?.[1], 10)
 				if(!Number.isSafeInteger(groupId)) { continue }
@@ -795,7 +795,7 @@ pageInit.common = () => {
 					})
 				}
 			}
-		}).observe(document.documentElement, { childList: true, subtree: true })
+		})
 		
 		InjectJS.listen("getRecentShouts", () => {
 			MESSAGING.send("getRecentShouts", shouts => {

@@ -226,6 +226,30 @@ const $ = (() => {
 			}
 		}
 		
+		const domListeners = []
+		let domObserverTriggered = false
+		let domObserverRunning = false
+		
+		const domObserver = new MutationObserver(() => {
+			for(let i = 0; i < domListeners.length; i++) {
+				const listener = domListeners[i]
+				
+				if(listener.connected) {
+					try { listener.callback() }
+					catch(ex) { console.error(ex) }
+				}
+				
+				if(!listener.connected) {
+					domListeners.splice(i, 1)
+					i--
+				}
+			}
+			
+			if(domListeners.length === 0) {
+				domObserver.disconnect()
+			}
+		})
+		
 		Object.assign($, {
 			ready(fn) {
 				if(document.readyState !== "loading") {
@@ -238,6 +262,24 @@ const $ = (() => {
 			wrapWith(self, wrap) {
 				self.before(wrap)
 				wrap.append(self)
+			},
+			
+			onDomChanged(callback) {
+				const listener = {
+					callback: callback,
+					connected: true,
+					disconnect() {
+						this.connected = false
+					}
+				}
+				
+				if(domListeners.length === 0) {
+					domObserver.observe(document.documentElement, { childList: true, subtree: true })
+				}
+				
+				domListeners.push(listener)
+				
+				return listener
 			},
 
 			watch(target, selectors, filter, callback, props) {
