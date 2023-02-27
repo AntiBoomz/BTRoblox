@@ -396,6 +396,12 @@
 	padding: 1px 0;
 }
 
+.btr-sourceviewer-source-container .btr-linetext::before {
+	content: "\0200B";
+	float: left;
+	display: block;
+}
+
 .btr-sourceviewer-source-container .btr-sourceviewer-tab,
 .btr-sourceviewer-source-container .btr-sourceviewer-space {
 	position: relative;
