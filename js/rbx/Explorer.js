@@ -734,7 +734,7 @@ const Explorer = (() => {
 						item: null
 					}
 					
-					let lastClick
+					let lastClick = 0
 	
 					line.btn.$on("click", ev => {
 						ev.stopPropagation()
@@ -744,14 +744,14 @@ const Explorer = (() => {
 						if(line.item) {
 							this.select([line.item])
 		
-							if(lastClick && Date.now() - lastClick < 500) {
-								lastClick = null
+							if(Date.now() - lastClick < 500) {
+								lastClick = 0
 		
-								switch(inst.ClassName) {
+								switch(line.item.inst.ClassName) {
 								case "Script":
 								case "LocalScript":
 								case "ModuleScript":
-									this.openSourceViewer(inst, "Source")
+									this.openSourceViewer(line.item.inst, "Source")
 									break
 								default:
 									item.classList.toggle("closed")
