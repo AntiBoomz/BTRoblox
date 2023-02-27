@@ -70,16 +70,16 @@ const PAGE_INFO = {
 		js: ["pages/inventory.js"],
 		css: ["inventory.css"]
 	},
+	itemdetails: {
+		matches: ["^/(catalog|library|game-pass|badges|bundles)/(\\d+)/"],
+		js: ["pages/itemdetails.js"],
+		css: ["itemdetails.css"]
+	},
 	marketplace: {
 		domainMatches: ["create.roblox.com"],
 		matches: ["^/marketplace/"],
 		js: ["pages/marketplace.js"],
 		css: ["marketplace.css"]
-	},
-	itemdetails: {
-		matches: ["^/(catalog|library|game-pass|badges|bundles)/(\\d+)/"],
-		js: ["pages/itemdetails.js"],
-		css: ["itemdetails.css"]
 	},
 	membership: {
 		matches: ["^/premium/membership"],

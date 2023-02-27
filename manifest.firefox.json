@@ -112,11 +112,13 @@
 				"js/pages/home.js",
 				"js/pages/inventory.js",
 				"js/pages/itemdetails.js",
-				"js/pages/marketplace.js",
 				"js/pages/messages.js",
 				"js/pages/money.js",
 				"js/pages/placeconfig.js",
 				"js/pages/profile.js",
+				
+				"js/pages/create.js",
+				"js/pages/marketplace.js",
 				
 				"js/inject.js",
 				"js/main.js"

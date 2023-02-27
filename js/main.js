@@ -15,8 +15,13 @@ if(document.contentType === "text/html" && location.protocol !== "blob") {
 			
 			btrThemes.init()
 			
-			try { pageInit.common() }
-			catch(ex) { console.error(ex) }
+			if(location.host === "create.roblox.com") {
+				try { pageInit.create() }
+				catch(ex) { console.error(ex) }
+			} else {
+				try { pageInit.common() }
+				catch(ex) { console.error(ex) }
+			}
 		
 			if(currentPage && pageInit[currentPage.name]) {
 				try { pageInit[currentPage.name].apply(null, currentPage.matches) }

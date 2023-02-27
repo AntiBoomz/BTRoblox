@@ -65,7 +65,9 @@ const ContextMenu = {
 			targetUrlPatterns: [
 				"*://*.roblox.com/games/*/*",
 				"*://*.roblox.com/refer?*PlaceId=*",
-				"*://*.roblox.com/games/refer?*PlaceId=*"
+				"*://*.roblox.com/games/refer?*PlaceId=*",
+				"*://create.roblox.com/creations/experiences/*/places/*",
+				"*://*/*btr_placeId=*"
 			]
 		},
 		{
@@ -82,7 +84,8 @@ const ContextMenu = {
 			contexts: ["link"],
 			targetUrlPatterns: [
 				"*://*.roblox.com/universes/*id=*",
-				"*://create.roblox.com/creations/experiences/*"
+				"*://create.roblox.com/creations/experiences/*/overview",
+				"*://*/*btr_universeId=*"
 			]
 		},
 		{
@@ -98,7 +101,7 @@ const ContextMenu = {
 			title: "Copy role...",
 			contexts: ["link"],
 			targetUrlPatterns: [
-				"*://*.roblox.com/btr_context/*btr_roleRank=*"
+				"*://*/*btr_roleRank=*"
 			]
 		},
 		{
@@ -107,7 +110,7 @@ const ContextMenu = {
 			contexts: ["link"],
 			parentId: "roleParent",
 			targetUrlPatterns: [
-				"*://*.roblox.com/btr_context/*btr_roleRank=*"
+				"*://*/*btr_roleRank=*"
 			]
 		},
 		{
@@ -116,7 +119,7 @@ const ContextMenu = {
 			contexts: ["link"],
 			parentId: "roleParent",
 			targetUrlPatterns: [
-				"*://*.roblox.com/btr_context/*btr_roleId=*"
+				"*://*/*btr_roleId=*"
 			]
 		}
 	],
@@ -141,12 +144,12 @@ const ContextMenu = {
 		
 		switch(info.menuItemId) {
 			case "assetLink": case "bundleLink": case "badgeLink": case "gamepassLink": case "pluginLink": {
-				const assetId = info.linkUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library|bundles|badges|game-pass|plugins|marketplace|marketplace\/asset)\/(?:refer\/)?)(\d+).*$/i, "$1")
+				const assetId = info.linkUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library|bundles|badges|game-pass|plugins|places|marketplace|marketplace\/asset)\/(?:refer\/)?)(\d+).*$/i, "$1")
 				copyToClipboard(assetId)
 				break
 			}
 			case "placeLink": {
-				const placeId = info.linkUrl.replace(/^.*(?:[&?]placeid=|\/games\/)(\d+).*$/i, "$1")
+				const placeId = info.linkUrl.replace(/^.*(?:[&?]placeid=|[&?]btr_placeId=|\/games\/)(\d+).*$/i, "$1")
 				copyToClipboard(placeId)
 				break
 			}
@@ -161,7 +164,7 @@ const ContextMenu = {
 				break
 			}
 			case "universeLink": {
-				const universeId = info.linkUrl.replace(/^.*(?:[&?]id=|(?:experiences)\/)(\d+).*$/i, "$1")
+				const universeId = info.linkUrl.replace(/^.*(?:[&?]id=|[&?]btr_universeId=|(?:experiences)\/)(\d+).*$/i, "$1")
 				copyToClipboard(universeId)
 				break
 			}
