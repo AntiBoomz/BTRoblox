@@ -132,6 +132,7 @@ pageInit.placeconfig = placeId => {
 			}
 		}
 		
+		document.$on("click", initClick)
 		document.$watch("#versionHistoryItems", cont => cont.replaceWith(versionHistory))
 	}
 }
