@@ -18,6 +18,8 @@
 // }
 
 pageInit.create = () => {
+	if(!SETTINGS.get("create.enabled")) { return }
+	
 	InjectJS.inject(() => {
 		const tempHijackEntries = new WeakMap()
 		const processedModules = new WeakSet()

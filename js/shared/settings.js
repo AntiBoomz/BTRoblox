@@ -25,6 +25,9 @@ const DEFAULT_SETTINGS = {
 		useNativeAudioPlayer: { value: false },
 		fixFirefoxLocalStorageIssue: { value: false }
 	},
+	create: {
+		enabled: { value: false }	
+	},
 	home: {
 		friendsShowUsername: { value: false },
 		friendsSecondRow: { value: false },
