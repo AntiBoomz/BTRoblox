@@ -28,7 +28,7 @@ const DEFAULT_SETTINGS = {
 	home: {
 		friendsShowUsername: { value: false },
 		friendsSecondRow: { value: false },
-		friendPresenceLinks: { value: false },
+		friendPresenceLinks: { value: true },
 		favoritesAtTop: { value: false }
 	},
 	messages: {
