@@ -777,9 +777,8 @@ a:not(.disabled):hover > .btr-icon-content {
 	height: 16px;
 	margin: 0 6px 0 3px;
 
-	background-image: url(/res/icon_explorer.png);
+	background-image: var(--btr-explorer-icons);
 	background-repeat: no-repeat;
-	background-size: auto 16px;
 }
 
 

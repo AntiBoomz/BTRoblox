@@ -39,6 +39,14 @@ const Explorer = (() => {
 		return ctx.measureText(text).width + 47 + depth * 20
 	}
 	
+	const explorerIconPromise = new Promise(resolve => {
+		AssetCache.loadBuffer(12706538541).then(buffer => {
+			const reader = new FileReader()
+			reader.onload = () => resolve(reader.result)
+			reader.readAsDataURL(new Blob([new Uint8Array(buffer)], { type: "image/png" }))
+		})
+	})
+	
 	return class {
 		constructor() {
 			this.models = []
@@ -102,6 +110,10 @@ const Explorer = (() => {
 					</div>
 				</div>
 			</div>"`
+			
+			explorerIconPromise.then(iconUrl => {
+				element.style.setProperty("--btr-explorer-icons", `url(${iconUrl})`)
+			})
 			
 			this.dropdown = this.element.$find(".btr-dropdown-container")
 			this.innerList = this.element.$find(".btr-explorer-inner-list")
@@ -947,7 +959,7 @@ const Explorer = (() => {
 					if(item) {
 						const icon = ApiDump.getExplorerIconIndex(item.inst.ClassName)
 						
-						line.icon.style.backgroundPosition = `-${icon * 16}px 0`
+						line.icon.style.backgroundPosition = `-${(icon % 64) * 16}px -${Math.floor(icon / 64) * 16}px`
 						line.nameLabel.textContent = item.inst.Name
 						
 						line.btn.classList.toggle("btr-explorer-has-children", item ? item.children.length > 0 : false)
@@ -1031,6 +1043,5 @@ const Explorer = (() => {
 				}
 			}
 		}
-		
 	}
 })()
