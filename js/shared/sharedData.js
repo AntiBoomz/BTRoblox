@@ -13,8 +13,6 @@ const SHARED_DATA = {
 		if(this.lastDataString === dataString) { return }
 		this.lastDataString = dataString
 		
-		localStorage.setItem("btrSharedData", dataString)
-		
 		if(IS_CHROME) {
 			const url = new URL("data:,")
 			url.searchParams.set("data", dataString)
@@ -63,7 +61,7 @@ const SHARED_DATA = {
 		this.data[key] = value
 		
 		if(IS_BACKGROUND_PAGE && this._loaded) {
-			this.updateData()
+			$.setImmediate(() => this.updateData())
 		}
 	},
 	
@@ -72,16 +70,6 @@ const SHARED_DATA = {
 	},
 	
 	async initBackgroundScript() {
-		try {
-			const data = JSON.parse(localStorage.getItem("btrSharedData"))
-			
-			if(data.version === this.data.version) {
-				Object.assign(this.data, data)
-			}
-		} catch(ex) {}
-		
-		this.updateData()
-		
 		this._loaded = true
 		this._loadPromise.$resolve()
 	},
