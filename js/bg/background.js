@@ -16,11 +16,7 @@ const getRequiredPermissions = () => {
 const browserAction = IS_MANIFEST_V3 ? chrome.action : chrome.browserAction
 
 browserAction.onClicked.addListener(tab => {
-	const callback = success => {
-		if(!success) {
-			chrome.tabs.create({ url: "https://www.roblox.com/home?btr_settings_open=true" })
-		}
-	}
+	chrome.permissions.request(getRequiredPermissions(), () => {})
 	
 	chrome.scripting.executeScript({
 		target: { tabId: tab.id },
@@ -30,9 +26,13 @@ browserAction.onClicked.addListener(tab => {
 				return true
 			}
 		}
-	}).then(x => callback(!!x?.[0].result === true || false), () => callback(false))
-	
-	chrome.permissions.request(getRequiredPermissions(), () => {})
+	}, results => {
+		if(chrome.runtime.lastError) {} // Clear lastError
+		
+		if(results?.[0]?.result !== true) {
+			chrome.tabs.create({ url: "https://www.roblox.com/home?btr_settings_open=true" })
+		}
+	})
 })
 
 // Service worker wont run on browser startup unless these have listeners
