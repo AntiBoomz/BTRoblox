@@ -25,16 +25,11 @@ pageInit.create = () => {
 		const processedModules = new WeakSet()
 		const functionProxies = new WeakMap()
 		const reactModuleHandlers = []
-		const reactArgsHandlers = []
 		const reactHandlers = []
 		const objects = { modules: {} }
 		
 		BTRoblox.addReactModuleHandler = handler => {
 			reactModuleHandlers.push(handler)
-		}
-		
-		BTRoblox.addReactArgsHandler = handler => {
-			reactArgsHandlers.push(handler)
 		}
 		
 		BTRoblox.addReactHandler = handler => {
@@ -87,25 +82,41 @@ pageInit.create = () => {
 				}
 			}
 		}
+		
+		BTRoblox.reactFind = (elem, fn, includeSelf=false) => {
+			if(Array.isArray(elem)) {
+				for(const child of elem) {
+					const result = BTRoblox.reactFind(child, fn, true)
+					
+					if(result) {
+						return result
+					}
+				}
+			} else if(typeof elem === "object" && elem?.props) {
+				if(includeSelf && fn(elem)) {
+					return elem
+				}
+				
+				return BTRoblox.reactFind(elem.props.children, fn, true)
+			}
+		}
+		
+		let isDispatching = false
+		
+		const onCreateElement = (target, thisArg, args) => {
+			const result = target.apply(thisArg, args)
+			let type = result.type
 			
-		const hijackConstructor = args => {
-			const originalFunction = args[0]
-									
-			if(typeof originalFunction === "function") {
-				let proxy = functionProxies.get(originalFunction)
+			if(typeof type === "function") {
+				let proxy = functionProxies.get(type)
 				
 				if(!proxy) {
-					proxy = new Proxy(originalFunction, {
+					proxy = new Proxy(type, {
 						apply(target, thisArg, args) {
-							for(const handler of reactArgsHandlers) {
-								try { result = handler(args, objects) }
-								catch(ex) { console.error(ex) }
-							}
-							
-							let result = target.apply(thisArg, args)
+							const result = target.apply(thisArg, args)
 							
 							for(const handler of reactHandlers) {
-								try { result = handler(args, result, objects) }
+								try { handler(args, result, objects) }
 								catch(ex) { console.error(ex) }
 							}
 							
@@ -113,32 +124,42 @@ pageInit.create = () => {
 						}
 					})
 					
-					functionProxies.set(originalFunction, proxy)
 					functionProxies.set(proxy, proxy)
+					functionProxies.set(type, proxy)
 				}
 				
-				args[0] = proxy
+				Object.defineProperty(result, "type", {
+					enumerable: true,
+					configurable: true,
+					get: () => (isDispatching ? proxy : type),
+					set: x => {
+						delete result.type
+						result.type = x
+					}
+				})
 			}
+			
+			return result
 		}
 		
 		BTRoblox.addReactModuleHandler((module, target, objects) => {
 			if("jsx" in module && "jsxs" in module) {
-				module.jsx = module.jsxs = new Proxy(module.jsxs, {
-					apply(target, thisArg, args) {
-						hijackConstructor(args)
-						return target.apply(thisArg, args)
-					}
-				})
-				
+				module.jsx = module.jsxs = new Proxy(module.jsxs, { apply: onCreateElement })
 				objects.jsx = module.jsx
 				
 			} else if("useState" in module && "useCallback" in module) {
-				BTRoblox.hijackFunction(module, "createElement", (target, thisArg, args) => {
-					hijackConstructor(args)
-					return target.apply(thisArg, args)
-				})
-				
+				module.createElement = new Proxy(module.createElement, { apply: onCreateElement })
 				objects.React = module
+				
+				const dispatcher = objects.React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher
+				let current
+				
+				Object.defineProperty(dispatcher, "current", {
+					enumerable: true,
+					configurable: true,
+					get: () => current,
+					set: x => (current = x, isDispatching = current && current.useCallback === current.useEffect)
+				})
 			}
 			
 			return module
@@ -210,10 +231,22 @@ pageInit.create = () => {
 				window.addEventListener("popstate", ev => {
 					objects.NextRouter.router.push(location.href)
 				})
+				
+				document.addEventListener("click", ev => {
+					const anchor = ev.target.nodeName === "A" ? ev.target : ev.target.closest("a")
+					
+					if(anchor?.classList.contains("btr-next-anchor")) {
+						if(!ev.shiftKey && !ev.ctrlKey) {
+							ev.preventDefault()
+							objects.NextRouter.router.push(anchor.href)
+						}
+					}
+				})
 			}
 			
 			return module
 		})
+		
 	})
 	
 	// Fix thumbnail2d using batch size of 100 (which errors)
@@ -223,20 +256,18 @@ pageInit.create = () => {
 				const entries = Object.entries(module)
 				
 				if(entries.length < 10) {
-					{
-						const batchSize = entries.find(x => x[1] === 100)
-						
-						if(batchSize && entries.find(x => x[1]?.assetThumbnail === "assetThumbnail")) {
-							module = new Proxy(module, {
-								get(target, property) {
-									if(property === batchSize[0]) {
-										return 50
-									}
-									
-									return target[property]
+					const batchSize = entries.find(x => x[1] === 100)
+					
+					if(batchSize && entries.find(x => x[1]?.assetThumbnail === "assetThumbnail")) {
+						module = new Proxy(module, {
+							get(target, property) {
+								if(property === batchSize[0]) {
+									return 50
 								}
-							})
-						}
+								
+								return target[property]
+							}
+						})
 					}
 				}
 			}
@@ -353,7 +384,9 @@ pageInit.create = () => {
 	// Adjust options menu items	
 	InjectJS.inject(() => {
 		BTRoblox.addReactHandler((args, result, objects) => {
-			if(result?.props?.["data-testid"] === "experience-options-menu") {
+			if(!result?.props) { return }
+			
+			if(result.props["data-testid"] === "experience-options-menu") {
 				const children = result.props.children = [result.props.children].flat(10).filter(x => x)
 				
 				if(args[0].itemType === "Game") {
@@ -388,9 +421,9 @@ pageInit.create = () => {
 						delete entry.props.onClick
 						
 						children[index] = objects.jsx("a", {
-							href: `/creations/experiences/${args[0].creation.universeId}/localization`,
+							href: `/dashboard/creations/experiences/${args[0].creation.universeId}/localization`,
 							style: { all: "unset", display: "contents" },
-							onClick: ev => { if(!ev.shiftKey && !ev.controlKey) { ev.preventDefault(); objects.NextRouter.router.push(ev.currentTarget.href); } },
+							className: "btr-next-anchor",
 							children: entry
 						})
 					}
@@ -401,9 +434,9 @@ pageInit.create = () => {
 						delete entry.props.onClick
 						
 						children[index] = objects.jsx("a", {
-							href: `/creations/experiences/${args[0].creation.universeId}/stats`,
+							href: `/dashboard/creations/experiences/${args[0].creation.universeId}/stats`,
 							style: { all: "unset", display: "contents" },
-							onClick: ev => { if(!ev.shiftKey && !ev.controlKey) { ev.preventDefault(); objects.NextRouter.router.push(ev.currentTarget.href); } },
+							className: "btr-next-anchor",
 							children: entry
 						})
 					}
@@ -414,9 +447,9 @@ pageInit.create = () => {
 						delete entry.props.onClick
 						
 						children[index] = objects.jsx("a", {
-							href: `/creations/experiences/${args[0].creation.universeId}/badges/create`,
+							href: `/dashboard/creations/experiences/${args[0].creation.universeId}/badges/create`,
 							style: { all: "unset", display: "contents" },
-							onClick: ev => { if(!ev.shiftKey && !ev.controlKey) { ev.preventDefault(); objects.NextRouter.router.push(ev.currentTarget.href); } },
+							className: "btr-next-anchor",
 							children: entry
 						})
 					}
@@ -424,15 +457,15 @@ pageInit.create = () => {
 					children.splice(
 						2, 0,
 						objects.jsx("a", {
-							href: `/creations/experiences/${args[0].creation.universeId}/overview`,
+							href: `/dashboard/creations/experiences/${args[0].creation.universeId}/overview`,
 							style: { all: "unset", display: "contents" },
-							onClick: ev => { if(!ev.shiftKey && !ev.controlKey) { ev.preventDefault(); objects.NextRouter.router.push(ev.currentTarget.href); } },
+							className: "btr-next-anchor",
 							children: objects.jsx(objects.Mui.MenuItem, { children: "Configure Experience" })
 						}),
 						objects.jsx("a", {
-							href: `/creations/experiences/${args[0].creation.universeId}/places/${args[0].creation.assetId}/configure`,
+							href: `/dashboard/creations/experiences/${args[0].creation.universeId}/places/${args[0].creation.assetId}/configure`,
 							style: { all: "unset", display: "contents" },
-							onClick: ev => { if(!ev.shiftKey && !ev.controlKey) { ev.preventDefault(); objects.NextRouter.router.push(ev.currentTarget.href); } },
+							className: "btr-next-anchor",
 							children: objects.jsx(objects.Mui.MenuItem, { children: "Configure Start Place" })
 						}),
 					)
@@ -452,9 +485,9 @@ pageInit.create = () => {
 							className: "MuiDivider-root"
 						}),
 						objects.jsx("a", {
-							href: `/creations/catalog/${args[0].creation.assetId}/configure`,
+							href: `/dashboard/creations/catalog/${args[0].creation.assetId}/configure`,
 							style: { all: "unset", display: "contents" },
-							onClick: ev => { if(!ev.shiftKey && !ev.controlKey) { ev.preventDefault(); objects.NextRouter.router.push(ev.currentTarget.href); } },
+							className: "btr-next-anchor",
 							children: objects.jsx(objects.Mui.MenuItem, { children: "Configure Asset" })
 						})
 					)
@@ -469,7 +502,7 @@ pageInit.create = () => {
 					if(index !== -1) { children.splice(index, 1) }
 				}
 			} else if(args[0]?.menuItems && args[0]?.setMenuOpen) {
-				const parent = result?.props?.children?.[1]
+				const parent = result.props.children?.[1]
 				
 				if(parent?.props) {
 					const children = parent.props.children = [parent.props.children].flat(10)
@@ -499,60 +532,60 @@ pageInit.create = () => {
 							}),
 							objects.jsx(objects.Mui.Divider, {}),
 							objects.jsx("a", {
-								href: `/creations/marketplace/${assetId}/configure`,
+								href: `/dashboard/creations/marketplace/${assetId}/configure`,
 								style: { all: "unset", display: "contents" },
-								onClick: ev => { if(!ev.shiftKey && !ev.controlKey) { ev.preventDefault(); objects.NextRouter.router.push(ev.currentTarget.href); } },
+								className: "btr-next-anchor",
 								children: objects.jsx(objects.Mui.MenuItem, { children: "Configure Asset" })
 							})
 						)
 					}
 				}
 			}
-			
-			return result
 		})
 	})
 	
-	// if(SETTINGS.get("general.enableContextMenus")) {
-	// 	// Add context menu items to item cards
-	// 	InjectJS.inject(() => {
-	// 		BTRoblox.addReactHandler((args, result, objects) => {
-	// 			if(args[0]?.item?.assetType === "Place" && result?.props?.onMouseEnter && result?.props?.onMouseLeave) {
-	// 				result.props["btr-context-url"] = `/btr_context/?btr_placeId=${args[0].item.assetId}&btr_universeId=${args[0].item.universeId}`
-	// 			}
+	if(SETTINGS.get("general.enableContextMenus")) {
+		// Add context menu items to item cards
+		InjectJS.inject(() => {
+			BTRoblox.addReactHandler((args, result, objects) => {
+				if(!result?.props) { return }
 				
-	// 			return result
-	// 		})
-	// 	})
+				if(args[0]?.item?.assetType === "Place" && result?.props?.onMouseEnter && result?.props?.onMouseLeave) {
+					result.props["btr-context-url"] = `/btr_context/?btr_placeId=${args[0].item.assetId}&btr_universeId=${args[0].item.universeId}`
+				}
+				
+				return result
+			})
+		})
 		
-	// 	document.$on("contextmenu", "[btr-context-url]", ev => {
-	// 		const parent = ev.target.matches("a") ? ev.target : ev.target.closest("a")
+		document.$on("contextmenu", "[btr-context-url]", ev => {
+			const parent = ev.target.matches("a") ? ev.target : ev.target.closest("a")
 			
-	// 		if(parent) {
-	// 			const originalHref = parent.getAttribute("href")
-	// 			parent.href = ev.currentTarget.getAttribute("btr-context-url")
+			if(parent) {
+				const originalHref = parent.getAttribute("href")
+				parent.href = ev.currentTarget.getAttribute("btr-context-url")
 				
-	// 			requestAnimationFrame(() => {
-	// 				if(typeof originalHref === "string") {
-	// 					parent.href = originalHref
-	// 				} else {
-	// 					parent.removeAttribute("href")
-	// 				}
-	// 			})
-	// 		} else {
-	// 			assert(!ev.target.$find("a"), "cant do context menu - link in target")
+				requestAnimationFrame(() => {
+					if(typeof originalHref === "string") {
+						parent.href = originalHref
+					} else {
+						parent.removeAttribute("href")
+					}
+				})
+			} else {
+				assert(!ev.target.$find("a"), "cant do context menu - link in target")
 				
-	// 			const link = html`<a style="display:contents">`
-	// 			link.href = ev.currentTarget.getAttribute("btr-context-url")
+				const link = html`<a style="display:contents">`
+				link.href = ev.currentTarget.getAttribute("btr-context-url")
 				
-	// 			ev.target.before(link)
-	// 			link.append(ev.target)
+				ev.target.before(link)
+				link.append(ev.target)
 				
-	// 			requestAnimationFrame(() => {
-	// 				link.before(ev.target)
-	// 				link.remove()
-	// 			})
-	// 		}
-	// 	})
-	// }
+				requestAnimationFrame(() => {
+					link.before(ev.target)
+					link.remove()
+				})
+			}
+		})
+	}
 }
