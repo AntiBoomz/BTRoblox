@@ -1,271 +1,101 @@
 "use strict"
 
-const btrSettingsModal = (() => {
-	const settingsDiv = html`
-	<div class=btr-settings-modal style=opacity:0>
-		<div class=btr-settings>
-			<div class=btr-settings-header>
-				<div class=btr-settings-header-title>BTRoblox</div>
-				<div style="flex: 1 1 auto"></div>
-				<div class="btr-settings-header-close btr-settings-toggle">✖</div>
-			</div>
-			<div class="btr-settings-content selected" id=btr-settings-main data-name=main>
-				<group label=General path=general>
-					<div>
-						<select path=theme>
-							<option selected disabled>Select Theme: (%opt%)</option>
-							<option value=default>Default</option>
-							<option value=simblk>Simply Black</option>
-							<option value=sky>Sky</option>
-							<option value=red>Red</option>
-						</select>
-						
-						<checkbox devOnly label="Theme Hot Reload" path=themeHotReload></checkbox>
-					</div>
-
-					<checkbox label="Hide Ads" path=hideAds></checkbox>
-					<checkbox label="Fast User Search" path=general.fastSearch></checkbox>
-					<div>
-						<checkbox label="Show Chat" path=!hideChat></checkbox>
-						<checkbox label="Minimize Chat" path=smallChatButton require=!hideChat></checkbox>
-					</div>
-					<checkbox label="Show 'Copy Id' Context Items" path=enableContextMenus></checkbox>
-					<checkbox label="Higher Robux Precision" path=higherRobuxPrecision></checkbox>
-					
-					<div style="display: inline-block; width: 50%; padding: 6px 2px;float:right;">
-						<label style="">Robux to Cash Conversion Rate</label>
-						<span style="width: calc(100% - 14px); display: inline-flex;">
-							<select id=btr-robuxToCash-currency style="flex: 0 1 auto"></select>
-							<select id=btr-robuxToCash-rate style="flex: 1 1 auto; min-width: 0; margin-left: 4px"></select>
-						</span>
-						<span class=btr-setting-reset-button path=general.robuxToUSDRate></span>
-					</div>
-					
-					<checkbox label="Lower Default Audio Volume" path=fixAudioVolume></checkbox>
-					<checkbox label="Audio Player Controls" path=useNativeAudioPlayer></checkbox>
-				</group>
-				<group label=Navigation path=navigation toggleable>
-					<checkbox label="Keep Sidebar Open" path=noHamburger require=false></checkbox>
-					<button btr-tab=navigation class=btn-control-xs>Modify Buttons</button>
-				</group>
-				<group label=Home path=home>
-					<checkbox label="Show Friend Usernames" path=friendsShowUsername></checkbox>
-					<checkbox label="Show More Friends" path=friendsSecondRow></checkbox>
-				</group>
-				<group label=Profile path=profile toggleable>
-					<checkbox label="Embed Inventory" path=embedInventoryEnabled></checkbox>
-					<checkbox label="Show Last Online" path=lastOnline></checkbox>
-				</group>
-				<group label=Groups path=groups toggleable=redesign>
-					<div>
-						<checkbox label="Group Shout Notifications" path=shoutAlerts require=false></checkbox>
-						<button btr-tab=shoutFilters class=btn-control-xs>Modify Shout Notifications</button>
-					</div>
-					<div>
-						<empty></empty>
-						<button btr-tab=groupRedesign class=btn-control-xs>Modify Redesign Options</button>
-					</div>
-				</group>
-				<group label="Game Details" path=gamedetails toggleable>
-					<checkbox label="Highlight Owned Badges" path=showBadgeOwned></checkbox>
-					<checkbox label="Add Server List Pager" path=addServerPager></checkbox>
-				</group>
-				<group label="Item Details" path=itemdetails toggleable>
-					<checkbox label="Item Previewer" path=itemPreviewer></checkbox>
-					<button btr-tab=itemPreviewerSettings class=btn-control-xs>Previewer Preferences</button>
-					<checkbox label="Show Explorer Button" path=explorerButton></checkbox>
-					<checkbox label="Show Download Button" path=downloadButton></checkbox>
-					<checkbox label="Show Content Button" path=contentButton></checkbox>
-					<checkbox label="Show Owners Button" path=addOwnersList></checkbox>
-				</group>
-				<group label=Inventory path=inventory toggleable>
-					<checkbox label="Inventory Tools" path=inventoryTools></checkbox>
-				</group>
-				<group label=Catalog path=catalog toggleable>
-					<checkbox label="Show Owned Items" path=showOwnedAssets></checkbox>
-				</group>
-				<group label="Place Configure" path=placeConfigure>
-					<checkbox label="Version History" path=versionHistory></checkbox>
-				</group>
-				<group label="Advanced" minimizable minimized>
-					<div id=btr-settings-wip>
-					</div>
-					<div style="margin-top: 12px; float:right; width: 100%; clear:both">
-						<button id=btr-fix-chat class=btn-control-xs style=float:left>Fix invis chat messages</button>
-						<button id=btr-reset-settings class=btn-control-xs style=float:right>Reset settings to default</button>
-					</div>
-				</group>
-			</div>
-			<div class=btr-settings-content data-name=navigation>
-				<div class=btr-settings-content-header>
-					<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
-					<h4>Navigation Buttons</h4>
-				</div>
-				<div style="display:flex">
-					<group label="Sidebar" style="width:50%">
-					</group>
-					<group label="Header" style="width:50%">
-					</group>
-				</div>
-			</div>
-			<div class=btr-settings-content id=btr-settings-shout-filters data-name=shoutFilters>
-				<div class=btr-settings-content-header>
-					<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
-					<h4>Group Shout Notifications</h4>
-				</div>
-				<group path=groups>
-					<div>
-						<checkbox label="Enable Group Shout Notifications" path=shoutAlerts></checkbox>
-					</div>
-					<checkbox label="Browser Notifications" path=shoutAlertBrowserNotifs require=shoutAlerts></checkbox>
-					<checkbox label="Show In Notification Stream" path=shoutAlertsInNotifStream require=shoutAlerts></checkbox>
-				</group>
-				<div class=btr-filter-lists>
-					<div class=btr-filter-list>
-						<h5 class=btr-filter-list-header>Enabled</h5>
-						<ul class=btr-filter-enabled>
-						</ul>
-					</div>
-					<div class=btr-filter-center>
-					</div>
-					<div class=btr-filter-list>
-						<h5 class=btr-filter-list-header>Disabled</h5>
-						<ul class=btr-filter-disabled>
-						</ul>
-					</div>
-				</div>
-			</div>
-			<div class=btr-settings-content id=btr-settings-item-previewer data-name=itemPreviewerSettings>
-				<div class=btr-settings-content-header>
-					<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
-					<h4>Item Previewer Preferences</h4>
-				</div>
-				<div>
-					<group>
-						<checkbox label="Item Previewer" path=itemdetails.itemPreviewer></checkbox>
-						<checkbox label="Hover Previewer" path=general.hoverPreview></checkbox>
-						<br>
-						<checkbox label="Show Layered Clothing (WIP)" path=general.previewLayeredClothing></checkbox>
-						<br>
-						<select label="Automatically open previewer:" path=itemdetails.itemPreviewerMode>
-							<option value=never>Never</option>
-							<option value=animations>For Animations</option>
-							<option value=always>Always</option>
-						</select>
-						<select label="Preview on hover:" path=general.hoverPreviewMode>
-							<option value=never>Never</option>
-							<option value=always>Always</option>
-						</select>
-					</group>
-				</div>
-			</div>
-			<div class=btr-settings-content id=btr-settings-group-redesign data-name=groupRedesign>
-				<div class=btr-settings-content-header>
-					<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
-					<h4>Group Redesign Options</h4>
-				</div>
-				<group label="Redesign" toggleable=redesign path=groups>
-					<checkbox label="Modify Layout" path=modifyLayout require=redesign></checkbox>
-					<checkbox label="Make Group Wall Paged" path=pagedGroupWall require=redesign></checkbox>
-					<checkbox label="Show Selected Role Member Count" path=selectedRoleCount require=redesign></checkbox>
-					<checkbox label="Hide Large Social Container" path=hideBigSocial require=redesign></checkbox>
-					<checkbox label="Show Title On Social Icon Hover" path=modifySmallSocialLinksTitle require=redesign></checkbox>
-				</group>
-			</div>
-			<div class=btr-settings-footer>
-				<div class=btr-settings-footer-version>v${chrome.runtime.getManifest().version}</div>
-				<div class=btr-settings-footer-text>Refresh the page to apply settings</div>
-			</div>
-		</div>
-	</div>`
+const SettingsModal = {
+	enabled: false,
 	
-	if(!IS_DEV_MODE) {
-		for(const elem of settingsDiv.$findAll("[devOnly]")) {
-			elem.remove()
-		}
-	}
-	
-	const contentDivs = {}
-	settingsDiv.$findAll(".btr-settings-content[data-name]").forEach(elem => {
-		elem.classList.remove("selected")
-		contentDivs[elem.dataset.name] = elem
-	})
-
-	let areFiltersInit = false
-	let currentContent
-
-	const switchContent = name => {
-		if(currentContent === name) { return }
-
-		const lastElem = currentContent && contentDivs[currentContent]
-		if(lastElem) {
-			lastElem.classList.remove("selected")
-		}
-
-		const newElem = name && contentDivs[name]
-		if(newElem) {
-			newElem.classList.add("selected")
-		}
-
-		currentContent = name
-		sessionStorage.setItem("btr-settings-open", name)
-
-		if(name === "shoutFilters") {
-			if(!areFiltersInit) {
-				areFiltersInit = true
-				initShoutFilters()
-			}
-		}
-	}
-
-	let settingsLoadPromise
-	let themeObserver
-
-	const copyThemeFromElement = target => {
-		settingsDiv.classList.toggle("btr-light-theme", target.classList.contains("light-theme"))
-		settingsDiv.classList.toggle("btr-dark-theme", target.classList.contains("dark-theme"))
-	}
-
-	const toggleSettingsDiv = force => {
-		const visible = typeof force === "boolean" ? force : settingsDiv.parentNode !== document.body
-
-		if(!settingsLoadPromise) {
-			settingsLoadPromise = initSettingsDiv().then(() => {
-				settingsDiv.style.opacity = ""
-			})
-		}
-
+	toggle(force) {
+		assert(this.enabled, "not enabled")
+		this.init()
+		
+		const visible = typeof force === "boolean" ? force : this.settingsDiv.parentNode !== document.body
+		this.visible = visible
+		
 		if(visible) {
-			document.body.appendChild(settingsDiv)
-
+			document.$watch(">body", body => this.visible && body.appendChild(this.settingsDiv))
+	
+			const copyThemeFromElement = target => {
+				this.settingsDiv.classList.toggle("btr-light-theme", target.classList.contains("light-theme"))
+				this.settingsDiv.classList.toggle("btr-dark-theme", target.classList.contains("dark-theme"))
+			}
+		
 			document.$watch(".light-theme:not(.btr-settings-modal), .dark-theme:not(.btr-settings-modal)", target => {
-				if(themeObserver || !settingsDiv.parentNode) { return }
+				if(this.themeObserver || !this.settingsDiv.parentNode) { return }
 
-				themeObserver = new MutationObserver(() => copyThemeFromElement(target))
-				themeObserver.observe(target, { attributeFilter: ["class"], attributes: true })
+				this.themeObserver = new MutationObserver(() => copyThemeFromElement(target))
+				this.themeObserver.observe(target, { attributeFilter: ["class"], attributes: true })
 				copyThemeFromElement(target)
 			})
 
 			const lastContentOpen = sessionStorage.getItem("btr-settings-open")
-			if(lastContentOpen && contentDivs[lastContentOpen]) {
-				switchContent(lastContentOpen)
+			if(lastContentOpen && this.contentDivs[lastContentOpen]) {
+				this.switchContent(lastContentOpen)
 			} else {
-				switchContent("main")
+				this.switchContent("main")
 			}
 		} else {
-			switchContent("main")
+			this.switchContent("main")
+			
 			sessionStorage.removeItem("btr-settings-open")
-			settingsDiv.remove()
+			this.settingsDiv.remove()
 
-			if(themeObserver) {
-				themeObserver.disconnect()
-				themeObserver = null
+			if(this.themeObserver) {
+				this.themeObserver.disconnect()
+				this.themeObserver = null
 			}
 		}
-	}
+	},
+	
+	enable() {
+		this.enabled = true
+		document.$on("click", ".btr-settings-toggle", () => this.toggle())
+		
+		try {
+			const url = new URL(window.location.href)
 
-	const initShoutFilters = () => {
-		const filterContent = settingsDiv.$find("#btr-settings-shout-filters")
+			if(url.searchParams.get("btr_settings_open")) {
+				sessionStorage.setItem("btr-settings-open", true)
+
+				url.searchParams.delete("btr_settings_open")
+				window.history.replaceState(null, null, url.toString())
+			}
+		} catch(ex) {}
+
+		if(sessionStorage.getItem("btr-settings-open")) {
+			try { this.toggle(true) }
+			catch(ex) { console.error(ex) }
+		}
+	},
+	
+	switchContent(name) {
+		assert(this.enabled, "not enabled")
+		
+		if(this.currentContent === name) { return }
+
+		const lastElem = this.currentContent && this.contentDivs[this.currentContent]
+		if(lastElem) {
+			lastElem.classList.remove("selected")
+		}
+
+		const newElem = name && this.contentDivs[name]
+		if(newElem) {
+			newElem.classList.add("selected")
+		}
+
+		this.currentContent = name
+		sessionStorage.setItem("btr-settings-open", name)
+
+		if(name === "shoutFilters") {
+			if(!this.areFiltersInit) {
+				this.areFiltersInit = true
+				this.initShoutFilters()
+			}
+		}
+	},
+	
+	initShoutFilters() {
+		assert(this.enabled, "not enabled")
+		
+		const filterContent = this.settingsDiv.$find("#btr-settings-shout-filters")
 		const enabledList = filterContent.$find(".btr-filter-enabled")
 		const disabledList = filterContent.$find(".btr-filter-disabled")
 		const enabledLabel = enabledList.previousElementSibling
@@ -417,15 +247,211 @@ const btrSettingsModal = (() => {
 			updateFilterMode()
 			updateLists()
 		})
-	}
-
-	const initSettingsDiv = async () => {
-		let labelCounter = 0
+	},
+	
+	init() {
+		assert(this.enabled, "not enabled")
+		if(this.settingsDiv) { return }
 		
-		settingsDiv.$on("click", "[btr-tab]", ev => switchContent(ev.currentTarget.getAttribute("btr-tab")))
-		settingsDiv.$on("click", ".btr-close-subcontent", () => switchContent("main"))
+		this.settingsDiv = html`
+		<div class=btr-settings-modal>
+			<div class=btr-settings>
+				<div class=btr-settings-header>
+					<div class=btr-settings-header-title>BTRoblox</div>
+					<div style="flex: 1 1 auto"></div>
+					<div class="btr-settings-header-close btr-settings-toggle">✖</div>
+				</div>
+				<div class="btr-settings-content selected" id=btr-settings-main data-name=main>
+					<group label=General path=general>
+						<div>
+							<select path=theme>
+								<option selected disabled>Select Theme: (%opt%)</option>
+								<option value=default>Default</option>
+								<option value=simblk>Simply Black</option>
+								<option value=sky>Sky</option>
+								<option value=red>Red</option>
+							</select>
+							
+							<checkbox devOnly label="Theme Hot Reload" path=themeHotReload></checkbox>
+						</div>
+	
+						<checkbox label="Hide Ads" path=hideAds></checkbox>
+						<checkbox label="Fast User Search" path=general.fastSearch></checkbox>
+						<div>
+							<checkbox label="Show Chat" path=!hideChat></checkbox>
+							<checkbox label="Minimize Chat" path=smallChatButton require=!hideChat></checkbox>
+						</div>
+						<checkbox label="Show 'Copy Id' Context Items" path=enableContextMenus></checkbox>
+						<checkbox label="Higher Robux Precision" path=higherRobuxPrecision></checkbox>
+						
+						<div style="display: inline-block; width: 50%; padding: 6px 2px;float:right;">
+							<label style="">Robux to Cash Conversion Rate</label>
+							<span style="width: calc(100% - 14px); display: inline-flex;">
+								<select id=btr-robuxToCash-currency style="flex: 0 1 auto"></select>
+								<select id=btr-robuxToCash-rate style="flex: 1 1 auto; min-width: 0; margin-left: 4px"></select>
+							</span>
+							<span class=btr-setting-reset-button path=general.robuxToUSDRate></span>
+						</div>
+						
+						<checkbox label="Lower Default Audio Volume" path=fixAudioVolume></checkbox>
+						<checkbox label="Audio Player Controls" path=useNativeAudioPlayer></checkbox>
+					</group>
+					<group label=Navigation path=navigation toggleable>
+						<checkbox label="Keep Sidebar Open" path=noHamburger require=false></checkbox>
+						<button btr-tab=navigation class=btn-control-xs>Modify Buttons</button>
+					</group>
+					<group label=Home path=home>
+						<checkbox label="Show Friend Usernames" path=friendsShowUsername></checkbox>
+						<checkbox label="Show More Friends" path=friendsSecondRow></checkbox>
+					</group>
+					<group label=Profile path=profile toggleable>
+						<checkbox label="Embed Inventory" path=embedInventoryEnabled></checkbox>
+						<checkbox label="Show Last Online" path=lastOnline></checkbox>
+					</group>
+					<group label=Groups path=groups toggleable=redesign>
+						<div>
+							<checkbox label="Group Shout Notifications" path=shoutAlerts require=false></checkbox>
+							<button btr-tab=shoutFilters class=btn-control-xs>Modify Shout Notifications</button>
+						</div>
+						<div>
+							<empty></empty>
+							<button btr-tab=groupRedesign class=btn-control-xs>Modify Redesign Options</button>
+						</div>
+					</group>
+					<group label="Game Details" path=gamedetails toggleable>
+						<checkbox label="Highlight Owned Badges" path=showBadgeOwned></checkbox>
+						<checkbox label="Add Server List Pager" path=addServerPager></checkbox>
+					</group>
+					<group label="Item Details" path=itemdetails toggleable>
+						<checkbox label="Item Previewer" path=itemPreviewer></checkbox>
+						<button btr-tab=itemPreviewerSettings class=btn-control-xs>Previewer Preferences</button>
+						<checkbox label="Show Explorer Button" path=explorerButton></checkbox>
+						<checkbox label="Show Download Button" path=downloadButton></checkbox>
+						<checkbox label="Show Content Button" path=contentButton></checkbox>
+						<checkbox label="Show Owners Button" path=addOwnersList></checkbox>
+					</group>
+					<group label=Inventory path=inventory toggleable>
+						<checkbox label="Inventory Tools" path=inventoryTools></checkbox>
+					</group>
+					<group label=Catalog path=catalog toggleable>
+						<checkbox label="Show Owned Items" path=showOwnedAssets></checkbox>
+					</group>
+					<group label="Place Configure" path=placeConfigure>
+						<checkbox label="Version History" path=versionHistory></checkbox>
+					</group>
+					<group label="Advanced" minimizable minimized>
+						<div id=btr-settings-wip>
+						</div>
+						<div style="margin-top: 12px; float:right; width: 100%; clear:both">
+							<button id=btr-fix-chat class=btn-control-xs style=float:left>Fix invis chat messages</button>
+							<button id=btr-reset-settings class=btn-control-xs style=float:right>Reset settings to default</button>
+						</div>
+					</group>
+				</div>
+				<div class=btr-settings-content data-name=navigation>
+					<div class=btr-settings-content-header>
+						<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
+						<h4>Navigation Buttons</h4>
+					</div>
+					<div style="display:flex">
+						<group label="Sidebar" style="width:50%">
+						</group>
+						<group label="Header" style="width:50%">
+						</group>
+					</div>
+				</div>
+				<div class=btr-settings-content id=btr-settings-shout-filters data-name=shoutFilters>
+					<div class=btr-settings-content-header>
+						<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
+						<h4>Group Shout Notifications</h4>
+					</div>
+					<group path=groups>
+						<div>
+							<checkbox label="Enable Group Shout Notifications" path=shoutAlerts></checkbox>
+						</div>
+						<checkbox label="Browser Notifications" path=shoutAlertBrowserNotifs require=shoutAlerts></checkbox>
+						<checkbox label="Show In Notification Stream" path=shoutAlertsInNotifStream require=shoutAlerts></checkbox>
+					</group>
+					<div class=btr-filter-lists>
+						<div class=btr-filter-list>
+							<h5 class=btr-filter-list-header>Enabled</h5>
+							<ul class=btr-filter-enabled>
+							</ul>
+						</div>
+						<div class=btr-filter-center>
+						</div>
+						<div class=btr-filter-list>
+							<h5 class=btr-filter-list-header>Disabled</h5>
+							<ul class=btr-filter-disabled>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<div class=btr-settings-content id=btr-settings-item-previewer data-name=itemPreviewerSettings>
+					<div class=btr-settings-content-header>
+						<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
+						<h4>Item Previewer Preferences</h4>
+					</div>
+					<div>
+						<group>
+							<checkbox label="Item Previewer" path=itemdetails.itemPreviewer></checkbox>
+							<checkbox label="Hover Previewer" path=general.hoverPreview></checkbox>
+							<br>
+							<checkbox label="Show Layered Clothing (WIP)" path=general.previewLayeredClothing></checkbox>
+							<br>
+							<select label="Automatically open previewer:" path=itemdetails.itemPreviewerMode>
+								<option value=never>Never</option>
+								<option value=animations>For Animations</option>
+								<option value=always>Always</option>
+							</select>
+							<select label="Preview on hover:" path=general.hoverPreviewMode>
+								<option value=never>Never</option>
+								<option value=always>Always</option>
+							</select>
+						</group>
+					</div>
+				</div>
+				<div class=btr-settings-content id=btr-settings-group-redesign data-name=groupRedesign>
+					<div class=btr-settings-content-header>
+						<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
+						<h4>Group Redesign Options</h4>
+					</div>
+					<group label="Redesign" toggleable=redesign path=groups>
+						<checkbox label="Modify Layout" path=modifyLayout require=redesign></checkbox>
+						<checkbox label="Make Group Wall Paged" path=pagedGroupWall require=redesign></checkbox>
+						<checkbox label="Show Selected Role Member Count" path=selectedRoleCount require=redesign></checkbox>
+						<checkbox label="Hide Large Social Container" path=hideBigSocial require=redesign></checkbox>
+						<checkbox label="Show Title On Social Icon Hover" path=modifySmallSocialLinksTitle require=redesign></checkbox>
+					</group>
+				</div>
+				<div class=btr-settings-footer>
+					<div class=btr-settings-footer-version>v${chrome.runtime.getManifest().version}</div>
+					<div class=btr-settings-footer-text>Refresh the page to apply settings</div>
+				</div>
+			</div>
+		</div>`
+		
+		if(!IS_DEV_MODE) {
+			for(const elem of this.settingsDiv.$findAll("[devOnly]")) {
+				elem.remove()
+			}
+		}
+		
+		if(SETTINGS.loadError) {
+			this.settingsDiv.$find(".btr-settings-header").after(html`<div style="position:absolute; width: 100%; height: 20px; text-align: center; background: red; top: 30px; z-index:1000; font-size: 16px; color: white; font-weight: bold;">Settings failed to load, changes may not save</div>`)
+		}
+		
+		this.contentDivs = {}
+		
+		for(const elem of this.settingsDiv.$findAll(".btr-settings-content[data-name]")) {
+			elem.classList.remove("selected")
+			this.contentDivs[elem.dataset.name] = elem
+		}
+	
+		this.settingsDiv.$on("click", "[btr-tab]:not([disabled])", ev => this.switchContent(ev.currentTarget.getAttribute("btr-tab")))
+		this.settingsDiv.$on("click", ".btr-close-subcontent", () => this.switchContent("main"))
 
-		settingsDiv.$on("click", "#btr-fix-chat", () => {
+		this.settingsDiv.$on("click", "#btr-fix-chat", () => {
 			$.fetch("https://chat.roblox.com/v2/get-user-conversations?pageNumber=1&pageSize=10", {
 				credentials: "include",
 				xsrf: true
@@ -444,12 +470,13 @@ const btrSettingsModal = (() => {
 			})
 		})
 		
-		if(SETTINGS.loadError) {
-			settingsDiv.$find(".btr-settings-header").after(html`<div style="position:absolute; width: 100%; height: 20px; text-align: center; background: red; top: 30px; z-index:1000; font-size: 16px; color: white; font-weight: bold;">Settings failed to load, changes may not save</div>`)
-		}
-
-		{
-			const navButtons = settingsDiv.$find(`.btr-settings-content[data-name="navigation"]`)
+		
+		//
+		
+		let labelCounter = 0
+		
+		{ // Navigation Buttons
+			const navButtons = this.settingsDiv.$find(`.btr-settings-content[data-name="navigation"]`)
 			const header = navButtons.$find(`group[label="Header"]`)
 			const sidebar = navButtons.$find(`group[label="Sidebar"]`)
 			
@@ -508,13 +535,17 @@ const btrSettingsModal = (() => {
 				}
 			}
 			
+			if(location.host === "create.roblox.com") {
+				this.settingsDiv.$find(`button[btr-tab="navigation"]`).disabled = true
+			}
+			
 			SETTINGS.onChange("navigation.elements", update)
 			update()
 		}
 		
-		{
-			const currencySelect = settingsDiv.$find("#btr-robuxToCash-currency")
-			const rateSelect = settingsDiv.$find("#btr-robuxToCash-rate")
+		{ // RobuxToCash
+			const currencySelect = this.settingsDiv.$find("#btr-robuxToCash-currency")
+			const rateSelect = this.settingsDiv.$find("#btr-robuxToCash-rate")
 
 			currencySelect.$empty()
 			rateSelect.$empty()
@@ -589,8 +620,8 @@ const btrSettingsModal = (() => {
 			updateRate()
 		}
 
-		{
-			const resetButton = settingsDiv.$find("#btr-reset-settings")
+		{ // Reset Settings
+			const resetButton = this.settingsDiv.$find("#btr-reset-settings")
 			const resetButtonDefaultText = resetButton.textContent
 			let isResetting = false
 			let resetInterval
@@ -631,7 +662,7 @@ const btrSettingsModal = (() => {
 		const settingsDone = {}
 		const joinPaths = (group, path) => (!group || path.includes(".") ? path : `${group}.${path}`)
 
-		settingsDiv.$findAll("group").forEach(group => {
+		this.settingsDiv.$findAll("group").forEach(group => {
 			const groupPath = group.getAttribute("path") || ""
 
 			const titleContainer = html`<div class=btr-setting-group-title-container></div>`
@@ -817,14 +848,14 @@ const btrSettingsModal = (() => {
 			})
 		})
 
-		const wipGroup = settingsDiv.$find("#btr-settings-wip")
-		Object.entries(SETTINGS.loadedSettings).forEach(([groupPath, settingsGroup]) => {
-			Object.entries(settingsGroup).forEach(([settingName, settingValueInfo]) => {
+		const wipGroup = this.settingsDiv.$find("#btr-settings-wip")
+		for(const [groupPath, settingsGroup] of Object.entries(SETTINGS.loadedSettings)) {
+			for(const [settingName, settingValueInfo] of Object.entries(settingsGroup)) {
 				const defaultValueInfo = DEFAULT_SETTINGS[groupPath][settingName]
 				const settingValue = settingValueInfo.value
 
 				const settingPath = `${groupPath}.${settingName}`
-				if(settingsDone[settingPath] || defaultValueInfo.hidden) { return }
+				if(settingsDone[settingPath] || defaultValueInfo.hidden) { continue }
 
 				if(typeof settingValue === "boolean") {
 					const checkbox = html`<checkbox></checkbox>`
@@ -852,14 +883,14 @@ const btrSettingsModal = (() => {
 				} else {
 					wipGroup.append(html`<div>${settingPath} (${typeof settingValue})`)
 				}
-			})
-		})
-
-		settingsDiv.$findAll(".btr-setting-reset-button").forEach(btn => {
-			btn.append(html`<span class=btr-cross></span>`)
-		})
+			}
+		}
 		
-		settingsDiv.$findAll(".btr-setting-reset-button[path]").forEach(btn => {
+		for(const btn of this.settingsDiv.$findAll(".btr-setting-reset-button")) {
+			btn.append(html`<span class=btr-cross></span>`)
+		}
+		
+		for(const btn of this.settingsDiv.$findAll(".btr-setting-reset-button[path]")) {
 			const settingPath = btn.getAttribute("path")
 
 			const update = () => {
@@ -874,10 +905,6 @@ const btrSettingsModal = (() => {
 
 			SETTINGS.onChange(settingPath, update)
 			update()
-		})
+		}
 	}
-
-	return {
-		toggle: toggleSettingsDiv
-	}
-})()
+}

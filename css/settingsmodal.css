@@ -56,6 +56,8 @@
 	display: flex;
 	height: 30px;
 	align-items: center;
+	background: #000;
+	color: rgb(203, 203, 203);
 }
 
 .btr-light-theme .btr-settings-header {

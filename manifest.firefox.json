@@ -89,6 +89,7 @@
 				"js/feat/fastSearch.js",
 				"js/feat/navigation.js",
 				"js/feat/robuxToCash.js",
+				"js/feat/settingsModal.js",
 
 				"js/rbx/FileFormat/ByteReader.js",
 				"js/rbx/FileFormat/Instance.js",

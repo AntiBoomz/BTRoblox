@@ -222,6 +222,33 @@ pageInit.create = () => {
 		})
 	})
 	
+	loggedInUserPromise = new Promise(async resolve => {
+		const res = await fetch(`https://users.roblox.com/v1/users/authenticated`, { credentials: "include" })
+		const json = await res.json()
+		
+		resolve(json.id ?? -1)
+	})
+	
+	// Add settings
+	InjectJS.inject(() => {
+		BTRoblox.addReactHandler((args, result, objects) => {
+			if(!result?.props) { return }
+			
+			const menuList = BTRoblox.reactFind(result, x => x.props.MenuListProps && x.props.children?.[0]?.[0]?.key === "auth-status-settings")
+			
+			if(menuList) {
+				menuList.props.children.unshift(
+					objects.React.createElement(objects.Mui.MenuItem, {
+						children: "BTR Settings",
+						className: "btr-settings-toggle"
+					})
+				)
+			}
+		})
+	})
+	
+	SettingsModal.enable()
+	
 	// Fix page not updating properly when backing/forwarding
 	InjectJS.inject(() => {
 		BTRoblox.addReactModuleHandler((module, target, objects) => {

@@ -265,16 +265,6 @@ function createPager(noSelect, hideWhenEmpty) {
 	return pager
 }
 
-const toggleSettingsModal = async force => {
-	await loadOptionalLibrary("settingsModal")
-
-	if(!document.body) { // Stuff breaks if body is not loaded
-		await document.$watch(">body").$promise()
-	}
-
-	btrSettingsModal.toggle(force)
-}
-
 let reactListenerIndex = 0
 
 const parseReactStringSelector = selector => {
@@ -485,24 +475,8 @@ pageInit.common = () => {
 		index: 0,
 		html: `<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>`
 	})
-
-	try {
-		const url = new URL(window.location.href)
-
-		if(url.searchParams.get("btr_settings_open")) {
-			sessionStorage.setItem("btr-settings-open", true)
-
-			url.searchParams.delete("btr_settings_open")
-			window.history.replaceState(null, null, url.toString())
-		}
-	} catch(ex) {}
-
-	if(sessionStorage.getItem("btr-settings-open")) {
-		try { toggleSettingsModal() }
-		catch(ex) { console.error(ex) }
-	}
 	
-	document.$on("click", ".btr-settings-toggle", toggleSettingsModal)
+	SettingsModal.enable()
 
 	//
 

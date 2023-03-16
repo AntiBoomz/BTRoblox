@@ -28,13 +28,6 @@ const optionalLibraries = {
 			"js/feat/sourceViewer.js",
 			"css/sourceviewer.css"
 		]
-	},
-	settingsModal: {
-		promise: null,
-		assets: [
-			"js/feat/settingsModal.js",
-			"css/settingsmodal.css"
-		]
 	}
 }
 

@@ -1,7 +1,7 @@
 "use strict"
 
 const btrThemes = {
-	cssFiles: ["main.css"],
+	cssFiles: ["main.css", "settingsmodal.css"],
 	themeStyles: [],
 
 	setTheme(theme) {

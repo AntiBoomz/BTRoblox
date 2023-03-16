@@ -21,8 +21,8 @@ browserAction.onClicked.addListener(tab => {
 	chrome.scripting.executeScript({
 		target: { tabId: tab.id },
 		func: () => {
-			if(typeof toggleSettingsModal === "function") {
-				SETTINGS.load(() => toggleSettingsModal(true))
+			if(typeof SettingsModal !== "undefined" && SettingsModal.enabled) {
+				SETTINGS.load(() => SettingsModal.toggle(true))
 				return true
 			}
 		}
