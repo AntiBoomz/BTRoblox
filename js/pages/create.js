@@ -128,10 +128,21 @@ pageInit.create = () => {
 					functionProxies.set(type, proxy)
 				}
 				
+				// Okay, this is hacky as heck...
+				// There's user level code that breaks if result.type is directly
+				// set to proxy, so we need to make it only return proxy when we're
+				// not executing a component render function.
+				
 				Object.defineProperty(result, "type", {
 					enumerable: true,
 					configurable: true,
-					get: () => (isDispatching ? proxy : type),
+					get: () => {
+						// According to ReactFiberHooks.js, dispatcher will be set to ContextOnlyDispatcher when not rendering
+						const dispatcher = objects.React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher.current
+						const isRendering = dispatcher && dispatcher.useCallback !== dispatcher.useEffect
+						
+						return isRendering ? type : proxy
+					},
 					set: x => {
 						delete result.type
 						result.type = x
@@ -150,16 +161,6 @@ pageInit.create = () => {
 			} else if("useState" in module && "useCallback" in module) {
 				module.createElement = new Proxy(module.createElement, { apply: onCreateElement })
 				objects.React = module
-				
-				const dispatcher = objects.React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher
-				let current
-				
-				Object.defineProperty(dispatcher, "current", {
-					enumerable: true,
-					configurable: true,
-					get: () => current,
-					set: x => (current = x, isDispatching = current && current.useCallback === current.useEffect)
-				})
 			}
 			
 			return module
@@ -229,81 +230,7 @@ pageInit.create = () => {
 		resolve(json.id ?? -1)
 	})
 	
-	// Add settings
-	InjectJS.inject(() => {
-		BTRoblox.addReactHandler((args, result, objects) => {
-			if(!result?.props) { return }
-			
-			const menuList = BTRoblox.reactFind(result, x => x.props.MenuListProps && x.props.children?.[0]?.[0]?.key === "auth-status-settings")
-			
-			if(menuList) {
-				menuList.props.children.unshift(
-					objects.React.createElement(objects.Mui.MenuItem, {
-						children: "BTR Settings",
-						className: "btr-settings-toggle"
-					})
-				)
-			}
-		})
-	})
-	
-	SettingsModal.enable()
-	
-	// Fix page not updating properly when backing/forwarding
-	InjectJS.inject(() => {
-		BTRoblox.addReactModuleHandler((module, target, objects) => {
-			if("useRouter" in module) {
-				objects.NextRouter = module
-				
-				window.addEventListener("popstate", ev => {
-					objects.NextRouter.router.push(location.href)
-				})
-				
-				document.addEventListener("click", ev => {
-					const anchor = ev.target.nodeName === "A" ? ev.target : ev.target.closest("a")
-					
-					if(anchor?.classList.contains("btr-next-anchor")) {
-						if(!ev.shiftKey && !ev.ctrlKey) {
-							ev.preventDefault()
-							objects.NextRouter.router.push(anchor.href)
-						}
-					}
-				})
-			}
-			
-			return module
-		})
-		
-	})
-	
-	// Fix thumbnail2d using batch size of 100 (which errors)
-	InjectJS.inject(() => {
-		BTRoblox.addReactModuleHandler((module, target, objects) => {
-			if(typeof module === "object") {
-				const entries = Object.entries(module)
-				
-				if(entries.length < 10) {
-					const batchSize = entries.find(x => x[1] === 100)
-					
-					if(batchSize && entries.find(x => x[1]?.assetThumbnail === "assetThumbnail")) {
-						module = new Proxy(module, {
-							get(target, property) {
-								if(property === batchSize[0]) {
-									return 50
-								}
-								
-								return target[property]
-							}
-						})
-					}
-				}
-			}
-			
-			return module
-		})
-	})
-	
-	// Hook to Mui stuff
+	// Populate objects.Mui
 	InjectJS.inject(() => {
 		BTRoblox.addReactModuleHandler((module, target, objects) => {
 			const targetSource = target.toString()
@@ -351,56 +278,68 @@ pageInit.create = () => {
 		})
 	})
 	
-	// Fix asset grid views
+	// Populate objects.NextRouter
 	InjectJS.inject(() => {
 		BTRoblox.addReactModuleHandler((module, target, objects) => {
-			const methods = Object.entries(module).filter(x => typeof x[1] === "function")
-			
-			if(methods.length === 1) {
-				const method = methods[0]
-				const methodSource = method[1].toString()
+			if("useRouter" in module) {
+				objects.NextRouter = module
 				
-				if(methodSource.includes("currentPageItems") && methodSource.includes("PagingParametersChanged")) { // useItemPager.ts
-					let lastReject
+				document.addEventListener("click", ev => {
+					const anchor = ev.target.nodeName === "A" ? ev.target : ev.target.closest("a")
 					
-					BTRoblox.hijackFunction(module, method[0], (target, thisArg, args) => {
-						const hijack = BTRoblox.tempHijackFunction(objects.React, "useCallback", args => {
-							hijack.disconnect()
-							
-							BTRoblox.hijackFunction(args, 0, (target, thisArg, args) => {
-								const promise = args[0]
-								
-								if(promise instanceof Promise) {
-									const didReject = !!lastReject
-									
-									if(didReject) {
-										lastReject("Paging parameters were changed")
-										lastReject = null
-									}
-									
-									args[0] = new Promise((resolve, reject) => {
-										lastReject = reject
-										promise.then(resolve, reject).finally(() => {
-											if(lastReject === reject) {
-												lastReject = null
-											}
-										})
-									})
-									
-									if(didReject) {
-										return Promise.resolve().then(() => target.apply(thisArg, args))
-									}
+					if(anchor?.classList.contains("btr-next-anchor")) {
+						if(!ev.shiftKey && !ev.ctrlKey) {
+							ev.preventDefault()
+							objects.NextRouter.router.push(anchor.href)
+						}
+					}
+				})
+			}
+			
+			return module
+		})
+	})
+	
+	// Add settings
+	InjectJS.inject(() => {
+		BTRoblox.addReactHandler((args, result, objects) => {
+			if(!result?.props) { return }
+			
+			const menuList = BTRoblox.reactFind(result, x => x.props.MenuListProps && BTRoblox.reactFind(x, x => x.props.content === "Action.LogOut"))
+			
+			if(menuList) {
+				menuList.props.children.unshift(
+					objects.React.createElement(objects.Mui.MenuItem, {
+						children: "BTR Settings",
+						className: "btr-settings-toggle"
+					})
+				)
+			}
+		})
+	})
+	
+	SettingsModal.enable()
+	
+	// Fix thumbnail2d using batch size of 100 (which errors)
+	InjectJS.inject(() => {
+		BTRoblox.addReactModuleHandler((module, target, objects) => {
+			if(typeof module === "object") {
+				const entries = Object.entries(module)
+				
+				if(entries.length < 10) {
+					const batchSize = entries.find(x => x[1] === 100)
+					
+					if(batchSize && entries.find(x => x[1]?.assetThumbnail === "assetThumbnail")) {
+						module = new Proxy(module, {
+							get(target, property) {
+								if(property === batchSize[0]) {
+									return 50
 								}
 								
-								return target.apply(thisArg, args)
-							})
+								return target[property]
+							}
 						})
-						
-						const result = target.apply(thisArg, args)
-						hijack.disconnect()
-						
-						return result
-					})
+					}
 				}
 			}
 			
@@ -571,8 +510,8 @@ pageInit.create = () => {
 		})
 	})
 	
+	// Add context menu items to item cards
 	if(SETTINGS.get("general.enableContextMenus")) {
-		// Add context menu items to item cards
 		InjectJS.inject(() => {
 			BTRoblox.addReactHandler((args, result, objects) => {
 				if(!result?.props) { return }
