@@ -11,8 +11,8 @@ const ContextMenu = {
 				"*://*.roblox.com/catalog/*",
 				"*://*.roblox.com/library/*",
 				"*://*.roblox.com/My/Item.aspx*ID=*",
-				"*://create.roblox.com/creations/catalog/*",
-				"*://create.roblox.com/creations/marketplace/*",
+				"*://create.roblox.com/dashboard/creations/catalog/*",
+				"*://create.roblox.com/dashboard/creations/marketplace/*",
 				"*://create.roblox.com/marketplace/asset/*",
 			]
 		},
@@ -66,7 +66,7 @@ const ContextMenu = {
 				"*://*.roblox.com/games/*/*",
 				"*://*.roblox.com/refer?*PlaceId=*",
 				"*://*.roblox.com/games/refer?*PlaceId=*",
-				"*://create.roblox.com/creations/experiences/*/places/*",
+				"*://create.roblox.com/dashboard/creations/experiences/*/places/*",
 				"*://*/*btr_placeId=*"
 			]
 		},
@@ -84,7 +84,7 @@ const ContextMenu = {
 			contexts: ["link"],
 			targetUrlPatterns: [
 				"*://*.roblox.com/universes/*id=*",
-				"*://create.roblox.com/creations/experiences/*/overview",
+				"*://create.roblox.com/dashboard/creations/experiences/*/overview",
 				"*://*/*btr_universeId=*"
 			]
 		},
