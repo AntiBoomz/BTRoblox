@@ -428,7 +428,10 @@ const RBXAvatar = (() => {
 			}
 		}
 	} catch(ex) {}
-
+	
+	const invalidRenderMetaAssetIds = {}
+	const invalidRenderAssetIds = {}
+	
 	class Avatar extends EventEmitter {
 		constructor() {
 			super()
@@ -1527,13 +1530,13 @@ const RBXAvatar = (() => {
 			}
 		
 			for(const acc of Object.values(request.accessories)) {
-				if(!body.avatarDefinition.assets.find(x => x.id === acc.asset.id)) {
-					body.avatarDefinition.assets.push({ id: acc.asset.id, meta: acc.asset.meta })
+				if(!body.avatarDefinition.assets.find(x => x.id === acc.asset.id) && !invalidRenderAssetIds[acc.asset.id]) {
+					body.avatarDefinition.assets.push({ id: acc.asset.id, meta: !invalidRenderMetaAssetIds[acc.asset.id] ? acc.asset.meta : undefined })
 				}
 			}
 			
 			for(const bp of Object.values(request.bodyparts)) {
-				if(!body.avatarDefinition.assets.find(x => x.id === bp.asset.id)) {
+				if(!body.avatarDefinition.assets.find(x => x.id === bp.asset.id) && !invalidRenderAssetIds[bp.asset.id]) {
 					body.avatarDefinition.assets.push({ id: bp.asset.id })
 				}
 			}
@@ -1550,6 +1553,21 @@ const RBXAvatar = (() => {
 			if(!objHash) {
 				const json = await RobloxApi.avatar.renderAvatar(body)
 				if(!requestsMatch(request, this.getLayeredRequest())) { return }
+				
+				if(json.errors) {
+					for(const error of json.errors) {
+						if(error.code === 2) {
+							const assetId = parseInt(error.field?.match(/AssetId: (\d+)/)?.[1], 10)
+							if(!Number.isSafeInteger(assetId)) { continue }
+							
+							if(error.field?.startsWith("InvalidAsset ")) {
+								invalidRenderAssetIds[assetId] = true
+							} else if(error.field?.startsWith("InvalidMeta ")) {
+								invalidRenderMetaAssetIds[assetId] = true
+							}
+						}
+					}
+				}
 				
 				if(!json?.imageUrl) {
 					return
