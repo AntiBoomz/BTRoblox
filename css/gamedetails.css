@@ -19,6 +19,7 @@ div.page-content {
 
 body .btr-game-main-container {
 	padding: 12px;
+	margin-top: 12px;
 }
 
 .light-theme .btr-game-main-container {
@@ -105,19 +106,10 @@ body .btr-game-main-container {
 
 /* Universe Box */
 
-.btr-universe-box {
-	height: 50px;
-	padding: 12px 20px;
-	margin: 0 0 12px;
-
-	background-color: #EFFAFF;
-
-	color: #555;
-	font-size: 18px;
-	font-weight: 400;
+html body .btr-universe-box {
+	height: 56px;
+	margin: 12px 0 0;
 	line-height: 26px;
-
-	box-shadow: 0 1px 3px rgba(0,0,0,0.15);
 }
 
 .btr-universe-visit-button {

@@ -584,7 +584,7 @@ pageInit.gamedetails = placeId => {
 				const rootPlaceName = dataCont.dataset.placeName
 				
 				const box = html`
-				<div class="btr-universe-box">
+				<div class="section-content btr-universe-box">
 					This place is part of 
 					<a class="btr-universe-name text-link" href="/games/${rootPlaceId}/${formatUrlName(rootPlaceName)}">${rootPlaceName || "..."}</a>
 					<div class="VisitButton VisitButtonPlayGLI btr-universe-visit-button" placeid="${rootPlaceId}" data-action=play data-is-membership-level-ok=true>
@@ -592,7 +592,7 @@ pageInit.gamedetails = placeId => {
 					</div>
 				</div>`
 
-				newContainer.prepend(box)
+				newContainer.before(box)
 			}
 		})
 	
