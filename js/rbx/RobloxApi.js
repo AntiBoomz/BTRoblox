@@ -38,7 +38,8 @@ const wrapArgs = async args => {
 			} else if(value instanceof Blob) {
 				value = {
 					__btrType: "Blob",
-					body: Array.from(new Uint8Array(await value.arrayBuffer()))
+					body: Array.from(new Uint8Array(await value.arrayBuffer())),
+					type: value.type
 				}
 			} else if(value instanceof ArrayBuffer) {
 				value = {
