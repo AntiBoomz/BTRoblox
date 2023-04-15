@@ -705,19 +705,22 @@ const $ = (() => {
 
 //
 
-Promise = class extends Promise {
-	constructor(fn) {
+Promise = new Proxy(Promise, {
+	construct(target, args) {
+		const fn = args[0]
 		let res, rej
 		
-		super((...args) => {
+		const promise = new target((...args) => {
 			[res, rej] = args
 			if(fn) { fn(...args) }
 		})
 		
-		this.$resolve = res
-		this.$reject = rej
+		promise.$resolve = res
+		promise.$reject = rej
+		
+		return promise
 	}
-}
+})
 
 //
 
