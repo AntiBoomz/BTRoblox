@@ -18,7 +18,7 @@
 	"browser_specific_settings": {
 		"gecko": {
 			"id": "btroblox@antiboomz.com",
-			"strict_min_version": "107.0"
+			"strict_min_version": "102.0"
 		}
 	},
 	
