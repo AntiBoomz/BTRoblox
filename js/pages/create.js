@@ -510,6 +510,111 @@ pageInit.create = () => {
 		})
 	})
 	
+	// Add download option to version history
+	InjectJS.inject(() => {
+		BTRoblox.addReactHandler((args, result, objects) => {
+			if(!result?.props) { return }
+			
+			try {
+				if(result.props["data-testid"]?.startsWith("version-history")) {
+					const version = args[0].version
+					const right = result.props.children[3]
+					
+					if(!Array.isArray(right.props.children)) {
+						right.props.children = [right.props.children]
+					}
+					
+					right.props.children.unshift(
+						objects.React.createElement(objects.Mui.Button, {
+							className: "btr-download-version",
+							btrVersion: version.assetVersionNumber,
+							btrAssetId: version.assetId,
+							size: "small",
+							color: "secondary",
+							children: [
+								objects.React.createElement("span", {
+									className: "btr-mui-circular-progress-root",
+									style: {
+										width: "20px",
+										height: "20px",
+										position: "absolute",
+										left: "7px",
+										display: "none"
+									},
+									children: objects.React.createElement("svg", {
+										className: "btr-mui-circular-progress-svg",
+										focusable: false,
+										viewBox: "22 22 44 44",
+										children: objects.React.createElement("circle", {
+											className: "btr-mui-circular-progress",
+											"stroke-width": 3.6,
+											fill: "none",
+											cx: 44,
+											cy: 44,
+											r: 20.2
+										})
+									})
+								}),
+								objects.React.createElement("svg", {
+									className: "MuiSvgIcon-root btr-download-icon",
+									focusable: false,
+									viewBox: "0 0 24 24",
+									style: {
+										height: "19px",
+										"margin-right": "7px"
+									},
+									children: objects.React.createElement("path", {
+										d: "M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"
+									})
+								}),
+								" ", "Download",,
+							],
+							style: {
+								"margin-right": "4px"
+							}
+						})
+					)
+				}
+			} catch(ex) {
+				console.error(ex)
+			}
+		})
+	})
+	
+	let isDownloading = false
+	
+	document.$on("click", ".btr-download-version", ev => {
+		const button = ev.currentTarget
+		
+		const assetId = parseInt(button.getAttribute("btrAssetId"), 10)
+		const assetVersionNumber = parseInt(button.getAttribute("btrVersion"), 10)
+		
+		if(!Number.isSafeInteger(assetId) || !Number.isSafeInteger(assetVersionNumber)) {
+			return
+		}
+		
+		if(isDownloading) { return }
+		isDownloading = true
+		
+		button.$find(".btr-mui-circular-progress-root").style.display = ""
+		button.$find(".btr-download-icon").style.opacity = "0"
+		
+		const placeNameRaw = document.title.match(/^(.*) \/ Version History$/)?.[1] ?? "place"
+		const placeName = placeNameRaw.replace(/\W+/g, "-").replace(/^-+|-+$/g, "")
+		const fileName = `${placeName}-${assetVersionNumber}.rbxl`
+		
+		const assetUrl = `https://assetdelivery.roblox.com/v1/asset/?id=${assetId}&version=${assetVersionNumber}`
+		AssetCache.loadBuffer(assetUrl, buffer => {
+			const blobUrl = URL.createObjectURL(new Blob([buffer], { type: "application/octet-stream" }))
+			startDownload(blobUrl, fileName)
+			URL.revokeObjectURL(blobUrl)
+			
+			isDownloading = false
+			button.$find(".btr-mui-circular-progress-root").style.display = "none"
+			button.$find(".btr-download-icon").style.opacity = ""
+		})
+	})
+	
 	// Add context menu items to item cards
 	if(SETTINGS.get("general.enableContextMenus")) {
 		InjectJS.inject(() => {
@@ -525,7 +630,7 @@ pageInit.create = () => {
 		})
 		
 		document.$on("contextmenu", "[btr-context-url]", ev => {
-			const parent = ev.target.matches("a") ? ev.target : ev.target.closest("a")
+			const parent = ev.currentTarget.matches("a") ? ev.currentTarget : ev.currentTarget.closest("a")
 			
 			if(parent) {
 				const originalHref = parent.getAttribute("href")
@@ -539,16 +644,16 @@ pageInit.create = () => {
 					}
 				})
 			} else {
-				assert(!ev.target.$find("a"), "cant do context menu - link in target")
+				assert(!ev.currentTarget.$find("a"), "cant do context menu - link in target")
 				
 				const link = html`<a style="display:contents">`
 				link.href = ev.currentTarget.getAttribute("btr-context-url")
 				
-				ev.target.before(link)
-				link.append(ev.target)
+				ev.currentTarget.before(link)
+				link.append(ev.currentTarget)
 				
 				requestAnimationFrame(() => {
-					link.before(ev.target)
+					link.before(ev.currentTarget)
 					link.remove()
 				})
 			}
