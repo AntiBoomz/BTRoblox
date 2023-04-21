@@ -347,316 +347,273 @@ pageInit.create = () => {
 		})
 	})
 	
-	// Adjust options menu items	
-	InjectJS.inject(() => {
-		BTRoblox.addReactHandler((args, result, objects) => {
-			if(!result?.props) { return }
-			
-			if(result.props["data-testid"] === "experience-options-menu") {
-				const children = result.props.children = [result.props.children].flat(10).filter(x => x)
+	// Adjust options menu items
+	if(SETTINGS.get("create.assetOptions")) {
+		InjectJS.inject(() => {
+			BTRoblox.addReactHandler((args, result, objects) => {
+				if(!result?.props) { return }
 				
-				if(args[0].itemType === "Game") {
-					let index = children.findIndex(x => x?.key === "Action.OpenInNewTab")
-					if(index !== -1) { children.splice(index, 1) }
+				if(result.props["data-testid"] === "experience-options-menu") {
+					const children = result.props.children = [result.props.children].flat(10).filter(x => x)
 					
-					index = children.findIndex(x => x?.key === "Action.CopyURL")
-					if(index !== -1) { children.splice(index, 1) }
-					
-					index = children.findIndex(x => x?.key === "Action.CopyUniverseID")
-					if(index !== -1) { children.splice(index, 1) }
-					
-					index = children.findIndex(x => x?.props.children === "Copy Start Place ID")
-					if(index !== -1) { children.splice(index, 1) }
-					
-					index = children.findIndex(x => x?.key === "Action.OpenExperienceDetails")
-					if(index !== -1) {
-						const entry = children[index]
-						delete entry.props.onClick
-						
-						children[index] = objects.jsx("a", {
-							href: `https://www.roblox.com/games/${args[0].creation.assetId}/`,
-							target: `_blank`,
-							style: { all: "unset", display: "contents" },
-							children: entry
-						})
-					}
-					
-					index = children.findIndex(x => x?.key === "Configure Localization")
-					if(index !== -1) {
-						const entry = children[index]
-						delete entry.props.onClick
-						
-						children[index] = objects.jsx("a", {
-							href: `/dashboard/creations/experiences/${args[0].creation.universeId}/localization`,
-							style: { all: "unset", display: "contents" },
-							className: "btr-next-anchor",
-							children: entry
-						})
-					}
-					
-					index = children.findIndex(x => x?.key === "Developer Stats")
-					if(index !== -1) {
-						const entry = children[index]
-						delete entry.props.onClick
-						
-						children[index] = objects.jsx("a", {
-							href: `/dashboard/creations/experiences/${args[0].creation.universeId}/stats`,
-							style: { all: "unset", display: "contents" },
-							className: "btr-next-anchor",
-							children: entry
-						})
-					}
-					
-					index = children.findIndex(x => x?.key === "Action.CreateBadge")
-					if(index !== -1) {
-						const entry = children[index]
-						delete entry.props.onClick
-						
-						children[index] = objects.jsx("a", {
-							href: `/dashboard/creations/experiences/${args[0].creation.universeId}/badges/create`,
-							style: { all: "unset", display: "contents" },
-							className: "btr-next-anchor",
-							children: entry
-						})
-					}
-						
-					children.splice(
-						2, 0,
-						objects.jsx("a", {
-							href: `/dashboard/creations/experiences/${args[0].creation.universeId}/overview`,
-							style: { all: "unset", display: "contents" },
-							className: "btr-next-anchor",
-							children: objects.jsx(objects.Mui.MenuItem, { children: "Configure Experience" })
-						}),
-						objects.jsx("a", {
-							href: `/dashboard/creations/experiences/${args[0].creation.universeId}/places/${args[0].creation.assetId}/configure`,
-							style: { all: "unset", display: "contents" },
-							className: "btr-next-anchor",
-							children: objects.jsx(objects.Mui.MenuItem, { children: "Configure Start Place" })
-						}),
-					)
-				} else if(args[0].itemType === "CatalogAsset") {
-					let index = children.findIndex(x => x?.key === "Action.OpenInNewTab")
-					if(index !== -1) { children.splice(index, 1) }
-						
-					children.splice(
-						0, 0,
-						objects.jsx("a", {
-							href: `https://www.roblox.com/catalog/${args[0].creation.assetId}/`,
-							target: "_blank",
-							style: { all: "unset", display: "contents" },
-							children: objects.jsx(objects.Mui.MenuItem, { children: "View on Roblox" })
-						}),
-						objects.jsx("hr", {
-							className: "MuiDivider-root"
-						}),
-						objects.jsx("a", {
-							href: `/dashboard/creations/catalog/${args[0].creation.assetId}/configure`,
-							style: { all: "unset", display: "contents" },
-							className: "btr-next-anchor",
-							children: objects.jsx(objects.Mui.MenuItem, { children: "Configure Asset" })
-						})
-					)
-					
-					index = children.findIndex(x => x?.key === "Action.CopyURL")
-					if(index !== -1) { children.splice(index, 1) }
-					
-					index = children.findIndex(x => x?.props.children === "Copy Asset ID")
-					if(index !== -1) { children.splice(index, 1) }
-					
-					index = children.findIndex(x => x?.props.children === "Copy Asset URI")
-					if(index !== -1) { children.splice(index, 1) }
-				}
-			} else if(args[0]?.menuItems && args[0]?.setMenuOpen) {
-				const parent = result.props.children?.[1]
-				
-				if(parent?.props) {
-					const children = parent.props.children = [parent.props.children].flat(10)
-					const assetDetail = children.find(x => x?.key === "open-asset-detail")
-					
-					if(assetDetail) {
-						const assetId = assetDetail.props.assetId
-						
-						let index = children.indexOf(assetDetail)
+					if(args[0].itemType === "Game") {
+						let index = children.findIndex(x => x?.key === "Action.OpenInNewTab")
 						if(index !== -1) { children.splice(index, 1) }
 						
-						index = children.findIndex(x => x?.key === "copy-asset-id")
+						index = children.findIndex(x => x?.key === "Action.CopyURL")
 						if(index !== -1) { children.splice(index, 1) }
 						
-						children.unshift(
+						index = children.findIndex(x => x?.key === "Action.CopyUniverseID")
+						if(index !== -1) { children.splice(index, 1) }
+						
+						index = children.findIndex(x => x?.props.children === "Copy Start Place ID")
+						if(index !== -1) { children.splice(index, 1) }
+						
+						index = children.findIndex(x => x?.key === "Action.OpenExperienceDetails")
+						if(index !== -1) {
+							const entry = children[index]
+							delete entry.props.onClick
+							
+							children[index] = objects.jsx("a", {
+								href: `https://www.roblox.com/games/${args[0].creation.assetId}/`,
+								target: `_blank`,
+								style: { all: "unset", display: "contents" },
+								children: entry
+							})
+						}
+						
+						index = children.findIndex(x => x?.key === "Configure Localization")
+						if(index !== -1) {
+							const entry = children[index]
+							delete entry.props.onClick
+							
+							children[index] = objects.jsx("a", {
+								href: `/dashboard/creations/experiences/${args[0].creation.universeId}/localization`,
+								style: { all: "unset", display: "contents" },
+								className: "btr-next-anchor",
+								children: entry
+							})
+						}
+						
+						index = children.findIndex(x => x?.key === "Developer Stats")
+						if(index !== -1) {
+							const entry = children[index]
+							delete entry.props.onClick
+							
+							children[index] = objects.jsx("a", {
+								href: `/dashboard/creations/experiences/${args[0].creation.universeId}/stats`,
+								style: { all: "unset", display: "contents" },
+								className: "btr-next-anchor",
+								children: entry
+							})
+						}
+						
+						index = children.findIndex(x => x?.key === "Action.CreateBadge")
+						if(index !== -1) {
+							const entry = children[index]
+							delete entry.props.onClick
+							
+							children[index] = objects.jsx("a", {
+								href: `/dashboard/creations/experiences/${args[0].creation.universeId}/badges/create`,
+								style: { all: "unset", display: "contents" },
+								className: "btr-next-anchor",
+								children: entry
+							})
+						}
+							
+						children.splice(
+							2, 0,
 							objects.jsx("a", {
-								href: `https://www.roblox.com/catalog/${assetId}/`,
+								href: `/dashboard/creations/experiences/${args[0].creation.universeId}/overview`,
+								style: { all: "unset", display: "contents" },
+								className: "btr-next-anchor",
+								children: objects.jsx(objects.Mui.MenuItem, { children: "Configure Experience" })
+							}),
+							objects.jsx("a", {
+								href: `/dashboard/creations/experiences/${args[0].creation.universeId}/places/${args[0].creation.assetId}/configure`,
+								style: { all: "unset", display: "contents" },
+								className: "btr-next-anchor",
+								children: objects.jsx(objects.Mui.MenuItem, { children: "Configure Start Place" })
+							}),
+						)
+					} else if(args[0].itemType === "CatalogAsset") {
+						let index = children.findIndex(x => x?.key === "Action.OpenInNewTab")
+						if(index !== -1) { children.splice(index, 1) }
+							
+						children.splice(
+							0, 0,
+							objects.jsx("a", {
+								href: `https://www.roblox.com/catalog/${args[0].creation.assetId}/`,
 								target: "_blank",
 								style: { all: "unset", display: "contents" },
 								children: objects.jsx(objects.Mui.MenuItem, { children: "View on Roblox" })
 							}),
-							objects.jsx("a", {
-								href: `/marketplace/asset/${assetId}/`,
-								target: "_blank",
-								style: { all: "unset", display: "contents" },
-								children: objects.jsx(objects.Mui.MenuItem, { children: "View in Marketplace" })
+							objects.jsx("hr", {
+								className: "MuiDivider-root"
 							}),
-							objects.jsx(objects.Mui.Divider, {}),
 							objects.jsx("a", {
-								href: `/dashboard/creations/marketplace/${assetId}/configure`,
+								href: `/dashboard/creations/catalog/${args[0].creation.assetId}/configure`,
 								style: { all: "unset", display: "contents" },
 								className: "btr-next-anchor",
 								children: objects.jsx(objects.Mui.MenuItem, { children: "Configure Asset" })
 							})
 						)
+						
+						index = children.findIndex(x => x?.key === "Action.CopyURL")
+						if(index !== -1) { children.splice(index, 1) }
+						
+						index = children.findIndex(x => x?.props.children === "Copy Asset ID")
+						if(index !== -1) { children.splice(index, 1) }
+						
+						index = children.findIndex(x => x?.props.children === "Copy Asset URI")
+						if(index !== -1) { children.splice(index, 1) }
+					}
+				} else if(args[0]?.menuItems && args[0]?.setMenuOpen) {
+					const parent = result.props.children?.[1]
+					
+					if(parent?.props) {
+						const children = parent.props.children = [parent.props.children].flat(10)
+						const assetDetail = children.find(x => x?.key === "open-asset-detail")
+						
+						if(assetDetail) {
+							const assetId = assetDetail.props.assetId
+							
+							let index = children.indexOf(assetDetail)
+							if(index !== -1) { children.splice(index, 1) }
+							
+							index = children.findIndex(x => x?.key === "copy-asset-id")
+							if(index !== -1) { children.splice(index, 1) }
+							
+							children.unshift(
+								objects.jsx("a", {
+									href: `https://www.roblox.com/catalog/${assetId}/`,
+									target: "_blank",
+									style: { all: "unset", display: "contents" },
+									children: objects.jsx(objects.Mui.MenuItem, { children: "View on Roblox" })
+								}),
+								objects.jsx("a", {
+									href: `/marketplace/asset/${assetId}/`,
+									target: "_blank",
+									style: { all: "unset", display: "contents" },
+									children: objects.jsx(objects.Mui.MenuItem, { children: "View in Marketplace" })
+								}),
+								objects.jsx(objects.Mui.Divider, {}),
+								objects.jsx("a", {
+									href: `/dashboard/creations/marketplace/${assetId}/configure`,
+									style: { all: "unset", display: "contents" },
+									className: "btr-next-anchor",
+									children: objects.jsx(objects.Mui.MenuItem, { children: "Configure Asset" })
+								})
+							)
+						}
 					}
 				}
-			}
+			})
 		})
-	})
+		
+	}
 	
 	// Add download option to version history
-	InjectJS.inject(() => {
-		BTRoblox.addReactHandler((args, result, objects) => {
-			if(!result?.props) { return }
-			
-			try {
-				if(result.props["data-testid"]?.startsWith("version-history")) {
-					const version = args[0].version
-					const right = result.props.children[3]
-					
-					if(!Array.isArray(right.props.children)) {
-						right.props.children = [right.props.children]
-					}
-					
-					right.props.children.unshift(
-						objects.React.createElement(objects.Mui.Button, {
-							className: "btr-download-version",
-							btrVersion: version.assetVersionNumber,
-							btrAssetId: version.assetId,
-							size: "small",
-							color: "secondary",
-							children: [
-								objects.React.createElement("span", {
-									className: "btr-mui-circular-progress-root",
-									style: {
-										width: "20px",
-										height: "20px",
-										position: "absolute",
-										left: "7px",
-										display: "none"
-									},
-									children: objects.React.createElement("svg", {
-										className: "btr-mui-circular-progress-svg",
-										focusable: false,
-										viewBox: "22 22 44 44",
-										children: objects.React.createElement("circle", {
-											className: "btr-mui-circular-progress",
-											"stroke-width": 3.6,
-											fill: "none",
-											cx: 44,
-											cy: 44,
-											r: 20.2
-										})
-									})
-								}),
-								objects.React.createElement("svg", {
-									className: "MuiSvgIcon-root btr-download-icon",
-									focusable: false,
-									viewBox: "0 0 24 24",
-									style: {
-										height: "19px",
-										"margin-right": "7px"
-									},
-									children: objects.React.createElement("path", {
-										d: "M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"
-									})
-								}),
-								" ", "Download",,
-							],
-							style: {
-								"margin-right": "4px"
-							}
-						})
-					)
-				}
-			} catch(ex) {
-				console.error(ex)
-			}
-		})
-	})
-	
-	let isDownloading = false
-	
-	document.$on("click", ".btr-download-version", ev => {
-		const button = ev.currentTarget
-		
-		const assetId = parseInt(button.getAttribute("btrAssetId"), 10)
-		const assetVersionNumber = parseInt(button.getAttribute("btrVersion"), 10)
-		
-		if(!Number.isSafeInteger(assetId) || !Number.isSafeInteger(assetVersionNumber)) {
-			return
-		}
-		
-		if(isDownloading) { return }
-		isDownloading = true
-		
-		button.$find(".btr-mui-circular-progress-root").style.display = ""
-		button.$find(".btr-download-icon").style.opacity = "0"
-		
-		const placeNameRaw = document.title.match(/^(.*) \/ Version History$/)?.[1] ?? "place"
-		const placeName = placeNameRaw.replace(/\W+/g, "-").replace(/^-+|-+$/g, "")
-		const fileName = `${placeName}-${assetVersionNumber}.rbxl`
-		
-		const assetUrl = `https://assetdelivery.roblox.com/v1/asset/?id=${assetId}&version=${assetVersionNumber}`
-		AssetCache.loadBuffer(assetUrl, buffer => {
-			const blobUrl = URL.createObjectURL(new Blob([buffer], { type: "application/octet-stream" }))
-			startDownload(blobUrl, fileName)
-			URL.revokeObjectURL(blobUrl)
-			
-			isDownloading = false
-			button.$find(".btr-mui-circular-progress-root").style.display = "none"
-			button.$find(".btr-download-icon").style.opacity = ""
-		})
-	})
-	
-	// Add context menu items to item cards
-	if(SETTINGS.get("general.enableContextMenus")) {
+	if(SETTINGS.get("create.downloadVersion")) {
 		InjectJS.inject(() => {
 			BTRoblox.addReactHandler((args, result, objects) => {
 				if(!result?.props) { return }
 				
-				if(args[0]?.item?.assetType === "Place" && result?.props?.onMouseEnter && result?.props?.onMouseLeave) {
-					result.props["btr-context-url"] = `/btr_context/?btr_placeId=${args[0].item.assetId}&btr_universeId=${args[0].item.universeId}`
+				try {
+					if(result.props["data-testid"]?.startsWith("version-history")) {
+						const version = args[0].version
+						const right = result.props.children[3]
+						
+						if(!Array.isArray(right.props.children)) {
+							right.props.children = [right.props.children]
+						}
+						
+						right.props.children.unshift(
+							objects.React.createElement(objects.Mui.Button, {
+								className: "btr-download-version",
+								btrVersion: version.assetVersionNumber,
+								btrAssetId: version.assetId,
+								size: "small",
+								color: "secondary",
+								children: [
+									objects.React.createElement("span", {
+										className: "btr-mui-circular-progress-root",
+										style: {
+											width: "20px",
+											height: "20px",
+											position: "absolute",
+											left: "7px",
+											display: "none"
+										},
+										children: objects.React.createElement("svg", {
+											className: "btr-mui-circular-progress-svg",
+											focusable: false,
+											viewBox: "22 22 44 44",
+											children: objects.React.createElement("circle", {
+												className: "btr-mui-circular-progress",
+												"stroke-width": 3.6,
+												fill: "none",
+												cx: 44,
+												cy: 44,
+												r: 20.2
+											})
+										})
+									}),
+									objects.React.createElement("svg", {
+										className: "MuiSvgIcon-root btr-download-icon",
+										focusable: false,
+										viewBox: "0 0 24 24",
+										style: {
+											height: "19px",
+											"margin-right": "5px"
+										},
+										children: objects.React.createElement("path", {
+											d: "M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"
+										})
+									}),
+									" ", "Download",,
+								]
+							})
+						)
+					}
+				} catch(ex) {
+					console.error(ex)
 				}
-				
-				return result
 			})
 		})
 		
-		document.$on("contextmenu", "[btr-context-url]", ev => {
-			const parent = ev.currentTarget.matches("a") ? ev.currentTarget : ev.currentTarget.closest("a")
+		let isDownloading = false
+		
+		document.$on("click", ".btr-download-version", ev => {
+			const button = ev.currentTarget
 			
-			if(parent) {
-				const originalHref = parent.getAttribute("href")
-				parent.href = ev.currentTarget.getAttribute("btr-context-url")
-				
-				requestAnimationFrame(() => {
-					if(typeof originalHref === "string") {
-						parent.href = originalHref
-					} else {
-						parent.removeAttribute("href")
-					}
-				})
-			} else {
-				assert(!ev.currentTarget.$find("a"), "cant do context menu - link in target")
-				
-				const link = html`<a style="display:contents">`
-				link.href = ev.currentTarget.getAttribute("btr-context-url")
-				
-				ev.currentTarget.before(link)
-				link.append(ev.currentTarget)
-				
-				requestAnimationFrame(() => {
-					link.before(ev.currentTarget)
-					link.remove()
-				})
+			const assetId = parseInt(button.getAttribute("btrAssetId"), 10)
+			const assetVersionNumber = parseInt(button.getAttribute("btrVersion"), 10)
+			
+			if(!Number.isSafeInteger(assetId) || !Number.isSafeInteger(assetVersionNumber)) {
+				return
 			}
+			
+			if(isDownloading) { return }
+			isDownloading = true
+			
+			button.$find(".btr-mui-circular-progress-root").style.display = ""
+			button.$find(".btr-download-icon").style.opacity = "0"
+			
+			const placeNameRaw = document.title.match(/^(.*) \/ Version History$/)?.[1] ?? "place"
+			const placeName = placeNameRaw.replace(/\W+/g, "-").replace(/^-+|-+$/g, "")
+			const fileName = `${placeName}-${assetVersionNumber}.rbxl`
+			
+			const assetUrl = `https://assetdelivery.roblox.com/v1/asset/?id=${assetId}&version=${assetVersionNumber}`
+			AssetCache.loadBuffer(assetUrl, buffer => {
+				const blobUrl = URL.createObjectURL(new Blob([buffer], { type: "application/octet-stream" }))
+				startDownload(blobUrl, fileName)
+				URL.revokeObjectURL(blobUrl)
+				
+				isDownloading = false
+				button.$find(".btr-mui-circular-progress-root").style.display = "none"
+				button.$find(".btr-download-icon").style.opacity = ""
+			})
 		})
 	}
 }

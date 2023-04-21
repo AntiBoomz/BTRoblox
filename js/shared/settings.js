@@ -26,7 +26,9 @@ const DEFAULT_SETTINGS = {
 		fixFirefoxLocalStorageIssue: { value: false }
 	},
 	create: {
-		enabled: { value: false }	
+		enabled: { value: false },
+		assetOptions: { value: true },
+		downloadVersion: { value: true }
 	},
 	home: {
 		friendsShowUsername: { value: false },
