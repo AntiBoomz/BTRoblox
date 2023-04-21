@@ -125,8 +125,22 @@ const ContextMenu = {
 	],
 	
 	onClick(info, tab) {
-		const copyToClipboard = text => {
-			const copy = text => {
+		const copyToClipboard = async text => {
+			if(IS_CHROME) {
+				chrome.scripting.executeScript({
+					target: { tabId: tab.id, frameIds: [info.frameId] },
+					func: text => {
+						document.addEventListener("copy", ev => {
+							ev.clipboardData.setData("text/plain", text)
+							ev.preventDefault()
+						}, { once: true })
+						
+						document.execCommand("copy", false, null)
+					},
+					args: [text]
+				})
+				
+			} else {
 				document.addEventListener("copy", ev => {
 					ev.clipboardData.setData("text/plain", text)
 					ev.preventDefault()
@@ -134,12 +148,6 @@ const ContextMenu = {
 				
 				document.execCommand("copy", false, null)
 			}
-			
-			chrome.scripting.executeScript({
-				target: { tabId: tab.id, frameIds: [info.frameId] },
-				func: copy,
-				args: [text]
-			})
 		}
 		
 		switch(info.menuItemId) {
@@ -191,6 +199,10 @@ const ContextMenu = {
 		
 		for(const menu of this.items) {
 			menu.visible = enabled
+			
+			if(IS_CHROME) {
+				menu.documentUrlPatterns = ["*://*.roblox.com/*", "*://*.rbxcdn.com/*"]
+			}
 			
 			chrome.contextMenus.create(menu, () => {
 				if(!chrome.runtime.lastError) { return }
