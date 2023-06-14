@@ -468,18 +468,13 @@ const useNativeAudioPlayer = (mediaPlayer, bigPlayer) => {
 
 
 pageInit.common = () => {
-	// Initialize settings
+	// Init global features
 	
-	reactInject({
-		selector: "#settings-popover-menu",
-		index: 0,
-		html: `<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>`
-	})
-	
+	Navigation.init()
 	SettingsModal.enable()
-
+	
 	//
-
+	
 	const headWatcher = document.$watch(">head").$then()
 	const bodyWatcher = document.$watch(">body", body => {
 		body.classList.toggle("btr-no-hamburger", SETTINGS.get("navigation.noHamburger"))
@@ -499,6 +494,14 @@ pageInit.common = () => {
 		})
 		
 		$.ready(() => resolve(-1))
+	})
+	
+	//
+	
+	reactInject({
+		selector: "#settings-popover-menu",
+		index: 0,
+		html: `<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>`
 	})
 	
 	bodyWatcher.$watch("#roblox-linkify", linkify => {
@@ -545,12 +548,7 @@ pageInit.common = () => {
 			SETTINGS.onChange("general.robuxToUSDRate", update)
 		})
 	
-	// Init features
-	
-	if(SETTINGS.get("navigation.enabled")) {
-		try { btrNavigation.init() }
-		catch(ex) { console.error(ex) }
-	}
+	// Init optional features
 	
 	if(SETTINGS.get("general.fastSearch")) {
 		try { btrFastSearch.init() }
@@ -561,8 +559,6 @@ pageInit.common = () => {
 		try { btrAdblock.init() }
 		catch(ex) { console.error(ex) }
 	}
-	
-	//
 	
 	if(SETTINGS.get("general.fixFirefoxLocalStorageIssue")) {
 		InjectJS.inject(() => {

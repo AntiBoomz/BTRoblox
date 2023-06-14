@@ -496,7 +496,7 @@ const SettingsModal = {
 				return { elem: checkbox, input, resetButton }
 			}
 			
-			for(const element of Object.values(btrNavigation.elements)) {
+			for(const element of Object.values(Navigation.elements)) {
 				const checkbox = createCheckbox(element.label || element.name, enabled => {
 					element.setEnabled(enabled)
 				})
@@ -530,10 +530,6 @@ const SettingsModal = {
 				for(const fn of onUpdate) {
 					fn()
 				}
-			}
-			
-			if(location.host === "create.roblox.com") {
-				this.settingsDiv.$find(`button[btr-tab="navigation"]`).disabled = true
 			}
 			
 			SETTINGS.onChange("navigation.elements", update)

@@ -1,7 +1,7 @@
 
 "use strict"
 
-const btrNavigation = {
+const Navigation = {
 	elements: {},
 
 	getElementStates() {
@@ -33,7 +33,7 @@ const btrNavigation = {
 			isDefault: true,
 			
 			saveState() {
-				const states = btrNavigation.getElementStates()
+				const states = Navigation.getElementStates()
 				const prevState = states[this.name]
 				let state
 				
@@ -148,36 +148,40 @@ const btrNavigation = {
 			}
 		}
 		
-		if(element.selector) {
-			document.$watch(element.selector, node => {
-				element.addNode(node)
-			})
-		}
-		
-		if(element.reactInject) {
-			reactInject({
-				...element.reactInject,
-				callback(node) {
-					element.addNode(node)
+		if(SETTINGS.get("navigation.enabled") && location.host !== "create.roblox.com") {
+			const attach = async () => {
+				if(name !== "header_home" && name !== "header_robux") {
+					await loggedInUserPromise
+					if(loggedInUser === -1) { return }
 				}
-			})
+				
+				if(element.selector) {
+					document.$watch(element.selector, node => {
+						element.addNode(node)
+					})
+				}
+				
+				if(element.reactInject) {
+					reactInject({
+						...element.reactInject,
+						callback(node) {
+							element.addNode(node)
+						}
+					})
+				}
+				
+				try { element.init?.() }
+				catch(ex) { console.error(ex) }
+			}
+			
+			attach()
 		}
-		
-		try { element.init?.() }
-		catch(ex) { console.error(ex) }
 	},
 	
-	async init() {
-		// btrNavigation.register("header_home", {
-		// 	reactInject: {
-		// 		selector: ".rbx-navbar",
-		// 		index: 0,
-		// 		html: `<li class=cursor-pointer style="order:-1"><a class="font-header-2 nav-menu-title text-header" href=/home>Home</a></li>`
-		// 	}
-		// })
+	init() {
+		// Always on (even when logged out)
 		
-		// Left header buttons are not react, apparently?
-		btrNavigation.register("header_home", {
+		Navigation.register("header_home", {
 			label: "Show Home",
 			
 			init() {
@@ -189,7 +193,7 @@ const btrNavigation = {
 			}
 		})
 		
-		btrNavigation.register("header_robux", {
+		Navigation.register("header_robux", {
 			label: "Show Robux",
 			enabled: false,
 			
@@ -204,29 +208,26 @@ const btrNavigation = {
 			}
 		})
 		
-		await loggedInUserPromise
-		if(!isLoggedIn) { return }
-		
 		// Header
 		
-		btrNavigation.register("header_agebracket", {
+		Navigation.register("header_agebracket", {
 			label: "Show Age Bracket",
 			selector: ".age-bracket-label",
 			enabled: false
 		})
 		
-		btrNavigation.register("header_notifications", {
+		Navigation.register("header_notifications", {
 			label: "Show Notifications",
 			
 			settings: [
-				{ name: "reduce_margins", label: "Reduce Margin", enabled: false }
+				{ name: "reduce_margins", label: "Reduce Margin", enabled: true }
 			],
 			
 			selector: "#navbar-stream",
 			enabled: true
 		})
 		
-		btrNavigation.register("header_friends", {
+		Navigation.register("header_friends", {
 			label: "Show Friends",
 			
 			settings: [
@@ -261,7 +262,7 @@ const btrNavigation = {
 			}
 		})
 		
-		btrNavigation.register("header_messages", {
+		Navigation.register("header_messages", {
 			label: "Show Messages",
 			
 			settings: [
@@ -298,7 +299,7 @@ const btrNavigation = {
 		
 		// Sidebar
 		
-		btrNavigation.register("sidebar_home", {
+		Navigation.register("sidebar_home", {
 			label: "Show Home",
 			
 			selector: "#nav-home",
@@ -309,7 +310,7 @@ const btrNavigation = {
 			}
 		})
 		
-		btrNavigation.register("sidebar_messages", {
+		Navigation.register("sidebar_messages", {
 			label: "Show Messages",
 			
 			settings: [
@@ -324,13 +325,13 @@ const btrNavigation = {
 			},
 			
 			nodeAdded(node) {
-				const update = () => btrNavigation.elements.header_messages.updateAll()
+				const update = () => Navigation.elements.header_messages.updateAll()
 				new MutationObserver(update).observe(node, { childList: true, subtree: true, attributeFilter: ["href"] })
 				update()
 			}
 		})
 		
-		btrNavigation.register("sidebar_friends", {
+		Navigation.register("sidebar_friends", {
 			label: "Show Friends",
 			
 			settings: [
@@ -345,13 +346,13 @@ const btrNavigation = {
 			},
 			
 			nodeAdded(node) {
-				const update = () => btrNavigation.elements.header_friends.updateAll()
+				const update = () => Navigation.elements.header_friends.updateAll()
 				new MutationObserver(update).observe(node, { childList: true, subtree: true, attributeFilter: ["href"] })
 				update()
 			}
 		})
 		
-		btrNavigation.register("sidebar_trade", {
+		Navigation.register("sidebar_trade", {
 			label: "Show Trade",
 			
 			selector: "#nav-trade",
@@ -362,7 +363,7 @@ const btrNavigation = {
 			}
 		})
 		
-		btrNavigation.register("sidebar_money", {
+		Navigation.register("sidebar_money", {
 			label: "Show Money",
 			enabled: false,
 			
@@ -379,7 +380,7 @@ const btrNavigation = {
 			}
 		})
 		
-		btrNavigation.register("sidebar_blogfeed", {
+		Navigation.register("sidebar_blogfeed", {
 			label: "Show Blog Feed",
 			
 			update(node) {
@@ -420,7 +421,7 @@ const btrNavigation = {
 			}
 		})
 		
-		btrNavigation.register("sidebar_premium", {
+		Navigation.register("sidebar_premium", {
 			label: "Show Premium",
 			
 			reactInject: {
@@ -436,7 +437,7 @@ const btrNavigation = {
 			}
 		})
 		
-		btrNavigation.register("sidebar_premium_2", {
+		Navigation.register("sidebar_premium_2", {
 			label: "Show Premium Button",
 			
 			selector: ".left-col-list > .rbx-upgrade-now",

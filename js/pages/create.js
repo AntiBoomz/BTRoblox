@@ -1,24 +1,15 @@
 "use strict"
 
-// const onClassAdded = (className, callback) => {
-// 	const elements = document.getElementsByClassName(className)
-	
-// 	const check = () => {
-// 		while(elements.length) {
-// 			const elem = elements[elements.length - 1]
-// 			elem.classList.remove(className)
-			
-// 			try { callback(elem) }
-// 			catch(ex) { console.error(ex) }
-// 		}
-// 	}
-	
-// 	$.onDomChanged(check)
-// 	check()
-// }
-
 pageInit.create = () => {
-	if(!SETTINGS.get("create.enabled")) { return }
+	// Init global features
+	
+	Navigation.init()
+	SettingsModal.enable()
+	
+	
+	if(!SETTINGS.get("create.enabled")) {
+		return
+	}
 	
 	InjectJS.inject(() => {
 		const tempHijackEntries = new WeakMap()
@@ -317,8 +308,6 @@ pageInit.create = () => {
 			}
 		})
 	})
-	
-	SettingsModal.enable()
 	
 	// Fix thumbnail2d using batch size of 100 (which errors)
 	InjectJS.inject(() => {
