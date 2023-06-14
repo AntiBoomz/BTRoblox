@@ -337,6 +337,10 @@ const SettingsModal = {
 					<group label=Catalog path=catalog toggleable>
 						<checkbox label="Show Owned Items" path=showOwnedAssets></checkbox>
 					</group>
+					<group label="Create (WIP)" path=create toggleable>
+						<checkbox label="Version History Changes" path=downloadVersion></checkbox>
+						<checkbox label="Asset Options Changes" path=assetOptions></checkbox>
+					</group>
 					<group label="Advanced" minimizable minimized>
 						<div id=btr-settings-wip>
 						</div>

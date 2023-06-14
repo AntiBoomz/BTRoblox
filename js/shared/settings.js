@@ -26,8 +26,8 @@ const DEFAULT_SETTINGS = {
 		fixFirefoxLocalStorageIssue: { value: false }
 	},
 	create: {
-		enabled: { value: false },
-		assetOptions: { value: true },
+		enabled: { value: true, version: 2 },
+		assetOptions: { value: false },
 		downloadVersion: { value: true }
 	},
 	home: {
@@ -124,18 +124,19 @@ const SETTINGS = {
 	},
 	
 	_load(data) {
-		if(data) {
-			Object.entries(data).forEach(([groupName, group]) => {
-				if(!(typeof groupName === "string" && group instanceof Object)) { return }
-	
-				Object.entries(group).forEach(([settingName, loadedSetting]) => {
-					if(!(typeof settingName === "string" && loadedSetting instanceof Object)) { return }
+		if(data && data._version === DEFAULT_SETTINGS._version) {
+			for(const [groupName, group] of Object.entries(data)) {
+				if(!(group instanceof Object)) { continue }
+				
+				for(const [settingName, loadedSetting] of Object.entries(group)) {
+					const settingPath = `${groupName}.${settingName}`
+					const defaultSetting = this._getSetting(settingPath, DEFAULT_SETTINGS)
 					
-					if(!loadedSetting.default) { // Ignore default settings
-						this._set(`${groupName}.${settingName}`, loadedSetting.value, loadedSetting.default, false)
+					if(defaultSetting && !loadedSetting.default && loadedSetting.version === defaultSetting.version) {
+						this._set(settingPath, loadedSetting.value, loadedSetting.default, false)
 					}
-				})
-			})
+				}
+			}
 		}
 
 		if(IS_BACKGROUND_PAGE) {
@@ -306,15 +307,13 @@ const SETTINGS = {
 	resetToDefault() {
 		if(!this.loaded) { throw new Error("Settings are not loaded") }
 
-		Object.entries(DEFAULT_SETTINGS).forEach(([groupName, group]) => {
-			if(!(typeof groupName === "string" && group instanceof Object)) { return }
-
-			Object.entries(group).forEach(([settingName, setting]) => {
-				if(!(typeof settingName === "string" && setting instanceof Object)) { return }
-
+		for(const [groupName, group] of Object.entries(DEFAULT_SETTINGS)) {
+			if(!(group instanceof Object)) { continue }
+			
+			for(const [settingName, setting] of Object.entries(group)) {
 				this._set(`${groupName}.${settingName}`, setting.value, true, true)
-			})
-		})
+			}
+		}
 
 		if(IS_BACKGROUND_PAGE) {
 			this.loadError = false
