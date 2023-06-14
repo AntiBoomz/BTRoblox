@@ -76,6 +76,8 @@ const RBXPreview = (() => {
 		24, // Animation
 		48, 49, 50, 51, 52, 53, 54, 55, 56, 61, 78 // Avatar Animations
 	]
+	
+	const LayeredAssetTypes = [64, 65, 66, 67, 68, 69, 70, 71, 72]
 
 	const R15Anims = [507766388, 507766951, 507766666]
 	const R6Anims = [180435571, 180435792]
@@ -303,7 +305,7 @@ const RBXPreview = (() => {
 			return Promise.all(promises)
 		}
 
-		addAsset(assetId, assetTypeId, meta = null) {
+		addAsset(assetId, assetTypeId, meta) {
 			const asset = this.avatar.appearance.addAsset(assetId, assetTypeId, meta)
 			if(!asset) { return }
 
@@ -322,8 +324,13 @@ const RBXPreview = (() => {
 			return asset
 		}
 
-		addAssetPreview(assetId, assetTypeId, meta = null) {
-			const asset = this.avatar.appearance.addAsset(assetId, assetTypeId, { version: 1, ...(meta || {}), order: (meta?.order || 0) + 10 })
+		addAssetPreview(assetId, assetTypeId, meta) {
+			if(LayeredAssetTypes.includes(assetTypeId)) {
+				if(!meta) { meta = {} }
+				meta.order = 50
+			}
+			
+			const asset = this.avatar.appearance.addAsset(assetId, assetTypeId, meta)
 			if(!asset) { return }
 
 			asset.setPriority(2)

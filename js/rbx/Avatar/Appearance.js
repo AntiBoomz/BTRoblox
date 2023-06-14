@@ -24,7 +24,7 @@ const RBXAppearance = (() => {
 	}
 
 	class Asset extends EventEmitter {
-		constructor(assetId, assetTypeId, meta = null) {
+		constructor(assetId, assetTypeId, meta) {
 			assert(Number.isSafeInteger(assetTypeId), "no assetTypeId")
 			super()
 
