@@ -3,9 +3,8 @@
 const pageInit = {}
 const startDate = new Date()
 
-let loggedInUserPromise = null
+let loggedInUserPromise = new Promise(() => {})
 let loggedInUser = -1
-let isLoggedIn = false
 
 const InvalidExplorableAssetTypeIds = [1, 3, 4, 5, 6, 7, 16, 21, 22, 32, 33, 34, 35, 37, 63]
 const InvalidDownloadableAssetTypeIds = [21, 32, 34]
@@ -485,16 +484,14 @@ pageInit.common = () => {
 		}
 	}).$then()
 
-	loggedInUserPromise = new Promise(resolve => {
-		headWatcher.$watch(`meta[name="user-data"]`, meta => {
-			const userId = +meta.dataset.userid
-			loggedInUser = Number.isSafeInteger(userId) ? userId : -1
-			isLoggedIn = userId !== -1
-			resolve(loggedInUser)
-		})
+	headWatcher.$watch(`meta[name="user-data"]`, meta => {
+		const userId = +meta.dataset.userid
 		
-		$.ready(() => resolve(-1))
+		loggedInUser = Number.isSafeInteger(userId) ? userId : -1
+		loggedInUserPromise.$resolve(loggedInUser)
 	})
+	
+	$.ready(() => loggedInUserPromise.$resolve(-1))
 	
 	//
 	

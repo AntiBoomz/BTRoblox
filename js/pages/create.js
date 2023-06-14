@@ -6,6 +6,17 @@ pageInit.create = () => {
 	Navigation.init()
 	SettingsModal.enable()
 	
+	//
+	
+	fetch(`https://users.roblox.com/v1/users/authenticated`, { credentials: "include" }).then(async res => {
+		const json = await res.json()
+		const userId = json?.id ?? -1
+		
+		loggedInUser = Number.isSafeInteger(userId) ? userId : -1
+		loggedInUserPromise.$resolve(loggedInUser)
+	})
+	
+	//
 	
 	if(!SETTINGS.get("create.enabled")) {
 		return
@@ -212,13 +223,6 @@ pageInit.create = () => {
 				process(item)
 			}
 		})
-	})
-	
-	loggedInUserPromise = new Promise(async resolve => {
-		const res = await fetch(`https://users.roblox.com/v1/users/authenticated`, { credentials: "include" })
-		const json = await res.json()
-		
-		resolve(json.id ?? -1)
 	})
 	
 	// Populate objects.Mui
