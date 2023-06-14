@@ -70,19 +70,48 @@ const SHARED_DATA = {
 	},
 	
 	async initBackgroundScript() {
+		MESSAGING.listen({
+			getSharedData: (_, respond) => {
+				respond(this.data)
+			}
+		})
+		
 		this._loaded = true
 		this._loadPromise.$resolve()
 	},
 	
 	async initContentScript() {
 		if(IS_CHROME) {
-			const request = new XMLHttpRequest()
-			request.open("HEAD", "https://www.roblox.com/?btr_settings", false)
+			let syncLoadErrorCounter = parseInt(sessionStorage.getItem("syncLoadError"), 10)
+			let dataPayload
 			
-			try {
-				request.send()
-				Object.assign(this.data, JSON.parse(new URL(request.responseURL).searchParams.get("data")))
-			} catch(ex) {}
+			if(!Number.isSafeInteger(syncLoadErrorCounter)) {
+				syncLoadErrorCounter = 0
+			}
+			
+			if(syncLoadErrorCounter < 3) {
+				const request = new XMLHttpRequest()
+				request.open("HEAD", "https://www.roblox.com/?btr_settings", false)
+				
+				try {
+					request.send()
+					dataPayload = JSON.parse(new URL(request.responseURL).searchParams.get("data"))
+				} catch(ex) {}
+			}
+			
+			if(dataPayload instanceof Object) {
+				sessionStorage.removeItem("syncLoadError")
+			} else {
+				sessionStorage.setItem("syncLoadError", syncLoadErrorCounter + 1)
+				
+				this.syncLoadError = typeof navigator.brave === "undefined"
+					? `BTRoblox failed to initialize properly for an unknown reason.\nSome features may not work properly for the time being.`
+					: `BTRoblox is currently experiencing issues on the Brave browser.\nSome features may not work properly for the time being.`
+				
+				dataPayload = await new Promise(resolve => MESSAGING.send("getSharedData", data => resolve(data)))
+			}
+			
+			Object.assign(this.data, dataPayload)
 		} else {
 			if(typeof SHARED_DATA_PAYLOAD === "undefined") {
 				this.payloadPromise = new Promise()

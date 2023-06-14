@@ -452,7 +452,11 @@ const SettingsModal = {
 		}
 		
 		if(SETTINGS.loadError) {
-			this.settingsDiv.$find(".btr-settings-header").after(html`<div style="position:absolute; width: 100%; height: 20px; text-align: center; background: red; top: 30px; z-index:1000; font-size: 16px; color: white; font-weight: bold;">Settings failed to load, changes may not save</div>`)
+			this.settingsDiv.$find(".btr-settings-header").after(html`<div style="width: 100%; flex: 0 0 auto; white-space: pre-line; padding: 4px; text-align: center; background: red; top: 30px; z-index:1000; font-size: 15px; color: white; font-weight: bold;">Settings failed to load, changes may not save</div>`)
+		}
+		
+		if(SHARED_DATA.syncLoadError) {
+			this.settingsDiv.$find(".btr-settings-header").after(html`<div style="width: 100%; flex: 0 0 auto; white-space: pre-line; padding: 4px; text-align: center; background: red; top: 30px; z-index:1000; font-size: 15px; color: white; font-weight: bold;">${SHARED_DATA.syncLoadError}</div>`)
 		}
 		
 		this.contentDivs = {}
