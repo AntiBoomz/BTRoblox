@@ -222,8 +222,8 @@
 	flex: 0 0 auto;
 	height: 24px;
 	line-height: 24px;
-
-	padding: 0 4px;
+	
+	padding: 0 6px;
 
 	padding-right: 4px;
 	border-top: 1px solid #E8E8E8;
@@ -234,8 +234,27 @@
 }
 
 .btr-settings-footer-version {
-	flex: 1;
+	flex: 0 0 fit-content;
 	text-align: left;
+	margin-right: 8px;
+}
+
+.btr-settings-footer-twitter,
+.btr-settings-footer-roblox {
+	flex: 0 0 auto;
+	width: 22px;
+	height: 22px;
+	background-image: url("https://www.roblox.com/images/SocialNetworks/SocialLinkIconsV3.svg");
+	background-size: 100% auto;
+	margin-right: 2px;
+}
+
+.btr-settings-footer-twitter {
+	background-position: 0 -200%;
+}
+
+.btr-settings-footer-roblox {
+	background-position: 0 -700%;
 }
 
 .btr-settings-footer-text {
