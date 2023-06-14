@@ -97,9 +97,6 @@ const DEFAULT_SETTINGS = {
 		embedInventoryEnabled: { value: true },
 		lastOnline: { value: true }
 	},
-	placeConfigure: {
-		versionHistory: { value: true }
-	}
 }
 
 Object.values(DEFAULT_SETTINGS).forEach(list => {

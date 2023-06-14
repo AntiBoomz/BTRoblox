@@ -96,11 +96,6 @@ const PAGE_INFO = {
 		js: ["pages/money.js"],
 		css: ["money.css"]
 	},
-	placeconfig: {
-		matches: ["^/places/(\\d+)/update"],
-		js: ["pages/placeconfig.js"],
-		css: ["placeconfig.css"]
-	},
 	profile: {
 		matches: ["^/users/(\\d+)/profile"],
 		js: ["pages/profile.js"],
