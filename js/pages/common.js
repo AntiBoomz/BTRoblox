@@ -530,7 +530,7 @@ pageInit.common = () => {
 				const matches = bal.textContent.trim().match(/^([\d,]+)\sRobux$/)
 				if(!matches) { return }
 
-				const amt = parseInt(matches[0].replace(/,/g, ""), 10)
+				const amt = parseInt(matches[0].replace(/\D/g, ""), 10)
 				if(!Number.isSafeInteger(amt)) { return }
 
 				span.textContent = RobuxToCash.convert(amt)

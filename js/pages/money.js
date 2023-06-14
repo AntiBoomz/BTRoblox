@@ -3,7 +3,7 @@
 pageInit.money = function() {
 	if(RobuxToCash.isEnabled()) {
 		const update = span => {
-			const amt = parseInt(span.textContent.replace(/,/g, ""), 10)
+			const amt = parseInt(span.textContent.replace(/\D/g, ""), 10)
 			
 			if(Number.isSafeInteger(amt)) {
 				const cash = RobuxToCash.convert(amt)

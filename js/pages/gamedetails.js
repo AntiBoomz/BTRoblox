@@ -450,7 +450,7 @@ pageInit.gamedetails = placeId => {
 				const label = item.$find(".text-robux")
 				if(!label) { return }
 
-				const cash = RobuxToCash.convert(+label.textContent.replace(/,/g, ""))
+				const cash = RobuxToCash.convert(parseInt(label.textContent.replace(/\D/g, ""), 10))
 				label.after(html`<span class=btr-robuxToCash-tile>&nbsp;(${cash})</span>`)
 				label.parentNode.setAttribute("title", `R$ ${label.parentNode.textContent.trim()}`)
 			})
@@ -460,7 +460,7 @@ pageInit.gamedetails = placeId => {
 				const label = item.$find(".text-robux")
 				if(!label) { return }
 
-				const cash = RobuxToCash.convert(+label.textContent.replace(/,/g, ""))
+				const cash = RobuxToCash.convert(parseInt(label.textContent.textContent.replace(/\D/g, ""), 10))
 				label.after(html`<span class=btr-robuxToCash-tile>&nbsp;(${cash})</span>`)
 				label.parentNode.setAttribute("title", `R$ ${label.parentNode.textContent.trim()}`)
 			})

@@ -493,14 +493,16 @@ pageInit.itemdetails = (category, assetIdString) => {
 
 	if(RobuxToCash.isEnabled()) {
 		document.$watch(".icon-robux-price-container .text-robux-lg", label => {
-			const cash = RobuxToCash.convert(+label.textContent.replace(/,/g, ""))
+			const cash = RobuxToCash.convert(parseInt(label.textContent.replace(/\D/g, ""), 10))
+			
 			label.after(
 				html`<span class=btr-robuxToCash-big>&nbsp;(${cash})</span>`
 			)
 		})
 			.$watch("#item-average-price", label => {
 				const update = () => {
-					const amt = +label.textContent.replace(/,/g, "")
+					const amt = parseInt(label.textContent.replace(/\D/g, ""), 10)
+					
 					if(!Number.isSafeInteger(amt)) {
 						return
 					}
