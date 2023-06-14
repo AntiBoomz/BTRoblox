@@ -49,6 +49,18 @@ const SettingsModal = {
 		this.enabled = true
 		document.$on("click", ".btr-settings-toggle", () => this.toggle())
 		
+		// we only want to remember settings visibility when navigating same-origin or through history
+		if(sessionStorage.getItem("btr-settings-open") && performance.getEntriesByType("navigation")[0]?.type === "navigate") {
+			let sameOrigin = false
+			
+			try { sameOrigin = new URL(document.referrer).host === location.host }
+			catch(ex) {}
+			
+			if(!sameOrigin) {
+				sessionStorage.removeItem("btr-settings-open")
+			}
+		}
+		
 		try {
 			const url = new URL(window.location.href)
 
