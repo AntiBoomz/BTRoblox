@@ -543,11 +543,17 @@ pageInit.gamedetails = placeId => {
 				const badgeList = badgeQueue.splice(0, badgeQueue.length)
 				
 				RobloxApi.badges.getAwardedDates(userId, badgeList.map(x => x.badgeId)).then(json => {
-					const ownedBadges = json.data.map(x => +x.badgeId)
-					
 					for(const { row, badgeId } of badgeList) {
-						row.classList.toggle("btr-notowned", ownedBadges.indexOf(badgeId) === -1)
-						row.title = row.classList.contains("btr-notowned") ? "You do not own this badge" : ""
+						const entry = json.data.find(x => x.badgeId === badgeId)
+						row.classList.toggle("btr-notowned", !entry)
+						
+						if(entry) {
+							const awardedDate = new Date(entry.awardedDate)
+							row.$find(".badge-data-container").append(html`
+							<span class=btr-unlock-date title="${awardedDate.$since()}">
+								Unlocked ${awardedDate.$format("MMM D, YYYY, h:mm A")}
+							</span>`)
+						}
 					}
 				})
 			}
@@ -573,7 +579,6 @@ pageInit.gamedetails = placeId => {
 					ownedTimeout = setTimeout(updateOwned, 10)
 
 					row.classList.add("btr-notowned")
-					row.title = row.classList.contains("btr-notowned") ? "You do not own this badge" : ""
 				}
 			})
 		})

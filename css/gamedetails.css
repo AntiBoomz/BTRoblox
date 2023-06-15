@@ -69,22 +69,41 @@ body .btr-game-main-container {
 
 .btr-badges-container .badge-row .badge-content {
 	width: calc(100% - 100px);
+	min-height: 100px;
+	padding-left: 4px;
+	display: flex;
+	flex-direction: row;
 }
 
 .btr-badges-container .badge-row .badge-data-container {
-	width: 60%;
+	flex: 1 1 auto;
 }
 
-.btr-badges-container .badge-row .badge-data-container>p {
-	height: 72px;
-	margin: 4px 4px;
+.btr-badges-container .badge-row .badge-data-container > p {
+	height: 46px;
+	margin: 4px 0px;
+	
+	font-size: 14px;
 
 	overflow: hidden;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+}
+
+.btr-badges-container .badge-row .badge-data-container .btr-unlock-date {
+	opacity: 0.3;
+	font-size: 12px;
 }
 
 .btr-badges-container .badge-row .badge-stats-container {
-	width: 40%;
-	margin-top: 18px;
+	flex: 1 0 fit-content;
+	height: 100px;
+	margin: 0;
+	
+	display: flex;
+	flex-direction: row;
+	align-items: center;
 }
 
 .btr-badges-container .badge-row {
