@@ -1736,6 +1736,8 @@ const RBXAvatar = (() => {
 						part.geometry.deleteAttribute("uv")
 						part.geometry.setIndex(null)
 						
+						part.rbxLayered = { wrapTarget: part.rbxBodypart.wrapTarget || part.rbxOrigWrapTarget }
+						
 					} else {
 						console.log("Failed to find match")
 						console.log(part.name, part.rbxMesh)
