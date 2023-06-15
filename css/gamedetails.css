@@ -106,6 +106,44 @@ body .btr-game-main-container {
 	align-items: center;
 }
 
+.btr-badges-container.btr-compact-stats .badge-row .badge-stats-container {
+	min-width: 200px;
+	
+	display: grid;
+	grid: repeat(3, 33.333%) / max-content auto;
+}
+
+.btr-badges-container.btr-compact-stats .badge-row .badge-stats-container::before {
+	display: none;
+}
+
+.btr-badges-container.btr-compact-stats .badge-row .badge-stats-container > li {
+	display: contents;
+}
+
+.btr-badges-container.btr-compact-stats .badge-row .badge-stats-container > li > div {
+	font-size: 14px;
+}
+
+.btr-badges-container.btr-compact-stats .badge-row .badge-stats-container .text-label {
+	grid-column: 1;
+	display: flex;
+	align-items: center;
+	justify-content: right;
+	text-align: right;
+	padding-right: 6px;
+}
+
+.btr-badges-container.btr-compact-stats .badge-row .badge-stats-container .badge-stats-info {
+	grid-column: 2;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	margin: 0;
+}
+
+
 .btr-badges-container .badge-row {
 	transition: opacity 1s;
 }

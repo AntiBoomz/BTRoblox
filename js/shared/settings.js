@@ -75,7 +75,8 @@ const DEFAULT_SETTINGS = {
 		enabled: { value: true },
 		showBadgeOwned: { value: true },
 		addServerPager: { value: true },
-		showServerPing: { value: true }
+		showServerPing: { value: true },
+		compactBadgeStats: { value: true }
 	},
 	groups: {
 		shoutAlerts: { value: false },

@@ -534,6 +534,10 @@ pageInit.gamedetails = placeId => {
 		})
 		.$watch(".badge-container", badges => {
 			badges.classList.add("btr-badges-container")
+			
+			if(SETTINGS.get("gamedetails.compactBadgeStats")) {
+				badges.classList.add("btr-compact-stats")
+			}
 
 			const badgeQueue = []
 			let ownedTimeout
@@ -565,6 +569,16 @@ pageInit.gamedetails = placeId => {
 				
 				label.$empty()
 				label.append(link)
+				
+				if(SETTINGS.get("gamedetails.compactBadgeStats")) {
+					const rarityLabel = row.$find(".badge-stats-container .badge-stats-info")
+					const rarity = rarityLabel.textContent.match(/^\s*(\d+\.\d+%)\s*\((.*)\)\s*$/)
+					
+					if(rarity) {
+						rarityLabel.textContent = rarity[1]
+						rarityLabel.title = rarity[2]
+					}
+				}
 
 				row.$find("p.para-overflow").classList.remove("para-overflow")
 
