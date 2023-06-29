@@ -100,12 +100,20 @@ const AssetCache = (() => {
 			
 			const cachePromise = cache[cacheKey] = cache[cacheKey] || new Promise(cacheResolve => {
 				const filePromise = fileCache[fileCacheKey] = fileCache[fileCacheKey] || new Promise((fileResolve, fileReject) => {
-					RobloxApi.assetdelivery.requestAssetV1(urlParams, params).then(buffer => {
-						if(buffer) {
-							fileResolve(buffer)
-						} else {
+					RobloxApi.assetdelivery.requestAssetV2(urlParams, params).then(async json => {
+						if(!json?.locations?.length) {
 							fileReject(new Error(`Failed to download asset "${fileCacheKey}"`))
+							return
 						}
+						
+						const res = await fetch(json.locations[0].location)
+						
+						if(!res.ok) {
+							fileReject(new Error(`Failed to download asset "${fileCacheKey}"`))
+							return
+						}
+						
+						fileResolve(await res.arrayBuffer())
 					})
 				})
 
