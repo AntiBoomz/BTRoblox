@@ -152,14 +152,14 @@ const AssetCache = (() => {
 			}
 			
 			if(info.params?.async) {
-				return RBXParser.parseModel(buffer, { async: true }).asyncPromise.then(model => RBXParser.parseAnimation(findSequence(model)))
+				return RBXParser.parseModel(buffer, { async: true, onProgress: info.params?.onProgress }).asyncPromise.then(model => RBXParser.parseAnimation(findSequence(model)))
 			}
 			
 			return RBXParser.parseAnimation(findSequence(RBXParser.parseModel(buffer).result))
 		}),
 		loadModel: createMethod((buffer, info) => {
 			if(info.params?.async) {
-				return RBXParser.parseModel(buffer, { async: true }).asyncPromise
+				return RBXParser.parseModel(buffer, { async: true, onProgress: info.params?.onProgress }).asyncPromise
 			}
 			
 			return RBXParser.parseModel(buffer).result

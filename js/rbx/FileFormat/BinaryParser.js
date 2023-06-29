@@ -74,21 +74,31 @@ const RBXBinaryParser = {
 		}
 		
 		if(params?.async) {
+			parser.onProgress = params?.onProgress
+			
 			parser.asyncPromise = Promise.resolve().then(async () => {
 				let lastYielded = performance.now()
 				let numChunksParsed = 0
+				
+				if(parser.onProgress) {
+					parser.onProgress(0)
+				}
 				
 				for(const startIndex of chunkIndices) {
 					this.parseChunk(parser, startIndex)
 					numChunksParsed += 1
 					
 					if(performance.now() > lastYielded + 33) {
-						if(parser.onLoadPercentageChanged) {
-							parser.onLoadPercentageChanged(numChunksParsed / chunkIndices.length)
+						if(parser.onProgress) {
+							parser.onProgress(numChunksParsed / chunkIndices.length)
 						}
 						
 						lastYielded = await new Promise(resolve => requestAnimationFrame(resolve))
 					}
+				}
+				
+				if(parser.onProgress) {
+					parser.onProgress(1)
 				}
 				
 				return parser.result

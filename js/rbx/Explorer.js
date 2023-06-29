@@ -80,6 +80,8 @@ const Explorer = (() => {
 				maxOpenWidth: new Map(),
 				open: new Set(),
 			}
+			
+			this.loadingText = "Loading"
 
 			const element = this.element = html`
 			<div class=btr-explorer-parent>
@@ -102,7 +104,7 @@ const Explorer = (() => {
 						<div class=btr-explorer-inner-list></div>
 						<div class=btr-explorer-list-status style=display:none></div>
 					</div>
-					<div class=btr-explorer-loading style="text-align:center;margin-top:12px;">Loading</div>
+					<div class=btr-explorer-loading style="text-align:center;margin-top:12px;">${this.loadingText}</div>
 				</div>
 				<div class=btr-properties>
 					<div class=btr-properties-header></div>
@@ -148,6 +150,11 @@ const Explorer = (() => {
 			}, { capture: true })
 
 			this.select([])
+		}
+		
+		setLoadingText(newText) {
+			this.loadingText = newText
+			this.element.$find(".btr-explorer-loading").textContent = newText
 		}
 
 		closeSourceViewer() {

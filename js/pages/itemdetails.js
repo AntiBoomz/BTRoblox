@@ -299,21 +299,26 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 			if(!explorerInitialized) {
 				explorerInitialized = true
 				
+				const updateLoadingText = perc => explorer.setLoadingText(`Parsing ${Math.floor(perc * 100)}%`)
+				explorer.setLoadingText(`Downloading...`)
+				
 				if(isBundle) {
+					let first = true
 					RobloxApi.catalog.getBundleDetails(assetId).then(async details => {
 						for(const item of details.items) {
 							if(item.type === "Asset") {
-								AssetCache.loadModel(item.id, { async: true }, model => explorer.addModel(item.name, model))
+								AssetCache.loadModel(item.id, { async: true, onProgress: first && updateLoadingText }, model => explorer.addModel(item.name, model))
+								first = false
 							}
 						}
 					})
 					
 				} else if(assetTypeId === AssetType.Head || assetTypeId === AssetType.DynamicHead) {
-					AssetCache.loadModel(assetId, { async: true, format: "avatar_meshpart_head" }, model => explorer.addModel("MeshPart", model))
+					AssetCache.loadModel(assetId, { async: true, onProgress: updateLoadingText, format: "avatar_meshpart_head" }, model => explorer.addModel("MeshPart", model))
 					AssetCache.loadModel(assetId, { async: true }, model => explorer.addModel("SpecialMesh", model))
 					
 				} else {
-					AssetCache.loadModel(assetId, { async: true }, model => explorer.addModel("Default", model, { open: assetTypeId !== AssetType.Place }))
+					AssetCache.loadModel(assetId, { async: true, onProgress: updateLoadingText }, model => explorer.addModel("Default", model, { open: assetTypeId !== AssetType.Place }))
 				}
 			}
 			
