@@ -22,7 +22,7 @@ const RBXXmlParser = {
 			.replace(/&&/g, "&")
 	},
 
-	parse(buffer) {
+	parse(buffer, params) {
 		const xml = new DOMParser().parseFromString(this.escapeXml(bufferToString(buffer)), "text/xml").documentElement
 
 		const parser = {
@@ -54,7 +54,11 @@ const RBXXmlParser = {
 			}
 		})
 
-		return parser.result
+		if(params?.async) {
+			parser.asyncPromise = Promise.resolve(parser.result)
+		}
+		
+		return parser
 	},
 
 	parseItem(parser, node) {

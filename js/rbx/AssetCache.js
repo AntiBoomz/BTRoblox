@@ -100,7 +100,10 @@ const AssetCache = (() => {
 			
 			const cachePromise = cache[cacheKey] = cache[cacheKey] || new Promise(cacheResolve => {
 				const filePromise = fileCache[fileCacheKey] = fileCache[fileCacheKey] || new Promise((fileResolve, fileReject) => {
-					RobloxApi.assetdelivery.requestAssetV2(urlParams, params).then(async json => {
+					RobloxApi.assetdelivery.requestAssetV2(urlParams, {
+						format: params?.format,
+						browserAssetRequest: params?.browserAssetRequest
+					}).then(async json => {
 						if(!json?.locations?.length) {
 							fileReject(new Error(`Failed to download asset "${fileCacheKey}"`))
 							return
@@ -117,7 +120,7 @@ const AssetCache = (() => {
 					})
 				})
 
-				cacheResolve(filePromise.then(buffer => constructor(buffer, request)))
+				cacheResolve(filePromise.then(buffer => constructor(buffer, {request, params})))
 			}).catch(ex => {
 				console.error(ex)
 				return null
@@ -132,7 +135,7 @@ const AssetCache = (() => {
 	}
 
 	return {
-		loadAnimation: createMethod(buffer => {
+		loadAnimation: createMethod((buffer, info) => {
 			const findSequence = array => {
 				for(const inst of array) {
 					if(inst.ClassName === "KeyframeSequence") {
@@ -148,15 +151,25 @@ const AssetCache = (() => {
 				return null
 			}
 			
-			return RBXParser.parseAnimation(findSequence(RBXParser.parseModel(buffer)))
+			if(info.params?.async) {
+				return RBXParser.parseModel(buffer, { async: true }).asyncPromise.then(model => RBXParser.parseAnimation(findSequence(model)))
+			}
+			
+			return RBXParser.parseAnimation(findSequence(RBXParser.parseModel(buffer).result))
 		}),
-		loadModel: createMethod(buffer => RBXParser.parseModel(buffer)),
+		loadModel: createMethod((buffer, info) => {
+			if(info.params?.async) {
+				return RBXParser.parseModel(buffer, { async: true }).asyncPromise
+			}
+			
+			return RBXParser.parseModel(buffer).result
+		}),
 		loadMesh: createMethod(buffer => RBXParser.parseMesh(buffer)),
-		loadImage: createMethod((buffer, request) => new Promise((resolve, reject) => {
+		loadImage: createMethod((buffer, info) => new Promise((resolve, reject) => {
 			const src = URL.createObjectURL(new Blob([new Uint8Array(buffer)], { type: "image/png" }))
 			
 			const image = new Image()
-			image.onerror = () => reject(new Error(`invalid image ${JSON.stringify(request)}`))
+			image.onerror = () => reject(new Error(`invalid image ${JSON.stringify(info)}`))
 			image.onload = () => resolve(image)
 			image.src = src
 			

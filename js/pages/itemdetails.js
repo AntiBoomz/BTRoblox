@@ -303,17 +303,17 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 					RobloxApi.catalog.getBundleDetails(assetId).then(async details => {
 						for(const item of details.items) {
 							if(item.type === "Asset") {
-								AssetCache.loadModel(item.id, model => explorer.addModel(item.name, model))
+								AssetCache.loadModel(item.id, { async: true }, model => explorer.addModel(item.name, model))
 							}
 						}
 					})
 					
 				} else if(assetTypeId === AssetType.Head || assetTypeId === AssetType.DynamicHead) {
-					AssetCache.loadModel(assetId, { format: "avatar_meshpart_head" }, model => explorer.addModel("MeshPart", model))
-					AssetCache.loadModel(assetId, model => explorer.addModel("SpecialMesh", model))
+					AssetCache.loadModel(assetId, { async: true, format: "avatar_meshpart_head" }, model => explorer.addModel("MeshPart", model))
+					AssetCache.loadModel(assetId, { async: true }, model => explorer.addModel("SpecialMesh", model))
 					
 				} else {
-					AssetCache.loadModel(assetId, model => explorer.addModel("Default", model, { open: assetTypeId !== AssetType.Place }))
+					AssetCache.loadModel(assetId, { async: true }, model => explorer.addModel("Default", model, { open: assetTypeId !== AssetType.Place }))
 				}
 			}
 			
