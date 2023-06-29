@@ -299,7 +299,7 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 			if(!explorerInitialized) {
 				explorerInitialized = true
 				
-				const updateLoadingText = perc => explorer.setLoadingText(`Parsing ${Math.floor(perc * 100)}%`)
+				const updateLoadingText = perc => explorer.setLoadingText(`Loading... ${Math.floor(perc * 100 + 0.5)}%`)
 				explorer.setLoadingText(`Downloading...`)
 				
 				if(isBundle) {
