@@ -408,12 +408,12 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 }
 
 .btr-explorer-popover {
+	display: none;
 	position: absolute;
 	pointer-events: none;
 	opacity: 0;
 	transition: opacity ease-in-out .2s;
-	z-index: 1;
-	margin-left: 50%;
+	z-index: 100000;
 	margin-top: 10px;
 }
 

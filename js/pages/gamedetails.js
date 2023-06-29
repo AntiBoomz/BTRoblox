@@ -658,10 +658,16 @@ pageInit.gamedetails = placeId => {
 			initExplorer(placeId, AssetType.Place).then(btnCont => {
 				if(!btnCont) { return }
 				
-				btnCont.$find(".btr-explorer-button").style.display = "none"
-				btnCont.style.display = "contents"
+				const target = $("#game-context-menu")
 				
-				$("#game-context-menu").append(btnCont)
+				btnCont.$find(".btr-explorer-button").style.display = "none"
+				btnCont.style.position = "absolute"
+				btnCont.style.width = `${target.clientWidth}px`
+				btnCont.style.height = `${0}px`
+				btnCont.style.left = `${target.offsetLeft}px`
+				btnCont.style.top = `${target.offsetTop + target.clientHeight}px`
+				
+				target.after(btnCont)
 				
 				placeEdit.parentNode.parentNode.append(
 					html`<li><a class=btr-open-in-explorer><div>Open in Explorer</div></a></li>`

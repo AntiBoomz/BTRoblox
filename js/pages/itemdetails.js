@@ -294,7 +294,7 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 			}
 			
 			popover.classList.add("visible")
-			popover.style.left = `${-popover.clientWidth / 2}px`
+			popover.style.left = `calc(50% - ${popover.clientWidth / 2}px)`
 			
 			if(!explorerInitialized) {
 				explorerInitialized = true
