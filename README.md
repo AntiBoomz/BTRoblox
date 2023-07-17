@@ -20,55 +20,172 @@ API Docs
 
 | Domain | Description |
 | -: | :- |
-| [accountinformation.roblox.com](https://accountinformation.roblox.com/docs) | All endpoints for accessing/modifying account information |
-| [accountsettings.roblox.com](https://accountsettings.roblox.com/docs) | All endpoints for account/user settings. |
-| [adconfiguration.roblox.com](https://adconfiguration.roblox.com/docs) | Roblox Ad Configuration related endpoints. |
-| [ads.roblox.com](https://ads.roblox.com/docs) | Ads configuration endpoints. |
-| [api.roblox.com](https://api.roblox.com/docs) | Miscellaneous endpoints |
-| [assetdelivery.roblox.com](https://assetdelivery.roblox.com/docs) | Serves asset content. |
-| [auth.roblox.com](https://auth.roblox.com/docs) | All endpoints that tamper with authentication sessions. |
-| [avatar.roblox.com](https://avatar.roblox.com/docs) | Endpoints relating to the customization of player avatars. |
-| [badges.roblox.com](https://badges.roblox.com/docs) | Endpoints for badges and badge awards management. |
-| [billing.roblox.com](https://billing.roblox.com/docs) | Real money transactions and interaction. |
-| [catalog.roblox.com](https://catalog.roblox.com/docs) | Catalog items browsing and searching. Content and user based catalog items recommendations. |
-| [chat.roblox.com](https://chat.roblox.com/docs) | All chat and party related endpoints. |
-| [clientsettings.roblox.com](https://clientsettings.roblox.com/docs) | Used by various Roblox clients to retrieve configuration information. |
-| [clientsettingscdn.roblox.com](https://clientsettingscdn.roblox.com/docs) | Used by various Roblox clients to retrieve configuration information. |
-| [contacts.roblox.com](https://contacts.roblox.com/docs) | Contacts and userTag management. |
-| [contentstore.roblox.com](https://contentstore.roblox.com/docs) | ApiSite to front the TemporaryStore for files before uploading to S3 |
-| [develop.roblox.com](https://develop.roblox.com/docs) | Game development configuration endpoints. |
-| [economy.roblox.com](https://economy.roblox.com/docs) | Endpoints related to transactions and currency. |
-| [economycreatorstats.roblox.com](https://economycreatorstats.roblox.com/docs) | Roblox.EconomyCreatorStats.Api endpoints. |
-| [engagementpayouts.roblox.com](https://engagementpayouts.roblox.com/docs) | For engagement-based payout information |
-| [followings.roblox.com](https://followings.roblox.com/docs) | Establishes follow relationship between subscriber entities (users, groups, etc) and source entities (games, groups, assets, etc.) |
-| [friends.roblox.com](https://friends.roblox.com/docs) | Friends and followers management. |
-| [gameinternationalization.roblox.com](https://gameinternationalization.roblox.com/docs) | Manages internationalization of games such as translating in game content. |
-| [gamejoin.roblox.com](https://gamejoin.roblox.com/docs) | All endpoints around launching a game. |
-| [gamepersistence.roblox.com](https://gamepersistence.roblox.com/docs) | Endpoints for the in-game datastore system for storing data for games. |
-| [games.roblox.com](https://games.roblox.com/docs) | All endpoints for game discovery, and details. |
-| [groups.roblox.com](https://groups.roblox.com/docs) | Groups management. |
-| [groupsmoderation.roblox.com](https://groupsmoderation.roblox.com/docs) | Group Moderation |
-| [inventory.roblox.com](https://inventory.roblox.com/docs) | All endpoints for viewing (but not granting) ownership of items. |
-| [itemconfiguration.roblox.com](https://itemconfiguration.roblox.com/docs) | Configure Items (bundles and avatar assets). |
-| [locale.roblox.com](https://locale.roblox.com/docs) | User locale management. |
-| [localizationtables.roblox.com](https://localizationtables.roblox.com/docs) | Handles managing of localization tables. |
-| [metrics.roblox.com](https://metrics.roblox.com/docs) | Record metrics across Roblox. |
-| [notifications.roblox.com](https://notifications.roblox.com/docs) | All notification stream endpoints. |
-| [points.roblox.com](https://points.roblox.com/docs) | The web Api for the in-game PointsService. |
-| [premiumfeatures.roblox.com](https://premiumfeatures.roblox.com/docs) | This API is for premium features and anything pertaining to account add ons |
-| [presence.roblox.com](https://presence.roblox.com/docs) | All endpoints for managing presence. |
-| [privatemessages.roblox.com](https://privatemessages.roblox.com/docs) | All messages page endpoints. |
-| [publish.roblox.com](https://publish.roblox.com/docs) | All endpoints handling file uploads. |
-| [share.roblox.com](https://share.roblox.com/docs) | Purpose of Api here. |
-| [thumbnails.roblox.com](https://thumbnails.roblox.com/docs) | Endpoints for requesting thumbnails. |
-| [thumbnailsresizer.roblox.com](https://thumbnailsresizer.roblox.com/docs) | Validate and resize thumbnails to requested dimensions |
-| [trades.roblox.com](https://trades.roblox.com/docs) | Endpoints for trading collectible items. |
-| [translationroles.roblox.com](https://translationroles.roblox.com/docs) | Manages translation roles of developers in game localization. |
-| [translations.roblox.com](https://translations.roblox.com/docs) | Endpoints for requesting translations. |
-| [twostepverification.roblox.com](https://twostepverification.roblox.com/docs) | Platform interface for the two step verification system. |
-| [usermoderation.roblox.com](https://usermoderation.roblox.com/docs) | Endpoints for performing actions/operations related to User Moderation |
-| [users.roblox.com](https://users.roblox.com/docs) | For direct Roblox user information. |
-| [voice.roblox.com](https://voice.roblox.com/docs) | APIs for Voice calls. |
+| [accountinformation.roblox.com](https://accountinformation.roblox.com/docs/index.html) | All endpoints for accessing/modifying account information |
+| [accountsettings.roblox.com](https://accountsettings.roblox.com/docs/index.html) | All endpoints for account/user settings. |
+| [adconfiguration.roblox.com](https://adconfiguration.roblox.com/docs/index.html) | Roblox Ad Configuration related endpoints. |
+| [ads.roblox.com](https://ads.roblox.com/docs/index.html) | Ads configuration endpoints. |
+| [assetdelivery.roblox.com](https://assetdelivery.roblox.com/docs/index.html) | Serves asset content. |
+| [auth.roblox.com](https://auth.roblox.com/docs/index.html) | All endpoints that tamper with authentication sessions. |
+| [avatar.roblox.com](https://avatar.roblox.com/docs/index.html) | Endpoints relating to the customization of player avatars. |
+| [badges.roblox.com](https://badges.roblox.com/docs/index.html) | Endpoints for badges and badge awards management. |
+| [billing.roblox.com](https://billing.roblox.com/docs/index.html) | Real money transactions and interaction. |
+| [catalog.roblox.com](https://catalog.roblox.com/docs/index.html) | Catalog items browsing and searching. Content and user based catalog items recommendations. |
+| [chat.roblox.com](https://chat.roblox.com/docs/index.html) | All chat and party related endpoints. |
+| [chatmoderation.roblox.com](https://chatmoderation.roblox.com/docs/index.html) |  |
+| [clientsettings.roblox.com](https://clientsettings.roblox.com/docs/index.html) | Used by various Roblox clients to retrieve configuration information. |
+| [clientsettingscdn.roblox.com](https://clientsettingscdn.roblox.com/docs/index.html) | Used by various Roblox clients to retrieve configuration information. |
+| [contacts.roblox.com](https://contacts.roblox.com/docs/index.html) | Contacts and userTag management. |
+| [contentstore.roblox.com](https://contentstore.roblox.com/docs/index.html) | ApiSite to front the TemporaryStore for files before uploading to S3 |
+| [develop.roblox.com](https://develop.roblox.com/docs/index.html) | Game development configuration endpoints. |
+| [economy.roblox.com](https://economy.roblox.com/docs/index.html) | Endpoints related to transactions and currency. |
+| [economycreatorstats.roblox.com](https://economycreatorstats.roblox.com/docs/index.html) | Roblox.EconomyCreatorStats.Api endpoints. |
+| [engagementpayouts.roblox.com](https://engagementpayouts.roblox.com/docs/index.html) | For engagement-based payout information |
+| [followings.roblox.com](https://followings.roblox.com/docs/index.html) | Establishes follow relationship between subscriber entities (users, groups, etc) and source entities (games, groups, assets, etc.) |
+| [friends.roblox.com](https://friends.roblox.com/docs/index.html) | Friends and followers management. |
+| [gameinternationalization.roblox.com](https://gameinternationalization.roblox.com/docs/index.html) | Manages internationalization of games such as translating in game content. |
+| [gamejoin.roblox.com](https://gamejoin.roblox.com/docs/index.html) | All endpoints around launching a game. |
+| [gamepersistence.roblox.com](https://gamepersistence.roblox.com/docs/index.html) | Endpoints for the in-game datastore system for storing data for games. |
+| [games.roblox.com](https://games.roblox.com/docs/index.html) | All endpoints for game discovery, and details. |
+| [groups.roblox.com](https://groups.roblox.com/docs/index.html) | Groups management. |
+| [groupsmoderation.roblox.com](https://groupsmoderation.roblox.com/docs/index.html) | Group Moderation |
+| [inventory.roblox.com](https://inventory.roblox.com/docs/index.html) | All endpoints for viewing (but not granting) ownership of items. |
+| [itemconfiguration.roblox.com](https://itemconfiguration.roblox.com/docs/index.html) | Configure Items (bundles and avatar assets). |
+| [locale.roblox.com](https://locale.roblox.com/docs/index.html) | User locale management. |
+| [localizationtables.roblox.com](https://localizationtables.roblox.com/docs/index.html) | Handles managing of localization tables. |
+| [metrics.roblox.com](https://metrics.roblox.com/docs/index.html) | Record metrics across Roblox. |
+| [notifications.roblox.com](https://notifications.roblox.com/docs/index.html) | All notification stream endpoints. |
+| [points.roblox.com](https://points.roblox.com/docs/index.html) | The web Api for the in-game PointsService. |
+| [premiumfeatures.roblox.com](https://premiumfeatures.roblox.com/docs/index.html) | This API is for premium features and anything pertaining to account add ons |
+| [presence.roblox.com](https://presence.roblox.com/docs/index.html) | All endpoints for managing presence. |
+| [privatemessages.roblox.com](https://privatemessages.roblox.com/docs/index.html) | All messages page endpoints. |
+| [publish.roblox.com](https://publish.roblox.com/docs/index.html) | All endpoints handling file uploads. |
+| [thumbnails.roblox.com](https://thumbnails.roblox.com/docs/index.html) | Endpoints for requesting thumbnails. |
+| [thumbnailsresizer.roblox.com](https://thumbnailsresizer.roblox.com/docs/index.html) | Validate and resize thumbnails to requested dimensions |
+| [trades.roblox.com](https://trades.roblox.com/docs/index.html) | Endpoints for trading collectible items. |
+| [translationroles.roblox.com](https://translationroles.roblox.com/docs/index.html) | Manages translation roles of developers in game localization. |
+| [translations.roblox.com](https://translations.roblox.com/docs/index.html) | Endpoints for requesting translations. |
+| [twostepverification.roblox.com](https://twostepverification.roblox.com/docs/index.html) | Platform interface for the two step verification system. |
+| [usermoderation.roblox.com](https://usermoderation.roblox.com/docs/index.html) | Endpoints for performing actions/operations related to User Moderation |
+| [users.roblox.com](https://users.roblox.com/docs/index.html) | For direct Roblox user information. |
+| [voice.roblox.com](https://voice.roblox.com/docs/index.html) | APIs for Voice calls. |
+| [abtesting.roblox.com](https://abtesting.roblox.com/) |  |
+| [advertise.roblox.com](https://advertise.roblox.com/) |  |
+| [affiliates.roblox.com](https://affiliates.roblox.com/) |  |
+| [ams1-128-116-121-3.roblox.com](https://ams1-128-116-121-3.roblox.com/) |  |
+| [apis.roblox.com](https://apis.roblox.com/) |  |
+| [ash1-128-116-114-3.roblox.com](https://ash1-128-116-114-3.roblox.com/) |  |
+| [assetgame.roblox.com](https://assetgame.roblox.com/) |  |
+| [authorize.roblox.com](https://authorize.roblox.com/) |  |
+| [authsite.roblox.com](https://authsite.roblox.com/) |  |
+| [barista-example.roblox.com](https://barista-example.roblox.com/) |  |
+| [blog.roblox.com](https://blog.roblox.com/) |  |
+| [bom1-128-116-104-3.roblox.com](https://bom1-128-116-104-3.roblox.com/) |  |
+| [bom1-128-116-104-4.roblox.com](https://bom1-128-116-104-4.roblox.com/) |  |
+| [bronze.roblox.com](https://bronze.roblox.com/) |  |
+| [captcha.roblox.com](https://captcha.roblox.com/) |  |
+| [careers.roblox.com](https://careers.roblox.com/) |  |
+| [cdg1-128-116-122-3.roblox.com](https://cdg1-128-116-122-3.roblox.com/) |  |
+| [cdnproviders.roblox.com](https://cdnproviders.roblox.com/) |  |
+| [client-telemetry.roblox.com](https://client-telemetry.roblox.com/) |  |
+| [content.roblox.com](https://content.roblox.com/) |  |
+| [corp.roblox.com](https://corp.roblox.com/) |  |
+| [corporate.roblox.com](https://corporate.roblox.com/) |  |
+| [create.roblox.com](https://create.roblox.com/) |  |
+| [creator.roblox.com](https://creator.roblox.com/) |  |
+| [cssak.roblox.com](https://cssak.roblox.com/) |  |
+| [data.roblox.com](https://data.roblox.com/) |  |
+| [developer.roblox.com](https://developer.roblox.com/) |  |
+| [devforum.roblox.com](https://devforum.roblox.com/) |  |
+| [dfw2-128-116-95-3.roblox.com](https://dfw2-128-116-95-3.roblox.com/) |  |
+| [discussions.roblox.com](https://discussions.roblox.com/) |  |
+| [docsiteassets.roblox.com](https://docsiteassets.roblox.com/) |  |
+| [dr-test.roblox.com](https://dr-test.roblox.com/) |  |
+| [economystats.roblox.com](https://economystats.roblox.com/) |  |
+| [education.roblox.com](https://education.roblox.com/) |  |
+| [eduforum.roblox.com](https://eduforum.roblox.com/) |  |
+| [en.help.roblox.com](https://en.help.roblox.com/) |  |
+| [events.roblox.com](https://events.roblox.com/) |  |
+| [fonts.roblox.com](https://fonts.roblox.com/) |  |
+| [forum.roblox.com](https://forum.roblox.com/) |  |
+| [fra1-128-116-123-3.roblox.com](https://fra1-128-116-123-3.roblox.com/) |  |
+| [fra2-128-116-123-3.roblox.com](https://fra2-128-116-123-3.roblox.com/) |  |
+| [fra4-128-116-44-3.roblox.com](https://fra4-128-116-44-3.roblox.com/) |  |
+| [gamepasses.roblox.com](https://gamepasses.roblox.com/) |  |
+| [gold.roblox.com](https://gold.roblox.com/) |  |
+| [gold-rlb50.roblox.com](https://gold-rlb50.roblox.com/) |  |
+| [golden.roblox.com](https://golden.roblox.com/) |  |
+| [hkg1-128-116-118-3.roblox.com](https://hkg1-128-116-118-3.roblox.com/) |  |
+| [iad4-128-116-102-3.roblox.com](https://iad4-128-116-102-3.roblox.com/) |  |
+| [ir.roblox.com](https://ir.roblox.com/) |  |
+| [jobs.roblox.com](https://jobs.roblox.com/) |  |
+| [lax1-128-116-116-3.roblox.com](https://lax1-128-116-116-3.roblox.com/) |  |
+| [lax2-128-116-116-3.roblox.com](https://lax2-128-116-116-3.roblox.com/) |  |
+| [lbaas-bronze.roblox.com](https://lbaas-bronze.roblox.com/) |  |
+| [lbaas-gold.roblox.com](https://lbaas-gold.roblox.com/) |  |
+| [lbaas-platinum.roblox.com](https://lbaas-platinum.roblox.com/) |  |
+| [lbaas-silver.roblox.com](https://lbaas-silver.roblox.com/) |  |
+| [lga1-128-116-126-3.roblox.com](https://lga1-128-116-126-3.roblox.com/) |  |
+| [lhr1-128-116-119-3.roblox.com](https://lhr1-128-116-119-3.roblox.com/) |  |
+| [lhr2-128-116-119-3.roblox.com](https://lhr2-128-116-119-3.roblox.com/) |  |
+| [lms.roblox.com](https://lms.roblox.com/) |  |
+| [m.roblox.com](https://m.roblox.com/) |  |
+| [maintenance.roblox.com](https://maintenance.roblox.com/) |  |
+| [maintenance-9007.roblox.com](https://maintenance-9007.roblox.com/) |  |
+| [maintenance-gold.roblox.com](https://maintenance-gold.roblox.com/) |  |
+| [membershipsite.roblox.com](https://membershipsite.roblox.com/) |  |
+| [mia1-128-116-127-3.roblox.com](https://mia1-128-116-127-3.roblox.com/) |  |
+| [mia1-128-116-127-4.roblox.com](https://mia1-128-116-127-4.roblox.com/) |  |
+| [mia2-128-116-127-3.roblox.com](https://mia2-128-116-127-3.roblox.com/) |  |
+| [mia4-128-116-45-3.roblox.com](https://mia4-128-116-45-3.roblox.com/) |  |
+| [midas.roblox.com](https://midas.roblox.com/) |  |
+| [midas-android.roblox.com](https://midas-android.roblox.com/) |  |
+| [migrate-bd2-1.roblox.com](https://migrate-bd2-1.roblox.com/) |  |
+| [misc.roblox.com](https://misc.roblox.com/) |  |
+| [ncs.roblox.com](https://ncs.roblox.com/) |  |
+| [nl.roblox.com](https://nl.roblox.com/) |  |
+| [nrt1-128-116-120-3.roblox.com](https://nrt1-128-116-120-3.roblox.com/) |  |
+| [nrt2-128-116-120-3.roblox.com](https://nrt2-128-116-120-3.roblox.com/) |  |
+| [ord2-128-116-101-3.roblox.com](https://ord2-128-116-101-3.roblox.com/) |  |
+| [platinum.roblox.com](https://platinum.roblox.com/) |  |
+| [pulsar.roblox.com](https://pulsar.roblox.com/) |  |
+| [punishments.roblox.com](https://punishments.roblox.com/) |  |
+| [rblxcdn.roblox.com](https://rblxcdn.roblox.com/) |  |
+| [realtime.roblox.com](https://realtime.roblox.com/) |  |
+| [realtime-signalr.roblox.com](https://realtime-signalr.roblox.com/) |  |
+| [research.roblox.com](https://research.roblox.com/) |  |
+| [rightsportal.roblox.com](https://rightsportal.roblox.com/) |  |
+| [rlb-edge.roblox.com](https://rlb-edge.roblox.com/) |  |
+| [sea1-128-116-115-3.roblox.com](https://sea1-128-116-115-3.roblox.com/) |  |
+| [search.roblox.com](https://search.roblox.com/) |  |
+| [share.roblox.com](https://share.roblox.com/) | Purpose of Api here. |
+| [silver.roblox.com](https://silver.roblox.com/) |  |
+| [sin2-128-116-97-3.roblox.com](https://sin2-128-116-97-3.roblox.com/) |  |
+| [sin4-128-116-50-3.roblox.com](https://sin4-128-116-50-3.roblox.com/) |  |
+| [sjc1-128-116-117-3.roblox.com](https://sjc1-128-116-117-3.roblox.com/) |  |
+| [split.roblox.com](https://split.roblox.com/) |  |
+| [static.roblox.com](https://static.roblox.com/) |  |
+| [status.roblox.com](https://status.roblox.com/) |  |
+| [steel.roblox.com](https://steel.roblox.com/) |  |
+| [syd1-128-116-51-3.roblox.com](https://syd1-128-116-51-3.roblox.com/) |  |
+| [talent.roblox.com](https://talent.roblox.com/) |  |
+| [techblog.roblox.com](https://techblog.roblox.com/) |  |
+| [textfilter.roblox.com](https://textfilter.roblox.com/) |  |
+| [themes.roblox.com](https://themes.roblox.com/) |  |
+| [titanium.roblox.com](https://titanium.roblox.com/) |  |
+| [tracing.roblox.com](https://tracing.roblox.com/) |  |
+| [uiblox.roblox.com](https://uiblox.roblox.com/) |  |
+| [us-central-bd1.roblox.com](https://us-central-bd1.roblox.com/) |  |
+| [us-central-bd2.roblox.com](https://us-central-bd2.roblox.com/) |  |
+| [us-central-default-px.roblox.com](https://us-central-default-px.roblox.com/) |  |
+| [us-central-origin-px.roblox.com](https://us-central-origin-px.roblox.com/) |  |
+| [us-east-1.roblox.com](https://us-east-1.roblox.com/) |  |
+| [us-east-bd1.roblox.com](https://us-east-bd1.roblox.com/) |  |
+| [waw1-128-116-124-3.roblox.com](https://waw1-128-116-124-3.roblox.com/) |  |
+| [web.roblox.com](https://web.roblox.com/) |  |
+| [wiki.roblox.com](https://wiki.roblox.com/) |  |
+| [www.roblox.com](https://www.roblox.com/) |  |
+| [www-gold.roblox.com](https://www-gold.roblox.com/) |  |
+| [yk-test.roblox.com](https://yk-test.roblox.com/) |  |
 
 
 Undocumented APIs
