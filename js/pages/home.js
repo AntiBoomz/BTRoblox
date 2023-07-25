@@ -12,9 +12,9 @@ pageInit.home = () => {
 		})
 	}
 	
-	if(SETTINGS.get("home.favoritesAtTop")) {
+	if(SETTINGS.get("home.favoritesAtTop") || SETTINGS.get("home.hideFriendActivity")) {
 		InjectJS.inject(() => {
-			const { hijackFunction } = window.BTRoblox
+			const { hijackFunction, settings } = window.BTRoblox
 			
 			hijackFunction(XMLHttpRequest.prototype, "open", (target, xhr, args) => {
 				const url = args[1]
@@ -26,19 +26,30 @@ pageInit.home = () => {
 						replaceText = text => {
 							try {
 								const json = JSON.parse(text)
-								const favs = json.sorts.find(x => x.topic === "Favorites")
 								
-								if(favs) {
-									const index = json.sorts.indexOf(favs)
+								if(settings.home.favoritesAtTop) {
+									const favs = json.sorts.find(x => x.topic === "Favorites")
 									
-									if(index > 1) {
-										json.sorts.splice(index, 1)
-										json.sorts.splice(1, 0, favs)
+									if(favs) {
+										const index = json.sorts.indexOf(favs)
+										
+										if(index > 1) {
+											json.sorts.splice(index, 1)
+											json.sorts.splice(1, 0, favs)
+										}
+									}
+								}
+								
+								if(settings.home.hideFriendActivity) {
+									for(const gameData of Object.values(json.contentMetadata.Game)) {
+										delete gameData.friendActivityTitle
 									}
 								}
 								
 								text = JSON.stringify(json)
-							} catch(ex) {}
+							} catch(ex) {
+								console.error(ex)
+							}
 							
 							return text
 						}

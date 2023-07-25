@@ -34,7 +34,8 @@ const DEFAULT_SETTINGS = {
 		friendsShowUsername: { value: false },
 		friendsSecondRow: { value: false },
 		friendPresenceLinks: { value: true },
-		favoritesAtTop: { value: false }
+		favoritesAtTop: { value: false },
+		hideFriendActivity: { value: false }
 	},
 	messages: {
 		enabled: { value: true }
