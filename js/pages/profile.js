@@ -231,17 +231,28 @@ pageInit.profile = userId => {
 						return
 					}
 					
-					RobloxApi.presence.getLastOnline([userId]).then(json => {
-						if(!json?.lastOnlineTimestamps?.length) {
-							label.$find(".text-lead").textContent = "Failed"
-							return
-						}
-						
-						const lastOnline = new Date(json.lastOnlineTimestamps[0].lastOnline)
-						
-						label.$find(".text-lead").textContent = `${lastOnline.$since()}`
-						label.$find(".text-lead").title = lastOnline.$format("MMM D, YYYY | hh:mm A (T)")
-					})
+					let numRetries = 0
+					
+					const getLastOnline = () => {
+						RobloxApi.presence.getLastOnline([userId]).then(json => {
+							if(!json?.lastOnlineTimestamps?.length) {
+								if(numRetries < 2) {
+									numRetries += 1
+									setTimeout(getLastOnline, numRetries * 2000)
+								} else {
+									label.$find(".text-lead").textContent = "Failed"
+								}
+								return
+							}
+							
+							const lastOnline = new Date(json.lastOnlineTimestamps[0].lastOnline)
+							
+							label.$find(".text-lead").textContent = `${lastOnline.$since()}`
+							label.$find(".text-lead").title = lastOnline.$format("MMM D, YYYY | hh:mm A (T)")
+						})
+					}
+					
+					getLastOnline()
 				})
 			}
 		})
