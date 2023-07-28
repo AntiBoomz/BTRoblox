@@ -1061,10 +1061,10 @@ const HoverPreview = (() => {
 
 			reqId = requestAnimationFrame(update)
 
-			document.documentElement.$once("mouseup", () => {
+			document.documentElement.$on("mouseup", () => {
 				if(ev.button !== 0) { return }
 				cancelAnimationFrame(reqId)
-			})
+			}, { once: true })
 
 			ev.preventDefault()
 		}).$on("click", ev => ev.preventDefault())

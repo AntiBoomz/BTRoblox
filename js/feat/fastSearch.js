@@ -304,7 +304,7 @@ const btrFastSearch = {
 						if(thumb.loaded) {
 							onload()
 						} else {
-							thumb.$once("load", onload)
+							thumb.$on("load", onload, { once: true })
 						}
 					})
 

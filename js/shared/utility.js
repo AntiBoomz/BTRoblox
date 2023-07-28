@@ -250,6 +250,8 @@ const $ = (() => {
 			}
 		})
 		
+		const domEvents = new WeakMap()
+		
 		Object.assign($, {
 			ready(fn) {
 				if(document.readyState !== "loading") {
@@ -403,86 +405,80 @@ const $ = (() => {
 				while(self.lastChild) { self.removeChild(self.lastChild) }
 			},
 
-			on(self, events, selector, callback, config) {
-				if(typeof selector === "function") { [selector, callback, config] = [null, selector, callback] }
-				if(!self.$events) { Object.defineProperty(self, "$events", { value: {} }) }
+			on(self, eventType, selector, callback, options) {
+				if(typeof selector === "function") { [selector, callback, options] = [null, selector, callback] }
+				
+				if(!selector) {
+					self.addEventListener(eventType, callback, options)
+					return self
+				}
+				
+				let events = domEvents.get(self)
+				if(!events) { events = []; domEvents.set(self, events) }
+				
+				let listeners = events[eventType]
+				if(!listeners) { listeners = events[eventType] = [] }
+				
+				const handler = event => {
+					const fn = event.stopImmediatePropagation
+					let immediateStop = false
 
-				events.split(" ").forEach(eventType => {
-					eventType = eventType.trim()
-
-					const eventName = eventType.replace(/^([^.]+).*$/, "$1")
-					if(!eventName) { return }
-
-					let listeners = self.$events[eventType]
-					if(!listeners) { listeners = self.$events[eventType] = [] }
-
-					const handler = event => {
-						if(!selector) {
-							return callback.call(self, event, self)
-						}
-
-						const fn = event.stopImmediatePropagation
-						let immediateStop = false
-
-						event.stopImmediatePropagation = function() {
-							immediateStop = true
-							return fn.call(this)
-						}
-
-						const path = event.composedPath()
-						const maxIndex = path.indexOf(self)
-						for(let i = 0; i < maxIndex; i++) {
-							const node = path[i]
-
-							if(node.matches(selector)) {
-								Object.defineProperty(event, "currentTarget", { value: node, configurable: true })
-								callback.call(self, event, self)
-								delete event.currentTarget
-
-								if(immediateStop) { break }
-							}
-						}
-
-						delete event.stopImmediatePropagation
+					event.stopImmediatePropagation = function() {
+						immediateStop = true
+						return fn.call(this)
 					}
 
-					const listener = {
-						selector, callback,
-						params: [eventName, handler, config]
+					const path = event.composedPath()
+					const maxIndex = path.indexOf(self)
+					for(let i = 0; i < maxIndex; i++) {
+						const node = path[i]
+
+						if(node.matches(selector)) {
+							Object.defineProperty(event, "currentTarget", { value: node, configurable: true })
+							callback.call(self, event, self)
+							delete event.currentTarget
+
+							if(immediateStop) { break }
+						}
 					}
 
-					listeners.push(listener)
-					self.addEventListener(...listener.params)
-				})
+					delete event.stopImmediatePropagation
+				}
+
+				const listener = {
+					selector, callback,
+					params: [eventType, handler, options]
+				}
+
+				listeners.push(listener)
+				self.addEventListener(...listener.params)
 
 				return self
 			},
-			once(self, events, selector, callback, config) {
-				if(typeof selector === "function") { [selector, callback, config] = [null, selector, callback] }
-				return this.on(self, events, selector, callback, { ...config, once: true })
-			},
-			off(self, events, selector, callback) {
-				if(!self.$events) { return self }
-				if(typeof selector !== "string") { [selector, callback] = [null, selector] }
+			off(self, eventType, selector, callback, options) {
+				if(typeof selector === "function") { [selector, callback, options] = [null, selector, callback] }
 
-				events.split(" ").forEach(eventType => {
-					eventType = eventType.trim()
-
-					const listeners = self.$events[eventType]
-					if(!listeners) { return }
-
-					for(let i = listeners.length; i--;) {
-						const x = listeners[i]
-						if((!selector || x.selector === selector) && (!callback || x.callback === callback)) {
-							self.removeEventListener(...x.params)
-							listeners.splice(i, 1)
-						}
+				if(!selector) {
+					self.removeEventListener(eventType, callback, options)
+					return self
+				}
+				
+				const events = domEvents.get(self)
+				if(!events) { return self }
+				
+				const listeners = events.get(eventType)
+				if(!listeners) { return self }
+				
+				for(let i = listeners.length; i--;) {
+					const x = listeners[i]
+					if((!selector || x.selector === selector) && (!callback || x.callback === callback)) {
+						self.removeEventListener(...x.params)
+						listeners.splice(i, 1)
 					}
+				}
 
-					if(!listeners.length) {
-						delete self.$events[eventType]
-					}
-				})
+				if(!listeners.length) { events.delete(eventType) }
+				if(events.size === 0) { domEvents.delete(self) }
 
 				return self
 			},
@@ -495,7 +491,6 @@ const $ = (() => {
 		Assign([self.EventTarget, EventTarget], {
 			$on(...args) { return $.on(this, ...args) },
 			$off(...args) { return $.off(this, ...args) },
-			$once(...args) { return $.once(this, ...args) },
 			$trigger(...args) { return $.trigger(this, ...args) }
 		})
 
