@@ -272,8 +272,9 @@ const RobloxApi = {
 	},
 	games: {
 		getPlaceDetails: placeIds =>
-			xsrfFetch(`https://games.roblox.com/v1/games/multiget-place-details?placeIds=${placeIds.join("&placeIds=")}`)
-				.then(res => res.json())
+			xsrfFetch(`https://games.roblox.com/v1/games/multiget-place-details?placeIds=${placeIds.join("&placeIds=")}`, {
+				credentials: "include"
+			}).then(res => res.json())
 	},
 	inventory: {
 		getUserInventory: (userId, urlParams) =>
