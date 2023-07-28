@@ -1642,6 +1642,7 @@ const RBXAvatar = (() => {
 
 			// Find and locate anchor
 			const anchor = groups.find(x => x.name.startsWith("Handle") && x.faces.length === 36 && $.hashString(JSON.stringify([x.faces, x.uvs])) === "4734F03A")
+			groups.splice(groups.indexOf(anchor), 1)
 			
 			const attachment = this.attachments.HatAttachment
 			const scaleMod = this.getScaleMod(attachment.parent.name, "Classic", attachment.parent.rbxScaleType)
@@ -1798,118 +1799,124 @@ const RBXAvatar = (() => {
 			const handleGroups = groups.filter(x => x.name.startsWith("Handle") && x !== anchor).sort((a, b) => b.uvs.length - a.uvs.length)
 			let numEmptyAccessoriesAccepted = Object.values(request.accessories).length - handleGroups.length
 			
-			const emptyAccessories = []
+			const accessoriesProcessed = []
 			
 			for(const acc of Object.values(this.accessories)) {
-				if(!request.accessories[acc.asset.id]) { continue } // in case we have multiple copies of an asset
-				const matches = []
+				if(!request.accessories[acc.asset.id] && !acc.wrapLayer) { continue }
+				let result = accessoriesProcessed[acc.asset.id]
 				
-				for(const group of handleGroups) {
-					const match = getGroupMatch(acc.obj, group, uvBoxes[0])
+				if(result === undefined) {
+					const matches = []
 					
-					if(match) {
-						matches.push({ group, match })
+					for(const group of handleGroups) {
+						const match = getGroupMatch(acc.obj, group, uvBoxes[0])
+						
+						if(match) {
+							matches.push({ group, match })
+						}
+					}
+					
+					if(matches.length !== 1) {
+						if(matches.length === 0 && numEmptyAccessoriesAccepted > 0) {
+							numEmptyAccessoriesAccepted -= 1
+						} else {
+							console.log("Could not resolve asset in render")
+							console.log(acc.asset.id, acc.obj.rbxMesh)
+							console.log(matches)
+							console.log(groups)
+							console.log(request)
+							
+							if(IS_DEV_MODE) {
+								setTimeout(() => alert("Could not resolve asset in render"), 0)
+							}
+						}
+						
+						result = accessoriesProcessed[acc.asset.id] = false
+					} else {
+						const { group, match } = matches[0]
+						const mesh = acc.obj.rbxMesh.firstLod || acc.obj.rbxMesh
+						
+						const vertices = mesh.vertices.slice()
+						const normals = mesh.normals.slice()
+						const faces = mesh.faces.slice()
+						
+						const layeredAccMatrix = acc.parent.layeredMatrix.clone().multiply(acc.bakedCFrame)
+						transform.copy(layeredAccMatrix).invert().multiply(inverseRenderMatrix)
+						
+						// apply transformed vertices and normals
+						for(let i = 0, len = group.vertices.length / 3; i < len; i++) {
+							const index = match[i]
+							
+							vertex.makeTranslation(
+								group.vertices[i * 3 + 0],
+								group.vertices[i * 3 + 1],
+								group.vertices[i * 3 + 2]
+							).premultiply(transform)
+							
+							vertices[index * 3 + 0] = vertex.elements[12]
+							vertices[index * 3 + 1] = vertex.elements[13]
+							vertices[index * 3 + 2] = vertex.elements[14]
+							
+							vertex.makeTranslation(
+								group.normals[i * 3 + 0] - transform.elements[12],
+								group.normals[i * 3 + 1] - transform.elements[13],
+								group.normals[i * 3 + 2] - transform.elements[14]
+							).premultiply(transform)
+							
+							normals[index * 3 + 0] = vertex.elements[12]
+							normals[index * 3 + 1] = vertex.elements[13]
+							normals[index * 3 + 2] = vertex.elements[14]
+						}
+						
+						// disable hidden faces
+						let search = 0
+						
+						outer:
+						for(let i = 0; i < group.faces.length; i += 3) {
+							const a = match[group.faces[i + 0]]
+							const b = match[group.faces[i + 1]]
+							const c = match[group.faces[i + 2]]
+							
+							while(true) {
+								if(search >= faces.length) {
+									break outer
+								}
+								
+								if(faces[search + 0] === a && faces[search + 1] === b && faces[search + 2] === c) {
+									search += 3
+									break
+								}
+								
+								faces[search + 0] = -1
+								faces[search + 1] = -1
+								faces[search + 2] = -1
+								search += 3
+							}
+						}
+						
+						for(; search < faces.length; search++) {
+							faces[search] = -1
+						}
+						
+						result = accessoriesProcessed[acc.asset.id] = {
+							vertices: new THREE.BufferAttribute(vertices, 3),
+							normals: new THREE.BufferAttribute(normals, 3),
+							faces: new THREE.BufferAttribute(faces, 1)
+						}
 					}
 				}
 				
-				if(matches.length !== 1) {
-					if(matches.length === 0 && numEmptyAccessoriesAccepted > 0) {
-						// If the whole accessory was hidden by HSR, it doesn't get added into the render
-						
-						if(!emptyAccessories.includes(acc.asset.id)) {
-							emptyAccessories.push(acc.asset.id)
-							numEmptyAccessoriesAccepted -= 1
-						}
-						
-					} else {
-						console.log("Could not resolve asset in render")
-						console.log(acc.asset.id, acc.obj.rbxMesh)
-						console.log(matches)
-						console.log(groups)
-						
-						if(IS_DEV_MODE) {
-							setTimeout(() => alert("Could not resolve asset in render"), 0)
-						}
-					}
-					
+				if(result) {
+					acc.obj.geometry.setAttribute("position", result.vertices)
+					acc.obj.geometry.setAttribute("normal", result.normals)
+					acc.obj.geometry.setIndex(result.faces)
+					acc.obj.rbxLayered = { wrapLayer: acc.wrapLayer, scaleMod: acc.obj.rbxScaleMod.clone() }
+				} else {
 					acc.obj.geometry.deleteAttribute("position")
 					acc.obj.geometry.deleteAttribute("normal")
 					acc.obj.geometry.deleteAttribute("uv")
 					acc.obj.geometry.setIndex(null)
-					
-					continue
 				}
-				
-				const { group, match } = matches[0]
-				const mesh = acc.obj.rbxMesh.firstLod || acc.obj.rbxMesh
-				
-				const vertices = mesh.vertices.slice()
-				const normals = mesh.normals.slice()
-				const faces = mesh.faces.slice()
-				
-				const layeredAccMatrix = acc.parent.layeredMatrix.clone().multiply(acc.bakedCFrame)
-				transform.copy(layeredAccMatrix).invert().multiply(inverseRenderMatrix)
-				
-				// apply transformed vertices and normals
-				for(let i = 0, len = group.vertices.length / 3; i < len; i++) {
-					const index = match[i]
-					
-					vertex.makeTranslation(
-						group.vertices[i * 3 + 0],
-						group.vertices[i * 3 + 1],
-						group.vertices[i * 3 + 2]
-					).premultiply(transform)
-					
-					vertices[index * 3 + 0] = vertex.elements[12]
-					vertices[index * 3 + 1] = vertex.elements[13]
-					vertices[index * 3 + 2] = vertex.elements[14]
-					
-					vertex.makeTranslation(
-						group.normals[i * 3 + 0] - transform.elements[12],
-						group.normals[i * 3 + 1] - transform.elements[13],
-						group.normals[i * 3 + 2] - transform.elements[14]
-					).premultiply(transform)
-					
-					normals[index * 3 + 0] = vertex.elements[12]
-					normals[index * 3 + 1] = vertex.elements[13]
-					normals[index * 3 + 2] = vertex.elements[14]
-				}
-				
-				// disable hidden faces
-				let search = 0
-				
-				outer:
-				for(let i = 0; i < group.faces.length; i += 3) {
-					const a = match[group.faces[i + 0]]
-					const b = match[group.faces[i + 1]]
-					const c = match[group.faces[i + 2]]
-					
-					while(true) {
-						if(search >= faces.length) {
-							break outer
-						}
-						
-						if(faces[search + 0] === a && faces[search + 1] === b && faces[search + 2] === c) {
-							search += 3
-							break
-						}
-						
-						faces[search + 0] = -1
-						faces[search + 1] = -1
-						faces[search + 2] = -1
-						search += 3
-					}
-				}
-				
-				for(; search < faces.length; search++) {
-					faces[search] = -1
-				}
-				
-				acc.obj.geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3))
-				acc.obj.geometry.setAttribute("normal", new THREE.BufferAttribute(normals, 3))
-				acc.obj.geometry.setIndex(new THREE.BufferAttribute(faces, 1))
-				
-				acc.obj.rbxLayered = { wrapLayer: acc.wrapLayer, scaleMod: acc.obj.rbxScaleMod.clone() }
 			}
 			
 			return true
