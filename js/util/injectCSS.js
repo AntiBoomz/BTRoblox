@@ -2,7 +2,6 @@
 
 const activeStyleSheets = {}
 const reloadingStyleSheets = {}
-let ffMainStyleSheet
 
 const startReloadingCSS = (path, skipFirst) => {
 	if(reloadingStyleSheets[path]) { return }
@@ -17,6 +16,8 @@ const startReloadingCSS = (path, skipFirst) => {
 	
 	setInterval(async () => {
 		if(reloadingStyleSheets[path] !== key) { return }
+		if(document.visibilityState === "hidden") { return }
+		
 		const newUrl = `${getURL(path)}?_=${Date.now()}`
 		
 		const res = await fetch(newUrl)
