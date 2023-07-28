@@ -134,7 +134,6 @@ pageInit.inventory = () => {
 		})
 		
 		let isRemoving = false
-		let shiftPressed = false
 		let lastPressed = null
 
 		const updateButtons = function() {
@@ -168,22 +167,25 @@ pageInit.inventory = () => {
 		})
 
 		document
-			.$on("keyup keydown", e => { shiftPressed = e.shiftKey })
-			.$on("change", ".btr-it-box", e => {
-				const id = +e.currentTarget.dataset.index
+			.$on("change", ".btr-it-box", e => { updateButtons() })
+			.$on("click", ".btr-it-checkbox", e => {
+				const checkbox = e.currentTarget.$find(".btr-it-box")
+				const id = +checkbox.dataset.index
 
-				if(shiftPressed && lastPressed != null && id !== lastPressed) {
+				if(e.shiftKey && lastPressed != null && id !== lastPressed) {
 					const from = Math.min(id, lastPressed)
 					const to = Math.max(id, lastPressed)
-					const value = e.currentTarget.checked
+					const value = !checkbox.checked
 
 					for(let i = from; i <= to; i++) {
 						$(`#btr-it-box${i}`).checked = value
 					}
+					
+					updateButtons()
+					e.preventDefault()
 				}
 
 				lastPressed = id
-				updateButtons()
 			})
 			.$on("click", ".item-card-link", () => {
 				if($(".btr-it-box:checked") != null) { return false }
