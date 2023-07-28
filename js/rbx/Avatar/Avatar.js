@@ -1420,7 +1420,10 @@ const RBXAvatar = (() => {
 						this.root.add(acc.obj)
 					}
 					
-					this.accessories.push(acc)
+					if(!this.accessories.includes(acc)) {
+						this.accessories.push(acc)
+					}
+					
 					this.activeMaterials.push(acc.obj.material)
 				} else {
 					acc.parent = null
