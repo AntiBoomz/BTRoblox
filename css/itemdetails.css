@@ -8,33 +8,6 @@
 	word-break: break-word;
 }
 
-#item-details-description.content-height {
-	height: 193px;
-}
-
-#item-details-description.content-overflow-toggle {
-	margin-bottom: 12px;
-}
-
-#item-details-description .toggle-content {
-	padding: 0 2px;
-	bottom: 1px;
-}
-
-.light-theme #item-details-description .toggle-content {
-	background: #f2f4f5;
-}
-
-.dark-theme #item-details-description .toggle-content {
-	background: #232527;
-}
-
-#item-details-description.content-overflow-toggle-off .toggle-content {
-	position: relative;
-	float: right;
-}
-
-
 .menu-shown {
 	--btr-menu-visible: 1;
 }
