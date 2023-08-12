@@ -6,71 +6,66 @@ let cachedXsrfToken = null
 let backgroundCallCounter = 0
 
 const wrapArgs = async args => {
-	if(IS_CHROME) {
-		const didCheck = new Set()
-		
-		const wrapValue = async value => {
-			if(Array.isArray(value) || value?.constructor === Object) {
-				if(didCheck.has(value)) { return null }
-				didCheck.add(value)
-				
-				let didModify = false
-				
-				for(const [key, oldValue] of Object.entries(value)) {
-					const newValue = await wrapValue(oldValue)
-					
-					if(oldValue !== newValue) {
-						if(!didModify) {
-							didModify = true
-							value = Array.isArray(value) ? [...value] : { ...value }
-						}
-						
-						value[key] = newValue
-					}
-				}
-			} else if(value instanceof Blob) {
-				value = {
-					__btrType: "Blob",
-					body: Array.from(new Uint8Array(await value.arrayBuffer())),
-					type: value.type
-				}
-			} else if(value instanceof ArrayBuffer) {
-				value = {
-					__btrType: "ArrayBuffer",
-					body: Array.from(new Uint8Array(value))
-				}
-			} else if(value instanceof URLSearchParams) {
-				value = {
+	// Chrome can only send json-able data, so we need to strip out
+	// everything else, I guess?
+	const valuePromises = new Map()
+	
+	const wrapValue = async value => {
+		if(typeof value === "object" && value !== null) {
+			if(value instanceof URLSearchParams) {
+				return {
 					__btrType: "URLSearchParams",
 					body: value.toString()
 				}
 			}
 			
+			if(Array.isArray(value) || value.constructor === Object) {
+				if(valuePromises.has(value)) { return valuePromises.get(value) }
+				
+				const valuePromise = Promise.resolve().then(async () => {
+					const promises = []
+					let newObject
+					
+					for(const [key, oldValue] of Object.entries(value)) {
+						promises.push(wrapValue(oldValue).then(newValue => {
+							if(newValue !== oldValue) {
+								if(!newObject) {
+									newObject = Array.isArray(value) ? [...value] : { ...value }
+								}
+								
+								newObject[key] = newValue
+							}
+						}))
+					}
+					
+					await Promise.all(promises)
+					return newObject ?? value
+				})
+				
+				valuePromises.set(value, valuePromise)
+				return valuePromise
+			}
+		} else if(typeof value === "boolean" || typeof value === "number" || typeof value === "string" || value === null || value === undefined) {
 			return value
 		}
 		
-		args = await wrapValue(args)
+		console.log(value)
+		throw new TypeError("Invalid value passed to wrapArgs")
 	}
 	
-	return args
+	return await wrapValue(args)
 }
 
 const unwrapArgs = async args => {
-	if(IS_CHROME) {
-		const didCheck = new Set()
-		
-		const unwrapValue = async value => {
-			const valueType = value?.__btrType
+	const didCheck = new Set()
+	
+	const unwrapValue = async value => {
+		if(typeof value === "object" && value !== null) {
+			if(value.__btrType === "URLSearchParams") {
+				return new URLSearchParams(value.body)
+			}
 			
-			if(valueType === "Blob") {
-				value = new Blob([new Uint8Array(value.body)], { type: value.type })
-			} else if(valueType === "ArrayBuffer") {
-				value = new Uint8Array(value.body).buffer
-			} else if(valueType === "URLSearchParams") {
-				value = new URLSearchParams(value.body)
-				
-			} else if(Array.isArray(value) || value?.constructor === Object) {
-				if(didCheck.has(value)) { return }
+			if(!didCheck.has(value)) {
 				didCheck.add(value)
 				
 				for(const [key, oldValue] of Object.entries(value)) {
@@ -81,14 +76,12 @@ const unwrapArgs = async args => {
 					}
 				}
 			}
-			
-			return value
 		}
 		
-		args = await unwrapValue(args)
+		return value
 	}
 	
-	return args
+	return await unwrapValue(args)
 }
 
 
@@ -126,7 +119,7 @@ const backgroundCall = callback => {
 	
 	return (...args) => new Promise(async (resolve, reject) => {
 		if(!cachedXsrfToken) {
-			cachedXsrfToken = document.querySelector("meta[name='csrf-token']")?.dataset.token ?? (document.readyState === "loading" ? null : false)
+			cachedXsrfToken = document.querySelector("meta[name='csrf-token']")?.dataset.token ?? null
 		}
 
 		MESSAGING.send(messageId, { args: await wrapArgs(args), xsrf: cachedXsrfToken }, async result => {
