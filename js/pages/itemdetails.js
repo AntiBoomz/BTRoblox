@@ -356,6 +356,8 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 			<span class=btr-icon-download></span>
 		</a>
 	</div>`
+	
+	const downloadButton = btnCont.$find("a")
 
 	const download = (data, fileType) => {
 		const title = $("#item-container .item-name-container h2")
@@ -369,9 +371,19 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 	const doNamedDownload = event => {
 		const self = event.currentTarget
 		event.preventDefault()
+		
+		if(downloadButton.classList.contains("disabled")) {
+			return
+		}
+		
+		downloadButton.classList.add("disabled")
+		downloadButton.classList.add("loading")
 
-		if(assetTypeId === 4 && self.classList.contains("btr-download-obj")) {
+		if(assetTypeId === AssetType.Mesh && self.classList.contains("btr-download-obj")) {
 			AssetCache.loadMesh(assetUrl, mesh => {
+				downloadButton.classList.remove("disabled")
+				downloadButton.classList.remove("loading")
+				
 				const lines = []
 
 				lines.push("o Mesh")
@@ -408,6 +420,9 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 			})
 		} else {
 			AssetCache.loadBuffer(assetUrl, { browserAssetRequest: assetTypeId === AssetType.Audio }, buffer => {
+				downloadButton.classList.remove("disabled")
+				downloadButton.classList.remove("loading")
+				
 				if(!buffer) {
 					alert("Failed to download")
 					return
@@ -418,10 +433,9 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 		}
 	}
 
-	const btn = btnCont.$find("a")
-	if(assetTypeId === 4) {
-		btn.dataset.toggle = "popover"
-		btn.dataset.bind = "popover-btr-download"
+	if(assetTypeId === AssetType.Mesh) {
+		downloadButton.dataset.toggle = "popover"
+		downloadButton.dataset.bind = "popover-btr-download"
 		
 		const popoverTemplate = html`
 		<div class=rbx-popover-content data-toggle=popover-btr-download>
@@ -448,11 +462,11 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 			})
 		}
 		
-		btn.after(popoverTemplate)
+		downloadButton.after(popoverTemplate)
 		btnCont.$on("click", ".btr-download-mesh, .btr-download-obj", doNamedDownload)
 	} else {
-		btn.href = assetUrl
-		btn.$on("click", doNamedDownload)
+		downloadButton.href = assetUrl
+		downloadButton.$on("click", doNamedDownload)
 	}
 	
 	return btnCont

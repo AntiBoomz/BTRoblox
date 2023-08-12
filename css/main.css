@@ -473,6 +473,19 @@ a:not(.disabled):hover > .btr-icon-content {
 	background-position-x: -28px;
 }
 
+.btr-download-button.loading::after {
+	content: "";
+	background-image: url(/res/icon_loading.gif);
+	background-size: 100%;
+	display: block;
+	position: absolute;
+	width: 16px;
+	height: 16px;
+	left: calc(50% - 8px);
+	top: calc(50% - 8px);
+	z-index: 2;
+}
+
 .btr-explorer-parent {
 	width: 276px;
 	position: relative;
