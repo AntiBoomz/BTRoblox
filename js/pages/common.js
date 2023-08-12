@@ -83,6 +83,28 @@ const robloxLinkify = target => {
 
 //
 
+function onMouseEnter(element, selector, callback) {
+	if(typeof selector === "function") {
+		element.$on("mouseenter", () => selector(element))
+		return
+	}
+	
+	let hovering = false
+	
+	element.$on("mouseover", selector, event => {
+		if(!hovering) {
+			hovering = true
+			
+			const currentTarget = event.currentTarget
+			currentTarget.$on("mouseleave", () => { hovering = false }, { once: true })
+			
+			callback(currentTarget)
+		}
+	})
+}
+
+//
+
 function startDownload(blob, fileName) {
 	const link = document.createElement("a")
 	link.setAttribute("download", fileName || "file")

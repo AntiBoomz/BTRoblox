@@ -470,7 +470,7 @@ pageInit.gamedetails = placeId => {
 		.$watch("#horizontal-tabs").$then()
 			.$watch(["#tab-about", "#tab-game-instances"], (aboutTab, gameTab) => {
 				aboutTab.$find(".text-lead").textContent = "Recommended"
-
+				
 				aboutTab.classList.remove("active")
 				gameTab.classList.add("active")
 
@@ -491,22 +491,15 @@ pageInit.gamedetails = placeId => {
 		.$watch("#game-instances", games => {
 			games.classList.add("active")
 			
-			games.$on("contextmenu", ".game-server-join-btn", ev => {
-				if(ev.target.parentNode.matches(".btr-context-item")) { return }
+			games.$on("btr_mouseenter", ".game-server-join-btn", event => {
+				const btn = event.currentTarget
+				const instanceId = btn.dataset.btrInstanceId
 				
-				const instanceId = ev.target.dataset.btrInstanceId
-				if(!instanceId) { return }
-				
-				const link = html`<a class="btr-context-item" style="display:contents">`
-				link.href = `/btr_context/?btr_instanceId=${instanceId}`
-				
-				ev.target.before(link)
-				link.append(ev.target)
-				
-				requestAnimationFrame(() => {
-					link.before(ev.target)
-					link.remove()
-				})
+				if(instanceId) {
+					ContextMenu.setCustomContextMenu(btn, {
+						instanceId: instanceId
+					})
+				}
 			})
 		})
 		.$watch(".game-main-content", mainCont => {
@@ -598,6 +591,12 @@ pageInit.gamedetails = placeId => {
 		})
 		.$watch("#carousel-game-details", details => details.setAttribute("data-is-video-autoplayed-on-ready", "false"))
 		.$watch("#game-detail-meta-data", dataCont => {
+			ContextMenu.setCustomContextMenu(document.documentElement, {
+				copyParent: true,
+				placeLink: dataCont.dataset.placeId,
+				universeLink: dataCont.dataset.universeId
+			})
+			
 			if(dataCont.dataset.placeId !== dataCont.dataset.rootPlaceId) {
 				const rootPlaceId = dataCont.dataset.rootPlaceId
 				const rootPlaceName = dataCont.dataset.placeName

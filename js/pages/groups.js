@@ -99,40 +99,34 @@ function enableRedesign() {
 		})
 
 		document.$watch("group-members-list .group-dropdown", dropdown => {
-			dropdown
-				.$watch(".input-dropdown-btn", btn => {
-					const link = html`<a style="position: absolute; opacity: 0; left: 0; top: 0; width: 100%; height: 100%;" onclick="return false">`
-					btn.append(link)
+			onMouseEnter(dropdown, ".input-dropdown-btn", btn => {
+				const roleName = btn.$find(".rbx-selection-label").textContent.trim()
+				const target = dropdown.$find(`.dropdown-menu li>a[title="${roleName}"]`)
 
-					link.$on("contextmenu", () => {
-						const roleName = btn.$find(".rbx-selection-label").textContent.trim()
-						const target = dropdown.$find(`.dropdown-menu li>a[title="${roleName}"]`)
+				if(target) {
+					const elem = target.parentNode
 
-						if(target) {
-							const elem = target.parentNode
-
-							const id = elem.id.replace(/^role-/, "")
-							const url = `/btr_context/?btr_roleId=${id}&btr_roleRank=${elem.dataset.btrRank}`
-
-							link.href = url
-							setTimeout(() => link.removeAttribute("href"), 100)
-						}
+					const roleId = elem.id.replace(/^role-/, "")
+					const roleRank = elem.dataset.btrRank
+					
+					ContextMenu.setCustomContextMenu(btn, {
+						roleParent: true,
+						roleId: roleId,
+						roleRank: roleRank
 					})
+				}
+			})
+			
+			onMouseEnter(dropdown, ".dropdown-menu > li", elem => {
+				const roleId = elem.id.replace(/^role-/, "")
+				const roleRank = elem.dataset.btrRank
+				
+				ContextMenu.setCustomContextMenu(elem, {
+					roleParent: true,
+					roleId: roleId,
+					roleRank: roleRank
 				})
-				.$watch(".dropdown-menu", menu =>
-					menu.$watchAll("li", elem => {
-						const id = elem.id.replace(/^role-/, "")
-						const url = `/btr_context/?btr_roleId=${id}&btr_roleRank=${elem.dataset.btrRank}`
-
-						const link = elem.$find("a")
-	
-						link.$on("click", ev => ev.preventDefault())
-						link.$on("contextmenu", () => {
-							link.href = url
-							setTimeout(() => link.removeAttribute("href"), 100)
-						})
-					})
-				)
+			})
 		})
 	}
 

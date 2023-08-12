@@ -60,10 +60,10 @@
 				
 				"js/shared/common.js",
 				"js/shared/utility.js",
-				
-				"js/shared/sharedData.js",
 				"js/shared/messaging.js",
+				"js/shared/sharedData.js",
 				"js/shared/settings.js",
+				"js/shared/contextmenu.js",
 				
 				"js/util/injectJS.js",
 				"js/util/injectCSS.js",
