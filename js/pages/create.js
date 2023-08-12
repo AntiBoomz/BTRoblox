@@ -597,8 +597,7 @@ pageInit.create = () => {
 			const placeName = placeNameRaw.replace(/\W+/g, "-").replace(/^-+|-+$/g, "")
 			const fileName = `${placeName}-${assetVersionNumber}.rbxl`
 			
-			const assetUrl = `https://assetdelivery.roblox.com/v1/asset/?id=${assetId}&version=${assetVersionNumber}`
-			AssetCache.loadBuffer(assetUrl, buffer => {
+			AssetCache.loadBuffer({ id: assetId, version: assetVersionNumber }, buffer => {
 				const blobUrl = URL.createObjectURL(new Blob([buffer], { type: "application/octet-stream" }))
 				startDownload(blobUrl, fileName)
 				URL.revokeObjectURL(blobUrl)
