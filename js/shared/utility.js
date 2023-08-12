@@ -250,7 +250,103 @@ const $ = (() => {
 			}
 		})
 		
-		const domEvents = new WeakMap()
+		class MultiMap {
+			constructor(depth, type=Map) {
+				this.map = new type()
+				this.depth = depth
+			}
+			
+			clear() { return this.map.clear() }
+			entries() { return this.map.entries() }
+			keys() { return this.map.keys() }
+			values() { return this.map.values() }
+			
+			[Symbol.iterator]() { return this.map.entries() }
+			
+			delete(...path) {
+				if(path.length === 0 || path.length > this.depth) {
+					throw new TypeError("bad path")
+				}
+				
+				const stack = [this.map]
+				let parent = this.map
+				
+				for(let i = 0; i < path.length - 1; i++) {
+					parent = parent.get(path[i])
+					if(parent === undefined) { break }
+					stack.push(parent)
+				}
+				
+				if(!parent || !parent.has(path.at(-1))) {
+					return false
+				}
+				
+				for(let i = stack.length; i--;) {
+					const entry = stack[i]
+					const key = path[i]
+					
+					entry.delete(key)
+					if(entry.size > 0) { break }
+				}
+				
+				return true
+			}
+			
+			get(...path) {
+				if(path.length === 0 || path.length > this.depth) {
+					throw new TypeError("bad path")
+				}
+				
+				if(path.length === 1) {
+					return super.get(path[0])
+				}
+				
+				let parent = this.map
+				
+				for(let i = 0; i < path.length - 1; i++) {
+					parent = parent.get(path[i])
+					if(!parent) { return undefined }
+				}
+				
+				return parent.get(path.at(-1))
+			}
+			
+			has(...path) {
+				let parent = this.map
+				
+				for(let i = 0; i < path.length - 1; i++) {
+					parent = parent.get(path[i])
+					if(parent === undefined) { return false }
+				}
+				
+				return parent.has(path.at(-1))
+			}
+			
+			set(...path) {
+				if(path.length !== this.depth + 1) {
+					throw new TypeError("bad path")
+				}
+				
+				const value = path.pop()
+				let parent = this.map
+				
+				for(let i = 0; i < path.length - 1; i++) {
+					let child = parent.get(path[i])
+					
+					if(!child) {
+						child = new Map()
+						parent.set(path[i], child)
+					}
+					
+					parent = child
+				}
+				
+				parent.set(path.at(-1), value)
+				return this
+			}
+		}
+		
+		const domEvents = new MultiMap(2, WeakMap)
 		
 		Object.assign($, {
 			ready(fn) {
@@ -404,50 +500,66 @@ const $ = (() => {
 			empty(self) {
 				while(self.lastChild) { self.removeChild(self.lastChild) }
 			},
-
+			
 			on(self, eventType, selector, callback, options) {
 				if(typeof selector === "function") { [selector, callback, options] = [null, selector, callback] }
+				
+				if(selector && typeof selector !== "string") { throw new TypeError("selector is not a string") }
+				if(typeof callback !== "function") { throw new TypeError("callback is not a function") }
+				
+				options = typeof options === "boolean" ? { capture: options } : (typeof options === "object" && options !== null) ? { ...options } : {}
+				options.capture = options.capture === true
 				
 				if(!selector) {
 					self.addEventListener(eventType, callback, options)
 					return self
 				}
-				
-				let events = domEvents.get(self)
-				if(!events) { events = []; domEvents.set(self, events) }
-				
-				let listeners = events[eventType]
-				if(!listeners) { listeners = events[eventType] = [] }
+
+				let listeners = domEvents.get(self, eventType)
+				if(!listeners) { domEvents.set(self, eventType, listeners = []) }
 				
 				const handler = event => {
-					const fn = event.stopImmediatePropagation
-					let immediateStop = false
-
-					event.stopImmediatePropagation = function() {
-						immediateStop = true
-						return fn.call(this)
+					let currentTarget = event.target.closest(selector)
+					if(!currentTarget || !self.contains(currentTarget)) { return }
+					
+					if(options.once) {
+						self.$off(eventType, selector, callback, options)
 					}
+					
+					let stopPropagation = false
 
-					const path = event.composedPath()
-					const maxIndex = path.indexOf(self)
-					for(let i = 0; i < maxIndex; i++) {
-						const node = path[i]
-
-						if(node.matches(selector)) {
-							Object.defineProperty(event, "currentTarget", { value: node, configurable: true })
-							callback.call(self, event, self)
-							delete event.currentTarget
-
-							if(immediateStop) { break }
+					event.stopPropagation = new Proxy(event.stopPropagation, {
+						apply(target, thisArg, args) {
+							stopPropagation = true
+							return target.apply(thisArg, args)
 						}
-					}
+					})
+					
+					event.stopImmediatePropagation = new Proxy(event.stopImmediatePropagation, {
+						apply(target, thisArg, args) {
+							stopPropagation = true
+							return target.apply(thisArg, args)
+						}
+					})
+					
+					do {
+						Object.defineProperty(event, "currentTarget", { value: currentTarget, configurable: true })
+						try { callback.call(self, event, self) }
+						catch(ex) { console.error(ex) }
+						delete event.currentTarget
 
+						if(stopPropagation) { break }
+						
+						currentTarget = currentTarget.parentElement ? currentTarget.parentElement.closest(selector) : null
+					} while(currentTarget && self.contains(currentTarget))
+					
+					delete event.stopPropagation
 					delete event.stopImmediatePropagation
 				}
 
 				const listener = {
-					selector, callback,
-					params: [eventType, handler, options]
+					selector, callback, options,
+					params: [eventType, handler, options.once ? { ...options, once: false } : options]
 				}
 
 				listeners.push(listener)
@@ -457,29 +569,31 @@ const $ = (() => {
 			},
 			off(self, eventType, selector, callback, options) {
 				if(typeof selector === "function") { [selector, callback, options] = [null, selector, callback] }
-
+				
+				if(selector && typeof selector !== "string") { throw new TypeError("selector is not a string") }
+				if(typeof callback !== "function") { throw new TypeError("callback is not a function") }
+				
+				options = typeof options === "boolean" ? { capture: options } : (typeof options === "object" && options !== null) ? { ...options } : {}
+				options.capture = options.capture === true
+				
 				if(!selector) {
 					self.removeEventListener(eventType, callback, options)
 					return self
 				}
 				
-				const events = domEvents.get(self)
-				if(!events) { return self }
-				
-				const listeners = events.get(eventType)
+				const listeners = domEvents.get(self, eventType)
 				if(!listeners) { return self }
 				
 				for(let i = listeners.length; i--;) {
 					const x = listeners[i]
-					if((!selector || x.selector === selector) && (!callback || x.callback === callback)) {
+					if(x.selector === selector && x.callback === callback && x.options.capture === options.capture) {
 						self.removeEventListener(...x.params)
 						listeners.splice(i, 1)
 					}
 				}
 
-				if(!listeners.length) { events.delete(eventType) }
-				if(events.size === 0) { domEvents.delete(self) }
-
+				if(!listeners.length) { domEvents.delete(self, eventType) }
+				
 				return self
 			},
 			trigger(self, type, init) {
