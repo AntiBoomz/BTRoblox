@@ -407,7 +407,7 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 				download(lines.join("\n"), "obj")
 			})
 		} else {
-			AssetCache.loadBuffer(assetUrl, buffer => {
+			AssetCache.loadBuffer(assetUrl, { browserAssetRequest: assetTypeId === AssetType.Audio }, buffer => {
 				if(!buffer) {
 					alert("Failed to download")
 					return

@@ -164,18 +164,24 @@ const xsrfFetch = (url, init = {}) => {
 const RobloxApi = {
 	assetdelivery: {
 		requestAssetV2: (urlParams, params) => {
+			if(!IS_BACKGROUND_PAGE && params?.browserAssetRequest) {
+				return RobloxApi.assetdelivery.requestAssetV2_bg(urlParams, params)
+			}
+			
 			if(typeof urlParams === "string" || typeof urlParams === "number") { urlParams = { id: urlParams } }
 			if(!(urlParams instanceof URLSearchParams)) { urlParams = new URLSearchParams(urlParams) }
 			
 			const headers = {}
 			if(params?.format) { headers["Roblox-AssetFormat"] = params.format }
-			if(params?.browserAssetRequest !== false) { headers["Roblox-Browser-Asset-Request"] = "true" }
+			if(params?.browserAssetRequest) { headers["Roblox-Browser-Asset-Request"] = "true" }
 			
 			return xsrfFetch(`https://assetdelivery.roblox.com/v2/asset/?${urlParams.toString()}`, {
 				credentials: "include",
 				headers: headers
 			}).then(res => res.json())
 		},
+		
+		requestAssetV2_bg: backgroundCall((...args) => RobloxApi.assetdelivery.requestAssetV2(...args))
 	},
 	avatar: {
 		getAvatarRules: () =>
