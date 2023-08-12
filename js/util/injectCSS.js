@@ -17,6 +17,7 @@ const startReloadingCSS = (path, skipFirst) => {
 	setInterval(async () => {
 		if(reloadingStyleSheets[path] !== key) { return }
 		if(document.visibilityState === "hidden") { return }
+		if(!chrome.runtime?.id) { return } // Stop if extension context is invalidated
 		
 		const newUrl = `${getURL(path)}?_=${Date.now()}`
 		
