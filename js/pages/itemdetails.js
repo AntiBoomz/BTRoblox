@@ -328,8 +328,8 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 			explorer.element.$find(".btr-properties").classList.toggle("left", popLeft)
 		})
 		
-		document.body.$on("click", ev => {
-			if(popover.classList.contains("visible") && !btnCont.contains(ev.target)) {
+		document.body.$on("mousedown", ev => {
+			if(popover.classList.contains("visible") && !btnCont.contains(ev.target) && !explorer.getRootElement().contains(ev.target)) {
 				popover.classList.remove("visible")
 				explorer.setActive(false)
 			}

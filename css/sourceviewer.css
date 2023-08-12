@@ -264,9 +264,7 @@
 	
 	display: flex;
 	flex-direction: row;
-
 	user-select: none;
-	-moz-user-select: none;
 }
 
 .btr-sourceviewer-source-container > * {
@@ -283,8 +281,6 @@
 	white-space: nowrap;
 
 	user-select: none;
-	-moz-user-select: none;
-
 	pointer-events: none;
 }
 
@@ -295,8 +291,6 @@
 	width: 14px;
 
 	user-select: none;
-	-moz-user-select: none;
-
 	pointer-events: none;
 }
 
@@ -308,9 +302,7 @@
 	padding-right: 6px;
 
 	cursor: text;
-
 	user-select: text;
-	-moz-user-select: text;
 	
 	outline: none !important; /* Weird chrome outline */
 }
@@ -320,17 +312,15 @@
 	white-space: nowrap;
 
 	user-select: none;
-	-moz-user-select: none;
-
 	pointer-events: none;
 }
 
 .btr-sourceviewer-source-container .btr-linenumber::selection {
-	display: none !important;
+	display: none;
 }
 
 .btr-sourceviewer-source-container .btr-line-container {
-	display: inline;
+	display: block;
 	position: relative;
 }
 
@@ -345,24 +335,20 @@
 
 .btr-sourceviewer-source-container .btr-line-container .btr-linenumber {
 	position: absolute;
-	top: 0;
+	top: 1px;
 	left: -75px;
-
 	width: 50px;
 }
 
 .btr-sourceviewer-source-container .btr-line-container .btr-scope {
 	position: absolute;
-	top: -1px;
+	top: 0px;
 	left: -20px;
-
 	width: 14px;
 	height: 18px;
 
 	cursor: default;
-
 	user-select: none;
-	-moz-user-select: none;
 }
 
 .btr-sourceviewer-source-container .btr-line-container.open .btr-scope::before,
@@ -383,7 +369,6 @@
 	top: 5px;
 
 	user-select: none;
-	-moz-user-select: none;
 }
 
 .btr-sourceviewer-source-container .btr-line-container.closed .btr-scope::before {
@@ -393,13 +378,8 @@
 }
 
 .btr-sourceviewer-source-container .btr-linetext {
-	padding: 1px 0;
-}
-
-.btr-sourceviewer-source-container .btr-linetext::before {
-	content: "\0200B";
-	float: left;
-	display: block;
+	display: inline-block;
+	width: 100%;
 }
 
 .btr-sourceviewer-source-container .btr-sourceviewer-tab,

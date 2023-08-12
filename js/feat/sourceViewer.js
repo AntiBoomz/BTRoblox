@@ -1,9 +1,9 @@
 "use strict"
 
-const btrSourceViewer = (() => {
+const SourceViewer = (() => {
 	const NumberRegex = /^-?(?:0_*(?:x_*[0-9a-f][0-9a-f_]*|[bB]_*[01][01_]*)|(\d[\d_]*)?\.?\d[\d_]*(?:e[+-]?_*\d[\d_]*)?)$/i
 
-	const ParseRegex = new RegExp(
+	const _ParseRegex = new RegExp(
 		[
 			/-?(?:0_*(?:x_*[0-9a-f][0-9a-f_]*|[bB]_*[01][01_]*)|(\d[\d_]*)?\.?\d[\d_]*(?:e[+-]?_*\d[\d_]*)?)/.source, // number
 			/[+\-*/^%~=><]=|\.\.[.=]?/.source, // multi-char ops
@@ -63,13 +63,12 @@ const btrSourceViewer = (() => {
 	const ScopeInOut = new Set(["else"])
 
 	async function parseSource(source, parent) {
-		const indexState = { depth: 0, parent: "root", state: false }
-		let textBuffer = ""
-		let lineN = 0
-		let depth = 0
-		let text
-
+		const ParseRegex = new RegExp(_ParseRegex)
 		const allLines = source.split("\n")
+		
+		const lineObjects = []
+		let lineNumber = 0
+		let current
 
 		const content = html`
 		<div class=btr-sourceviewer-source-container>
@@ -78,57 +77,110 @@ const btrSourceViewer = (() => {
 			</div>
 			<div class=btr-sourceviewer-scopes>
 			</div>
-			<div class=btr-sourceviewer-lines>
+			<div class=btr-sourceviewer-lines contentEditable=true spellcheck=false>
 			</div>
 		</div>`
-
-
+		
 		const linesParent = content.$find(".btr-sourceviewer-lines")
-		let loadingLinesParent
 
-		let lastLine
-		let current
-
+		linesParent.$on("beforeinput", ev => {
+			ev.stopImmediatePropagation()
+			ev.preventDefault()
+		})
+		
+		const toggleScope = startLine => {
+			let endLineNumber = startLine.lineNumber
+			
+			while(true) {
+				endLineNumber += 1
+				
+				const endLine = lineObjects[endLineNumber]
+				if(!endLine || endLine === current) { return }
+				
+				if(endLine.depth <= startLine.depth) {
+					break
+				}
+			}
+			
+			if(startLine.scopeOpen) {
+				startLine.scopeOpen = false
+				
+				startLine.elem.classList.remove("open")
+				startLine.elem.classList.add("closed")
+				
+				for(let i = startLine.lineNumber + 1; i < endLineNumber; i++) {
+					lineObjects[i].elem.classList.add("btr-collapsed")
+				}
+				
+			} else {
+				startLine.scopeOpen = true
+				
+				startLine.elem.classList.add("open")
+				startLine.elem.classList.remove("closed")
+				
+				let closedDepth = null
+				
+				for(let i = startLine.lineNumber + 1; i < endLineNumber; i++) {
+					const line = lineObjects[i]
+					
+					if(closedDepth !== null) {
+						if(line.depth > closedDepth) {
+							continue
+						}
+						
+						closedDepth = null
+					}
+					
+					if(line.scopeOpen === false) {
+						closedDepth = line.depth
+					}
+					
+					line.elem.classList.remove("btr-collapsed")
+				}
+			}
+		}
+		
+		//
+		
 		const finishLine = () => {
-			if(!current) {
-				return
+			if(!current) { return }
+			
+			current.list.append("\n")
+			
+			current.templist.replaceWith(current.list)
+			delete current.templist
+			
+			const last = lineObjects[lineNumber - 1]
+			
+			if(last && current.depth > last.depth) {
+				const scopeButton = document.createElement("div")
+				scopeButton.classList.add("btr-scope")
+				scopeButton.contentEditable = false
+				
+				last.elem.classList.add("open")
+				last.elem.append(scopeButton)
+				
+				last.scopeOpen = true
+				scopeButton.$on("click", () => toggleScope(last))
 			}
 			
-			flushText()
-
-			current.elem.dataset.depth = current.depth
-			
-			if(lastLine && current.depth > lastLine.depth) {
-				lastLine.elem.classList.add("open")
-				lastLine.elem.$find(".btr-linenumber").after(html`<div class=btr-scope contenteditable=false>`)
-			}
-
-			lastLine = current
 			current = null
 		}
 
-		const createLine = () => {
-			const elem = html`
-			<div class=btr-line-container>
-				<div class=btr-linenumber contenteditable=false>${++lineN}</div>
-				<span class=btr-linetext></span>
-			</div>`
-
-			linesParent.append(elem)
-
-			const line = {
-				elem, depth,
-				list: elem.$find(".btr-linetext")
-			}
-
-			if(lineN === 1) { // small hack to fix selection for first line
-				elem.prepend(line.list)
-			}
-
+		const nextLine = (depth = 0) => {
 			finishLine()
+			lineNumber += 1
+			
+			const line = lineObjects[lineNumber]
+			line.depth = depth
+			
 			current = line
 		}
-
+		
+		//
+		
+		let text
+		
 		const appendUntil = final => {
 			const len = final - ParseRegex.lastIndex
 
@@ -180,58 +232,84 @@ const btrSourceViewer = (() => {
 			}
 		}
 		
-		const flushText = () => {
-			if(textBuffer.length) {
-				current.list.append(textBuffer)
-				textBuffer = ""
-			}
-		}
-
-		const appendText = textInput => {
-			textBuffer += textInput
-		}
-
-		createLine()
-		ParseRegex.lastIndex = 0
-
-		let nextYield = performance.now() + 10
+		// Load all lines as pure text first
 		
-		if(!loadingLinesParent) {
-			loadingLinesParent = linesParent.cloneNode()
-			linesParent.after(loadingLinesParent)
-			linesParent.style.display = "none"
+		for(const lineText of allLines) {
+			lineNumber += 1
 
-			parent.append(content)
-
-			let loadingLineN = 0
+			const elem = document.createElement("div")
+			elem.classList.add("btr-line-container")
 			
-			for(const lineText of allLines) {
-				loadingLinesParent.append(html`
-				<div class=btr-line-container>
-					<div class=btr-linenumber contenteditable=false>${++loadingLineN}</div>
-					<span class=btr-linetext>${lineText + "\n"}</span>
-				</div>`)
+			const ln = document.createElement("div")
+			ln.classList.add("btr-linenumber")
+			ln.contentEditable = false
+			ln.textContent = lineNumber
+			
+			const list = document.createElement("span")
+			list.classList.add("btr-linetext")
+			
+			const templist = list.cloneNode(true)
+			templist.textContent = lineText + "\n"
+			
+			elem.append(ln, templist)
+			
+			const line = lineObjects[lineNumber] = {
+				lineNumber: lineNumber,
+				templist: templist,
+				list: list,
+				elem: elem,
+				depth: 0
 			}
+			
+			linesParent.append(elem)
 		}
-
+		
+		lineNumber = 0
+		
+		//
+		
+		const indexState = { depth: 0, parent: "root", state: false }
+		let nextYield = performance.now() + 10
+		let parented = false
+		let depth = 0
+		
+		nextLine(0)
+		
 		while(true) {
 			if(performance.now() >= nextYield) {
+				if(!parented) {
+					parented = true
+					parent.append(content)
+				}
+				
 				await new Promise(resolve => requestAnimationFrame(resolve))
-				nextYield = performance.now() + 10
+				nextYield = performance.now() + 5
 			}
-
+			
 			const match = ParseRegex.exec(source)
-			if(!match) {
-				break
-			}
-
+			if(!match) { break }
+			
 			text = match[0]
+			
 			if(text === "\n") {
-				appendText("\n")
-				createLine()
+				nextLine(depth)
 				continue
 			}
+			
+			if(ScopeIn.has(text)) {
+				depth++
+			} else if(ScopeOut.has(text)) {
+				if(depth === current.depth) {
+					current.depth--
+				}
 
+				depth--
+			} else if(ScopeInOut.has(text)) {
+				if(depth === current.depth) {
+					current.depth--
+				}
+			}
+			
 			let textType = "text"
 
 			if(text[0] === "-" && text[1] === "-") {
@@ -256,20 +334,7 @@ const btrSourceViewer = (() => {
 				textType = "whitespace"
 			}
 
-			if(ScopeIn.has(text)) {
-				depth++
-			} else if(ScopeOut.has(text)) {
-				if(depth === current.depth) {
-					current.depth--
-				}
 
-				depth--
-			} else if(ScopeInOut.has(text)) {
-				if(depth === current.depth) {
-					current.depth--
-				}
-			}
-			
 			if(textType !== "whitespace" && textType !== "comment") {
 				if(indexState.state && (text === "." || text === ":")) {
 					indexState.depth += 1
@@ -315,14 +380,13 @@ const btrSourceViewer = (() => {
 					indexState.state = false
 				}
 			}
-
+			
 			const textLines = text.split(/\n/)
 			const multiline = (textType === "comment" || textType === "string") && textLines.length > 1
 			
 			for(const [index, line] of Object.entries(textLines)) {
 				if(index > 0) {
-					appendText("\n")
-					createLine()
+					nextLine(depth)
 				}
 
 				if(multiline) {
@@ -335,20 +399,18 @@ const btrSourceViewer = (() => {
 				}
 
 				if(textType === "text") {
-					appendText(text)
+					current.list.append(text)
 					
 				} else if(textType === "whitespace") {
-					flushText()
-					
 					for(let i = 0; i < line.length; i++) {
 						if(line[i] === "\t") {
-							const span = html`<span></span>`
+							const span = document.createElement("span")
 							span.className = "btr-sourceviewer-tab"
 							span.textContent = line[i]
 			
 							current.list.append(span)
 						} else {
-							const span = html`<span></span>`
+							const span = document.createElement("span")
 							span.className = "btr-sourceviewer-space"
 							span.textContent = line[i]
 			
@@ -357,9 +419,7 @@ const btrSourceViewer = (() => {
 					}
 					
 				} else {
-					flushText()
-					
-					const span = html`<span></span>`
+					const span = document.createElement("span")
 					span.className = "btr-sourceviewer-" + textType
 					span.textContent = line
 	
@@ -369,143 +429,12 @@ const btrSourceViewer = (() => {
 		}
 
 		finishLine()
-
-		if(loadingLinesParent) {
-			loadingLinesParent.remove()
-			linesParent.style.display = ""
-		} else {
+		
+		if(!parented) {
+			parented = true
 			parent.append(content)
 		}
 		
-		//
-
-		linesParent.contentEditable = true
-		linesParent.spellcheck = false
-
-		let savedContent = linesParent.innerHTML
-		let savedSelection
-
-		linesParent.$on("input", () => {
-			if(linesParent.innerHTML !== savedContent) {
-				const savedScroll = parent.scrollTop
-
-				linesParent.innerHTML = savedContent
-
-				if(savedSelection) {
-					const { anchor, focus } = savedSelection
-
-					const sel = document.getSelection()
-					const anchorElem = linesParent.children[anchor.lineIndex].$find(".btr-linetext").childNodes[anchor.childIndex]
-					const focusElem = linesParent.children[focus.lineIndex].$find(".btr-linetext").childNodes[focus.childIndex]
-
-					sel.setBaseAndExtent(
-						anchorElem.nodeType !== 3 ? anchorElem.childNodes[0] : anchorElem,
-						anchor.offset,
-						focusElem.nodeType !== 3 ? focusElem.childNodes[0] : focusElem,
-						focus.offset
-					)
-				}
-
-				parent.scrollTop = savedScroll
-				requestAnimationFrame(() => parent.scrollTop = savedScroll)
-			}
-		})
-
-		const getElemPath = (node, offset) => {
-			if(!node.parentNode.classList.contains("btr-linetext")) {
-				node = node.parentNode
-			}
-
-			if(node.parentNode.classList.contains("btr-linetext")) {
-				const lineIndex = Array.prototype.indexOf.call(linesParent.children, node.parentNode.parentNode)
-				const childIndex = Array.prototype.indexOf.call(node.parentNode.childNodes, node)
-
-				if(lineIndex !== -1 && childIndex !== -1) {
-					return { lineIndex, childIndex, offset }
-				}
-			}
-		}
-
-		const onSelectChange = () => {
-			if(!document.contains(linesParent)) {
-				document.$off("selectionchange", onSelectChange)
-				return
-			}
-
-			savedSelection = null
-
-			const sel = document.getSelection()
-
-			if(linesParent.contains(sel.anchorNode)) {
-				const anchor = getElemPath(sel.anchorNode, sel.anchorOffset)
-				const focus = getElemPath(sel.focusNode, sel.focusOffset)
-
-				if(anchor && focus) {
-					savedSelection = { anchor, focus }
-				}
-			}
-		}
-
-		document.$on("selectionchange", onSelectChange)
-		
-		//
-
-		content.$on("click", ".btr-scope", ev => {
-			ev.preventDefault()
-			ev.stopPropagation()
-			ev.stopImmediatePropagation()
-
-			const scope = ev.currentTarget
-			const elem = scope.closest(".btr-line-container")
-
-			if(elem.classList.contains("open")) {
-				elem.classList.remove("open")
-				elem.classList.add("closed")
-	
-				const myDepth = +elem.dataset.depth
-				let target = elem
-	
-				while(target.nextElementSibling) {
-					target = target.nextElementSibling
-	
-					if(!target.dataset.depth || +target.dataset.depth <= myDepth) {
-						break
-					}
-	
-					target.classList.add("btr-collapsed")
-				}
-			} else {
-				elem.classList.remove("closed")
-				elem.classList.add("open")
-	
-				const myDepth = +elem.dataset.depth
-				let subDepth = null
-				let target = elem
-	
-				while(target.nextElementSibling) {
-					target = target.nextElementSibling
-	
-					if(!target.dataset.depth || +target.dataset.depth <= myDepth) {
-						break
-					}
-	
-					if(subDepth !== null && +target.dataset.depth > subDepth) {
-						// Keep hidden
-					} else {
-						subDepth = null
-	
-						target.classList.remove("btr-collapsed")
-	
-						if(target.classList.contains("closed")) {
-							subDepth = +target.dataset.depth
-						}
-					}
-				}
-			}
-
-			savedContent = linesParent.innerHTML
-		})
-
 		return content
 	}
 

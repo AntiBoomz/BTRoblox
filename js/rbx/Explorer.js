@@ -152,6 +152,10 @@ const Explorer = (() => {
 			this.select([])
 		}
 		
+		getRootElement() {
+			return this.sourceViewerModal || this.element
+		}
+		
 		setLoadingText(newText) {
 			this.loadingText = newText
 			this.element.$find(".btr-explorer-loading").textContent = newText
@@ -187,8 +191,14 @@ const Explorer = (() => {
 		}
 
 		async openSourceViewer(inst, propName) {
-			await loadOptionalLibrary("sourceViewer")
-
+			if(!this.sourceViewerLoadPromise) {
+				this.sourceViewerLoadPromise = loadOptionalLibrary("sourceViewer").then(async () => {
+					await new Promise(resolve => setTimeout(resolve, 16)) // wait for styles to load in
+				})
+			}
+			
+			await this.sourceViewerLoadPromise
+			
 			if(!this.sourceViewerModal) {
 				this.sourceViewerModal = html`
 				<div class=btr-sourceviewer-modal>
@@ -208,17 +218,21 @@ const Explorer = (() => {
 					</div>
 				</div>`
 
-				this.sourceViewerModal.$on("click", ev => {
+				this.sourceViewerModal.$on("mousedown", ev => {
 					ev.preventDefault()
-					ev.stopPropagation()
 					ev.stopImmediatePropagation()
 
 					this.closeSourceViewer()
+				}).$on("click", ev => {
+					ev.stopImmediatePropagation()
+				})
+				
+				this.sourceViewerModal.$find(".btr-sourceviewer-container").$on("mousedown", ev => {
+					ev.stopImmediatePropagation()
 				})
 
 				this.sourceViewerModal.$find(".btr-sourceviewer-settings-button").$on("click", ev => {
 					ev.preventDefault()
-					ev.stopPropagation()
 					ev.stopImmediatePropagation()
 					
 					ev.target.classList.toggle("active")
@@ -276,11 +290,6 @@ const Explorer = (() => {
 					}
 				}
 				
-				this.sourceViewerModal.$find(".btr-sourceviewer-container").$on("click", ev => {
-					ev.stopPropagation()
-					ev.stopImmediatePropagation()
-				})
-
 				document.body.append(this.sourceViewerModal)
 				document.body.style.overflow = "hidden"
 				
@@ -344,13 +353,12 @@ const Explorer = (() => {
 
 			tab.btn.classList.add("active")
 			this.selectedSourceViewerTab = tab
-
-			const source = inst.Properties[propName]?.value || ""
-
+			
 			const content = this.sourceViewerModal.$find(".btr-sourceviewer-content")
 			content.$empty()
-
-			btrSourceViewer.init(content, source)
+			
+			const source = inst.Properties[propName]?.value || ""
+			SourceViewer.init(content, source)
 
 			this.sourceViewerModal.$find(".btr-sourceviewer-content").scrollTop = 0
 		}
@@ -1047,6 +1055,10 @@ const Explorer = (() => {
 				} else {
 					cancelAnimationFrame(this.raf)
 					this.raf = null
+					
+					if(this.sourceViewerModal) {
+						this.closeSourceViewer()
+					}
 				}
 			}
 		}
