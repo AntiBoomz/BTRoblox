@@ -221,7 +221,6 @@ const getCurrentValidAssetUrl = async (assetId, assetTypeId) => validAssetUrlCac
 		}))
 		
 		promises.push(RobloxApi.develop.userCanManage(loggedInUser, assetId).then(json => {
-			console.log(json)
 			if(json?.CanManage) {
 				resolve(defaultAssetUrl)
 			}
