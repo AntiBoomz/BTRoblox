@@ -85,6 +85,7 @@ if(IS_BACKGROUND_PAGE) {
 		
 		initPort() {
 			if(this.port) { return }
+			if(!chrome.runtime?.id) { return } // dont try to create a port if extension context is invalidated
 			
 			const port = chrome.runtime.connect()
 			this.port = port
@@ -132,8 +133,10 @@ if(IS_BACKGROUND_PAGE) {
 			}
 			
 			if(!this.port) { this.initPort() }
-			this.port.postMessage(info)
-			this.resetTimeout()
+			if(this.port) {
+				this.port.postMessage(info)
+				this.resetTimeout()
+			}
 		}
 	}
 }
