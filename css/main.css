@@ -227,10 +227,15 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	margin-top: 4px;
 	margin-bottom: 0px;
 	font-size: 11px;
+	
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	text-overflow: ellipsis;
+	-webkit-line-clamp: 7;
 }
 
 #btr-blogfeed .btr-feed:hover > .btr-feeddesc {
-	max-height: 200px;
+	max-height: 106px;
 	margin-bottom: 4px;
 }
 

@@ -15,11 +15,43 @@ const BlogFeed = {
 			this.lastRequest = Date.now()
 			
 			const escape = { amp: "&", gt: ">", lt: "<", apos: "'", quot: "\"" }
-			const content = data => {
-				return data.replace(/<!\[CDATA\[([^]*?)\]\]>/g, "$1").replace(/<[^>]*>/g, "").replace(/\s+/g, " ")
-					.replace(/&(?:(amp|gt|lt|apos|quot)|(?:#x([a-fA-F0-9]+))|(?:#([0-9]+)));/g, (_, name, hex, dec) =>
+			
+			const unescape = data => {
+				return data
+					.replace(/<!\[CDATA\[([^]*?)\]\]>/g, "$1") // strip cdata
+					.replace(/&(?:(amp|gt|lt|apos|quot)|(?:#x([a-fA-F0-9]+))|(?:#([0-9]+)));/g, (_, name, hex, dec) => // unescape characters
 						(name ? escape[name] : hex ? String.fromCodePoint(parseInt(hex, 16)) : String.fromCodePoint(parseInt(dec, 10)))
 					)
+					.trim()
+			}
+			
+			const content = (data, trimlen=null) => {
+				data = data
+					.replace(/<!\[CDATA\[([^]*?)\]\]>/g, "$1") // strip cdata
+					.replace(/<(style)[^>]*>.*?<\/\1[^>]*>/gis, "") // strip out style elements
+					.replace(/<[^>]*>/g, "") // strip out all other tags
+					.replace(/&(?:(amp|gt|lt|apos|quot)|(?:#x([a-fA-F0-9]+))|(?:#([0-9]+)));/g, (_, name, hex, dec) => // unescape characters
+						(name ? escape[name] : hex ? String.fromCodePoint(parseInt(hex, 16)) : String.fromCodePoint(parseInt(dec, 10)))
+					)
+				
+				if(trimlen && trimlen < data.length) {
+					let index = 0
+					
+					while(index <= trimlen) {
+						index = data.indexOf("\n", index + 1)
+						
+						if(index === -1) {
+							index = data.length
+							break
+						}
+					}
+					
+					data = data.slice(0, index)
+				}
+				
+				return data
+					.replace(/(?<=\w)\s*$/gm, ".") // add dots to end of sentences that dont have them
+					.replace(/\s+/g, " ") // collapse all whitespace
 					.trim()
 			}
 			
@@ -39,14 +71,14 @@ const BlogFeed = {
 					const match = regex.exec(text)
 					if(!match) { break }
 					
-					const [, title, link, date, desc] = match[0].match(/<title>([^]*?)<\/title>[^]*?<link>([^]*?)<\/link>[^]*?<pubDate>([^]*?)<\/pubDate>[^]*?<description>([^]*?)<\/description>/) || []
+					const [, title, link, date, desc] = match[0].match(/<title>([^]*?)<\/title>[^]*?<link>([^]*?)<\/link>[^]*?<pubDate>([^]*?)<\/pubDate>[^]*?<content:encoded>([^]*?)<\/content:encoded>/) || []
 					if(!link) { continue }
 					
 					posts.push({
-						url: content(link),
-						date: content(date),
-						title: content(title),
-						desc: content(desc)
+						url: unescape(link),
+						date: unescape(date),
+						title: unescape(title),
+						desc: content(desc, 200)
 					})
 				}
 				
