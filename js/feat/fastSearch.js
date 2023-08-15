@@ -189,7 +189,9 @@ const btrFastSearch = {
 			const { list, container, selectedClass } = getInfo()
 			if(!list) { return }
 			
-			container.$findAll(`>li`).forEach(x => x.remove())
+			for(const li of container.$findAll(`>li`)) {
+				li.remove()
+			}
 			
 			if(!list.$find(`>.${selectedClass}`)) {
 				list.$find(">li")?.classList.add(selectedClass)
@@ -313,8 +315,10 @@ const btrFastSearch = {
 						
 						const status = item.$find(".btr-fastsearch-status")
 						status.classList.remove("game", "studio", "online")
-				
-						item.$findAll(".btr-fastsearch-placename, .btr-fastsearch-follow").forEach(x => x.remove())
+						
+						for(const x of item.$findAll(".btr-fastsearch-placename, .btr-fastsearch-follow")) {
+							x.remove()
+						}
 				
 						switch(info.userPresenceType) {
 						case 0: break
@@ -410,9 +414,11 @@ const btrFastSearch = {
 
 				loggedInUserPromise.then(userId => {
 					RobloxApi.friends.getFriends(userId).then(json => {
-						Object.entries(userCache).filter(x => x[1].IsFriend).forEach(([name]) => {
-							delete userCache[name]
-						})
+						for(const [name, entry] of Object.entries(userCache)) {
+							if(entry.IsFriend) {
+								delete userCache[name]
+							}
+						}
 
 						const friendsCache = {}
 						

@@ -117,20 +117,20 @@ pageInit.inventory = () => {
 					.join(" || ")
 			})`
 
-			template.$findAll(".assets-explorer-title").forEach(title => {
+			for(const title of template.$findAll(".assets-explorer-title")) {
 				title.after(html`
 				<div class="header-content" ng-show="${visibility}">
 					<a class="btn btn-secondary-sm btr-it-btn btr-it-remove disabled" style="float:right;margin-left:10px;">Remove</a>
 				</div>`)
-			})
+			}
 
-			template.$findAll("#assetsItems .item-card-container").forEach(cont => {
+			for(const cont of template.$findAll("#assetsItems .item-card-container")) {
 				cont.append(html`
 				<span class="checkbox btr-it-checkbox" ng-show="${visibility}">
 					<input type="checkbox" id="btr-it-box{{$index}}" class="btr-it-box" data-index="{{$index}}">
 					<label for="btr-it-box{{$index}}" style="position:absolute;left:6px;top:6px;width:auto;"></label>
 				</span>`)
-			})
+			}
 		})
 		
 		let isRemoving = false

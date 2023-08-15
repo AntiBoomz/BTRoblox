@@ -89,7 +89,11 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 				if(typeof fn === "function") {
 					hijackFunction(a, b, (target, thisArg, args) => {
 						const argMap = {}
-						args.forEach((x, i) => argMap[injects[i]] = x)
+						
+						for(const [i, arg] of Object.entries(args)) {
+							argMap[injects[i]] = arg
+						}
+						
 						return callback.call(thisArg, target, args, argMap)
 					})
 				}
@@ -285,7 +289,7 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 				}
 				
 				if(selector.props) {
-					for(const key in selector.props) {
+					for(const key of Object.keys(selector.props)) {
 						if(selector.props[key] !== elem.props[key]) {
 							continue main
 						}

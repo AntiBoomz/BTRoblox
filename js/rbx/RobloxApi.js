@@ -197,8 +197,9 @@ const RobloxApi = {
 				.then(res => res.json()),
 		
 		getCurrentAvatar: () =>
-			xsrfFetch(`https://avatar.roblox.com/v1/avatar`)
-				.then(res => res.json()),
+			xsrfFetch(`https://avatar.roblox.com/v1/avatar`, {
+				credentials: "include"
+			}).then(res => res.json()),
 		
 		renderAvatar: request =>
 			xsrfFetch(`https://avatar.roblox.com/v1/avatar/render`, {

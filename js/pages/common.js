@@ -359,9 +359,11 @@ const parseReactSelector = selectors => {
 						if(Array.isArray(value)) {
 							target[key] = target[key] ?? []
 							target[key].push(...value)
-						} else if(typeof value === "object") {
+							
+						} else if(typeof value === "object" && value !== null) {
 							target[key] = target[key] ?? {}
-							for(const i in value) { target[key][i] = value[i] }
+							Object.assign(target[key], value)
+							
 						} else {
 							target[key] = value
 						}

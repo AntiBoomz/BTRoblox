@@ -507,11 +507,11 @@ if(IS_BACKGROUND_PAGE) {
 		ContextMenu.onFocus()
 	}
 	
-	new MutationObserver(() => {
+	$.onDomChanged(() => {
 		for(const entry of ContextMenu.activeContextMenus) {
 			if(!document.documentElement.contains(entry.element)) {
 				entry.kill()
 			}
 		}
-	}).observe(document.documentElement, { childList: true, subtree: true })
+	})
 }

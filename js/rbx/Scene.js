@@ -70,7 +70,7 @@ const RBXScene = (() => {
 				{
 					target: canvas,
 					events: {
-						mousedown(event) {
+						mousedown: event => {
 							if(!this.cameraControlsEnabled) { return }
 
 							if(!this.isDragging && (event.button >= 0 && event.button <= 2)) {
@@ -85,11 +85,11 @@ const RBXScene = (() => {
 
 							event.preventDefault()
 						},
-						contextmenu(event) {
+						contextmenu: event => {
 							if(!this.cameraControlsEnabled) { return }
 							event.preventDefault()
 						},
-						wheel(event) {
+						wheel: event => {
 							if(!this.cameraControlsEnabled) { return }
 							
 							const deltaY = event.deltaY
@@ -107,7 +107,7 @@ const RBXScene = (() => {
 				{
 					target: window,
 					events: {
-						mousemove(event) {
+						mousemove: event => {
 							if(!this.cameraControlsEnabled) { return }
 							
 							if(!this.isDragging) { return }
@@ -125,12 +125,12 @@ const RBXScene = (() => {
 								this.cameraRotation.y -= 2 * Math.PI * moveX / this.canvas.clientWidth
 							}
 						},
-						mouseup(event) {
+						mouseup: event => {
 							if(this.isDragging && event.button === this.dragButton) {
 								this.isDragging = false
 							}
 						},
-						contextmenu(event) {
+						contextmenu: event => {
 							if(!this.cameraControlsEnabled) { return }
 							
 							if(event.button === 2 && event.button === this.dragButton) {
@@ -141,13 +141,12 @@ const RBXScene = (() => {
 					}
 				}
 			]
-
-			this.listeners.forEach(x => {
-				Object.entries(x.events).forEach(([eventName, fn]) => {
-					const bound = x.events[eventName] = fn.bind(this)
-					x.target.addEventListener(eventName, bound)
-				})
-			})
+			
+			for(const listener of this.listeners) {
+				for(const params of Object.entries(listener.events)) {
+					listener.target.addEventListener(...params)
+				}
+			}
 		}
 
 		update() {
@@ -188,12 +187,12 @@ const RBXScene = (() => {
 		remove() {
 			if(this.started) { this.stop() }
 			this.canvas.remove()
-
-			this.listeners.forEach(x => {
-				Object.entries(x.events).forEach(([eventName, fn]) => {
-					x.target.addEventListener(eventName, fn)
-				})
-			})
+			
+			for(const listener of this.listeners) {
+				for(const params of Object.entries(listener.events)) {
+					listener.target.removeEventListener(...params)
+				}
+			}
 		}
 
 		start() {

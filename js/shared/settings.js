@@ -101,11 +101,13 @@ const DEFAULT_SETTINGS = {
 	},
 }
 
-Object.values(DEFAULT_SETTINGS).forEach(list => {
+for(const list of Object.values(DEFAULT_SETTINGS)) {
 	if(list instanceof Object) {
-		Object.values(list).forEach(x => x.default = true)
+		for(const setting of Object.values(list)) {
+			setting.default = true
+		}
 	}
-})
+}
 
 const SETTINGS = {
 	_onChangeListeners: [],
@@ -173,11 +175,11 @@ const SETTINGS = {
 		delete settings._version
 
 		// Change settings to be name: value
-		Object.values(settings).forEach(group => {
-			Object.entries(group).forEach(([name, setting]) => {
+		for(const group of Object.values(settings)) {
+			for(const [name, setting] of Object.entries(group)) {
 				group[name] = setting.value
-			})
-		})
+			}
+		}
 
 		return settings
 	},

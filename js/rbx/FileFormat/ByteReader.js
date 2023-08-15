@@ -202,14 +202,15 @@ class ByteReader extends Uint8Array {
 		"Byte", "UInt8", "UInt16LE", "UInt16BE", "UInt32LE", "UInt32BE",
 		"FloatLE", "FloatBE", "DoubleLE", "DoubleBE", "String"
 	]
-
-	peekMethods.forEach(key => {
+	
+	for(const key of peekMethods) {
 		const fn = ByteReader.prototype[key]
+		
 		ByteReader.prototype["Peek" + key] = function(...args) {
 			const index = this.GetIndex()
 			const result = fn.apply(this, args)
 			this.SetIndex(index)
 			return result
 		}
-	})
+	}
 }

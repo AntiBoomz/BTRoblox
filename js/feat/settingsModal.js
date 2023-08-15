@@ -125,8 +125,8 @@ const SettingsModal = {
 
 			const list0 = shoutFilters.mode === "blacklist" ? enabledList : disabledList
 			const list1 = list0 === disabledList ? enabledList : disabledList
-
-			groups.forEach(group => {
+			
+			for(const group of groups) {
 				const tile = group.tile
 
 				if(currentList.includes(group.id)) {
@@ -134,7 +134,7 @@ const SettingsModal = {
 				} else {
 					list0.append(tile)
 				}
-			})
+			}
 		}
 
 		const setGroupEnabled = (id, state) => {
@@ -213,8 +213,8 @@ const SettingsModal = {
 		loggedInUserPromise.then(async userId => {
 			const resp = await $.fetch(`https://groups.roblox.com/v1/users/${userId}/groups/roles`)
 			const json = await resp.json()
-
-			json.data.map(x => x.group).sort((a, b) => (a.name < b.name ? -1 : 1)).forEach(group => {
+			
+			for(const group of json.data.map(x => x.group).sort((a, b) => (a.name < b.name ? -1 : 1))) {
 				const tile = group.tile = html`
 				<li class=btr-filter-group title="${group.name}" draggable=true>
 					<div class=btr-filter-group-icon>
@@ -233,19 +233,19 @@ const SettingsModal = {
 				tile.$on("click", () => {
 					setGroupEnabled(group.id, !isGroupEnabled(group.id))
 				})
-
+				
 				groups.push(group)
-			})
+			}
 
 			fetch(`https://thumbnails.roblox.com/v1/groups/icons?groupIds=${groups.map(x => x.id).join(",")}&size=150x150&format=Png&isCircular=false`)
 				.then(async resp => {
 					const json = await resp.json()
-
-					json.data.forEach(iconData => {
+					
+					for(const iconData of json.data) {
 						if(iconData.state === "Completed" && iconData.imageUrl) {
 							groups.find(x => x.id === iconData.targetId).tile.$find("img").src = iconData.imageUrl
 						}
-					})
+					}
 				})
 
 			areGroupsLoaded = true
@@ -479,16 +479,16 @@ const SettingsModal = {
 				xsrf: true
 			}).then(async resp => {
 				const json = await resp.json()
-
-				json.forEach(({ id }) => {
+				
+				for(const conversation of json) {
 					$.fetch("https://chat.roblox.com/v2/mark-as-read", {
 						credentials: "include",
 						xsrf: true,
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ conversationId: id })
+						body: JSON.stringify({ conversationId: conversation.id })
 					})
-				})
+				}
 			})
 		})
 		
@@ -565,18 +565,18 @@ const SettingsModal = {
 			const currencySelect = this.settingsDiv.$find("#btr-robuxToCash-currency")
 			const rateSelect = this.settingsDiv.$find("#btr-robuxToCash-rate")
 
-			currencySelect.$empty()
-			rateSelect.$empty()
+			currencySelect.replaceChildren()
+			rateSelect.replaceChildren()
 
 			const currencies = Object.values(RobuxToCash.Currencies)
 			
-			currencies.filter(x => !x.usdRate).forEach(currency => {
+			for(const currency of currencies.filter(x => !x.usdRate))  {
 				currencySelect.append(html`<option>${currency.name}</option>`)
-			})
+			}
 			
-			currencies.filter(x => x.usdRate).sort((a, b) => (a.name < b.name ? -1 : 1)).forEach(currency => {
+			for(const currency of currencies.filter(x => x.usdRate).sort((a, b) => (a.name < b.name ? -1 : 1))) {
 				currencySelect.append(html`<option title="Rates are estimations based on USD-${currency.name} exchange rate on ${RobuxToCash.UpdateDate}" value="${currency.name}">${currency.name}*</option>`)
-			})
+			}
 
 			const setRate = () => {
 				SETTINGS.set("general.robuxToUSDRate", rateSelect.value)
@@ -592,10 +592,10 @@ const SettingsModal = {
 				const name = RobuxToCash.getSelectedOption().currency.name
 				currencySelect.value = name
 
-				rateSelect.$empty()
+				rateSelect.replaceChildren()
 				let selected = false
 
-				RobuxToCash.OptionLists[name].forEach(option => {
+				for(const option of RobuxToCash.OptionLists[name]) {
 					let fullText = ""
 					
 					if(option.name === "none") {
@@ -618,7 +618,7 @@ const SettingsModal = {
 					if(option.name === SETTINGS.get("general.robuxToUSDRate")) {
 						selected = true
 					}
-				})
+				}
 				
 				if(selected) {
 					rateSelect.value = SETTINGS.get("general.robuxToUSDRate")
@@ -680,7 +680,7 @@ const SettingsModal = {
 		const settingsDone = {}
 		const joinPaths = (group, path) => (!group || path.includes(".") ? path : `${group}.${path}`)
 
-		this.settingsDiv.$findAll("group").forEach(group => {
+		for(const group of this.settingsDiv.$findAll("group")) {
 			const groupPath = group.getAttribute("path") || ""
 
 			const titleContainer = html`<div class=btr-setting-group-title-container></div>`
@@ -743,7 +743,7 @@ const SettingsModal = {
 				update()
 			}
 
-			group.$findAll("select[path]").forEach(select => {
+			for(const select of group.$findAll("select[path]")) {
 				const settingPath = joinPaths(groupPath, select.getAttribute("path"))
 				settingsDone[settingPath] = true
 
@@ -802,9 +802,9 @@ const SettingsModal = {
 					SETTINGS.onChange(requirePath, requireUpdate)
 					requireUpdate()
 				}
-			})
+			}
 
-			group.$findAll("checkbox[path]").forEach(checkbox => {
+			for(const checkbox of group.$findAll("checkbox[path]")) {
 				const settingAttr = checkbox.getAttribute("path")
 				const settingPath = joinPaths(groupPath, settingAttr.replace(/^!/, ""))
 				settingsDone[settingPath] = true
@@ -863,10 +863,11 @@ const SettingsModal = {
 				} else {
 					label.textContent += " (Bad setting)"
 				}
-			})
-		})
+			}
+		}
 
 		const wipGroup = this.settingsDiv.$find("#btr-settings-wip")
+		
 		for(const [groupPath, settingsGroup] of Object.entries(SETTINGS.loadedSettings)) {
 			for(const [settingName, settingValueInfo] of Object.entries(settingsGroup)) {
 				const defaultValueInfo = DEFAULT_SETTINGS[groupPath][settingName]

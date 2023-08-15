@@ -15,17 +15,17 @@ pageInit.groupadmin = () => {
 		})
 		
 		modifyTemplate("revenue-summary", template => {
-			template.$findAll(`.icon-robux-container > span[ng-bind*="$ctrl"]`).forEach(elem => {
+			for(const elem of template.$findAll(`.icon-robux-container > span[ng-bind*="$ctrl"]`)) {
 				const cashText = ` (${RobuxToCash.convertAngular(elem.getAttribute("ng-bind").replace(/\|.*$/, ""))})`
 				elem.after(html`<span class=btr-robuxToCash>${cashText}</span>`)
-			})
+			}
 		})
 
 		modifyTemplate("transactions", template => {
-			template.$findAll(`.icon-robux-container > span[ng-bind*="transaction"]`).forEach(elem => {
+			for(const elem of template.$findAll(`.icon-robux-container > span[ng-bind*="transaction"]`)) {
 				const cashText = ` (${RobuxToCash.convertAngular(elem.getAttribute("ng-bind").replace(/\|.*$/, ""))})`
 				elem.after(html`<span class=btr-robuxToCash title="${cashText.replace(/{{/g, "")}">${cashText}</span>`)
-			})
+			}
 		})
 	}
 }

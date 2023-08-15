@@ -662,7 +662,7 @@ a:not(.disabled):hover > .btr-icon-content {
 }
 
 .btr-explorer-filter input.btr-explorer-filter-input::placeholder {
-	color: #000;
+	color: #777;
 }
 
 .btr-explorer-filter.loading::after {

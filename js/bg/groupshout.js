@@ -188,7 +188,7 @@
 						const params = {
 							type: "basic",
 							title: data.name,
-							iconUrl: thumbUrl || getURL("res/icon_128.png"),
+							iconUrl: thumbUrl || chrome.runtime.getURL("res/icon_128.png"),
 							message: data.shout.body,
 							contextMessage: data.shout.poster.username,
 

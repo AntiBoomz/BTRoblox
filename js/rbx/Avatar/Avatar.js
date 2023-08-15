@@ -1,8 +1,6 @@
 "use strict"
 
 const RBXAvatar = (() => {
-	const Vector3 = THREE.Vector3
-	
 	function applyMesh(obj, baseMesh) {
 		const geom = obj.geometry
 		let appliedMesh = baseMesh
@@ -342,7 +340,26 @@ const RBXAvatar = (() => {
 	}
 
 	const emptyImage = createImage("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=")
-
+	
+	const LocalAssets = {
+		"res/previewer/characterModels.rbxm": "rbxassetid://11829118051&version=1",
+		"res/previewer/face.png": "rbxassetid://2957705858",
+		
+		"res/previewer/meshes/leftarm.mesh": "rbxassetid://2957740508",
+		"res/previewer/meshes/leftleg.mesh": "rbxassetid://2957740624",
+		"res/previewer/meshes/rightarm.mesh": "rbxassetid://2957740703",
+		"res/previewer/meshes/rightleg.mesh": "rbxassetid://2957740776",
+		"res/previewer/meshes/torso.mesh": "rbxassetid://2957740857",
+		"res/previewer/heads/head.mesh": "rbxassetid://2957715294",
+	
+		"res/previewer/compositing/CompositPantsTemplate.mesh": "rbxassetid://2957742558",
+		"res/previewer/compositing/CompositShirtTemplate.mesh": "rbxassetid://2957742631",
+		"res/previewer/compositing/CompositTShirt.mesh": "rbxassetid://2957742706",
+		"res/previewer/compositing/R15CompositLeftArmBase.mesh": "rbxassetid://2957742791",
+		"res/previewer/compositing/R15CompositRightArmBase.mesh": "rbxassetid://2957742881",
+		"res/previewer/compositing/R15CompositTorsoBase.mesh": "rbxassetid://2957742957"
+	}
+	
 	const R6BodyPartNames = ["Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
 	const R15BodyPartNames = [
 		"LeftFoot", "LeftHand", "LeftLowerArm", "LeftLowerLeg", "LeftUpperArm", "LeftUpperLeg", "LowerTorso",
@@ -546,7 +563,7 @@ const RBXAvatar = (() => {
 				rightLeg: new RBXComposites.R15RightLegComposite(sources)
 			}
 			
-			sources.face.defaultImage = getURL("res/previewer/face.png")
+			sources.face.defaultImage = RBXAvatar.LocalAssets[`res/previewer/face.png`]
 			
 			for(const name of ["Head", ...R6BodyPartNames]) {
 				sources.base[name] = new MergeSource()
@@ -581,10 +598,10 @@ const RBXAvatar = (() => {
 					this.shouldRefreshRig = true
 				})
 			)
-
-			Object.values(this.composites).forEach(comp => {
-				loaders.push(...comp.loaders)
-			})
+			
+			for(const composite of Object.values(this.composites)) {
+				loaders.push(...composite.loaders)
+			}
 			
 			if(this.bodyColors) {
 				this.setBodyColors(this.bodyColors)
@@ -912,7 +929,7 @@ const RBXAvatar = (() => {
 				obj.rbxOrigWrapTarget = tree.wrapTarget
 				obj.rbxOrigSize = tree.origSize
 				
-				obj.rbxScaleMod = new Vector3(1, 1, 1)
+				obj.rbxScaleMod = new THREE.Vector3(1, 1, 1)
 				obj.matrixNoScale = new THREE.Matrix4()
 				obj.rbxPoseMatrix = new THREE.Matrix4()
 				obj.skinnedMatrix = new THREE.Matrix4()
@@ -1588,7 +1605,7 @@ const RBXAvatar = (() => {
 				}
 			}
 			
-			const obj = await fetch(AssetCache.getHashUrl(objHash)).then(res => res.text())
+			const obj = await fetch(AssetCache.getHashUrl(objHash, "t")).then(res => res.text())
 			if(!requestsMatch(request, this.getLayeredRequest())) { return }
 			
 			// Read obj file
@@ -1925,7 +1942,8 @@ const RBXAvatar = (() => {
 
 	return {
 		Avatar,
-
+		
+		LocalAssets,
 		R6BodyPartNames,
 		R15BodyPartNames,
 

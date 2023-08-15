@@ -19,9 +19,9 @@ const $ = (() => {
 	}
 	
 	const Assign = (stuff, data) => {
-		stuff.forEach(constructor => {
+		for(const constructor of stuff) {
 			Object.assign(constructor.prototype, data)
-		})
+		}
 	}
 
 	const defaultToDict = (x, v) => x[v] = true
@@ -496,10 +496,6 @@ const $ = (() => {
 			findAll(self, selector) {
 				return self.querySelectorAll(selector.replace(/(^|,)\s*(?=>)/g, "$&:scope"))
 			},
-
-			empty(self) {
-				while(self.lastChild) { self.removeChild(self.lastChild) }
-			},
 			
 			on(self, eventType, selector, callback, options) {
 				if(typeof selector === "function") { [selector, callback, options] = [null, selector, callback] }
@@ -616,7 +612,6 @@ const $ = (() => {
 		})
 
 		Assign([self.Node, Node], {
-			$empty() { return $.empty(this) },
 			$wrapWith(...args) { return $.wrapWith(this, ...args) }
 		})
 	} else {
@@ -692,17 +687,6 @@ const $ = (() => {
 				}
 				return result
 			}
-		},
-		
-		toDict(fn, ...args) {
-			if(typeof fn !== "function" && fn !== null) {
-				throw new TypeError("No function given to toDict")
-			}
-			if(!fn) { fn = defaultToDict }
-
-			const obj = {}
-			args.forEach((val, index) => fn(obj, val, index))
-			return obj
 		},
 		
 		setImmediate(cb, ...args) {

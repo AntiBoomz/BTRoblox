@@ -16,17 +16,22 @@ const ApiDump = (() => {
 	
 	const ZeroClassName = Data.Classes[0][0]
 	let isPrepared = false
+	
 	const prepare = () => {
 		if(isPrepared) { return }
 		isPrepared = true
 
 		const enums = Data.Enums
 		const enumDict = Data.Enums = {}
-		enums.forEach(([name, items]) => enumDict[name] = items)
+		
+		for(const [name, items] of enums) {
+			enumDict[name] = items
+		}
 
 		const classes = Data.Classes
 		const classDict = Data.Classes = {}
-		classes.forEach(([className, superClass, members, rmd]) => {
+		
+		for(let [className, superClass, members, rmd] of classes) {
 			if(typeof superClass !== "number") {
 				rmd = members
 				members = superClass
@@ -37,7 +42,7 @@ const ApiDump = (() => {
 			superClass = className === superClass ? null : classDict[superClass]
 			
 			if(members) {
-				Object.entries(members).forEach(([prop, value]) => {
+				for(const [prop, value] of Object.entries(members)) {
 					if(typeof value === "number") {
 						members[prop] = {
 							Group: value === -1 ? "HIDDEN" : Data.Categories[value]
@@ -52,7 +57,7 @@ const ApiDump = (() => {
 							EnumItems: enumItems
 						}
 					}
-				})
+				}
 			}
 
 			classDict[className] = {
@@ -62,7 +67,7 @@ const ApiDump = (() => {
 				ExplorerOrder: typeof rmd === "number" ? rmd : rmd ? rmd[0] : undefined,
 				ExplorerIcon: Array.isArray(rmd) ? rmd[1] : undefined
 			}
-		})
+		}
 	}
 
 	const getPropInfo = (className, prop) => {

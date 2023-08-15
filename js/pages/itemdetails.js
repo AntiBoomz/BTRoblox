@@ -77,7 +77,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 				// Emote asset, contains an Animation
 				const model = await AssetCache.loadModel(assetId)
 				const animation = model.find(x => x.ClassName === "Animation")
-				const animationId = AssetCache.resolveAssetId(animation.AnimationId)
+				const animationId = AssetCache.getAssetIdFromUrl(animation.AnimationId)
 				
 				preview.addAnimation(animationId, assetName)
 				
@@ -98,7 +98,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 					for(const animation of value.Children) {
 						if(animation.ClassName !== "Animation") { continue }
 						
-						const animationId = AssetCache.resolveAssetId(animation.AnimationId)
+						const animationId = AssetCache.getAssetIdFromUrl(animation.AnimationId)
 						
 						if(isBundle) {
 							preview.addBundleAnimation(animationId, value.Name, assetName)
@@ -168,9 +168,9 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 		
 		for(const item of details.items) {
 			if(item.type === "Asset") {
-				RobloxApi.economy.getAssetDetails(item.id).then(async data => {
+				AssetCache.resolveAsset(item.id).then(async assetRequest => {
 					const outfit = await outfitPromise
-					addAsset(item.id, data.AssetTypeId, item.name, outfit?.assets.find(x => x.id === item.id)?.meta)
+					addAsset(item.id, assetRequest.assetTypeId, item.name, outfit?.assets.find(x => x.id === item.id)?.meta)
 				})
 			}
 		}
@@ -495,7 +495,9 @@ const initContentButton = async (assetId, assetTypeId) => {
 
 	AssetCache.loadModel(assetId, model => {
 		const contentUrl = getAssetUrl(model)
-		const contentId = AssetCache.resolveAssetId(contentUrl)
+		const contentId = AssetCache.getAssetIdFromUrl(contentUrl)
+		
+		console.log(contentUrl, contentId, model)
 		
 		if(contentId) {
 			btnCont.$find(">a").href = `https://www.roblox.com/library/${contentId}/` // marketplace needs full domain
@@ -674,7 +676,9 @@ pageInit.itemdetails = (category, assetIdString) => {
 						elem.$find(".avatar-card-image").src = json.data[0].imageUrl
 					})
 				} else {
-					elem.$findAll("a").forEach(x => x.removeAttribute("href"))
+					for(const anchor of elem.$findAll("a")) {
+						anchor.removeAttribute("href")
+					}
 				}
 
 				return elem
@@ -735,12 +739,12 @@ pageInit.itemdetails = (category, assetIdString) => {
 					
 					if(!firstLoaded && !isInitial) {
 						firstLoaded = true
-						ownersList.$empty()
+						ownersList.replaceChildren()
 					}
-
-					elems.forEach(
-						x => ownersList.append(createElement(x))
-					)
+					
+					for(const elem of elems) {
+						ownersList.append(createElement(elem))
+					}
 				})
 			}
 

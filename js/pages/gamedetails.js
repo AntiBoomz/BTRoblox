@@ -560,8 +560,7 @@ pageInit.gamedetails = placeId => {
 				const label = row.$find(".badge-name")
 				const link = html`<a href="${url}">${label.textContent}</a>`
 				
-				label.$empty()
-				label.append(link)
+				label.replaceChildren(link)
 				
 				if(SETTINGS.get("gamedetails.compactBadgeStats")) {
 					const rarityLabel = row.$find(".badge-stats-container .badge-stats-info")

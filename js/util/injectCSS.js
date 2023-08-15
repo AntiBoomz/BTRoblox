@@ -19,7 +19,7 @@ const startReloadingCSS = (path, skipFirst) => {
 		if(document.visibilityState === "hidden") { return }
 		if(!chrome.runtime?.id) { return } // Stop if extension context is invalidated
 		
-		const newUrl = `${getURL(path)}?_=${Date.now()}`
+		const newUrl = `${chrome.runtime.getURL(path)}?_=${Date.now()}`
 		
 		const res = await fetch(newUrl)
 		const cssText = await res.text()
@@ -39,7 +39,7 @@ const injectCSS = (...paths) => {
 		if(activeStyleSheets[path]) { continue }
 		
 		const styleSheet = document.createElement("link")
-		styleSheet.href = SETTINGS.get("general.themeHotReload") ? `${getURL(path)}?_=${Date.now()}` : getURL(path)
+		styleSheet.href = SETTINGS.get("general.themeHotReload") ? `${chrome.runtime.getURL(path)}?_=${Date.now()}` : chrome.runtime.getURL(path)
 		styleSheet.rel = "stylesheet"
 		
 		BTRoblox.element.append(styleSheet)

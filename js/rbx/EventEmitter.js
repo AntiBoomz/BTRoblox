@@ -55,13 +55,13 @@ class EventEmitter {
 
 		const listeners = props.listeners[eventName]
 		if(!listeners) { return }
-
-		[...listeners].forEach(x => {
+		
+		for(const x of listeners.slice()) {
 			if(x.opt.once) {
 				listeners.splice(listeners.indexOf(x), 1)
 			}
 
 			x.fn(...args)
-		})
+		}
 	}
 }

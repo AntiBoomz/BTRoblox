@@ -290,7 +290,10 @@ pageInit.profile = userId => {
 
 			pager.onsetpage = page => {
 				pager.setPage(page)
-				gameItems.forEach(item => item.updateVisibility())
+				
+				for(const item of gameItems) {
+					item.updateVisibility()
+				}
 			}
 			
 			let thumbnailRequest
@@ -590,7 +593,7 @@ pageInit.profile = userId => {
 			pager.setPage(currentPage)
 			pager.togglePrev(currentPage > 1)
 			pager.toggleNext(hasMorePages || pageStart < playerBadges.length - pageSize)
-			hlist.$empty()
+			hlist.replaceChildren()
 
 			if(!badges.length) {
 				hlist.append(html`<div class="section-content-off btr-section-content-off">This user has no Player Badges</div>`)
@@ -690,18 +693,20 @@ pageInit.profile = userId => {
 
 		$.ready(() => {
 			const url = `https://groups.roblox.com/v1/users/${userId}/groups/roles`
+			
 			$.fetch(url).then(async response => {
 				const json = await response.json()
 				const numGroups = json.data.length
 
 				pager.setMaxPage(Math.floor((numGroups - 1) / pageSize) + 1)
 				if(numGroups === 0) { return }
-				hlist.$empty()
+				
+				hlist.replaceChildren()
 
 				const thumbs = {}
 				const groups = json.data.sort((a, b) => (a.isPrimaryGroup ? -1 : b.isPrimaryGroup ? 1 : 0))
-
-				groups.forEach(({ group, role }, index) => {
+				
+				for(const [index, { group, role }] of Object.entries(groups)) {
 					const parent = html`
 					<li class="list-item game-card ${index < pageSize ? "visible" : ""}">
 						<div class="card-item game-card-container">
@@ -722,20 +727,20 @@ pageInit.profile = userId => {
 					thumbs[group.id] = thumb
 
 					hlist.append(parent)
-				})
+				}
 
 				hlist.style["min-height"] = `${hlist.scrollHeight + 1}px`
 
 				const thumbUrl = `https://thumbnails.roblox.com/v1/groups/icons?format=png&groupIds=${Object.keys(thumbs).join(",")}&size=150x150`
 				const thumbData = await $.fetch(thumbUrl).then(resp => resp.json())
-
-				thumbData.data.forEach(thumbInfo => {
+				
+				for(const thumbInfo of thumbData.data) {
 					if(thumbInfo.imageUrl) {
 						thumbs[thumbInfo.targetId].src = thumbInfo.imageUrl
 					} else {
 						thumbs[thumbInfo.targetId].parentNode.classList.add("icon-blocked")
 					}
-				})
+				}
 			})
 		})
 	}
@@ -821,7 +826,7 @@ pageInit.profile = userId => {
 			
 			pager.setPage(page)
 			pager.setMaxPage(Math.floor((data.totalItems - 1) / pageSize) + 1)
-			hlist.$empty()
+			hlist.replaceChildren()
 			
 			if(data.items.length === 0) {
 				const categoryName = dropdownLabel.textContent

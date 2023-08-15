@@ -47,7 +47,10 @@ const RBXComposites = (() => {
 			this.context.drawImage(renderer.domElement, 0, 0, this.width, this.height, 0, 0, this.width, this.height)
 
 			this.afterComposite()
-			this.updateListeners.forEach(fn => fn(this))
+			
+			for(const fn of this.updateListeners) {
+				fn(this)
+			}
 		}
 		
 		drawImage(ctx, canvas) {
@@ -101,13 +104,13 @@ const RBXComposites = (() => {
 			this.sources.shirt.onUpdate(() => this.requestUpdate())
 			this.sources.tshirt.onUpdate(() => this.requestUpdate())
 	
-			let meshUrl = getURL("res/previewer/compositing/CompositShirtTemplate.mesh")
+			let meshUrl = RBXAvatar.LocalAssets["res/previewer/compositing/CompositShirtTemplate.mesh"]
 			this.loaders.push(AssetCache.loadMesh(true, meshUrl, mesh => RBXAvatar.applyMesh(shirtmesh, mesh)))
 	
-			meshUrl = getURL("res/previewer/compositing/CompositPantsTemplate.mesh")
+			meshUrl = RBXAvatar.LocalAssets["res/previewer/compositing/CompositPantsTemplate.mesh"]
 			this.loaders.push(AssetCache.loadMesh(true, meshUrl, mesh => RBXAvatar.applyMesh(pantsmesh, mesh)))
 	
-			meshUrl = getURL("res/previewer/compositing/CompositTShirt.mesh")
+			meshUrl = RBXAvatar.LocalAssets["res/previewer/compositing/CompositTShirt.mesh"]
 			this.loaders.push(AssetCache.loadMesh(true, meshUrl, mesh => RBXAvatar.applyMesh(tshirtmesh, mesh)))
 		}
 	}
@@ -144,7 +147,7 @@ const RBXComposites = (() => {
 			this.sources.shirt.onUpdate(() => this.requestUpdate())
 			this.sources.tshirt.onUpdate(() => this.requestUpdate())
 	
-			const meshUrl = getURL("res/previewer/compositing/R15CompositTorsoBase.mesh")
+			const meshUrl = RBXAvatar.LocalAssets["res/previewer/compositing/R15CompositTorsoBase.mesh"]
 			this.loaders.push(AssetCache.loadMesh(true, meshUrl, mesh => {
 				RBXAvatar.applyMesh(shirtmesh, mesh)
 				RBXAvatar.applyMesh(pantsmesh, mesh)
@@ -182,16 +185,16 @@ const RBXComposites = (() => {
 	}
 
 	class R15LeftArmComposite extends R15LimbComposite {
-		constructor(sources) { super(sources.shirt, getURL("res/previewer/compositing/R15CompositLeftArmBase.mesh")) }
+		constructor(sources) { super(sources.shirt, RBXAvatar.LocalAssets["res/previewer/compositing/R15CompositLeftArmBase.mesh"]) }
 	}
 	class R15RightArmComposite extends R15LimbComposite {
-		constructor(sources) { super(sources.shirt, getURL("res/previewer/compositing/R15CompositRightArmBase.mesh")) }
+		constructor(sources) { super(sources.shirt, RBXAvatar.LocalAssets["res/previewer/compositing/R15CompositRightArmBase.mesh"]) }
 	}
 	class R15LeftLegComposite extends R15LimbComposite {
-		constructor(sources) { super(sources.pants, getURL("res/previewer/compositing/R15CompositLeftArmBase.mesh")) }
+		constructor(sources) { super(sources.pants, RBXAvatar.LocalAssets["res/previewer/compositing/R15CompositLeftArmBase.mesh"]) }
 	}
 	class R15RightLegComposite extends R15LimbComposite {
-		constructor(sources) { super(sources.pants, getURL("res/previewer/compositing/R15CompositRightArmBase.mesh")) }
+		constructor(sources) { super(sources.pants, RBXAvatar.LocalAssets["res/previewer/compositing/R15CompositRightArmBase.mesh"]) }
 	}
 
 	return {

@@ -199,11 +199,11 @@ const RBXPreview = (() => {
 		setOutfitAccessoriesVisible(bool) {
 			this.outfitAccessoriesVisible = !!bool
 			
-			this.outfitAssets.forEach(asset => {
+			for(const asset of this.outfitAssets) {
 				if(asset.accessories.length) {
 					asset.setEnabled(this.outfitAccessoriesVisible)
 				}
-			})
+			}
 		}
 
 		//
@@ -257,8 +257,10 @@ const RBXPreview = (() => {
 			if(!this.playerType && this.autoLoadPlayerType) {
 				this.setPlayerType(data.playerAvatarType)
 			}
-
-			this.outfitAssets.forEach(asset => asset.remove())
+			
+			for(const asset of this.outfitAssets) {
+				asset.remove()
+			}
 			
 			for(const asset of data.assets) {
 				if(!SkippableAssetTypes.includes(asset.assetType.id)) {
@@ -558,7 +560,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		const inputSliders = []
 
 		const loadSliders = () => {
-			bodyPopup.$findAll("input").forEach(input => {
+			for(const input of bodyPopup.$findAll("input")) {
 				const scaleName = input.dataset.target
 				const rule = this.avatarRules.scales[scaleName]
 				const label = input.previousElementSibling
@@ -586,14 +588,14 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 				input.step = rule.increment
 
 				inputSliders.push({ input, update, scaleName })
-			})
+			}
 		}
 
 		const updateSliders = () => {
-			inputSliders.forEach(({ input, update, scaleName }) => {
-				input.value = this.appearance.scales[scaleName]
-				update()
-			})
+			for(const slider of inputSliders) {
+				slider.input.value = this.appearance.scales[slider.scaleName]
+				slider.update()
+			}
 		}
 
 		if(this.avatarRules) {
@@ -608,7 +610,11 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		const typeInput = typeSwitch.$find("input")
 		const typeUpdate = () => {
 			typeInput.checked = this.playerType === "R15"
-			bodyPopup.$findAll("input").forEach(x => x.toggleAttribute("disabled", !typeInput.checked))
+			
+			for(const input of bodyPopup.$findAll("input")) {
+				input.toggleAttribute("disabled", !typeInput.checked)
+			}
+			
 			// bodyPopup.classList.toggle("disabled", !typeInput.checked)
 			// bodyBtn.toggleAttribute("disabled", !typeInput.checked)
 		}
@@ -702,8 +708,11 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 				this.setOutfit(+target.slice(4), "Player")
 			}
 		}
+		
+		for(const btn of this.buttons.$findAll(".btr-body-outfit-btn.selected")) {
+			btn.classList.remove("selected")
+		}
 
-		this.buttons.$findAll(".btr-body-outfit-btn.selected").forEach(x => x.classList.remove("selected"))
 		this.buttons.$find(`.btr-body-outfit-btn[data-outfit="${target}"]`).classList.add("selected")
 	}
 	
@@ -769,12 +778,14 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		label.title = anim.isBundleAnim ? "" : anim.name
 
 		if(this.hasBundleAnims) {
-			this.bundleAnims.$findAll(".selected").forEach(x => x.classList.remove("selected"))
+			for(const sel of this.bundleAnims.$findAll(".selected")) {
+				sel.classList.remove("selected")
+			}
 
 			if(anim.isBundleAnim) {
-				anim.selections.forEach(sel => {
+				for(const sel of anim.selections) {
 					sel.classList.add("selected")
-				})
+				}
 			}
 			
 			this.animNameLabel.textContent = anim.name || ""
@@ -1194,14 +1205,14 @@ const HoverPreview = (() => {
 				const addItems = async items => {
 					if(debounceCounter !== debounce) { return }
 
-					const outfit = items.find(x => x.outfitType === "Avatar")
+					const outfit = items.find(x => x?.outfitType === "Avatar")
 					if(outfit) {
 						targetOutfitId = outfit.id
 					}
 					
 					let curAnim
 					for(const item of items) {
-						if(item.outfitType) { continue }
+						if(!item || item.outfitType) { continue }
 						
 						if(WearableAssetTypeIds.includes(item.AssetTypeId)) {
 							addAssetPreview(item.AssetId, item.AssetTypeId, outfit?.assets.find(x => x.id === item.AssetId)?.meta)
@@ -1222,7 +1233,7 @@ const HoverPreview = (() => {
 							if(debounceCounter !== debounce) { return }
 
 							const anim = model.find(x => x.ClassName === "Animation")
-							const animId = anim && AssetCache.resolveAssetId(anim.AnimationId)
+							const animId = anim && AssetCache.getAssetIdFromUrl(anim.AnimationId)
 
 							if(animId) {
 								addAssetPreview(animId, 24)
@@ -1235,7 +1246,7 @@ const HoverPreview = (() => {
 							const folder = model.find(x => x.Name === "R15Anim" && x.ClassName === "Folder")
 							const group = folder && (folder.Children.find(x => x.Name.toLowerCase().includes("idle")) || folder.Children[0])
 							const anim = group && group.Children
-								.map(x => ({ id: AssetCache.resolveAssetId(x.AnimationId), weight: x.Children.length && x.Children[0].Value || 0 }))
+								.map(x => ({ id: AssetCache.getAssetIdFromUrl(x.AnimationId), weight: x.Children.length && x.Children[0].Value || 0 }))
 								.filter(x => x.id)
 								.reduce((prev, cur) => ((!prev || cur.weight > prev.weight) ? cur : prev))
 							
@@ -1258,7 +1269,7 @@ const HoverPreview = (() => {
 					
 					for(const item of details.items) {
 						if(item.type === "Asset") {
-							promises.push(RobloxApi.economy.getAssetDetails(item.id))
+							promises.push(AssetCache.resolveAsset(item.id).then(assetRequest => ({ AssetId: item.id, AssetTypeId: assetRequest.assetTypeId })))
 							
 						} else if(item.type === "UserOutfit") {
 							promises.push(RobloxApi.avatar.getOutfitDetails(item.id))
@@ -1267,7 +1278,7 @@ const HoverPreview = (() => {
 					
 					addItems(await Promise.all(promises))
 				} else {
-					const info = await RobloxApi.economy.getAssetDetails(assetId)
+					const info = await AssetCache.resolveAsset(assetId).then(assetRequest => ({ AssetId: assetId, AssetTypeId: assetRequest.assetTypeId }))
 					
 					addItems([info])
 				}

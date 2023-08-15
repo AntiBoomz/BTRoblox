@@ -17,11 +17,7 @@ const Explorer = (() => {
 	}
 
 	const fixNum = v => { return Math.round(v * 1e3) / 1e3 }
-	const fixNums = arr => {
-		const copy = arr.slice(0)
-		copy.forEach((v, i) => copy[i] = fixNum(v))
-		return copy
-	}
+	const fixNums = arr => arr.map(x => fixNum(x))
 
 	const sortPropertyGroups = (a, b) => a.Order - b.Order
 	const sortProperties = (a, b) => (a[0] < b[0] ? -1 : 1)
@@ -40,7 +36,8 @@ const Explorer = (() => {
 	}
 	
 	const explorerIconPromise = new Promise(resolve => {
-		AssetCache.loadBuffer(12706538541).then(buffer => {
+		// Asset id: 12706538541
+		AssetCache.loadBuffer("https://c5.rbxcdn.com/c17885601281c2beda436c55fcedb9cc", { cache: false }).then(buffer => {
 			const reader = new FileReader()
 			reader.onload = () => resolve(reader.result)
 			reader.readAsDataURL(new Blob([new Uint8Array(buffer)], { type: "image/png" }))
@@ -355,7 +352,7 @@ const Explorer = (() => {
 			this.selectedSourceViewerTab = tab
 			
 			const content = this.sourceViewerModal.$find(".btr-sourceviewer-content")
-			content.$empty()
+			content.replaceChildren()
 			
 			const source = inst.Properties[propName]?.value || ""
 			SourceViewer.init(content, source)
@@ -367,7 +364,7 @@ const Explorer = (() => {
 			const properties = this.element.$find(".btr-properties")
 			const header = properties.$find(".btr-properties-header")
 			const propertyContainer = properties.$find(".btr-properties-container")
-			propertyContainer.$empty()
+			propertyContainer.replaceChildren()
 
 			if(!this.selection.length) {
 				header.textContent = "Properties"
@@ -383,8 +380,11 @@ const Explorer = (() => {
 			const groups = []
 			const groupMap = {}
 			
-			Object.entries(target.Properties).forEach(([name, prop]) => {
-				if(RenamedProperties[name] && RenamedProperties[name] in target.Properties) { return }
+			for(let [name, prop] of Object.entries(target.Properties)) {
+				if(RenamedProperties[name] && RenamedProperties[name] in target.Properties) {
+					continue
+				}
+				
 				name = RenamedProperties[name] || name
 
 				let group = ApiDump.getPropertyGroup(target.ClassName, name)
@@ -406,9 +406,9 @@ const Explorer = (() => {
 				}
 
 				groupData.Properties.push([name, prop])
-			})
+			}
 
-			groups.sort(sortPropertyGroups).forEach(group => {
+			for(const group of groups.sort(sortPropertyGroups)) {
 				const titleButton = html`<div class=btr-property-group><div class=btr-property-group-more></div>${group.Name}</div>`
 				const propertiesList = html`<div class=btr-properties-list></div>`
 				propertyContainer.append(titleButton, propertiesList)
@@ -429,14 +429,13 @@ const Explorer = (() => {
 						lastClick = Date.now()
 					}
 				})
-
-
-				group.Properties.sort(sortProperties).forEach(([name, prop]) => {
+				
+				for(const [name, prop] of group.Properties.sort(sortProperties)) {
 					const value = prop.value
 					let type = prop.type
 
 					if(name === "LinkedSource" && !value) {
-						return
+						continue
 					} else if(name === "BrickColor" && type === "int") {
 						type = "BrickColor"
 					}
@@ -474,7 +473,7 @@ const Explorer = (() => {
 							
 							valueItem.append(more)
 						} else {
-							const id = AssetCache.resolveAssetId(value)
+							const id = AssetCache.getAssetIdFromUrl(value)
 							if(id) {
 								const more = html`<a class=more href="https://www.roblox.com/library/${id}/Redirect" target=_blank>🔗</a>`
 								more.title = "Go to asset"
@@ -555,10 +554,11 @@ const Explorer = (() => {
 					<div class=btr-property>
 						<div class=btr-property-more></div>
 					</div>`
+					
 					cont.append(nameItem, valueItem)
 					propertiesList.append(cont)
-				})
-			})
+				}
+			}
 		}
 		
 		select(items) {

@@ -219,7 +219,7 @@ pageInit.create = () => {
 				}
 			})
 			
-			for(const item in chunk) {
+			for(const item of chunk) {
 				process(item)
 			}
 		})

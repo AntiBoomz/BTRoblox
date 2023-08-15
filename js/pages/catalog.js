@@ -137,7 +137,10 @@ const OwnerAssetCache = {
 
 				const pushChanges = () => {
 					if(Object.keys(changes).length) {
-						operation.onchange.forEach(fn => fn(changes))
+						for(const fn of operation.onchange) {
+							fn(changes)
+						}
+						
 						changes = {}
 					}
 				}
@@ -264,11 +267,11 @@ const OwnerAssetCache = {
 pageInit.catalog = () => {
 	if(RobuxToCash.isEnabled()) {
 		modifyTemplate("item-card", template => {
-			template.$findAll(".item-card-price .text-robux-tile").forEach(label => {
+			for(const label of template.$findAll(".item-card-price .text-robux-tile")) {
 				const cashText = ` (${RobuxToCash.convertAngular("(item.lowestPrice||item.price)")})`
 				label.after(html`<span class=btr-robuxToCash-tile ng-if="${label.getAttribute("ng-if")}">${cashText}</span>`)
 				label.parentNode.setAttribute("title", `R$ {{::getDisplayPrice() || item.lowestPrice | number}}${cashText}`)
-			})
+			}
 		})
 	}
 
@@ -282,7 +285,7 @@ pageInit.catalog = () => {
 	document.$watch("body", body => body.classList.add("btr-catalog"))
 
 	modifyTemplate("item-card", template => {
-		template.$findAll(".item-card-container").forEach(cont => {
+		for(const cont of template.$findAll(".item-card-container")) {
 			cont.classList.add("btr-item-card-container")
 	
 			const hover = html`<div class="btr-item-card-more" ng-show="item.itemType==='Asset'||item.purchaseCount!==undefined">
@@ -291,7 +294,7 @@ pageInit.catalog = () => {
 			</div>`
 	
 			cont.$find(".item-card-caption").append(hover)
-		})
+		}
 	})
 
 	document.$on("mouseover", ".btr-item-card-container", ev => {

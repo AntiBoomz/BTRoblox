@@ -9,7 +9,6 @@ const IS_CONTENT_SCRIPT = !IS_BACKGROUND_PAGE
 const IS_DEV_MODE = chrome.runtime.getManifest().short_name === "BTRoblox_DEV"
 
 const STORAGE = chrome.storage.local
-const getURL = chrome.runtime.getURL
 
 const THROW_DEV_WARNING = errorString => {
 	console.warn(errorString)

@@ -48,10 +48,10 @@ const RBXAvatarRigs = (() => {
 			if(part.ClassName === "MeshPart") {
 				partData.meshId = part.MeshID ?? part.MeshId
 			} else if(part.Name === "Head") {
-				partData.meshId = getURL(`res/previewer/heads/head.mesh`)
+				partData.meshId = RBXAvatar.LocalAssets[`res/previewer/heads/head.mesh`]
 			} else if(RBXAvatar.R6BodyPartNames.indexOf(part.Name) !== -1) {
 				const fname = part.Name.toLowerCase().replace(/\s/g, "")
-				partData.meshId = getURL(`res/previewer/meshes/${fname}.mesh`)
+				partData.meshId = RBXAvatar.LocalAssets[`res/previewer/meshes/${fname}.mesh`]
 			}
 
 			return partData
@@ -79,7 +79,7 @@ const RBXAvatarRigs = (() => {
 			}
 
 			return this.loadPromise = this.loadPromise || new Promise(resolve => {
-				const path = getURL("res/previewer/characterModels.rbxm")
+				const path = RBXAvatar.LocalAssets["res/previewer/characterModels.rbxm"]
 
 				AssetCache.loadModel(true, path, model => {
 					this.R6Tree = RecurseTree(model.find(x => x.Name === "R6"))

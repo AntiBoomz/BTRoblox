@@ -392,9 +392,9 @@ const Navigation = {
 					const blogfeed = node.$find("#btr-blogfeed")
 					
 					const updateBlogFeed = blogFeedData => {
-						blogfeed.$empty()
-		
-						blogFeedData.forEach(item => {
+						blogfeed.replaceChildren()
+						
+						for(const item of blogFeedData) {
 							blogfeed.append(html`
 							<a class="btr-feed" href="${item.url}">
 								<div class="btr-feedtitle">
@@ -403,7 +403,7 @@ const Navigation = {
 								</div>
 								<div class="btr-feeddesc">${item.desc}</div>
 							</a>`)
-						})
+						}
 					}
 					
 					MESSAGING.send("requestBlogFeed", data => updateBlogFeed(data))
