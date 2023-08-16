@@ -231,40 +231,34 @@ pageInit.create = () => {
 			const targetSource = target.toString()
 			
 			if(targetSource.includes(`MenuItem:function(){return `)) {
-				const match = targetSource.match(/MenuItem:function\(\){return (\w+)\.(\w+)}/)
-				const match2 = match && targetSource.match(`${match[1]}=\\w+\\((\\d+)\\)`)
-				const uiModule = match2 && objects.modules[match2[1]]
-						
-				if(uiModule) {
-					objects.Mui = {
-						Avatar: false,
-						Button: false,
-						CircularProgress: false,
-						CloseIcon: false,
-						Divider: false,
-						Drawer: false,
-						Grid: false,
-						IconButton: false,
-						Link: false,
-						List: false,
-						ListItem: false,
-						Menu: false,
-						MenuIcon: false,
-						MenuItem: match[2],
-						Tab: false,
-						Tabs: false,
-						Typography: false,
-						UIThemeProvider: false,
-					}
+				objects.Mui = {
+					Avatar: false,
+					Button: false,
+					CircularProgress: false,
+					CloseIcon: false,
+					Divider: false,
+					Drawer: false,
+					Grid: false,
+					IconButton: false,
+					Link: false,
+					List: false,
+					ListItem: false,
+					Menu: false,
+					MenuIcon: false,
+					MenuItem: false,
+					Tab: false,
+					Tabs: false,
+					Typography: false,
+					UIThemeProvider: false,
+				}
+				
+				for(const key of Object.keys(objects.Mui)) {
+					const match = targetSource.match(`${key}:function\\(\\){return (\\w+)\\.(\\w+)}`)
+					const match2 = match && targetSource.match(`${match[1]}=\\w+\\((\\d+)\\)`)
+					const value = match2 && objects.modules[match2[1]]?.[match[2]]
 					
-					for(let [key, value] of Object.entries(objects.Mui)) {
-						if(!value) {
-							value = targetSource.match(`${key}:function\\(\\){return (\\w+)\\.(\\w+)}`)?.[2]
-						}
-						
-						if(value) {
-							objects.Mui[key] = uiModule[value]
-						}
+					if(value) {
+						objects.Mui[key] = value
 					}
 				}
 			}
@@ -558,7 +552,8 @@ pageInit.create = () => {
 										viewBox: "0 0 24 24",
 										style: {
 											height: "19px",
-											"margin-right": "5px"
+											"margin-right": "5px",
+											fill: "currentcolor"
 										},
 										children: objects.React.createElement("path", {
 											d: "M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"
