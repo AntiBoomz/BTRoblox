@@ -214,10 +214,11 @@ const RobloxApi = {
 			xsrfFetch(`https://badges.roblox.com/v1/users/${userId}/badges?sortOrder=${sortOrder}&limit=${limit}&cursor=${cursor || ""}`)
 				.then(res => res.json()),
 				
-		getBadgeDetails: badgeId =>
+		getBadgeDetails: cacheResult(badgeId =>
 			xsrfFetch(`https://badges.roblox.com/v1/badges/${badgeId}`)
-				.then(res => res.json()),
-				
+				.then(res => res.json())
+		),
+		
 		getAwardedDates: (userId, badgeIds) =>
 			xsrfFetch(`https://badges.roblox.com/v1/users/${userId}/badges/awarded-dates?badgeIds=${badgeIds.join(",")}`)
 				.then(res => res.json()),
@@ -265,10 +266,10 @@ const RobloxApi = {
 				.then(res => res.json())
 	},
 	gamepasses: {
-		getGamepassDetails: backgroundCall(gamepassId =>
+		getGamepassDetails: cacheResult(backgroundCall(gamepassId =>
 			xsrfFetch(`https://apis.roblox.com/game-passes/v1/game-passes/${gamepassId}/product-info `)
 				.then(res => res.json())
-		)
+		))
 	},
 	games: {
 		getPlaceDetails: placeIds =>

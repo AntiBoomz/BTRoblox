@@ -888,38 +888,81 @@ pageInit.itemdetails = (category, assetIdString) => {
 		}
 	}
 	
-	if(SETTINGS.get("itemdetails.showSales")) {
+	if(SETTINGS.get("itemdetails.showSales") && category !== "bundles") {
 		const elem = html`
 		<div class="clearfix item-field-container" style="display:none">
 			<div class="font-header-1 text-label text-overflow field-label">Sales</div>
-			<span class=field-content></div>
+			<span class="field-content btr-sales"></div>
 		</div>`
 		
-		document.$watch(
-			"#item-details .item-field-container .field-label",
-			label => label.textContent === "Updated",
-			label => label.parentNode.after(elem)
-		)
+		document.$watch("#item-details").$then()
+			.$watch(
+				">.item-field-container>.field-label, >.item-info-row-container>.row-label",
+				label => label.textContent === "Description",
+				label => {
+					if(label.classList.contains("row-label")) {
+						const label = elem.$find(".field-label")
+						const content = elem.$find(".field-content")
+						
+						elem.classList.remove("item-field-container")
+						label.classList.remove("field-label")
+						content.classList.remove("field-content")
+						
+						elem.classList.add("item-info-row-container")
+						label.classList.add("row-label")
+						content.classList.add("row-content")
+					}
+					
+					label.parentNode.before(elem)
+				}
+			)
 
+		const show = () => elem.style.display = ""
+		const hide = () => elem.style.display = "none"
+		
 		const apply = sales => {
-			elem.style.display = ""
-			elem.$find(".field-content").textContent = formatNumber(sales)
+			elem.$find(".btr-sales").textContent = formatNumber(sales)
+			show()
 		}
+		
+		let canConfigure = false
+		
+		document.$watch("#configure-item", () => {
+			canConfigure = true
+			show()
+		})
 
 		if(category === "game-pass") {
 			RobloxApi.gamepasses.getGamepassDetails(assetId).then(data => {
 				const sales = data?.Sales
 				
-				if(Number.isSafeInteger(sales) && sales > 0) {
+				if(Number.isSafeInteger(sales) && (canConfigure || sales > 0)) {
 					apply(sales)
+				} else {
+					hide()
 				}
 			})
-		} else if(category !== "bundles") {
+		} else if(category === "badges") {
+			elem.$find(".text-label").textContent = "Awarded"
+			show()
+			
+			RobloxApi.badges.getBadgeDetails(assetId).then(data => {
+				const numAwarded = data?.statistics?.awardedCount
+				
+				if(Number.isSafeInteger(numAwarded)) {
+					apply(numAwarded)
+				} else {
+					hide()
+				}
+			})
+		} else {
 			RobloxApi.economy.getAssetDetails(assetId).then(data => {
 				const sales = data?.Sales
 				
-				if(Number.isSafeInteger(sales) && sales > 0) {
+				if(Number.isSafeInteger(sales) && (canConfigure || sales > 0)) {
 					apply(sales)
+				} else {
+					hide()
 				}
 			})
 		}
