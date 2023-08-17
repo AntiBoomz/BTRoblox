@@ -617,14 +617,14 @@ pageInit.gamedetails = placeId => {
 		watcher.$watch(".game-stats-container").$then()
 			.$watch(
 				".game-stat .text-lead",
-				x => x.previousElementSibling.textContent === "Created",
+				x => x.previousElementSibling?.textContent === "Created",
 				label => {
 					label.title = new Date(data.Created).$format("M/D/YYYY h:mm:ss A (T)")
 				}
 			)
 			.$watch(
 				".game-stat .text-lead",
-				x => x.previousElementSibling.textContent === "Updated",
+				x => x.previousElementSibling?.textContent === "Updated",
 				label => {
 					label.classList.remove("date-time-i18n") // Otherwise roblox rewrites the label
 					
