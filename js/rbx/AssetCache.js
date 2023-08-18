@@ -65,25 +65,25 @@ const AssetCache = (() => {
 			}
 			
 			let resolvePromise
-			let assetRequest
 			
 			if(!strict && typeof request === "string" && /^https?:\/\/[^\/]+\.rbxcdn\.com\/*[0-9a-fA-F]{32}/i.test(request)) {
-				assetRequest = {
+				const assetRequest = {
 					strict, request, params,
 					cacheKey: request,
 					location: request
 				}
 				
 				resolvePromise = Promise.resolve(assetRequest)
+				resolvePromise.assetRequest = assetRequest
 			} else {
 				resolvePromise = AssetCache.resolveAsset(strict, request, params)
-				assetRequest = resolvePromise.assetRequest
 			}
 			
-			let methodPromise = methodCache[assetRequest.cacheKey]
+			const cacheKey = resolvePromise.assetRequest.cacheKey
+			let methodPromise = methodCache[cacheKey]
 			
 			if(!methodPromise) {
-				methodPromise = resolvePromise.then(() =>
+				methodPromise = resolvePromise.then(assetRequest =>
 					AssetCache.loadDirect(assetRequest.location, params)
 						.then(buffer => constructor(buffer, assetRequest)),
 				).catch(err => {
@@ -92,7 +92,7 @@ const AssetCache = (() => {
 				})
 				
 				if(params?.cache !== false) {
-					methodCache[assetRequest.cacheKey] = methodPromise
+					methodCache[cacheKey] = methodPromise
 				}
 			}
 			
@@ -131,8 +131,8 @@ const AssetCache = (() => {
 				
 			if(!resolvePromise) {
 				const assetRequest = {
-					strict, request, params,
-					urlParams, cacheKey
+					strict, request, params, cacheKey,
+					urlParams: urlParams.toString()
 				}
 				
 				resolvePromise = RobloxApi.assetdelivery.requestAssetV2(urlParams, {
