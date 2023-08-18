@@ -320,6 +320,23 @@ html body .btr-thumb-btn-container .btr-thumb-btn {
 	height: 20px;
 }
 
+.dark-theme .btr-thumb-popup.btr-body-popup input[type=range]::-webkit-slider-runnable-track {
+	--btr-input-bg: #111214;
+}
+
+.btr-thumb-popup.btr-body-popup input[type=range]::-webkit-slider-runnable-track {
+	--btr-input-bg: #e3e3e3;
+	--btr-input-progress: #00a2ff;
+	
+	background: linear-gradient(
+		to right,
+		var(--btr-input-progress) 0%,
+		var(--btr-input-progress) var(--btr-input-perc, 0.01%),
+		var(--btr-input-bg) var(--btr-input-perc, 0.01%),
+		var(--btr-input-bg) 100%
+	)
+}
+
 .btr-thumb-popup.btr-body-popup input[type=range]::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	width: 16px;

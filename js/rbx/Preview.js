@@ -567,6 +567,10 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 
 				const update = () => {
 					label.textContent = Math.floor(input.value * 100 + 0.5) + "%"
+					
+					if(IS_CHROME) {
+						input.style.setProperty("--btr-input-perc", `${(input.value - input.min) / (input.max - input.min) * 100}%`)
+					}
 				}
 
 				input.$on("input", () => {
