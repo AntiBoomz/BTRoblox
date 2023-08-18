@@ -1043,17 +1043,17 @@ pageInit.itemdetails = (category, assetIdString) => {
 					ev.currentTarget.classList.add("selected")
 
 					thumb.dataset.btrBg = color
-					localStorage["btr-item-thumb-bg"] = color
+					btrLocalStorage.setItem("itemThumbBg", color)
 				})
 					.$on("mouseover", ".btr-bg-btn", ev => {
 						thumb.dataset.btrBg = ev.currentTarget.dataset.color
 					})
 					.$on("mouseout", ".btr-bg-btn", () => {
-						thumb.dataset.btrBg = localStorage["btr-item-thumb-bg"]
+						thumb.dataset.btrBg = btrLocalStorage.getItem("itemThumbBg")
 					})
 
 
-				const selectedBg = localStorage["btr-item-thumb-bg"] || "white"
+				const selectedBg = btrLocalStorage.getItem("itemThumbBg") || "white"
 				btns.$find(`[data-color="${selectedBg}"]`).click()
 			})
 		}

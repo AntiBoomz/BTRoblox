@@ -65,7 +65,7 @@ const OwnerAssetCache = {
 
 			setTimeout(() => {
 				this.markedDirty = false
-				localStorage.setItem("btr-ownerAssetCache", JSON.stringify(this.data, (k, v) => (v instanceof Set ? Array.from(v) : v)))
+				btrLocalStorage.setItem("ownerAssetCache", this.data, { replacer: (k, v) => (v instanceof Set ? Array.from(v) : v) })
 			}, 1e3)
 		}
 	},
@@ -233,31 +233,34 @@ const OwnerAssetCache = {
 		
 		this.initialized = true
 		this.resetData()
+		
+		try {
+			const savedCache = btrLocalStorage.getItem("ownerAssetCache")
+			
+			if(savedCache) {
+				if(savedCache.types) {
+					for(const [type, next] of Object.entries(this.data.types)) {
+						const savedNext = savedCache.types[type]
+						if(!savedNext) { continue }
 
-		const savedCache = localStorage.getItem("btr-ownerAssetCache")
-		if(savedCache) {
-			const parsed = JSON.parse(savedCache)
+						Object.assign(next, savedNext)
 
-			if(parsed.types) {
-				for(const [type, next] of Object.entries(this.data.types)) {
-					const savedNext = parsed.types[type]
-					if(!savedNext) { continue }
-
-					Object.assign(next, savedNext)
-
-					if(Array.isArray(next.list)) {
-						next.list = new Set(next.list)
+						if(Array.isArray(next.list)) {
+							next.list = new Set(next.list)
+						}
+						
+						for(const id of next.list) {
+							this.markAsset(next, id, true)
+						}
 					}
-					
-					for(const id of next.list) {
-						this.markAsset(next, id, true)
-					}
+
+					delete savedCache.types
 				}
 
-				delete parsed.types
+				Object.assign(this.data, savedCache)
 			}
-
-			Object.assign(this.data, parsed)
+		} catch(ex) {
+			console.error(ex)
 		}
 
 		return this

@@ -89,7 +89,7 @@ pageInit.home = () => {
 						
 						let showSecondRow = true
 						
-						try { showSecondRow = !!localStorage.getItem("btr-showSecondRow") }
+						try { showSecondRow = !!localStorage.getItem("BTRoblox:homeShowSecondRow") }
 						catch(ex) { console.error(ex) }
 						
 						elem.classList.toggle("btr-home-secondRow", showSecondRow)
@@ -101,9 +101,9 @@ pageInit.home = () => {
 							elem.classList.toggle("btr-home-secondRow", showSecondRow)
 							
 							if(showSecondRow) {
-								localStorage.setItem("btr-showSecondRow", "1")
+								localStorage.setItem("BTRoblox:homeShowSecondRow", "true")
 							} else {
-								localStorage.removeItem("btr-showSecondRow")
+								localStorage.removeItem("BTRoblox:homeShowSecondRow")
 							}
 						})
 					}

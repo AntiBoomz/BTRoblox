@@ -18,22 +18,23 @@ const btrFastSearch = {
 		let lastPresenceRequest = 0
 		let presencePromise = null
 		
-		try { localStorage.removeItem("btr-fastsearch-cache") }
-		catch(ex) {}
-		
 		try {
-			const data = JSON.parse(localStorage.getItem("btr-fastsearch-cache-v2"))
+			const data = btrLocalStorage.getItem("fastsearchCache")
 			
-			for(const [idString, entry] of Object.entries(data)) {
-				userCache[entry.name.toLowerCase()] = {
-					Username: entry.name,
-					DisplayName: entry.displayName ?? entry.name,
-					HasVerifiedBadge: entry.verified || false,
-					UserId: +idString,
-					IsFriend: true
+			if(data) {
+				for(const [idString, entry] of Object.entries(data)) {
+					userCache[entry.name.toLowerCase()] = {
+						Username: entry.name,
+						DisplayName: entry.displayName ?? entry.name,
+						HasVerifiedBadge: entry.verified || false,
+						UserId: +idString,
+						IsFriend: true
+					}
 				}
 			}
-		} catch(ex) {}
+		} catch(ex) {
+			console.error(ex)
+		}
 
 		//
 		
@@ -445,7 +446,7 @@ const btrFastSearch = {
 							requestPresence(friend.id)
 						}
 
-						localStorage.setItem("btr-fastsearch-cache-v2", JSON.stringify(friendsCache))
+						btrLocalStorage.setItem("fastsearchCache", friendsCache)
 						reloadSearchResults(true)
 					})
 				})

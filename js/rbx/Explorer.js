@@ -242,20 +242,21 @@ const Explorer = (() => {
 				}
 				
 				try {
-					const savedSettings = JSON.parse(localStorage.getItem("btr-sv-settings"))
+					const data = btrLocalStorage.getItem("svSettings")
 					
-					if(savedSettings) {
-						for(const [key, value] of Object.entries(savedSettings)) {
+					if(data) {
+						for(const [key, value] of Object.entries(data)) {
 							if(key in svSettings && typeof value === typeof svSettings[key]) {
 								svSettings[key] = value
 							}
 						}
 					}
-				} catch(ex) {}
+				} catch(ex) {
+					console.error(ex)
+				}
 				
 				const update = () => {
-					try { localStorage.setItem("btr-sv-settings", JSON.stringify(svSettings)) }
-					catch(ex) {}
+					btrLocalStorage.setItem("svSettings", svSettings)
 					
 					this.sourceViewerModal.$find(".btr-sourceviewer-content").style = `
 					--sv-tabwidth:${svSettings.tabwidth};

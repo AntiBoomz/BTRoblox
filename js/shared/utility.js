@@ -817,6 +817,116 @@ Promise = new Proxy(Promise, {
 
 //
 
+let btrLocalStorage
+
+if(self.localStorage) {
+	btrLocalStorage = {
+		keyPrefix: "BTRoblox:",
+		
+		setItem(key, value, params) {
+			key = this.keyPrefix + key
+			
+			if(value === null || value === undefined) {
+				localStorage.removeItem(key)
+				return true
+			}
+			
+			let prefix = ""
+			
+			if(params?.expires != null) {
+				if(!Number.isSafeInteger(params.expires)) {
+					throw new TypeError(`Invalid expires passed to setLocalStorage, expected integer but got ${typeof params.expires}`)
+				}
+				
+				prefix += `expires=${params.expires};`
+			}
+			
+			if(typeof value === "string" && params?.raw) {
+				prefix += "raw,"
+			} else {
+				value = JSON.stringify(value, params ? params.replacer : null)
+			}
+			
+			try {
+				localStorage.setItem(key, prefix + value)
+				return true
+			} catch(ex) {
+				console.error(ex)
+				return false
+			}
+		},
+		
+		removeItem(key) {
+			return this.setItem(key, undefined)
+		},
+		
+		getItem(key, params) {
+			key = this.keyPrefix + key
+			
+			const value = localStorage.getItem(key)
+			if(typeof value !== "string") { return null }
+			
+			let startIndex = 0
+			
+			if(value.startsWith("expires=", startIndex)) {
+				const regex = /^expires=([^;]*);/y
+				regex.lastIndex = startIndex
+				
+				const match = regex.exec(value)
+				const expires = match && parseInt(match[1], 10)
+				
+				if(!Number.isSafeInteger(expires) || expires <= Date.now()) {
+					localStorage.removeItem(key)
+					return null
+				}
+				
+				startIndex = regex.lastIndex
+			}
+			
+			if(value.startsWith("raw,")) {
+				startIndex += 4
+				return value.slice(startIndex)
+			}
+			
+			if(params?.raw) {
+				return value.slice(startIndex)
+			}
+			
+			return JSON.parse(value.slice(startIndex), params ? params.reviver : null)
+		},
+		
+		hasItem(key) {
+			return this.getItem(key, { raw: true }) ? true : false
+		},
+		
+		refresh() {
+			for(let i = localStorage.length; i--;) {
+				const key = localStorage.key(i)
+				
+				if(key.startsWith("btrLayeredCache-") || key.startsWith("btr-")) { // Remove legacy data
+					if(key === "btr-sv-settings") {
+						try { this.setItem("svSettings", JSON.parse(localStorage.getItem(key))) }
+						catch {}
+					} else if(key === "btr-item-thumb-bg") {
+						this.setItem("itemThumbBg", localStorage.getItem(key))
+					}
+					
+					localStorage.removeItem(key)
+					continue
+				}
+				
+				if(key.startsWith(this.keyPrefix)) {
+					this.getItem(key.slice(this.keyPrefix.length), { raw: true })
+				}
+			}
+		}
+	}
+
+	btrLocalStorage.refresh()
+}
+
+//
+
 const htmltemplate = function(pieces, ...args) {
 	if(!Array.isArray(pieces)) { pieces = [pieces] }
 	

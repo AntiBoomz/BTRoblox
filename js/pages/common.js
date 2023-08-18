@@ -149,6 +149,7 @@ function getAssetFileType(assetTypeId, buffer) {
 	}
 }
 
+//
 
 function createPager(noSelect, hideWhenEmpty) {
 	const pager = html`
@@ -634,13 +635,13 @@ pageInit.common = () => {
 						if(amountLabel) {
 							if(amountLabel.props.children) {
 								if(typeof amountLabel.props.children === "string") {
-									localStorage.setItem("btr-cached-robux", amountLabel.props.children)
+									localStorage.setItem("BTRoblox:cachedRobux", JSON.stringify(amountLabel.props.children))
 								}
 							} else {
-								const cached = localStorage.getItem("btr-cached-robux")
+								const cached = localStorage.getItem("BTRoblox:cachedRobux")
 								
 								if(cached) {
-									amountLabel.props.children = cached
+									amountLabel.props.children = JSON.parse(cached)
 								}
 							}
 						}
