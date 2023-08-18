@@ -85,10 +85,26 @@ const unwrapArgs = async args => {
 }
 
 
-const cacheResult = fn => {
+const cacheResult = (duration, fn) => {
+	if(typeof duration === "function") {
+		fn = duration
+		duration = Infinity
+	}
+	
 	const cache = {}
 	
-	const cachedFn = (...args) => (cache[args[0]] = cache[args[0]] || [fn(...args)])[0]
+	const cachedFn = (...args) => {
+		let cached = cache[args[0]]
+		if(cached && Date.now() < cached.expires) { return cached.result }
+		
+		cached = cache[args[0]] = {
+			expires: Date.now() + duration,
+			result: fn(...args)
+		}
+		
+		return cached.result
+	}
+	
 	cachedFn.uncached = fn
 	
 	return cachedFn
@@ -188,9 +204,10 @@ const RobloxApi = {
 			xsrfFetch(`https://avatar.roblox.com/v1/avatar-rules`)
 				.then(res => res.json()),
 		
-		getOutfitDetails: outfitId =>
+		getOutfitDetails: cacheResult(10e3, outfitId =>
 			xsrfFetch(`https://avatar.roblox.com/v1/outfits/${outfitId}/details`)
-				.then(res => res.json()),
+				.then(res => res.ok ? res.json() : null)
+		),
 		
 		getUserAvatar: userId =>
 			xsrfFetch(`https://avatar.roblox.com/v1/users/${userId}/avatar`)
@@ -214,7 +231,7 @@ const RobloxApi = {
 			xsrfFetch(`https://badges.roblox.com/v1/users/${userId}/badges?sortOrder=${sortOrder}&limit=${limit}&cursor=${cursor || ""}`)
 				.then(res => res.json()),
 				
-		getBadgeDetails: cacheResult(badgeId =>
+		getBadgeDetails: cacheResult(10e3, badgeId =>
 			xsrfFetch(`https://badges.roblox.com/v1/badges/${badgeId}`)
 				.then(res => res.json())
 		),
@@ -239,7 +256,7 @@ const RobloxApi = {
 				xsrf: true
 			}).then(res => res.json()),
 			
-		getBundleDetails: cacheResult(bundleId =>
+		getBundleDetails: cacheResult(10e3, bundleId =>
 			xsrfFetch(`https://catalog.roblox.com/v1/bundles/${bundleId}/details`)
 				.then(res => res.json())
 		),
@@ -255,7 +272,7 @@ const RobloxApi = {
 				.then(res => res.json()),
 	},
 	economy: {
-		getAssetDetails: cacheResult(assetId =>
+		getAssetDetails: cacheResult(10e3, assetId =>
 			xsrfFetch(`https://economy.roblox.com/v2/assets/${assetId}/details`)
 				.then(res => res.json())
 		),
@@ -266,7 +283,7 @@ const RobloxApi = {
 				.then(res => res.json())
 	},
 	gamepasses: {
-		getGamepassDetails: cacheResult(backgroundCall(gamepassId =>
+		getGamepassDetails: cacheResult(10e3, backgroundCall(gamepassId =>
 			xsrfFetch(`https://apis.roblox.com/game-passes/v1/game-passes/${gamepassId}/product-info `)
 				.then(res => res.json())
 		))
