@@ -33,7 +33,7 @@ const RBXAvatar = (() => {
 			appliedMesh = baseMesh.firstLod
 		}
 		
-		if(obj instanceof THREE.SkinnedMesh) {
+		if(obj.rbxMesh !== appliedMesh && obj instanceof THREE.SkinnedMesh) {
 			if(obj.skeleton) {
 				obj.skeleton.dispose()
 				delete obj.skeleton
@@ -49,10 +49,17 @@ const RBXAvatar = (() => {
 				geom.setAttribute("skinWeight", new THREE.Float32BufferAttribute(appliedMesh.skinWeights, 4))
 				
 				for(const meshBone of baseMesh.bones) {
+					const isEndBone = meshBone.name.endsWith("_end")
+					
 					const bone = {
 						name: meshBone.name,
+						jointName: isEndBone ? meshBone.name.slice(0, -4) : meshBone.name,
+						isEndBone: isEndBone,
+						
 						matrixWorld: new THREE.Matrix4(),
-						inverse: new THREE.Matrix4()
+						inverse: new THREE.Matrix4(),
+						
+						cframe: CFrameToMatrix4(...meshBone.cframe)
 					}
 					
 					bones.push(bone)
@@ -150,35 +157,6 @@ const RBXAvatar = (() => {
 		texture.needsUpdate = true
 		
 		return texture
-	}
-	
-	const requestsMatch = (request, otherRequest) => {
-		let matches = false
-		
-		if(request && otherRequest) {
-			matches = true
-			
-			outer:
-			for(const [key, dict] of Object.entries(request)) {
-				const lastDict = otherRequest[key]
-				
-				if(Object.keys(dict).length !== Object.keys(lastDict).length) {
-					matches = false
-					break
-				}
-				
-				for(const [key, value] of Object.entries(dict)) {
-					if(lastDict[key] !== value) {
-						matches = false
-						break outer
-					}
-				}
-			}
-		} else if(!request && !otherRequest) {
-			matches = true
-		}
-		
-		return matches
 	}
 	
 	class MergeSource {
@@ -423,28 +401,10 @@ const RBXAvatar = (() => {
 	const tempMatrix = new THREE.Matrix4()
 	const tempVector = new THREE.Vector3()
 	
-	const inversePoseMatrix = new THREE.Matrix4()
-	const inverseMatrix = new THREE.Matrix4()
+	const skinnedWorld = new THREE.Matrix4()
+	const skinnedInverse = new THREE.Matrix4()
 	
 	let compositeRenderer
-	
-	try {
-		for(let i = localStorage.length; i--;) {
-			const key = localStorage.key(i)
-			
-			if(key.startsWith("btrLayeredCache-")) {
-				try {
-					const json = JSON.parse(localStorage.getItem(key))
-					
-					if(Date.now() > json.expires) {
-						localStorage.removeItem(key)
-					}
-				} catch(ex) {
-					localStorage.removeItem(key)
-				}
-			}
-		}
-	} catch(ex) {}
 	
 	const invalidRenderMetaAssetIds = {}
 	const invalidRenderAssetIds = {}
@@ -671,10 +631,8 @@ const RBXAvatar = (() => {
 					scalePosition(joint.transform, tempVector.setScalar(this.hipHeight / 2))
 				}
 				
-				joint.part1.matrixNoScale
-					.multiplyMatrices(joint.part0.matrixNoScale, joint.bakedC0)
-					.multiply(joint.transform)
-					.multiply(tempMatrix.copy(joint.bakedC1).invert())
+				joint.matrixNoScale.multiplyMatrices(joint.part0.matrixNoScale, joint.bakedC0).multiply(joint.transform)
+				joint.part1.matrixNoScale.multiplyMatrices(joint.matrixNoScale, joint.bakedC1Inverse)
 				
 				joint.part1.matrix.copy(joint.part1.matrixNoScale).scale(joint.part1.scale)
 				joint.part1.matrixWorldNeedsUpdate = true
@@ -691,57 +649,76 @@ const RBXAvatar = (() => {
 			}
 			
 			// Update layered clothing
-			if(this.playerType === "R15" && SETTINGS.get("general.previewLayeredClothing")) {
-				this._refreshLayeredClothing()
-			}
+			this._refreshLayeredClothing()
 			
 			// Update bones
+			let updatedPoseMatrixes = false
+			let lastSkinnedScaleMod
+			
 			const updateBones = (obj, acc) => {
 				if(acc && obj.rbxLayered?.wrapLayer) {
-					const scale = obj.rbxScaleMod.clone().divide(obj.rbxLayered.scaleMod)
-					
-					for(const joint of this.sortedJointsArray) {
-						joint.part1.skinnedMatrix
-							.multiplyMatrices(joint.part0.skinnedMatrix, joint.bakedC0)
-							.multiply(tempMatrix.copy(joint.bakedC1).invert())
+					if(!updatedPoseMatrixes) {
+						updatedPoseMatrixes = true
+							
+						for(const joint of this.sortedJointsArray) {
+							joint.skinnedPoseMatrix.multiplyMatrices(joint.part0.skinnedPoseMatrix, joint.bakedC0)
+							joint.part1.skinnedPoseMatrix.multiplyMatrices(joint.skinnedPoseMatrix, joint.bakedC1Inverse)
+						}
 					}
 					
-					acc.obj.skinnedMatrix.multiplyMatrices(acc.parent.skinnedMatrix, acc.bakedCFrame)
+					if(acc) {
+						obj.skinnedPoseMatrix.multiplyMatrices(acc.parent.skinnedPoseMatrix, acc.bakedCFrame)
+					}
 					
-					inversePoseMatrix.copy(obj.skinnedMatrix).invert()
-					inverseMatrix.copy(obj.matrix).invert().multiply(obj.matrixNoScale).multiply(tempMatrix.copy(obj.matrixNoScale).invert())
+					skinnedWorld.copy(obj.matrix).invert()
+					skinnedInverse.copy(obj.skinnedPoseMatrix).invert()
 					
 					for(const bone of obj.rbxBones) {
-						const ref = bone.name.endsWith("_end") && this.parts[bone.name.slice(0, -4)] || this.parts[bone.name] || obj
+						const joint = this.joints[bone.jointName]
 						
-						bone.matrixWorld.multiplyMatrices(inverseMatrix, ref.matrixNoScale).scale(scale)
-						bone.inverse.multiplyMatrices(inversePoseMatrix, ref.skinnedMatrix).invert()
+						if(!joint) {
+							bone.matrixWorld.identity()
+							bone.inverse.identity()
+							continue
+						}
+						
+						const target = joint.isEndBone ? joint.part1 : joint
+						
+						bone.matrixWorld.multiplyMatrices(skinnedWorld, target.matrixNoScale)
+						bone.inverse.multiplyMatrices(skinnedInverse, target.skinnedPoseMatrix).invert()
 					}
 					
 					return
 				}
 				
-				for(const joint of this.sortedJointsArray) {
-					joint.part1.skinnedMatrix
-						.multiplyMatrices(joint.part0.skinnedMatrix, scalePosition(tempMatrix.copy(joint.C0), obj.rbxScaleMod))
-						.multiply(joint.transform)
-						.multiply(scalePosition(tempMatrix.copy(joint.C1).invert(), obj.rbxScaleMod))
+				if(!lastSkinnedScaleMod || !lastSkinnedScaleMod.equals(obj.rbxScaleMod)) {
+					lastSkinnedScaleMod = obj.rbxScaleMod
+					
+					for(const joint of this.sortedJointsArray) {
+						joint.skinnedNoScale.multiplyMatrices(joint.part0.skinnedNoScale, scalePosition(tempMatrix.copy(joint.C0), obj.rbxScaleMod)).multiply(joint.transform)
+						joint.part1.skinnedNoScale.multiplyMatrices(joint.skinnedNoScale, scalePosition(tempMatrix.copy(joint.C1Inverse), obj.rbxScaleMod))
+					}
 				}
 				
 				if(acc) {
-					acc.obj.skinnedMatrix.multiplyMatrices(acc.parent.skinnedMatrix, acc.bakedCFrame)
+					obj.skinnedNoScale.multiplyMatrices(acc.parent.skinnedNoScale, acc.bakedCFrame)
 				}
 				
-				inversePoseMatrix.copy(obj.rbxPoseMatrix).invert()
-				inverseMatrix.copy(obj.matrix).invert()
-					.multiply(obj.matrixNoScale)
-					.multiply(tempMatrix.copy(obj.skinnedMatrix).invert())
+				skinnedWorld.copy(obj.matrix).invert().multiply(obj.matrixNoScale).multiply(tempMatrix.copy(obj.skinnedNoScale).invert())
 				
 				for(const bone of obj.rbxBones) {
-					const ref = bone.name.endsWith("_end") && this.parts[bone.name.slice(0, -4)] || this.parts[bone.name] || obj
+					const joint = this.joints[bone.jointName]
 					
-					bone.matrixWorld.multiplyMatrices(inverseMatrix, ref.skinnedMatrix).scale(obj.rbxScaleMod)
-					bone.inverse.multiplyMatrices(inversePoseMatrix, ref.rbxPoseMatrix).invert()
+					if(!joint) {
+						bone.matrixWorld.identity()
+						bone.inverse.identity()
+						continue
+					}
+					
+					const target = joint.isEndBone ? joint.part1 : joint
+					
+					bone.matrixWorld.multiplyMatrices(skinnedWorld, target.skinnedNoScale) // .scale(obj.scale)
+					scalePosition(bone.inverse.copy(bone.cframe).invert(), obj.scale).scale(obj.scale)
 				}
 			}
 			
@@ -905,7 +882,7 @@ const RBXAvatar = (() => {
 			const joints = this.joints = {}
 			const parts = this.parts = {}
 
-			const CreateModel = tree => {
+			const CreateModel = (tree, parentJoint) => {
 				let obj
 				
 				if(tree.name !== "HumanoidRootPart") {
@@ -923,16 +900,17 @@ const RBXAvatar = (() => {
 				
 				// Custom stuff
 				obj.rbxDefaultBodypart = {
-					meshId: tree.meshId
+					meshId: tree.meshId,
+					wrapTarget: tree.wrapTarget
 				}
 				
-				obj.rbxOrigWrapTarget = tree.wrapTarget
+				obj.rbxBodypart = obj.rbxDefaultBodypart
 				obj.rbxOrigSize = tree.origSize
-				
 				obj.rbxScaleMod = new THREE.Vector3(1, 1, 1)
+				
 				obj.matrixNoScale = new THREE.Matrix4()
-				obj.rbxPoseMatrix = new THREE.Matrix4()
-				obj.skinnedMatrix = new THREE.Matrix4()
+				obj.skinnedNoScale = new THREE.Matrix4()
+				obj.skinnedPoseMatrix = new THREE.Matrix4()
 				//
 				
 				this.root.add(obj)
@@ -948,31 +926,30 @@ const RBXAvatar = (() => {
 				}
 
 				for(const child of tree.children) {
-					const childObj = CreateModel(child)
-
-					const joint = joints[child.JointName] = {
+					const joint = joints[child.name] = {
 						origC0: child.C0,
 						origC1: child.C1,
 						
 						C0: child.C0.clone(),
-						C1: child.C1.clone(),
+						C1Inverse: child.C1.clone().invert(),
 						
 						bakedC0: child.C0.clone(),
-						bakedC1: child.C1.clone(),
+						bakedC1Inverse: child.C1.clone().invert(),
 						
+						matrixNoScale: new THREE.Matrix4(),
 						transform: new THREE.Matrix4(),
 						
-						part0: obj,
-						part1: childObj,
+						skinnedNoScale: new THREE.Matrix4(),
+						skinnedPoseMatrix: new THREE.Matrix4(),
 						
+						parent: parentJoint,
 						name: child.JointName
 					}
 					
-					joint.bone = new THREE.Bone()
-					joint.bone.matrix.copy(joint.origC1)
-					joint.bone.matrixWorldNeedsUpdate = true
-					childObj.add(joint.bone)
-					// bone.matrix.copy(joint.bakedC0)
+					const childObj = CreateModel(child, joint)
+					
+					joint.part0 = obj
+					joint.part1 = childObj
 					
 					this.sortedJointsArray.push(joint)
 				}
@@ -1083,11 +1060,7 @@ const RBXAvatar = (() => {
 				const overrideC1 = attachmentOverride[joint.part1.name]?.[`${joint.name}RigAttachment`]
 				
 				joint.C0.copy(overrideC0?.cframe || joint.origC0)
-				joint.C1.copy(overrideC1?.cframe || joint.origC1)
-				
-				joint.part1.rbxPoseMatrix
-					.multiplyMatrices(joint.part0.rbxPoseMatrix, joint.C0)
-					.multiply(tempMatrix.copy(joint.C1).invert())
+				joint.C1Inverse.copy(overrideC1?.cframe || joint.origC1).invert()
 			}
 			
 			// Update parts
@@ -1121,11 +1094,16 @@ const RBXAvatar = (() => {
 					clearGeometry(part)
 					
 					if(meshId) {
+						part.rbxMeshLoading = meshId
+						
 						AssetCache.loadMesh(true, meshId, mesh => {
-							if(part.rbxMeshId === meshId) {
+							if(part.rbxMeshLoading === meshId) {
+								delete part.rbxMeshLoading
 								applyMesh(part, mesh)
 							}
 						})
+					} else {
+						delete part.rbxMeshLoading
 					}
 				}
 				
@@ -1216,7 +1194,7 @@ const RBXAvatar = (() => {
 				// Scale joints
 				for(const joint of Object.values(this.joints)) {
 					scalePosition(joint.bakedC0.copy(joint.C0), joint.part0.rbxScaleMod)
-					scalePosition(joint.bakedC1.copy(joint.C1), joint.part1.rbxScaleMod)
+					scalePosition(joint.bakedC1Inverse.copy(joint.C1Inverse), joint.part1.rbxScaleMod)
 				}
 				
 				// Scale attachments
@@ -1226,12 +1204,12 @@ const RBXAvatar = (() => {
 				
 				// Scale rootjoint so that the lowest hip joint aligns with bottom of rootpart
 				if(this.playerType === "R15") {
-					const rootJoint = this.joints.Root
-					const rightHip = this.joints.RightHip
-					const leftHip = this.joints.LeftHip
+					const rootJoint = this.joints.LowerTorso
+					const rightHip = this.joints.RightUpperLeg
+					const leftHip = this.joints.LeftUpperLeg
 					
 					rootJoint.bakedC0.elements[13] =
-						rootJoint.bakedC1.elements[13]
+						- rootJoint.bakedC1Inverse.elements[13]
 						- Math.min(rightHip.bakedC0.elements[13], leftHip.bakedC0.elements[13])
 						- Math.max(0.05, rootJoint.part0.rbxSize[1]) / 2
 				}
@@ -1242,19 +1220,19 @@ const RBXAvatar = (() => {
 			// HipHeight and leg stretching
 			if(this.playerType === "R15") {
 				let leftLegSize =
-					this.joints.LeftHip.bakedC1.elements[13]
-					- this.joints.LeftKnee.bakedC0.elements[13]
-					+ this.joints.LeftKnee.bakedC1.elements[13]
-					- this.joints.LeftAnkle.bakedC0.elements[13]
-					+ this.joints.LeftAnkle.bakedC1.elements[13]
+					- this.joints.LeftUpperLeg.bakedC1Inverse.elements[13]
+					- this.joints.LeftLowerLeg.bakedC0.elements[13]
+					- this.joints.LeftLowerLeg.bakedC1Inverse.elements[13]
+					- this.joints.LeftFoot.bakedC0.elements[13]
+					- this.joints.LeftFoot.bakedC1Inverse.elements[13]
 					+ Math.max(0.05, this.parts.LeftFoot.rbxSize[1]) / 2
 				
 				let rightLegSize =
-					this.joints.RightHip.bakedC1.elements[13]
-					- this.joints.RightKnee.bakedC0.elements[13]
-					+ this.joints.RightKnee.bakedC1.elements[13]
-					- this.joints.RightAnkle.bakedC0.elements[13]
-					+ this.joints.RightAnkle.bakedC1.elements[13]
+					- this.joints.RightUpperLeg.bakedC1Inverse.elements[13]
+					- this.joints.RightLowerLeg.bakedC0.elements[13]
+					- this.joints.RightLowerLeg.bakedC1Inverse.elements[13]
+					- this.joints.RightFoot.bakedC0.elements[13]
+					- this.joints.RightFoot.bakedC1Inverse.elements[13]
 					+ Math.max(0.05, this.parts.RightFoot.rbxSize[1]) / 2
 				
 				if(leftLegSize >= 0.1 && rightLegSize >= 0.1) {
@@ -1276,19 +1254,19 @@ const RBXAvatar = (() => {
 				}
 				
 				const rootHeight =
-					-this.joints.Root.bakedC0.elements[13]
-					+ this.joints.Root.bakedC1.elements[13]
+					-this.joints.LowerTorso.bakedC0.elements[13]
+					- this.joints.LowerTorso.bakedC1Inverse.elements[13]
 					- Math.max(0.05, this.parts.HumanoidRootPart.rbxSize[1]) / 2
 				
-				let min = rootHeight - this.joints.LeftHip.bakedC0.elements[13] + leftLegSize
-				let max = rootHeight - this.joints.RightHip.bakedC0.elements[13] + rightLegSize
+				let min = rootHeight - this.joints.LeftUpperLeg.bakedC0.elements[13] + leftLegSize
+				let max = rootHeight - this.joints.RightUpperLeg.bakedC0.elements[13] + rightLegSize
 				if(min < max) { [min, max] = [max, min] }
 				
 				this.hipHeight = min >= max * 0.95 ? min : max
 			} else {
 				this.hipHeight = 2
 			}
-
+			
 			// Remove old accessories
 			const accArray = Object.values(accessories)
 			
@@ -1379,20 +1357,25 @@ const RBXAvatar = (() => {
 					}
 					
 					const obj = acc.obj = new THREE.SkinnedMesh(undefined, material)
-					obj.bindMode = "detached"
 					obj.isSkinnedMesh = false
+					obj.bindMode = "detached"
 					obj.matrixAutoUpdate = false
 					obj.frustumCulled = false
 					obj.visible = false
 					obj.castShadow = true
-					
 					obj.rbxScaleMod = new THREE.Vector3(1, 1, 1)
+					
 					obj.matrixNoScale = new THREE.Matrix4()
-					obj.rbxPoseMatrix = new THREE.Matrix4()
-					obj.skinnedMatrix = new THREE.Matrix4()
+					obj.skinnedNoScale = new THREE.Matrix4()
+					obj.skinnedPoseMatrix = new THREE.Matrix4()
 					
 					if(acc.meshId) {
-						AssetCache.loadMesh(true, acc.meshId, mesh => applyMesh(obj, mesh))
+						obj.rbxMeshLoading = acc.meshId
+						
+						AssetCache.loadMesh(true, acc.meshId, mesh => {
+							delete obj.rbxMeshLoading
+							applyMesh(obj, mesh)
+						})
 					}
 					
 					acc.bakedCFrame = new THREE.Matrix4()
@@ -1431,8 +1414,6 @@ const RBXAvatar = (() => {
 					acc.attachment = attachment
 					acc.parent = parent
 					
-					acc.obj.rbxPoseMatrix.multiplyMatrices(parent.rbxPoseMatrix, acc.bakedCFrame)
-					
 					if(!acc.obj.parent) {
 						this.root.add(acc.obj)
 					}
@@ -1453,50 +1434,80 @@ const RBXAvatar = (() => {
 		}
 		
 		getLayeredRequest() {
-			const accessories = {}
-			let request = null
+			if(!SETTINGS.get("general.previewLayeredClothing")) { return null }
+			if(this.playerType !== "R15") { return null }
 			
+			const accessories = []
+
 			for(const acc of this.accessories) {
-				if(acc.obj.rbxMesh && acc.wrapLayer) {
-					accessories[acc.asset.id] = acc
+				if(!acc.wrapLayer) { continue }
+				if(invalidRenderAssetIds[acc.asset.id]) { continue }
+				
+				if(acc.obj.rbxMeshLoading) { // Don't request layered stuff if mesh is not loaded yet
+					return null
+				}
+				
+				if(acc.obj.rbxMesh) {
+					accessories.push({
+						id: acc.asset.id,
+						meta: !invalidRenderMetaAssetIds[acc.asset.id] ? acc.asset.meta : undefined
+					})
 				}
 			}
 			
-			if(Object.values(accessories).length > 0) {
-				const scales = { ...this.scales }
-				const bodyColors = {}
-				const bodyparts = {}
+			if(accessories.length === 0) {
+				return null
+			}
+			
+			const bodyparts = []
+		
+			for(const part of Object.values(this.parts)) {
+				const bodypart = part.rbxBodypart
+				if(invalidRenderAssetIds[bodypart.asset?.id]) { continue }
 				
-				for(const [name, color] of Object.entries(this.bodyColors)) {
-					bodyColors[name + "Color"] = color
+				if(part.rbxMeshLoading) { // Don't request layered stuff if mesh is not loaded yet
+					return null
 				}
 				
-				for(const part of Object.values(this.parts)) {
-					if(part.rbxMesh && part.rbxBodypart.asset) {
-						bodyparts[part.name] = part.rbxBodypart
+				if(part.rbxMesh && bodypart.asset) {
+					if(!bodyparts.find(x => x.id === bodypart.asset.id)) { // Multiple parts can share the same asset
+						bodyparts.push({ id: bodypart.asset.id })
 					}
 				}
-				
-				request = { scales, accessories, bodyColors, bodyparts }
 			}
+			
+			const scales = { ...this.scales }
+			const bodyColors = {}
+			
+			for(const [name, color] of Object.entries(this.bodyColors)) {
+				bodyColors[name + "Color"] = color
+			}
+			
+			const request = { bodyColors, scales, accessories, bodyparts }
+			request.hash = $.hashString(JSON.stringify(request))
 			
 			return request
 		}
 		
 		_refreshLayeredClothing() {
 			if(this.layeredRequestState === "fetching") { return }
+			
+			const now = performance.now()
+			if(now - (this.lastLayeredRequest ?? 0) < 100) { return }
+			
+			this.lastLayeredRequest = now
 			const request = this.getLayeredRequest()
 			
-			if(!requestsMatch(request, this.layeredFinishedRequest)) {
+			if(request?.hash !== this.layeredFinishedRequest?.hash) {
+				for(const part of Object.values(this.parts)) {
+					if(part.rbxLayered) {
+						applyMesh(part, part.rbxMesh)
+					}
+				}
+				
 				if(!request) {
 					this.layeredRequestState = null
 					this.layeredFinishedRequest = request
-					
-					for(const part of Object.values(this.parts)) {
-						if(part.rbxLayered) {
-							applyMesh(part, part.rbxMesh)
-						}
-					}
 					
 					for(const acc of this.accessories) {
 						if(acc.obj.rbxLayered) {
@@ -1534,7 +1545,9 @@ const RBXAvatar = (() => {
 			const body = {
 				avatarDefinition: {
 					assets: [
-						{ id: anchorAssetId } // anchor
+						{ id: anchorAssetId }, // anchor
+						...request.accessories,
+						...request.bodyparts
 					],
 					bodyColors: request.bodyColors,
 					scales: request.scales,
@@ -1548,31 +1561,12 @@ const RBXAvatar = (() => {
 					thumbnailType: "3d"
 				}
 			}
-		
-			for(const acc of Object.values(request.accessories)) {
-				if(!body.avatarDefinition.assets.find(x => x.id === acc.asset.id) && !invalidRenderAssetIds[acc.asset.id]) {
-					body.avatarDefinition.assets.push({ id: acc.asset.id, meta: !invalidRenderMetaAssetIds[acc.asset.id] ? acc.asset.meta : undefined })
-				}
-			}
 			
-			for(const bp of Object.values(request.bodyparts)) {
-				if(!body.avatarDefinition.assets.find(x => x.id === bp.asset.id) && !invalidRenderAssetIds[bp.asset.id]) {
-					body.avatarDefinition.assets.push({ id: bp.asset.id })
-				}
-			}
-			
-			body.avatarDefinition.assets.sort((a, b) => a.id - b.id) // sort assets for hashing
-			
-			const bodyHash = $.hashString(JSON.stringify(body))
-			let objHash
-			
-			try {
-				objHash = JSON.parse(localStorage.getItem(`btrLayeredCache-${bodyHash}`)).objHash
-			} catch(ex) {}
+			let objHash = btrLocalStorage.getItem(`btrLayeredCache-${request.hash}`)
 			
 			if(!objHash) {
-				const json = await RobloxApi.avatar.renderAvatar(body)
-				if(!requestsMatch(request, this.getLayeredRequest())) { return }
+				const json = await RobloxApi.avatar.renderAvatar(body).catch(() => null)
+				if(!json || request?.hash !== this.getLayeredRequest()?.hash) { return }
 				
 				if(json.errors) {
 					for(const error of json.errors) {
@@ -1594,19 +1588,17 @@ const RBXAvatar = (() => {
 				}
 				
 				const render = await fetch(json.imageUrl).then(res => res.json())
-				if(!requestsMatch(request, this.getLayeredRequest())) { return }
+				if(request?.hash !== this.getLayeredRequest()?.hash) { return }
 				
 				objHash = render.obj
 				
 				if(objHash) {
-					try {
-						localStorage.setItem(`btrLayeredCache-${bodyHash}`, JSON.stringify({ expires: Date.now() + 5 * 60e3, objHash: objHash }))
-					} catch(ex) {}
+					btrLocalStorage.setItem(`btrLayeredCache-${request.hash}`, objHash, { expires: Date.now() + 5 * 60e3 })
 				}
 			}
 			
 			const obj = await fetch(AssetCache.getHashUrl(objHash, "t")).then(res => res.text())
-			if(!requestsMatch(request, this.getLayeredRequest())) { return }
+			if(request?.hash !== this.getLayeredRequest()?.hash) { return }
 			
 			// Read obj file
 			const lines = obj.split("\n")
@@ -1654,7 +1646,7 @@ const RBXAvatar = (() => {
 					joint.part1.layeredMatrix = new THREE.Matrix4()
 				}
 				
-				joint.part1.layeredMatrix.multiplyMatrices(joint.part0.layeredMatrix, joint.bakedC0).multiply(tempMatrix.copy(joint.bakedC1).invert())
+				joint.part1.layeredMatrix.multiplyMatrices(joint.part0.layeredMatrix, joint.bakedC0).multiply(joint.bakedC1Inverse)
 			}
 
 			// Find and locate anchor
@@ -1697,58 +1689,46 @@ const RBXAvatar = (() => {
 			const getGroupMatch = (obj, group, box) => {
 				const mesh = obj.rbxMesh.firstLod || obj.rbxMesh
 				
-				if(group.uvs.length > mesh.uvs.length) {
+				if(group.uvs.length !== mesh.uvs.length) {
 					return null
 				}
 				
 				const [x0, y0, width, height] = box
-				const result = []
-				let search = 0
 				
 				for(let i = 0; i < group.uvs.length; i += 2) {
 					const u = (group.uvs[i] - x0) / width
 					const v = (group.uvs[i + 1] - y0) / height
 					
-					while(true) {
-						if(search >= mesh.uvs.length) {
-							return null
-						}
-						
-						const u2 = mesh.uvs[search]
-						const v2 = mesh.uvs[search + 1]
-						
-						search += 2
-						
-						if(Math.abs(u2 - u) < 0.01 && Math.abs(v2 - v) < 0.01) {
-							break
-						}
+					const u2 = mesh.uvs[i]
+					const v2 = mesh.uvs[i + 1]
+					
+					if(Math.abs(u2 - u) > 0.01 || Math.abs(v2 - v) > 0.01) {
+						return null
 					}
-					
-					result.push(search / 2 - 1)
 				}
-					
-				return result
+				
+				return box
 			}
 			
 			const playerGroups = groups.filter(x => x.name.startsWith("Player")).sort((a, b) => b.uvs.length - a.uvs.length)
 			let numEmptyPartsAccepted = 15 - playerGroups.length
 			
 			for(const part of Object.values(this.parts)) {
-				if(!part.isMesh) { continue }
+				if(!part.isMesh || !part.rbxMesh || !part.rbxBodypart?.asset) { continue }
+				if(!request.bodyparts.find(x => x.id === part.rbxBodypart.asset.id)) { continue }
+				
 				const matches = []
 				
 				for(const group of playerGroups) {
 					for(const box of uvBoxes) {
-						const match = getGroupMatch(part, group, box)
-						
-						if(match) {
-							matches.push({ group, box, match })
+						if(getGroupMatch(part, group, box)) {
+							matches.push({ group, box })
 						}
 					}
 				}
 				
-				if(matches.length !== 1) {
-					if(matches.length === 0 && numEmptyPartsAccepted > 0) {
+				if(matches.length === 0) {
+					if(numEmptyPartsAccepted > 0) {
 						// If the whole part was hidden by HSR, it doesn't get added into the render
 						numEmptyPartsAccepted -= 1
 						
@@ -1757,181 +1737,273 @@ const RBXAvatar = (() => {
 						part.geometry.deleteAttribute("uv")
 						part.geometry.setIndex(null)
 						
-						part.rbxLayered = { wrapTarget: part.rbxBodypart.wrapTarget || part.rbxOrigWrapTarget }
-						
+						part.rbxLayered = { wrapTarget: part.rbxBodypart.wrapTarget || part.rbxDefaultBodypart.wrapTarget }
+						continue
 					} else {
 						console.log("Failed to find match")
-						console.log(part.name, part.rbxMesh)
-						console.log(matches)
-						console.log(groups)
 						
 						if(IS_DEV_MODE) {
+							console.log(part.name, part.rbxMesh)
+							console.log(matches)
+							console.log(groups)
+							
 							setTimeout(() => alert("Failed to find match for bodypart"), 0)
 						}
 						
-						if(part.rbxLayered) {
-							applyMesh(part, part.rbxMesh)
+						this.clearLayeredClothing()
+						return
+					}
+				}
+				
+				if(matches.length >= 2) {
+					// If more than two match, somehow choose one of them
+					// My best idea atm is just to compare distance from
+					// vertices to where the part should be
+					
+					const px = part.layeredMatrix.elements[12]
+					const py = part.layeredMatrix.elements[13]
+					const pz = part.layeredMatrix.elements[14]
+					
+					let closestDistance = Infinity
+					let closest
+					
+					for(const match of matches) {
+						const step = Math.floor(group.vertices.length / 3 / 50) * 3
+						let x = 0, y = 0, z = 0, count = 0
+						
+						for(let i = 0; i < group.vertices.length; i += step) {
+							x += group.vertices[i]
+							y += group.vertices[i + 1]
+							z += group.vertices[i + 2]
+							count += 1
+						}
+						
+						const distance = (x / count - px) ** 2 + (x / count - py) ** 2 + (x / count - pz) ** 2
+						
+						if(distance < closestDistance) {
+							closestDistance = distance
+							closest = match
 						}
 					}
 					
-					continue
+					matches.splice(0, matches.length, closest)
 				}
 				
-				const { group, box: [x0, y0, width, height] } = matches[0]
+				const { group } = matches[0]
 				playerGroups.splice(playerGroups.indexOf(group), 1) // only match each group once
 				
-				const vertices = new Float32Array(group.vertices)
-				const normals = new Float32Array(group.normals)
-				const uvs = new Float32Array(group.uvs)
-				const faces = new Uint32Array(group.faces)
+				const mesh = part.rbxMesh.firstLod || part.rbxMesh
+				
+				/*
+				// vertices and normals are disabled here for bodyparts
+				// since we dont have a good way to un-apply skinning
+				// to them yet
+				
+				// apply transformed vertices and normals
 				
 				transform.copy(part.layeredMatrix).invert().multiply(inverseRenderMatrix)
 				
+				const vertices = mesh.vertices.slice()
+				const normals = mesh.normals.slice()
+				
 				for(let i = 0; i < vertices.length; i += 3) {
 					vertex.makeTranslation(
-						vertices[i + 0],
-						vertices[i + 1],
-						vertices[i + 2]
+						group.vertices[i + 0],
+						group.vertices[i + 1],
+						group.vertices[i + 2]
 					).premultiply(transform)
 					
 					vertices[i + 0] = vertex.elements[12] / part.rbxScale[0]
 					vertices[i + 1] = vertex.elements[13] / part.rbxScale[1]
 					vertices[i + 2] = vertex.elements[14] / part.rbxScale[2]
-				}
-				
-				for(let i = 0; i < uvs.length; i += 2) {
-					uvs[i] = (uvs[i] - x0) / width
-					uvs[i + 1] = (uvs[i + 1] - y0) / height
+					
+					vertex.makeTranslation(
+						group.normals[i + 0] - transform.elements[12],
+						group.normals[i + 1] - transform.elements[13],
+						group.normals[i + 2] - transform.elements[14]
+					).premultiply(transform)
+					
+					normals[i + 0] = vertex.elements[12]
+					normals[i + 1] = vertex.elements[13]
+					normals[i + 2] = vertex.elements[14]
 				}
 				
 				part.geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3))
 				part.geometry.setAttribute("normal", new THREE.BufferAttribute(normals, 3))
-				part.geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2))
-				part.geometry.setIndex(new THREE.BufferAttribute(faces, 1))
+				*/
 				
-				part.rbxLayered = { wrapTarget: part.rbxBodypart.wrapTarget || part.rbxOrigWrapTarget }
+				// disable hidden faces
+				
+				if(group.faces.length < mesh.faces.length) {
+					const faces = mesh.faces.slice()
+					let search = 0
+					
+					outer:
+					for(let i = 0; i < group.faces.length; i += 3) {
+						const a = group.faces[i + 0]
+						const b = group.faces[i + 1]
+						const c = group.faces[i + 2]
+						
+						while(true) {
+							if(search >= faces.length) {
+								break outer
+							}
+							
+							if(faces[search + 0] === a && faces[search + 1] === b && faces[search + 2] === c) {
+								search += 3
+								break
+							}
+							
+							faces[search + 0] = -1
+							faces[search + 1] = -1
+							faces[search + 2] = -1
+							search += 3
+						}
+					}
+					
+					for(; search < faces.length; search++) {
+						faces[search] = -1
+					}
+					
+					part.geometry.setIndex(new THREE.BufferAttribute(faces, 1))
+				}
+				
+				part.rbxLayered = { wrapTarget: part.rbxBodypart.wrapTarget || part.rbxDefaultBodypart.wrapTarget }
 			}
 			
 			// Resolve accessories
 			const handleGroups = groups.filter(x => x.name.startsWith("Handle") && x !== anchor).sort((a, b) => b.uvs.length - a.uvs.length)
-			let numEmptyAccessoriesAccepted = Object.values(request.accessories).length - handleGroups.length
+			let numEmptyAccessoriesAccepted = request.accessories.length - handleGroups.length
 			
-			const accessoriesProcessed = []
+			const accessoriesProcessed = {}
 			
-			for(const acc of Object.values(this.accessories)) {
-				if(!request.accessories[acc.asset.id] && !acc.wrapLayer) { continue }
-				let result = accessoriesProcessed[acc.asset.id]
-				
-				if(result === undefined) {
-					const matches = []
+			const processAccessory = acc => {
+				const matches = []
 					
-					for(const group of handleGroups) {
-						const match = getGroupMatch(acc.obj, group, uvBoxes[0])
-						
-						if(match) {
-							matches.push({ group, match })
-						}
+				for(const group of handleGroups) {
+					if(getGroupMatch(acc.obj, group, uvBoxes[0])) {
+						matches.push({ group })
 					}
-					
-					if(matches.length !== 1) {
-						if(matches.length === 0 && numEmptyAccessoriesAccepted > 0) {
-							numEmptyAccessoriesAccepted -= 1
-						} else {
-							console.log("Could not resolve asset in render")
+				}
+				
+				if(matches.length !== 1) {
+					if(matches.length === 0 && numEmptyAccessoriesAccepted > 0) {
+						numEmptyAccessoriesAccepted -= 1
+					} else {
+						console.log("Could not resolve asset in render")
+						
+						if(IS_DEV_MODE) {
 							console.log(acc.asset.id, acc.obj.rbxMesh)
 							console.log(matches)
 							console.log(groups)
 							console.log(request)
-							
-							if(IS_DEV_MODE) {
-								setTimeout(() => alert("Could not resolve asset in render"), 0)
-							}
-						}
-						
-						result = accessoriesProcessed[acc.asset.id] = false
-					} else {
-						const { group, match } = matches[0]
-						const mesh = acc.obj.rbxMesh.firstLod || acc.obj.rbxMesh
-						
-						const vertices = mesh.vertices.slice()
-						const normals = mesh.normals.slice()
-						const faces = mesh.faces.slice()
-						
-						const layeredAccMatrix = acc.parent.layeredMatrix.clone().multiply(acc.bakedCFrame)
-						transform.copy(layeredAccMatrix).invert().multiply(inverseRenderMatrix)
-						
-						// apply transformed vertices and normals
-						for(let i = 0, len = group.vertices.length / 3; i < len; i++) {
-							const index = match[i]
-							
-							vertex.makeTranslation(
-								group.vertices[i * 3 + 0],
-								group.vertices[i * 3 + 1],
-								group.vertices[i * 3 + 2]
-							).premultiply(transform)
-							
-							vertices[index * 3 + 0] = vertex.elements[12]
-							vertices[index * 3 + 1] = vertex.elements[13]
-							vertices[index * 3 + 2] = vertex.elements[14]
-							
-							vertex.makeTranslation(
-								group.normals[i * 3 + 0] - transform.elements[12],
-								group.normals[i * 3 + 1] - transform.elements[13],
-								group.normals[i * 3 + 2] - transform.elements[14]
-							).premultiply(transform)
-							
-							normals[index * 3 + 0] = vertex.elements[12]
-							normals[index * 3 + 1] = vertex.elements[13]
-							normals[index * 3 + 2] = vertex.elements[14]
-						}
-						
-						// disable hidden faces
-						let search = 0
-						
-						outer:
-						for(let i = 0; i < group.faces.length; i += 3) {
-							const a = match[group.faces[i + 0]]
-							const b = match[group.faces[i + 1]]
-							const c = match[group.faces[i + 2]]
-							
-							while(true) {
-								if(search >= faces.length) {
-									break outer
-								}
-								
-								if(faces[search + 0] === a && faces[search + 1] === b && faces[search + 2] === c) {
-									search += 3
-									break
-								}
-								
-								faces[search + 0] = -1
-								faces[search + 1] = -1
-								faces[search + 2] = -1
-								search += 3
-							}
-						}
-						
-						for(; search < faces.length; search++) {
-							faces[search] = -1
-						}
-						
-						result = accessoriesProcessed[acc.asset.id] = {
-							vertices: new THREE.BufferAttribute(vertices, 3),
-							normals: new THREE.BufferAttribute(normals, 3),
-							faces: new THREE.BufferAttribute(faces, 1)
+							setTimeout(() => alert("Could not resolve asset in render"), 0)
 						}
 					}
+					
+					return false
+				}
+				
+				const { group } = matches[0]
+				handleGroups.splice(handleGroups.indexOf(group), 1) // only match each group once
+				
+				const mesh = acc.obj.rbxMesh.firstLod || acc.obj.rbxMesh
+				const result = {}
+				
+				// apply transformed vertices and normals
+				
+				const vertices = mesh.vertices.slice()
+				const normals = mesh.normals.slice()
+				
+				const layeredAccMatrix = acc.parent.layeredMatrix.clone().multiply(acc.bakedCFrame)
+				transform.copy(layeredAccMatrix).invert().multiply(inverseRenderMatrix)
+				
+				for(let i = 0; i < vertices.length; i += 3) {
+					vertex.makeTranslation(
+						group.vertices[i + 0],
+						group.vertices[i + 1],
+						group.vertices[i + 2]
+					).premultiply(transform)
+					
+					vertices[i + 0] = vertex.elements[12]
+					vertices[i + 1] = vertex.elements[13]
+					vertices[i + 2] = vertex.elements[14]
+					
+					vertex.makeTranslation(
+						group.normals[i + 0] - transform.elements[12],
+						group.normals[i + 1] - transform.elements[13],
+						group.normals[i + 2] - transform.elements[14]
+					).premultiply(transform)
+					
+					normals[i + 0] = vertex.elements[12]
+					normals[i + 1] = vertex.elements[13]
+					normals[i + 2] = vertex.elements[14]
+				}
+				
+				result.vertices = new THREE.BufferAttribute(vertices, 3)
+				result.normals = new THREE.BufferAttribute(normals, 3)
+				
+				// disable hidden faces
+				
+				if(group.faces.length < mesh.faces.length) {
+					const faces = mesh.faces.slice()
+					let search = 0
+					
+					outer:
+					for(let i = 0; i < group.faces.length; i += 3) {
+						const a = group.faces[i + 0]
+						const b = group.faces[i + 1]
+						const c = group.faces[i + 2]
+						
+						while(true) {
+							if(search >= faces.length) {
+								break outer
+							}
+							
+							if(faces[search + 0] === a && faces[search + 1] === b && faces[search + 2] === c) {
+								search += 3
+								break
+							}
+							
+							faces[search + 0] = -1
+							faces[search + 1] = -1
+							faces[search + 2] = -1
+							search += 3
+						}
+					}
+					
+					for(; search < faces.length; search++) {
+						faces[search] = -1
+					}
+					
+					result.faces = new THREE.BufferAttribute(faces, 1)
+				}
+					
+				return result
+			}
+			
+			for(const acc of Object.values(this.accessories)) {
+				if(!acc.obj.rbxMesh || !acc.wrapLayer) { continue }
+				if(!request.accessories.find(x => x.id === acc.asset.id)) { continue }
+				
+				let result = accessoriesProcessed[acc.asset.id]
+				
+				if(result == null) {
+					result = accessoriesProcessed[acc.asset.id] = processAccessory(acc)
 				}
 				
 				if(result) {
-					acc.obj.geometry.setAttribute("position", result.vertices)
-					acc.obj.geometry.setAttribute("normal", result.normals)
-					acc.obj.geometry.setIndex(result.faces)
+					if(result.vertices) {
+						acc.obj.geometry.setAttribute("position", result.vertices)
+						acc.obj.geometry.setAttribute("normal", result.normals)
+					}
+					
+					if(result.faces) {
+						acc.obj.geometry.setIndex(result.faces)
+					}
+					
 					acc.obj.rbxLayered = { wrapLayer: acc.wrapLayer, scaleMod: acc.obj.rbxScaleMod.clone() }
 				} else {
-					acc.obj.geometry.deleteAttribute("position")
-					acc.obj.geometry.deleteAttribute("normal")
-					acc.obj.geometry.deleteAttribute("uv")
 					acc.obj.geometry.setIndex(null)
 				}
 			}

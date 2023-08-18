@@ -150,7 +150,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 			for(const item of details.items) {
 				if(item.type === "UserOutfit") {
 					promises.push(RobloxApi.avatar.getOutfitDetails(item.id).then(details => {
-						if(details.outfitType === "Avatar") {
+						if(details?.outfitType === "Avatar") {
 							resolve(details)
 						}
 					}))

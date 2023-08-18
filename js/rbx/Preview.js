@@ -27,7 +27,19 @@ const RBXPreview = (() => {
 
 	function getOutfitData(id) {
 		if(!outfitCache[id]) {
-			const outfitPromise = RobloxApi.avatar.getOutfitDetails(id)
+			const retryOnFail = data => {
+				if(!data) {
+					return new Promise(resolve => {
+						setTimeout(() => {
+							resolve(RobloxApi.avatar.getOutfitDetails(id).then(retryOnFail))
+						}, 2000)
+					})
+				}
+				
+				return data
+			}
+			
+			const outfitPromise = RobloxApi.avatar.getOutfitDetails(id).then(retryOnFail)
 
 			return outfitCache[id] = Promise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
 				data = { ...data }
@@ -127,10 +139,10 @@ const RBXPreview = (() => {
 						maxSlide =
 							this.avatar.hipHeight
 							+ this.avatar.parts.HumanoidRootPart.rbxSize[1] / 2
-							+ this.avatar.joints.Root.bakedC0.elements[13]
-							- this.avatar.joints.Root.bakedC1.elements[13]
-							+ this.avatar.joints.Neck.bakedC0.elements[13]
-							- this.avatar.joints.Neck.bakedC1.elements[13]
+							+ this.avatar.joints.LowerTorso.bakedC0.elements[13]
+							+ this.avatar.joints.LowerTorso.bakedC1Inverse.elements[13]
+							+ this.avatar.joints.Head.bakedC0.elements[13]
+							+ this.avatar.joints.Head.bakedC1Inverse.elements[13]
 							+ 1
 					}
 					
@@ -1282,7 +1294,10 @@ const HoverPreview = (() => {
 					
 					addItems(await Promise.all(promises))
 				} else {
-					const info = await AssetCache.resolveAsset(assetId).then(assetRequest => ({ AssetId: assetId, AssetTypeId: assetRequest.assetTypeId }))
+					const info = await AssetCache.resolveAsset(assetId).then(
+						assetRequest => ({ AssetId: assetId, AssetTypeId: assetRequest.assetTypeId }),
+						() => null
+					)
 					
 					addItems([info])
 				}

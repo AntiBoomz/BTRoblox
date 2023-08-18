@@ -305,7 +305,7 @@ const RBXAppearance = (() => {
 				
 				const wrapTarget = part.Children.find(x => x.ClassName === "WrapTarget")
 				
-				if(wrapTarget && wrapTarget.Enabled !== false) {
+				if(wrapTarget) {
 					bp.wrapTarget = {
 						cageMeshId: wrapTarget.CageMeshId ?? "",
 						cageOrigin: RBXAvatar.CFrameToMatrix4(...wrapTarget.CageOrigin),
@@ -377,7 +377,7 @@ const RBXAppearance = (() => {
 				}
 				
 				const wrapLayer = hanInst.Children.find(x => x.ClassName === "WrapLayer")
-				if(wrapLayer && wrapLayer.Enabled !== false) {
+				if(wrapLayer) {
 					acc.wrapLayer = {
 						cageMeshId: wrapLayer.CageMeshId ?? "",
 						cageOrigin: RBXAvatar.CFrameToMatrix4(...wrapLayer.CageOrigin),
