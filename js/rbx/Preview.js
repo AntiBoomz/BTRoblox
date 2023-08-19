@@ -340,8 +340,8 @@ const RBXPreview = (() => {
 
 		addAssetPreview(assetId, assetTypeId, meta) {
 			if(LayeredAssetTypes.includes(assetTypeId)) {
-				if(!meta) { meta = {} }
-				meta.order = 50
+				if(!meta) { meta = { order: 1, version: 1 } }
+				meta.order = 10
 			}
 			
 			const asset = this.avatar.appearance.addAsset(assetId, assetTypeId, meta)
@@ -1127,8 +1127,8 @@ const HoverPreview = (() => {
 				const anchor = self.$find(`a[href*="/catalog/"],a[href*="/library/"],a[href*="/bundles/"]`)
 				if(!anchor) { return }
 
-				const assetId = anchor.href.replace(/^.*\/(?:bundles|catalog|library)\/(\d+)\/?.*$/, "$1")
-				if(!Number.isSafeInteger(+assetId)) { return }
+				const assetId = parseInt(anchor.href.replace(/^.*\/(?:bundles|catalog|library)\/(\d+)\/?.*$/, "$1"), 10)
+				if(!Number.isSafeInteger(assetId)) { return }
 
 				clearTarget()
 				if(invalidAssets[assetId]) { return }
