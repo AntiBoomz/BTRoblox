@@ -204,10 +204,11 @@ const RobloxApi = {
 			xsrfFetch(`https://avatar.roblox.com/v1/avatar-rules`)
 				.then(res => res.json()),
 		
-		getOutfitDetails: cacheResult(10e3, outfitId =>
+		// hits rate limits when requested from page, so doing backgroundCall
+		getOutfitDetails: cacheResult(30e3, backgroundCall(outfitId =>
 			xsrfFetch(`https://avatar.roblox.com/v1/outfits/${outfitId}/details`)
 				.then(res => res.ok ? res.json() : null)
-		),
+		)),
 		
 		getUserAvatar: userId =>
 			xsrfFetch(`https://avatar.roblox.com/v1/users/${userId}/avatar`)

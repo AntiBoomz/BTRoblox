@@ -27,19 +27,7 @@ const RBXPreview = (() => {
 
 	function getOutfitData(id) {
 		if(!outfitCache[id]) {
-			const retryOnFail = data => {
-				if(!data) {
-					return new Promise(resolve => {
-						setTimeout(() => {
-							resolve(RobloxApi.avatar.getOutfitDetails(id).then(retryOnFail))
-						}, 2000)
-					})
-				}
-				
-				return data
-			}
-			
-			const outfitPromise = RobloxApi.avatar.getOutfitDetails(id).then(retryOnFail)
+			const outfitPromise = RobloxApi.avatar.getOutfitDetails(id)
 
 			return outfitCache[id] = Promise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
 				data = { ...data }
