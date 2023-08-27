@@ -48,18 +48,23 @@ const RBXAvatar = (() => {
 				geom.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(appliedMesh.skinIndices, 4))
 				geom.setAttribute("skinWeight", new THREE.Float32BufferAttribute(appliedMesh.skinWeights, 4))
 				
-				for(const meshBone of baseMesh.bones) {
-					const isEndBone = meshBone.name.endsWith("_end")
-					
+				const boneCount = {}
+				
+				for(let i = 0; i < appliedMesh.skinIndices.length; i++) {
+					if((appliedMesh.skinWeights[i] ?? 0) > 0) {
+						const boneIndex = appliedMesh.skinIndices[i]
+						boneCount[boneIndex] = (boneCount[boneIndex] ?? 0) + 1
+					}
+				}
+				
+				for(const [i, meshBone] of Object.entries(baseMesh.bones)) {
 					const bone = {
 						name: meshBone.name,
+						cframe: CFrameToMatrix4(...meshBone.cframe),
+						count: boneCount[i] ?? 0,
+						
 						matrixWorld: new THREE.Matrix4(),
-						inverse: new THREE.Matrix4(),
-						
-						jointName: isEndBone ? meshBone.name.slice(0, -4) : meshBone.name,
-						isEndBone: isEndBone,
-						
-						cframe: CFrameToMatrix4(...meshBone.cframe)
+						inverse: new THREE.Matrix4()
 					}
 					
 					bones.push(bone)
@@ -606,48 +611,71 @@ const RBXAvatar = (() => {
 		}
 
 		updateBones(obj) {
-			const acc = obj.rbxAccessory
-			
-			if(acc && obj.rbxLayered?.wrapLayer) {
-				for(const joint of this.sortedJointsArray) {
+			for(const joint of this.sortedJointsArray) {
+				if(obj.rbxLayered?.wrapLayer) {
 					joint.skinnedPoseMatrix.multiplyMatrices(joint.part0.skinnedPoseMatrix, joint.bakedC0)
 					joint.part1.skinnedPoseMatrix.multiplyMatrices(joint.skinnedPoseMatrix, joint.bakedC1Inverse)
-				}
-				
-				if(acc) {
-					obj.skinnedPoseMatrix.multiplyMatrices(acc.parent.skinnedPoseMatrix, acc.bakedCFrame)
-				}
-				
-				for(const bone of obj.rbxBones) {
-					const joint = this.joints[bone.jointName]
-					const target = joint ? (joint.isEndBone ? joint.part1 : joint) : this.parts[name] ?? obj
+				} else {
+					if(obj.rbxBodypart) {
+						joint.skinnedPoseMatrix.multiplyMatrices(joint.part0.skinnedPoseMatrix, joint.C0)
+						joint.part1.skinnedPoseMatrix.multiplyMatrices(joint.skinnedPoseMatrix, joint.C1Inverse)
+					}
 					
-					bone.matrixWorld.copy(obj.matrix).invert().multiply(target.matrixNoScale)
-					bone.inverse.copy(obj.skinnedPoseMatrix).invert().multiply(target.skinnedPoseMatrix).invert()
-					scalePosition(bone.inverse, obj.rbxScaleMod).scale(obj.rbxScaleMod)
+					joint.skinnedNoScale
+						.multiplyMatrices(joint.part0.skinnedNoScale, scalePosition(tempMatrix.copy(joint.C0), obj.rbxScaleMod))
+						.multiply(joint.transform)
+					
+					joint.part1.skinnedNoScale
+						.multiplyMatrices(joint.skinnedNoScale, scalePosition(tempMatrix.copy(joint.C1Inverse), obj.rbxScaleMod))
 				}
-				return
 			}
 			
-			for(const joint of this.sortedJointsArray) {
-				joint.skinnedNoScale.multiplyMatrices(joint.part0.skinnedNoScale, scalePosition(tempMatrix.copy(joint.C0), obj.rbxScaleMod)).multiply(joint.transform)
-				joint.part1.skinnedNoScale.multiplyMatrices(joint.skinnedNoScale, scalePosition(tempMatrix.copy(joint.C1Inverse), obj.rbxScaleMod))
-			}
-			
-			if(acc) {
+			if(obj.rbxAccessory) {
+				const acc = obj.rbxAccessory
+				
+				obj.skinnedPoseMatrix.multiplyMatrices(acc.parent.skinnedPoseMatrix, acc.bakedCFrame)
 				obj.skinnedNoScale.multiplyMatrices(acc.parent.skinnedNoScale, acc.bakedCFrame)
 			}
 			
-			skinnedWorld.copy(obj.matrix).invert().multiply(obj.matrixNoScale).multiply(tempMatrix.copy(obj.skinnedNoScale).invert())
+			if(!obj.rbxLayered?.wrapLayer) {
+				skinnedWorld
+					.copy(obj.matrix).invert()
+					.multiply(obj.matrixNoScale)
+					.multiply(tempMatrix.copy(obj.skinnedNoScale).invert())
+			}
 			
 			for(const bone of obj.rbxBones) {
-				const joint = this.joints[bone.jointName]
-				const target = joint ? (joint.isEndBone ? joint.part1 : joint) : this.parts[name] ?? obj
+				const joint = this.joints[bone.name]
 				
-				bone.matrixWorld.multiplyMatrices(skinnedWorld, target.skinnedNoScale)
+				if(!joint || bone.count === 0) {
+					bone.matrixWorld.identity()
+					bone.inverse.identity()
+					continue
+				}
 				
-				bone.inverse.copy(bone.cframe).invert()
-				scalePosition(bone.inverse, obj.scale).scale(obj.scale)
+				if(obj.rbxLayered?.wrapLayer) {
+					bone.matrixWorld.copy(obj.matrix).invert().multiply(joint.matrixNoScale)
+					bone.inverse.copy(obj.skinnedPoseMatrix).invert().multiply(joint.skinnedPoseMatrix).invert()
+					
+					// scale a bit with obj so it looks better when waiting for layered stuff to load
+					const target = obj.rbxLayered.rbxScaleModTarget
+					
+					if(target && this.parts[target]) {
+						bone.inverse.scale(tempVector.copy(this.parts[target].rbxScaleMod).divide(obj.rbxLayered.rbxScaleMod))
+					}
+					
+				} else if(obj.rbxBodypart) {
+					bone.matrixWorld.multiplyMatrices(skinnedWorld, joint.skinnedNoScale)
+					bone.inverse.copy(obj.skinnedPoseMatrix).invert().multiply(joint.skinnedPoseMatrix).invert()
+					
+					scalePosition(bone.inverse, obj.rbxScaleMod).scale(obj.scale)
+					
+				} else {
+					bone.matrixWorld.multiplyMatrices(skinnedWorld, joint.skinnedNoScale)
+					bone.inverse.copy(bone.cframe).invert()
+					
+					scalePosition(bone.inverse, obj.rbxScaleMod).scale(obj.scale)
+				}
 			}
 		}
 		
@@ -1076,6 +1104,8 @@ const RBXAvatar = (() => {
 				
 				if(part.rbxMeshId !== meshId) {
 					part.rbxMeshId = meshId
+					delete part.rbxMeshLoading
+					
 					clearGeometry(part)
 					
 					if(meshId) {
@@ -1087,8 +1117,6 @@ const RBXAvatar = (() => {
 								applyMesh(part, mesh)
 							}
 						})
-					} else {
-						delete part.rbxMeshLoading
 					}
 				}
 				
@@ -1108,6 +1136,10 @@ const RBXAvatar = (() => {
 					
 					// only draw bodycolor if alphamode = 0
 					material.map.setSourceEnabled(0, bodypart.pbrAlphaMode === 0)
+					
+					if(bodypart.pbrAlphaMode === 1) { // Transparent
+						material.transparent = true
+					}
 				} else {
 					material.map = this.textures[part.name]
 				}
@@ -1895,8 +1927,6 @@ const RBXAvatar = (() => {
 				obj.layeredMatrix.multiplyMatrices(acc.parent.layeredMatrix, acc.bakedCFrame)
 				transform.copy(obj.layeredMatrix).invert().multiply(inverseRenderMatrix)
 				
-				// this.updateBones(obj, obj.layeredMatrix, false)
-				
 				for(let i = 0; i < vertices.length; i += 3) {
 					vertex.makeTranslation(
 						group.vertices[i + 0],
@@ -2038,7 +2068,13 @@ const RBXAvatar = (() => {
 					acc.obj.geometry.setIndex(null)
 				}
 				
-				acc.obj.rbxLayered = { wrapLayer: acc.wrapLayer }
+				const mainBone = acc.obj.rbxBones.filter(x => this.parts[x.name]).reduce((a, b) => (a.count > b.count ? a : b))
+				
+				acc.obj.rbxLayered = {
+					wrapLayer: acc.wrapLayer,
+					rbxScaleModTarget: mainBone ? mainBone.name : acc.obj.parent?.name ?? null,
+					rbxScaleMod: mainBone ? this.parts[mainBone.name].rbxScaleMod.clone() : acc.obj.parent.rbxScaleMod?.clone() ?? null
+				}
 			}
 			
 			return true

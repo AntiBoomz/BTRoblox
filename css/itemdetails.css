@@ -72,10 +72,17 @@
 	top: 0;
 	z-index: 2;
 	--btr-btn-color: #fff;
+	--btr-btn-color-disabled: #eee;
 }
 
 .dark-theme .btr-preview-container-itempage {
 	--btr-btn-color: #393b3d;
+	--btr-btn-color-disabled: #666;
+}
+
+.btr-preview-container-itempage > .btr-dropdown-container > button {
+	background-color: var(--btr-btn-color) !important;
+	width: auto;
 }
 
 .btr-preview-inactive .btr-preview-container-itempage {
@@ -314,10 +321,15 @@ html body .btr-thumb-btn-container .btr-thumb-btn {
 	height: 6px;
 	width: 100%;
 	border-radius: 3px;
-	cursor: pointer;
+	/* cursor: pointer; */
 	
 	display: block;
 	height: 20px;
+}
+
+.btr-thumb-popup.btr-body-popup input[type=range][disabled] {
+	filter: grayscale(1);
+	opacity: 0.5;
 }
 
 .dark-theme .btr-thumb-popup.btr-body-popup input[type=range]::-webkit-slider-runnable-track {
@@ -367,6 +379,7 @@ html body .btr-thumb-btn-container .btr-thumb-btn {
     position: absolute;
     bottom: 50px;
     font-size: 18px;
+	user-select: none;
 }
 
 .btr-bundle-animations {
@@ -407,8 +420,10 @@ body .btr-bundle-animations .btr-bundle-btn-alt {
 }
 
 .btr-bundle-animations .btr-bundle-btn[disabled] {
-	background-color: #eee !important;
-	cursor: default;
+	background-color: var(--btr-btn-color-disabled) !important;
+	cursor: default !important;
+	opacity: 1 !important;
+	pointer-events: all !important;
 }
 
 .btr-bundle-animations .btr-bundle-btn > div[class^="btr-anim-icon-"] {
@@ -421,11 +436,15 @@ body .btr-bundle-animations .btr-bundle-btn-alt {
     vertical-align: middle;
 }
 
+.btr-bundle-animations .btr-bundle-btn[disabled] > div[class^="btr-anim-icon-"] {
+	opacity: 0.5;
+}
+
 .dark-theme .btr-bundle-animations .btr-bundle-btn > div[class^="btr-anim-icon-"] {
 	background-image: url(https://www.roblox.com/images/Shared/animation_dark_09282018.svg)
 }
 
-.btr-bundle-animations .btr-bundle-btn.selected > div[class^="btr-anim-icon-"] {
+.btr-bundle-animations .btr-bundle-btn.selected:not([disabled]) > div[class^="btr-anim-icon-"] {
 	background-position-x: -28px;
 }
 

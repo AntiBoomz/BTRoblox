@@ -9,6 +9,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 	const previewerMode = SETTINGS.get("itemdetails.itemPreviewerMode")
 	let autoLoading = false
 	
+	const assetPromises = []
 	let currentOutfitId
 	let playedAnimation
 	let bundleType
@@ -35,24 +36,35 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 			setOutfit(currentOutfitId)
 		}
 		
-		preview.waitForAppearance().then(() => {
-			let gotAnything = false
+		// Add default animations
+		const disabledTypes = [
+			AssetType.ClimbAnimation, AssetType.FallAnimation, AssetType.IdleAnimation,
+			AssetType.JumpAnimation, AssetType.RunAnimation, AssetType.SwimAnimation,
+			AssetType.WalkAnimation
+		]
+		
+		if(!disabledTypes.includes(assetTypeId) && bundleType !== "AvatarAnimations") {
+			const defaultAnims = {
+				run: [913376220],
+				walk: [913402848],
+				swim: [913384386],
+				swimidle: [913389285],
+				jump: [507765000],
+				idle: [507766388, 507766666],
+				fall: [507767968],
+				climb: [507765644]
+			}
 			
-			for(const asset of preview.previewAssets.values()) {
-				if(!asset.isEmpty()) {
-					gotAnything = true
-					break
+			for(const [animType, assetIds] of Object.entries(defaultAnims)) {
+				for(const assetId of assetIds) {
+					preview.addBundleAnimation(assetId, animType, "")
 				}
 			}
 			
-			if(!gotAnything && !currentOutfitId && !playedAnimation) {
-				console.log("We've got nothing, let's just remove previewer")
-				preview.setEnabled(false)
-				preview.setVisible(false)
-			}
-		})
+			preview.playAnimation(defaultAnims.idle[0])
+		}
 	})
-	
+		
 	const addAsset = async (assetId, assetTypeId, assetName, meta) => {
 		if(AnimationPreviewAssetTypeIds.includes(assetTypeId)) {
 			await loadPreview()
@@ -69,7 +81,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 				
 				if(!playedAnimation) {
 					playedAnimation = true
-					preview.applyAnimationPlayerType = true
+					preview.initPlayerTypeFromPlayingAnimation = true
 					preview.playAnimation(assetId)
 				}
 				
@@ -83,7 +95,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 				
 				if(!playedAnimation) {
 					playedAnimation = true
-					preview.applyAnimationPlayerType = true
+					preview.initPlayerTypeFromPlayingAnimation = true
 					preview.playAnimation(animationId)
 				}
 				
@@ -95,27 +107,19 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 				for(const value of folder.Children) {
 					if(value.ClassName !== "StringValue") { continue }
 					
+					preview.removeBundleAnimations(value.Name)
+					
 					for(const animation of value.Children) {
 						if(animation.ClassName !== "Animation") { continue }
 						
 						const animationId = AssetCache.getAssetIdFromUrl(animation.AnimationId)
 						
-						if(isBundle) {
-							preview.addBundleAnimation(animationId, value.Name, assetName)
+						preview.addBundleAnimation(animationId, value.Name, assetName)
 
-							if(!playedAnimation && value.Name === "run") {
-								playedAnimation = true
-								preview.applyAnimationPlayerType = true
-								preview.playAnimation(animationId)
-							}
-						} else {
-							preview.addAnimation(animationId, value.Name)
-
-							if(!playedAnimation) {
-								playedAnimation = true
-								preview.applyAnimationPlayerType = true
-								preview.playAnimation(animationId)
-							}
+						if(!playedAnimation && (!isBundle || value.Name === "idle")) {
+							playedAnimation = true
+							preview.initPlayerTypeFromPlayingAnimation = true
+							preview.playAnimation(animationId)
 						}
 					}
 				}
@@ -141,42 +145,76 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 	}
 	
 	if(isBundle) {
-		const details = await RobloxApi.catalog.getBundleDetails(assetId)
-		bundleType = details.bundleType
-		
-		const outfitPromise = new Promise(resolve => {
-			const promises = []
-			
-			for(const item of details.items) {
-				if(item.type === "UserOutfit") {
-					promises.push(RobloxApi.avatar.getOutfitDetails(item.id).then(details => {
-						if(details?.outfitType === "Avatar") {
-							resolve(details)
+		assetPromises.push(
+			RobloxApi.catalog.getBundleDetails(assetId).then(async details => {
+				bundleType = details.bundleType
+				
+				const outfitPromise = new Promise(resolve => {
+					const promises = []
+					
+					for(const item of details.items) {
+						if(item.type === "UserOutfit") {
+							promises.push(RobloxApi.avatar.getOutfitDetails(item.id).then(details => {
+								if(details?.outfitType === "Avatar") {
+									resolve(details)
+								}
+							}))
 						}
-					}))
-				}
-			}
-			
-			Promise.all(promises).then(() => resolve(null))
-		})
-		
-		outfitPromise.then(outfit => {
-			if(outfit) {
-				setOutfit(outfit.id)
-			}
-		})
-		
-		for(const item of details.items) {
-			if(item.type === "Asset") {
-				AssetCache.resolveAsset(item.id).then(async assetRequest => {
-					const outfit = await outfitPromise
-					addAsset(item.id, assetRequest.assetTypeId, item.name, outfit?.assets.find(x => x.id === item.id)?.meta)
+					}
+					
+					Promise.all(promises).then(() => resolve(null))
 				})
+				
+				const bundlePromises = []
+				
+				bundlePromises.push(
+					outfitPromise.then(outfit => {
+						if(outfit) {
+							setOutfit(outfit.id)
+						}
+					})
+				)
+				
+				for(const item of details.items) {
+					if(item.type === "Asset") {
+						bundlePromises.push(
+							AssetCache.resolveAsset(item.id).then(async assetRequest => {
+								const outfit = await outfitPromise
+								return addAsset(item.id, assetRequest.assetTypeId, item.name, outfit?.assets.find(x => x.id === item.id)?.meta)
+							})
+						)
+					}
+				}
+				
+				return Promise.all(bundlePromises)
+			})
+		)
+	} else {
+		assetPromises.push(
+			addAsset(assetId, assetTypeId, $("#item-container")?.dataset.itemName || "Asset")
+		)
+	}
+	
+	Promise.all(assetPromises).then(async () => {
+		if(!preview) { return }
+		
+		await preview.waitForAppearance()
+		
+		let gotAnything = false
+		
+		for(const asset of preview.previewAssets.values()) {
+			if(!asset.isEmpty()) {
+				gotAnything = true
+				break
 			}
 		}
-	} else {
-		addAsset(assetId, assetTypeId, "Asset")
-	}
+		
+		if(!gotAnything && !currentOutfitId && !playedAnimation) {
+			console.log("We've got nothing, let's just remove previewer")
+			preview.setEnabled(false)
+			preview.setVisible(false)
+		}
+	})
 }
 
 const validAssetUrlCache = {}
@@ -213,6 +251,10 @@ const getCurrentValidAssetUrl = async (assetId, assetTypeId) => validAssetUrlCac
 	if(assetTypeId === AssetType.Audio || assetTypeId === AssetType.Shirt || assetTypeId === AssetType.Pants || assetTypeId === AssetType.TShirt) {
 		// Disabling this for clothing because people were using btr to steal and reupload clothing
 		const promises = []
+		
+		if(IS_DEV_MODE && assetTypeId !== AssetType.Audio) {
+			return resolve(defaultAssetUrl)
+		}
 		
 		promises.push(RobloxApi.economy.getAssetDetails(assetId).then(json => {
 			if(json?.Creator?.Id === 1 || json?.Creator?.Id === loggedInUser) {

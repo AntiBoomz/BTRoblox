@@ -10,10 +10,8 @@ const RBXScene = (() => {
 			this.cameraMinZoom = 2
 			this.cameraMaxZoom = 25
 			this.cameraZoom = 10
-			this.cameraMinSlide = 0
-			this.cameraMaxSlide = 0
 			this.cameraSlide = 0
-			this.cameraFocus = new THREE.Vector3(0, 4.5, 0)
+			this.cameraFocus = new THREE.Vector3(0, 4, 0)
 			this.cameraOffset = new THREE.Vector3(0, 0, 0)
 			this.cameraRotation = new THREE.Euler(.05, 0, 0, "YXZ")
 			this.cameraDir = new THREE.Vector3(0, 0, 1)
@@ -117,7 +115,6 @@ const RBXScene = (() => {
 							
 							if(this.dragButton === 1) {
 								this.cameraSlide += this.cameraZoom * moveY / this.canvas.clientHeight
-								this.cameraSlide = Math.max(this.cameraMinSlide, Math.min(this.cameraMaxSlide, this.cameraSlide))
 								
 							} else {
 								const rotX = this.cameraRotation.x + 2 * Math.PI * moveY / this.canvas.clientHeight
@@ -167,12 +164,34 @@ const RBXScene = (() => {
 			}
 				
 			this.cameraDir.set(0, 0, 1).applyEuler(this.cameraRotation)
-			this.camera.position.copy(this.cameraFocus).addScaledVector(this.cameraDir, -this.cameraZoom)
-			this.camera.lookAt(this.cameraFocus)
-			this.camera.position.add(this.cameraOffset)
 			
-			this.cameraSlide = Math.max(this.cameraMinSlide, Math.min(this.cameraMaxSlide, this.cameraSlide))
-			this.camera.position.y += this.cameraSlide
+			//
+			let minSlide = 2
+			let maxSlide = 5.5
+			
+			if(this.avatar.playerType === "R15" && this.avatar.parts.Head) {
+				maxSlide =
+					this.avatar.hipHeight
+					+ this.avatar.parts.HumanoidRootPart.rbxSize[1] / 2
+					+ this.avatar.joints.LowerTorso.bakedC0.elements[13]
+					+ this.avatar.joints.LowerTorso.bakedC1Inverse.elements[13]
+					+ this.avatar.joints.Head.bakedC0.elements[13]
+					+ this.avatar.joints.Head.bakedC1Inverse.elements[13]
+					+ 1
+			}
+			
+			minSlide -= this.cameraFocus.y + this.cameraOffset.y
+			maxSlide -= this.cameraFocus.y + this.cameraOffset.y
+			
+			this.cameraSlide = Math.max(minSlide, Math.min(maxSlide, this.cameraSlide))
+			//
+			
+			const focus = this.cameraFocus.clone()
+			focus.add(this.cameraOffset)
+			focus.y += this.cameraSlide
+			
+			this.camera.position.copy(focus).addScaledVector(this.cameraDir, -this.cameraZoom)
+			this.camera.lookAt(focus)
 
 			const groundDiff = 0.2 - this.camera.position.y
 			if(this.cameraDir.y > 0 && groundDiff > 0) {

@@ -102,7 +102,7 @@ const RBXPreview = (() => {
 			
 			this.autoLoadPlayerType = "autoLoadPlayerType" in opts ? !!opts.autoLoadPlayerType : true
 			this.defaultAnimationsDisabled = !!opts.defaultAnimationsDisabled
-			this.applyAnimationPlayerType = false
+			this.initPlayerTypeFromPlayingAnimation = false
 			this.outfitAccessoriesVisible = true
 
 			this.outfitLoaded = false
@@ -115,29 +115,6 @@ const RBXPreview = (() => {
 			this.currentAnim = null
 			this.loadingAnim = null
 			this.playingAnim = null
-			
-			this.scene.cameraSlide = 0
-			
-			this.scene.on("update", () => {
-				if(this.avatar.parts.Head) {
-					let minSlide = 2
-					let maxSlide = 5.5
-					
-					if(this.avatar.playerType === "R15") {
-						maxSlide =
-							this.avatar.hipHeight
-							+ this.avatar.parts.HumanoidRootPart.rbxSize[1] / 2
-							+ this.avatar.joints.LowerTorso.bakedC0.elements[13]
-							+ this.avatar.joints.LowerTorso.bakedC1Inverse.elements[13]
-							+ this.avatar.joints.Head.bakedC0.elements[13]
-							+ this.avatar.joints.Head.bakedC1Inverse.elements[13]
-							+ 1
-					}
-					
-					this.scene.cameraMinSlide = minSlide - this.scene.cameraFocus.y
-					this.scene.cameraMaxSlide = maxSlide - this.scene.cameraFocus.y
-				}
-			})
 			
 			this.avatar.on("layeredRequestStateChanged", state => {
 				this.container.classList.toggle("btr-layered-loading", state === "fetching")
@@ -386,8 +363,8 @@ const RBXPreview = (() => {
 					})
 				})
 
-				if(this.currentAnim && this.applyAnimationPlayerType) {
-					this.applyAnimationPlayerType = false
+				if(this.currentAnim && this.initPlayerTypeFromPlayingAnimation) {
+					this.initPlayerTypeFromPlayingAnimation = false
 					this.setPlayerType(R6AnimParts.some(x => x in data.keyframes) ? "R6" : "R15")
 				}
 
@@ -555,8 +532,6 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		container.append(this.dropdown, this.typeSwitch, this.bundleAnims, this.animNameLabel, this.buttons)
 
 		const bodyPopup = buttons.$find(".btr-body-popup")
-		// const bodyBtn = buttons.$find(".btr-body-btn")
-
 		const inputSliders = []
 
 		const loadSliders = () => {
@@ -618,9 +593,6 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 			for(const input of bodyPopup.$findAll("input")) {
 				input.toggleAttribute("disabled", !typeInput.checked)
 			}
-			
-			// bodyPopup.classList.toggle("disabled", !typeInput.checked)
-			// bodyBtn.toggleAttribute("disabled", !typeInput.checked)
 		}
 
 		this.on("playerTypeChanged", typeUpdate)
@@ -687,8 +659,6 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 				this.scene.avatarOffset.rotation.set(0, 0, 0)
 			}
 		})
-		
-		this.scene.cameraFocus.y -= 0.5
 	}
 
 	selectOutfit(target) {
@@ -738,10 +708,16 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 					this.container.parentNode?.classList.toggle("btr-preview-inactive", !this.enabled)
 				}
 			})
+			
 		} else {
 			this.container.parentNode?.classList.remove("btr-preview-active")
 			this.container.parentNode?.classList.remove("btr-preview-inactive")
 			this.container.remove()
+			
+			if(this.observer) {
+				this.observer.disconnect()
+				this.observer = null
+			}
 		}
 	}
 
@@ -796,6 +772,40 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		}
 	}
 
+	updateAnimButtons() {
+		if(Object.values(this.animMap).length >= 2) {
+			if(!this.hasBundleAnims && Object.values(this.animMap).find(x => x.isBundleAnim)) {
+				this.hasBundleAnims = true
+				
+				this.bundleAnims.style.display = ""
+				this.animNameLabel.textContent = Object.values(this.animMap).find(x => x.assetId === this.currentAnim)?.name || ""
+
+				// Move camera down
+				this.scene.cameraOffset.y -= 1
+			}
+
+			if(!this.hasDropdown && this.dropdownMenu.children.length >= 1) {
+				this.hasDropdown = true
+				this.dropdown.style.display = ""
+			}
+		} else {
+			this.animNameLabel.textContent = ""
+			
+			if(this.hasBundleAnims) {
+				this.hasBundleAnims = false
+				this.bundleAnims.style.display = "none"
+				
+				// Move camera back up
+				this.scene.cameraOffset.y += 1
+			}
+			
+			if(this.hasDropdown) {
+				this.hasDropdown = false
+				this.dropdown.style.display = "none"
+			}
+		}
+	}
+	
 	addAnimation(assetId, name) {
 		const anims = Object.values(this.animMap).map(x => x.name)
 		if(anims.includes(name)) {
@@ -816,13 +826,22 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		btn.$on("click", () => this.playAnimation(anim.assetId))
 
 		this.dropdownMenu.append(btn)
-
-		if(!this.hasDropdown && (this.dropdownMenu.children.length >= 2 || this.hasBundleAnims)) {
-			this.hasDropdown = true
-			this.dropdown.style.display = ""
-		}
+		this.updateAnimButtons()
 
 		return anim
+	}
+	
+	removeBundleAnimations(animType) {
+		for(const anim of Object.values(this.animMap).filter(x => x.animType === animType)) {
+			delete this.animMap[anim.assetId]
+			
+			if(anim.isAlt) {
+				anim.btn.remove()
+			} else {
+				anim.btn.setAttribute("disabled", "")
+				anim.btn.$off("click", anim.onclick)
+			}
+		}
 	}
 
 	addBundleAnimation(assetId, origAnimType, assetName) {
@@ -846,30 +865,24 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 			return
 		}
 		
-		if(!this.hasBundleAnims) {
-			this.hasBundleAnims = true
-			this.bundleAnims.style.display = ""
-
-			// Move camera down
-			this.scene.cameraOffset.y -= 1
-		}
-
-		if(!this.hasDropdown && this.dropdownMenu.children.length >= 1) {
-			this.hasDropdown = true
-			this.dropdown.style.display = ""
-		}
-
-		const anim = this.animMap[assetId] = { assetId }
-		anim.name = assetName
-		anim.animType = origAnimType
-		anim.isBundleAnim = true
-		anim.selections = [root]
-
 		let btn = root
+		
 		if(!isAlt && !root.hasAttribute("disabled")) {
 			isAlt = true
 			altText = "ALT"
 		}
+		
+		const anim = {
+			assetId: assetId,
+			name: assetName,
+			animType: origAnimType,
+			altText: altText,
+			isAlt: isAlt,
+			isBundleAnim: true,
+			selections: [root]
+		}
+		
+		this.animMap[anim.assetId] = anim
 
 		if(isAlt) {
 			const alts = this.bundleAlts[animType] = this.bundleAlts[animType] || { list: [] }
@@ -879,20 +892,27 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 				root.prepend(alts.cont)
 			}
 
-			btn = html`<div class="btr-bundle-btn-alt btn-control-xs">${altText}</div>`
+			btn = html`<div class="btr-bundle-btn-alt btn-control-xs">${anim.altText}</div>`
 			alts.cont.prepend(btn)
 
 			anim.selections.push(alts.cont, btn)
 		} else {
 			btn.removeAttribute("disabled")
 		}
-
-		btn.$on("click", ev => {
+		
+		anim.btn = btn
+		
+		anim.onclick = ev => {
 			this.playAnimation(anim.assetId)
 
 			ev.stopImmediatePropagation()
 			ev.preventDefault()
-		})
+		}
+		
+		anim.btn.$on("click", anim.onclick)
+		this.updateAnimButtons()
+		
+		return anim
 	}
 }
 
@@ -1154,7 +1174,7 @@ const HoverPreview = (() => {
 					}
 
 					preview.setOutfit(targetOutfitId, "Outfit")
-					preview.applyAnimationPlayerType = true
+					preview.initPlayerTypeFromPlayingAnimation = true
 
 					if(preview.appearance) {
 						preview.setPlayerType(preview.appearance.playerAvatarType)
