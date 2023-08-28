@@ -43,24 +43,44 @@ pageInit.gamedetails = placeId => {
 			if(json.nextPageCursor) {
 				cursors[largePageIndex - 1] = json.nextPageCursor
 				
-				if(btrPager.maxPage <= maxPage) {
+				if(maxPage >= btrPager.maxPage) {
 					btrPager.maxPage = maxPage
 					btrPager.foundMaxPage = false
+					btrPager.hasMore = true
 					btrPagerState.update()
 				}
 			} else {
-				btrPager.maxPage = maxPage
-				btrPager.foundMaxPage = json.data.length > 0 || largePageIndex === 1
-				btrPagerState.update()
+				const isMaxPage = json.data.length > 0 || largePageIndex === 1
+				
+				if(isMaxPage || maxPage <= btrPager.maxPage) {
+					btrPager.maxPage = maxPage
+					btrPager.foundMaxPage = json.data.length > 0 || largePageIndex === 1
+					btrPager.hasMore = false
+					btrPagerState.update()
+				}
 			}
 			
 			return json
 		}
 		
-		const updateMaxPage = async () => {
-			const attemptFindMaxPage = () => {
-				const largePageIndex = Math.floor((btrPager.maxPage * pageSize) / largePageSize) + 1
-				return loadLargePage(largePageIndex).then(() => !btrPager.foundMaxPage && attemptFindMaxPage())
+		const updateMaxPage = async skipPageIndex => {
+			const largePageIndex = Math.min(
+				Math.floor((btrPager.maxPage * pageSize - 1) / largePageSize) + 1,
+				cursors.length + (btrPager.foundMaxPage ? 1 : 0)
+			)
+			
+			if(largePageIndex === skipPageIndex) {
+				return
+			}
+			
+			const attemptFindMaxPage = async () => {
+				for(let i = largePageIndex; i >= 1; i--) {
+					await loadLargePage(i)
+					
+					if(btrPager.foundMaxPage || btrPager.hasMore) {
+						break
+					}
+				}
 			}
 			
 			btrPager.updatingMaxPage = true
@@ -73,7 +93,7 @@ pageInit.gamedetails = placeId => {
 		}
 		
 		const loadServers = async () => {
-			const servers = {}
+			const largePages = {}
 			
 			outer:
 			while(true) {
@@ -85,16 +105,16 @@ pageInit.gamedetails = placeId => {
 				const largeFrom = Math.min(cursors.length + 1, Math.floor((serversFrom - 1) / largePageSize) + 1)
 				let largeTo = Math.floor((serversTo - 1) / largePageSize) + 1
 				
-				for(let pageIndex = largeFrom; pageIndex <= largeTo; pageIndex++) {
-					const json = servers[pageIndex]
+				for(let largePageIndex = largeFrom; largePageIndex <= largeTo; largePageIndex++) {
+					const json = largePages[largePageIndex]
 					
 					if(!json) {
-						servers[pageIndex] = await loadLargePage(pageIndex)
+						largePages[largePageIndex] = await loadLargePage(largePageIndex)
 						continue outer
 					}
 					
 					if(!json.nextPageCursor) {
-						const maxServer = (pageIndex - 1) * largePageSize + json.data.length
+						const maxServer = (largePageIndex - 1) * largePageSize + json.data.length
 						const maxPage = Math.max(1, Math.floor((maxServer - 1) / pageSize) + 1)
 						
 						if(maxPage < targetPage) {
@@ -103,7 +123,7 @@ pageInit.gamedetails = placeId => {
 							continue outer
 						}
 						
-						largeTo = pageIndex
+						largeTo = largePageIndex
 						break
 					}
 				}
@@ -113,19 +133,15 @@ pageInit.gamedetails = placeId => {
 				
 				const result = []
 				
-				for(let pageIndex = largeFrom; pageIndex <= largeTo; pageIndex++) {
-					const json = servers[pageIndex]
-					const startIndex = (pageIndex - 1) * largePageSize
+				for(let largePageIndex = largeFrom; largePageIndex <= largeTo; largePageIndex++) {
+					const json = largePages[largePageIndex]
+					const startIndex = (largePageIndex - 1) * largePageSize
 					
 					result.push(...json.data.slice(Math.max(0, (serversFrom - 1) - startIndex), Math.max(0, serversTo - startIndex)))
 				}
 				
-				if(btrPager.foundMaxPage && !btrPager.updatingMaxPage) {
-					const maxLargePage = Math.floor((btrPager.maxPage * pageSize - 1) / largePageSize) + 1 // index of last item on maxPage
-					
-					if(!servers[maxLargePage]) { // we dont want to update max page twice
-						updateMaxPage()
-					}
+				if(!btrPager.updatingMaxPage) {
+					updateMaxPage(largeTo)
 				}
 				
 				return result
@@ -177,7 +193,7 @@ pageInit.gamedetails = placeId => {
 			const btrPager = reactHook.useGlobalState(btrPagerState)
 			
 			const canPrev = !btrPager.loading && btrPager.currentPage > 1
-			const canNext = !btrPager.loading && btrPager.currentPage < (btrPager.maxPage ?? 2)
+			const canNext = !btrPager.loading && (!btrPager.foundMaxPage || btrPager.currentPage < (btrPager.maxPage ?? 2))
 			
 			const inputRef = React.useRef()
 			
@@ -191,6 +207,17 @@ pageInit.gamedetails = placeId => {
 			React.useEffect(() => {
 				inputRef.current.value = btrPager.currentPage
 			}, [btrPager.currentPage])
+			
+			const submit = pressedEnter => {
+				const num = parseInt(inputRef.current.value, 10)
+	
+				if(Number.isSafeInteger(num) && (pressedEnter || btrPager.targetPage !== num)) {
+					btrPager.targetPage = Math.max(1, num)
+					refreshGameInstances({ btrRefresh: true })
+				} else {
+					inputRef.current.value = btrPager.currentPage
+				}
+			}
 			
 			return React.createElement(
 				"div", { className: "btr-pager-holder btr-server-pager" },
@@ -251,19 +278,13 @@ pageInit.gamedetails = placeId => {
 								
 								onKeyDown(e) {
 									if(e.which === 13) {
+										submit(true)
 										e.target.blur()
 									}
 								},
 								
 								onBlur(e) {
-									const num = parseInt(e.target.value, 10)
-	
-									if(Number.isSafeInteger(num)) {
-										btrPager.targetPage = Math.max(1, num)
-										refreshGameInstances({ btrRefresh: true })
-									} else {
-										e.target.value = btrPager.currentPage
-									}
+									submit(false)
 								}
 							}
 						),
@@ -347,14 +368,94 @@ pageInit.gamedetails = placeId => {
 			}
 		)
 		
+		const useSyncExternalStore = (subscribe, getSnapshot) => {
+			const [counter, setCounter] = React.useState(0)
+			const snapshot = getSnapshot()
+			
+			const refresh = () => {
+				if(!Object.is(snapshot, getSnapshot())) {
+					setCounter(counter + 1)
+				}
+			}
+			
+			React.useEffect(() => (refresh(), subscribe(refresh)))
+			
+			return snapshot
+		}
+		
+		const globalServerRegions = {}
+		const onRegionsChanged = new Set()
+		
+		if(settings.gamedetails.showServerRegion) {
+			BTRoblox.contentScript.listen("setServerRegion", (jobId, details) => {
+				if(JSON.stringify(details) !== JSON.stringify(globalServerRegions[jobId])) {
+					globalServerRegions[jobId] = details
+					
+					for(const fn of onRegionsChanged) {
+						fn()
+					}
+				}
+			})
+		}
+		
 		reactHook.hijackConstructor( // GameInstanceCard
 			args => args[1]?.gameServerStatus,
 			(target, thisArg, args) => {
 				const result = target.apply(thisArg, args)
+				const jobId = args[0].id
 				
-				const joinBtn = reactHook.queryElement(result, x => x.props.className?.includes("game-server-join-btn"))
-				if(joinBtn) {
-					joinBtn.props["data-btr-instance-id"] = args[0].id
+				if(jobId) {
+					const joinBtn = reactHook.queryElement(result, x => x.props.className?.includes("game-server-join-btn"))
+					if(joinBtn) {
+						joinBtn.props["data-btr-instance-id"] = jobId
+					}
+					
+					let serverDetails
+					
+					const regionSetting = settings.gamedetails.showServerRegion
+					const showPing = ["ping", "both", "combined"].includes(regionSetting)
+					const showRegion = ["region", "both", "combined"].includes(regionSetting)
+					
+					if(showRegion) {
+						serverDetails = useSyncExternalStore(callback => {
+							onRegionsChanged.add(callback)
+							return () => onRegionsChanged.delete(callback)
+						}, () => globalServerRegions[jobId])
+						
+						React.useEffect(() => {
+							BTRoblox.contentScript.send("getServerRegion", jobId)
+						}, [jobId])
+					}
+					
+					const gameInstance = args[0].btrGameInstance
+					if(gameInstance) {
+						const status = reactHook.queryElement(result, x => x.props.className?.includes("rbx-game-status"))
+						
+						if(status) {
+							if(showRegion && regionSetting !== "combined") {
+								status.props.children += `\nRegion: ${serverDetails ? serverDetails.location?.medium ?? serverDetails.ip : "Loading"}`
+									
+								// Okay, this is hacky, BUT...
+								// United Kingdom wraps over by 1 character, so let's increase size for it lmao
+								if(serverDetails?.location?.medium === "United Kingdom") {
+									if(!status.props.style) { status.props.style = {} }
+									status.props.style.width = "105%"
+								}
+							}
+							
+							if(showPing) {
+								status.props.children += `\nPing: ${gameInstance.ping ?? 0}ms`
+								
+								if(showRegion && regionSetting === "combined") {
+									status.props.children += ` (${serverDetails ? serverDetails.location?.short ?? "??" : "Loading"})`
+								}
+							}
+							
+							if(showRegion) {
+								status.props.title = serverDetails ? serverDetails.location?.long ?? serverDetails.ip : "Unknown"
+							}
+						}
+					}
 				}
 				
 				return result
@@ -381,20 +482,12 @@ pageInit.gamedetails = placeId => {
 						)
 					}
 					
-					if(settings.gamedetails.showServerPing) {
-						const ul = reactHook.queryElement(list, x => x.type === "ul", 5)
-						
-						let servers = ul?.props?.children
-						if(servers) {
-							if(!Array.isArray(servers)) { servers = [servers] }
-							
-							for(const server of servers) {
-								const serverInfo = args[0]?.gameInstances?.find(x => x.id === server.props.id)
-	
-								if(serverInfo) {
-									server.props.gameServerStatus += `\nPing: ${serverInfo.ping ?? 0}ms`
-								}
-							}
+					const ul = reactHook.queryElement(list, x => x.type === "ul", 5)
+					const servers = ul?.props?.children
+					
+					if(servers) {
+						for(const server of [servers].flat()) {
+							server.props.btrGameInstance = args[0]?.gameInstances?.find(x => x.id === server.props.id)
 						}
 					}
 				} catch(ex) {
@@ -435,7 +528,21 @@ pageInit.gamedetails = placeId => {
 			}
 		)
 	})
-
+	
+	if(SETTINGS.get("gamedetails.showServerRegion")) {
+		const requesting = {}
+		
+		InjectJS.listen("getServerRegion", jobId => {
+			if(typeof jobId !== "string" || requesting[jobId]) { return }
+			requesting[jobId] = true
+			
+			getServerDetails(placeId, jobId, details => {
+				delete requesting[jobId]
+				InjectJS.send("setServerRegion", jobId, details)
+			})
+		})
+	}
+	
 	const newContainer = html`
 	<div class="col-xs-12 btr-game-main-container section-content">
 		<div class=placeholder-main></div>
@@ -491,8 +598,7 @@ pageInit.gamedetails = placeId => {
 		.$watch("#game-instances", games => {
 			games.classList.add("active")
 			
-			games.$on("btr_mouseenter", ".game-server-join-btn", event => {
-				const btn = event.currentTarget
+			onMouseEnter(games, ".game-server-join-btn", btn => {
 				const instanceId = btn.dataset.btrInstanceId
 				
 				if(instanceId) {

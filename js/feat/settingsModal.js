@@ -899,6 +899,47 @@ const SettingsModal = {
 
 					SETTINGS.onChange(settingPath, update)
 					update()
+				} else if(typeof settingValue === "string" && defaultValueInfo.validValues) {
+					const select = html`<select style="width:50%">
+						<option selected disabled>${settingPath}</option>
+					</select>`
+					
+					for(const value of defaultValueInfo.validValues) {
+						select.append(html`<option value="${value}">${value}</option>`)
+					}
+					
+					wipGroup.append(select)
+					
+					const titleOption = select.options[0] && select.options[0].hasAttribute("disabled") ? select.options[0] : null
+					const titleOptionFormat = titleOption ? titleOption.textContent : null
+
+					if(titleOption) {
+						titleOption.style.display = "none"
+					}
+
+					const update = () => {
+						select.value = SETTINGS.get(settingPath)
+
+						const selected = select.selectedOptions[0]
+						if(selected && titleOption && titleOption !== selected) {
+							titleOption.textContent = titleOptionFormat.replace(/%opt%/g, () => selected.textContent)
+							select.value = titleOption.value
+						}
+						
+						for(const option of select.$findAll("option:not([disabled])")) {
+							option.textContent = option === selected ? `${option.value} (selected)` : option.value
+						}
+					}
+
+					select.$on("change", () => {
+						const selected = select.selectedOptions[0]
+						if(!selected || selected.hasAttribute("disabled")) { return }
+
+						SETTINGS.set(settingPath, select.value)
+					})
+					
+					SETTINGS.onChange(settingPath, update)
+					update()
 				} else {
 					wipGroup.append(html`<div>${settingPath} (${typeof settingValue})`)
 				}

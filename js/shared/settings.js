@@ -76,7 +76,7 @@ const DEFAULT_SETTINGS = {
 		enabled: { value: true },
 		showBadgeOwned: { value: true },
 		addServerPager: { value: true },
-		showServerPing: { value: true },
+		showServerRegion: { value: "ping", validValues: ["none", "ping", "region", "both", "combined"] },
 		compactBadgeStats: { value: true }
 	},
 	groups: {

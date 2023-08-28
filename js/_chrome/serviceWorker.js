@@ -9,6 +9,7 @@ importScripts(
 	"/js/shared/sharedData.js",
 	"/js/shared/settings.js",
 	"/js/shared/contextmenu.js",
+	"/js/shared/serverdetails.js",
 	
 	"/js/bg/background.js",
 	"/js/bg/groupshout.js",
