@@ -23,10 +23,6 @@
 	transition: max-height 0.3s, opacity 0.15s 0.15s;
 }
 
-.btr-catalog .item-card-container .btr-item-card-more .btr-updated-label {
-	white-space: normal;
-}
-
 @media (min-width: 768px) {
 	.btr-catalog .item-card-container:hover .btr-item-card-more {
 		pointer-events: unset;

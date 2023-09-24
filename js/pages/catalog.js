@@ -291,9 +291,9 @@ pageInit.catalog = () => {
 		for(const cont of template.$findAll(".item-card-container")) {
 			cont.classList.add("btr-item-card-container")
 	
-			const hover = html`<div class="btr-item-card-more" ng-show="item.itemType==='Asset'||item.purchaseCount!==undefined">
+			const hover = html`<div class="btr-item-card-more" ng-show="item.itemType==='Asset'||item.purchaseCount!==undefined&&item.purchaseCount>0">
 				<div class="text-overflow item-card-label" ng-show="item.itemType==='Asset'">Updated: <span class=btr-updated-label>Loading...</span></div>
-				<div class="text-overflow item-card-label" ng-show="item.purchaseCount!==undefined">Sales: {{item.purchaseCount | number:0}}</div>
+				<div class="text-overflow item-card-label" ng-show="item.purchaseCount!==undefined&&item.purchaseCount>0">Sales: {{item.purchaseCount | number:0}}</div>
 			</div>`
 	
 			cont.$find(".item-card-caption").append(hover)
