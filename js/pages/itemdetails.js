@@ -40,7 +40,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 		const disabledTypes = [
 			AssetType.ClimbAnimation, AssetType.FallAnimation, AssetType.IdleAnimation,
 			AssetType.JumpAnimation, AssetType.RunAnimation, AssetType.SwimAnimation,
-			AssetType.WalkAnimation
+			AssetType.WalkAnimation, AssetType.Animation, AssetType.EmoteAnimation
 		]
 		
 		if(!disabledTypes.includes(assetTypeId) && bundleType !== "AvatarAnimations") {
@@ -538,8 +538,6 @@ const initContentButton = async (assetId, assetTypeId) => {
 	AssetCache.loadModel(assetId, model => {
 		const contentUrl = getAssetUrl(model)
 		const contentId = AssetCache.getAssetIdFromUrl(contentUrl)
-		
-		console.log(contentUrl, contentId, model)
 		
 		if(contentId) {
 			btnCont.$find(">a").href = `https://www.roblox.com/library/${contentId}/` // marketplace needs full domain
