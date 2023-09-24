@@ -297,7 +297,7 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 				}
 				
 				if(selector.classList) {
-					const classes = elem.props.className?.split(/\s+/g) ?? []
+					const classes = typeof elem.props.className === "string" ? elem.props.className.split(/\s+/g) : []
 					
 					for(const className of selector.classList) {
 						if(!classes.includes(className)) {

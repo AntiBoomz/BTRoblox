@@ -169,7 +169,7 @@ const RBXScene = (() => {
 			let minSlide = 2
 			let maxSlide = 5.5
 			
-			if(this.avatar.playerType === "R15" && this.avatar.parts.Head) {
+			if(this.avatar.playerType === "R15" && this.avatar.joints.LowerTorso) {
 				maxSlide =
 					this.avatar.hipHeight
 					+ this.avatar.parts.HumanoidRootPart.rbxSize[1] / 2
