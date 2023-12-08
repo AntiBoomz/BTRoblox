@@ -183,7 +183,7 @@ const AssetCache = (() => {
 		loadAnimation: createMethod((buffer, assetRequest) => {
 			const findSequence = array => {
 				for(const inst of array) {
-					if(inst.ClassName === "KeyframeSequence") {
+					if(inst.ClassName === "KeyframeSequence" || inst.ClassName === "CurveAnimation") {
 						return inst
 					}
 					

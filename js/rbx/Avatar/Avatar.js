@@ -697,7 +697,7 @@ const RBXAvatar = (() => {
 			
 			// Update joints
 			for(const joint of this.sortedJointsArray) {
-				const transform = this.animator.getJointTransform(joint.part1.name)
+				const transform = this.animator.getJointTransform(joint.part0.name, joint.part1.name)
 				
 				if(transform) {
 					joint.transform.compose(transform.position, transform.quaternion, tempVector.set(1, 1, 1))

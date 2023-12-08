@@ -38,6 +38,67 @@ const RBXAnimator = (() => {
 		]
 	]
 	
+	const eulerToQuat = (x, y, z, order) => {
+		// https://github.com/mrdoob/three.js/blob/master/src/math/Quaternion.js
+		
+		// http://www.mathworks.com/matlabcentral/fileexchange/
+		// 	20696-function-to-convert-between-dcm-euler-angles-quaternions-and-euler-vectors/
+		//	content/SpinCalc.m
+		
+		const c1 = Math.cos(x / 2)
+		const c2 = Math.cos(y / 2)
+		const c3 = Math.cos(z / 2)
+
+		const s1 = Math.sin(x / 2)
+		const s2 = Math.sin(y / 2)
+		const s3 = Math.sin(z / 2)
+
+		switch (order) {
+		case "XYZ":
+			return [
+				s1 * c2 * c3 + c1 * s2 * s3,
+				c1 * s2 * c3 - s1 * c2 * s3,
+				c1 * c2 * s3 + s1 * s2 * c3,
+				c1 * c2 * c3 - s1 * s2 * s3
+			]
+		case "YXZ":
+			return [
+				s1 * c2 * c3 + c1 * s2 * s3,
+				c1 * s2 * c3 - s1 * c2 * s3,
+				c1 * c2 * s3 - s1 * s2 * c3,
+				c1 * c2 * c3 + s1 * s2 * s3
+			]
+		case "ZXY":
+			return [
+				s1 * c2 * c3 - c1 * s2 * s3,
+				c1 * s2 * c3 + s1 * c2 * s3,
+				c1 * c2 * s3 + s1 * s2 * c3,
+				c1 * c2 * c3 - s1 * s2 * s3
+			]
+		case "ZYX":
+			return [
+				s1 * c2 * c3 - c1 * s2 * s3,
+				c1 * s2 * c3 + s1 * c2 * s3,
+				c1 * c2 * s3 - s1 * s2 * c3,
+				c1 * c2 * c3 + s1 * s2 * s3
+			]
+		case "YZX":
+			return [
+				s1 * c2 * c3 + c1 * s2 * s3,
+				c1 * s2 * c3 + s1 * c2 * s3,
+				c1 * c2 * s3 - s1 * s2 * c3,
+				c1 * c2 * c3 - s1 * s2 * s3
+			]
+		case "XZY":
+			return [
+				s1 * c2 * c3 - c1 * s2 * s3,
+				c1 * s2 * c3 - s1 * c2 * s3,
+				c1 * c2 * s3 + s1 * s2 * c3,
+				c1 * c2 * c3 + s1 * s2 * s3
+			]
+		}
+	}
+	
 	const tempPos = new THREE.Vector3()
 	const tempQuat = new THREE.Quaternion()
 	
@@ -115,8 +176,8 @@ const RBXAnimator = (() => {
 			return info
 		}
 		
-		getJointTransform(name) {
-			return this.transforms.get(name)
+		getJointTransform(parentName, name) {
+			return this.transforms.get(`${parentName}.${name}`)
 		}
 
 		update() {
@@ -181,12 +242,6 @@ const RBXAnimator = (() => {
 						continue
 					}
 					
-					const index = keyframes.findIndex(x => x.time > info.timePosition)
-					
-					if(index === 0) {
-						continue
-					}
-					
 					if(!transform) {
 						transform = this.transforms.get(name)
 						
@@ -229,18 +284,74 @@ const RBXAnimator = (() => {
 						transform.working.priority = info.priority
 					}
 					
-					const prev = index === -1 ? keyframes[keyframes.length - 1] : keyframes[index - 1]
-					const next = index === -1 ? null : keyframes[index]
-					
-					if(!next || info.timePosition === prev.time) {
-						tempPos.set(...prev.pos)
-						tempQuat.set(...prev.rot)
-					} else {
-						const easing = (EasingStyles[prev.easingstyle] || EasingStyles[0])[prev.easingdir || 0]
-						const theta = easing((info.timePosition - prev.time) / (next.time - prev.time))
+					if(info.anim.isCurveAnimation) {
+						const pos = { x: 0, y: 0, z: 0 }
+						const rot = { x: 0, y: 0, z: 0 }
 						
-						tempPos.set(...prev.pos).lerp(tempPos2.set(...next.pos), theta)
-						tempQuat.set(...prev.rot).slerp(tempQuat2.set(...next.rot), theta)
+						const set = (input, output) => {
+							for(const [key, keyframes] of Object.entries(input)) {
+								const index = keyframes.findIndex(x => x.time > info.timePosition)
+								
+								if(index === 0) {
+									continue
+								}
+								
+								const prev = index === -1 ? keyframes[keyframes.length - 1] : keyframes[index - 1]
+								const next = index === -1 ? null : keyframes[index]
+								
+								if(!next || info.timePosition === prev.time || prev.interpolationMode === 0) {
+									output[key] = prev.value
+								} else {
+									const timediff = next.time - prev.time
+									const theta =  (info.timePosition - prev.time) / timediff
+									
+									if(prev.interpolationMode === 2) {
+										// cubic hermite spline (interpolationMode = 2)
+										const p0 = prev.value
+										const m0 = prev.right_tangent * timediff
+										
+										const p1 = next.value
+										const m1 = next.left_tangent * timediff
+										
+										output[key] =
+											(2 * theta**3 - 3 * theta**2 + 1) * p0 +
+											(theta**3 - 2 * theta**2 + theta) * m0 +
+											(-2 * theta**3 + 3 * theta**2) * p1 +
+											(theta**3 - theta**2) * m1
+										
+									} else {
+										// linear (interpolationMode = 1), we also default to this for unknown interpolation modes
+										output[key] = prev.value * (1 - theta) + next.value * theta
+									}
+								}
+							}
+						}
+						
+						set(keyframes.position, pos)
+						set(keyframes.rotation, rot)
+						
+						tempPos.set(pos.x, pos.y, pos.z)
+						tempQuat.set(...eulerToQuat(rot.x, rot.y, rot.z, keyframes.rotationOrder))
+					} else {
+						const index = keyframes.findIndex(x => x.time > info.timePosition)
+						
+						if(index === 0) {
+							continue
+						}
+						
+						const prev = index === -1 ? keyframes[keyframes.length - 1] : keyframes[index - 1]
+						const next = index === -1 ? null : keyframes[index]
+						
+						if(!next || info.timePosition === prev.time) {
+							tempPos.set(...prev.pos)
+							tempQuat.set(...prev.rot)
+						} else {
+							const easing = (EasingStyles[prev.easingstyle] || EasingStyles[0])[prev.easingdir || 0]
+							const theta = easing((info.timePosition - prev.time) / (next.time - prev.time))
+							
+							tempPos.set(...prev.pos).lerp(tempPos2.set(...next.pos), theta)
+							tempQuat.set(...prev.rot).slerp(tempQuat2.set(...next.rot), theta)
+						}
 					}
 					
 					const newWeight = transform.working.weight + weight
@@ -269,10 +380,12 @@ const RBXAnimator = (() => {
 					transform.working.priority = -1
 				}
 				
-				transform.position.lerp(tempPos.set(0, 0, 0), 1 - transform.weight)
-				transform.quaternion.slerp(tempQuat.set(0, 0, 0, 1), 1 - transform.weight)
-				
-				this.transforms.set(name, transform)
+				if(transform.weight > 0) {
+					transform.position.lerp(tempPos.set(0, 0, 0), 1 - transform.weight)
+					transform.quaternion.slerp(tempQuat.set(0, 0, 0, 1), 1 - transform.weight)
+					
+					this.transforms.set(name, transform)
+				}
 			}
 		}
 	}
