@@ -156,7 +156,7 @@ if(IS_BACKGROUND_PAGE) {
 					break
 				}
 				case "placeLink": {
-					const placeId = data ?? linkUrl.replace(/^.*(?:[&?]placeid=|\/games\/)(\d+).*$/i, "$1")
+					const placeId = data ?? linkUrl.replace(/^.*(?:[&?]placeid=|\/games\/|\/places\/)(\d+).*$/i, "$1")
 					copyToClipboard(placeId)
 					break
 				}
@@ -171,7 +171,7 @@ if(IS_BACKGROUND_PAGE) {
 					break
 				}
 				case "universeLink": {
-					const universeId = data ?? linkUrl.replace(/^.*(?:[&?]id=|(?:experiences)\/)(\d+).*$/i, "$1")
+					const universeId = data ?? linkUrl.replace(/^.*(?:[&?]id=|\/experiences\/)(\d+).*$/i, "$1")
 					copyToClipboard(universeId)
 					break
 				}
