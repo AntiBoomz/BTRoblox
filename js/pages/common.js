@@ -625,29 +625,27 @@ pageInit.common = () => {
 			const { reactHook } = window.BTRoblox
 			
 			reactHook.hijackConstructor(
-				([fn, props]) => "robuxAmount" in props && fn.toString().includes("nav-robux-amount"),
+				([fn, props]) => "isGetCurrencyCallDone" in props && "isExperimentCallDone" in props && "robuxAmount" in props,
 				(target, thisArg, args) => {
-					const result = target.apply(thisArg, args)
-					
 					try {
-						const amountLabel = reactHook.queryElement(result, x => x.props?.id === "nav-robux-amount")
+						const props = args[0]
 						
-						if(amountLabel) {
-							if(amountLabel.props.children) {
-								if(typeof amountLabel.props.children === "string") {
-									localStorage.setItem("BTRoblox:cachedRobux", JSON.stringify(amountLabel.props.children))
-								}
-							} else {
-								const cached = localStorage.getItem("BTRoblox:cachedRobux")
-								
-								if(cached) {
-									amountLabel.props.children = JSON.parse(cached)
-								}
+						if(props.isGetCurrencyCallDone && props.isExperimentCallDone) {
+							if(Number.isSafeInteger(props.robuxAmount)) {
+								localStorage.setItem("BTRoblox:cachedRobux", props.robuxAmount)
+							}
+						} else {
+							const cachedRobux = localStorage.getItem("BTRoblox:cachedRobux")
+							
+							if(cachedRobux) {
+								props.isExperimentCallDone = true
+								props.isGetCurrencyCallDone = true
+								props.robuxAmount = +cachedRobux
 							}
 						}
-					} catch(ex) {}
+					} catch {}
 					
-					return result
+					return target.apply(thisArg, args)
 				}
 			)
 		})
