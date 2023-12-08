@@ -833,18 +833,12 @@ if(self.localStorage) {
 			
 			let prefix = ""
 			
-			if(params?.expires != null) {
-				if(!Number.isSafeInteger(params.expires)) {
-					throw new TypeError(`Invalid expires passed to setLocalStorage, expected integer but got ${typeof params.expires}`)
-				}
-				
+			if(Number.isSafeInteger(params?.expires)) {
 				prefix += `expires=${params.expires};`
 			}
 			
-			if(typeof value === "string" && params?.raw) {
-				prefix += "raw,"
-			} else {
-				value = JSON.stringify(value, params ? params.replacer : null)
+			if(!params?.raw) {
+				value = JSON.stringify(value, params?.replacer)
 			}
 			
 			try {
@@ -883,16 +877,11 @@ if(self.localStorage) {
 				startIndex = regex.lastIndex
 			}
 			
-			if(value.startsWith("raw,")) {
-				startIndex += 4
-				return value.slice(startIndex)
-			}
-			
 			if(params?.raw) {
 				return value.slice(startIndex)
 			}
 			
-			return JSON.parse(value.slice(startIndex), params ? params.reviver : null)
+			return JSON.parse(value.slice(startIndex), params?.reviver)
 		},
 		
 		hasItem(key) {
