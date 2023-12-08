@@ -1062,6 +1062,10 @@ pageInit.itemdetails = (category, assetIdString) => {
 				parent.append(btnCont)
 				parent.parentNode.classList.add("btr-content-btn-shown")
 			})
+			
+			itemCont.$watch("#item-info-container-frontend", () => {
+				itemCont.classList.add("btr-shopping-cart-shown")
+			})
 		})
 
 		if(SETTINGS.get("itemdetails.imageBackgrounds") && (assetTypeId === 1 || assetTypeId === 13)) {

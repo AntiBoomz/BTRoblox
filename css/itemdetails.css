@@ -9,7 +9,12 @@
 }
 
 .menu-shown {
-	--btr-menu-visible: 1;
+	--btr-menu-offset-x: 38px;
+}
+
+.btr-shopping-cart-shown {
+	--btr-menu-offset-x: 42px;
+	--btr-menu-offset-y: 4px;
 }
 
 .btr-explorer-btn-shown {
@@ -28,38 +33,29 @@
 .btr-download-button,
 .btr-content-button {
 	position: absolute;
-	top: 12px;
-	right: 12px;
+	top: calc(var(--btr-menu-offset-y, 0px) + 12px);
+	right: calc(var(--btr-menu-offset-x, 0px) + 12px);
 }
 
 #item-container .item-name-container h1 {
 	padding-right: calc((
-		var(--btr-menu-visible, 0) +
 		var(--btr-explorer-visible, 0) +
 		var(--btr-download-visible, 0) +
 		var(--btr-content-visible, 0)
-	) * 38px + 12px);
-}
-
-#item-container .btr-explorer-button-container {
-	right: calc((
-		var(--btr-menu-visible, 0)
-	) * 38px + 12px);
+	) * 38px + var(--btr-menu-offset-x, 0px) + 12px);
 }
 
 #item-container .btr-download-button {
 	right: calc((
-		var(--btr-menu-visible, 0) +
 		var(--btr-explorer-visible, 0)
-	) * 38px + 12px);
+	) * 38px + var(--btr-menu-offset-x, 0px) + 12px);
 }
 
 #item-container .btr-content-button {
 	right: calc((
-		var(--btr-menu-visible, 0) +
 		var(--btr-explorer-visible, 0) +
 		var(--btr-download-visible, 0)
-	) * 38px + 12px);
+	) * 38px + var(--btr-menu-offset-x, 0px) + 12px);
 }
 
 /* */
