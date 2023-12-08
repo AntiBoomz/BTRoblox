@@ -14,6 +14,52 @@ const RBXXmlParser = {
 	},
 	
 	unescapeXml(value) {
+		if(value.startsWith("<![CDATA[")) {
+			// https://github.com/niklasvh/base64-arraybuffer/blob/master/src/index.ts
+			
+			const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+			const lookup = new Uint8Array(256)
+			
+			for (let i = 0; i < chars.length; i++) {
+				lookup[chars.charCodeAt(i)] = i
+			}
+			
+			const decodeBase64 = (base64, startIndex, endIndex) => {
+				let bufferLength = base64.length * 0.75
+				let len = endIndex - startIndex
+				let i = startIndex
+				let p = 0
+				let encoded1
+				let encoded2
+				let encoded3
+				let encoded4
+
+				if (base64[base64.length - 1] === "=") {
+					bufferLength--
+					if (base64[base64.length - 2] === "=") {
+						bufferLength--
+					}
+				}
+
+				const bytes = new Uint8Array(bufferLength)
+
+				for (; i < len; i += 4) {
+					encoded1 = lookup[base64.charCodeAt(i)]
+					encoded2 = lookup[base64.charCodeAt(i + 1)]
+					encoded3 = lookup[base64.charCodeAt(i + 2)]
+					encoded4 = lookup[base64.charCodeAt(i + 3)]
+
+					bytes[p++] = (encoded1 << 2) | (encoded2 >> 4)
+					bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2)
+					bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63)
+				}
+
+				return bytes
+			}
+			
+			return bufferToString(decodeBase64(value, 9, -3))
+		}
+		
 		return value
 			.replace(/(?<!&)((?:&{2})*)&#(\d{1,4}|x[0-9a-fA-F]{1,4});/g, (_, prefix, inner) => {
 				const byte = inner[0] === "x" ? parseInt(inner.slice(1), 16) : parseInt(inner, 10)
