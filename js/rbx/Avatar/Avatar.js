@@ -1727,7 +1727,42 @@ const RBXAvatar = (() => {
 					}
 				}
 				
-				return box
+				return true
+			}
+			
+			const getGroupMatchPartial = (obj, group, box) => {
+				const mesh = obj.rbxMesh.firstLod || obj.rbxMesh
+				
+				if(group.uvs.length > mesh.uvs.length) {
+					return null
+				}
+				
+				const [x0, y0, width, height] = box
+				const mapping = []
+				
+				let search = 0
+				
+				outer:
+				for(let i = 0; i < group.uvs.length; i += 2) {
+					const u = (group.uvs[i] - x0) / width
+					const v = (group.uvs[i + 1] - y0) / height
+					
+					while(search < mesh.uvs.length) {
+						const u2 = mesh.uvs[search]
+						const v2 = mesh.uvs[search + 1]
+						
+						search += 2
+						
+						if(Math.abs(u2 - u) < 0.01 && Math.abs(v2 - v) < 0.01) {
+							mapping.push(search / 2 - 1)
+							continue outer
+						}
+					}
+					
+					return null
+				}
+				
+				return mapping
 			}
 			
 			const playerGroups = groups.filter(x => x.name.startsWith("Player")).sort((a, b) => b.uvs.length - a.uvs.length)
@@ -1741,8 +1776,10 @@ const RBXAvatar = (() => {
 				
 				for(const group of playerGroups) {
 					for(const box of uvBoxes) {
-						if(getGroupMatch(part, group, box)) {
-							matches.push({ group, box })
+						const mapping = getGroupMatchPartial(part, group, box)
+						
+						if(mapping) {
+							matches.push({ group, box, mapping })
 						}
 					}
 				}
@@ -1759,7 +1796,7 @@ const RBXAvatar = (() => {
 							console.log(matches)
 							console.log(groups)
 							
-							setTimeout(() => alert("Failed to find match for bodypart"), 0)
+							// setTimeout(() => alert("Failed to find match for bodypart"), 0)
 						}
 					}
 					
@@ -1806,7 +1843,7 @@ const RBXAvatar = (() => {
 					matches.splice(0, matches.length, closest)
 				}
 				
-				const { group } = matches[0]
+				const { group, mapping } = matches[0]
 				playerGroups.splice(playerGroups.indexOf(group), 1) // only match each group once
 				
 				const mesh = part.rbxMesh.firstLod || part.rbxMesh
@@ -1814,68 +1851,46 @@ const RBXAvatar = (() => {
 				// apply transformed vertices and normals
 				transform.copy(part.layeredMatrix).invert().multiply(inverseRenderMatrix)
 				
+				// Order of vertices matters for bones/skinnedmesh stuff, so update vertices in place rather than just replacing them all
 				const vertices = mesh.vertices.slice()
 				const normals = mesh.normals.slice()
 				
-				for(let i = 0; i < vertices.length; i += 3) {
-					vertex.makeTranslation(
-						group.vertices[i + 0],
-						group.vertices[i + 1],
-						group.vertices[i + 2]
-					).premultiply(transform)
-					
-					vertices[i + 0] = vertex.elements[12] / part.rbxScale[0]
-					vertices[i + 1] = vertex.elements[13] / part.rbxScale[1]
-					vertices[i + 2] = vertex.elements[14] / part.rbxScale[2]
+				for(let mapIndex = 0; mapIndex < mapping.length; mapIndex++) {
+					const groupIndex = mapIndex * 3
+					const meshIndex = mapping[mapIndex] * 3
 					
 					vertex.makeTranslation(
-						group.normals[i + 0] - transform.elements[12],
-						group.normals[i + 1] - transform.elements[13],
-						group.normals[i + 2] - transform.elements[14]
+						group.vertices[groupIndex + 0],
+						group.vertices[groupIndex + 1],
+						group.vertices[groupIndex + 2]
 					).premultiply(transform)
 					
-					normals[i + 0] = vertex.elements[12]
-					normals[i + 1] = vertex.elements[13]
-					normals[i + 2] = vertex.elements[14]
+					vertices[meshIndex + 0] = vertex.elements[12] / part.rbxScale[0]
+					vertices[meshIndex + 1] = vertex.elements[13] / part.rbxScale[1]
+					vertices[meshIndex + 2] = vertex.elements[14] / part.rbxScale[2]
+					
+					vertex.makeTranslation(
+						group.normals[groupIndex + 0] - transform.elements[12],
+						group.normals[groupIndex + 1] - transform.elements[13],
+						group.normals[groupIndex + 2] - transform.elements[14]
+					).premultiply(transform)
+					
+					normals[meshIndex + 0] = vertex.elements[12]
+					normals[meshIndex + 1] = vertex.elements[13]
+					normals[meshIndex + 2] = vertex.elements[14]
 				}
+				
+				// Order of faces doesn't seem to matter though, so we can just directly use the group faces as long as we map the vertex indices
+				const faces = Uint32Array.from(group.faces)
+				
+				for(let i = 0; i < faces.length; i++) {
+					faces[i] = mapping[faces[i]]
+				}
+				//
 				
 				part.geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3))
 				part.geometry.setAttribute("normal", new THREE.BufferAttribute(normals, 3))
-				
-				// disable hidden faces
-				if(group.faces.length < mesh.faces.length) {
-					const faces = mesh.faces.slice()
-					let search = 0
-					
-					outer:
-					for(let i = 0; i < group.faces.length; i += 3) {
-						const a = group.faces[i + 0]
-						const b = group.faces[i + 1]
-						const c = group.faces[i + 2]
-						
-						while(true) {
-							if(search >= faces.length) {
-								break outer
-							}
-							
-							if(faces[search + 0] === a && faces[search + 1] === b && faces[search + 2] === c) {
-								search += 3
-								break
-							}
-							
-							faces[search + 0] = -1
-							faces[search + 1] = -1
-							faces[search + 2] = -1
-							search += 3
-						}
-					}
-					
-					for(; search < faces.length; search++) {
-						faces[search] = -1
-					}
-					
-					part.geometry.setIndex(new THREE.BufferAttribute(faces, 1))
-				}
+				part.geometry.setIndex(new THREE.BufferAttribute(faces, 1))
 				
 				part.rbxLayered = { wrapTarget: part.rbxBodypart.wrapTarget || part.rbxDefaultBodypart.wrapTarget }
 			}
