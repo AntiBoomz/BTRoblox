@@ -435,9 +435,6 @@ pageInit.create = () => {
 								style: { all: "unset", display: "contents" },
 								children: objects.jsx(objects.Mui.MenuItem, { children: "View on Roblox" })
 							}),
-							objects.jsx("hr", {
-								className: "MuiDivider-root"
-							}),
 							objects.jsx("a", {
 								href: `/dashboard/creations/catalog/${args[0].creation.assetId}/configure`,
 								style: { all: "unset", display: "contents" },
@@ -465,28 +462,18 @@ pageInit.create = () => {
 						if(assetDetail) {
 							const assetId = assetDetail.props.assetId
 							
-							let index = children.indexOf(assetDetail)
+							// let index = children.indexOf(assetDetail)
+							// if(index !== -1) { children.splice(index, 1) }
+							
+							let index = children.findIndex(x => x?.key === "copy-asset-id")
 							if(index !== -1) { children.splice(index, 1) }
 							
-							index = children.findIndex(x => x?.key === "copy-asset-id")
-							if(index !== -1) { children.splice(index, 1) }
-							
-							children.unshift(
+							children.splice(
+								children.indexOf(assetDetail) + 1,
+								0,
+								// objects.jsx(objects.Mui.Divider, {}),
 								objects.jsx("a", {
-									href: `https://www.roblox.com/catalog/${assetId}/`,
-									target: "_blank",
-									style: { all: "unset", display: "contents" },
-									children: objects.jsx(objects.Mui.MenuItem, { children: "View on Roblox" })
-								}),
-								objects.jsx("a", {
-									href: `/marketplace/asset/${assetId}/`,
-									target: "_blank",
-									style: { all: "unset", display: "contents" },
-									children: objects.jsx(objects.Mui.MenuItem, { children: "View in Marketplace" })
-								}),
-								objects.jsx(objects.Mui.Divider, {}),
-								objects.jsx("a", {
-									href: `/dashboard/creations/marketplace/${assetId}/configure`,
+									href: `/dashboard/creations/store/${assetId}/configure`,
 									style: { all: "unset", display: "contents" },
 									className: "btr-next-anchor",
 									children: objects.jsx(objects.Mui.MenuItem, { children: "Configure Asset" })

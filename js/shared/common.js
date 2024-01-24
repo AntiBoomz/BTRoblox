@@ -76,7 +76,7 @@ const PAGE_INFO = {
 	},
 	marketplace: {
 		domainMatches: ["create.roblox.com"],
-		matches: ["^/marketplace/"],
+		matches: ["^/marketplace/", "^/store/"],
 		js: ["pages/marketplace.js"],
 		css: ["marketplace.css"]
 	},
