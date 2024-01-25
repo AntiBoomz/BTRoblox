@@ -915,6 +915,70 @@ pageInit.common = () => {
 		})
 	}
 	
+	if(SETTINGS.get("home.favoritesAtTop") || SETTINGS.get("home.hideFriendActivity")) { // also applies to discover sorts so the code is here
+		InjectJS.inject(() => {
+			const { hijackFunction, settings } = window.BTRoblox
+			
+			hijackFunction(XMLHttpRequest.prototype, "open", (target, xhr, args) => {
+				const url = args[1]
+				
+				if(typeof url === "string") {
+					let replaceText
+					
+					if(url === "https://apis.roblox.com/discovery-api/omni-recommendation" || url === "https://apis.roblox.com/discovery-api/omni-recommendation-metadata") {
+						replaceText = text => {
+							try {
+								const json = JSON.parse(text)
+								
+								if(settings.home.favoritesAtTop && json?.sorts) {
+									const favs = json.sorts.find(x => x.topic === "Favorites")
+									
+									if(favs) {
+										const index = json.sorts.indexOf(favs)
+										
+										if(index > 1) {
+											json.sorts.splice(index, 1)
+											json.sorts.splice(1, 0, favs)
+										}
+									}
+								}
+								
+								if(settings.home.hideFriendActivity && json?.contentMetadata?.Game) {
+									for(const gameData of Object.values(json.contentMetadata.Game)) {
+										delete gameData.friendActivityTitle
+									}
+								}
+								
+								text = JSON.stringify(json)
+							} catch(ex) {
+								console.error(ex)
+							}
+							
+							return text
+						}
+					}
+					
+					if(replaceText) {
+						const responseText = {
+							configurable: true,
+							
+							get() {
+								delete xhr.responseText
+								const value = replaceText(xhr.responseText)
+								Object.defineProperty(xhr, "responseText", responseText)
+								return value
+							}
+						}
+						
+						Object.defineProperty(xhr, "responseText", responseText)
+					}
+				}
+				
+				return target.apply(xhr, args)
+			})
+		})
+	}
+	
 	// Chat
 	
 	if(SETTINGS.get("general.hideChat")) {
