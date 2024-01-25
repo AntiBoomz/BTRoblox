@@ -675,7 +675,7 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 			this.setOutfit(this.bundleOutfitId, "Outfit")
 			break
 		case "default":
-			this.setOutfit(19489609232, "Outfit")
+			this.setOutfit(1116516198, "Outfit")
 			break
 		default:
 			if(target.startsWith("plr-")) {
