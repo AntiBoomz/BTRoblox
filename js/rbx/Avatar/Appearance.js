@@ -55,6 +55,8 @@ const RBXAppearance = (() => {
 			if(playerType !== "R6") {
 				if(this.assetTypeId === AssetType.Head || this.assetTypeId === AssetType.DynamicHead) {
 					request.format = "avatar_meshpart_head"
+				} else if(AccessoryAssetTypeIds.includes(this.assetTypeId)) {
+					request.format = "avatar_meshpart_accessory"
 				}
 			}
 			

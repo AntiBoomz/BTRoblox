@@ -353,10 +353,18 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 							}
 						}
 					})
-					
+				
 				} else if(assetTypeId === AssetType.Head || assetTypeId === AssetType.DynamicHead) {
-					AssetCache.loadModel(assetId, { async: true, onProgress: updateLoadingText, format: "avatar_meshpart_head" }, model => explorer.addModel("MeshPart", model))
-					AssetCache.loadModel(assetId, { async: true }, model => explorer.addModel("SpecialMesh", model))
+					AssetCache.loadModel(assetId, { async: true, onProgress: updateLoadingText, format: "avatar_meshpart_head" }, model => {
+						AssetCache.loadModel(assetId, { async: true }, model => explorer.addModel("Default", model))
+						explorer.addModel("MeshPart", model)
+					})
+					
+				} else if(AccessoryAssetTypeIds.includes(assetTypeId)) {
+					AssetCache.loadModel(assetId, { async: true, onProgress: updateLoadingText, format: "avatar_meshpart_accessory" }, model => {
+						AssetCache.loadModel(assetId, { async: true }, model => explorer.addModel("Default", model))
+						explorer.addModel("MeshPart", model)
+					})
 					
 				} else {
 					AssetCache.loadModel(assetId, { async: true, onProgress: updateLoadingText }, model => explorer.addModel("Default", model, { open: assetTypeId !== AssetType.Place }))
