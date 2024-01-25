@@ -36,18 +36,20 @@ const RBXAppearance = (() => {
 			this.enabled = true
 			this.priority = 1
 			
-			this._loadStates = {}
-
-			this.accessories = []
-			this.bodyparts = []
-			this.clothing = []
+			this.states = {}
 		}
 
 		isEmpty() {
-			return !(this.accessories.length || this.bodyparts.length || this.clothing.length)
+			for(const state of Object.values(this.states)) {
+				if(state.accessories.length || state.bodyparts.length || state.clothing.length) {
+					return false
+				}
+			}
+			
+			return true
 		}
 		
-		getLoadState(playerType) {
+		getState(playerType) {
 			const request = {}
 			
 			if(playerType !== "R6") {
@@ -56,26 +58,31 @@ const RBXAppearance = (() => {
 				}
 			}
 			
-			const requestKey = JSON.stringify(request)
+			const requestKey = request.format ?? ""
 			
-			if(!this._loadStates[requestKey]) {
-				this._loadStates[requestKey] = {
+			if(!this.states[requestKey]) {
+				this.states[requestKey] = {
 					request: request,
+					
 					loaded: false,
 					loading: false,
-					loadPromise: new Promise()
+					loadPromise: new Promise(),
+					
+					accessories: [],
+					bodyparts: [],
+					clothing: [],
 				}
 			}
 			
-			return this._loadStates[requestKey]
+			return this.states[requestKey]
 		}
 		
 		isLoaded(...loadParams) {
-			return this.getLoadState(...loadParams).loaded
+			return this.getState(...loadParams).loaded
 		}
 
 		load(...loadParams) {
-			const state = this.getLoadState(...loadParams)
+			const state = this.getState(...loadParams)
 			if(!state) { return null }
 			
 			if(state.loaded || state.loading) { return state }
@@ -97,25 +104,29 @@ const RBXAppearance = (() => {
 				
 				switch(this.assetTypeId) {
 				case AssetType.TShirt:
-					this.addClothing({
+					state.clothing.push({
+						asset: this,
 						target: "tshirt",
 						texId: this.validateAndPreload("Image", model[0].Graphic)
 					})
 					break
 				case AssetType.Shirt:
-					this.addClothing({
+					state.clothing.push({
+						asset: this,
 						target: "shirt",
 						texId: this.validateAndPreload("Image", model[0].ShirtTemplate)
 					})
 					break
 				case AssetType.Pants:
-					this.addClothing({
+					state.clothing.push({
+						asset: this,
 						target: "pants",
 						texId: this.validateAndPreload("Image", model[0].PantsTemplate)
 					})
 					break
 				case AssetType.Face:
-					this.addClothing({
+					state.clothing.push({
+						asset: this,
 						target: "face",
 						texId: this.validateAndPreload("Image", model[0].Texture)
 					})
@@ -133,17 +144,17 @@ const RBXAppearance = (() => {
 					for(const child of model) {
 						if(child.ClassName === "SpecialMesh") {
 							if(this.assetTypeId === AssetType.Head || this.assetTypeId === AssetType.DynamicHead) {
-								this.loadHeadR6(child)
+								this.loadHeadR6(state, child)
 							}
 							
 						} else if(child.ClassName === "MeshPart") {
 							if(this.assetTypeId === AssetType.Head || this.assetTypeId === AssetType.DynamicHead) {
-								this.loadBodyPartsR15([child])
+								this.loadBodyPartsR15(state, [child])
 							}
 							
 						} else if(child.ClassName === "Folder") {
 							if(child.Name === "R6") {
-								this.loadBodyPartsR6(child.Children)
+								this.loadBodyPartsR6(state, child.Children)
 								
 							} else if(R15FolderPriority.includes(child.Name)) {
 								R15Folders.push(child)
@@ -153,15 +164,15 @@ const RBXAppearance = (() => {
 					
 					if(R15Folders.length > 0) {
 						R15Folders.sort((a, b) => R15FolderPriority.indexOf(a.Name) - R15FolderPriority.indexOf(b.Name))
-						this.loadBodyPartsR15(R15Folders[0].Children)
+						this.loadBodyPartsR15(state, R15Folders[0].Children)
 					}
 					
 					break
 				}
 				
 				default:
-					if(this.assetTypeId === 8 || Object.entries(AssetType).find(x => x[1] === this.assetTypeId)?.[0]?.includes("Accessory")) {
-						this.loadAccessory(model[0])
+					if(AccessoryAssetTypeIds.includes(this.assetTypeId)) {
+						this.loadAccessory(state, model[0])
 					}
 					
 				}
@@ -179,10 +190,7 @@ const RBXAppearance = (() => {
 				this.trigger("update")
 			}
 		}
-		
-		addAccessory(data) { data.asset = this; this.accessories.push(data) }
-		addBodyPart(data) { data.asset = this; this.bodyparts.push(data) }
-		addClothing(data) { this.clothing.push(data) }
+
 
 		setPriority(priority) {
 			this.priority = priority
@@ -215,11 +223,12 @@ const RBXAppearance = (() => {
 			return assetUrl
 		}
 		
-		loadHeadR6(mesh) {
+		loadHeadR6(state, mesh) {
 			const scaleTypeValue = mesh.Children.find(x => x.Name === "AvatarPartScaleType")
 			const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
 			
 			const bp = {
+				asset: this,
 				attachments: [],
 				target: "Head",
 				
@@ -244,16 +253,16 @@ const RBXAppearance = (() => {
 				})
 			}
 			
-			this.addBodyPart(bp)
+			state.bodyparts.push(bp)
 		}
 
-		loadBodyPartsR6(charmeshes) {
+		loadBodyPartsR6(state, charmeshes) {
 			for(const charmesh of charmeshes) {
 				const target = BodyPartEnum[charmesh.BodyPart]
 				if(!target) { continue }
 				
-				this.addBodyPart({
-					playerType: "R6",
+				state.bodyparts.push({
+					asset: this,
 					attachments: [],
 					target: target,
 
@@ -265,7 +274,7 @@ const RBXAppearance = (() => {
 			}
 		}
 
-		loadBodyPartsR15(parts) {
+		loadBodyPartsR15(state, parts) {
 			for(const part of parts) {
 				if(part.ClassName !== "MeshPart") { continue }
 				
@@ -273,8 +282,8 @@ const RBXAppearance = (() => {
 				const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
 				
 				const bp = {
+					asset: this,
 					attachments: [],
-					playerType: "R15",
 					target: part.Name,
 					
 					meshId: this.validateAndPreload("Mesh", part.MeshID || part.MeshId),
@@ -325,35 +334,41 @@ const RBXAppearance = (() => {
 					})
 				}
 				
-				this.addBodyPart(bp)
-				
+				state.bodyparts.push(bp)
 			}
 		}
 
-		loadAccessory(accInst) {
+		loadAccessory(state, accInst) {
 			const hanInst = accInst.Children.find(x => x.Name === "Handle")
 			if(!hanInst) { return }
 			
 			const scaleTypeValue = hanInst.Children.find(x => x.Name === "AvatarPartScaleType")
-			const attInst = hanInst.Children.find(x => x.ClassName === "Attachment")
-
 			const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
-			let baseColor = hanInst.Color || hanInst.Color3uint8
 			
+			let baseColor = hanInst.Color || hanInst.Color3uint8
 			if(!baseColor) {
 				const brickColor = BrickColor[hanInst.BrickColor] || BrickColor[194]
 				baseColor = brickColor.color.map(x => x / 255)
 			}
 			
 			const acc = {
-				attName: attInst ? attInst.Name : null,
-				attCFrame: attInst ? RBXAvatar.CFrameToMatrix4(...attInst.CFrame).invert() : new THREE.Matrix4(),
+				asset: this,
+				attachments: [],
 				
 				baseColor: [...baseColor],
 				opacity: 1 - (hanInst.Transparency || 0),
 				
 				legacyHatCFrame: accInst.AttachmentPoint ? RBXAvatar.CFrameToMatrix4(...accInst.AttachmentPoint).invert() : new THREE.Matrix4(),
 				scaleType: scaleType
+			}
+			
+			for(let att of hanInst.Children) {
+				if(att.ClassName === "Attachment") {
+					acc.attachments.push({
+						name: att.Name,
+						cframe: RBXAvatar.CFrameToMatrix4(...att.CFrame).invert()
+					})
+				}
 			}
 			
 			if(hanInst.ClassName === "MeshPart") {
@@ -399,7 +414,7 @@ const RBXAppearance = (() => {
 				acc.scale = meshInst.Scale ? [...meshInst.Scale] : null
 			}
 			
-			this.addAccessory(acc)
+			state.accessories.push(acc)
 		}
 	}
 

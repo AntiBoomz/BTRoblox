@@ -995,9 +995,9 @@ const RBXAvatar = (() => {
 			for(const asset of this.appearance.assets) {
 				if(!asset.enabled) { continue }
 				
-				const loadState = asset.load(this.playerType)
+				const state = asset.load(this.playerType)
 				
-				if(loadState.loaded) {
+				if(state.loaded) {
 					asset.lastIndex = assets.length
 					assets.push(asset)
 				}
@@ -1006,25 +1006,19 @@ const RBXAvatar = (() => {
 			assets.sort((a, b) => (a.priority === b.priority ? a.lastIndex - b.lastIndex : a.priority - b.priority))
 			
 			for(const asset of assets) {
-				for(const bodypart of asset.bodyparts) {
-					if(!bodypart.playerType || bodypart.playerType === this.playerType) {
-						const previous = bodypartOverride[bodypart.target]
-						
-						if(previous?.asset === asset && bodypart.target === "Head" && !bodypart.playerType) {
-							// prioritize meshpart (playerType=R15) heads over specialmesh (playerType=null)
-							continue
-						}
-						
-						bodypartOverride[bodypart.target] = bodypart
-					}
+				const state = asset.getState(this.playerType)
+				if(!state) { continue }
+				
+				for(const bodypart of state.bodyparts) {
+					bodypartOverride[bodypart.target] = bodypart
 				}
 				
-				for(const cloth of asset.clothing) {
+				for(const acc of state.accessories) {
+					accessories[asset.id] = acc
+				}
+				
+				for(const cloth of state.clothing) {
 					clothingOverride[cloth.target] = cloth.texId
-				}
-				
-				if(asset.accessories.length) {
-					accessories[asset.id] = asset.accessories[0]
 				}
 			}
 			
@@ -1402,7 +1396,17 @@ const RBXAvatar = (() => {
 				}
 				
 				// Attach to correct attachment
-				const attachment = this.attachments[acc.attName]
+				const attCFrame = new THREE.Matrix4()
+				let attachment
+				
+				for(const att of acc.attachments) {
+					if(this.attachments[att.name]) {
+						attachment = this.attachments[att.name]
+						attCFrame.copy(att.cframe)
+						break
+					}
+				}
+				
 				const parent = attachment ? attachment.parent : this.parts.Head
 				
 				if(parent) {
@@ -1413,7 +1417,7 @@ const RBXAvatar = (() => {
 					// Position
 					if(attachment) {
 						acc.bakedCFrame.copy(attachment.bakedCFrame).multiply(
-							scalePosition(tempMatrix.copy(acc.attCFrame), acc.obj.rbxScaleMod)
+							scalePosition(tempMatrix.copy(attCFrame), acc.obj.rbxScaleMod)
 						)
 					} else {
 						// Legacy hats, position is not scaled

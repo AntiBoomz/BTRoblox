@@ -177,7 +177,7 @@ const RBXPreview = (() => {
 			this.outfitAccessoriesVisible = !!bool
 			
 			for(const asset of this.outfitAssets) {
-				if(asset.accessories.length) {
+				if(AccessoryAssetTypeIds.includes(asset.assetTypeId)) {
 					asset.setEnabled(this.outfitAccessoriesVisible)
 				}
 			}
@@ -291,7 +291,7 @@ const RBXPreview = (() => {
 			this.outfitAssets.add(asset)
 			
 			asset.on("update", () => {
-				if(asset.accessories.length) {
+				if(AccessoryAssetTypeIds.includes(asset.assetTypeId)) {
 					asset.setEnabled(this.outfitAccessoriesVisible)
 				}
 			})
@@ -961,7 +961,10 @@ const HoverPreview = (() => {
 		let cameraDir
 		
 		for(const asset of lastPreviewedAssets) {
-			for(const acc of asset.accessories) {
+			const state = asset.getState(preview.avatar.playerType)
+			if(!state) { continue }
+			
+			for(const acc of state.accessories) {
 				if(!acc.obj) { continue }
 				
 				if(acc.obj.rbxLayered?.wrapLayer && acc.obj.rbxBones) {
@@ -976,7 +979,7 @@ const HoverPreview = (() => {
 					addedObjects.add(acc.obj)
 				}
 				
-				if(acc.attName?.endsWith("BackAttachment")) {
+				if(acc.attachment?.name?.endsWith("BackAttachment")) {
 					if(!cameraDir) {
 						cameraDir = "Back"
 					}
@@ -985,7 +988,7 @@ const HoverPreview = (() => {
 				}
 			}
 			
-			for(const bp of asset.bodyparts) {
+			for(const bp of state.bodyparts) {
 				const part = preview.avatar.parts[bp.target]
 				
 				if(part?.isMesh) {
@@ -994,7 +997,7 @@ const HoverPreview = (() => {
 				}
 			}
 			
-			for(const clothing of asset.clothing) {
+			for(const clothing of state.clothing) {
 				const parts = ClothingParts[clothing.target]
 				
 				if(parts) {
