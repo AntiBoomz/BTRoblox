@@ -604,6 +604,7 @@ a:not(.disabled):hover > .btr-icon-content {
 	white-space: nowrap;
 	margin-right: 2px;
 	font-weight: 500;
+	color: #000;
 }
 
 .btr-explorer-header .btr-dropdown-container .btr-dropdown-btn:hover {
@@ -618,12 +619,17 @@ a:not(.disabled):hover > .btr-icon-content {
 	max-width: 200px;
 	max-height: 200px;
 	border-radius: 2px;
+	padding: 0;
 	
 	z-index: 2;
 	
 	overflow: hidden;
 	overflow-y: scroll;
 	white-space: nowrap;
+}
+
+.btr-explorer-header .btr-dropdown-container .btr-dropdown-menu > li {
+	list-style: none;
 }
 
 .btr-explorer-header .btr-dropdown-container .btr-dropdown-menu > li a {
