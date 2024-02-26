@@ -443,5 +443,27 @@ const Navigation = {
 			selector: ".left-col-list > .rbx-upgrade-now",
 			enabled: false
 		})
+		
+		Navigation.register("sidebar_giftcards", {
+			label: "Show Gift Cards",
+			
+			selector: "#nav-giftcards",
+			enabled: false,
+			
+			update(node) {
+				node.parentNode.style.display = this.enabled ? "" : "none"
+			}
+		})
+		
+		Navigation.register("sidebar_shop", {
+			label: "Show Official Store",
+			
+			selector: "#nav-shop",
+			enabled: false,
+			
+			update(node) {
+				node.parentNode.style.display = this.enabled ? "" : "none"
+			}
+		})
 	}
 }
