@@ -443,6 +443,8 @@ const Navigation = {
 			selector: ".left-col-list > .rbx-upgrade-now",
 			enabled: false
 		})
+     
+                /* New options */
 		
 		Navigation.register("sidebar_giftcards", {
 			label: "Show Gift Cards",
