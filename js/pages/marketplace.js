@@ -99,7 +99,7 @@ pageInit.marketplace = () => {
 		let nextPageParams
 		let nextPage
 		
-		const assetId = Number.parseInt(location.pathname.match(/\/(?:marketplace|store)\/asset\/(\d+)\//i)?.[1], 10)
+		const assetId = Number.parseInt(location.pathname.match(/\/(?:marketplace|store)\/asset\/(\d+)/i)?.[1], 10)
 		if(assetId) {
 			nextPage = AssetDetailsPage
 			nextPageParams = [assetId]
