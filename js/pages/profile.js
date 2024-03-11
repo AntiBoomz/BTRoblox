@@ -117,51 +117,40 @@ pageInit.profile = userId => {
 					})
 			})
 		})
-		.$watch(".profile-header-top .header-caption", () => { // Wait for the first element after status
-			const status = $(".profile-avatar-status")
+		.$watch(".profile-header-top .avatar-status", statusContainer => {
 			const statusDiv = html`<div class="btr-header-status-parent"></div>`
 			newCont.$find(".placeholder-status").replaceWith(statusDiv)
-			const statusText = html`<span class="btr-header-status-text"></span>`
-			statusDiv.append(statusText)
-			const statusLabel = html`<span></span>`
-			statusText.append(statusLabel)
-
-			if(!status) {
-				statusText.classList.add("btr-status-offline")
-				statusLabel.textContent = "Offline"
-			} else {
-				const statusTitle = status.getAttribute("title")
+			
+			const updateStatus = () => {
+				const status = statusContainer.$find(".profile-avatar-status")
+				
+				if(!status) {
+					statusDiv.replaceChildren(html`<span class="btr-header-status-text btr-status-offline">Offline</span>`)
+					return
+				}
 
 				if(status.classList.contains("icon-game")) {
-					statusText.classList.add("btr-status-ingame")
-					statusLabel.textContent = statusTitle || "In Game"
+					const statusText = html`<span class="btr-header-status-text btr-status-ingame">${status.title || "In Game"}</span>`
+					statusDiv.replaceChildren(statusText)
 					
-					const link = status.parentElement
-					if(link.href && link.href.includes("PlaceId=")) {
-						const anchor = html`<a href="${link.href}" title="${status.title}"></a>`
+					const placeUrl = status.parentElement?.href
+					
+					if(placeUrl?.includes("PlaceId=")) {
+						const anchor = html`<a href="${placeUrl}" title="${status.title}"></a>`
 						statusText.before(anchor)
 						anchor.prepend(statusText)
 						anchor.after(html`<a class="btr-header-status-follow-button" title="Follow" onclick="Roblox.GameLauncher.followPlayerIntoGame(${userId})">\uD83D\uDEAA</a>`)
 					}
 				} else if(status.classList.contains("icon-studio")) {
-					statusText.classList.add("btr-status-studio")
-					statusLabel.textContent = statusTitle || "In Studio"
-
-					$(".profile-container").$watch("#profile-header-more").$then().$watch(">script", script => {
-						if(script.textContent.includes("play_placeId=")) {
-							const id = +script.textContent.match(/play_placeId=(\d+)/)[1]
-							if(Number.isSafeInteger(id) && id !== 0) {
-								const anchor = html`<a href="/games/${id}/" title="${statusTitle}"></a>`
-								statusText.before(anchor)
-								anchor.prepend(statusText)
-							}
-						}
-					})
+					const statusText = html`<span class="btr-header-status-text btr-status-studio">${status.title || "In Studio"}</span>`
+					statusDiv.replaceChildren(statusText)
 				} else {
-					statusText.classList.add("btr-status-online")
-					statusLabel.textContent = statusTitle || "Online"
+					statusDiv.replaceChildren(html`<span class="btr-header-status-text btr-status-online">${status.title || "Online"}</span>`)
 				}
 			}
+			
+			new MutationObserver(updateStatus).observe(statusContainer, { subtree: true, childList: true, attributeFilter: ["class", "title", "href"] })
+			updateStatus()
 		})
 		.$watch(".profile-avatar", async avatar => {
 			newCont.$find(".placeholder-avatar").replaceWith(avatar)
