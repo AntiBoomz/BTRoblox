@@ -418,8 +418,6 @@ pageInit.profile = userId => {
 								</a>
 								<div data-toggle="btr-placedrop-${this.placeId}" style="display:none">
 									<ul class="dropdown-menu" role="menu">
-										<li><a onclick=Roblox.GameLauncher.editGameInStudio(${this.placeId})><div>Edit</div></a></li>
-										<li><a href="/places/${this.placeId}/update"><div>Configure this Place</div></a></li>
 										<li><a class=btr-btn-toggle-profile data-placeid="${this.placeId}"><div>Remove from Profile</div></a></li>
 									</ul>
 								</div>
@@ -429,15 +427,14 @@ pageInit.profile = userId => {
 
 							gamePromise.then(data => {
 								if(!data) { return }
-
-								dropdown.$find(".dropdown-menu").children[1].after(
-									html`<li><a href=/universes/configure?id=${data.universeId}><div>Configure this Experience</div></a></li>`,
-									html`<li><a href=/localization/games/${data.universeId}/configure><div>Configure Localization</div></a></li>`,
-								)
 								
-								dropdown.$find(".dropdown-menu").children[0].after(
-									html`<li><a href="https://create.roblox.com/creations/experiences/${this.placeId}/stats"><div>Developer Stats</div></a></li>`,
+								dropdown.$find(".dropdown-menu").prepend(
+									html`<li><a onclick="Roblox.GameLauncher.editGameInStudio(${this.placeId}, ${data.universeId})"><div>Edit</div></a></li>`,
+									html`<li><a href="https://create.roblox.com/dashboard/creations/experiences/${data.universeId}/overview"><div>View Analytics</div></a></li>`,
 									html`<li><a href=/sponsored/experiences/${data.universeId}/create><div>Sponsor this Experience</div></a></li>`,
+									html`<li><a href="https://create.roblox.com/dashboard/creations/experiences/${data.universeId}/places/${this.placeId}/configure"><div>Configure this Place</div></a></li>`,
+									html`<li><a href="https://create.roblox.com/dashboard/creations/experiences/${data.universeId}/configure"><div>Configure this Experience</div></a></li>`,
+									html`<li><a href="https://create.roblox.com/dashboard/creations/experiences/${data.universeId}/localization"><div>Configure Localization</div></a></li>`,
 								)
 							})
 						})
