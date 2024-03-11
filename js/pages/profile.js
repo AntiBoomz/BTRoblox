@@ -81,7 +81,9 @@ pageInit.profile = userId => {
 	</div>`
 
 	const bodyWatcher = document.$watch("body", body => body.classList.add("btr-profile")).$then()
-
+	
+	const presencePromise = new Promise(resolve => resolve(RobloxApi.presence.getPresence([userId]).then(json => json?.userPresences?.[0])))
+	
 	bodyWatcher.$watch(".profile-container").$then()
 		.$watch(".rbx-tabs-horizontal", cont => {
 			cont.before(newCont)
@@ -121,36 +123,28 @@ pageInit.profile = userId => {
 			const statusDiv = html`<div class="btr-header-status-parent"></div>`
 			newCont.$find(".placeholder-status").replaceWith(statusDiv)
 			
-			const updateStatus = () => {
-				const status = statusContainer.$find(".profile-avatar-status")
-				
-				if(!status) {
-					statusDiv.replaceChildren(html`<span class="btr-header-status-text btr-status-offline">Offline</span>`)
-					return
-				}
-
-				if(status.classList.contains("icon-game")) {
-					const statusText = html`<span class="btr-header-status-text btr-status-ingame">${status.title || "In Game"}</span>`
-					statusDiv.replaceChildren(statusText)
+			presencePromise.then(presence => {
+				if(presence?.userPresenceType === 3) { // studio
+					statusDiv.replaceChildren(html`<span class="btr-header-status-text btr-status-studio">In Studio</span>`)
 					
-					const placeUrl = status.parentElement?.href
+				} else if(presence?.userPresenceType === 2 && presence.placeId) {
+					statusDiv.replaceChildren(
+						html`<a href="/games/${presence.placeId}/" title="${presence.lastLocation}"><span class="btr-header-status-text btr-status-ingame">${presence.lastLocation}</span></a>`,
+						html`<a class="btr-header-status-follow-button" title="Follow" onclick="Roblox.GameLauncher.followPlayerIntoGame(${userId})">\uD83D\uDEAA</a>`
+					)
 					
-					if(placeUrl?.includes("PlaceId=")) {
-						const anchor = html`<a href="${placeUrl}" title="${status.title}"></a>`
-						statusText.before(anchor)
-						anchor.prepend(statusText)
-						anchor.after(html`<a class="btr-header-status-follow-button" title="Follow" onclick="Roblox.GameLauncher.followPlayerIntoGame(${userId})">\uD83D\uDEAA</a>`)
-					}
-				} else if(status.classList.contains("icon-studio")) {
-					const statusText = html`<span class="btr-header-status-text btr-status-studio">${status.title || "In Studio"}</span>`
-					statusDiv.replaceChildren(statusText)
+				} else if(presence?.userPresenceType === 2) {
+					statusDiv.replaceChildren(
+						html`<span class="btr-header-status-text btr-status-ingame">In Game</span>`
+					)
+					
+				} else if(presence?.userPresenceType) { // online
+					statusDiv.replaceChildren(html`<span class="btr-header-status-text btr-status-online">Online</span>`)
+					
 				} else {
-					statusDiv.replaceChildren(html`<span class="btr-header-status-text btr-status-online">${status.title || "Online"}</span>`)
+					statusDiv.replaceChildren(html`<span class="btr-header-status-text btr-status-offline">Offline</span>`)
 				}
-			}
-			
-			new MutationObserver(updateStatus).observe(statusContainer, { subtree: true, childList: true, attributeFilter: ["class", "title", "href"] })
-			updateStatus()
+			})
 		})
 		.$watch(".profile-avatar", async avatar => {
 			newCont.$find(".placeholder-avatar").replaceWith(avatar)
@@ -215,33 +209,35 @@ pageInit.profile = userId => {
 						stats.prepend(label)
 					}
 					
-					if($(".profile-avatar-status")) {
-						label.$find(".text-lead").textContent = "Now"
-						return
-					}
-					
-					let numRetries = 0
-					
-					const getLastOnline = () => {
-						RobloxApi.presence.getLastOnline([userId]).then(json => {
-							if(!json?.lastOnlineTimestamps?.length) {
-								if(numRetries < 2) {
-									numRetries += 1
-									setTimeout(getLastOnline, numRetries * 2000)
-								} else {
-									label.$find(".text-lead").textContent = "Failed"
+					presencePromise.then(presence => {
+						if(presence?.userPresenceType) {
+							label.$find(".text-lead").textContent = "Now"
+							return
+						}
+						
+						let numRetries = 0
+						
+						const getLastOnline = () => {
+							RobloxApi.presence.getLastOnline([userId]).then(json => {
+								if(!json?.lastOnlineTimestamps?.length) {
+									if(numRetries < 2) {
+										numRetries += 1
+										setTimeout(getLastOnline, numRetries * 2000)
+									} else {
+										label.$find(".text-lead").textContent = "Failed"
+									}
+									return
 								}
-								return
-							}
-							
-							const lastOnline = new Date(json.lastOnlineTimestamps[0].lastOnline)
-							
-							label.$find(".text-lead").textContent = `${lastOnline.$since()}`
-							label.$find(".text-lead").title = lastOnline.$format("MMM D, YYYY | hh:mm A (T)")
-						})
-					}
-					
-					getLastOnline()
+								
+								const lastOnline = new Date(json.lastOnlineTimestamps[0].lastOnline)
+								
+								label.$find(".text-lead").textContent = `${lastOnline.$since()}`
+								label.$find(".text-lead").title = lastOnline.$format("MMM D, YYYY | hh:mm A (T)")
+							})
+						}
+						
+						getLastOnline()
+					})
 				})
 			}
 		})
