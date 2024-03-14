@@ -172,6 +172,16 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 }
 
 
+/* Sidebar Divider Padding Tweak */
+.rbx-left-col ul {
+	/*
+		!important because BTRoblox injects css before Roblox's bundle gets loaded.
+		This fixes an annoying padding issue that has been present on the sidebar since a refactor in 2018.
+	*/
+	padding: 5px 10px 0 10px !important;
+}
+
+
 /* Sidebar Blog Feed */
 
 #btr-blogfeed-container {
