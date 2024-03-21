@@ -1681,6 +1681,8 @@ const RBXAvatar = (() => {
 
 			// Find and locate anchor
 			const anchor = groups.find(x => x.name.startsWith("Handle") && x.faces.length === 36 && $.hashString(JSON.stringify([x.faces, x.uvs])) === "4734F03A")
+			if(!anchor) { return console.log("Found no anchor") }
+			
 			groups.splice(groups.indexOf(anchor), 1)
 			
 			const attachment = this.attachments.HatAttachment
