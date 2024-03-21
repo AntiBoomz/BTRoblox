@@ -433,11 +433,16 @@ pageInit.gamedetails = placeId => {
 						
 						if(status) {
 							if(showRegion && regionSetting !== "combined") {
-								status.props.children += `\nRegion: ${serverDetails ? serverDetails.location?.medium ?? serverDetails.ip : "Loading"}`
+								status.props.children += `\nRegion: ${
+									!serverDetails ? "Loading" :
+									serverDetails.location ? serverDetails.location.country.name :
+									serverDetails.full ? "Full" :
+									"??"
+								}`
 									
 								// Okay, this is hacky, BUT...
 								// United Kingdom wraps over by 1 character, so let's increase size for it lmao
-								if(serverDetails?.location?.medium === "United Kingdom") {
+								if(serverDetails?.location?.country.name === "United Kingdom") {
 									if(!status.props.style) { status.props.style = {} }
 									status.props.style.width = "105%"
 								}
@@ -447,12 +452,24 @@ pageInit.gamedetails = placeId => {
 								status.props.children += `\nPing: ${gameInstance.ping ?? 0}ms`
 								
 								if(showRegion && regionSetting === "combined") {
-									status.props.children += ` (${serverDetails ? serverDetails.location?.short ?? "??" : "Loading"})`
+									status.props.children += ` (${
+										!serverDetails ? "Loading" :
+										serverDetails.location ? serverDetails.location.country.code :
+										serverDetails.full ? "Full" :
+										"??"
+									})`
 								}
 							}
 							
 							if(showRegion) {
-								status.props.title = serverDetails ? serverDetails.location?.long ?? serverDetails.ip : "Unknown"
+								status.props.title = 
+									!serverDetails ? "Loading" :
+									serverDetails.location ? (
+										serverDetails.location.country.code === "US" ? `${serverDetails.location.city}, ${serverDetails.location.region.code}, ${serverDetails.location.country.name}` :
+										serverDetails.location.city !== serverDetails.location.country.name ? `${serverDetails.location.city}, ${serverDetails.location.country.name}` :
+										`${serverDetails.location.city}` 
+									) :
+									`Unable to fetch server location: ${serverDetails.full ? "Server is full" : serverDetails.ip ?? `status ${serverDetails.status}`}`
 							}
 						}
 					}
