@@ -1628,7 +1628,13 @@ const RBXAvatar = (() => {
 				}
 			}
 			
-			const objFile = await fetch(AssetCache.getHashUrl(objHash, "t")).then(res => res.text())
+			const objRes = await fetch(AssetCache.getHashUrl(objHash, "t"))
+			if(!objRes.ok) {
+				btrLocalStorage.removeItem(`btrLayeredCache-${request.hash}`)
+				return
+			}
+			
+			const objFile = await objRes.text()
 			if(request?.hash !== this.getLayeredRequest()?.hash) { return }
 			
 			// Read obj file
