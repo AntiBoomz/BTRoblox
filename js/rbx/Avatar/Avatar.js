@@ -1915,8 +1915,8 @@ const RBXAvatar = (() => {
 					}
 				}
 				
-				if(matches.length !== 1) {
-					if(matches.length === 0 && numEmptyAccessoriesAccepted > 0) {
+				if(matches.length === 0) {
+					if(numEmptyAccessoriesAccepted > 0) {
 						numEmptyAccessoriesAccepted -= 1
 					} else {
 						console.log("Could not resolve asset in render")
@@ -1931,6 +1931,12 @@ const RBXAvatar = (() => {
 					}
 					
 					return false
+				}
+				
+				if(matches.length >= 2) {
+					// Can't really do anything about this case, gotta just select the first one and hope
+					// stuff wont break too badly
+					console.log("[BTRoblox] Multiple accessory matches :(")
 				}
 				
 				const { group } = matches[0]
