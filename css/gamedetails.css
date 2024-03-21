@@ -208,8 +208,13 @@ html body .btr-universe-box {
 	row-gap: 12px; /* looked a bit bad with no gap at all */
 }
 
-.btr-gamedetails .rbx-game-status {
+.btr-gamedetails .server-player-count-gauge {
+	display: none;
+}
+
+.btr-gamedetails .server-list-section .card-list .card-item div.rbx-game-status {
 	white-space: pre-line;
+	margin: 0;
 }
 
 /* VIP Servers */
