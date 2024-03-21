@@ -228,7 +228,7 @@ const AssetCache = (() => {
 		getHashUrl(hash, prefix="c") {
 			let code = 31
 			
-			for(let n = 0; n < 32; n++) {
+			for(let n = 0; n < hash.length; n++) {
 				code ^= hash.charCodeAt(n)
 			}
 			
