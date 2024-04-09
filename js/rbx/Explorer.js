@@ -2,13 +2,31 @@
 
 const Explorer = (() => {
 	const GroupOrders = [
-		"Appearance", "Data", "Shape", "Goals", "Thrust", "Turn", "Camera", "Transform", "Pivot", "Behavior", "Collision", "Image", "Compliance",
-		"AlignOrientation", "AlignPosition", "BallSocket", "Limits", "TwistLimits", "Hinge", "Servo",
-		"Motor", "LineForce", "Rod", "Rope", "Cylinder", "AngularLimits", "AngularServo", "AngularMotor", "Slider",
-		"Spring", "Torque", "VectorForce", "Attachments", "Input", "Text", "Scrolling", "Localization", "State",
-		"Control", "Game", "Teams", "Forcefield", "Part", "Surface Inputs", "Surface", "Motion", "Particles",
-		"Emission", "Parts"
+		"Appearance", "Data", "Transform", "Pivot", "Behavior", "Collision", "Part"
 	]
+	
+	const HiddenProperties = {
+		UniqueId: true, HistoryId: true,
+		AttributesSerialize: true, Tags: true,
+		Capabilities: true, DefinesCapabilities: true,
+		SourceAssetId: true,
+		
+		// Script
+		ScriptGuid: true,
+		
+		// Model
+		ModelMeshCFrame: true, ModelMeshSize: true, ModelMeshData: true,
+		NeedsPivotMigration: true,
+		
+		// BasePart
+		FormFactor: true,
+		HasJointOffset: true, HasSkinnedMesh: true,
+		AeroMeshData: true, FluidFidelityInternal: true,
+		PhysicalConfigData: true, PhysicsData: true,
+		
+		// Humanoid
+		InternalBodyScale: true, InternalHeadScale: true,
+	}
 	
 	const RenamedProperties = {
 		Color3uint8: "Color", formFactorRaw: "FormFactor", Health_XML: "Health", xmlRead_MaxDistance_3: "MaxDistance",
@@ -19,7 +37,7 @@ const Explorer = (() => {
 	const fixNum = v => { return Math.round(v * 1e3) / 1e3 }
 	const fixNums = arr => arr.map(x => fixNum(x))
 
-	const sortPropertyGroups = (a, b) => a.Order - b.Order
+	const sortPropertyGroups = (a, b) => (a.Order === b.Order ? (a.Name < b.Name ? -1 : 1) : a.Order - b.Order)
 	const sortProperties = (a, b) => (a[0] < b[0] ? -1 : 1)
 	const sortChildren = (a, b) => {
 		const ao = ApiDump.getExplorerOrder(a.inst.ClassName)
@@ -381,12 +399,55 @@ const Explorer = (() => {
 			const groups = []
 			const groupMap = {}
 			
+			const hidden = {}
+			
+			if("TopSurface" in target.Properties) {
+				const sides = ["Back", "Bottom", "Front", "Left", "Right", "Top"]
+				let allSmooth = false
+				
+				for(const side of sides) {
+					const valueEntry = target.Properties[`${side}Surface`]
+					const value = valueEntry?.value ?? 0
+					
+					hidden[`${side}SurfaceInput`] = true
+					hidden[`${side}ParamA`] = true
+					hidden[`${side}ParamB`] = true
+					
+					if(value !== 0) {
+						allSmooth = true
+						
+						if(value === 7 || value === 8) {
+							const inputValue = target.Properties[`${side}SurfaceInput`]?.value ?? 0
+							
+							if(inputValue === 12) {
+								hidden[`${side}SurfaceInput`] = false
+								hidden[`${side}ParamB`] = false
+							} else if(inputValue === 13) {
+								hidden[`${side}SurfaceInput`] = false
+								hidden[`${side}ParamA`] = false
+								hidden[`${side}ParamB`] = false
+							}
+						}
+					}
+				}
+				
+				if(!allSmooth) {
+					for(const side of sides) {
+						hidden[`${side}Surface`] = true
+					}
+				}
+			}
+			
 			for(let [name, prop] of Object.entries(target.Properties)) {
 				if(RenamedProperties[name] && RenamedProperties[name] in target.Properties) {
 					continue
 				}
 				
 				name = RenamedProperties[name] || name
+				
+				if(HiddenProperties[name] || hidden[name]) {
+					continue
+				}
 
 				let group = ApiDump.getPropertyGroup(target.ClassName, name)
 				
@@ -397,9 +458,10 @@ const Explorer = (() => {
 				let groupData = groupMap[group]
 				if(!groupData) {
 					const order = GroupOrders.indexOf(group)
+					
 					groupData = groupMap[group] = {
-						Name: (typeof order !== "number" && IS_DEV_MODE) ? `${group} (Missing Order)` : group,
-						Order: typeof order === "number" ? order : 1e3 + groups.length,
+						Name: group,
+						Order: order === -1 ? 1000 : order,
 						Properties: []
 					}
 
@@ -444,7 +506,7 @@ const Explorer = (() => {
 					const nameItem = html`<div class=btr-property-name title=${name}>${name}</div>`
 					const valueItem = html`<div class=btr-property-value></div>`
 
-					if(name === "ClassName") {
+					if(name === "ClassName" || type === "Parent") {
 						nameItem.classList.add("btr-property-readonly")
 						valueItem.classList.add("btr-property-readonly")
 					}
