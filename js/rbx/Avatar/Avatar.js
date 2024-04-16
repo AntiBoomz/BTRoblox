@@ -220,7 +220,7 @@ const RBXAvatar = (() => {
 		}
 		
 		setHex(hex) { return this.setValue(hex[0] !== "#" ? "#" + hex : hex) }
-		setRGB(r, g, b) { return this.setValue("#" + (new THREE.Color(r, g, b)).getHex()) }
+		setRGB(r, g, b) { return this.setValue("#" + (new THREE.Color(r, g, b)).getHexString()) }
 		setImage(img) { return this.setValue(img) }
 		
 		toTexture() {
@@ -1317,7 +1317,7 @@ const RBXAvatar = (() => {
 						const texture = new MergeSource()
 						
 						if(acc.pbrAlphaMode === 0) {
-							background.setRGB(...acc.baseColor.map(x => x * 255))
+							background.setRGB(...acc.baseColor)
 						}
 						
 						material = new THREE.MeshStandardMaterial({
@@ -1353,7 +1353,7 @@ const RBXAvatar = (() => {
 						material = new THREE.MeshStandardMaterial({
 							transparent: opacity < 1,
 							opacity: opacity,
-							map: MergeSource.fromRGB(...acc.baseColor.map(x => x * 255)).toTexture()
+							map: MergeSource.fromRGB(...acc.baseColor).toTexture()
 						})
 						
 						if(acc.texId) {
