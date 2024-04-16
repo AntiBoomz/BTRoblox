@@ -935,10 +935,11 @@ pageInit.common = () => {
 									
 									if(favs) {
 										const index = json.sorts.indexOf(favs)
+										const continueIndex = json.sorts.findIndex(x => x.topic === "Continue")
 										
 										if(index > 1) {
 											json.sorts.splice(index, 1)
-											json.sorts.splice(1, 0, favs)
+											json.sorts.splice(continueIndex !== -1 ? continueIndex + 1 : 1, 0, favs)
 										}
 									}
 								}
