@@ -215,9 +215,8 @@ const RobloxApi = {
 				.then(res => res.json()),
 		
 		getCurrentAvatar: () =>
-			xsrfFetch(`https://avatar.roblox.com/v1/avatar`, {
-				credentials: "include"
-			}).then(res => res.json()),
+			xsrfFetch(`https://avatar.roblox.com/v1/avatar`, { credentials: "include" })
+				.then(res => res.json()),
 		
 		renderAvatar: request =>
 			xsrfFetch(`https://avatar.roblox.com/v1/avatar/render`, {
@@ -274,7 +273,7 @@ const RobloxApi = {
 	},
 	economy: {
 		getAssetDetails: cacheResult(10e3, assetId =>
-			xsrfFetch(`https://economy.roblox.com/v2/assets/${assetId}/details`)
+			xsrfFetch(`https://economy.roblox.com/v2/assets/${assetId}/details`, { credentials: "include" })
 				.then(res => res.json())
 		),
 	},
