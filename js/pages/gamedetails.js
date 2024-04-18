@@ -737,6 +737,8 @@ pageInit.gamedetails = placeId => {
 		})
 	
 	RobloxApi.economy.getAssetDetails(placeId).then(data => {
+		if(!data.Updated) { return }
+		
 		watcher.$watch(".game-stats-container").$then()
 			.$watch(
 				".game-stat .text-lead",
