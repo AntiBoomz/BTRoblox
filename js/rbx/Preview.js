@@ -57,13 +57,19 @@ const RBXPreview = (() => {
 		return outfitCache["user" + userId]
 	}
 
-	function getDefaultAppearance() {
+	function getCurrentAppearance() {
 		if(!outfitCache.default) {
 			const outfitPromise = RobloxApi.avatar.getCurrentAvatar()
 
-			return outfitCache.default = Promise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
-				data = { ...data }
-				data.bodyColors = solveBodyColors(data.bodyColors, rules)
+			return outfitCache.default = Promise.all([getAvatarRules(), outfitPromise]).then(async ([rules, data]) => {
+				if(!data || data.errors) {
+					const [, outfitData] = await getOutfitData(1116516198)
+					data = outfitData
+				} else {
+					data = { ...data }
+					data.bodyColors = solveBodyColors(data.bodyColors, rules)
+				}
+				
 				return [rules, data]
 			})
 		}
@@ -207,7 +213,7 @@ const RBXPreview = (() => {
 			} else if(outfitType === "Player" && outfitId) {
 				outfitPromise = getPlayerAppearance(outfitId)
 			} else {
-				outfitPromise = getDefaultAppearance()
+				outfitPromise = getCurrentAppearance()
 			}
 			
 			outfitPromise.then(result => {
