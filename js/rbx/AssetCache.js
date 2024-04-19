@@ -180,7 +180,9 @@ const AssetCache = (() => {
 			return cdnPromise
 		},
 		
-		loadAnimation: createMethod((buffer, assetRequest) => {
+		loadAnimation: createMethod(async (buffer, assetRequest) => {
+			await loadOptionalLibrary("parser")
+			
 			const findSequence = array => {
 				for(const inst of array) {
 					if(inst.ClassName === "KeyframeSequence" || inst.ClassName === "CurveAnimation") {
@@ -202,14 +204,20 @@ const AssetCache = (() => {
 			
 			return RBXParser.parseAnimation(findSequence(RBXParser.parseModel(buffer).result))
 		}),
-		loadModel: createMethod((buffer, assetRequest) => {
+		loadModel: createMethod(async (buffer, assetRequest) => {
+			await loadOptionalLibrary("parser")
+			
 			if(assetRequest.params?.async) {
 				return RBXParser.parseModel(buffer, { async: true, onProgress: assetRequest.params?.onProgress }).asyncPromise
 			}
 			
 			return RBXParser.parseModel(buffer).result
 		}),
-		loadMesh: createMethod((buffer, assetRequest) => RBXParser.parseMesh(buffer)),
+		loadMesh: createMethod(async (buffer, assetRequest) => {
+			await loadOptionalLibrary("parser")
+			return RBXParser.parseMesh(buffer)
+		}),
+		
 		loadImage: createMethod((buffer, assetRequest) => new Promise((resolve, reject) => {
 			const src = URL.createObjectURL(new Blob([new Uint8Array(buffer)], { type: "image/png" }))
 			

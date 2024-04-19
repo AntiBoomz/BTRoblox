@@ -94,15 +94,7 @@
 				"js/feat/navigation.js",
 				"js/feat/robuxToCash.js",
 				"js/feat/settingsModal.js",
-
-				"js/rbx/FileFormat/ByteReader.js",
-				"js/rbx/FileFormat/Instance.js",
-				"js/rbx/FileFormat/XmlParser.js",
-				"js/rbx/FileFormat/BinaryParser.js",
-				"js/rbx/FileFormat/MeshParser.js",
 				
-				"js/rbx/AnimationParser.js",
-				"js/rbx/Parser.js",
 				"js/rbx/AssetCache.js",
 				"js/rbx/RobloxApi.js",
 
