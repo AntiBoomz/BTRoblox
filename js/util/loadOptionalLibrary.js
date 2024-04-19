@@ -2,7 +2,6 @@
 
 const optionalLibraries = {
 	previewer: {
-		promise: null,
 		assets: [
 			"lib/three.min.js",
 			"js/rbx/EventEmitter.js",
@@ -16,21 +15,18 @@ const optionalLibraries = {
 		]
 	},
 	explorer: {
-		promise: null,
 		assets: [
 			"js/rbx/ApiDump.js",
 			"js/rbx/Explorer.js"
 		]
 	},
 	sourceViewer: {
-		promise: null,
 		assets: [
 			"js/feat/sourceViewer.js",
 			"css/sourceviewer.css"
 		]
 	},
 	parser: {
-		promise: null,
 		assets: [
 			"js/rbx/FileFormat/ByteReader.js",
 			"js/rbx/FileFormat/Instance.js",
