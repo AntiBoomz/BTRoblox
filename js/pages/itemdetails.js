@@ -625,19 +625,7 @@ pageInit.itemdetails = (category, assetIdString) => {
 	}
 
 	if(!SETTINGS.get("itemdetails.enabled")) { return }
-
-	document.$watch("#AjaxCommentsContainer").$then().$watch(".comments").$then()
-		.$watchAll(".comment-item", comment => {
-			const span = comment.$find(".text-date-hint")
-			const fixedDate = robloxTimeToDate(span.textContent.replace("|", ""))
-
-			if(fixedDate) {
-				span.setAttribute("btr-timestamp", "")
-				span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
-			}
-		})
 	
-
 	if(SETTINGS.get("itemdetails.addOwnersList")) {
 		let wasOwnersListSetup = false
 		

@@ -1,7 +1,6 @@
 "use strict"
 
 const pageInit = {}
-const startDate = new Date()
 
 let loggedInUserPromise = new Promise(() => {})
 let loggedInUser = -1
@@ -32,40 +31,6 @@ const ProhibitedReasons = {
 	InsufficientPermissionFriendsOnly: "This game is friends only.",
 	InsufficientPermissionGroupOnly: "Group members only.",
 	UnderReview: "This game is under moderation review."
-}
-
-function getRobloxTimeZoneString() {
-	const month = startDate.getUTCMonth() + 1
-	const date = startDate.getUTCDate()
-	const weekday = startDate.getUTCDay()
-	const hour = startDate.getUTCHours()
-
-	// DST starts on the second Sunday in March at 02:00 CST, which is 08:00 UTC
-	// DST ends on the first Sunday in November at 01:00 CST, which is 07:00 UTC
-
-	const someSunday = date + 7 - weekday
-	const firstSunday = someSunday - Math.floor(someSunday / 7) * 7
-	const secondSunday = firstSunday + 7
-
-	if(
-		(month > 3 && month < 11) || // Within daytime months
-		(month === 3 && ( // Or march and DST has begun
-			date > secondSunday ||
-			(date === secondSunday && hour >= 8)
-		)) ||
-		(month === 11 && ( // Or november and DST has not ended
-			date < firstSunday ||
-			(date === firstSunday && hour < 7)
-		))
-	) {
-		return "CDT"
-	}
-
-	return "CST"
-}
-
-function robloxTimeToDate(dateString) {
-	return Date.parse(dateString) ? new Date(`${dateString} ${getRobloxTimeZoneString()}`) : false
 }
 
 //
