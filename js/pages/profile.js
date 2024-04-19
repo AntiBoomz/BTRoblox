@@ -472,9 +472,17 @@ pageInit.profile = userId => {
 								descContent.textContent = data.description
 
 								if(!data.isPlayable) {
+									const prohibitedReasons = {
+										UniverseDoesNotHaveARootPlace: "This game has no root place.",
+										UniverseRootPlaceIsNotActive: "This game is not active",
+										InsufficientPermissionFriendsOnly: "This game is friends only.",
+										InsufficientPermissionGroupOnly: "Group members only.",
+										UnderReview: "This game is under moderation review."
+									}
+									
 									const btnCont = this.item.$find(".btr-game-playbutton-container")
 									btnCont.classList.add("btr-place-prohibited")
-									btnCont.textContent = ProhibitedReasons[data.reasonProhibited] || data.reasonProhibited
+									btnCont.textContent = prohibitedReasons[data.reasonProhibited] || data.reasonProhibited
 								}
 							}
 
