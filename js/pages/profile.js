@@ -867,9 +867,9 @@ pageInit.profile = userId => {
 	}
 	
 	InjectJS.inject(() => {
-		const { hijackAngular } = window.BTRoblox
+		const { angularHook } = window.BTRoblox
 		
-		hijackAngular("peopleList", {
+		angularHook.hijackModule("peopleList", {
 			layoutService(handler, args) {
 				const result = handler.apply(this, args)
 				result.maxNumberOfFriendsDisplayed = 10

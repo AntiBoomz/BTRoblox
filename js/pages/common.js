@@ -803,7 +803,7 @@ pageInit.common = () => {
 		})
 		
 		InjectJS.inject(() => {
-			const { hijackAngular, hijackFunction, onSet, IS_DEV_MODE, contentScript } = window.BTRoblox
+			const { angularHook, hijackFunction, onSet, IS_DEV_MODE, contentScript } = window.BTRoblox
 			const shoutNotifications = []
 			const shoutListeners = []
 			
@@ -815,7 +815,7 @@ pageInit.common = () => {
 				}
 			})
 			
-			hijackAngular("notificationStream", {
+			angularHook.hijackModule("notificationStream", {
 				notificationStreamController(handler, args, argsMap) {
 					try {
 						const { $scope, notificationStreamService } = argsMap
@@ -989,9 +989,9 @@ pageInit.common = () => {
 			bodyWatcher.$watch("#chat-container", cont => cont.classList.add("btr-small-chat-button"))
 			
 			InjectJS.inject(() => {
-				const { hijackAngular, IS_DEV_MODE } = window.BTRoblox
+				const { angularHook, IS_DEV_MODE } = window.BTRoblox
 				
-				hijackAngular("chat", {
+				angularHook.hijackModule("chat", {
 					chatController(func, args, argMap) {
 						const result = func.apply(this, args)
 

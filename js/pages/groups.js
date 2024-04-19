@@ -13,9 +13,9 @@ function enableRedesign() {
 		})
 		
 		InjectJS.inject(() => {
-			const { hijackAngular } = window.BTRoblox
+			const { angularHook } = window.BTRoblox
 			
-			hijackAngular("socialLinksJumbotron", {
+			angularHook.hijackModule("socialLinksJumbotron", {
 				socialLinkIcon(component) {
 					component.bindings.title = "<"
 				}
@@ -149,7 +149,7 @@ function enableRedesign() {
 		})
 		
 		InjectJS.inject(() => {
-			const { hijackAngular, IS_DEV_MODE } = window.BTRoblox
+			const { angularHook, IS_DEV_MODE } = window.BTRoblox
 			
 			const createCustomPager = (ctrl, { $scope }) => {
 				const wallPosts = []
@@ -316,7 +316,7 @@ function enableRedesign() {
 				}
 			}
 	
-			hijackAngular("group", {
+			angularHook.hijackModule("group", {
 				groupWallController(func, args, argMap) {
 					const result = func.apply(this, args)
 	

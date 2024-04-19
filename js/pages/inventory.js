@@ -143,9 +143,9 @@ pageInit.inventory = () => {
 		InjectJS.listen("inventoryUpdateEnd", updateButtons)
 		
 		InjectJS.inject(() => {
-			const { hijackAngular, contentScript, IS_DEV_MODE } = window.BTRoblox
+			const { angularHook, contentScript, IS_DEV_MODE } = window.BTRoblox
 			
-			hijackAngular("inventory", {
+			angularHook.hijackModule("inventory", {
 				inventoryContentController(handler, args, argsMap) {
 					const result = handler.apply(this, args)
 					

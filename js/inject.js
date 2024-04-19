@@ -612,7 +612,6 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 		reactHook,
 		
 		hijackFunction,
-		hijackAngular: angularHook.hijackModule.bind(angularHook),
 		onReady,
 		onSet
 	})

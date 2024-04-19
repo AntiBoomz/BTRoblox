@@ -14,9 +14,9 @@ pageInit.home = () => {
 	
 	if(SETTINGS.get("home.friendsSecondRow")) {
 		InjectJS.inject(() => {
-			const { hijackAngular } = window.BTRoblox
+			const { angularHook } = window.BTRoblox
 			
-			hijackAngular("peopleList", {
+			angularHook.hijackModule("peopleList", {
 				peopleListContainer(handler, args) {
 					const directive = handler.apply(this, args)
 					

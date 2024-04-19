@@ -11,14 +11,14 @@ pageInit.avatar = () => {
 	
 	if(SETTINGS.get("avatar.removeAccessoryLimits")) {
 		InjectJS.inject(() => {
-			const { hijackAngular, hijackFunction, onSet, settings } = window.BTRoblox
+			const { angularHook, hijackFunction, onSet, settings } = window.BTRoblox
 			
 			const accessoryAssetTypeIds = [8, 41, 42, 43, 44, 45, 46, 47, 57, 58]
 			const layeredAssetTypeIds = [64, 65, 66, 67, 68, 69, 70, 71, 72]
 			
 			onSet(window, "Roblox", Roblox => {
 				onSet(Roblox, "AvatarAccoutrementService", AvatarAccoutrementService => {
-					hijackAngular("avatar", {
+					angularHook.hijackModule("avatar", {
 						avatarController(handler, args, argsMap) {
 							const result = handler.apply(this, args)
 							
