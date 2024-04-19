@@ -7,11 +7,12 @@ if(document.contentType === "text/html" && location.protocol !== "blob") {
 		SETTINGS.load(() => {
 			const currentPage = BTRoblox.currentPage
 			
-			InjectJS.inject([
+			InjectJS.inject(
+				INJECT_SCRIPT,
 				SETTINGS.serialize(),
 				currentPage ? { name: currentPage.name, matches: currentPage.matches } : null,
 				IS_DEV_MODE
-			], INJECT_SCRIPT)
+			)
 			
 			btrThemes.init()
 			

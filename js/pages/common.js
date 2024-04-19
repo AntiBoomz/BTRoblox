@@ -78,7 +78,7 @@ const robloxLinkify = target => {
 	const className = `btr-linkify-${linkifyCounter++}`
 	target.classList.add("linkify", className)
 	
-	InjectJS.inject([className], className => $?.(`.${className}`).linkify?.())
+	InjectJS.inject(className => $?.(`.${className}`).linkify?.(), className)
 	target.classList.remove(className)
 }
 
