@@ -595,7 +595,7 @@ pageInit.itemdetails = (category, assetIdString) => {
 				})
 		
 		if(category !== "game-pass") {
-			modifyTemplate("recommendations", template => {
+			angularHook.modifyTemplate("recommendations", template => {
 				for(const label of template.$findAll(".item-card-price .text-robux-tile")) {
 					const cashText = ` (${RobuxToCash.convertAngular("item.price")})`
 					const cashTitle = `R$ {{::${label.getAttribute("ng-bind")}}}${cashText}`

@@ -75,7 +75,7 @@ pageInit.inventory = () => {
 	}
 	
 	if(RobuxToCash.isEnabled()) {
-		modifyTemplate("assets-explorer", template => {
+		angularHook.modifyTemplate("assets-explorer", template => {
 			const label = template.$find(".item-card-price .text-robux-tile")
 			if(!label) { return }
 
@@ -110,7 +110,7 @@ pageInit.inventory = () => {
 			2, 11, 12, 21
 		]
 
-		modifyTemplate("assets-explorer", template => {
+		angularHook.modifyTemplate("assets-explorer", template => {
 			const visibility = `$ctrl.staticData.isOwnPage && (${
 				validAssetTypes
 					.map(x => `$ctrl.currentData.AssetTypeId === ${x}`)

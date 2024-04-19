@@ -5,7 +5,7 @@ pageInit.avatar = () => {
 		return
 	}
 	
-	modifyTemplate("avatar-base", template => {
+	angularHook.modifyTemplate("avatar-base", template => {
 		template.$find(".redraw-avatar .text-link").after(html`<a class="text-link" ng-click="openAdvancedAccessories()" style="margin-right:10px">Advanced</a>`)
 	})
 	

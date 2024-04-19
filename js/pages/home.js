@@ -2,7 +2,7 @@
 
 pageInit.home = () => {
 	if(SETTINGS.get("home.friendsShowUsername")) {
-		modifyTemplate("people", card => {
+		angularHook.modifyTemplate("people", card => {
 			const container = card.$find(".friend-parent-container")
 			
 			if(container) {
@@ -56,7 +56,7 @@ pageInit.home = () => {
 	}
 	
 	if(SETTINGS.get("home.friendPresenceLinks")) {
-		modifyTemplate("people-info-card", template => {
+		angularHook.modifyTemplate("people-info-card", template => {
 			for(const elem of template.$findAll(`[ng-click^="goToGameDetails"]`)) {
 				const anchor = document.createElement("a")
 				anchor.href = `{{friend.presence.placeUrl}}`

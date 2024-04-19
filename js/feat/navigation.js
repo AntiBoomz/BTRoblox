@@ -162,7 +162,7 @@ const Navigation = {
 				}
 				
 				if(element.reactInject) {
-					reactInject({
+					reactHook.inject({
 						...element.reactInject,
 						callback(node) {
 							element.addNode(node)

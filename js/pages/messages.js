@@ -128,7 +128,7 @@ pageInit.messages = function() {
 	
 	document.$watch(">body", body => body.classList.add("btr-messages"))
 
-	modifyTemplate("messages-nav", template => {
+	angularHook.modifyTemplate("messages-nav", template => {
 		const curPage = template.$find(".CurrentPage")
 
 		if(curPage) {

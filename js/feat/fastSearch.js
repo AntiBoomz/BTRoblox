@@ -571,7 +571,7 @@ const btrFastSearch = {
 			new MutationObserver(requestClassUpdate).observe(search, { subtree: true, attributes: true, attributeFilter: ["class"] })
 		}, { continuous: true })
 		
-		reactInject({
+		reactHook.inject({
 			selector: "#navbar-universal-search ul, .navbar-search ul",
 			index: 0,
 			html: `<div id="btr-fastsearch-container"><div style=display:none></div></div>`

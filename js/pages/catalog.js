@@ -269,7 +269,7 @@ const OwnerAssetCache = {
 
 pageInit.catalog = () => {
 	if(RobuxToCash.isEnabled()) {
-		modifyTemplate("item-card", template => {
+		angularHook.modifyTemplate("item-card", template => {
 			for(const label of template.$findAll(".item-card-price .text-robux-tile")) {
 				const cashText = ` (${RobuxToCash.convertAngular("(item.lowestPrice||item.price)")})`
 				label.after(html`<span class=btr-robuxToCash-tile ng-if="${label.getAttribute("ng-if")}">${cashText}</span>`)
@@ -287,7 +287,7 @@ pageInit.catalog = () => {
 	if(!SETTINGS.get("catalog.enabled")) { return }
 	document.$watch("body", body => body.classList.add("btr-catalog"))
 
-	modifyTemplate("item-card", template => {
+	angularHook.modifyTemplate("item-card", template => {
 		for(const cont of template.$findAll(".item-card-container")) {
 			cont.classList.add("btr-item-card-container")
 	

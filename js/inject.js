@@ -249,10 +249,9 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 		}
 	}
 	
-	
-	const reactHandlerCacheSymbol = Symbol("btrReactHandlerCache")
-	
 	const reactHook = {
+		handlerCacheSymbol: Symbol("btrReactHandlerCache"),
+		
 		constructorReplaces: [],
 		injectedContent: [],
 		
@@ -445,7 +444,7 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 				const handlers = this.constructorReplaces.filter(info => info.filter(args))
 				
 				if(handlers.length > 0) {
-					const cache = args[0][reactHandlerCacheSymbol] = args[0][reactHandlerCacheSymbol] ?? {}
+					const cache = args[0][reactHook.handlerCacheSymbol] = args[0][reactHook.handlerCacheSymbol] ?? {}
 					const key = handlers.map(x => x.index).join("_")
 					
 					let handler = cache[key]
