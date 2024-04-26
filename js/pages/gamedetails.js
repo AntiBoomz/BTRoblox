@@ -756,6 +756,29 @@ pageInit.gamedetails = placeId => {
 			}
 		})
 	})
+	
+	RobloxApi.economy.getAssetDetails(placeId).then(data => {
+		if(!data.Updated) { return }
+		
+		watcher.$watch(".game-stat-container").$then()
+			.$watch(
+				".game-stat .text-lead",
+				x => x.previousElementSibling?.textContent === "Created",
+				label => {
+					label.title = new Date(data.Created).$format("M/D/YYYY h:mm:ss A (T)")
+				}
+			)
+			.$watch(
+				".game-stat .text-lead",
+				x => x.previousElementSibling?.textContent === "Updated",
+				label => {
+					label.classList.remove("date-time-i18n") // Otherwise roblox rewrites the label
+					
+					label.title = new Date(data.Updated).$format("M/D/YYYY h:mm:ss A (T)")
+					label.textContent = `${$.dateSince(data.Updated)}`
+				}
+			)
+	})
 		
 	$.ready(() => {
 		const placeEdit = $("#game-context-menu .dropdown-menu .VisitButtonEditGLI")
