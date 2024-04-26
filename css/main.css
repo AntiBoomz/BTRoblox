@@ -68,7 +68,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 #header .btr-nav-notif {
 	box-sizing: content-box;
 	position: absolute;
-	display: flex;
+	display: block;
 	top: -2px;
 	right: -2px;
 
@@ -76,13 +76,12 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	padding: 0px 4px;
 	height: 16px;
 	min-width: 8px;
-	align-items: center;
-	justify-content: center;
+	text-align: center;
 
 	color: #191919;
 	font-size: 10px;
 	font-weight: bold;
-	line-height: 1.4em;
+	line-height: 17px;
 
 	border-radius: 10px;
 	border: 2px solid #0074bd;
