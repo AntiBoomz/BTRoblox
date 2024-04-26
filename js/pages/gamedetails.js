@@ -341,7 +341,7 @@ pageInit.gamedetails = placeId => {
 		}
 		
 		reactHook.hijackConstructor( // RunningGameServers
-			args => args[1]?.getGameServers,
+			result => result.props.getGameServers,
 			(target, thisArg, args) => {
 				const [props] = args
 				
@@ -399,7 +399,7 @@ pageInit.gamedetails = placeId => {
 		}
 		
 		reactHook.hijackConstructor( // GameInstanceCard
-			args => args[1]?.gameServerStatus,
+			result => result.props.gameServerStatus,
 			(target, thisArg, args) => {
 				const result = target.apply(thisArg, args)
 				const jobId = args[0].id
@@ -480,7 +480,7 @@ pageInit.gamedetails = placeId => {
 		)
 		
 		reactHook.hijackConstructor( // GameSection
-			args => args[1]?.loadMoreGameInstances,
+			result => result.props.loadMoreGameInstances,
 			(target, thisArg, args) => {
 				if(args[0].btrPagerEnabled) {
 					args[0].showLoadMoreButton = false
@@ -516,7 +516,7 @@ pageInit.gamedetails = placeId => {
 		)
 		
 		reactHook.hijackConstructor( // App (serverList)
-			args => args[0].toString().includes("getPublicGameInstances"),
+			result => result.type.toString().includes("getPublicGameInstances"),
 			(target, thisArg, args) => {
 				reactHook.hijackUseState({ // shouldRender
 					index: 0,
@@ -603,15 +603,6 @@ pageInit.gamedetails = placeId => {
 				parent.prepend(gameTab)
 			})
 		.$back()
-		.$watch("#about", about => {
-			about.classList.remove("active")
-
-			about.$watchAll("*", x => {
-				if(!x.matches("#rbx-private-servers, #private-server-container-about-tab, #my-recommended-games, #recommended-games-container")) {
-					midContainer.append(x)
-				}
-			})
-		})
 		.$watch("#game-instances", games => {
 			games.classList.add("active")
 			
@@ -631,17 +622,25 @@ pageInit.gamedetails = placeId => {
 			newContainer.after(midContainer)
 			newContainer.$find(".placeholder-main").replaceWith(mainCont)
 		})
-		.$watch(".game-about-container", async aboutCont => {
-			const descCont = await aboutCont.$watch(">.section-content").$promise()
-
-			descCont.classList.remove("section-content")
-			descCont.classList.add("btr-description")
-			newContainer.append(descCont)
-
-			aboutCont.remove()
+		.$watch("#about", about => {
+			about.classList.remove("active")
+		})
+		.$watch("#game-details-about-tab-container", parent => {
+			midContainer.append(parent)
+			
+			parent.$watch("#btr-description-wrapper", descCont => {
+				newContainer.append(descCont)
+				reactHook.redirectEvents(descCont, parent)
+			})
+			
+			parent.$watch("#btr-recommendations-wrapper", recCont => {
+				$("#about").append(recCont)
+				reactHook.redirectEvents(recCont, parent)
+			})
 		})
 		.$watch(".tab-content", cont => {
 			cont.classList.add("section")
+			
 			cont.$watchAll(".tab-pane", pane => {
 				if(pane.id !== "about") {
 					pane.classList.add("section-content")
@@ -736,29 +735,28 @@ pageInit.gamedetails = placeId => {
 			}
 		})
 	
-	RobloxApi.economy.getAssetDetails(placeId).then(data => {
-		if(!data.Updated) { return }
+	InjectJS.inject(() => {
+		BTRoblox.reactHook.inject({
+			selector: ".game-description-container",
+			
+			callback(result) {
+				return React.createElement("div", { style: { display: "contents" } },
+					React.createElement("div", { id: "btr-description-wrapper", style: { display: "contents" } }, result)
+				)
+			}
+		})
 		
-		watcher.$watch(".game-stats-container").$then()
-			.$watch(
-				".game-stat .text-lead",
-				x => x.previousElementSibling?.textContent === "Created",
-				label => {
-					label.title = new Date(data.Created).$format("M/D/YYYY h:mm:ss A (T)")
-				}
-			)
-			.$watch(
-				".game-stat .text-lead",
-				x => x.previousElementSibling?.textContent === "Updated",
-				label => {
-					label.classList.remove("date-time-i18n") // Otherwise roblox rewrites the label
-					
-					label.title = new Date(data.Updated).$format("M/D/YYYY h:mm:ss A (T)")
-					label.textContent = `${$.dateSince(data.Updated)}`
-				}
-			)
+		BTRoblox.reactHook.inject({
+			selector: ".container-list.games-detail",
+			
+			callback(result) {
+				return React.createElement("div", { style: { display: "contents" } },
+					React.createElement("div", { id: "btr-recommendations-wrapper", style: { display: "contents" } }, result)
+				)
+			}
+		})
 	})
-
+		
 	$.ready(() => {
 		const placeEdit = $("#game-context-menu .dropdown-menu .VisitButtonEditGLI")
 		if(placeEdit) {

@@ -36,6 +36,11 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 		return args[0][args[1]] = new Proxy(args[0][args[1]], { apply: args[2] })
 	}
 	
+	const assert = (bool, ...args) => {
+		if(!bool) { throw new Error(...args) }
+		return bool
+	}
+	
 	//
 	
 	const contentScript = {
@@ -250,7 +255,7 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 	}
 	
 	const reactHook = {
-		handlerCacheSymbol: Symbol("btrReactHandlerCache"),
+		functionProxies: new WeakMap(),
 		
 		constructorReplaces: [],
 		injectedContent: [],
@@ -388,48 +393,39 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 			})
 		},
 		
-		queryElement(elem, query, n = 5, requireRootMatch = false) {
-			if(!elem?.props) {
-				return null
-			}
-			
-			const iterate = (target, selector, n) => {
-				if(Array.isArray(target)) {
-					for(const child of target) {
-						const result = iterate(child, selector, n)
-						
-						if(result) {
-							return result
-						}
-					}
-					
-					return null
+		queryElement(targets, query, depth = 5, matchRoot = false) {
+			for(const target of (Array.isArray(targets) ? targets : [targets])) {
+				if(!target?.props) {
+					continue
 				}
 				
-				return this.queryElement(target, selector, n)
-			}
-			
-			if(typeof query === "function") {
-				if(query(elem)) {
-					return elem
-				}
-			} else {
-				for(const selector of (Array.isArray(query) ? query : [query])) {
-					if(this.selectorMatches(elem, selector)) {
-						if(!selector.next) {
-							return elem
-						}
-						
-						const result = iterate(elem.props.children, selector.next, n)
-						if(result) {
-							return result
+				if(typeof query === "function") {
+					if(query(target)) {
+						return target
+					}
+				} else {
+					for(const selector of (Array.isArray(query) ? query : [query])) {
+						if(this.selectorMatches(target, selector)) {
+							if(!selector.next) {
+								return target
+							}
+							
+							const result = this.queryElement(target.props.children, selector.next, depth - 1, selector.direct)
+							
+							if(result) {
+								return result
+							}
 						}
 					}
 				}
-			}
-			
-			if(n >= 2 && !requireRootMatch) {
-				return iterate(elem.props.children, query, n - 1)
+				
+				if(depth >= 2 && !matchRoot) {
+					const result = this.queryElement(target.props.children, query, depth - 1, matchRoot)
+					
+					if(result) {
+						return result
+					}
+				}
 			}
 			
 			return null
@@ -437,104 +433,255 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 		
 		//
 		
-		onCreateElement(args) {
-			const props = args[1]
+		parseReactStringSelector(selector) {
+			assert(!/[[+~]/.exec(selector), "complex selectors not supported")
+			const result = []
 			
-			if(typeof args[0] === "function") {
-				const handlers = this.constructorReplaces.filter(info => info.filter(args))
+			for(const option of selector.split(/,/)) {
+				let directChild = false
+				let previous
 				
-				if(handlers.length > 0) {
-					const cache = args[0][reactHook.handlerCacheSymbol] = args[0][reactHook.handlerCacheSymbol] ?? {}
-					const key = handlers.map(x => x.index).join("_")
+				for(let piece of option.split(/\s+|(?=>)/)) {
+					piece = piece.trim()
+					if(!piece.length) { continue }
 					
-					let handler = cache[key]
-					
-					if(!handler) {
-						handler = args[0]
+					if(piece[0] === ">") {
+						assert(!directChild, "duplicate direct child selector")
+						directChild = true
 						
-						for(const info of handlers) {
-							handler = new Proxy(handler, { apply: info.handler })
+						if(piece.length === 1) {
+							continue
 						}
 						
-						cache[key] = handler
+						piece = piece.slice(1)
 					}
 					
-					args[0] = handler
+					const attributes = piece.split(/(?=[#.])/)
+					const obj = {}
+					
+					if(directChild) {
+						obj.direct = true
+					}
+					
+					for(const attr of attributes) {
+						if(attr[0] === ".") {
+							obj.classList = obj.classList ?? []
+							obj.classList.push(attr.slice(1))
+						} else if(attr[0] === "#") {
+							obj.props = obj.props ?? {}
+							obj.props.id = attr.slice(1)
+						} else {
+							if(attr !== "*") { // unset obj.type acts as universal selector
+								obj.type = attr.toLowerCase()
+							}
+						}
+					}
+					
+					if(previous) {
+						previous.next = obj
+					} else {
+						result.push(obj) // Add first selector to result
+					}
+					
+					previous = obj
+					directChild = false
+				}
+			}
+			
+			return result
+		},
+
+		parseReactSelector(selectors) {
+			selectors = Array.isArray(selectors) ? selectors : [selectors]
+			const result = []
+			
+			for(let i = 0, len = selectors.length; i < len; i++) {
+				const selector = selectors[i]
+				
+				if(typeof selector === "string") {
+					result.push(...reactHook.parseReactStringSelector(selector))
+					continue
+				}
+				
+				if(selector.selector) {
+					assert(!selector.next)
+					const selectors = reactHook.parseReactStringSelector(selector)
+					
+					const fillMissingData = targets => {
+						for(const target of targets) {
+							if(target.next) {
+								fillMissingData(target.next)
+								continue
+							}
+							
+							for(const key of selector) {
+								if(key === "selector") { continue }
+								const value = selector[key]
+								
+								if(Array.isArray(value)) {
+									target[key] = target[key] ?? []
+									target[key].push(...value)
+									
+								} else if(typeof value === "object" && value !== null) {
+									target[key] = target[key] ?? {}
+									Object.assign(target[key], value)
+									
+								} else {
+									target[key] = value
+								}
+							}
+						}
+					}
+					
+					fillMissingData(selectors)
+					result.push(...selectors)
+					continue
+				}
+				
+				result.push(selector)
+			}
+			
+			return result
+		},
+		
+		//
+		
+		onCreateElement(result) {
+			const type = result.type
+			const props = result.props
+			
+			if(typeof type === "function" && this.functionProxies.get(type) !== false) {
+				const handlers = this.constructorReplaces.filter(info => info.filter(result))
+				
+				if(handlers.length > 0) {
+					let proxies = this.functionProxies.get(type)
+					
+					if(!proxies) {
+						proxies = {}
+						this.functionProxies.set(type, proxies)
+					}
+					
+					const key = handlers.map(x => x.index).join("_")
+					let proxy = proxies[key]
+					
+					if(!proxy) {
+						proxy = type
+						
+						for(const info of handlers) {
+							proxy = new Proxy(proxy, { apply: info.handler })
+						}
+						
+						this.functionProxies.set(proxy, false)
+						proxies[key] = proxy
+					}
+					
+					// Okay, this is hacky as heck...
+					// There's user level code that breaks if result.type is directly
+					// set to proxy, so we need to make it only return proxy when we're
+					// not executing a component render function.
+					
+					Object.defineProperty(result, "type", {
+						enumerable: true,
+						configurable: true,
+						get: () => {
+							// According to ReactFiberHooks.js, dispatcher will be set to ContextOnlyDispatcher when not rendering
+							const dispatcher = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher.current
+							const isRendering = dispatcher && dispatcher.useCallback !== dispatcher.useEffect
+							return isRendering ? type : proxy
+						},
+						set: x => {
+							delete result.type
+							result.type = x
+						}
+					})
 				}
 			}
 			
 			//
 			
-			const childrenModified = new WeakSet()
-			
-			const rootElem = {
-				type: args[0],
-				key: props.key,
-				props: {
-					...props,
-					key: null,
-					children: args.slice(2)
-				}
-			}
-			
-			for(const content of this.injectedContent) {
-				const target = this.queryElement(rootElem, content.selector, 5, true)
-				if(!target) { continue }
+			if(!this.injectingContent) {
+				this.injectingContent = true
 				
-				if(!childrenModified.has(target)) {
-					childrenModified.add(target)
-					target.props.children = this.flattenChildren(target.props.children)
+				try {
+					const childrenModified = new WeakSet()
 					
-					if(target === rootElem) {
-						args.splice(2, args.length, target.props.children)
-					}
-				}
-				
-				const children = target.props.children
-				let index = 0
-				
-				if(typeof content.index === "number") {
-					index = content.index
-				} else if(typeof content.index === "object") {
-					for(let i = 0; i < children.length; i++) {
-						const child = children[i]
+					for(const content of this.injectedContent) {
+						const target = this.queryElement(result, content.selector, 5, true)
+						if(!target) { continue }
 						
-						if(child.props && this.selectorMatches(child, content.index.selector)) {
-							index = i + (content.index.offset || 0) + 1
-							break
+						if(content.action === "append") {
+							if(!childrenModified.has(target)) {
+								childrenModified.add(target)
+								target.props.children = this.flattenChildren(target.props.children)
+							}
+							
+							const children = target.props.children
+							let index = 0
+							
+							if(typeof content.index === "number") {
+								index = content.index
+							} else if(typeof content.index === "object") {
+								for(let i = 0; i < children.length; i++) {
+									const child = children[i]
+									
+									if(child.props && this.selectorMatches(child, content.index.selector)) {
+										index = i + (content.index.offset || 0) + 1
+										break
+									}
+								}
+							}
+							
+							children.splice(
+								index, 0,
+								reactHook.createElement(content.elemType, {
+									key: content.elemId,
+									id: content.elemId,
+									dangerouslySetInnerHTML: { __html: " " }
+								})
+							)
+						} else if(content.callback) {
+							const returnValue = content.callback(target, result)
+							
+							if(returnValue && returnValue !== result) {
+								return returnValue
+							}
 						}
 					}
+				} finally {
+					this.injectingContent = false
 				}
-				
-				children.splice(
-					index,
-					0,
-					reactHook.createElement(content.elemType, {
-						key: content.elemId,
-						id: content.elemId,
-						dangerouslySetInnerHTML: { __html: " " }
-					})
-				)
 			}
+			
+			return result
+		},
+		
+		inject(data) {
+			data = { ...data }
+			data.selector = this.parseReactSelector(data.selector)
+			
+			if(typeof data.index === "object") {
+				data.index = { ...data.index }
+				data.index.selector = this.parseReactSelector(data.index.selector)
+			}
+			
+			this.injectedContent.push(data)
 		},
 		
 		init() {
 			contentScript.listen("reactInject", data => {
-				this.injectedContent.push(data)
+				reactHook.inject(data)
 			})
 			
 			onSet(window, "React", React => {
 				reactHook.createElement = React.createElement
 				
 				hijackFunction(React, "createElement", (target, thisArg, args) => {
-					if(args[1] == null) {
-						args[1] = {}
-					}
+					let result = target.apply(thisArg, args)
 					
-					try { reactHook.onCreateElement(args) }
+					try { result = reactHook.onCreateElement(result) }
 					catch(ex) { console.error(ex) }
 					
-					return target.apply(thisArg, args)
+					return result
 				})
 				
 				hijackFunction(React, "useState", (target, thisArg, args) => {
@@ -612,6 +759,7 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 		
 		hijackFunction,
 		onReady,
-		onSet
+		onSet,
+		assert
 	})
 }

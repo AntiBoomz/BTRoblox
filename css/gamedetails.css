@@ -36,17 +36,15 @@ body .btr-game-main-container {
 	overflow-wrap: break-word;
 }
 
-.btr-description {
-	float: left;
-	width: 100%;
-	padding: 0;
-}
-
-.btr-description .game-description {
+.btr-game-main-container .game-description-container {
 	padding: 6px 12px;
-	margin-bottom: 10px;
+	margin-bottom: 0;
+	clear: both;
 }
 
+.btr-game-main-container .game-description-container > .container-header {
+	display: none;
+}
 
 /* Badges */
 
@@ -252,8 +250,8 @@ html body .btr-universe-box {
 	background: transparent !important;
 }
 
-.btr-gamedetails #about #rbx-private-servers,
-.btr-gamedetails #about #private-server-container-about-tab {
+.btr-gamedetails #game-details-about-tab-container #rbx-private-servers,
+.btr-gamedetails #game-details-about-tab-container #private-server-container-about-tab {
 	display: none !important;
 }
 
