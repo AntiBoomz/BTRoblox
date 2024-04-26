@@ -380,14 +380,20 @@ pageInit.common = () => {
 			if(!bal) { return }
 
 			const span = html`<span style="display:block;opacity:0.75;font-size:small;font-weight:500;"></span>`
-
+			let lastText
+			
 			const update = () => {
 				if(!RobuxToCash.isEnabled()) {
 					span.remove()
 					return
 				}
 				
-				const matches = bal.textContent.trim().match(/^([\d,]+)\sRobux$/)
+				const text = bal.firstChild?.textContent
+				if(lastText === text) { return }
+				
+				lastText = text
+				
+				const matches = text.trim().match(/([\d,]+)/)
 				if(!matches) { return }
 
 				const amt = parseInt(matches[0].replace(/\D/g, ""), 10)
@@ -398,8 +404,7 @@ pageInit.common = () => {
 				bal.style.flexDirection = "column"
 			}
 
-			const observer = new MutationObserver(update)
-			observer.observe(bal, { childList: true })
+			new MutationObserver(update).observe(bal, { childList: true })
 			update()
 			
 			SETTINGS.onChange("general.robuxToUSDRate", update)
