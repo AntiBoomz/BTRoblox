@@ -199,7 +199,7 @@ const Navigation = {
 			
 			init() {
 				document.$watch("#header").$then().$watch("ul.rbx-navbar", navbar => {
-					const robuxBtn = navbar.$find(`.rbx-navbar a[href^="/robux"]`)
+					const robuxBtn = navbar.$find(`.rbx-navbar a[href^="/robux"],.rbx-navbar a[href^="/upgrades/robux"]`)
 					
 					if(robuxBtn) {
 						this.addNode(robuxBtn.parentNode)
