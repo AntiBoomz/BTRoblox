@@ -579,18 +579,16 @@ pageInit.gamedetails = placeId => {
 	}
 
 	const watcher = document.$watch("body", body => body.classList.add("btr-gamedetails")).$then()
-		.$watch("#horizontal-tabs").$then()
-			.$watch(["#tab-about", "#tab-game-instances"], (aboutTab, gameTab) => {
-				aboutTab.$find(".text-lead").textContent = "Recommended"
-				
-				aboutTab.classList.remove("active")
-				gameTab.classList.add("active")
+		.$watch(["#tab-about", "#tab-game-instances"], (aboutTab, gameTab) => {
+			aboutTab.$find(".text-lead").textContent = "Recommended"
+			
+			aboutTab.classList.remove("active")
+			gameTab.classList.add("active")
 
-				const parent = aboutTab.parentNode
-				parent.append(aboutTab)
-				parent.prepend(gameTab)
-			})
-		.$back()
+			const parent = aboutTab.parentNode
+			parent.append(aboutTab)
+			parent.prepend(gameTab)
+		})
 		.$watch("#game-instances", games => {
 			games.classList.add("active")
 			
@@ -698,7 +696,9 @@ pageInit.gamedetails = placeId => {
 				}
 			})
 		})
-		.$watch("#carousel-game-details", details => details.setAttribute("data-is-video-autoplayed-on-ready", "false"))
+		.$watch("#carousel-game-details", details => {
+			details.setAttribute("data-is-video-autoplayed-on-ready", "false")
+		})
 		.$watch("#game-detail-meta-data", dataCont => {
 			ContextMenu.setCustomContextMenu(document.documentElement, {
 				copyParent: true,
@@ -724,7 +724,9 @@ pageInit.gamedetails = placeId => {
 		})
 	
 	InjectJS.inject(() => {
-		BTRoblox.reactHook.inject({
+		const { reactHook, hijackFunction } = BTRoblox
+		
+		reactHook.inject({
 			selector: ".game-description-container",
 			
 			callback(result) {
@@ -734,7 +736,7 @@ pageInit.gamedetails = placeId => {
 			}
 		})
 		
-		BTRoblox.reactHook.inject({
+		reactHook.inject({
 			selector: ".container-list.games-detail",
 			
 			callback(result) {
