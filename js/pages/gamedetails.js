@@ -745,6 +745,27 @@ pageInit.gamedetails = placeId => {
 				)
 			}
 		})
+		
+		reactHook.inject({
+			selector: ".game-social-links .btn-secondary-lg",
+			
+			callback(result) {
+				const socials = reactHook?.renderTarget.state[0]?.[0]
+				const entry = socials?.find(x => x.id === +result.key)
+				
+				if(entry) {
+					result.props.href = entry.url
+					
+					hijackFunction(result.props, "onClick", (target, thisArg, args) => {
+						const event = args[0]
+						event.preventDefault()
+						
+						const result = target.apply(thisArg, args)
+						return result
+					})
+				}
+			}
+		})
 	})
 	
 	RobloxApi.economy.getAssetDetails(placeId).then(data => {
