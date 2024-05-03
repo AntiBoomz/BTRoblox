@@ -341,7 +341,7 @@ pageInit.gamedetails = placeId => {
 		}
 		
 		reactHook.hijackConstructor( // RunningGameServers
-			result => result.props.getGameServers,
+			(type, props) => props.getGameServers,
 			(target, thisArg, args) => {
 				const [props] = args
 				
@@ -399,7 +399,7 @@ pageInit.gamedetails = placeId => {
 		}
 		
 		reactHook.hijackConstructor( // GameInstanceCard
-			result => result.props.gameServerStatus,
+			(type, props) => props.gameServerStatus,
 			(target, thisArg, args) => {
 				const result = target.apply(thisArg, args)
 				const jobId = args[0].id
@@ -480,7 +480,7 @@ pageInit.gamedetails = placeId => {
 		)
 		
 		reactHook.hijackConstructor( // GameSection
-			result => result.props.loadMoreGameInstances,
+			(type, props) => props.loadMoreGameInstances,
 			(target, thisArg, args) => {
 				if(args[0].btrPagerEnabled) {
 					args[0].showLoadMoreButton = false
@@ -516,30 +516,18 @@ pageInit.gamedetails = placeId => {
 		)
 		
 		reactHook.hijackConstructor( // App (serverList)
-			result => result.type.toString().includes("getPublicGameInstances"),
+			(type, props) => type.toString().includes("getPublicGameInstances"),
 			(target, thisArg, args) => {
-				reactHook.hijackUseState({ // shouldRender
-					index: 0,
-					expectedValue: false,
-					
-					transform(value) {
-						return true
-					}
-				})
-				
-				reactHook.hijackUseState({ // currentTab
-					filter(value) {
-						return ["tab-about", "tab-game-instances", "tab-store"].includes(value)
-					},
-					
-					transform(value) {
-						if(value === "tab-about" && window.location.hash !== "#!/about") {
+				reactHook.hijackUseState( // currentTab
+					(value, index) => ["tab-about", "tab-game-instances", "tab-store"].includes(value),
+					(value, initial) => {
+						if(initial && value === "tab-about" && window.location.hash !== "#!/about") {
 							return "tab-game-instances"
 						}
 						
 						return value
 					}
-				})
+				)
 				
 				return target.apply(thisArg, args)
 			}

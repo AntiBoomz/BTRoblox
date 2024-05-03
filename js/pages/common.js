@@ -465,7 +465,7 @@ pageInit.common = () => {
 			const { reactHook } = window.BTRoblox
 			
 			reactHook.hijackConstructor(
-				result => "isGetCurrencyCallDone" in result.props && "isExperimentCallDone" in result.props && "robuxAmount" in result.props,
+				(type, props) => "isGetCurrencyCallDone" in props && "isExperimentCallDone" in props && "robuxAmount" in props,
 				(target, thisArg, args) => {
 					try {
 						const props = args[0]
@@ -517,7 +517,7 @@ pageInit.common = () => {
 			})
 
 			reactHook.hijackConstructor(
-				result => "robuxAmount" in result.props && result.type.toString().includes("nav-robux-amount"),
+				(type, props) => "robuxAmount" in props && type.toString().includes("nav-robux-amount"),
 				(target, thisArg, args) => {
 					hijackTruncValue = true
 					const result = target.apply(thisArg, args)
