@@ -436,8 +436,7 @@ pageInit.gamedetails = placeId => {
 								status.props.children += `\nRegion: ${
 									!serverDetails ? "Loading" :
 									serverDetails.location ? serverDetails.location.country.name :
-									serverDetails.full ? "Full" :
-									"??"
+									serverDetails.statusText
 								}`
 									
 								// Okay, this is hacky, BUT...
@@ -455,8 +454,7 @@ pageInit.gamedetails = placeId => {
 									status.props.children += ` (${
 										!serverDetails ? "Loading" :
 										serverDetails.location ? serverDetails.location.country.code :
-										serverDetails.full ? "Full" :
-										"??"
+										serverDetails.statusText
 									})`
 								}
 							}
@@ -469,7 +467,7 @@ pageInit.gamedetails = placeId => {
 										serverDetails.location.city !== serverDetails.location.country.name ? `${serverDetails.location.city}, ${serverDetails.location.country.name}` :
 										`${serverDetails.location.city}` 
 									) :
-									`Unable to fetch server location: ${serverDetails.full ? "Server is full" : serverDetails.ip ?? `status ${serverDetails.status}`}`
+									serverDetails.statusTextLong
 							}
 						}
 					}

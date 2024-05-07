@@ -193,18 +193,45 @@ if(IS_BACKGROUND_PAGE) {
 			const address = json?.joinScript?.UdmuxEndpoints?.[0]?.Address ?? json?.joinScript?.MachineAddress
 			
 			if(!address) {
+				switch(json.status) {
+				case 22:
+					respond({
+						success: false,
+						statusText: "Full",
+						statusTextLong: "Unable to fetch server location: Server is full"
+					})
+					break
+				case 12:
+					respond({
+						success: false,
+						statusText: "Unknown",
+						statusTextLong: "Unable to fetch server location: You do not have access to this place"
+					})
+					break
+				default:
+					respond({
+						success: false,
+						statusText: "Unknown",
+						statusTextLong: `Unable to fetch server location: Unknown status ${json.status}`
+					})
+				}
+				return
+			}
+			
+			const location = serverRegionsByIp[address.replace(/^(128\.116\.\d+)\.\d+$/, "$1.0")]
+			
+			if(!location) {
 				respond({
 					success: false,
-					full: json.status === 22,
-					status: json.status
+					statusText: "Unknown",
+					statusTextLong: `Unknown server address ${address}`
 				})
 				return
 			}
 			
 			respond({
 				success: true,
-				ip: address,
-				location: serverRegionsByIp[address.replace(/^(128\.116\.\d+)\.\d+$/, "$1.0")] ?? null
+				location: location
 			})
 		}
 	})
@@ -226,7 +253,7 @@ const getServerDetails = !IS_BACKGROUND_PAGE && function(placeId, jobId, callbac
 		promise = gettingServerDetails[jobId] = new Promise(resolve => {
 			MESSAGING.send("getServerDetails", { placeId: placeId, jobId: jobId}, details => {
 				delete gettingServerDetails[jobId]
-				btrLocalStorage.setItem(`serverDetails-${jobId}`, details, { expires: Date.now() + (details.success ? 5 * 60e3 : 15e3) })
+				btrLocalStorage.setItem(`serverDetails-${jobId}`, details, { expires: Date.now() + (details.success ? 60 * 60e3 : 15e3) })
 				resolve(details)
 			})
 		})
