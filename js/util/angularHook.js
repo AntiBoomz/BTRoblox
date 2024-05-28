@@ -49,11 +49,13 @@ const angularHook = {
 			}
 		}
 		
-		$.ready(() => setTimeout(() => {
-			if(!listener.finished) {
-				THROW_DEV_WARNING(`Missing templates in modifyTemplate ${JSON.stringify(keyArray)}`)
-			}
-		}, 5e3))
+		if(IS_DEV_MODE) {
+			$.ready(() => setTimeout(() => {
+				if(!listener.finished) {
+					console.warn(`Missing templates in modifyTemplate ${JSON.stringify(keyArray)}`)
+				}
+			}, 5e3))
+		}
 	},
 	
 	init() {
