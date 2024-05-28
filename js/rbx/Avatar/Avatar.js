@@ -1295,7 +1295,9 @@ const RBXAvatar = (() => {
 					acc.parent = null
 				}
 			}
-
+			
+			let hasInvalidLayeredClothing = false
+			
 			// Update accessories
 			for(const acc of accArray) {
 				if(acc.wrapLayer) {
@@ -1306,6 +1308,11 @@ const RBXAvatar = (() => {
 					if(this.playerType !== "R15") {
 						continue
 					}
+				}
+				
+				if(acc.hasAutoSkinWrapLayer) {
+					hasInvalidLayeredClothing = true
+					continue
 				}
 				
 				if(!acc.obj) {
@@ -1455,6 +1462,8 @@ const RBXAvatar = (() => {
 					}
 				}
 			}
+			
+			this.trigger("hasInvalidLayeredClothingChanged", hasInvalidLayeredClothing)
 		}
 		
 		getLayeredRequest() {
@@ -1919,7 +1928,7 @@ const RBXAvatar = (() => {
 					
 				for(const group of handleGroups) {
 					if(getGroupMatch(obj, group, uvBoxes[0])) {
-						matches.push({ group })
+						matches.push(group)
 					}
 				}
 				
@@ -1934,7 +1943,7 @@ const RBXAvatar = (() => {
 							console.log(matches)
 							console.log(groups)
 							console.log(request)
-							setTimeout(() => alert("Could not resolve asset in render"), 0)
+							console.warn("Could not resolve asset in render")
 						}
 					}
 					
@@ -1942,12 +1951,13 @@ const RBXAvatar = (() => {
 				}
 				
 				if(matches.length >= 2) {
-					// Can't really do anything about this case, gotta just select the first one and hope
-					// stuff wont break too badly
+					// Can't really do anything about this case
+					// Gotta either select randomly or just hide the accessory...
 					console.log("[BTRoblox] Multiple accessory matches :(")
+					return false
 				}
 				
-				const { group } = matches[0]
+				const group = matches[0]
 				handleGroups.splice(handleGroups.indexOf(group), 1) // only match each group once
 				
 				const mesh = obj.rbxMesh.firstLod || obj.rbxMesh
@@ -2101,6 +2111,7 @@ const RBXAvatar = (() => {
 					acc.obj.geometry.setIndex(null)
 				}
 				
+				// TODO: Figure out a better way to do this, i think we can apply scaling stuff directly to the bone somehow?
 				const mainBone = acc.obj.rbxBones.filter(x => this.parts[x.name]).reduce((a, b) => (a.count > b.count ? a : b))
 				
 				acc.obj.rbxLayered = {

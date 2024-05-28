@@ -395,13 +395,17 @@ const RBXAppearance = (() => {
 				
 				const wrapLayer = hanInst.Children.find(x => x.ClassName === "WrapLayer")
 				if(wrapLayer) {
-					acc.wrapLayer = {
-						cageMeshId: wrapLayer.CageMeshId ?? "",
-						cageOrigin: RBXAvatar.CFrameToMatrix4(...wrapLayer.CageOrigin),
-						refMeshId: wrapLayer.ReferenceMeshId ?? "",
-						refOrigin: RBXAvatar.CFrameToMatrix4(...wrapLayer.ReferenceOrigin),
-						puffiness: wrapLayer.Puffiness ?? 0,
-						order: wrapLayer.Order ?? 0
+					if((wrapLayer.AutoSkin ?? 0) === 0) {
+						acc.wrapLayer = {
+							cageMeshId: wrapLayer.CageMeshId ?? "",
+							cageOrigin: RBXAvatar.CFrameToMatrix4(...wrapLayer.CageOrigin),
+							refMeshId: wrapLayer.ReferenceMeshId ?? "",
+							refOrigin: RBXAvatar.CFrameToMatrix4(...wrapLayer.ReferenceOrigin),
+							puffiness: wrapLayer.Puffiness ?? 0,
+							order: wrapLayer.Order ?? 0
+						}
+					} else {
+						acc.hasAutoSkinWrapLayer = true
 					}
 				}
 			} else {

@@ -125,6 +125,16 @@ const RBXPreview = (() => {
 			this.avatar.on("layeredRequestStateChanged", state => {
 				this.container.classList.toggle("btr-layered-loading", state === "fetching")
 			})
+			
+			const invalidLayeredClothingMarker = html`<div class=btr-invalid-layered>!</div>`
+			
+			this.avatar.on("hasInvalidLayeredClothingChanged", hasInvalidLayeredClothing => {
+				if(hasInvalidLayeredClothing) {
+					this.container.append(invalidLayeredClothingMarker)
+				} else {
+					invalidLayeredClothingMarker.remove()
+				}
+			})
 		}
 
 		//
