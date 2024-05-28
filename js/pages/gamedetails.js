@@ -748,7 +748,7 @@ pageInit.gamedetails = placeId => {
 			selector: ".game-social-links .btn-secondary-lg",
 			
 			callback(result) {
-				const socials = reactHook?.renderTarget.state[0]?.[0]
+				const socials = reactHook.renderTarget?.state?.[0]
 				const entry = socials?.find(x => x.id === +result.key)
 				
 				if(entry) {
