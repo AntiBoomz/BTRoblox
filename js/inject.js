@@ -791,6 +791,27 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 			const dispatcher = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher
 			let current = dispatcher.current
 			
+			// let lastFiber
+				
+			// Object.defineProperty(Object.prototype, "updateQueue", {
+			// 	configurable: true,
+			// 	get() { return undefined },
+			// 	set(value) {
+			// 		Object.defineProperty(this, "updateQueue", {
+			// 			enumerable: true,
+			// 			configurable: true,
+			// 			get() { return value },
+			// 			set(_value) {
+			// 				value = _value
+							
+			// 				if(value === null) {
+			// 					lastFiber = this
+			// 				}
+			// 			}
+			// 		})
+			// 	}
+			// })
+			
 			Object.defineProperty(dispatcher, "current", {
 				enumerable: true,
 				get() { return current },
@@ -800,6 +821,7 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 					// According to ReactFiberHooks.js, current will be set to ContextOnlyDispatcher when not rendering
 					if(current && current.useCallback !== current.useEffect) {
 						reactHook.renderTarget = {
+							// fiber: lastFiber,
 							state: []
 						}
 					} else {
