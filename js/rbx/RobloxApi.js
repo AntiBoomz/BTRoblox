@@ -160,6 +160,10 @@ const xsrfFetch = (url, init = {}) => {
 			init.headers = {}
 		}
 		
+		if(!cachedXsrfToken) {
+			cachedXsrfToken = document.querySelector("meta[name='csrf-token']")?.dataset.token ?? null
+		}
+		
 		init.headers["X-CSRF-TOKEN"] = cachedXsrfToken
 	}
 	
