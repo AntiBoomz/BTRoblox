@@ -51,8 +51,15 @@ function enableRedesign() {
 			groupAbout.after(socialLinks)
 			
 			const shout = aboutTemplate.$find(".group-shout")
-			shout.classList.add("btr-shout-container")
-			groupAbout.after(shout)
+			if(shout) {
+				shout.classList.add("btr-shout-container")
+				groupAbout.after(shout)
+			}
+			
+			const announcement = aboutTemplate.$find("#group-announcements")
+			if(announcement) {
+				groupAbout.after(announcement)
+			}
 			
 			// Show group wall on all tabs
 			
