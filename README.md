@@ -72,6 +72,7 @@ API Docs
 
 Undocumented APIs
 =================
+* [apis.roblox.com](#apis-roblox-com)
 * [User APIs](#user-apis)
 * [Asset APIs](#asset-apis)
 * [Place APIs](#place-apis)
@@ -79,6 +80,10 @@ Undocumented APIs
 * [DataStore APIs](#datastore-apis)
 * [Profile Page APIs](#profile-page-apis)
 
+apis.roblox.com
+---------
+#### Various random apis.roblox.com endpoints I've come across
+* https://apis.roblox.com/player-hydration-service/v1/players/signed
 
 User APIs
 ---------
