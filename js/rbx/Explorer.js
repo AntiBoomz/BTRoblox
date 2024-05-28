@@ -5,9 +5,10 @@ const Explorer = (() => {
 		"Appearance", "Data", "Transform", "Pivot", "Behavior", "Collision", "Part"
 	]
 	
+	/*
 	const HiddenProperties = {
 		UniqueId: true, HistoryId: true,
-		AttributesSerialize: true, Tags: true,
+		// AttributesSerialize: true, Tags: true, // keep disabled until we show these elsewhere?
 		Capabilities: true, DefinesCapabilities: true,
 		SourceAssetId: true,
 		
@@ -24,9 +25,13 @@ const Explorer = (() => {
 		AeroMeshData: true, FluidFidelityInternal: true,
 		PhysicalConfigData: true, PhysicsData: true,
 		
+		// Mesh
+		LODX: true, LODY: true,
+		
 		// Humanoid
 		InternalBodyScale: true, InternalHeadScale: true,
 	}
+	*/
 	
 	const RenamedProperties = {
 		Color3uint8: "Color", formFactorRaw: "FormFactor", Health_XML: "Health", xmlRead_MaxDistance_3: "MaxDistance",
@@ -445,7 +450,7 @@ const Explorer = (() => {
 				
 				name = RenamedProperties[name] || name
 				
-				if(HiddenProperties[name] || hidden[name]) {
+				if(/*HiddenProperties[name] ||*/ hidden[name]) {
 					continue
 				}
 
