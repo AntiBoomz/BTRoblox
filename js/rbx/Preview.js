@@ -280,7 +280,7 @@ const RBXPreview = (() => {
 
 			promises.push(
 				this.waitForOutfit().then(() => {
-					this.avatar.appearance.startLoadingAssets()
+					this.avatar.startLoadingAssets()
 					return this.avatar.waitForAppearance()
 				})
 			)
@@ -301,7 +301,7 @@ const RBXPreview = (() => {
 		}
 
 		addAsset(assetId, assetTypeId, meta) {
-			const asset = this.avatar.appearance.addAsset(assetId, assetTypeId, meta)
+			const asset = this.avatar.addAsset(assetId, assetTypeId, meta)
 			if(!asset) { return }
 
 			this.outfitAssets.add(asset)
@@ -325,7 +325,7 @@ const RBXPreview = (() => {
 				meta.order = 10
 			}
 			
-			const asset = this.avatar.appearance.addAsset(assetId, assetTypeId, meta)
+			const asset = this.avatar.addAsset(assetId, assetTypeId, meta)
 			if(!asset) { return }
 
 			asset.setPriority(2)
@@ -972,7 +972,7 @@ const HoverPreview = (() => {
 		}
 	}
 	
-	const updatePreviewCamera = secondary => {
+	const updatePreviewCamera = () => {
 		const addedObjects = new Set()
 		let cameraDir
 		
@@ -983,17 +983,7 @@ const HoverPreview = (() => {
 			for(const acc of state.accessories) {
 				if(!acc.obj) { continue }
 				
-				if(acc.obj.rbxLayered?.wrapLayer && acc.obj.rbxBones) {
-					for(const bone of acc.obj.rbxBones) {
-						const part = preview.avatar.parts[bone.name]
-						
-						if(part?.isMesh) {
-							addedObjects.add(part)
-						}
-					}
-				} else {
-					addedObjects.add(acc.obj)
-				}
+				addedObjects.add(acc.obj)
 				
 				if(acc.attachment?.name?.endsWith("BackAttachment")) {
 					if(!cameraDir) {
@@ -1076,9 +1066,7 @@ const HoverPreview = (() => {
 		preview.scene.cameraFocus.y += (box.max.y - box.min.y) * 0.01
 		preview.scene.cameraZoom = Math.max(2.5, box.max.clone().sub(box.min).length() * 0.9)
 		
-		if(!secondary) {
-			setCameraDir(cameraDir || "Front")
-		}
+		setCameraDir(cameraDir || "Front")
 	}
 
 	const initPreview = () => {
@@ -1093,12 +1081,6 @@ const HoverPreview = (() => {
 
 		const rotBtn = html`<span class="btr-hover-preview-camera-rotate"></span>`
 		preview.container.append(rotBtn)
-
-		preview.avatar.on("layeredRequestStateChanged", state => {
-			if(state === "done" && preview.enabled) {
-				updatePreviewCamera(true)
-			}
-		})
 		
 		rotBtn.$on("mousedown", ev => {
 			if(ev.button !== 0) { return }

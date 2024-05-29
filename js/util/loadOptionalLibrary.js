@@ -9,7 +9,6 @@ const optionalLibraries = {
 			"js/rbx/Avatar/AvatarRigs.js",
 			"js/rbx/Avatar/Composites.js",
 			"js/rbx/Avatar/Avatar.js",
-			"js/rbx/Avatar/Appearance.js",
 			"js/rbx/Scene.js",
 			"js/rbx/Preview.js"
 		]
