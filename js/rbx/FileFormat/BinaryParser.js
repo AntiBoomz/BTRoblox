@@ -10,7 +10,7 @@ const RBXBinaryParser = {
 		"Ray", "Faces", "Axes", "BrickColor", "Color3", "Vector2", "Vector3", "Vector2int16", // 15
 		"CFrame", "Quaternion", "Enum", "Instance", "Vector3int16", "NumberSequence", "ColorSequence", // 22
 		"NumberRange", "Rect2D", "PhysicalProperties", "Color3uint8", "int64", "SharedString", "UnknownScriptFormat", // 29
-		"Optional", "UniqueId"
+		"Optional", "UniqueId", "Font", "SecurityCapabilities"
 	],
 
 	parse(buffer, params) {
@@ -319,7 +319,7 @@ const RBXBinaryParser = {
 			}
 			break
 		}
-		case "Vector2int16": break // Not used anywhere?
+		// case "Vector2int16": break // Not used anywhere?
 		case "CFrame": {
 			for(let vi = 0; vi < instCount; vi++) {
 				const value = values[vi] = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
@@ -370,8 +370,7 @@ const RBXBinaryParser = {
 			}
 			break
 		}
-		case "Vector3int16":
-			break // Not used anywhere?
+		// case "Vector3int16": break // Not used anywhere?
 		case "NumberSequence": {
 			for(let i = 0; i < instCount; i++) {
 				const seqLength = chunk.UInt32LE()
@@ -512,11 +511,14 @@ const RBXBinaryParser = {
 				}
 			}
 			// break omitted
-		case "UnknownScriptFormat":
+		case "SecurityCapabilities": // Instance.Capabilities
+		case "Font": // TextLabel.FontFace
+		// case "UnknownScriptFormat":
 			for(let i = 0; i < instCount; i++) {
 				values[i] = `<${typeName || "Unknown"}>`
 			}
 			break
+			
 		}
 		
 		if(isOptional) {
