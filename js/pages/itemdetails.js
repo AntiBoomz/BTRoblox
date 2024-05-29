@@ -356,13 +356,15 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 				
 				} else if(assetTypeId === AssetType.Head || assetTypeId === AssetType.DynamicHead) {
 					AssetCache.loadModel(assetId, { async: true, onProgress: updateLoadingText, format: "avatar_meshpart_head" }, model => {
-						AssetCache.loadModel(assetId, { async: true }, model => explorer.addModel("Default", model))
+						AssetCache.loadModel(assetId, { async: true }, model => explorer.addModel("SpecialMesh", model))
 						explorer.addModel("MeshPart", model)
 					})
 					
 				} else if(AccessoryAssetTypeIds.includes(assetTypeId)) {
 					AssetCache.loadModel(assetId, { async: true, onProgress: updateLoadingText, format: "avatar_meshpart_accessory" }, model => {
-						AssetCache.loadModel(assetId, { async: true }, model => explorer.addModel("Default", model))
+						if(assetTypeId <= AssetType.WaistAccessory) { // is not layered clothing
+							AssetCache.loadModel(assetId, { async: true }, model => explorer.addModel("SpecialMesh", model))
+						}
 						explorer.addModel("MeshPart", model)
 					})
 					
