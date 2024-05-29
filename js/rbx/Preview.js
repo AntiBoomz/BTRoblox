@@ -487,12 +487,6 @@ class ItemPreviewer extends AvatarPreviewer {
 						</div>
 						<span class=btr-body-outfit-title>Default</span>
 					</div>
-					<div class=btr-body-outfit-btn data-outfit=custom>
-						<div class=btr-body-outfit-icon>
-							<img src="https://tr.rbxcdn.com/0291e3569377d17f1ea852a773ad56a5/110/110/Decal/Png">
-						</div>
-						<span class=btr-body-outfit-title>Custom</span>
-					</div>
 				</div>
 
 				<div>
@@ -691,7 +685,8 @@ class ItemPreviewer extends AvatarPreviewer {
 			btn.classList.remove("selected")
 		}
 
-		this.buttons.$find(`.btr-body-outfit-btn[data-outfit="${target}"]`).classList.add("selected")
+		const button = this.buttons.$find(`.btr-body-outfit-btn[data-outfit="${target}"]`)
+		if(button) { button.classList.add("selected") }
 	}
 	
 	setOutfitAccessoriesVisible(bool) {
