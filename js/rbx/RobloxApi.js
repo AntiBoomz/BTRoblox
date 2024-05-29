@@ -224,6 +224,15 @@ const RobloxApi = {
 			xsrfFetch(`https://avatar.roblox.com/v2/avatar/avatar`, {
 				credentials: "include"
 			}).then(res => res.json()),
+			
+		setBodyColors: bodyColor3s =>
+			xsrfFetch(`https://avatar.roblox.com/v2/avatar/set-body-colors`, {
+				method: "POST",
+				credentials: "include",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(bodyColor3s),
+				xsrf: true
+			}).then(res => res.json()),
 		
 		renderAvatar: request =>
 			xsrfFetch(`https://avatar.roblox.com/v1/avatar/render`, {
