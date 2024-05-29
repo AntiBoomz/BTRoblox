@@ -609,19 +609,36 @@ pageInit.gamedetails = placeId => {
 		.$watch("#about", about => {
 			about.classList.remove("active")
 		})
-		.$watch("#game-details-about-tab-container", parent => {
-			midContainer.append(parent)
-			
-			parent.$watch("#btr-description-wrapper", descCont => {
-				newContainer.append(descCont)
-				reactHook.redirectEvents(descCont, parent)
-			})
-			
-			parent.$watch("#btr-recommendations-wrapper", recCont => {
-				$("#about").append(recCont)
-				reactHook.redirectEvents(recCont, parent)
-			})
+		.$watch(".game-about-container,#game-details-about-tab-container", cont => {
+			if(cont.id === "game-details-about-tab-container") {
+				// react about tab
+				watcher.$watch("#game-details-about-tab-container", parent => {
+					midContainer.append(parent)
+					
+					parent.$watch("#btr-description-wrapper", descCont => {
+						newContainer.append(descCont)
+						reactHook.redirectEvents(descCont, parent)
+					})
+					
+					parent.$watch("#btr-recommendations-wrapper", recCont => {
+						$("#about").append(recCont)
+						reactHook.redirectEvents(recCont, parent)
+					})
+				})
+			} else {
+				// legacy about tab
+				newContainer.append(cont)
+				
+				watcher.$watch("#about").$then().$watchAll("*", child => {
+					if(child.id === "private-server-container-about-tab") {
+						child.style.display = "none"
+					} else if(child.id !== "recommended-games-container") {
+						midContainer.append(child)
+					}
+				})
+			}
 		})
+		
 		.$watch(".tab-content", cont => {
 			cont.classList.add("section")
 			
@@ -769,7 +786,7 @@ pageInit.gamedetails = placeId => {
 	RobloxApi.economy.getAssetDetails(placeId).then(data => {
 		if(!data.Updated) { return }
 		
-		watcher.$watch(".game-stat-container").$then()
+		watcher.$watch(".game-stat-container,.game-stats-container").$then()
 			.$watch(
 				".game-stat .text-lead",
 				x => x.previousElementSibling?.textContent === "Created",

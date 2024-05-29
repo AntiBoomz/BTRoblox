@@ -38,11 +38,25 @@ body .btr-game-main-container {
 
 .btr-game-main-container .game-description-container {
 	padding: 6px 12px;
+	padding-bottom: 0;
 	margin-bottom: 0;
 	clear: both;
 }
 
 .btr-game-main-container .game-description-container > .container-header {
+	display: none;
+}
+
+/* legacy description stuff */
+
+.btr-game-main-container .game-about-container > .section-content {
+	padding: 6px 12px;
+	padding-bottom: 0;
+	margin-bottom: 0;
+	clear: both;
+}
+
+.btr-game-main-container .game-about-container > .container-header {
 	display: none;
 }
 
