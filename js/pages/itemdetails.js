@@ -420,7 +420,7 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 	}
 
 	const doNamedDownload = event => {
-		const self = event.currentTarget
+		const target = event.currentTarget
 		event.preventDefault()
 		
 		if(downloadButton.classList.contains("disabled")) {
@@ -430,7 +430,9 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 		downloadButton.classList.add("disabled")
 		downloadButton.classList.add("loading")
 
-		if(assetTypeId === AssetType.Mesh && self.classList.contains("btr-download-obj")) {
+		const format = target.getAttribute("format") ?? undefined
+		
+		if(format === "obj") {
 			AssetCache.loadMesh(assetUrl, mesh => {
 				downloadButton.classList.remove("disabled")
 				downloadButton.classList.remove("loading")
@@ -470,7 +472,7 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 				download(lines.join("\n"), "obj")
 			})
 		} else {
-			AssetCache.loadBuffer(assetUrl, { browserAssetRequest: assetTypeId === AssetType.Audio }, buffer => {
+			AssetCache.loadBuffer(assetUrl, { browserAssetRequest: assetTypeId === AssetType.Audio, format: format }, buffer => {
 				downloadButton.classList.remove("disabled")
 				downloadButton.classList.remove("loading")
 				
@@ -483,7 +485,7 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 			})
 		}
 	}
-
+	
 	if(assetTypeId === AssetType.Mesh) {
 		downloadButton.dataset.toggle = "popover"
 		downloadButton.dataset.bind = "popover-btr-download"
@@ -492,10 +494,10 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 		<div class=rbx-popover-content data-toggle=popover-btr-download>
 			<ul class=dropdown-menu role=menu>
 				<li>
-					<a class=btr-download-mesh href="${assetUrl}">Download as .mesh</a>
+					<a class=btr-download href="${assetUrl}">Download as .mesh</a>
 				</li>
 				<li>
-					<a class=btr-download-obj>Download as .obj</a>
+					<a class=btr-download format=obj>Download as .obj</a>
 				</li>
 			</ul>
 		</div>`
@@ -514,7 +516,51 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 		}
 		
 		downloadButton.after(popoverTemplate)
-		btnCont.$on("click", ".btr-download-mesh, .btr-download-obj", doNamedDownload)
+		btnCont.$on("click", ".btr-download", doNamedDownload)
+		
+	} else if(assetTypeId === AssetType.Head || assetTypeId === AssetType.DynamicHead) {
+		downloadButton.dataset.toggle = "popover"
+		downloadButton.dataset.bind = "popover-btr-download"
+		
+		const popoverTemplate = html`
+		<div class=rbx-popover-content data-toggle=popover-btr-download>
+			<ul class=dropdown-menu role=menu>
+				<li>
+					<a class=btr-download format=avatar_meshpart_head href="${assetUrl}">Download MeshPart</a>
+				</li>
+				<li>
+					<a class=btr-download>Download SpecialMesh</a>
+				</li>
+			</ul>
+		</div>`
+		
+		downloadButton.after(popoverTemplate)
+		btnCont.$on("click", ".btr-download", doNamedDownload)
+		
+	} else if(AccessoryAssetTypeIds.includes(assetTypeId)) {
+		if(assetTypeId <= AssetType.WaistAccessory) {
+			downloadButton.dataset.toggle = "popover"
+			downloadButton.dataset.bind = "popover-btr-download"
+			
+			const popoverTemplate = html`
+			<div class=rbx-popover-content data-toggle=popover-btr-download>
+				<ul class=dropdown-menu role=menu>
+					<li>
+						<a class=btr-download format=avatar_meshpart_accessory href="${assetUrl}">Download MeshPart</a>
+					</li>
+					<li>
+						<a class=btr-download>Download SpecialMesh</a>
+					</li>
+				</ul>
+			</div>`
+			
+			downloadButton.after(popoverTemplate)
+			btnCont.$on("click", ".btr-download", doNamedDownload)
+		} else {
+			downloadButton.href = assetUrl
+			downloadButton.setAttribute("format", "avatar_meshpart_accessory")
+			downloadButton.$on("click", doNamedDownload)
+		}
 	} else {
 		downloadButton.href = assetUrl
 		downloadButton.$on("click", doNamedDownload)
