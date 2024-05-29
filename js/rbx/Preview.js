@@ -1,289 +1,158 @@
 "use strict"
 
-const RBXPreview = (() => {
-	const outfitCache = {}
-	let avatarRulePromise
-	
-	function getAvatarRules() {
-		if(!avatarRulePromise) {
-			avatarRulePromise = RobloxApi.avatar.getAvatarRules()
-		}
+const outfitCache = {}
+let avatarRulePromise
 
-		return avatarRulePromise
+function getAvatarRules() {
+	if(!avatarRulePromise) {
+		avatarRulePromise = RobloxApi.avatar.getAvatarRules()
 	}
 
-	function solveBodyColors(origColors, rules) {
-		const bodyColors = {}
-		if(!origColors) { return bodyColors }
+	return avatarRulePromise
+}
 
-		for(const [name, value] of Object.entries(origColors)) {
-			const index = name.slice(0, -7) // remove ColorId from the end
-			const bodyColor = rules.bodyColorsPalette.find(x => x.brickColorId === value)
-			bodyColors[index] = bodyColor.hexColor
-		}
+function solveBodyColors(bodyColor3s) {
+	const bodyColors = {}
 
-		return bodyColors
+	for(const [name, value] of Object.entries(bodyColor3s)) {
+		const key = name.slice(0, -6) // remove Color3 from the end
+		bodyColors[key] = `#${value}`
 	}
 
-	function getOutfitData(id) {
-		if(!outfitCache[id]) {
-			const outfitPromise = RobloxApi.avatar.getOutfitDetails(id)
+	return bodyColors
+}
 
-			return outfitCache[id] = Promise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
-				data = { ...data }
+function getOutfitData(id) {
+	if(!outfitCache[id]) {
+		return outfitCache[id] = RobloxApi.avatar.getOutfitDetails(id).then(data => {
+			data = { ...data }
 
-				data.scales = data.scale
-				delete data.scale
+			data.scales = data.scale
+			delete data.scale
 
-				data.bodyColors = solveBodyColors(data.bodyColors, rules)
-				return [rules, data]
-			})
-		}
-
-		return outfitCache[id]
+			data.bodyColors = solveBodyColors(data.bodyColor3s)
+			delete data.bodyColor3s
+			
+			return data
+		})
 	}
 
-	function getPlayerAppearance(userId) {
-		if(!outfitCache["user" + userId]) {
-			const outfitPromise = RobloxApi.avatar.getUserAvatar(userId)
+	return outfitCache[id]
+}
 
-			return outfitCache["user" + userId] = Promise.all([getAvatarRules(), outfitPromise]).then(([rules, data]) => {
-				data = { ...data }
-				data.bodyColors = solveBodyColors(data.bodyColors, rules)
-				return [rules, data]
-			})
-		}
-
-		return outfitCache["user" + userId]
+function getPlayerAppearance(userId) {
+	if(!outfitCache["user" + userId]) {
+		return outfitCache["user" + userId] = RobloxApi.avatar.getUserAvatar(userId).then(data => {
+			data = { ...data }
+			
+			data.bodyColors = solveBodyColors(data.bodyColor3s)
+			delete data.bodyColor3s
+			
+			return data
+		})
 	}
 
-	function getCurrentAppearance() {
-		if(!outfitCache.default) {
-			const outfitPromise = RobloxApi.avatar.getCurrentAvatar()
+	return outfitCache["user" + userId]
+}
 
-			return outfitCache.default = Promise.all([getAvatarRules(), outfitPromise]).then(async ([rules, data]) => {
-				if(!data || data.errors) {
-					const [, outfitData] = await getOutfitData(1116516198)
-					data = outfitData
-				} else {
-					data = { ...data }
-					data.bodyColors = solveBodyColors(data.bodyColors, rules)
-				}
-				
-				return [rules, data]
-			})
-		}
-
-		return outfitCache.default
+function getCurrentAppearance() {
+	if(!outfitCache.default) {
+		return outfitCache.default = RobloxApi.avatar.getCurrentAvatar().then(async data => {
+			console.log("current", data)
+			
+			if(!data || data.errors) {
+				return getOutfitData(1116516198)
+			}
+			
+			data = { ...data }
+			
+			data.bodyColors = solveBodyColors(data.bodyColor3s)
+			delete data.bodyColor3s
+			
+			return data
+		})
 	}
 
-	const SkippableAssetTypes = [
-		19, // Gear
-		24, // Animation
-		48, 49, 50, 51, 52, 53, 54, 55, 56, 61, 78 // Avatar Animations
-	]
-	
-	const LayeredAssetTypes = [64, 65, 66, 67, 68, 69, 70, 71, 72]
+	return outfitCache.default
+}
 
-	const R15Anims = [507766388, 507766951, 507766666]
-	const R6Anims = [180435571, 180435792]
-	
-	const R6AnimParts = ["Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
+const SkippableAssetTypes = [
+	19, // Gear
+	24, // Animation
+	48, 49, 50, 51, 52, 53, 54, 55, 56, 61, 78 // Avatar Animations
+]
 
-	class AvatarPreviewer extends EventEmitter {
-		constructor(opts = {}) {
-			super()
+const LayeredAssetTypes = [64, 65, 66, 67, 68, 69, 70, 71, 72]
 
-			this.enabled = false
-			this.initialized = false
+const R15Anims = [507766388, 507766951, 507766666]
+const R6Anims = [180435571, 180435792]
 
-			this.scene = new RBXScene.AvatarScene()
-			this.avatar = this.scene.avatar
+const R6AnimParts = ["Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
 
-			this.container = html`<div class=btr-preview-container></div>`
-			this.container.append(this.scene.canvas)
+class AvatarPreviewer extends EventEmitter {
+	constructor(opts = {}) {
+		super()
 
-			this.outfitAssets = new Set()
-			this.previewAssets = new Set()
-			
-			this.autoLoadPlayerType = "autoLoadPlayerType" in opts ? !!opts.autoLoadPlayerType : true
-			this.defaultAnimationsDisabled = !!opts.defaultAnimationsDisabled
-			this.initPlayerTypeFromPlayingAnimation = false
-			this.outfitAccessoriesVisible = true
+		this.enabled = false
+		this.initialized = false
 
-			this.outfitLoaded = false
-			this.shouldLoadOutfit = null
+		this.scene = new RBXScene.AvatarScene()
+		this.avatar = this.scene.avatar
 
-			this.appearance = null
-			this.avatarRules = null
-			this.playerType = null
+		this.container = html`<div class=btr-preview-container></div>`
+		this.container.append(this.scene.canvas)
 
-			this.currentAnim = null
-			this.loadingAnim = null
-			this.playingAnim = null
-			
-			this.avatar.on("layeredRequestStateChanged", state => {
-				this.container.classList.toggle("btr-layered-loading", state === "fetching")
-			})
-			
-			const invalidLayeredClothingMarker = html`<div class=btr-invalid-layered>!</div>`
-			
-			this.avatar.on("hasInvalidLayeredClothingChanged", hasInvalidLayeredClothing => {
-				if(hasInvalidLayeredClothing) {
-					this.container.append(invalidLayeredClothingMarker)
-				} else {
-					invalidLayeredClothingMarker.remove()
-				}
-			})
-		}
-
-		//
-
-		setEnabled(bool) {
-			if(this.enabled === !!bool) {
-				return
-			}
-
-			this.enabled = !!bool
-
-			if(this.enabled) {
-				if(!this.initialized) {
-					this.initialized = true
-					this.trigger("init")
-				}
-				
-				if(!this.outfitLoaded) {
-					this._loadOutfit(...(this.shouldLoadOutfit ?? []))
-				}
-
-				if(!this.playingAnim) {
-					if(this.currentAnim) {
-						this.loadAnimation(this.currentAnim)
-					} else if(!this.defaultAnimationsDisabled) {
-						this.loadDefaultAnimation()
-					}
-				}
-
-				this.scene.start()
-				this.trigger("enabled")
-			} else {
-				this.scene.stop()
-				this.trigger("disabled")
-			}
-		}
-
-		setPlayerType(playerType) {
-			if(this.playerType === playerType) {
-				return
-			}
-
-			this.playerType = playerType
-			this.scene.avatar.setPlayerType(playerType)
-
-			if(this.enabled) {
-				if(!this.currentAnim && !this.defaultAnimationsDisabled) {
-					this.loadDefaultAnimation()
-				}
-			}
-
-			this.trigger("playerTypeChanged", playerType)
-		}
-
-		setOutfitAccessoriesVisible(bool) {
-			this.outfitAccessoriesVisible = !!bool
-			
-			for(const asset of this.outfitAssets) {
-				if(AccessoryAssetTypeIds.includes(asset.assetTypeId)) {
-					asset.setEnabled(this.outfitAccessoriesVisible)
-				}
-			}
-		}
-
-		//
-
-		setOutfit(outfitId, outfitType) {
-			this.outfitLoaded = false
-
-			if(this.enabled) {
-				this._loadOutfit(outfitId, outfitType)
-			} else {
-				this.shouldLoadOutfit = [outfitId, outfitType]
-			}
-		}
-
-		_loadOutfit(outfitId, outfitType) {
-			const debounce = performance.now()
-			let outfitPromise
-			
-			this.outfitDebounce = debounce
-			delete this.shouldLoadOutfit
-
-			if(outfitType === "Outfit" && outfitId) {
-				outfitPromise = getOutfitData(outfitId)
-			} else if(outfitType === "Player" && outfitId) {
-				outfitPromise = getPlayerAppearance(outfitId)
-			} else {
-				outfitPromise = getCurrentAppearance()
-			}
-			
-			outfitPromise.then(result => {
-				if(this.outfitDebounce !== debounce) {
-					return
-				}
-
-				this.outfitDebounce = null
-				this.onOutfitLoaded(result)
-			})
-		}
-
-		onOutfitLoaded([rules, data]) {
-			this.appearance = JSON.parse(JSON.stringify(data))
-	
-			if(!this.avatarRules) {
-				this.avatarRules = rules
-				this.trigger("avatarRulesLoaded")
-			}
-
-			this.avatar.setScales(data.scales)
-			this.avatar.setBodyColors(data.bodyColors)
-
-			if(!this.playerType && this.autoLoadPlayerType) {
-				this.setPlayerType(data.playerAvatarType)
-			}
-			
-			for(const asset of this.outfitAssets) {
-				asset.remove()
-			}
-			
-			for(const asset of data.assets) {
-				if(!SkippableAssetTypes.includes(asset.assetType.id)) {
-					this.addAsset(asset.id, asset.assetType.id, asset.meta)
-				}
-			}
-
-			this.outfitLoaded = true
-			this.trigger("appearanceLoaded")
-		}
-
-		//
-
-		waitForOutfit() {
-			if(this.outfitLoaded) {
-				return Promise.resolve()
-			}
-
-			return new Promise(resolve => this.once("appearanceLoaded", () => resolve()))
-		}
+		this.outfitAssets = new Set()
+		this.previewAssets = new Set()
 		
-		waitForAppearance() {
-			const promises = []
+		this.autoLoadPlayerType = "autoLoadPlayerType" in opts ? !!opts.autoLoadPlayerType : true
+		this.defaultAnimationsDisabled = !!opts.defaultAnimationsDisabled
+		this.initPlayerTypeFromPlayingAnimation = false
+		this.outfitAccessoriesVisible = true
 
-			promises.push(
-				this.waitForOutfit().then(() => {
-					this.avatar.startLoadingAssets()
-					return this.avatar.waitForAppearance()
-				})
-			)
+		this.outfitLoaded = false
+		this.shouldLoadOutfit = null
+
+		this.appearance = null
+		this.playerType = null
+
+		this.currentAnim = null
+		this.loadingAnim = null
+		this.playingAnim = null
+		
+		this.avatar.on("layeredRequestStateChanged", state => {
+			this.container.classList.toggle("btr-layered-loading", state === "fetching")
+		})
+		
+		const invalidLayeredClothingMarker = html`<div class=btr-invalid-layered>!</div>`
+		
+		this.avatar.on("hasInvalidLayeredClothingChanged", hasInvalidLayeredClothing => {
+			if(hasInvalidLayeredClothing) {
+				this.container.append(invalidLayeredClothingMarker)
+			} else {
+				invalidLayeredClothingMarker.remove()
+			}
+		})
+	}
+
+	//
+
+	setEnabled(bool) {
+		if(this.enabled === !!bool) {
+			return
+		}
+
+		this.enabled = !!bool
+
+		if(this.enabled) {
+			if(!this.initialized) {
+				this.initialized = true
+				this.trigger("init")
+			}
+			
+			if(!this.outfitLoaded) {
+				this._loadOutfit(...(this.shouldLoadOutfit ?? []))
+			}
 
 			if(!this.playingAnim) {
 				if(this.currentAnim) {
@@ -293,136 +162,255 @@ const RBXPreview = (() => {
 				}
 			}
 
-			if(!this.playingAnim && this.loadingAnim) {
-				promises.push(new Promise(resolve => this.once("animationLoaded", () => resolve())))
+			this.scene.start()
+			this.trigger("enabled")
+		} else {
+			this.scene.stop()
+			this.trigger("disabled")
+		}
+	}
+
+	setPlayerType(playerType) {
+		if(this.playerType === playerType) {
+			return
+		}
+
+		this.playerType = playerType
+		this.scene.avatar.setPlayerType(playerType)
+
+		if(this.enabled) {
+			if(!this.currentAnim && !this.defaultAnimationsDisabled) {
+				this.loadDefaultAnimation()
+			}
+		}
+
+		this.trigger("playerTypeChanged", playerType)
+	}
+
+	setOutfitAccessoriesVisible(bool) {
+		this.outfitAccessoriesVisible = !!bool
+		
+		for(const asset of this.outfitAssets) {
+			if(AccessoryAssetTypeIds.includes(asset.assetTypeId)) {
+				asset.setEnabled(this.outfitAccessoriesVisible)
+			}
+		}
+	}
+
+	//
+
+	setOutfit(outfitId, outfitType) {
+		this.outfitLoaded = false
+
+		if(this.enabled) {
+			this._loadOutfit(outfitId, outfitType)
+		} else {
+			this.shouldLoadOutfit = [outfitId, outfitType]
+		}
+	}
+
+	_loadOutfit(outfitId, outfitType) {
+		const debounce = performance.now()
+		let outfitPromise
+		
+		this.outfitDebounce = debounce
+		delete this.shouldLoadOutfit
+
+		if(outfitType === "Outfit" && outfitId) {
+			outfitPromise = getOutfitData(outfitId)
+		} else if(outfitType === "Player" && outfitId) {
+			outfitPromise = getPlayerAppearance(outfitId)
+		} else {
+			outfitPromise = getCurrentAppearance()
+		}
+		
+		outfitPromise.then(result => {
+			if(this.outfitDebounce !== debounce) {
+				return
 			}
 
-			return Promise.all(promises)
+			this.outfitDebounce = null
+			this.onOutfitLoaded(result)
+		})
+	}
+
+	onOutfitLoaded(data) {
+		this.appearance = JSON.parse(JSON.stringify(data))
+
+		this.avatar.setScales(data.scales)
+		this.avatar.setBodyColors(data.bodyColors)
+
+		if(!this.playerType && this.autoLoadPlayerType) {
+			this.setPlayerType(data.playerAvatarType)
+		}
+		
+		for(const asset of this.outfitAssets) {
+			asset.remove()
+		}
+		
+		for(const asset of data.assets) {
+			if(!SkippableAssetTypes.includes(asset.assetType.id)) {
+				this.addAsset(asset.id, asset.assetType.id, asset.meta)
+			}
 		}
 
-		addAsset(assetId, assetTypeId, meta) {
-			const asset = this.avatar.addAsset(assetId, assetTypeId, meta)
-			if(!asset) { return }
+		this.outfitLoaded = true
+		this.trigger("appearanceLoaded")
+	}
 
-			this.outfitAssets.add(asset)
-			
-			asset.on("update", () => {
-				if(AccessoryAssetTypeIds.includes(asset.assetTypeId)) {
-					asset.setEnabled(this.outfitAccessoriesVisible)
-				}
-			})
-			
-			asset.once("remove", () => {
-				this.outfitAssets.delete(asset)
-			})
+	//
 
-			return asset
+	waitForOutfit() {
+		if(this.outfitLoaded) {
+			return Promise.resolve()
 		}
 
-		addAssetPreview(assetId, assetTypeId, meta) {
-			if(LayeredAssetTypes.includes(assetTypeId)) {
-				if(!meta) { meta = { order: 1, version: 1 } }
-				meta.order = 10
+		return new Promise(resolve => this.once("appearanceLoaded", () => resolve()))
+	}
+	
+	waitForAppearance() {
+		const promises = []
+
+		promises.push(
+			this.waitForOutfit().then(() => {
+				this.avatar.startLoadingAssets()
+				return this.avatar.waitForAppearance()
+			})
+		)
+
+		if(!this.playingAnim) {
+			if(this.currentAnim) {
+				this.loadAnimation(this.currentAnim)
+			} else if(!this.defaultAnimationsDisabled) {
+				this.loadDefaultAnimation()
+			}
+		}
+
+		if(!this.playingAnim && this.loadingAnim) {
+			promises.push(new Promise(resolve => this.once("animationLoaded", () => resolve())))
+		}
+
+		return Promise.all(promises)
+	}
+
+	addAsset(assetId, assetTypeId, meta) {
+		const asset = this.avatar.addAsset(assetId, assetTypeId, meta)
+		if(!asset) { return }
+
+		this.outfitAssets.add(asset)
+		
+		asset.on("update", () => {
+			if(AccessoryAssetTypeIds.includes(asset.assetTypeId)) {
+				asset.setEnabled(this.outfitAccessoriesVisible)
+			}
+		})
+		
+		asset.once("remove", () => {
+			this.outfitAssets.delete(asset)
+		})
+
+		return asset
+	}
+
+	addAssetPreview(assetId, assetTypeId, meta) {
+		if(LayeredAssetTypes.includes(assetTypeId)) {
+			if(!meta) { meta = { order: 1, version: 1 } }
+			meta.order = 10
+		}
+		
+		const asset = this.avatar.addAsset(assetId, assetTypeId, meta)
+		if(!asset) { return }
+
+		asset.setPriority(2)
+
+		this.previewAssets.add(asset)
+		asset.once("remove", () => {
+			this.previewAssets.delete(asset)
+		})
+		
+		return asset
+	}
+
+	//
+
+	loadAnimation(assetId, fadeIn) {
+		this.loadingAnim = assetId
+		
+		AssetCache.loadAnimation(assetId, data => {
+			if(this.loadingAnim !== assetId) {
+				return
 			}
 			
-			const asset = this.avatar.addAsset(assetId, assetTypeId, meta)
-			if(!asset) { return }
+			if(this.playingAnim) {
+				this.scene.avatar.animator.stop(this.playingAnim.track, this.playingAnim.fadeSwitch)
+				this.playingAnim = null
+			}
 
-			asset.setPriority(2)
-
-			this.previewAssets.add(asset)
-			asset.once("remove", () => {
-				this.previewAssets.delete(asset)
-			})
+			this.loadingAnim = null
+			this.playingAnim = { id: assetId, data: data }
 			
-			return asset
-		}
-
-		//
-
-		loadAnimation(assetId, fadeIn) {
-			this.loadingAnim = assetId
-			
-			AssetCache.loadAnimation(assetId, data => {
-				if(this.loadingAnim !== assetId) {
-					return
-				}
-				
-				if(this.playingAnim) {
-					this.scene.avatar.animator.stop(this.playingAnim.track, this.playingAnim.fadeSwitch)
-					this.playingAnim = null
-				}
-
-				this.loadingAnim = null
-				this.playingAnim = { id: assetId, data: data }
-				
-				this.playingAnim.track = this.scene.avatar.animator.play(data, {
-					fadeIn: fadeIn ?? 0,
-					loop: true,
-					onloop: !this.currentAnim && (() => {
-						if(this.loadingAnim) { return }
-						let animId
-						
-						if(R15Anims.includes(this.playingAnim.id)) {
-							const roll = Math.random()
-							animId = roll < 9 / 11 ? R15Anims[0] : roll < 10 / 11 ? R15Anims[1] : R15Anims[2]
-			
-						} else if(R6Anims.includes(this.playingAnim.id)) {
-							const roll = Math.random()
-							animId = roll < 9 / 10 ? R6Anims[0] : R6Anims[1]
-						}
-						
-						if(animId && animId !== this.playingAnim.id) {
-							this.playingAnim.fadeSwitch = 0.15
-							this.loadAnimation(animId, 0.15)
-						}
-					})
+			this.playingAnim.track = this.scene.avatar.animator.play(data, {
+				fadeIn: fadeIn ?? 0,
+				loop: true,
+				onloop: !this.currentAnim && (() => {
+					if(this.loadingAnim) { return }
+					let animId
+					
+					if(R15Anims.includes(this.playingAnim.id)) {
+						const roll = Math.random()
+						animId = roll < 9 / 11 ? R15Anims[0] : roll < 10 / 11 ? R15Anims[1] : R15Anims[2]
+		
+					} else if(R6Anims.includes(this.playingAnim.id)) {
+						const roll = Math.random()
+						animId = roll < 9 / 10 ? R6Anims[0] : R6Anims[1]
+					}
+					
+					if(animId && animId !== this.playingAnim.id) {
+						this.playingAnim.fadeSwitch = 0.15
+						this.loadAnimation(animId, 0.15)
+					}
 				})
-
-				if(this.currentAnim && this.initPlayerTypeFromPlayingAnimation) {
-					this.initPlayerTypeFromPlayingAnimation = false
-					this.setPlayerType(R6AnimParts.some(x => x in data.keyframes) ? "R6" : "R15")
-				}
-
-				this.trigger("animationLoaded", data, assetId)
 			})
+
+			if(this.currentAnim && this.initPlayerTypeFromPlayingAnimation) {
+				this.initPlayerTypeFromPlayingAnimation = false
+				this.setPlayerType(R6AnimParts.some(x => x in data.keyframes) ? "R6" : "R15")
+			}
+
+			this.trigger("animationLoaded", data, assetId)
+		})
+	}
+
+	loadDefaultAnimation() {
+		this.currentAnim = null
+		this.loadingAnim = null
+
+		if(this.playingAnim) {
+			this.scene.avatar.animator.stop(this.playingAnim.track)
+			this.playingAnim = null
 		}
 
-		loadDefaultAnimation() {
-			this.currentAnim = null
-			this.loadingAnim = null
-
-			if(this.playingAnim) {
-				this.scene.avatar.animator.stop(this.playingAnim.track)
-				this.playingAnim = null
-			}
-
-			if(this.enabled) {
-				this.loadAnimation(this.playerType === "R15" ? R15Anims[0] : R6Anims[0])
-			}
-		}
-
-		playAnimation(animId) {
-			this.currentAnim = animId
-			this.loadingAnim = null
-
-			if(this.playingAnim) {
-				this.scene.avatar.animator.stop(this.playingAnim.track)
-				this.playingAnim = null
-			}
-
-			if(this.enabled) {
-				this.loadAnimation(animId)
-			}
+		if(this.enabled) {
+			this.loadAnimation(this.playerType === "R15" ? R15Anims[0] : R6Anims[0])
 		}
 	}
 
-	return {
-		AvatarPreviewer
-	}
-})()
+	playAnimation(animId) {
+		this.currentAnim = animId
+		this.loadingAnim = null
 
-class ItemPreviewer extends RBXPreview.AvatarPreviewer {
+		if(this.playingAnim) {
+			this.scene.avatar.animator.stop(this.playingAnim.track)
+			this.playingAnim = null
+		}
+
+		if(this.enabled) {
+			this.loadAnimation(animId)
+		}
+	}
+}
+
+class ItemPreviewer extends AvatarPreviewer {
 	constructor() {
 		super()
 
@@ -550,10 +538,10 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		const bodyPopup = buttons.$find(".btr-body-popup")
 		const inputSliders = []
 
-		const loadSliders = () => {
+		const loadSliders = rules => {
 			for(const input of bodyPopup.$findAll("input")) {
 				const scaleName = input.dataset.target
-				const rule = this.avatarRules.scales[scaleName]
+				const rule = rules.scales[scaleName]
 				const label = input.previousElementSibling
 
 				const update = () => {
@@ -587,18 +575,18 @@ class ItemPreviewer extends RBXPreview.AvatarPreviewer {
 		}
 
 		const updateSliders = () => {
+			if(!this.appearance) { return }
+			
 			for(const slider of inputSliders) {
 				slider.input.value = this.appearance.scales[slider.scaleName]
 				slider.update()
 			}
 		}
-
-		if(this.avatarRules) {
-			loadSliders()
+		
+		getAvatarRules().then(rules => {
+			loadSliders(rules)
 			updateSliders()
-		} else {
-			this.once("avatarRulesLoaded", loadSliders)
-		}
+		})
 
 		this.on("appearanceLoaded", updateSliders)
 
@@ -1070,7 +1058,7 @@ const HoverPreview = (() => {
 	}
 
 	const initPreview = () => {
-		preview = this.preview = new RBXPreview.AvatarPreviewer()
+		preview = this.preview = new AvatarPreviewer()
 
 		// preview.container.style.position = "absolute"
 		// preview.container.style.top = "0"

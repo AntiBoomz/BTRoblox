@@ -210,19 +210,18 @@ const RobloxApi = {
 			}).then(res => res.json()),
 		
 		// hits rate limits when requested from page, so doing backgroundCall
-		getOutfitDetails: cacheResult(30e3, backgroundCall(outfitId =>
-			xsrfFetch(`https://avatar.roblox.com/v1/outfits/${outfitId}/details`, {
+		getOutfitDetails: outfitId =>
+			xsrfFetch(`https://avatar.roblox.com/v3/outfits/${outfitId}/details`, {
 				credentials: "include"
-			}).then(res => res.ok ? res.json() : null)
-		)),
+			}).then(res => res.json()),
 		
 		getUserAvatar: userId =>
-			xsrfFetch(`https://avatar.roblox.com/v1/users/${userId}/avatar`, {
+			xsrfFetch(`https://avatar.roblox.com/v2/avatar/users/${userId}/avatar`, {
 				credentials: "include"
 			}).then(res => res.json()),
 		
 		getCurrentAvatar: () =>
-			xsrfFetch(`https://avatar.roblox.com/v1/avatar`, {
+			xsrfFetch(`https://avatar.roblox.com/v2/avatar/avatar`, {
 				credentials: "include"
 			}).then(res => res.json()),
 		
