@@ -420,8 +420,8 @@ const RobloxApi = {
 			}).then(res => res.json())
 	},
 	www: {
-		getFavorites: (userId, assetTypeId, itemsPerPage, pageNumber, thumbWidth=150, thumbHeight=150) =>
-			xsrfFetch(`https://www.roblox.com/users/favorites/list-json?userId=${userId}&assetTypeId=${assetTypeId}&itemsPerPage=${itemsPerPage}&pageNumber=${pageNumber}&thumbWidth=${thumbWidth}&thumbHeight=${thumbHeight}`, {
+		getFavorites: (userId, assetTypeId, itemsPerPage, cursor, thumbWidth=150, thumbHeight=150) =>
+			xsrfFetch(`https://www.roblox.com/users/favorites/list-json?userId=${userId}&assetTypeId=${assetTypeId}&itemsPerPage=${itemsPerPage}&cursor=${cursor}&thumbWidth=${thumbWidth}&thumbHeight=${thumbHeight}`, {
 				credentials: "include"
 			}).then(res => res.json()),
 		

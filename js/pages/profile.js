@@ -787,6 +787,7 @@ pageInit.profile = userId => {
 				data = {
 					items: [],
 					nextPage: 1,
+					nextPageCursor: "",
 					hasMore: true
 				}
 				
@@ -798,7 +799,7 @@ pageInit.profile = userId => {
 			
 			while(data.hasMore && pageEnd > data.items.length) {
 				isLoading = true
-				const json = await RobloxApi.www.getFavorites(userId, category, 100, data.nextPage, 150, 150)
+				const json = await RobloxApi.www.getFavorites(userId, category, 100, data.nextPageCursor, 150, 150)
 				isLoading = false
 				
 				if(!json?.IsValid) {
@@ -807,18 +808,18 @@ pageInit.profile = userId => {
 				
 				data.items.push(...json.Data.Items)
 				
-				const expectedTotalItems = json.Data.Start + 100
-				
 				data.nextPage += 1
-				data.hasMore = expectedTotalItems < json.Data.TotalItems
-				data.totalItems = data.hasMore ? json.Data.TotalItems - (expectedTotalItems - data.items.length) : data.items.length
+				data.nextPageCursor = json.Data.NextCursor
+				
+				data.hasMore = !!data.nextPageCursor
+				data.totalItems = data.hasMore ? Math.max(data.items.length + 1, json.Data.TotalItems - ((data.nextPage - 1) * 100 - data.items.length)) : data.items.length
 			}
 			
 			pager.setPage(page)
 			pager.setMaxPage(Math.floor((data.totalItems - 1) / pageSize) + 1)
 			hlist.replaceChildren()
 			
-			if(data.items.length === 0) {
+			if(pageStart >= data.items.length) {
 				const categoryName = dropdownLabel.textContent
 				hlist.append(html`<div class='section-content-off btr-section-content-off'>This user has no favorite ${categoryName}</div>`)
 				return
