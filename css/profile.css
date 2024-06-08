@@ -55,7 +55,7 @@ html .dark-theme.btr-profile .btr-section-content-off {
 
 .btr-profile .social-link-icon-list {
 	position: relative;
-	z-index: 1;
+	z-index: 2;
 }
 
 /* Player status */
