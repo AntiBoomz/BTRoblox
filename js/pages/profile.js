@@ -114,7 +114,7 @@ pageInit.profile = userId => {
 						const tooltip = footer.$find(".tooltip-pastnames")
 						if(tooltip) { tooltip.setAttribute("data-container", "body") } // Display tooltip over side panel
 					})
-					.$watch(".social-links,.profile-social-networks", social => {
+					.$watch("social-link-icon-list", social => {
 						newCont.$find(".btr-profile-about").prepend(social)
 					})
 			})
