@@ -626,15 +626,19 @@ const RBXAvatar = (() => {
 				const scaleTypeValue = part.Children.find(x => x.Name === "AvatarPartScaleType")
 				const scaleType = scaleTypeValue ? scaleTypeValue.Value : null
 				
+				const size = part.Size || part.size
+				const initialSize = part.InitialSize
+				
 				const bp = {
 					asset: this,
 					attachments: [],
 					target: part.Name,
 					
 					meshId: this.validateAndPreload("Mesh", part.MeshID || part.MeshId),
-					
 					opacity: 1 - (part.Transparency || 0),
-					size: [...(part.size || part.Size)],
+					
+					scale: [size[0] / initialSize[0], size[1] / initialSize[1], size[2] / initialSize[2]],
+					size: [...size],
 
 					scaleType: scaleType
 				}
