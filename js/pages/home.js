@@ -33,7 +33,7 @@ pageInit.home = () => {
 						$scope.$watch("library.numOfFriends", numOfFriends => {
 							if(numOfFriends == null) { return }
 							
-							showSecondRow = numOfFriends > 9
+							showSecondRow = numOfFriends > ($scope.layout.maxNumberOfFriendsDisplayed / 2)
 							elem.classList.toggle("btr-home-secondRow", showSecondRow)
 							
 							if(showSecondRow) {
@@ -48,7 +48,7 @@ pageInit.home = () => {
 				},
 				layoutService(handler, args) {
 					const result = handler.apply(this, args)
-					result.maxNumberOfFriendsDisplayed = 18
+					result.maxNumberOfFriendsDisplayed *= 2
 					return result
 				}
 			})
