@@ -1560,10 +1560,31 @@ const RBXAvatar = (() => {
 					}
 				}
 				
+				// Only one part per bodypart determines the used MeshPart.TextureId
+				let textureId = bodypart.texId
+				
+				switch(part.name) {
+				case "LowerTorso":
+					textureId = bodypartOverride.UpperTorso?.texId
+					break
+				case "LeftLowerArm": case "LeftHand":
+					textureId = bodypartOverride.LeftUpperArm?.texId
+					break
+				case "RightLowerArm": case "RightHand":
+					textureId = bodypartOverride.RightUpperArm?.texId
+					break
+				case "LeftLowerLeg": case "LeftFoot":
+					textureId = bodypartOverride.LeftUpperLeg?.texId
+					break
+				case "RightLowerLeg": case "RightFoot":
+					textureId = bodypartOverride.RightUpperLeg?.texId
+					break
+				}
+				
 				// Update textures
 				const textures = [
 					[this.sources.base[part.name], null, bodypart.baseTexId],
-					[this.sources[part.name], null, bodypart.texId],
+					[this.sources[part.name], null, textureId],
 					
 					[this.sources.pbr[part.name], null, bodypart.colorMapId],
 					[material, "normalMap", bodypart.normalMapId],
