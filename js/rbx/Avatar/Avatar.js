@@ -1537,6 +1537,7 @@ const RBXAvatar = (() => {
 				if(material.opacity !== opacity) {
 					material.opacity = opacity
 					material.transparent = opacity < 1
+					material.needsUpdate = true
 				}
 				
 				// Update mesh
@@ -1594,6 +1595,7 @@ const RBXAvatar = (() => {
 				
 				if(bodypart.pbrEnabled) {
 					material.map = this.textures.pbr[part.name]
+					material.needsUpdate = true
 					
 					// only draw bodycolor if alphamode = 0
 					material.map.setSourceEnabled(0, bodypart.pbrAlphaMode === 0)
@@ -1603,6 +1605,7 @@ const RBXAvatar = (() => {
 					}
 				} else {
 					material.map = this.textures[part.name]
+					material.needsUpdate = true
 				}
 				
 				for(const [target, prop, texId] of textures) {
@@ -1619,6 +1622,8 @@ const RBXAvatar = (() => {
 							if(img) {
 								target[prop] = createTexture(img)
 							}
+							
+							target.needsUpdate = true
 						} else {
 							target.setImage(img)
 						}
@@ -1813,18 +1818,21 @@ const RBXAvatar = (() => {
 						if(acc.normalMapId) {
 							AssetCache.loadImage(true, acc.normalMapId, img => {
 								material.normalMap = createTexture(img)
+								material.needsUpdate = true
 							})
 						}
 						
 						if(acc.metalnessMapId) {
 							AssetCache.loadImage(true, acc.metalnessMapId, img => {
 								material.metalnessMap = createTexture(img)
+								material.needsUpdate = true
 							})
 						}
 						
 						if(acc.roughnessMapId) {
 							AssetCache.loadImage(true, acc.roughnessMapId, img => {
 								material.roughnessMap = createTexture(img)
+								material.needsUpdate = true
 							})
 						}
 					} else {
@@ -1837,6 +1845,7 @@ const RBXAvatar = (() => {
 						if(acc.texId) {
 							AssetCache.loadImage(true, acc.texId, img => {
 								material.map = new MergeTexture(256, 256, img)
+								material.needsUpdate = true
 							})
 							
 							if(acc.vertexColor) {
