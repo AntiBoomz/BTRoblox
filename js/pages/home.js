@@ -13,38 +13,46 @@ pageInit.home = () => {
 	}
 	
 	if(SETTINGS.get("home.friendsSecondRow")) {
+		angularHook.modifyTemplate("people-list-container", template => {
+			template.$find(".people-list-container").setAttribute("ng-class", `{"btr-home-secondRow": btrShowSecondRow}`)
+		})
+		
+		angularHook.modifyTemplate("people-list", template => {
+			template.$find(".hlist").setAttribute("style", "--btr-width: {{btrWidth * 128}}px;")
+		})
+		
 		InjectJS.inject(() => {
 			const { angularHook } = window.BTRoblox
 			
 			angularHook.hijackModule("peopleList", {
-				peopleListContainer(handler, args) {
-					const directive = handler.apply(this, args)
+				peopleListContainerController(handler, args, argsMap) {
+					const result = handler.apply(this, args)
 					
-					directive.link = ($scope, iElem) => {
-						const elem = iElem[0]
+					try {
+						const { $scope } = argsMap
 						
-						let showSecondRow = true
+						$scope.btrShowSecondRow = false
 						
-						try { showSecondRow = !!localStorage.getItem("BTRoblox:homeShowSecondRow") }
+						try { $scope.btrShowSecondRow = !!localStorage.getItem("BTRoblox:homeShowSecondRow") }
 						catch(ex) { console.error(ex) }
-						
-						elem.classList.toggle("btr-home-secondRow", showSecondRow)
 						
 						$scope.$watch("library.numOfFriends", numOfFriends => {
 							if(numOfFriends == null) { return }
 							
-							showSecondRow = numOfFriends > ($scope.layout.maxNumberOfFriendsDisplayed / 2)
-							elem.classList.toggle("btr-home-secondRow", showSecondRow)
+							$scope.btrShowSecondRow = numOfFriends > ($scope.layout.maxNumberOfFriendsDisplayed / 2)
+							$scope.btrWidth = Math.ceil(Math.min($scope.layout.maxNumberOfFriendsDisplayed, numOfFriends) / 2)
 							
-							if(showSecondRow) {
+							if($scope.btrShowSecondRow) {
 								localStorage.setItem("BTRoblox:homeShowSecondRow", "true")
 							} else {
 								localStorage.removeItem("BTRoblox:homeShowSecondRow")
 							}
 						})
+					} catch(ex) {
+						console.error(ex)
 					}
 					
-					return directive
+					return result
 				},
 				layoutService(handler, args) {
 					const result = handler.apply(this, args)

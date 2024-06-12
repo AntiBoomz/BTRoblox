@@ -6,7 +6,7 @@
 }
 
 .btr-home-showUsername .people-list-container,
-.btr-home-secondRow .people-list-container {
+.btr-home-secondRow.people-list-container {
 	--btr-friend-height: 148px;
 	--btr-friend-rows: 1;
 }
@@ -15,28 +15,35 @@
 	--btr-friend-height: 152px;
 }
 
-.btr-home-secondRow .people-list-container {
+.btr-home-secondRow.people-list-container {
 	--btr-friend-rows: 2;
 }
 
 .btr-home-showUsername .people-list-container,
-.btr-home-secondRow .people-list-container {
+.btr-home-secondRow.people-list-container {
 	height: calc(var(--btr-friend-rows) * var(--btr-friend-height) + 42px);
 }
 
 .btr-home-showUsername .people-list-container .people-list,
-.btr-home-secondRow .people-list-container .people-list {
+.btr-home-secondRow.people-list-container .people-list {
 	max-height: none;
 	height: calc(var(--btr-friend-rows) * var(--btr-friend-height));
+	white-space: wrap;
+}
+
+@media (max-width: 991px) {
+	.btr-home-secondRow.people-list-container .people-list .hlist {
+		width: var(--btr-width, 0px);
+	}
 }
 
 .btr-home-showUsername .people-list-container .people-list .friend,
-.btr-home-secondRow .people-list-container .people-list .friend {
+.btr-home-secondRow.people-list-container .people-list .friend {
 	height: var(--btr-friend-height);
 }
 
 .btr-home-showUsername .people-list-container .people-list .friend a,
-.btr-home-secondRow .people-list-container .people-list .friend a {
+.btr-home-secondRow.people-list-container .people-list .friend a {
 	padding-bottom: 8px; /* This moves the popup lower */
 }
 
