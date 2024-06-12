@@ -130,8 +130,13 @@ const btrFastSearch = {
 					
 					if(!x.user.Hidden) {
 						if(name === search) {
-							x.display = user.Username
-							x.index = 0
+							if(!user.DisplayName || user.DisplayName === user.Username) {
+								x.display = user.Username
+								x.index = 0
+							} else {
+								x.display = `${user.DisplayName} (@${user.Username})`
+								x.index = user.DisplayName.length + 3
+							}
 							x.sort = 0
 						} else if(x.user.IsFriend && !x.isAlias) {
 							const display = user.DisplayName.toLowerCase()
@@ -140,11 +145,16 @@ const btrFastSearch = {
 							const displayIndex = display.indexOf(search)
 							
 							if(nameIndex !== -1 && (displayIndex === -1 || nameIndex < displayIndex)) {
-								x.display = user.Username
-								x.index = nameIndex
+								if(!user.DisplayName || user.DisplayName === user.Username) {
+									x.display = user.Username
+									x.index = nameIndex
+								} else {
+									x.display = `${user.DisplayName} (@${user.Username})`
+									x.index = user.DisplayName.length + 3 + nameIndex
+								}
 								x.sort = nameIndex + x.display.length / 200
 							} else if(displayIndex !== -1) {
-								x.display = user.DisplayName
+								x.display = `${user.DisplayName} (@${user.Username})`
 								x.index = displayIndex
 								x.sort = displayIndex + x.display.length / 200
 							}
