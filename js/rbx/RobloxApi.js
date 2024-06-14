@@ -288,10 +288,6 @@ const RobloxApi = {
 			}).then(res => res.json()),
 	},
 	develop: {
-		userCanManage: (userId, assetId) =>
-			xsrfFetch(`https://develop.roblox.com/v1/user/${userId}/canmanage/${assetId}`, {
-				credentials: "include"
-			}).then(res => res.json()),
 	},
 	economy: {
 		getAssetDetails: cacheResult(10e3, assetId =>
