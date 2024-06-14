@@ -257,6 +257,7 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 	const reactHook = {
 		constructorProxies: new WeakMap(),
 		constructorReplaces: [],
+		elementListeners: [],
 		injectedContent: [],
 		renderTarget: null,
 		
@@ -391,9 +392,9 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 		},
 		
 		useGlobalState(globalState) {
-			const [, setValue] = React.useState()
+			const [, setValue] = this.React.useState()
 			
-			React.useEffect(() => {
+			this.React.useEffect(() => {
 				globalState.listeners.add(setValue)
 				return () => {
 					globalState.listeners.delete(setValue)
@@ -410,6 +411,10 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 				index: this.constructorReplaces.length,
 				filter, handler
 			})
+		},
+		
+		hijackElement(filter, handler) {
+			this.elementListeners.push({ filter, handler })
 		},
 		
 		hijackUseState(filter, transform) {
@@ -582,7 +587,7 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 										
 										children.splice(
 											index, 0,
-											React.createElement(content.elemType, {
+											this.React.createElement(content.elemType, {
 												key: content.elemId,
 												id: content.elemId,
 												dangerouslySetInnerHTML: { __html: " " }
@@ -671,7 +676,7 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 			let proxy = cache[cacheKey]
 			
 			if(!proxy) {
-				proxy = type
+				proxy = typeFn
 				
 				for(const info of handlers) {
 					proxy = new Proxy(proxy, { apply: info.handler })
@@ -723,6 +728,16 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 				}
 			} catch(ex) {
 				console.error(ex)
+			}
+			
+			for(const { filter, handler } of this.elementListeners) {
+				try {
+					if(filter(result)) {
+						handler(result)
+					}
+				} catch(ex) {
+					console.error(ex)
+				}
 			}
 			
 			try {
@@ -784,11 +799,13 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 			return result
 		},
 		
-		onReact(React) {
-			hijackFunction(React, "createElement", this.onCreateElement.bind(this))
-			hijackFunction(React, "useState", this.onUseState.bind(this))
+		onReact(_react) {
+			this.React = _react
 			
-			const dispatcher = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher
+			hijackFunction(this.React, "createElement", this.onCreateElement.bind(this))
+			hijackFunction(this.React, "useState", this.onUseState.bind(this))
+			
+			const dispatcher = this.React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher
 			let current = dispatcher.current
 			
 			// let lastFiber
