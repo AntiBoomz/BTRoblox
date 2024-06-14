@@ -12,19 +12,23 @@ const SettingsModal = {
 		
 		if(visible) {
 			document.$watch(">body", body => this.visible && body.appendChild(this.settingsDiv))
-	
-			const copyThemeFromElement = target => {
-				this.settingsDiv.classList.toggle("btr-light-theme", target.classList.contains("light-theme"))
-				this.settingsDiv.classList.toggle("btr-dark-theme", target.classList.contains("dark-theme"))
-			}
-		
-			document.$watch(".light-theme:not(.btr-settings-modal), .dark-theme:not(.btr-settings-modal)", target => {
-				if(this.themeObserver || !this.settingsDiv.parentNode) { return }
+			
+			if(location.hostname === "create.roblox.com") {
+				this.settingsDiv.classList.add("btr-dark-theme")
+			} else {
+				const copyThemeFromElement = target => {
+					this.settingsDiv.classList.toggle("btr-light-theme", target.classList.contains("light-theme"))
+					this.settingsDiv.classList.toggle("btr-dark-theme", target.classList.contains("dark-theme"))
+				}
+			
+				document.$watch(".light-theme:not(.btr-settings-modal), .dark-theme:not(.btr-settings-modal)", target => {
+					if(this.themeObserver || !this.settingsDiv.parentNode) { return }
 
-				this.themeObserver = new MutationObserver(() => copyThemeFromElement(target))
-				this.themeObserver.observe(target, { attributeFilter: ["class"], attributes: true })
-				copyThemeFromElement(target)
-			})
+					this.themeObserver = new MutationObserver(() => copyThemeFromElement(target))
+					this.themeObserver.observe(target, { attributeFilter: ["class"], attributes: true })
+					copyThemeFromElement(target)
+				})
+			}
 
 			const lastContentOpen = sessionStorage.getItem("btr-settings-open")
 			if(lastContentOpen && this.contentDivs[lastContentOpen]) {
