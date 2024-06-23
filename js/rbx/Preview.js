@@ -58,8 +58,6 @@ function getPlayerAppearance(userId) {
 function getCurrentAppearance() {
 	if(!outfitCache.default) {
 		return outfitCache.default = RobloxApi.avatar.getCurrentAvatar().then(async data => {
-			console.log("current", data)
-			
 			if(!data || data.errors) {
 				return getOutfitData(1116516198)
 			}
