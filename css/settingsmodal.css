@@ -239,17 +239,17 @@
 	margin-right: 8px;
 }
 
-.btr-settings-footer-twitter,
+.btr-settings-footer-x,
 .btr-settings-footer-roblox {
 	flex: 0 0 auto;
 	width: 22px;
 	height: 22px;
-	background-image: url("https://www.roblox.com/images/SocialNetworks/SocialLinkIconsV3.svg");
+	background-image: url("https://images.rbxcdn.com/f6d39fbab06f1ad69f6e6c36ffeff02e-SocialLinkSquareIconsV4.svg");
 	background-size: 100% auto;
 	margin-right: 2px;
 }
 
-.btr-settings-footer-twitter {
+.btr-settings-footer-x {
 	background-position: 0 -200%;
 }
 

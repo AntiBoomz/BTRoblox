@@ -446,7 +446,7 @@ const SettingsModal = {
 				</div>
 				<div class=btr-settings-footer>
 					<div class=btr-settings-footer-version>v${chrome.runtime.getManifest().version}</div>
-					<a href=https://twitter.com/AntiBoomz target=_blank title="Contact me on Twitter" class=btr-settings-footer-twitter></a>
+					<a href=https://x.com/AntiBoomz target=_blank title="Contact me on X" class=btr-settings-footer-x></a>
 					<a href=https://www.roblox.com/users/4719353/profile target=_blank title="Check me out on Roblox" class=btr-settings-footer-roblox></a>
 					<div class=btr-settings-footer-text>Refresh the page to apply settings</div>
 				</div>
