@@ -813,6 +813,7 @@ const RBXXmlParser = {
 			case "Item": {
 				const child = this.parseItem(parser, childNode)
 				child.setProperty("Parent", inst, "Instance")
+				inst.Children.push(child)
 				break
 			}
 			case "Properties":
