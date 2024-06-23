@@ -28,12 +28,9 @@ const optionalLibraries = {
 	parser: {
 		assets: [
 			"js/rbx/FileFormat/ByteReader.js",
-			"js/rbx/FileFormat/Instance.js",
-			"js/rbx/FileFormat/XmlParser.js",
-			"js/rbx/FileFormat/BinaryParser.js",
+			"js/rbx/FileFormat/ModelParser.js",
 			"js/rbx/FileFormat/MeshParser.js",
-			"js/rbx/AnimationParser.js",
-			"js/rbx/Parser.js",
+			"js/rbx/FileFormat/AnimationParser.js"
 		]
 	}
 }

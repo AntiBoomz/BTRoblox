@@ -511,25 +511,22 @@ const Explorer = (() => {
 					const nameItem = html`<div class=btr-property-name title=${name}>${name}</div>`
 					const valueItem = html`<div class=btr-property-value></div>`
 
-					if(name === "ClassName" || type === "Parent") {
+					if(name === "ClassName" || type === "UniqueId") {
 						nameItem.classList.add("btr-property-readonly")
 						valueItem.classList.add("btr-property-readonly")
 					}
 
 					switch(type) {
-					case "int64": {
+					case "SecurityCapabilities":
+					case "int64":
+					case "int":
 						valueItem.textContent = value
 						break
-					}
-					case "int":
 					case "float":
-					case "double": {
+					case "double":
 						valueItem.textContent = fixNum(value)
 						break
-					}
-					case "UniqueId":
-					case "SharedString":
-					case "string": {
+					case "string": case "UniqueId": {
 						const input = html`<input type=text readonly>`
 
 						const tooLong = value.length > 120
@@ -568,6 +565,8 @@ const Explorer = (() => {
 					case "CFrame":
 					case "Vector2":
 					case "Vector3":
+					case "Vector2int16":
+					case "Vector3int16":
 						valueItem.textContent = fixNums(value).join(", ")
 						break
 					case "Color3": {
@@ -583,7 +582,7 @@ const Explorer = (() => {
 						valueItem.textContent = `${ApiDump.getPropertyEnumName(target.ClassName, name, value) || value}`
 						break
 					case "Rect2D":
-						valueItem.textContent = `${fixNums(value).join(", ")}`
+						valueItem.textContent = `{${fixNums(value[0]).join(", ")}}, {${fixNums(value[1]).join(", ")}}`
 						break
 					case "UDim":
 						valueItem.textContent = `${fixNums(value).join(", ")}`
@@ -592,7 +591,7 @@ const Explorer = (() => {
 						valueItem.textContent = `{${fixNums(value[0]).join(", ")}}, {${fixNums(value[1]).join(", ")}}`
 						break
 					case "PhysicalProperties":
-						valueItem.textContent = value.CustomPhysics ?
+						valueItem.textContent = value ?
 							fixNums([value.Density, value.Friction, value.Elasticity, value.FrictionWeight, value.ElasticityWeight]).join(", ") :
 							"false"
 						break
@@ -600,7 +599,7 @@ const Explorer = (() => {
 						valueItem.textContent = value.map(x => `(${fixNums([x.Time, x.Value]).join(", ")})`).join(", ")
 						break
 					case "NumberRange":
-						valueItem.textContent = `${fixNums([value.Min, value.Max]).join(", ")}`
+						valueItem.textContent = `${fixNums(value).join(", ")}`
 						break
 					case "ColorSequence":
 						valueItem.textContent = value.map(x => `(${fixNums([x.Time])[0]}, (${fixNums(x.Color).map(num => Math.round(num * 255)).join(", ")}))`).join(", ")

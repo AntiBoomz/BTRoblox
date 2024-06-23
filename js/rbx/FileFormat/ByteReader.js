@@ -57,12 +57,24 @@ class ByteReader extends Uint8Array {
 		return result
 	}
 
-	Match(arr) {
-		const begin = this.index
-		this.index += arr.length
-		for(let i = 0; i < arr.length; i++) {
-			if(arr[i] !== this[begin + i]) { return false }
+	Match(match) {
+		let index = this.index
+		
+		if(typeof match === "string") {
+			for(let i = 0; i < match.length; i++) {
+				if(match.charCodeAt(i) !== this[index++]) {
+					return false
+				}
+			}
+		} else {
+			for(let i = 0; i < match.length; i++) {
+				if(match[i] !== this[index++]) {
+					return false
+				}
+			}
 		}
+		
+		this.index += match.length
 		return true
 	}
 
@@ -92,68 +104,73 @@ class ByteReader extends Uint8Array {
 	}
 
 	// Custom stuff
-	LZ4(buffer) {
+	LZ4Header() {
 		const comLength = this.UInt32LE()
 		const decomLength = this.UInt32LE()
-		this.Jump(4)
-
-		if(comLength === 0) { // TOOD: This path is actually not supported by Roblox, may have to take a look at some point?
-			assert(this.GetRemaining() >= decomLength, "[ByteReader.LZ4] unexpected eof")
+		const checksum = this.Jump(4) // always 0
+		
+		return [comLength, decomLength]
+	}
+	
+	LZ4(buffer) {
+		const [comLength, decomLength] = this.LZ4Header()
+		
+		if(comLength === 0) {
+			assert(this.GetRemaining() >= decomLength, "[ByteReader.LZ4Header] unexpected eof")
 			return this.Array(decomLength)
 		}
 		
-		assert(this.GetRemaining() >= comLength, "[ByteReader.LZ4] unexpected eof")
+		assert(this.GetRemaining() >= comLength, "[ByteReader.LZ4Header] unexpected eof")
 		
 		if(!buffer || buffer.length < decomLength) {
 			buffer = new Uint8Array(decomLength)
 		}
-
-		const start = this.index
-		const end = start + comLength
-		const data = buffer.length === decomLength ? buffer : buffer.subarray(0, decomLength)
+		
+		const data = buffer.length > decomLength ? buffer.subarray(0, decomLength) : buffer
+		const endIndex = this.index + comLength
+		
+		let lastByte = 0
 		let index = 0
 
-		while(this.index < end) {
-			const token = this.Byte()
-			let litLen = token >>> 4
+		while(index < decomLength) {
+			const token = this[this.index++]
+			let literalLength = token >> 4
 
-			if(litLen === 0xF) {
-				while(true) {
-					const lenByte = this.Byte()
-					litLen += lenByte
-					if(lenByte !== 0xFF) { break }
-				}
+			if(literalLength === 0xF) {
+				do {
+					lastByte = this[this.index++]
+					literalLength += lastByte
+				} while(lastByte === 0xFF)
 			}
 			
-			assert(this.index + litLen <= end, "[ByteReader.LZ4] unexpected eof")
+			assert(this.index + literalLength <= endIndex, "[ByteReader.LZ4] unexpected eof")
 
-			for(let i = 0; i < litLen; i++) {
-				data[index++] = this.Byte()
+			for(let i = 0; i < literalLength; i++) {
+				data[index++] = this[this.index++]
 			}
 
-			if(this.index < end) {
-				const offset = this.UInt16LE()
-				const begin = index - offset
-				
-				let len = token & 0xF
+			if(index < decomLength) {
+				let matchIndex = index - this.UInt16LE()
+				let matchLength = token & 0xF
 
-				if(len === 0xF) {
-					while(true) {
-						const lenByte = this.Byte()
-						len += lenByte
-						if(lenByte !== 0xFF) { break }
-					}
+				if(matchLength === 0xF) {
+					do {
+						lastByte = this[this.index++]
+						matchLength += lastByte
+					} while(lastByte === 0xFF)
 				}
-
-				len += 4
 				
-				for(let i = 0; i < len; i++) {
-					data[index++] = data[begin + i]
+				matchLength += 4 // Minimum match is 4 bytes, so 4 is added to the length
+				
+				assert(index + matchLength <= decomLength, "[ByteReader.LZ4] output size mismatch")
+				
+				for(let i = 0; i < matchLength; i++) {
+					data[index++] = data[matchIndex++]
 				}
 			}
 		}
 
-		assert(this.index === end, "[ByteReader.LZ4] input size mismatch")
+		assert(this.index === endIndex, "[ByteReader.LZ4] input size mismatch")
 		assert(index === decomLength, "[ByteReader.LZ4] output size mismatch")
 		
 		return data
@@ -164,15 +181,57 @@ class ByteReader extends Uint8Array {
 	RBXFloatLE() { return ByteReader.ParseRBXFloat(this.UInt32LE()) }
 	RBXFloatBE() { return ByteReader.ParseRBXFloat(this.UInt32BE()) }
 	
+	RBXInterleavedUint16(count, result) {
+		for(let i = 0; i < count; i++) {
+			result[i] =
+				this[this.index + i + count * 0] << 8 |
+				this[this.index + i + count * 1]
+		}
+
+		this.Jump(count * 2)
+		return result
+	}
+	
 	RBXInterleavedUint32(count, result) {
 		for(let i = 0; i < count; i++) {
-			result[i] = (this[this.index + i] << 24)
-				+ (this[this.index + i + count] << 16)
-				+ (this[this.index + i + count * 2] << 8)
-				+ (this[this.index + i + count * 3])
+			result[i] =
+				this[this.index + i + count * 0] << 24 |
+				this[this.index + i + count * 1] << 16 |
+				this[this.index + i + count * 2] << 8 |
+				this[this.index + i + count * 3]
 		}
 
 		this.Jump(count * 4)
+		return result
+	}
+	
+	RBXInterleavedUint64(count, result) {
+		for(let i = 0; i < count; i++) {
+			result[i] = BigInt(
+				this[this.index + i + count * 0] << 24 |
+				this[this.index + i + count * 1] << 16 |
+				this[this.index + i + count * 2] << 8 |
+				this[this.index + i + count * 3]
+			) * (2n ** 32n) + BigInt(
+				this[this.index + i + count * 4] << 24 |
+				this[this.index + i + count * 5] << 16 |
+				this[this.index + i + count * 6] << 8 |
+				this[this.index + i + count * 7]
+			)
+		}
+
+		this.Jump(count * 8)
+		return result
+	}
+	
+	RBXInterleavedInt16(count, result) {
+		this.RBXInterleavedUint16(count, result)
+		
+		for(let i = 0; i < count; i++) {
+			const value = result[i]
+			result[i] = (value % 2 ? -(value + 1) / 2 : value / 2)
+		}
+		
 		return result
 	}
 
@@ -180,7 +239,19 @@ class ByteReader extends Uint8Array {
 		this.RBXInterleavedUint32(count, result)
 		
 		for(let i = 0; i < count; i++) {
-			result[i] = (result[i] % 2 === 1 ? -(result[i] + 1) / 2 : result[i] / 2)
+			const value = result[i]
+			result[i] = (value % 2 ? -(value + 1) / 2 : value / 2)
+		}
+		
+		return result
+	}
+	
+	RBXInterleavedInt64(count, result) {
+		this.RBXInterleavedUint64(count, result)
+		
+		for(let i = 0; i < count; i++) {
+			const value = result[i]
+			result[i] = (value % 2n ? -(value + 1n) / 2n : value / 2n)
 		}
 		
 		return result
@@ -200,7 +271,7 @@ class ByteReader extends Uint8Array {
 {
 	const peekMethods = [
 		"Byte", "UInt8", "UInt16LE", "UInt16BE", "UInt32LE", "UInt32BE",
-		"FloatLE", "FloatBE", "DoubleLE", "DoubleBE", "String"
+		"FloatLE", "FloatBE", "DoubleLE", "DoubleBE", "String", "LZ4Header",
 	]
 	
 	for(const key of peekMethods) {

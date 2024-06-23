@@ -199,23 +199,27 @@ const AssetCache = (() => {
 			}
 			
 			if(assetRequest.params?.async) {
-				return RBXParser.parseModel(buffer, { async: true, onProgress: assetRequest.params?.onProgress }).asyncPromise.then(model => RBXParser.parseAnimation(findSequence(model)))
+				return RBXModelParser.parse(
+					buffer, { async: true, onProgress: assetRequest.params?.onProgress }
+				).promise.then(parser => RBXAnimationParser.parse(findSequence(parser.result)))
 			}
 			
-			return RBXParser.parseAnimation(findSequence(RBXParser.parseModel(buffer).result))
+			return RBXAnimationParser.parse(findSequence(RBXModelParser.parse(buffer).result))
 		}),
 		loadModel: createMethod(async (buffer, assetRequest) => {
 			await loadOptionalLibrary("parser")
 			
 			if(assetRequest.params?.async) {
-				return RBXParser.parseModel(buffer, { async: true, onProgress: assetRequest.params?.onProgress }).asyncPromise
+				return RBXModelParser.parse(
+					buffer, { async: true, onProgress: assetRequest.params?.onProgress }
+				).promise.then(parser => parser.result)
 			}
 			
-			return RBXParser.parseModel(buffer).result
+			return RBXModelParser.parse(buffer).result
 		}),
 		loadMesh: createMethod(async (buffer, assetRequest) => {
 			await loadOptionalLibrary("parser")
-			return RBXParser.parseMesh(buffer)
+			return RBXMeshParser.parse(buffer)
 		}),
 		
 		loadImage: createMethod((buffer, assetRequest) => new Promise((resolve, reject) => {

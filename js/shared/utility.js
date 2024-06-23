@@ -964,10 +964,12 @@ const html = function(...args) {
 	return elem
 }
 
-const assert = (bool, ...args) => {
-	if(!bool) { throw new Error(...args) }
-	return bool
+const assert = (value, ...args) => {
+	if(!value) { throw new Error(...args) }
+	return value
 }
+
+const assert_warn = (value, ...args) => (!value && console.warn(...args), value)
 
 const stringToBuffer = str => {
 	const buff = new ArrayBuffer(str.length)
