@@ -198,13 +198,29 @@ const Navigation = {
 			enabled: false,
 			
 			update(node) {
-				if(this.enabled) {
-					if(node.textContent === "Charts") {
-						node.textContent = "Discover"
+				if(node.nodeName === "TITLE") {
+					if(location.pathname.toLowerCase().startsWith("/charts")) {
+						if(this.enabled) {
+							if(document.title.includes("Charts")) {
+								this.replacedTitle = true
+								document.title = document.title.replace(/Charts/, "Discover")
+							}
+						} else {
+							if(this.replacedTitle && document.title.includes("Discover")) {
+								document.title = document.title.replace(/Discover/, "Charts")
+							}
+						}
 					}
 				} else {
-					if(node.textContent === "Discover") {
-						node.textContent = "Charts"
+					if(this.enabled) {
+						if(node.textContent === "Charts") {
+							node.classList.add("btr-charts-rename")
+							node.textContent = "Discover"
+						}
+					} else {
+						if(node.classList.contains("btr-charts-rename") && node.textContent === "Discover") {
+							node.textContent = "Charts"
+						}
 					}
 				}
 			},
@@ -217,6 +233,8 @@ const Navigation = {
 						this.addNode(chartsButton)
 					}
 				}, { continuous: true })
+				
+				document.$watch("title", title => this.addNode(title))
 			}
 		})
 		
