@@ -16,15 +16,6 @@ const BlogFeed = {
 			
 			const escape = { amp: "&", gt: ">", lt: "<", apos: "'", quot: "\"" }
 			
-			const unescape = data => {
-				return data
-					.replace(/<!\[CDATA\[([^]*?)\]\]>/g, "$1") // strip cdata
-					.replace(/&(?:(amp|gt|lt|apos|quot)|(?:#x([a-fA-F0-9]+))|(?:#([0-9]+)));/g, (_, name, hex, dec) => // unescape characters
-						(name ? escape[name] : hex ? String.fromCodePoint(parseInt(hex, 16)) : String.fromCodePoint(parseInt(dec, 10)))
-					)
-					.trim()
-			}
-			
 			const content = (data, trimlen=null) => {
 				data = data
 					.replace(/<!\[CDATA\[([^]*?)\]\]>/g, "$1") // strip cdata
@@ -55,30 +46,23 @@ const BlogFeed = {
 					.trim()
 			}
 			
-			const feedUrl = `https://blog.roblox.com/feed/`
+			const feedUrl = `https://api.buttercms.com/v2/pages/long_form_page/?locale=en&preview=0&page=1&page_size=3&fields.page_type.slug=newsroom&order=-displayed_publish_date&auth_token=137ac5a15935fab769262b6167858b427157ee3d`
 
-			this.fetching = fetch(feedUrl).then(async response => {
-				if(!response.ok) {
-					return Promise.reject()
-				}
-				
-				const text = await response.text()
-				const regex = /<item>[^]*?<\/item>/g
-				
+			this.fetching = fetch(feedUrl).then(async res => {
+				const json = await res.json()
 				const posts = []
 				
 				for(let i = 0; i < 3; i++) {
-					const match = regex.exec(text)
-					if(!match) { break }
+					const post = json.data[i]
+					if(!post) { break }
 					
-					const [, title, link, date, desc] = match[0].match(/<title>([^]*?)<\/title>[^]*?<link>([^]*?)<\/link>[^]*?<pubDate>([^]*?)<\/pubDate>[^]*?<content:encoded>([^]*?)<\/content:encoded>/) || []
-					if(!link) { continue }
+					const published = new Date(post.fields.displayed_publish_date)
 					
 					posts.push({
-						url: unescape(link),
-						date: unescape(date),
-						title: unescape(title),
-						desc: content(desc, 200)
+						url: `https://corp.roblox.com/newsroom/${published.getUTCFullYear()}/${("0" + (published.getUTCMonth() + 1)).slice(-2)}/${post.slug}`,
+						date: post.fields.displayed_publish_date,
+						title: post.fields.title,
+						desc: content(post.fields.long_form_content?.find(x => x.type === "long-form-text")?.fields.body, 200)
 					})
 				}
 				

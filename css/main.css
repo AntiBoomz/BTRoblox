@@ -199,7 +199,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 }
 
 #btr-blogfeed .btr-feed:hover {
-	background: rgba(0,0,0,0.08);
+	background: rgba(0, 0, 0, 0.1);
 }
 
 #btr-blogfeed .btr-feedcreator, #btr-blogfeed .btr-feeddate {
@@ -220,7 +220,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	overflow: hidden;
 	max-height: 0;
 	width: 100%;
-	opacity: .75;
+	opacity: 0.8;
 	font-weight: 300;
 	transition: max-height 0.4s;
 	margin-top: 4px;
