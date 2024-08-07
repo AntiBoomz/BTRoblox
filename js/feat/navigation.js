@@ -193,6 +193,33 @@ const Navigation = {
 			}
 		})
 		
+		Navigation.register("header_charts_rename", {
+			label: "Rename Charts to Discover",
+			enabled: false,
+			
+			update(node) {
+				if(this.enabled) {
+					if(node.textContent === "Charts") {
+						node.textContent = "Discover"
+					}
+				} else {
+					if(node.textContent === "Discover") {
+						node.textContent = "Charts"
+					}
+				}
+			},
+			
+			init() {
+				document.$watch("#header").$then().$watch("ul.rbx-navbar", navbar => {
+					const chartsButton = navbar.$find(`.rbx-navbar a[href^="/charts"]`)
+					
+					if(chartsButton) {
+						this.addNode(chartsButton)
+					}
+				}, { continuous: true })
+			}
+		})
+		
 		Navigation.register("header_robux", {
 			label: "Show Robux",
 			enabled: false,
