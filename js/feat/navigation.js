@@ -435,6 +435,7 @@ const Navigation = {
 					this.loadedFeed = true
 					
 					const blogfeed = node.$find("#btr-blogfeed")
+					const parser = new DOMParser()
 					
 					const updateBlogFeed = blogFeedData => {
 						blogfeed.replaceChildren()
@@ -446,7 +447,9 @@ const Navigation = {
 									${item.title.trim() + " "}
 									<span class="btr-feeddate">(${$.dateSince(item.date)})</span>
 								</div>
-								<div class="btr-feeddesc">${item.desc}</div>
+								<div class="btr-feeddesc">${
+									parser.parseFromString(item.desc, "text/html").documentElement.textContent.replace(/\s+/g, " ").trim().slice(0, 220)
+								}</div>
 							</a>`)
 						}
 					}
