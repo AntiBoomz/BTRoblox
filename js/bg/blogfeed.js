@@ -14,37 +14,11 @@ const BlogFeed = {
 		if(!this.fetching && this.canRequest()) {
 			this.lastRequest = Date.now()
 			
-			const escape = { amp: "&", gt: ">", lt: "<", apos: "'", quot: "\"" }
-			
-			const content = (data, trimlen=null) => {
-				data = data
-					.replace(/<!\[CDATA\[([^]*?)\]\]>/g, "$1") // strip cdata
-					.replace(/<(style)[^>]*>.*?<\/\1[^>]*>/gis, "") // strip out style elements
-					.replace(/<[^>]*>/g, "") // strip out all other tags
-					.replace(/&(?:(amp|gt|lt|apos|quot)|(?:#x([a-fA-F0-9]+))|(?:#([0-9]+)));/g, (_, name, hex, dec) => // unescape characters
-						(name ? escape[name] : hex ? String.fromCodePoint(parseInt(hex, 16)) : String.fromCodePoint(parseInt(dec, 10)))
-					)
-				
-				if(trimlen && trimlen < data.length) {
-					let index = 0
-					
-					while(index <= trimlen) {
-						index = data.indexOf("\n", index + 1)
-						
-						if(index === -1) {
-							index = data.length
-							break
-						}
-					}
-					
-					data = data.slice(0, index)
-				}
-				
-				return data
-					.replace(/(?<=\w)\s*$/gm, ".") // add dots to end of sentences that dont have them
+			const content = data =>
+				new DOMParser().parseFromString(data, "text/html").documentElement.textContent
+					// .replace(/(?<=\w)\s*$/gm, ". ") // add dots to end of lines that dont have them
 					.replace(/\s+/g, " ") // collapse all whitespace
 					.trim()
-			}
 			
 			const feedUrl = `https://api.buttercms.com/v2/pages/long_form_page/?locale=en&preview=0&page=1&page_size=3&fields.page_type.slug=newsroom&order=-displayed_publish_date&auth_token=137ac5a15935fab769262b6167858b427157ee3d`
 
@@ -62,7 +36,7 @@ const BlogFeed = {
 						url: `https://corp.roblox.com/newsroom/${published.getUTCFullYear()}/${("0" + (published.getUTCMonth() + 1)).slice(-2)}/${post.slug}`,
 						date: post.fields.displayed_publish_date,
 						title: post.fields.title,
-						desc: content(post.fields.long_form_content?.find(x => x.type === "long-form-text")?.fields.body, 200)
+						desc: content(post.fields.long_form_content?.find(x => x.type === "long-form-text")?.fields.body ?? "").slice(0, 200)
 					})
 				}
 				
