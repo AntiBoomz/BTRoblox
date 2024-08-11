@@ -1,37 +1,8 @@
 "use strict"
 
 class ByteReader extends Uint8Array {
-	static ParseFloat(long) {
-		const exp = (long >>> 23) & 255
-		if(exp === 0) { return 0 }
-		const float = 2 ** (exp - 127) * (1 + (long & 0x7FFFFF) / 0x7FFFFF)
-		return long > 0x7FFFFFFF ? -float : float
-	}
-
-	static ParseRBXFloat(long) {
-		const exp = long >>> 24
-		if(exp === 0) { return 0 }
-		const float = 2 ** (exp - 127) * (1 + ((long >>> 1) & 0x7FFFFF) / 0x7FFFFF)
-		return long & 1 ? -float : float
-	}
-
-	static ParseDouble(long0, long1) {
-		const exp = (long0 >>> 20) & 0x7FF
-		const frac = (((long0 & 1048575) * 4294967296) + long1) / 4503599627370496
-		const neg = long0 & 2147483648
-
-		if(exp === 0) {
-			if(frac === 0) { return -0 }
-			const double = 2 ** (exp - 1023) * frac
-			return neg ? -double : double
-		} else if(exp === 2047) {
-			return frac === 0 ? Infinity : NaN
-		}
-
-		const double = 2 ** (exp - 1023) * (1 + frac)
-		return neg ? -double : double
-	}
-
+	static Converter = new DataView(new ArrayBuffer(8))
+	
 	constructor(...args) {
 		if(args[0] instanceof Uint8Array) {
 			args[1] = args[0].byteOffset
@@ -43,6 +14,7 @@ class ByteReader extends Uint8Array {
 		super(...args)
 
 		this.index = 0
+		this.view = new DataView(this.buffer, this.byteOffset, this.byteLength)
 	}
 
 	SetIndex(n) { this.index = n }
@@ -78,32 +50,32 @@ class ByteReader extends Uint8Array {
 		return true
 	}
 
-	Byte() { return this[this.index++] }
-	UInt8() { return this[this.index++] }
-	UInt16LE() { return this[this.index++] + (this[this.index++] * 256) }
-	UInt16BE() { return (this[this.index++] * 256) + this[this.index++] }
-	UInt32LE() { return this[this.index++] + (this[this.index++] * 256) + (this[this.index++] * 65536) + (this[this.index++] * 16777216) }
-	UInt32BE() { return (this[this.index++] * 16777216) + (this[this.index++] * 65536) + (this[this.index++] * 256) + this[this.index++] }
+	Byte() { return this.view.getUint8(this.index++) }
+	UInt8() { return this.view.getUint8(this.index++) }
+	UInt16LE() { return this.view.getUint16((this.index += 2) - 2, true) }
+	UInt16BE() { return this.view.getUint16((this.index += 2) - 2, false) }
+	UInt32LE() { return this.view.getUint32((this.index += 4) - 4, true) }
+	UInt32BE() { return this.view.getUint32((this.index += 4) - 4, false) }
+	UInt64LE() { return this.view.getBigUint64((this.index += 8) - 8, true) }
+	UInt64BE() { return this.view.getBigUint64((this.index += 8) - 8, false) }
 
-	Int8() { return (this[this.index++]) << 24 >> 24 }
-	Int16LE() { return (this[this.index++] + (this[this.index++] * 256)) << 16 >> 16 }
-	Int16BE() { return ((this[this.index++] * 256) + this[this.index++]) << 16 >> 16 }
-	Int32LE() { return (this[this.index++] + (this[this.index++] * 256) + (this[this.index++] * 65536) + (this[this.index++] * 16777216)) >> 0 }
-	Int32BE() { return ((this[this.index++] * 16777216) + (this[this.index++] * 65536) + (this[this.index++] * 256) + this[this.index++]) >> 0 }
+	Int8() { return this.view.getInt8(this.index++) }
+	Int16LE() { return this.view.getInt16((this.index += 2) - 2, true) }
+	Int16BE() { return this.view.getInt16((this.index += 2) - 2, false) }
+	Int32LE() { return this.view.getInt32((this.index += 4) - 4, true) }
+	Int32BE() { return this.view.getInt32((this.index += 4) - 4, false) }
+	Int64LE() { return this.view.getBigInt64((this.index += 8) - 8, true) }
+	Int64BE() { return this.view.getBigInt64((this.index += 8) - 8, false) }
+	
+	FloatLE() { return this.view.getFloat32((this.index += 4) - 4, true) }
+	FloatBE() { return this.view.getFloat32((this.index += 4) - 4, false) }
+	DoubleLE() { return this.view.getFloat64((this.index += 8) - 8, true) }
+	DoubleBE() { return this.view.getFloat64((this.index += 8) - 8, false) }
 
-	FloatLE() { return ByteReader.ParseFloat(this.UInt32LE()) }
-	FloatBE() { return ByteReader.ParseFloat(this.UInt32BE()) }
-	DoubleLE() {
-		const byte = this.UInt32LE()
-		return ByteReader.ParseDouble(this.UInt32LE(), byte)
-	}
-	DoubleBE() { return ByteReader.ParseDouble(this.UInt32BE(), this.UInt32BE()) }
+	String(n) { return bufferToString(this.Array(n)) }
 
-	String(n) {
-		return bufferToString(this.Array(n))
-	}
-
-	// Custom stuff
+	// LZ4
+	
 	LZ4Header() {
 		const comLength = this.UInt32LE()
 		const decomLength = this.UInt32LE()
@@ -178,8 +150,11 @@ class ByteReader extends Uint8Array {
 
 	// RBX
 
-	RBXFloatLE() { return ByteReader.ParseRBXFloat(this.UInt32LE()) }
-	RBXFloatBE() { return ByteReader.ParseRBXFloat(this.UInt32BE()) }
+	RBXFloat() {
+		const uint32 = this.UInt32LE()
+		ByteReader.Converter.setUint32(0, uint32 << 31 | uint32 >>> 1)
+		return ByteReader.Converter.getFloat32(0)
+	}
 	
 	RBXInterleavedUint16(count, result) {
 		for(let i = 0; i < count; i++) {
@@ -261,7 +236,9 @@ class ByteReader extends Uint8Array {
 		this.RBXInterleavedUint32(count, result)
 		
 		for(let i = 0; i < count; i++) {
-			result[i] = ByteReader.ParseRBXFloat(result[i])
+			const uint32 = result[i]
+			ByteReader.Converter.setUint32(0, uint32 << 31 | uint32 >>> 1)
+			result[i] =  ByteReader.Converter.getFloat32(0)
 		}
 		
 		return result
@@ -271,7 +248,7 @@ class ByteReader extends Uint8Array {
 {
 	const peekMethods = [
 		"Byte", "UInt8", "UInt16LE", "UInt16BE", "UInt32LE", "UInt32BE",
-		"FloatLE", "FloatBE", "DoubleLE", "DoubleBE", "String", "LZ4Header",
+		"FloatLE", "FloatBE", "DoubleLE", "DoubleBE", "Array", "String"
 	]
 	
 	for(const key of peekMethods) {

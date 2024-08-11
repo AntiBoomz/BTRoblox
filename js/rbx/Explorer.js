@@ -595,6 +595,9 @@ const Explorer = (() => {
 							fixNums([value.Density, value.Friction, value.Elasticity, value.FrictionWeight, value.ElasticityWeight]).join(", ") :
 							"false"
 						break
+					case "Font":
+						valueItem.textContent = `{ Family = ${value.Family}, Weight = ${ApiDump.getEnumName("FontWeight", value.Weight) ?? value.Weight}, Style = ${ApiDump.getEnumName("FontStyle", value.Style) ?? value.Style} }`
+						break
 					case "NumberSequence":
 						valueItem.textContent = value.map(x => `(${fixNums([x.Time, x.Value]).join(", ")})`).join(", ")
 						break

@@ -86,12 +86,12 @@ class RBXInstance {
 		
 		const canSet = name !== "Children" && name !== "Properties" && !(name in Object.getPrototypeOf(this))
 		
-		if(type == null) {
-			delete this.Properties[name]
-			if(canSet) { delete this[name] }
-		} else {
+		if(type != null) {
 			this.Properties[name] = { type, value }
 			if(canSet) { this[name] = value }
+		} else {
+			delete this.Properties[name]
+			if(canSet) { delete this[name] }
 		}
 	}
 	
@@ -367,8 +367,8 @@ const RBXBinaryParser = {
 			case "Ray": {
 				for(let i = 0; i < count; i++) {
 					values[i] = [
-						[chunk.RBXFloatLE(), chunk.RBXFloatLE(), chunk.RBXFloatLE()],
-						[chunk.RBXFloatLE(), chunk.RBXFloatLE(), chunk.RBXFloatLE()]
+						[chunk.RBXFloat(), chunk.RBXFloat(), chunk.RBXFloat()],
+						[chunk.RBXFloat(), chunk.RBXFloat(), chunk.RBXFloat()]
 					]
 				}
 				break
@@ -549,11 +549,11 @@ const RBXBinaryParser = {
 					
 					if(enabled) {
 						values[i] = {
-							Density: chunk.RBXFloatLE(),
-							Friction: chunk.RBXFloatLE(),
-							Elasticity: chunk.RBXFloatLE(),
-							FrictionWeight: chunk.RBXFloatLE(),
-							ElasticityWeight: chunk.RBXFloatLE()
+							Density: chunk.RBXFloat(),
+							Friction: chunk.RBXFloat(),
+							Elasticity: chunk.RBXFloat(),
+							FrictionWeight: chunk.RBXFloat(),
+							ElasticityWeight: chunk.RBXFloat()
 						}
 					} else {
 						values[i] = false
@@ -571,6 +571,16 @@ const RBXBinaryParser = {
 				valueType = "Color3"
 				break
 			}
+			case "Font":
+				for(let i = 0; i < count; i++) {
+					values[i] = {
+						Family: chunk.String(chunk.UInt32LE()),
+						Weight: chunk.UInt16LE(),
+						Style: chunk.Byte(),
+						CachedFaceId: chunk.String(chunk.UInt32LE())
+					}
+				}
+				break
 			case "int64":
 				chunk.RBXInterleavedInt64(count, values)
 				for(let i = 0; i < count; i++) {
@@ -937,6 +947,14 @@ const RBXXmlParser = {
 				} else {
 					inst.setProperty(name, false, "PhysicalProperties")
 				}
+				break
+			case "Font":
+				inst.setProperty(name, {
+					Family: getValue(children.Family, ""),
+					Weight: +getValue(children.Weight, 500),
+					Style: +getValue(children.Style, 0),
+					CachedFaceId: getValue(children.CachedFaceId, ""),
+				}, "Font")
 				break
 			case "Ref":
 				if(parser.refs[value]) {
