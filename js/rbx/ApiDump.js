@@ -90,6 +90,10 @@ const ApiDump = (() => {
 			prepare()
 			return Data.Enums[name]
 		},
+		getEnumName(enumType, value) {
+			prepare()
+			return Data.Enums[enumType]?.[value]
+		},
 		getPropertyGroup(className, prop) {
 			prepare()
 			const propInfo = getPropInfo(className, prop)
