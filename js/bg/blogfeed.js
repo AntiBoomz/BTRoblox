@@ -14,7 +14,7 @@ const BlogFeed = {
 		if(!this.fetching && this.canRequest()) {
 			this.lastRequest = Date.now()
 
-			const feedUrl = `https://api.buttercms.com/v2/pages/long_form_page/?locale=en&preview=0&page=1&page_size=3&fields.page_type.slug=newsroom&order=-displayed_publish_date&auth_token=137ac5a15935fab769262b6167858b427157ee3d`
+			const feedUrl = `https://api.buttercms.com/v2/pages/long_form_page/?locale=en&preview=0&page=1&page_size=3&fields.page_type.slug=newsroom&fields.unlist_page=false&order=-displayed_publish_date&auth_token=137ac5a15935fab769262b6167858b427157ee3d`
 
 			this.fetching = fetch(feedUrl).then(async res => {
 				const json = await res.json()
