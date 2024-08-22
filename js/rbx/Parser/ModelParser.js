@@ -783,6 +783,8 @@ const RBXXmlParser = {
 					console.warn(`[RBXXmlParser] unknown node ${child.nodeName}`)
 				}
 			}
+			
+			return parser
 		})()
 		
 		return parser
