@@ -10,14 +10,49 @@ BTRoblox, or Better Roblox, is an extension that aims to enhance Roblox website'
 Links
 -----
 
-* [Roblox Web Apis](https://github.com/matthewdean/roblox-web-apis)
+* [Roblox Web Apis by matthewdean](https://github.com/matthewdean/roblox-web-apis)
+* [Roblox-Apis by NoTwistedHere](https://github.com/NoTwistedHere/Roblox-Apis/blob/main/Apis.md)
 * [API Docs](#api-docs)
 * [Undocumented APIs](#undocumented-apis)
-    * [apis.roblox.com](#apisrobloxcom)
-    * [develop.roblox.com](#developrobloxcom)
-    * [economy.roblox.com](#economyrobloxcom)
-    * [gamepersistence.roblox.com](#gamepersistencerobloxcom)
-    * [www.roblox.com](#gamepersistencerobloxcom)
+  * [roblox://](#roblox)
+    * [Join a roblox place](#join-a-roblox-place)
+  * [roblox-studio://](#roblox-studio)
+    * [Open place in studio](#open-place-in-studio)
+  * [apis.roblox.com/player-hydration-service](#apisrobloxcomplayer-hydration-service)
+  * [apis.roblox.com/content-aliases-api](#apisrobloxcomcontent-aliases-api)
+    * [Configure aliases](#configure-aliases)
+  * [apis.roblox.com/creator-marketplace-purchasing-service](#apisrobloxcomcreator-marketplace-purchasing-service)
+    * [Purchase asset](#purchase-asset-note-url-uses-product-id-not-asset-id)
+  * [apis.roblox.com/game-passes](#apisrobloxcomgame-passes)
+    * [Get gamepass product info](#get-gamepass-product-info)
+    * [Get gamepass details](#get-gamepass-details)
+    * [Get universeId from place](#get-universeid-from-place)
+  * [apis.roblox.com/asset-permissions-api](#apisrobloxcomasset-permissions-api)
+    * [Check if user (or group) has edit access](#check-if-user-or-group-has-edit-access)
+  * [apis.roblox.com/explore-api](#apisrobloxcomexplore-api)
+    * [Game sorts](#game-sorts)
+  * [apis.roblox.com/search-api](#apisrobloxcomsearch-api)
+    * [Game search](#game-search)
+  * [apis.roblox.com/platform-chat-api](#apisrobloxcomplatform-chat-api)
+    * [Platform chat](#platform-chat)
+  * [develop.roblox.com](#developrobloxcom)
+    * [Get saved versions of an asset](#get-saved-versions-of-an-asset)
+    * [Get published versions of an asset](#get-published-versions-of-an-asset)
+    * [Multi-get asset details](#multi-get-asset-details)
+    * [Archive asset](#archive-asset)
+  * [economy.roblox.com](#economyrobloxcom)
+    * [Get asset details](#get-asset-details)
+  * [gamepersistence.roblox.com](#gamepersistencerobloxcom)
+    * [DataStore methods](#datastore-methods)
+  * [www.roblox.com](#wwwrobloxcom)
+    * [Get info about currently logged in user](#get-info-about-currently-logged-in-user)
+    * [Get place details](#get-place-details)
+    * [Get place settings](#get-place-settings-requires-edit-access)
+    * [Get collections of an user](#get-collections-of-an-user)
+    * [Get player badges of an user](#get-player-badges-of-an-user-only-returns-first-6)
+    * [Get games on an user's profile](#get-games-on-an-users-profile)
+    * [Get favorites of an user](#get-favorites-of-an-user)
+    * [Delete asset from inventory](#delete-asset-from-inventory)
 
 
 API Docs
@@ -75,35 +110,61 @@ API Docs
 Undocumented APIs
 =================
 
+roblox://
+---------
 #### Join a roblox place
 * roblox://experiences/start?id=1818
 * roblox://placeId=1818/
   * supported params: `placeId` (or just `id`), `gameInstanceId`, `accessCode`, `linkCode`, `launchData`, `reservedServerAccessCode`, `joinAttemptId`, `joinAttemptOrigin`, `callId` and `browserTrackerId`. (credit to [bloxstrap](https://github.com/pizzaboxer/bloxstrap/wiki/A-deep-dive-on-how-the-Roblox-bootstrapper-works) for this information)
 
+roblox-studio://
+---------
 #### Open place in studio
 * roblox-studio:1+launchmode:edit+task:EditPlace+placeId:1818+universeId:13058
 
 
-apis.roblox.com
+apis.roblox.com/player-hydration-service
 ---------
-#### Random endpoints I've come across
 * GET https://apis.roblox.com/player-hydration-service/v1/players/signed
 
+
+apis.roblox.com/content-aliases-api
+---------
 #### Configure aliases
 * POST https://apis.roblox.com/content-aliases-api/v1/universes/create-alias?universeId={universeId}&name={name}&type={aliasTypeId}&targetId{targetId}
 * POST https://apis.roblox.com/content-aliases-api/v1/universes/delete-alias?universeId={universeId}&name={name}
 * POST https://apis.roblox.com/content-aliases-api/v1/universes/update-alias?universeId={universeId}&oldName={oldName}&name={name}&type={aliasTypeId}&targetId={targetId}
 
+
+apis.roblox.com/creator-marketplace-purchasing-service
+---------
+#### Purchase asset (note: url uses product id, not asset id)
+* POST https://apis.roblox.com/creator-marketplace-purchasing-service/v1/products/1346487601/purchase
+  ```
+  {"assetId":11829118051,"assetType":10,"expectedPrice":0,"searchId":null}
+  ```
+  ```
+  {"purchased":true,"productId":1346487601,"price":0,"reason":"Success"}
+  ```
+
+
+apis.roblox.com/game-passes
+---------
 #### Get gamepass product info
-* GET https://apis.roblox.com/game-passes/v1/game-passes/{gamepassId}/product-info
+* GET https://apis.roblox.com/game-passes/v1/game-passes/18185363/product-info
+
+#### Get gamepass details
+* GET https://apis.roblox.com/game-passes/v1/game-passes/18185363/details
 
 #### Get universeId from place
 * GET https://apis.roblox.com/universes/v1/places/1818/universe
 
+
+apis.roblox.com/asset-permissions-api
+---------
 #### Check if user (or group) has edit access
   ```
   POST https://apis.roblox.com/asset-permissions-api/v1/assets/check-permissions
-  cookie: .ROBLOSECURITY=*
   content-type: application/json
 
   {
@@ -120,7 +181,8 @@ apis.roblox.com
   }
   ```
   ```
-  status: 200
+  
+  200 OK
   content-type: application/json
 
   {
@@ -130,13 +192,22 @@ apis.roblox.com
   }
   ```
 
+
+apis.roblox.com/explore-api
+---------
 #### Game sorts
 * GET https://apis.roblox.com/explore-api/v1/get-sorts?sessionId={sessionID}
 * GET https://apis.roblox.com/explore-api/v1/get-sort-content?sessionId={sessionID}&sortId={sortID}
 
+
+apis.roblox.com/search-api
+---------
 #### Game search
 * GET https://apis.roblox.com/search-api/omni-search?SearchQuery={query}&SessionId={sessionID}
 
+
+apis.roblox.com/platform-chat-api
+---------
 #### Platform chat
 * GET https://apis.roblox.com/platform-chat-api/v1/metadata
 * GET https://apis.roblox.com/platform-chat-api/v1/get-conversation-metadata
@@ -149,6 +220,7 @@ apis.roblox.com
   ```
   {"status":"success"}
   ```
+  
 * POST https://apis.roblox.com/platform-chat-api/v1/send-messages
   ```
   {"conversation_id":"{conversationId}","messages":[{"content":"this is a test message"}]}
@@ -156,6 +228,7 @@ apis.roblox.com
   ```
   {"messages":[{"id":"12345678-1234-1234-1234-123456789abc","content":"this is a test message","sender_user_id":4719353,"created_at":"2024-06-27T21:32:22.7534644Z","status":"success","type":"unknown_type"}]}
   ```
+  
 * POST https://apis.roblox.com/platform-chat-api/v1/create-conversations
   ```
   {"conversations":[{"type":"group","name":"","participant_user_ids":[1234,2345]}],"include_user_data":true}
@@ -163,6 +236,7 @@ apis.roblox.com
   ```
   {"conversations":[{"source":"chat","id":"123456789","type":"group","name":null,"created_by":4719353,"participant_user_ids":[4719353,1234,2345],"user_data":*snip*,"messages":[],"unread_message_count":0,"updated_at":"2024-06-27T21:39:27.7080493Z","created_at":"0001-01-01T00:00:00Z","status":"success"}]}
   ```
+  
 * POST https://apis.roblox.com/platform-chat-api/v1/get-conversations
   ```
   {"ids":[123456789],"include_messages":true,"include_participants":true,"include_user_data":true}
@@ -170,6 +244,7 @@ apis.roblox.com
   ```
   {"conversations":[{"source":"chat","id":"123456789","type":"group","name":null,"created_by":4719353,"participant_user_ids":[4719353,1234,2345],"user_data":*snip*,"messages":[],"unread_message_count":0,"updated_at":"2024-06-27T21:39:27.7080493Z","created_at":"2024-06-27T21:39:27.7080493Z"}]}
   ```
+  
 
 
 develop.roblox.com
@@ -183,6 +258,8 @@ develop.roblox.com
 #### Multi-get asset details
 * GET https://develop.roblox.com/v1/assets?assetIds=16580499833,1818
 
+#### Archive asset
+* POST https://develop.roblox.com/v1/assets/1818/archive
 
 economy.roblox.com
 -------------
@@ -192,122 +269,353 @@ economy.roblox.com
 
 gamepersistence.roblox.com
 --------------
-### V1
+#### DataStore methods
+* These examples use [this place](https://www.roblox.com/games/1076067099/) with placeId of 1076067099 and universeId of 446315170
 
-#### GetAsync("Key")
+#### ListDataStoresAsync("T", 1, "cursor")
+* GET https://gamepersistence.roblox.com/v2/persistence/446315170/datastores?prefix=T&maxItemsToReturn=1&exclusiveStartKey=cursor
   ```
-  GET https://gamepersistence.roblox.com/v1/persistence/standard?key=DSName&scope=DSScope&target=Key
-  GET https://gamepersistence.roblox.com/v1/persistence/sorted?key=DSName&scope=DSScope&target=Key
-  cookie: .ROBLOSECURITY=*
+  Roblox-Place-Id: 1076067099
+  ```
+  ```
+  200 OK
+  
+  {"datastores":[{"name":"Test","createdTime":"2024-08-22T16:49:57.8516146Z","updatedTime":"2024-08-22T16:49:57.8516146Z"}],"lastReturnedKey":""}
+  ```
+  
+#### GetDataStore("Test"):GetAsync("hi")
+* GET https://gamepersistence.roblox.com/v2/persistence/446315170/datastores/objects/object?datastore=Test&objectKey=global%2Fhi
+  ```
+  Roblox-Place-Id: 1076067099
+  ```
+  ```
+  // If key exists
+  200 OK
   content-type: application/octet-stream
-  roblox-place-id: 1818
+  content-md5: VQNh2cu4sdBAMRrdwrY35w==
+  etag: "08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01"
+  roblox-object-version-id: 08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01
+  roblox-object-created-time: 2024-08-22T16:49:57.8993219Z
+  roblox-object-version-created-time: 2024-08-22T17:00:36.1474268Z
+  roblox-object-attributes: {"key1":"value1","key2":"value2"}
+  roblox-object-userids: [1,2,3]
+  
+  "ho"
+  ```
+  ```
+  // If key doesn't exist
+  404 Not Found
+  content-type: application/json
+  
+  {"errors":[{"code":11,"message":"The requested key does not exist.","retryable":false}]}
+  ```
 
+#### GetDataStore("Test"):GetVersionAsync("hi", "08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01")
+* GET https://gamepersistence.roblox.com/v2/persistence/446315170/datastores/objects/object?datastore=Test&objectKey=global%2Fhi&version=08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01
+  ```
+  Roblox-Place-Id: 1076067099
   ```
   ```
-  status: 200
+  // If version exists
+  200 OK
   content-type: application/octet-stream
-  roblox-usn: 08D94934165492FF.0000000002.08D94934E28101F9.01
-
-  "value"
+  content-md5: VQNh2cu4sdBAMRrdwrY35w==
+  etag: "08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01"
+  roblox-object-version-id: 08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01
+  roblox-object-created-time: 2024-08-22T16:49:57.8993219Z
+  roblox-object-version-created-time: 2024-08-22T17:00:36.1474268Z
+  roblox-object-attributes: {"key1":"value1","key2":"value2"}
+  roblox-object-userids: [1,2,3]
+  
+  "ho"
   ```
-
-#### SetAsync("Key", "value")
   ```
-  POST https://gamepersistence.roblox.com/v1/persistence/standard?key=DSName&scope=DSScope&target=Key
-  POST https://gamepersistence.roblox.com/v1/persistence/sorted?key=DSName&scope=DSScope&target=Key
-  cookie: .ROBLOSECURITY=*
+  // If version doesn't exist but key does
+  204 No Content
   content-type: application/octet-stream
-  roblox-place-id: 1818
+  content-md5: VQNh2cu4sdBAMRrdwrY35w==
+  etag: "08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01"
+  roblox-object-version-id: 08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01
+  roblox-object-created-time: 2024-08-22T16:49:57.8993219Z
+  roblox-object-version-created-time: 2024-08-22T17:00:36.1474268Z
+  roblox-object-attributes: {"key1":"value1","key2":"value2"}
+  roblox-object-userids: [1,2,3]
+  
+  <no data>
+  ```
+  ```
+  // If key doesn't exist
+  404 Not Found
+  content-type: application/json
+  
+  {"errors":[{"code":11,"message":"The requested key does not exist.","retryable":false}]}
+  ```
 
-  "value"
+#### GetDataStore("Test"):SetAsync("hi", "ho", {1, 2, 3}, DataStoreSetOptions({ key1 = "value1", key2 = "value2" }))
+* POST https://gamepersistence.roblox.com/v2/persistence/446315170/datastores/objects/object?datastore=Test&objectKey=global%2Fhi
+  ```
+  Content-Type: application/octet-stream
+  Content-MD5: VQNh2cu4sdBAMRrdwrY35w==
+  Roblox-Place-Id: 1076067099
+  Roblox-Object-Userids: [1,2,3]
+  Roblox-Object-Attributes: {"key1":"value1","key2":"value2"}
+  
+  "ho"
   ```
   ```
-  status: 200
+  200 OK
+  content-type: application/json
+  
+  {"version":"08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01","deleted":false,"contentLength":4,"createdTime":"2024-08-22T17:00:36.1474268Z","objectCreatedTime":"2024-08-22T16:49:57.8993219Z"}
+  ```
+
+#### GetDataStore("Test"):UpdateAsync("hi", function() return "ho", {1, 2, 3}, DataStoreSetOptions({ key1 = "value1", key2 = "value2" }) end)
+* Implemented using [GetAsync](#getdatastoretestgetasynchi) and [SetAsync](#getdatastoretestsetasynchi-ho-1-2-3-datastoresetoptions-key1--value1-key2--value2-) with If-Match header
+  ```
+  // First it gets current data
+  GET https://gamepersistence.roblox.com/v2/persistence/446315170/datastores/objects/object?datastore=Test&objectKey=global%2Fhi
+  Roblox-Place-Id: 1076067099
+  ```
+  ```
+  200 OK
+  content-type: application/octet-stream
+  content-md5: VQNh2cu4sdBAMRrdwrY35w==
+  etag: "08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01"
+  roblox-object-version-id: 08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01
+  roblox-object-created-time: 2024-08-22T16:49:57.8993219Z
+  roblox-object-version-created-time: 2024-08-22T17:00:36.1474268Z
+  roblox-object-attributes: {"key1":"value1","key2":"value2"}
+  roblox-object-userids: [1,2,3]
+  
+  "ho"
+  ```
+  ```
+  // Then it tries to set it to new value (note If-Match header which matches etag returned by GetAsync)
+  POST https://gamepersistence.roblox.com/v2/persistence/446315170/datastores/objects/object?datastore=Test&objectKey=global%2Fhi
+  Content-Type: application/octet-stream
+  If-Match: "08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01"
+  Content-MD5: uax0tCReVutN8x1hJ+LNDQ==
+  Roblox-Place-Id: 1076067099
+  Roblox-Object-Userids: [1,2,3]
+  Roblox-Object-Attributes: {"key1":"value1","key2":"value2"}
+  
+  "hy"
+  ```
+  ```
+  // If it succeeds
+  200 OK
+  content-type: application/json
+  
+  {"version":"08DCC2CE8B549D47.0000000003.08DCC2CEED7D4991.01","deleted":false,"contentLength":4,"createdTime":"2024-08-22T17:21:58.3230353Z","objectCreatedTime":"2024-08-22T17:19:13.6397639Z"}
+  ```
+  ```
+  // If it fails (data does not match If-Match), return new data and repeat setasync
+  412 Precondition Failed
+  content-type: application/octet-stream
+  content-md5: uax0tCReVutN8x1hJ+LNDQ==
+  etag: "08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01"
+  roblox-object-version-id: 08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01
+  roblox-object-created-time: 2024-08-22T16:49:57.8993219Z
+  roblox-object-version-created-time: 2024-08-22T17:00:36.1474268Z
+  roblox-object-attributes: {"key1":"value1","key2":"value2"}
+  roblox-object-userids: [1,2,3]
+  
+  "hy"
+  ```
+
+#### GetDataStore("Test"):RemoveAsync("hi")
+* DELETE https://gamepersistence.roblox.com/v2/persistence/446315170/datastores/objects/object?datastore=Test&objectKey=global%2Fhi
+  ```
+  Content-Type: application/octet-stream
+  Roblox-Place-Id: 1076067099
+  
+  <no body>
+  ```
+  ```
+  // If key exists
+  200 OK
+  content-type: application/octet-stream
+  content-md5: VQNh2cu4sdBAMRrdwrY35w==
+  etag: "08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01"
+  roblox-object-version-id: 08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01
+  roblox-object-created-time: 2024-08-22T16:49:57.8993219Z
+  roblox-object-version-created-time: 2024-08-22T17:00:36.1474268Z
+  roblox-object-attributes: {"key1":"value1","key2":"value2"}
+  roblox-object-userids: [1,2,3]
+  
+  "ho"
+  ```
+  ```
+  // If key doesn't exist
+  404 Not Found
+  content-type: application/json
+  
+  {"errors":[{"code":11,"message":"The requested key does not exist.","retryable":false}]}
+  ```
+
+#### GetDataStore("Test"):RemoveVersionAsync("hi", "08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01")
+* DELETE https://gamepersistence.roblox.com/v2/persistence/446315170/datastores/objects/object?datastore=Test&objectKey=global%2Fhi&version=08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01
+  ```
+  Content-Type: application/octet-stream
+  Roblox-Place-Id: 1076067099
+  
+  <no body>
+  ```
+  ```
+  // If version exists
+  200 OK
+  content-type: application/octet-stream
+  content-md5: VQNh2cu4sdBAMRrdwrY35w==
+  etag: "08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01"
+  roblox-object-version-id: 08DCC2CA74D3E243.0000000007.08DCC2CBF140D0DC.01
+  roblox-object-created-time: 2024-08-22T16:49:57.8993219Z
+  roblox-object-version-created-time: 2024-08-22T17:00:36.1474268Z
+  roblox-object-attributes: {"key1":"value1","key2":"value2"}
+  roblox-object-userids: [1,2,3]
+  
+  "ho"
+  ```
+  ```
+  // If version doesn't exist
+  404 Not Found
+  content-type: application/json
+  
+  {"errors":[{"code":12,"message":"The requested object version does not exist.","retryable":false}]}
+  ```
+
+#### GetDataStore("Test"):IncrementAsync("hi", 1, {1, 2, 3}, DataStoreSetOptions({ key1 = "value1", key2 = "value2" }))
+* POST https://gamepersistence.roblox.com/v2/persistence/446315170/datastores/objects/object/increment?datastore=Test&objectKey=global%2Fhi&incrementBy=1
+  ```
+  Content-Type: application/octet-stream
+  Roblox-Place-Id: 1076067099
+  Roblox-Object-Userids: [1,2,3]
+  Roblox-Object-Attributes: {"key1":"value1","key2":"value2"}
+  
+  <no body>
+  ```
+  ```
+  // If it succeeds
+  200 OK
+  content-type: application/octet-stream
+  content-md5: xMpCOKC5I4INzFCab3WEmw==
+  etag: "08DCC2D1D7C3A452.0000000001.08DCC2D1D7C3A452.01"
+  roblox-object-version-id: 08DCC2D1D7C3A452.0000000001.08DCC2D1D7C3A452.01
+  roblox-object-created-time: 2024-08-22T17:42:50.3644242Z
+  roblox-object-version-created-time: 2024-08-22T17:42:50.3644242Z
+  roblox-object-attributes: {"key1":"value1","key2":"value2"}
+  roblox-object-userids: [1,2,3]
+  
+  1
+  ```
+  ```
+  // If existing data is not numeric
+  400 Bad Request
+  content-type: application/json
+  
+  {"errors":[{"code":24,"message":"Key value is not numeric.","retryable":false}]}
+  ```
+
+#### GetDataStore("Test"):ListKeysAsync("hi", 1, "cursor", true)
+* GET https://gamepersistence.roblox.com/v2/persistence/446315170/datastores/objects?datastore=Test&prefix=global%2Fhi&maxItemsToReturn=1&exclusiveStartKey=cursor&excludeDeleted=true
+  ```
+  Roblox-Place-Id: 1076067099
+  ```
+  ```
+  200 OK
+  content-type: application/json
+  
+  {"keys":["global/hi"],"lastReturnedKey":"nzrxiER/+KVBNMl9B7mbqnzqkKsBZcr9liT+cwLGGf01Iw=="}
+  ```
+
+#### GetDataStore("Test"):ListVersionsAsync("hi", Enum.SortDirection.Ascending, 1, 1724340243000, 1)
+* GET https://gamepersistence.roblox.com/v2/persistence/446315170/datastores/objects/object/versions?datastore=Test&objectKey=global%2Fhi&sortOrder=Ascending&startTime=1970-01-01T00:00:00Z&endTime=2024-08-22T18:24:03Z&maxItemsToReturn=1
+  * Start and end times are in millis
+  ```
+  Roblox-Place-Id: 1076067099
+  ```
+  ```
+  200 OK
+  content-type: application/json
+  
+  {"versions":[{"version":"08DCC2CA74D3E243.0000000005.08DCC2CB5C770715.01","deleted":false,"contentLength":4,"createdTime":"2024-08-22T16:56:26.5221909Z","objectCreatedTime":"2024-08-22T16:49:57.8993219Z"}],"lastReturnedKey":"X3qpRUgyRrQhbDShI97MRuacpM6vR7jTjyNqyBDMiMdleUpwYm14cGJtVldaWEp6YVc5dUlqcG1ZV3h6WlN3aWJHRnpkRlpsY25OcGIyNGlPaUl3T0VSRFF6SkRRVGMwUkRORk1qUXpMakF3TURBd01EQXdNRFV1TURoRVEwTXlRMEkxUXpjM01EY3hOUzR3TVNJc0lrTjFjbk52Y2xabGNuTnBiMjRpT2pGOQ=="}
+  ```
+  ```
+  // If key doesn't exist
+  404 Not Found
+  content-type: application/json
+  
+  {"errors":[{"code":11,"message":"The requested key does not exist.","retryable":false}]}
+  ```
+
+#### GetOrderedDataStore("Test"):GetAsync("hi")
+* GET https://gamepersistence.roblox.com/v1/persistence/sorted?key=Test&scope=global&target=hi
+  ```
+  Roblox-Place-Id: 1076067099
+  ```
+  ```
+  200 OK
+  content-type: application/octet-stream
+  roblox-usn: 123
+
+  123
+  ```
+
+#### GetOrderedDataStore("Test"):SetAsync("hi", 123)
+* POST https://gamepersistence.roblox.com/v1/persistence/sorted?key=Test&scope=global&target=hi
+  ```
+  Content-Type: application/octet-stream
+  Roblox-Place-Id: 1076067099
+
+  123
+  ```
+  ```
+  200 OK
   content-type: application/json
 
-  {"usn":"08D94934165492FF.0000000002.08D94934E28101F9.01"}
+  {"usn":"123"}
   ```
 
-#### RemoveAsync("Key")
+#### GetOrderedDataStore("Test"):RemoveAsync("hi")
+* POST https://gamepersistence.roblox.com/v1/persistence/sorted/remove?key=Test&scope=global&target=hi
   ```
-  POST https://gamepersistence.roblox.com/v1/persistence/standard/remove?key=DSName&scope=DSScope&target=Key
-  POST https://gamepersistence.roblox.com/v1/persistence/sorted/remove?key=DSName&scope=DSScope&target=Key
-  cookie: .ROBLOSECURITY=*
+  Content-Type: application/octet-stream
+  Roblox-Place-Id: 1076067099
+  
+  <no data>
+  ```
+  ```
+  200 OK
   content-type: application/octet-stream
-  roblox-place-id: 1818
+  roblox-usn: 123
 
-  ```
-  ```
-  status: 200
-  content-type: application/octet-stream
-  roblox-usn: 08D94934165492FF.0000000002.08D94934E28101F9.01
-
-  "value"
+  123
   ```
 
-#### IncrementAsync("Key", 10)
+#### GetOrderedDataStore("Test"):IncrementAsync("hi", 1)
+* POST https://gamepersistence.roblox.com/v1/persistence/sorted/increment?key=Test&scope=global&target=hi&by=1
   ```
-  POST https://gamepersistence.roblox.com/v1/persistence/standard/increment?key=DSName&scope=DSScope&target=Key&by=10
-  POST https://gamepersistence.roblox.com/v1/persistence/sorted/increment?key=DSName&scope=DSScope&target=Key&by=10
-  cookie: .ROBLOSECURITY=*
-  content-type: application/octet-stream
-  roblox-place-id: 1818
-
+  Content-Type: application/octet-stream
+  Roblox-Place-Id: 1076067099
+  
+  <no data>
   ```
   ```
-  status: 200
+  200 OK
   content-type: application/json
 
-  {"value":"10","usn":"08D94934165492FF.0000000004.08D9493603433C74.01"}
+  {"value":"124","usn":"124"}
   ```
 
-#### GetSortedAsync(true, 1, 1, 100):AdvanceToNextPageAsync()
+#### GetOrderedDataStore("Test"):GetSortedAsync(true, 1, 1, 100)
+* GET https://gamepersistence.roblox.com/v1/persistence/sorted/list?key=Test&scope=global&pageSize=1&direction=asc&minValue=1&maxValue=100&exclusiveStartKey=AQEBAQRLZXkx
   ```
-  GET https://gamepersistence.roblox.com/v1/persistence/sorted/list?scope=DSScope&key=DSName&pageSize=10&direction=asc&minValue=1&maxValue=100&exclusiveStartKey=AQEBAQRLZXkx
-  cookie: .ROBLOSECURITY=*
-  content-type: application/octet-stream
-  roblox-place-id: 1818
-
+  Roblox-Place-Id: 1076067099
   ```
   ```
-  status: 200
+  200 OK
   content-type: application/json
 
-  {"entries":[{"target":"Key2","value":2,"usn":"2"}],"lastEvaluatedKey":"AQEBAgRLZXky"}
-  ```
-
-
-### V2
-
-#### GetAsync with multiple keys
-  ```
-  POST https://gamepersistence.roblox.com/persistence/getV2?type=standard
-  POST https://gamepersistence.roblox.com/persistence/getV2?type=sorted
-  cookie: .ROBLOSECURITY=*
-  content-type: application/x-www-form-urlencoded
-  roblox-place-id: 1818
-
-  &qkeys[0].scope=DSScope&qkeys[0].key=DSName&qkeys[0].target=Key1&qkeys[1].scope=DSScope&qkeys[1].key=DSName&qkeys[1].target=Key2
-  ```
-  ```
-  status: 200
-  content-type: application/json
-
-  {"data":[{"Key":{"Scope":"DSScope","Target":"Key1","Key":"DSName"},"Value":"1"},{"Key":{"Scope":"DSScope","Target":"Key2","Key":"DSName"},"Value":"2"}]}
-  ```
-
-#### GetSortedAsync(true, 1, 1, 100):AdvanceToNextPageAsync()
-  ```
-  POST https://gamepersistence.roblox.com/persistence/getSortedValues?scope=DSScope&key=DSName&pageSize=1&ascending=true&inclusiveMinValue=1&inclusiveMaxValue=100&exclusiveStartKey=AQEBAQRLZXkx
-  roblox-place-id: 1818
-  cookie: .ROBLOSECURITY=*
-
-  ```
-  ```
-  status: 200
-  content-type: application/json
-
-  {"data":{"Entries":[{"Target":"Key2","Value":2}],"ExclusiveStartKey":"AQEBAgRLZXky"}}
+  {"entries":[{"target":"hi","value":123,"usn":"123"}],"lastEvaluatedKey":"AQEBAgRLZXky"}
   ```
 
 
@@ -315,7 +623,6 @@ ww<span>w.roblox.com
 ---------
 #### Get info about currently logged in user
 * GET https://www.roblox.com/my/account/json
-* GET https://www.roblox.com/mobileapi/userinfo
 * GET https://www.roblox.com/my/settings/json
 
 #### Get place details
@@ -335,3 +642,6 @@ ww<span>w.roblox.com
 
 #### Get favorites of an user
 * GET https://www.roblox.com/users/favorites/list-json?userId=4719353&cursor=&assetTypeId=8&itemsPerPage=6
+
+#### Delete asset from inventory
+* POST https://www.roblox.com/asset/delete-from-inventory?assetId=1818
