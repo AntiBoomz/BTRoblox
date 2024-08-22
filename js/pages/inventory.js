@@ -126,7 +126,7 @@ pageInit.inventory = () => {
 
 			for(const cont of template.$findAll("#assetsItems .item-card-container")) {
 				cont.append(html`
-				<span class="checkbox btr-it-checkbox" ng-show="${visibility}">
+				<span class="checkbox btr-it-checkbox" ng-if="item.Creator.Id !== 1 && ${visibility}">
 					<input type="checkbox" id="btr-it-box{{$index}}" class="btr-it-box" data-index="{{$index}}">
 					<label for="btr-it-box{{$index}}" style="position:absolute;left:6px;top:6px;width:auto;"></label>
 				</span>`)
@@ -178,7 +178,8 @@ pageInit.inventory = () => {
 					const value = !checkbox.checked
 
 					for(let i = from; i <= to; i++) {
-						$(`#btr-it-box${i}`).checked = value
+						const box = $(`#btr-it-box${i}`)
+						if(box) { box.checked = value }
 					}
 					
 					updateButtons()
