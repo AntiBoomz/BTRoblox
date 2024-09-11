@@ -13,7 +13,7 @@ pageInit.home = () => {
 				friendsState.set(friends)
 			})
 			
-			reactHook.hijackConstructor(
+			reactHook.hijackConstructor( // FriendTileContent
 				(type, props) => props.displayName && props.userProfileUrl,
 				(target, thisArg, args) => {
 					const result = target.apply(thisArg, args)
@@ -27,10 +27,15 @@ pageInit.home = () => {
 							const friend = friends[userId]
 							
 							if(friend) {
-								labels.props.children.splice(1, 0, reactHook.createElement("span", {
-									className: "btr-friends-carousel-real-username",
-									children: `@${friend.name}`
-								}))
+								labels.props.children.splice(1, 0, 
+									reactHook.createElement("div", {
+										className: "friends-carousel-tile-sublabel btr-friends-carousel-username-label",
+										children: reactHook.createElement("span", {
+											className: "btr-friends-carousel-username",
+											children: `@${friend.name}`
+										})
+									})
+								)
 							}
 						}
 					} catch(ex) {

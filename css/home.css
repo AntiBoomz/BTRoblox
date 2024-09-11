@@ -1,7 +1,7 @@
 .btr-home-secondRow .friends-carousel-container {
 	--btr-friend-height: 140px;
 	flex-flow: row wrap;
-	max-height: calc(var(--btr-friend-height) * 2);
+	max-height: calc(var(--btr-friend-height) * 2 - 10px);
 }
 
 .btr-home-secondRow.btr-home-showUsername .friends-carousel-container {
@@ -14,18 +14,30 @@
 	width: 118px;
 }
 
+.btr-home-secondRow #friend-tile-button {
+	width: 100%;
+}
+
 body .friends-carousel-container .friends-carousel-display-name {
 	width: auto;
 }
 
-.friends-carousel-container .btr-friends-carousel-real-username {
-	display: block;
+body .friends-carousel-container .btr-friends-carousel-username-label {
 	margin-top: -4px;
 	margin-bottom: -4px;
-	font-size: .7em;
-	color: #b8b8b8;
+	
+	/* this is a bit silly */
+	margin-left: -14px;
+	width: 118px;
 }
 
-.light-theme .friends-carousel-container .btr-friends-carousel-real-username {
+.friends-carousel-container .btr-friends-carousel-username {
+	font-size: .7em;
+	color: #b8b8b8;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+
+.light-theme .friends-carousel-container .btr-friends-carousel-username {
 	color: #737373;
 }
