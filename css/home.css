@@ -25,3 +25,7 @@ body .friends-carousel-container .friends-carousel-display-name {
 	font-size: .7em;
 	color: #b8b8b8;
 }
+
+.light-theme .friends-carousel-container .btr-friends-carousel-real-username {
+	color: #737373;
+}
