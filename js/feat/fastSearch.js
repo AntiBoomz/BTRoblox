@@ -479,7 +479,7 @@ const btrFastSearch = {
 					}
 					
 					for(const [idString, entry] of Object.entries(friends)) {
-						const entry = userCache[entry.name.toLowerCase()] = {
+						const user = userCache[entry.name.toLowerCase()] = {
 							Username: entry.name,
 							DisplayName: entry.displayName ?? entry.name,
 							HasVerifiedBadge: entry.verified || false,
@@ -487,7 +487,7 @@ const btrFastSearch = {
 							IsFriend: true
 						}
 						
-						requestPresence(entry.UserId)
+						requestPresence(user.UserId)
 					}
 					
 					reloadSearchResults(true)
