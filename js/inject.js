@@ -310,24 +310,27 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 			return false
 		},
 		
-		queryElement(targets, query, depth = 5, matchRoot = false, all = false) {
+		queryElement(targets, queries, depth = 5, mustMatchRoot = false, all = false) {
+			if(!Array.isArray(targets)) { targets = [targets] }
+			if(!Array.isArray(queries)) { queries = [queries] }
+			
 			const temp = all ? [] : null
 			
-			for(const target of (Array.isArray(targets) ? targets : [targets])) {
+			for(const target of targets) {
 				if(!target?.props) {
 					continue
 				}
 				
-				if(typeof query === "function") {
-					if(query(target)) {
-						if(all) {
-							temp.push(target)
-						} else {
-							return target
+				for(const query of queries) {
+					if(typeof query === "function") {
+						if(query(target)) {
+							if(all) {
+								temp.push(target)
+							} else {
+								return target
+							}
 						}
-					}
-				} else {
-					for(const selector of (Array.isArray(query) ? query : [query])) {
+					} else {
 						if(this.selectorMatches(target, selector)) {
 							if(!selector.next) {
 								if(all) {
@@ -353,8 +356,8 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 					}
 				}
 				
-				if(depth >= 2 && !matchRoot) {
-					const result = this.queryElement(target.props.children, query, depth - 1, matchRoot, all)
+				if(depth >= 2 && !mustMatchRoot) {
+					const result = this.queryElement(target.props.children, queries, depth - 1, mustMatchRoot, all)
 					
 					if(result) {
 						if(all) {
