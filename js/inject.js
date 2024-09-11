@@ -384,6 +384,11 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 				value: value,
 				counter: 0,
 				
+				set(value) {
+					this.value = value
+					this.update()
+				},
+				
 				update() {
 					this.counter++
 					
@@ -849,6 +854,10 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 					}
 				}
 			})
+		},
+		
+		createElement(...args) {
+			return this.React.createElement(...args)
 		},
 		
 		//
