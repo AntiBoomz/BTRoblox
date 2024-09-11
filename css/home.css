@@ -1,55 +1,27 @@
-/* Friend stuff */
-
-#people-list-container .people-list-container {
-	float: none;
-	overflow: hidden;
+.btr-home-secondRow .friends-carousel-container {
+	--btr-friend-height: 140px;
+	flex-flow: row wrap;
+	max-height: calc(var(--btr-friend-height) * 2);
 }
 
-.btr-home-showUsername .people-list-container,
-.btr-home-secondRow.people-list-container {
-	--btr-friend-height: 148px;
-	--btr-friend-rows: 1;
+.btr-home-secondRow.btr-home-showUsername .friends-carousel-container {
+	--btr-friend-height: 154px;
 }
 
-.btr-home-showUsername .people-list-container {
-	--btr-friend-height: 152px;
-}
-
-.btr-home-secondRow.people-list-container {
-	--btr-friend-rows: 2;
-}
-
-.btr-home-showUsername .people-list-container,
-.btr-home-secondRow.people-list-container {
-	height: calc(var(--btr-friend-rows) * var(--btr-friend-height) + 42px);
-}
-
-.btr-home-showUsername .people-list-container .people-list,
-.btr-home-secondRow.people-list-container .people-list {
-	max-height: none;
-	height: calc(var(--btr-friend-rows) * var(--btr-friend-height));
-	white-space: wrap;
-}
-
-@media (max-width: 991px) {
-	.btr-home-secondRow.people-list-container .people-list .hlist {
-		width: var(--btr-width, 0px);
-	}
-}
-
-.btr-home-showUsername .people-list-container .people-list .friend,
-.btr-home-secondRow.people-list-container .people-list .friend {
+.btr-home-secondRow .friends-carousel-container > div {
+	opacity: 1 !important;
 	height: var(--btr-friend-height);
+	width: 118px;
 }
 
-.btr-home-showUsername .people-list-container .people-list .friend a,
-.btr-home-secondRow.people-list-container .people-list .friend a {
-	padding-bottom: 8px; /* This moves the popup lower */
+body .friends-carousel-container .friends-carousel-display-name {
+	width: auto;
 }
 
-.people-list-container .btr-people-username {
-	text-align: center;
-	margin-top: -5px;
-	margin-bottom: 2px;
-	font-weight: 0;
+.friends-carousel-container .btr-friends-carousel-real-username {
+	display: block;
+	margin-top: -4px;
+	margin-bottom: -4px;
+	font-size: .7em;
+	color: #b8b8b8;
 }
