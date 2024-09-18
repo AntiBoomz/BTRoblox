@@ -892,7 +892,7 @@ if(self.localStorage) {
 			for(let i = localStorage.length; i--;) {
 				const key = localStorage.key(i)
 				
-				if(key.startsWith("btrLayeredCache-") || key.startsWith("btr-")) { // Remove legacy data
+				if(key.startsWith("btrLayeredCache-") || key.startsWith("btr-") || key === "BTRoblox:homeShowSecondRow") { // Remove legacy data
 					if(key === "btr-sv-settings") {
 						try { this.setItem("svSettings", JSON.parse(localStorage.getItem(key))) }
 						catch {}
