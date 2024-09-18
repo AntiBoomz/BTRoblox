@@ -2,7 +2,7 @@
 
 pageInit.home = () => {
 	if(SETTINGS.get("home.friendsShowUsername")) {
-		document.$watch(">body", body => body.classList.add("btr-home-showUsername"))
+		document.$watch(">body", body => body.classList.add("btr-home-showUsername", "btr-home-friends"))
 		
 		InjectJS.inject(() => {
 			const { reactHook, contentScript } = BTRoblox
@@ -52,7 +52,7 @@ pageInit.home = () => {
 	}
 	
 	if(SETTINGS.get("home.friendsSecondRow")) {
-		document.$watch(">body", body => body.classList.add("btr-home-secondRow"))
+		document.$watch(">body", body => body.classList.add("btr-home-secondRow", "btr-home-friends"))
 	}
 	
 	if(SETTINGS.get("home.friendPresenceLinks")) {

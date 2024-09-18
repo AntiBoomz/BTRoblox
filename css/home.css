@@ -1,28 +1,40 @@
-.btr-home-secondRow .friends-carousel-container {
+/* home.friendsSecondRow */
+
+html .btr-home-secondRow .react-friends-carousel-container {
+	min-height: 187px;
+	height: auto;
+}
+
+html .btr-home-secondRow .friends-carousel-container {
 	--btr-friend-height: 140px;
 	flex-flow: row wrap;
 	max-height: calc(var(--btr-friend-height) * 2 - 10px);
 }
 
-.btr-home-secondRow.btr-home-showUsername .friends-carousel-container {
+html .btr-home-secondRow.btr-home-showUsername .friends-carousel-container {
 	--btr-friend-height: 154px;
 }
 
-.btr-home-secondRow .friends-carousel-container > div {
+html .btr-home-secondRow .friends-carousel-container > div {
 	opacity: 1 !important;
 	height: var(--btr-friend-height);
+}
+
+/* center and truncate names */
+
+html .btr-home-friends .friends-carousel-container > div {
 	width: 118px;
 }
 
-.btr-home-secondRow #friend-tile-button {
+html .btr-home-friends .friends-carousel-container #friend-tile-button {
 	width: 100%;
 }
 
-body .friends-carousel-container .friends-carousel-display-name {
+html .btr-home-friends .friends-carousel-container .friends-carousel-display-name {
 	width: auto;
 }
 
-body .friends-carousel-container .btr-friends-carousel-username-label {
+html .btr-home-friends .friends-carousel-container .btr-friends-carousel-username-label {
 	margin-top: -4px;
 	margin-bottom: -4px;
 	
@@ -31,13 +43,13 @@ body .friends-carousel-container .btr-friends-carousel-username-label {
 	width: 118px;
 }
 
-.friends-carousel-container .btr-friends-carousel-username {
+html .btr-home-friends .friends-carousel-container .btr-friends-carousel-username {
 	font-size: .7em;
 	color: #b8b8b8;
 	text-overflow: ellipsis;
 	overflow: hidden;
 }
 
-.light-theme .friends-carousel-container .btr-friends-carousel-username {
+html .btr-home-friends .light-theme .friends-carousel-container .btr-friends-carousel-username {
 	color: #737373;
 }
