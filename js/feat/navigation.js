@@ -162,7 +162,7 @@ const Navigation = {
 				}
 				
 				if(element.reactInject) {
-					reactInject({
+					reactHook.inject({
 						...element.reactInject,
 						callback(node) {
 							element.addNode(node)
@@ -193,16 +193,61 @@ const Navigation = {
 			}
 		})
 		
+		Navigation.register("header_charts_rename", {
+			label: "Rename Charts to Discover",
+			enabled: false,
+			
+			update(node) {
+				if(node.nodeName === "TITLE") {
+					if(location.pathname.toLowerCase().startsWith("/charts")) {
+						if(this.enabled) {
+							if(document.title.includes("Charts")) {
+								this.replacedTitle = true
+								document.title = document.title.replace(/Charts/, "Discover")
+							}
+						} else {
+							if(this.replacedTitle && document.title.includes("Discover")) {
+								document.title = document.title.replace(/Discover/, "Charts")
+							}
+						}
+					}
+				} else {
+					if(this.enabled) {
+						if(node.textContent === "Charts") {
+							node.classList.add("btr-charts-rename")
+							node.textContent = "Discover"
+						}
+					} else {
+						if(node.classList.contains("btr-charts-rename") && node.textContent === "Discover") {
+							node.textContent = "Charts"
+						}
+					}
+				}
+			},
+			
+			init() {
+				document.$watch("#header").$then().$watch("ul.rbx-navbar", navbar => {
+					const chartsButton = navbar.$find(`.rbx-navbar a[href^="/charts"]`)
+					
+					if(chartsButton) {
+						this.addNode(chartsButton)
+					}
+				}, { continuous: true })
+				
+				document.$watch("title", title => this.addNode(title))
+			}
+		})
+		
 		Navigation.register("header_robux", {
 			label: "Show Robux",
 			enabled: false,
 			
 			init() {
 				document.$watch("#header").$then().$watch("ul.rbx-navbar", navbar => {
-					const robuxBtn = navbar.$find(`.rbx-navbar a[href^="/robux"]`)
+					const robuxBtn = navbar.$find(`.rbx-navbar a[href^="/robux"], .rbx-navbar a[href^="/upgrades/robux"]`)?.parentNode || navbar.$find(`#navigation-robux-container, #navigation-robux-mobile-container`)
 					
 					if(robuxBtn) {
-						this.addNode(robuxBtn.parentNode)
+						this.addNode(robuxBtn)
 					}
 				}, { continuous: true })
 			}
@@ -390,6 +435,7 @@ const Navigation = {
 					this.loadedFeed = true
 					
 					const blogfeed = node.$find("#btr-blogfeed")
+					const parser = new DOMParser()
 					
 					const updateBlogFeed = blogFeedData => {
 						blogfeed.replaceChildren()
@@ -401,7 +447,9 @@ const Navigation = {
 									${item.title.trim() + " "}
 									<span class="btr-feeddate">(${$.dateSince(item.date)})</span>
 								</div>
-								<div class="btr-feeddesc">${item.desc}</div>
+								<div class="btr-feeddesc">${
+									parser.parseFromString(item.desc, "text/html").documentElement.textContent.replace(/\s+/g, " ").trim().slice(0, 220)
+								}</div>
 							</a>`)
 						}
 					}

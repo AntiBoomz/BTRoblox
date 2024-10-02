@@ -2,7 +2,59 @@
 
 pageInit.home = () => {
 	if(SETTINGS.get("home.friendsShowUsername")) {
-		modifyTemplate("people", card => {
+		document.$watch(">body", body => body.classList.add("btr-home-showUsername", "btr-home-friends"))
+		
+		// react friends
+		
+		InjectJS.inject(() => {
+			const { reactHook, contentScript } = BTRoblox
+			
+			const friendsState = reactHook.createGlobalState({})
+			
+			contentScript.listen("updateFriends", friends => {
+				friendsState.set(friends)
+			})
+			
+			reactHook.hijackConstructor( // FriendTileContent
+				(type, props) => props.displayName && props.userProfileUrl,
+				(target, thisArg, args) => {
+					const result = target.apply(thisArg, args)
+					
+					try {
+						const userId = args[0].id
+						
+						const labels = reactHook.queryElement(result, x => x.props.className?.includes("friends-carousel-tile-labels"))
+						if(labels && Array.isArray(labels.props.children)) {
+							const friends = reactHook.useGlobalState(friendsState)
+							const friend = friends[userId]
+							
+							if(friend) {
+								labels.props.children.splice(1, 0, 
+									reactHook.createElement("div", {
+										className: "friends-carousel-tile-sublabel btr-friends-carousel-username-label",
+										children: reactHook.createElement("span", {
+											className: "btr-friends-carousel-username",
+											children: `@${friend.name}`
+										})
+									})
+								)
+							}
+						}
+					} catch(ex) {
+						console.error(ex)
+					}
+					
+					return result
+				}
+			)
+		})
+		
+		InjectJS.send("updateFriends", btrFriends.getFriends())
+		btrFriends.loadFriends(friends => InjectJS.send("updateFriends", friend))
+		
+		// legacy angular friends
+		
+		angularHook.modifyTemplate("people", card => {
 			const container = card.$find(".friend-parent-container")
 			
 			if(container) {
@@ -12,107 +64,77 @@ pageInit.home = () => {
 		})
 	}
 	
-	if(SETTINGS.get("home.favoritesAtTop") || SETTINGS.get("home.hideFriendActivity")) {
-		InjectJS.inject(() => {
-			const { hijackFunction, settings } = window.BTRoblox
-			
-			hijackFunction(XMLHttpRequest.prototype, "open", (target, xhr, args) => {
-				const url = args[1]
-				
-				if(typeof url === "string") {
-					let replaceText
-					
-					if(url === "https://apis.roblox.com/discovery-api/omni-recommendation") {
-						replaceText = text => {
-							try {
-								const json = JSON.parse(text)
-								
-								if(settings.home.favoritesAtTop) {
-									const favs = json.sorts.find(x => x.topic === "Favorites")
-									
-									if(favs) {
-										const index = json.sorts.indexOf(favs)
-										
-										if(index > 1) {
-											json.sorts.splice(index, 1)
-											json.sorts.splice(1, 0, favs)
-										}
-									}
-								}
-								
-								if(settings.home.hideFriendActivity) {
-									for(const gameData of Object.values(json.contentMetadata.Game)) {
-										delete gameData.friendActivityTitle
-									}
-								}
-								
-								text = JSON.stringify(json)
-							} catch(ex) {
-								console.error(ex)
-							}
-							
-							return text
-						}
-					}
-					
-					if(replaceText) {
-						const responseText = {
-							configurable: true,
-							
-							get() {
-								delete xhr.responseText
-								const value = replaceText(xhr.responseText)
-								Object.defineProperty(xhr, "responseText", responseText)
-								return value
-							}
-						}
-						
-						Object.defineProperty(xhr, "responseText", responseText)
-					}
-				}
-				
-				return target.apply(xhr, args)
-			})
-		})
-	}
-	
 	if(SETTINGS.get("home.friendsSecondRow")) {
+		document.$watch(">body", body => body.classList.add("btr-home-secondRow", "btr-home-friends"))
+		
+		// react friends
+		
 		InjectJS.inject(() => {
-			const { hijackAngular } = window.BTRoblox
+			const { reactHook } = BTRoblox
+		
+			reactHook.hijackConstructor(
+				(type, props) => props.friendsList, 
+				(target, thisArg, args) => {
+					const friendsList = args[0].friendsList
+					
+					reactHook.hijackUseState( // visibleFriendsList
+						(value, index) => value === friendsList,
+						(value, initial) => (friendsList || [])
+					)
+					
+					const result = target.apply(thisArg, args)
+					
+					return result
+				}
+			)
+		})
+		
+		// legacy angular friends
+		
+		// angularHook.modifyTemplate("people-list-container", template => {
+		// 	template.$find(".people-list-container").setAttribute("ng-class", `{"btr-home-secondRow": btrShowSecondRow}`)
+		// })
+		
+		// angularHook.modifyTemplate("people-list", template => {
+		// 	template.$find(".hlist").setAttribute("style", "--btr-width: {{btrWidth * 128}}px;")
+		// })
+		
+		InjectJS.inject(() => {
+			const { angularHook } = window.BTRoblox
 			
-			hijackAngular("peopleList", {
-				peopleListContainer(handler, args) {
-					const directive = handler.apply(this, args)
+			angularHook.hijackModule("peopleList", {
+				// peopleListContainerController(handler, args, argsMap) {
+				// 	const result = handler.apply(this, args)
 					
-					directive.link = ($scope, iElem) => {
-						const elem = iElem[0]
+				// 	try {
+				// 		const { $scope } = argsMap
 						
-						let showSecondRow = true
+				// 		$scope.btrShowSecondRow = false
 						
-						try { showSecondRow = !!localStorage.getItem("BTRoblox:homeShowSecondRow") }
-						catch(ex) { console.error(ex) }
+				// 		try { $scope.btrShowSecondRow = !!localStorage.getItem("BTRoblox:homeShowSecondRow") }
+				// 		catch(ex) { console.error(ex) }
 						
-						elem.classList.toggle("btr-home-secondRow", showSecondRow)
-						
-						$scope.$watch("library.numOfFriends", numOfFriends => {
-							if(numOfFriends == null) { return }
+				// 		$scope.$watch("library.numOfFriends", numOfFriends => {
+				// 			if(numOfFriends == null) { return }
 							
-							showSecondRow = numOfFriends > 9
-							elem.classList.toggle("btr-home-secondRow", showSecondRow)
+				// 			$scope.btrShowSecondRow = numOfFriends > ($scope.layout.maxNumberOfFriendsDisplayed / 2)
+				// 			$scope.btrWidth = Math.ceil(Math.min($scope.layout.maxNumberOfFriendsDisplayed, numOfFriends) / 2)
 							
-							if(showSecondRow) {
-								localStorage.setItem("BTRoblox:homeShowSecondRow", "true")
-							} else {
-								localStorage.removeItem("BTRoblox:homeShowSecondRow")
-							}
-						})
-					}
+				// 			if($scope.btrShowSecondRow) {
+				// 				localStorage.setItem("BTRoblox:homeShowSecondRow", "true")
+				// 			} else {
+				// 				localStorage.removeItem("BTRoblox:homeShowSecondRow")
+				// 			}
+				// 		})
+				// 	} catch(ex) {
+				// 		console.error(ex)
+				// 	}
 					
-					return directive
-				},
+				// 	return result
+				// },
 				layoutService(handler, args) {
 					const result = handler.apply(this, args)
-					result.maxNumberOfFriendsDisplayed = 18
+					result.maxNumberOfFriendsDisplayed *= 2
 					return result
 				}
 			})
@@ -120,7 +142,39 @@ pageInit.home = () => {
 	}
 	
 	if(SETTINGS.get("home.friendPresenceLinks")) {
-		modifyTemplate("people-info-card", template => {
+		// react friends
+		
+		InjectJS.inject(() => {
+			const { reactHook } = BTRoblox
+		
+			reactHook.hijackConstructor(
+				(type, props) => props.friend && props.gameUrl,
+				(target, thisArg, args) => {
+					const result = target.apply(thisArg, args)
+					
+					try {
+						const card = result.props.children?.[0]
+						
+						if(card?.props.className?.includes("in-game-friend-card")) {
+							result.props.children[0] = reactHook.createElement("a", {
+								href: args[0].gameUrl,
+								style: { display: "contents" },
+								onClick: event => event.preventDefault(),
+								children: card
+							})
+						}
+					} catch(ex) {
+						console.error(ex)
+					}
+					
+					return result
+				}
+			)
+		})
+		
+		// legacy angular friends
+		
+		angularHook.modifyTemplate("people-info-card", template => {
 			for(const elem of template.$findAll(`[ng-click^="goToGameDetails"]`)) {
 				const anchor = document.createElement("a")
 				anchor.href = `{{friend.presence.placeUrl}}`

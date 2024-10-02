@@ -55,6 +55,7 @@ const AssetType = {
 	LeftShoeAccessory: 70,
 	RightShoeAccessory: 71,
 	DressSkirtAccessory: 72,
+	FontFamily: 73,
 	EyebrowAccessory: 76,
 	EyelashAccessory: 77,
 	MoodAnimation: 78,

@@ -75,7 +75,7 @@ pageInit.inventory = () => {
 	}
 	
 	if(RobuxToCash.isEnabled()) {
-		modifyTemplate("assets-explorer", template => {
+		angularHook.modifyTemplate("assets-explorer", template => {
 			const label = template.$find(".item-card-price .text-robux-tile")
 			if(!label) { return }
 
@@ -110,7 +110,7 @@ pageInit.inventory = () => {
 			2, 11, 12, 21
 		]
 
-		modifyTemplate("assets-explorer", template => {
+		angularHook.modifyTemplate("assets-explorer", template => {
 			const visibility = `$ctrl.staticData.isOwnPage && (${
 				validAssetTypes
 					.map(x => `$ctrl.currentData.AssetTypeId === ${x}`)
@@ -126,7 +126,7 @@ pageInit.inventory = () => {
 
 			for(const cont of template.$findAll("#assetsItems .item-card-container")) {
 				cont.append(html`
-				<span class="checkbox btr-it-checkbox" ng-show="${visibility}">
+				<span class="checkbox btr-it-checkbox" ng-if="item.Creator.Id !== 1 && ${visibility}">
 					<input type="checkbox" id="btr-it-box{{$index}}" class="btr-it-box" data-index="{{$index}}">
 					<label for="btr-it-box{{$index}}" style="position:absolute;left:6px;top:6px;width:auto;"></label>
 				</span>`)
@@ -143,9 +143,9 @@ pageInit.inventory = () => {
 		InjectJS.listen("inventoryUpdateEnd", updateButtons)
 		
 		InjectJS.inject(() => {
-			const { hijackAngular, contentScript, IS_DEV_MODE } = window.BTRoblox
+			const { angularHook, contentScript, IS_DEV_MODE } = window.BTRoblox
 			
-			hijackAngular("inventory", {
+			angularHook.hijackModule("inventory", {
 				inventoryContentController(handler, args, argsMap) {
 					const result = handler.apply(this, args)
 					
@@ -178,7 +178,8 @@ pageInit.inventory = () => {
 					const value = !checkbox.checked
 
 					for(let i = from; i <= to; i++) {
-						$(`#btr-it-box${i}`).checked = value
+						const box = $(`#btr-it-box${i}`)
+						if(box) { box.checked = value }
 					}
 					
 					updateButtons()

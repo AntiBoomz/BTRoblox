@@ -1,52 +1,113 @@
-.btr-hide-ads .content {
-	max-width: 970px;
+/* home.friendsSecondRow */
+
+html .btr-home-secondRow .react-friends-carousel-container {
+	min-height: 187px;
+	height: auto;
 }
 
-/* Friend stuff */
-
-#people-list-container .people-list-container {
-	float: none;
-	overflow: hidden;
+html .btr-home-secondRow .friends-carousel-container > div {
+	--btr-friend-height: 140px;
+	flex-flow: row wrap;
+	max-height: calc(var(--btr-friend-height) * 2 - 10px);
+	width: 100%;
 }
 
-.btr-home-showUsername .people-list-container,
-.btr-home-secondRow .people-list-container {
-	--btr-friend-height: 148px;
-	--btr-friend-rows: 1;
+html .btr-home-secondRow.btr-home-showUsername .friends-carousel-container > div {
+	--btr-friend-height: 154px;
 }
 
-.btr-home-showUsername .people-list-container {
-	--btr-friend-height: 152px;
-}
-
-.btr-home-secondRow .people-list-container {
-	--btr-friend-rows: 2;
-}
-
-.btr-home-showUsername .people-list-container,
-.btr-home-secondRow .people-list-container {
-	height: calc(var(--btr-friend-rows) * var(--btr-friend-height) + 42px);
-}
-
-.btr-home-showUsername .people-list-container .people-list,
-.btr-home-secondRow .people-list-container .people-list {
-	max-height: none;
-	height: calc(var(--btr-friend-rows) * var(--btr-friend-height));
-}
-
-.btr-home-showUsername .people-list-container .people-list .friend,
-.btr-home-secondRow .people-list-container .people-list .friend {
+html .btr-home-secondRow .friends-carousel-container > div > div {
+	opacity: 1 !important;
 	height: var(--btr-friend-height);
 }
 
-.btr-home-showUsername .people-list-container .people-list .friend a,
-.btr-home-secondRow .people-list-container .people-list .friend a {
-	padding-bottom: 8px; /* This moves the popup lower */
+/* center and truncate names */
+
+html .btr-home-friends .friends-carousel-container > div > div {
+	width: 118px;
 }
 
-.people-list-container .btr-people-username {
+html .btr-home-friends .friends-carousel-container > div #friend-tile-button {
+	width: 100%;
+}
+
+html .btr-home-friends .friends-carousel-container > div .friends-carousel-tile-labels {
+	/* allow name labels to extend into the margin */
+	display: inline-block;
+	margin-left: -14px;
+	width: 118px;
+}
+
+html .btr-home-friends .friends-carousel-container > div .friends-carousel-display-name {
+	max-width: 118px;
+	width: auto;
+}
+
+html .btr-home-friends .friends-carousel-container > div:has(.friend-tile-verified-badge) .friends-carousel-display-name {
+	/* account for verified badge (21px wide) */
+	max-width: 97px;
+}
+
+html .btr-home-friends .friends-carousel-container > div .btr-friends-carousel-username-label {
+	margin-top: -4px;
+	margin-bottom: -4px;
+}
+
+html .btr-home-friends .friends-carousel-container > div .btr-friends-carousel-username {
+	font-size: .7em;
+	color: #b8b8b8;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+
+html .btr-home-friends .light-theme .friends-carousel-container > div .btr-friends-carousel-username {
+	color: #737373;
+}
+
+/* fix dropdown game thumbnails when loading (shimmer class messes with size) */
+
+html body .friends-carousel-container > div .friend-tile-dropdown .friend-tile-game-card {
+	float: left;
+	width: 100px;
+	height: 100px;
+}
+
+/* friend dropdown "Chat with X" text wrap to second line with long names which looks odd */
+
+html body .friends-carousel-container > div .friend-tile-dropdown .friend-tile-dropdown-button:has(.icon-chat-gray) {
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+
+/* legacy friends */
+
+html .btr-home-secondRow .people-list-container {
+	height: auto
+}
+
+html .btr-home-secondRow .people-list-container .people-list {
+	min-height: 148px;
+	max-height: unset;
+	height: auto;
+}
+
+html .btr-home-secondRow .people-list-container .hlist {
+	--btr-friend-height: 140px;
+	flex-flow: row wrap;
+	max-height: calc(var(--btr-friend-height) * 2 - 10px);
+	width: 100%;
+}
+
+html .btr-home-secondRow.btr-home-showUsername .people-list-container .hlist {
+	--btr-friend-height: 154px;
+}
+
+html .btr-home-secondRow .people-list-container .hlist > div {
+	opacity: 1 !important;
+	height: var(--btr-friend-height);
+}
+
+html .btr-home-secondRow .people-list-container .btr-people-username {
 	text-align: center;
-	margin-top: -5px;
-	margin-bottom: 2px;
-	font-weight: 0;
 }

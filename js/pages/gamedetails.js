@@ -341,7 +341,7 @@ pageInit.gamedetails = placeId => {
 		}
 		
 		reactHook.hijackConstructor( // RunningGameServers
-			args => args[1]?.getGameServers,
+			(type, props) => props.getGameServers,
 			(target, thisArg, args) => {
 				const [props] = args
 				
@@ -399,7 +399,7 @@ pageInit.gamedetails = placeId => {
 		}
 		
 		reactHook.hijackConstructor( // GameInstanceCard
-			args => args[1]?.gameServerStatus,
+			(type, props) => props.gameServerStatus,
 			(target, thisArg, args) => {
 				const result = target.apply(thisArg, args)
 				const jobId = args[0].id
@@ -433,11 +433,15 @@ pageInit.gamedetails = placeId => {
 						
 						if(status) {
 							if(showRegion && regionSetting !== "combined") {
-								status.props.children += `\nRegion: ${serverDetails ? serverDetails.location?.medium ?? serverDetails.ip : "Loading"}`
+								status.props.children += `\nRegion: ${
+									!serverDetails ? "Loading" :
+									serverDetails.location ? serverDetails.location.country.name :
+									serverDetails.statusText
+								}`
 									
 								// Okay, this is hacky, BUT...
 								// United Kingdom wraps over by 1 character, so let's increase size for it lmao
-								if(serverDetails?.location?.medium === "United Kingdom") {
+								if(serverDetails?.location?.country.name === "United Kingdom") {
 									if(!status.props.style) { status.props.style = {} }
 									status.props.style.width = "105%"
 								}
@@ -447,12 +451,23 @@ pageInit.gamedetails = placeId => {
 								status.props.children += `\nPing: ${gameInstance.ping ?? 0}ms`
 								
 								if(showRegion && regionSetting === "combined") {
-									status.props.children += ` (${serverDetails ? serverDetails.location?.short ?? "??" : "Loading"})`
+									status.props.children += ` (${
+										!serverDetails ? "Loading" :
+										serverDetails.location ? serverDetails.location.country.code :
+										serverDetails.statusText
+									})`
 								}
 							}
 							
 							if(showRegion) {
-								status.props.title = serverDetails ? serverDetails.location?.long ?? serverDetails.ip : "Unknown"
+								status.props.title = 
+									!serverDetails ? "Loading" :
+									serverDetails.location ? (
+										serverDetails.location.country.code === "US" ? `${serverDetails.location.city}, ${serverDetails.location.region.code}, ${serverDetails.location.country.name}` :
+										serverDetails.location.city !== serverDetails.location.country.name ? `${serverDetails.location.city}, ${serverDetails.location.country.name}` :
+										`${serverDetails.location.city}` 
+									) :
+									serverDetails.statusTextLong
 							}
 						}
 					}
@@ -463,7 +478,7 @@ pageInit.gamedetails = placeId => {
 		)
 		
 		reactHook.hijackConstructor( // GameSection
-			args => args[1]?.loadMoreGameInstances,
+			(type, props) => props.loadMoreGameInstances,
 			(target, thisArg, args) => {
 				if(args[0].btrPagerEnabled) {
 					args[0].showLoadMoreButton = false
@@ -499,30 +514,18 @@ pageInit.gamedetails = placeId => {
 		)
 		
 		reactHook.hijackConstructor( // App (serverList)
-			args => args[0].toString().includes("getPublicGameInstances"),
+			(type, props) => type.toString().includes("getPublicGameInstances"),
 			(target, thisArg, args) => {
-				reactHook.hijackUseState({ // shouldRender
-					index: 0,
-					expectedValue: false,
-					
-					transform(value) {
-						return true
-					}
-				})
-				
-				reactHook.hijackUseState({ // currentTab
-					filter(value) {
-						return ["tab-about", "tab-game-instances", "tab-store"].includes(value)
-					},
-					
-					transform(value) {
-						if(value === "tab-about" && window.location.hash !== "#!/about") {
+				reactHook.hijackUseState( // currentTab
+					(value, index) => ["tab-about", "tab-game-instances", "tab-store"].includes(value),
+					(value, initial) => {
+						if(initial && value === "tab-about" && window.location.hash !== "#!/about") {
 							return "tab-game-instances"
 						}
 						
 						return value
 					}
-				})
+				)
 				
 				return target.apply(thisArg, args)
 			}
@@ -574,26 +577,15 @@ pageInit.gamedetails = placeId => {
 	}
 
 	const watcher = document.$watch("body", body => body.classList.add("btr-gamedetails")).$then()
-		.$watch("#horizontal-tabs").$then()
-			.$watch(["#tab-about", "#tab-game-instances"], (aboutTab, gameTab) => {
-				aboutTab.$find(".text-lead").textContent = "Recommended"
-				
-				aboutTab.classList.remove("active")
-				gameTab.classList.add("active")
+		.$watch(["#tab-about", "#tab-game-instances"], (aboutTab, gameTab) => {
+			aboutTab.$find(".text-lead").textContent = "Recommended"
+			
+			aboutTab.classList.remove("active")
+			gameTab.classList.add("active")
 
-				const parent = aboutTab.parentNode
-				parent.append(aboutTab)
-				parent.prepend(gameTab)
-			})
-		.$back()
-		.$watch("#about", about => {
-			about.classList.remove("active")
-
-			about.$watchAll("*", x => {
-				if(!x.matches("#rbx-private-servers, #private-server-container-about-tab, #my-recommended-games, #recommended-games-container")) {
-					midContainer.append(x)
-				}
-			})
+			const parent = aboutTab.parentNode
+			parent.append(aboutTab)
+			parent.prepend(gameTab)
 		})
 		.$watch("#game-instances", games => {
 			games.classList.add("active")
@@ -614,17 +606,42 @@ pageInit.gamedetails = placeId => {
 			newContainer.after(midContainer)
 			newContainer.$find(".placeholder-main").replaceWith(mainCont)
 		})
-		.$watch(".game-about-container", async aboutCont => {
-			const descCont = await aboutCont.$watch(">.section-content").$promise()
-
-			descCont.classList.remove("section-content")
-			descCont.classList.add("btr-description")
-			newContainer.append(descCont)
-
-			aboutCont.remove()
+		.$watch("#about", about => {
+			about.classList.remove("active")
 		})
+		.$watch(".game-about-container,#game-details-about-tab-container", cont => {
+			if(cont.id === "game-details-about-tab-container") {
+				// react about tab
+				watcher.$watch("#game-details-about-tab-container", parent => {
+					midContainer.append(parent)
+					
+					parent.$watch("#btr-description-wrapper", descCont => {
+						newContainer.append(descCont)
+						reactHook.redirectEvents(descCont, parent)
+					})
+					
+					parent.$watch("#btr-recommendations-wrapper", recCont => {
+						$("#about").append(recCont)
+						reactHook.redirectEvents(recCont, parent)
+					})
+				})
+			} else {
+				// legacy about tab
+				newContainer.append(cont)
+				
+				watcher.$watch("#about").$then().$watchAll("*", child => {
+					if(child.id === "private-server-container-about-tab") {
+						child.style.display = "none"
+					} else if(child.id !== "recommended-games-container") {
+						midContainer.append(child)
+					}
+				})
+			}
+		})
+		
 		.$watch(".tab-content", cont => {
 			cont.classList.add("section")
+			
 			cont.$watchAll(".tab-pane", pane => {
 				if(pane.id !== "about") {
 					pane.classList.add("section-content")
@@ -694,7 +711,9 @@ pageInit.gamedetails = placeId => {
 				}
 			})
 		})
-		.$watch("#carousel-game-details", details => details.setAttribute("data-is-video-autoplayed-on-ready", "false"))
+		.$watch("#carousel-game-details", details => {
+			details.setAttribute("data-is-video-autoplayed-on-ready", "false")
+		})
 		.$watch("#game-detail-meta-data", dataCont => {
 			ContextMenu.setCustomContextMenu(document.documentElement, {
 				copyParent: true,
@@ -719,8 +738,55 @@ pageInit.gamedetails = placeId => {
 			}
 		})
 	
+	InjectJS.inject(() => {
+		const { reactHook, hijackFunction } = BTRoblox
+		
+		reactHook.inject({
+			selector: ".game-description-container",
+			
+			callback(result) {
+				return React.createElement("div", { style: { display: "contents" } },
+					React.createElement("div", { id: "btr-description-wrapper", style: { display: "contents" } }, result)
+				)
+			}
+		})
+		
+		reactHook.inject({
+			selector: ".container-list.games-detail",
+			
+			callback(result) {
+				return React.createElement("div", { style: { display: "contents" } },
+					React.createElement("div", { id: "btr-recommendations-wrapper", style: { display: "contents" } }, result)
+				)
+			}
+		})
+		
+		reactHook.inject({
+			selector: ".game-social-links .btn-secondary-lg",
+			
+			callback(result) {
+				const socials = reactHook.renderTarget?.state[0]?.[0]
+				const entry = socials?.find(x => x.id === +result.key)
+				
+				if(entry) {
+					result.props.href = entry.url
+					
+					hijackFunction(result.props, "onClick", (target, thisArg, args) => {
+						const event = args[0]
+						event.preventDefault()
+						
+						const result = target.apply(thisArg, args)
+						return result
+					})
+				}
+			}
+		})
+	})
+	
 	RobloxApi.economy.getAssetDetails(placeId).then(data => {
-		watcher.$watch(".game-stats-container").$then()
+		if(!data.Updated) { return }
+		
+		watcher.$watch(".game-stat-container,.game-stats-container").$then()
 			.$watch(
 				".game-stat .text-lead",
 				x => x.previousElementSibling?.textContent === "Created",
@@ -739,7 +805,7 @@ pageInit.gamedetails = placeId => {
 				}
 			)
 	})
-
+		
 	$.ready(() => {
 		const placeEdit = $("#game-context-menu .dropdown-menu .VisitButtonEditGLI")
 		if(placeEdit) {

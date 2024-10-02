@@ -68,7 +68,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 #header .btr-nav-notif {
 	box-sizing: content-box;
 	position: absolute;
-	display: flex;
+	display: block;
 	top: -2px;
 	right: -2px;
 
@@ -76,13 +76,12 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	padding: 0px 4px;
 	height: 16px;
 	min-width: 8px;
-	align-items: center;
-	justify-content: center;
+	text-align: center;
 
 	color: #191919;
 	font-size: 10px;
 	font-weight: bold;
-	line-height: 1.4em;
+	line-height: 17px;
 
 	border-radius: 10px;
 	border: 2px solid #0074bd;
@@ -200,7 +199,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 }
 
 #btr-blogfeed .btr-feed:hover {
-	background: rgba(0,0,0,0.08);
+	background: rgba(0, 0, 0, 0.1);
 }
 
 #btr-blogfeed .btr-feedcreator, #btr-blogfeed .btr-feeddate {
@@ -221,7 +220,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	overflow: hidden;
 	max-height: 0;
 	width: 100%;
-	opacity: .75;
+	opacity: 0.8;
 	font-weight: 300;
 	transition: max-height 0.4s;
 	margin-top: 4px;
@@ -604,6 +603,7 @@ a:not(.disabled):hover > .btr-icon-content {
 	white-space: nowrap;
 	margin-right: 2px;
 	font-weight: 500;
+	color: #000;
 }
 
 .btr-explorer-header .btr-dropdown-container .btr-dropdown-btn:hover {
@@ -618,12 +618,17 @@ a:not(.disabled):hover > .btr-icon-content {
 	max-width: 200px;
 	max-height: 200px;
 	border-radius: 2px;
+	padding: 0;
 	
 	z-index: 2;
 	
 	overflow: hidden;
 	overflow-y: scroll;
 	white-space: nowrap;
+}
+
+.btr-explorer-header .btr-dropdown-container .btr-dropdown-menu > li {
+	list-style: none;
 }
 
 .btr-explorer-header .btr-dropdown-container .btr-dropdown-menu > li a {
@@ -1174,6 +1179,57 @@ a:not(.disabled):hover > .btr-icon-content {
 	left: 4px;
 	top: 4px;
 	z-index: 2;
+}
+
+body div.btr-invalid-layered {
+	position: absolute;
+	left: 6px;
+	top: 6px;
+	width: 16px;
+	height: 16px;
+	box-sizing: border-box;
+	z-index: 2;
+	border-radius: 8px;
+	background: rgba(200, 20, 20, 1);
+	color: #fff;
+	text-align: center;
+	line-height: 14px;
+	font-weight: 600;
+	font-size: 14px;
+	cursor: default;
+	user-select: none;
+	pointer-events: all;
+}
+
+.btr-layered-loading .btr-invalid-layered {
+	left: 22px;
+}
+
+body div.btr-invalid-layered:hover::after {
+	content: "Unable to preview some layered clothing.";
+	display: block;
+	position: absolute;
+	left: 100%;
+	top: 0;
+	bottom: 0;
+	padding-left: 4px;
+	color: #fff;
+	pointer-events: none;
+	text-align: left;
+	font-size: 12px;
+	font-weight: normal;
+	opacity: 0.7;
+	z-index: 10000;
+	
+	width: 400px;
+}
+
+.item-card div.btr-invalid-layered:hover::after {
+	max-width: 100px;
+}
+
+.light-theme div.btr-invalid-layered:hover::after {
+	color: #333;
 }
 
 /* groups.shoutAlertsInNotifStream */

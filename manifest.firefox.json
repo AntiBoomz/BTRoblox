@@ -4,7 +4,7 @@
 	"name": "BTRoblox - Making Roblox Better",
 	"short_name": "BTRoblox",
 	"description": "Enhance your Roblox experience!",
-	"version": "3.4.1",
+	"version": "3.6.7",
 	"author": "AntiBoomz",
 
 	"browser_action": {
@@ -67,7 +67,10 @@
 			"exclude_matches": [
 				"*://*/userads/*",
 				"*://*/user-sponsorship/*",
-				"*://*/build/upload"
+				"*://*/build/upload",
+				"*://*/*/userads/*",
+				"*://*/*/user-sponsorship/*",
+				"*://*/*/build/upload"
 			],
 			"js": [
 				"js/rbx/Constants.js",
@@ -82,7 +85,8 @@
 				
 				"js/util/injectJS.js",
 				"js/util/injectCSS.js",
-				"js/util/modifyTemplate.js",
+				"js/util/reactHook.js",
+				"js/util/angularHook.js",
 				"js/util/loadOptionalLibrary.js",
 				
 				"js/feat/themes.js",
@@ -91,15 +95,7 @@
 				"js/feat/navigation.js",
 				"js/feat/robuxToCash.js",
 				"js/feat/settingsModal.js",
-
-				"js/rbx/FileFormat/ByteReader.js",
-				"js/rbx/FileFormat/Instance.js",
-				"js/rbx/FileFormat/XmlParser.js",
-				"js/rbx/FileFormat/BinaryParser.js",
-				"js/rbx/FileFormat/MeshParser.js",
 				
-				"js/rbx/AnimationParser.js",
-				"js/rbx/Parser.js",
 				"js/rbx/AssetCache.js",
 				"js/rbx/RobloxApi.js",
 

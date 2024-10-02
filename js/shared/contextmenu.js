@@ -23,7 +23,9 @@ if(IS_BACKGROUND_PAGE) {
 					"*://*.roblox.com/My/Item.aspx*ID=*",
 					"*://create.roblox.com/dashboard/creations/catalog/*",
 					"*://create.roblox.com/dashboard/creations/marketplace/*",
+					"*://create.roblox.com/dashboard/creations/store/*",
 					"*://create.roblox.com/marketplace/asset/*",
+					"*://create.roblox.com/store/asset/*",
 				]
 			},
 			{
@@ -151,7 +153,7 @@ if(IS_BACKGROUND_PAGE) {
 			
 			switch(menuId.replace(/_page$/, "")) {
 				case "assetLink": case "bundleLink": case "badgeLink": case "gamepassLink": case "pluginLink": {
-					const assetId = data ?? linkUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library|bundles|badges|game-pass|plugins|places|marketplace|marketplace\/asset)\/(?:refer\/)?)(\d+).*$/i, "$1")
+					const assetId = data ?? linkUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library|bundles|badges|game-pass|plugins|places|marketplace(?:\/asset)?|store(?:\/asset)?)\/(?:refer\/)?)(\d+).*$/i, "$1")
 					copyToClipboard(assetId)
 					break
 				}
@@ -308,6 +310,21 @@ if(IS_BACKGROUND_PAGE) {
 		}
 	}
 
+	// Add support for locale urls
+	
+	for(const entry of ContextMenu.items) {
+		if(entry.targetUrlPatterns) {
+			for(let i = entry.targetUrlPatterns.length; i--;) {
+				const pattern = entry.targetUrlPatterns[i]
+				const index = pattern.indexOf(".roblox.com/") + 11
+				
+				if(index !== -1) {
+					entry.targetUrlPatterns.push(`${pattern.slice(0, index)}/*${pattern.slice(index)}`)
+				}
+			}
+		}
+	}
+	
 	// Add page versions for every item
 
 	for(let i = 0, len = ContextMenu.items.length; i < len; i++) {

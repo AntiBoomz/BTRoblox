@@ -2,13 +2,36 @@
 
 const Explorer = (() => {
 	const GroupOrders = [
-		"Appearance", "Data", "Shape", "Goals", "Thrust", "Turn", "Camera", "Transform", "Pivot", "Behavior", "Collision", "Image", "Compliance",
-		"AlignOrientation", "AlignPosition", "BallSocket", "Limits", "TwistLimits", "Hinge", "Servo",
-		"Motor", "LineForce", "Rod", "Rope", "Cylinder", "AngularLimits", "AngularServo", "AngularMotor", "Slider",
-		"Spring", "Torque", "VectorForce", "Attachments", "Input", "Text", "Scrolling", "Localization", "State",
-		"Control", "Game", "Teams", "Forcefield", "Part", "Surface Inputs", "Surface", "Motion", "Particles",
-		"Emission", "Parts"
+		"Appearance", "Data", "Transform", "Pivot", "Behavior", "Collision", "Part"
 	]
+	
+	/*
+	const HiddenProperties = {
+		UniqueId: true, HistoryId: true,
+		// AttributesSerialize: true, Tags: true, // keep disabled until we show these elsewhere?
+		Capabilities: true, DefinesCapabilities: true,
+		SourceAssetId: true,
+		
+		// Script
+		ScriptGuid: true,
+		
+		// Model
+		ModelMeshCFrame: true, ModelMeshSize: true, ModelMeshData: true,
+		NeedsPivotMigration: true,
+		
+		// BasePart
+		FormFactor: true,
+		HasJointOffset: true, HasSkinnedMesh: true,
+		AeroMeshData: true, FluidFidelityInternal: true,
+		PhysicalConfigData: true, PhysicsData: true,
+		
+		// Mesh
+		LODX: true, LODY: true,
+		
+		// Humanoid
+		InternalBodyScale: true, InternalHeadScale: true,
+	}
+	*/
 	
 	const RenamedProperties = {
 		Color3uint8: "Color", formFactorRaw: "FormFactor", Health_XML: "Health", xmlRead_MaxDistance_3: "MaxDistance",
@@ -19,7 +42,7 @@ const Explorer = (() => {
 	const fixNum = v => { return Math.round(v * 1e3) / 1e3 }
 	const fixNums = arr => arr.map(x => fixNum(x))
 
-	const sortPropertyGroups = (a, b) => a.Order - b.Order
+	const sortPropertyGroups = (a, b) => (a.Order === b.Order ? (a.Name < b.Name ? -1 : 1) : a.Order - b.Order)
 	const sortProperties = (a, b) => (a[0] < b[0] ? -1 : 1)
 	const sortChildren = (a, b) => {
 		const ao = ApiDump.getExplorerOrder(a.inst.ClassName)
@@ -381,12 +404,55 @@ const Explorer = (() => {
 			const groups = []
 			const groupMap = {}
 			
+			const hidden = {}
+			
+			if("TopSurface" in target.Properties) {
+				const sides = ["Back", "Bottom", "Front", "Left", "Right", "Top"]
+				let allSmooth = false
+				
+				for(const side of sides) {
+					const valueEntry = target.Properties[`${side}Surface`]
+					const value = valueEntry?.value ?? 0
+					
+					hidden[`${side}SurfaceInput`] = true
+					hidden[`${side}ParamA`] = true
+					hidden[`${side}ParamB`] = true
+					
+					if(value !== 0) {
+						allSmooth = true
+						
+						if(value === 7 || value === 8) {
+							const inputValue = target.Properties[`${side}SurfaceInput`]?.value ?? 0
+							
+							if(inputValue === 12) {
+								hidden[`${side}SurfaceInput`] = false
+								hidden[`${side}ParamB`] = false
+							} else if(inputValue === 13) {
+								hidden[`${side}SurfaceInput`] = false
+								hidden[`${side}ParamA`] = false
+								hidden[`${side}ParamB`] = false
+							}
+						}
+					}
+				}
+				
+				if(!allSmooth) {
+					for(const side of sides) {
+						hidden[`${side}Surface`] = true
+					}
+				}
+			}
+			
 			for(let [name, prop] of Object.entries(target.Properties)) {
 				if(RenamedProperties[name] && RenamedProperties[name] in target.Properties) {
 					continue
 				}
 				
 				name = RenamedProperties[name] || name
+				
+				if(/*HiddenProperties[name] ||*/ hidden[name]) {
+					continue
+				}
 
 				let group = ApiDump.getPropertyGroup(target.ClassName, name)
 				
@@ -397,9 +463,10 @@ const Explorer = (() => {
 				let groupData = groupMap[group]
 				if(!groupData) {
 					const order = GroupOrders.indexOf(group)
+					
 					groupData = groupMap[group] = {
-						Name: (typeof order !== "number" && IS_DEV_MODE) ? `${group} (Missing Order)` : group,
-						Order: typeof order === "number" ? order : 1e3 + groups.length,
+						Name: group,
+						Order: order === -1 ? 1000 : order,
 						Properties: []
 					}
 
@@ -444,25 +511,22 @@ const Explorer = (() => {
 					const nameItem = html`<div class=btr-property-name title=${name}>${name}</div>`
 					const valueItem = html`<div class=btr-property-value></div>`
 
-					if(name === "ClassName") {
+					if(name === "ClassName" || type === "UniqueId") {
 						nameItem.classList.add("btr-property-readonly")
 						valueItem.classList.add("btr-property-readonly")
 					}
 
 					switch(type) {
-					case "int64": {
+					case "SecurityCapabilities":
+					case "int64":
+					case "int":
 						valueItem.textContent = value
 						break
-					}
-					case "int":
 					case "float":
-					case "double": {
+					case "double":
 						valueItem.textContent = fixNum(value)
 						break
-					}
-					case "UniqueId":
-					case "SharedString":
-					case "string": {
+					case "string": case "UniqueId": {
 						const input = html`<input type=text readonly>`
 
 						const tooLong = value.length > 120
@@ -501,6 +565,8 @@ const Explorer = (() => {
 					case "CFrame":
 					case "Vector2":
 					case "Vector3":
+					case "Vector2int16":
+					case "Vector3int16":
 						valueItem.textContent = fixNums(value).join(", ")
 						break
 					case "Color3": {
@@ -516,7 +582,7 @@ const Explorer = (() => {
 						valueItem.textContent = `${ApiDump.getPropertyEnumName(target.ClassName, name, value) || value}`
 						break
 					case "Rect2D":
-						valueItem.textContent = `${fixNums(value).join(", ")}`
+						valueItem.textContent = `{${fixNums(value[0]).join(", ")}}, {${fixNums(value[1]).join(", ")}}`
 						break
 					case "UDim":
 						valueItem.textContent = `${fixNums(value).join(", ")}`
@@ -525,15 +591,18 @@ const Explorer = (() => {
 						valueItem.textContent = `{${fixNums(value[0]).join(", ")}}, {${fixNums(value[1]).join(", ")}}`
 						break
 					case "PhysicalProperties":
-						valueItem.textContent = value.CustomPhysics ?
+						valueItem.textContent = value ?
 							fixNums([value.Density, value.Friction, value.Elasticity, value.FrictionWeight, value.ElasticityWeight]).join(", ") :
 							"false"
+						break
+					case "Font":
+						valueItem.textContent = `{ Family = ${value.Family}, Weight = ${ApiDump.getEnumName("FontWeight", value.Weight) ?? value.Weight}, Style = ${ApiDump.getEnumName("FontStyle", value.Style) ?? value.Style} }`
 						break
 					case "NumberSequence":
 						valueItem.textContent = value.map(x => `(${fixNums([x.Time, x.Value]).join(", ")})`).join(", ")
 						break
 					case "NumberRange":
-						valueItem.textContent = `${fixNums([value.Min, value.Max]).join(", ")}`
+						valueItem.textContent = `${fixNums(value).join(", ")}`
 						break
 					case "ColorSequence":
 						valueItem.textContent = value.map(x => `(${fixNums([x.Time])[0]}, (${fixNums(x.Color).map(num => Math.round(num * 255)).join(", ")}))`).join(", ")

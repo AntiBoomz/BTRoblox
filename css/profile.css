@@ -51,6 +51,13 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	padding: 12px;
 }
 
+/* Social buttons */
+
+.btr-profile .social-link-icon-list {
+	position: relative;
+	z-index: 2;
+}
+
 /* Player status */
 
 .btr-profile .btr-header-status-parent {

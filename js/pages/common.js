@@ -1,7 +1,6 @@
 "use strict"
 
 const pageInit = {}
-const startDate = new Date()
 
 let loggedInUserPromise = new Promise(() => {})
 let loggedInUser = -1
@@ -24,48 +23,7 @@ const WearableAssetTypeIds = [
 	66, 67, 68, 69, 70, 71, 72, 76, 77, 79
 ]
 const AnimationPreviewAssetTypeIds = [24, 48, 49, 50, 51, 52, 53, 54, 55, 56, 61]
-
-const ProhibitedReasons = {
-	UniverseDoesNotHaveARootPlace: "This game has no root place.",
-	UniverseRootPlaceIsNotActive: "This game is not active",
-	InsufficientPermissionFriendsOnly: "This game is friends only.",
-	InsufficientPermissionGroupOnly: "Group members only.",
-	UnderReview: "This game is under moderation review."
-}
-
-function getRobloxTimeZoneString() {
-	const month = startDate.getUTCMonth() + 1
-	const date = startDate.getUTCDate()
-	const weekday = startDate.getUTCDay()
-	const hour = startDate.getUTCHours()
-
-	// DST starts on the second Sunday in March at 02:00 CST, which is 08:00 UTC
-	// DST ends on the first Sunday in November at 01:00 CST, which is 07:00 UTC
-
-	const someSunday = date + 7 - weekday
-	const firstSunday = someSunday - Math.floor(someSunday / 7) * 7
-	const secondSunday = firstSunday + 7
-
-	if(
-		(month > 3 && month < 11) || // Within daytime months
-		(month === 3 && ( // Or march and DST has begun
-			date > secondSunday ||
-			(date === secondSunday && hour >= 8)
-		)) ||
-		(month === 11 && ( // Or november and DST has not ended
-			date < firstSunday ||
-			(date === firstSunday && hour < 7)
-		))
-	) {
-		return "CDT"
-	}
-
-	return "CST"
-}
-
-function robloxTimeToDate(dateString) {
-	return Date.parse(dateString) ? new Date(`${dateString} ${getRobloxTimeZoneString()}`) : false
-}
+const AccessoryAssetTypeIds = [8, 41, 42, 43, 44, 45, 46, 47, 57, 58, 64, 65, 66, 67, 68, 69, 70, 71, 72]
 
 //
 
@@ -77,7 +35,7 @@ const robloxLinkify = target => {
 	const className = `btr-linkify-${linkifyCounter++}`
 	target.classList.add("linkify", className)
 	
-	InjectJS.inject([className], className => $?.(`.${className}`).linkify?.())
+	InjectJS.inject(className => $?.(`.${className}`).linkify?.(), className)
 	target.classList.remove(className)
 }
 
@@ -287,129 +245,6 @@ function createPager(noSelect, hideWhenEmpty) {
 	return pager
 }
 
-let reactListenerIndex = 0
-
-const parseReactStringSelector = selector => {
-	assert(!/[[>+~]/.exec(selector), "complex selectors not supported")
-	const result = []
-	
-	for(const option of selector.split(/,/)) {
-		let previous
-		
-		for(let piece of option.split(/\s+/)) {
-			piece = piece.trim()
-			if(!piece.length) { continue }
-			
-			const attributes = piece.split(/(?=[#.])/)
-			const obj = {}
-			
-			for(const attr of attributes) {
-				if(attr[0] === ".") {
-					obj.classList = obj.classList ?? []
-					obj.classList.push(attr.slice(1))
-				} else if(attr[0] === "#") {
-					obj.props = obj.props ?? {}
-					obj.props.id = attr.slice(1)
-				} else {
-					if(attr !== "*") { // unset obj.type acts as universal selector
-						obj.type = attr.toLowerCase()
-					}
-				}
-			}
-			
-			if(previous) {
-				previous.next = obj
-			} else {
-				result.push(obj) // Add first selector to result
-			}
-			
-			previous = obj
-		}
-	}
-	
-	return result
-}
-
-const parseReactSelector = selectors => {
-	selectors = Array.isArray(selectors) ? selectors : [selectors]
-	const result = []
-	
-	for(let i = 0, len = selectors.length; i < len; i++) {
-		const selector = selectors[i]
-		
-		if(typeof selector === "string") {
-			result.push(...parseReactStringSelector(selector))
-			continue
-		}
-		
-		if(selector.selector) {
-			assert(!selector.next)
-			const selectors = parseReactStringSelector(selector)
-			
-			const fillMissingData = targets => {
-				for(const target of targets) {
-					if(target.next) {
-						fillMissingData(target.next)
-						continue
-					}
-					
-					for(const key of selector) {
-						if(key === "selector") { continue }
-						const value = selector[key]
-						
-						if(Array.isArray(value)) {
-							target[key] = target[key] ?? []
-							target[key].push(...value)
-							
-						} else if(typeof value === "object" && value !== null) {
-							target[key] = target[key] ?? {}
-							Object.assign(target[key], value)
-							
-						} else {
-							target[key] = value
-						}
-					}
-				}
-			}
-			
-			fillMissingData(selectors)
-			result.push(...selectors)
-			continue
-		}
-		
-		result.push(selector)
-	}
-	
-	return result
-}
-
-const reactInject = data => {
-	data = { ...data }
-	data.selector = parseReactSelector(data.selector)
-	
-	if(typeof data.index === "object") {
-		data.index = { ...data.index }
-		data.index.selector = parseReactSelector(data.index.selector)
-	}
-	
-	const callback = data.callback
-	const resultHtml = data.html
-	
-	delete data.callback
-	delete data.html
-	
-	data.elemType = html(resultHtml).nodeName.toLowerCase()
-	data.elemId = `btr-react-${reactListenerIndex++}`
-	
-	document.$watch(`#${data.elemId}`, node => {
-		const replace = html(resultHtml)
-		node.replaceWith(replace)
-		callback?.(replace)
-	}, { continuous: true })
-	
-	InjectJS.send("reactInject", data)
-}
-
 let currentNativeAudioPlayer
 const useNativeAudioPlayer = (mediaPlayer, bigPlayer) => {
 	mediaPlayer.$on("click", ev => {
@@ -520,7 +355,7 @@ pageInit.common = () => {
 	
 	//
 	
-	reactInject({
+	reactHook.inject({
 		selector: "#settings-popover-menu",
 		index: 0,
 		html: `<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>`
@@ -545,14 +380,20 @@ pageInit.common = () => {
 			if(!bal) { return }
 
 			const span = html`<span style="display:block;opacity:0.75;font-size:small;font-weight:500;"></span>`
-
+			let lastText
+			
 			const update = () => {
 				if(!RobuxToCash.isEnabled()) {
 					span.remove()
 					return
 				}
 				
-				const matches = bal.textContent.trim().match(/^([\d,]+)\sRobux$/)
+				const text = bal.firstChild?.textContent
+				if(lastText === text) { return }
+				
+				lastText = text
+				
+				const matches = text.trim().match(/([\d,]+)/)
 				if(!matches) { return }
 
 				const amt = parseInt(matches[0].replace(/\D/g, ""), 10)
@@ -563,8 +404,7 @@ pageInit.common = () => {
 				bal.style.flexDirection = "column"
 			}
 
-			const observer = new MutationObserver(update)
-			observer.observe(bal, { childList: true })
+			new MutationObserver(update).observe(bal, { childList: true })
 			update()
 			
 			SETTINGS.onChange("general.robuxToUSDRate", update)
@@ -625,7 +465,7 @@ pageInit.common = () => {
 			const { reactHook } = window.BTRoblox
 			
 			reactHook.hijackConstructor(
-				([fn, props]) => "isGetCurrencyCallDone" in props && "isExperimentCallDone" in props && "robuxAmount" in props,
+				(type, props) => "isGetCurrencyCallDone" in props && "isExperimentCallDone" in props && "robuxAmount" in props,
 				(target, thisArg, args) => {
 					try {
 						const props = args[0]
@@ -677,7 +517,7 @@ pageInit.common = () => {
 			})
 
 			reactHook.hijackConstructor(
-				([fn, props]) => "robuxAmount" in props && fn.toString().includes("nav-robux-amount"),
+				(type, props) => "robuxAmount" in props && type.toString().includes("nav-robux-amount"),
 				(target, thisArg, args) => {
 					hijackTruncValue = true
 					const result = target.apply(thisArg, args)
@@ -802,7 +642,7 @@ pageInit.common = () => {
 		})
 		
 		InjectJS.inject(() => {
-			const { hijackAngular, hijackFunction, onSet, IS_DEV_MODE, contentScript } = window.BTRoblox
+			const { angularHook, hijackFunction, onSet, IS_DEV_MODE, contentScript } = window.BTRoblox
 			const shoutNotifications = []
 			const shoutListeners = []
 			
@@ -814,7 +654,7 @@ pageInit.common = () => {
 				}
 			})
 			
-			hijackAngular("notificationStream", {
+			angularHook.hijackModule("notificationStream", {
 				notificationStreamController(handler, args, argsMap) {
 					try {
 						const { $scope, notificationStreamService } = argsMap
@@ -914,6 +754,71 @@ pageInit.common = () => {
 		})
 	}
 	
+	if(SETTINGS.get("home.favoritesAtTop") || SETTINGS.get("home.hideFriendActivity")) { // also applies to discover sorts so the code is here
+		InjectJS.inject(() => {
+			const { hijackFunction, settings } = window.BTRoblox
+			
+			hijackFunction(XMLHttpRequest.prototype, "open", (target, xhr, args) => {
+				const url = args[1]
+				
+				if(typeof url === "string") {
+					let replaceText
+					
+					if(url === "https://apis.roblox.com/discovery-api/omni-recommendation" || url === "https://apis.roblox.com/discovery-api/omni-recommendation-metadata") {
+						replaceText = text => {
+							try {
+								const json = JSON.parse(text)
+								
+								if(settings.home.favoritesAtTop && json?.sorts) {
+									const favs = json.sorts.find(x => x.topic === "Favorites")
+									
+									if(favs) {
+										const index = json.sorts.indexOf(favs)
+										const continueIndex = json.sorts.findIndex(x => x.topic === "Continue")
+										
+										if(index > 1) {
+											json.sorts.splice(index, 1)
+											json.sorts.splice(continueIndex !== -1 ? continueIndex + 1 : 1, 0, favs)
+										}
+									}
+								}
+								
+								if(settings.home.hideFriendActivity && json?.contentMetadata?.Game) {
+									for(const gameData of Object.values(json.contentMetadata.Game)) {
+										delete gameData.friendActivityTitle
+									}
+								}
+								
+								text = JSON.stringify(json)
+							} catch(ex) {
+								console.error(ex)
+							}
+							
+							return text
+						}
+					}
+					
+					if(replaceText) {
+						const responseText = {
+							configurable: true,
+							
+							get() {
+								delete xhr.responseText
+								const value = replaceText(xhr.responseText)
+								Object.defineProperty(xhr, "responseText", responseText)
+								return value
+							}
+						}
+						
+						Object.defineProperty(xhr, "responseText", responseText)
+					}
+				}
+				
+				return target.apply(xhr, args)
+			})
+		})
+	}
+	
 	// Chat
 	
 	if(SETTINGS.get("general.hideChat")) {
@@ -923,9 +828,9 @@ pageInit.common = () => {
 			bodyWatcher.$watch("#chat-container", cont => cont.classList.add("btr-small-chat-button"))
 			
 			InjectJS.inject(() => {
-				const { hijackAngular, IS_DEV_MODE } = window.BTRoblox
+				const { angularHook, IS_DEV_MODE } = window.BTRoblox
 				
-				hijackAngular("chat", {
+				angularHook.hijackModule("chat", {
 					chatController(func, args, argMap) {
 						const result = func.apply(this, args)
 
