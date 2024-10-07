@@ -49,7 +49,8 @@ const DEFAULT_SETTINGS = {
 		enabled: { value: true },
 		removeAccessoryLimits: { value: true },
 		removeLayeredLimits: { value: true },
-		fullRangeBodyColors: { value: true }
+		fullRangeBodyColors: { value: true },
+		assetRefinement: { value: false }
 	},
 	catalog: {
 		enabled: { value: true },

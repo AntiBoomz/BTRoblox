@@ -16,12 +16,16 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 
 	const onSet = (a, b, c) => {
 		if(a[b]) { return c(a[b]) }
+		
+		let descriptor
+		try { descriptor = Object.getOwnPropertyDescriptor(a, b) } catch(ex) {}
 
 		Object.defineProperty(a, b, {
 			enumerable: false,
 			configurable: true,
 			set(v) {
 				delete a[b]
+				try { Object.defineProperty(a, b, descriptor) } catch(ex) {}
 				a[b] = v
 				c(v)
 			}

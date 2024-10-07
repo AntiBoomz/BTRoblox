@@ -1,3 +1,86 @@
+/* Style redraw and advanced buttons */
+
+.btr-redraw-button {
+	margin: 0 !important;
+}
+
+.btr-advanced-button {
+	margin: 0 !important;
+	clear: both;
+}
+
+/* Scrollable left wrapper */
+
+html body.btr-avatar-refinement .left-wrapper-placeholder {
+	min-height: 600px;
+	height: auto;
+}
+
+html body.btr-avatar-refinement .left-wrapper {
+	height: auto;
+	clear: both;
+	max-height: max(600px, calc(100vh - 260px));
+	
+	display: flex;
+	flex-direction: column;
+}
+
+html body.btr-avatar-refinement .btr-avatar-refinement-container {
+	margin-top: 20px;
+	padding-right: 10px;
+	padding-bottom: 10px;
+	
+	overflow-x: visible;
+	overflow-y: auto;
+}
+
+html body.btr-avatar-refinement .btr-avatar-refinement-container > :not(:first-child) {
+	margin-top: 10px;
+}
+
+html body.btr-avatar-refinement .btr-avatar-refinement-container .text-label {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+html body.btr-avatar-refinement .btr-avatar-refinement-container input[type="range"] {
+	height: 14px;
+	padding-top: 2px;
+}
+
+html body.btr-avatar-refinement .btr-avatar-refinement-container input[type="range"]::-webkit-slider-thumb {
+	margin-top: -3px;
+	width: 12px;
+	height: 12px;
+}
+
+html body.btr-avatar-refinement .btr-avatar-refinement-container input[type="range"]::-moz-range-thumb {
+	width: 12px;
+	height: 12px;
+}
+
+
+html body.btr-avatar-refinement.dark-theme .btr-avatar-refinement-container input[type=range]::-webkit-slider-runnable-track {
+	--btr-input-bg: #111214;
+}
+
+html body.btr-avatar-refinement .btr-avatar-refinement-container input[type=range]::-webkit-slider-runnable-track {
+	--btr-input-bg: #e3e3e3;
+	--btr-input-progress: #00a2ff;
+	
+	background: linear-gradient(
+		to right,
+		var(--btr-input-progress) 0%,
+		var(--btr-input-progress) var(--btr-input-perc, 0.01%),
+		var(--btr-input-bg) var(--btr-input-perc, 0.01%),
+		var(--btr-input-bg) 100%
+	)
+}
+
+
+/* Custom color selector */
+
 .btr-color-selector {
 	position: relative;
 	
