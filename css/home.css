@@ -17,7 +17,7 @@ html .btr-home-friends .friends-carousel-container {
 html .btr-home-friends .friends-carousel-container > div {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-	grid-template-rows: repeat(var(--btr-friend-rows, 1), auto) 0 0 0 0 0 0 0 0 0;
+	grid-template-rows: repeat(var(--btr-friend-rows, 1), auto) repeat(100, 0);
 }
 
 html .btr-home-friends .friends-carousel-tile #friend-tile-button {
@@ -91,7 +91,7 @@ html .btr-home-friends .people-list-container .people-list {
 }
 
 html .btr-home-friends .people-list-container .hlist {
-	grid-template-rows: repeat(var(--btr-friend-rows, 1), auto) 0 0 0 0 0 0 0 0 0;
+	grid-template-rows: repeat(var(--btr-friend-rows, 1), auto) repeat(100, 0);
 }
 
 html .btr-home-friends .people-list-container .hlist .friend {
