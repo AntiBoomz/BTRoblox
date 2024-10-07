@@ -15,17 +15,18 @@ const Navigation = {
 	},
 	
 	register(name, elementInfo) {
-		const selector = `.btr-nav-${name}`
 		const enabledByDefault = elementInfo.enabled !== false
 		
 		const element = this.elements[name] = {
-			settings: [],
+			nodeSelector: `.btr-nav-node-${name}`,
+			class: name,
 			
 			update(node) {
 				node.style.display = this.enabled ? "" : "none"
 			},
 			
 			...elementInfo,
+			settings: {},
 			name: name,
 			
 			enabledByDefault: enabledByDefault,
@@ -42,39 +43,9 @@ const Navigation = {
 					state.enabled = this.enabled
 				}
 				
-				for(const setting of this.settings) {
-					if(!setting.isDefault) {
-						if(!state) { state = {} }
-						if(!state.settings) { state.settings = {} }
-						state.settings[setting.name] = setting.enabled
-					}
-				}
-				
 				if(JSON.stringify(prevState) !== JSON.stringify(state)) {
 					states[this.name] = state
 					SETTINGS.set("navigation.elements", JSON.stringify(states))
-				}
-			},
-			
-			getSetting(name) {
-				return this.settings.find(x => x.name === name)
-			},
-			
-			setSettingEnabled(name, enabled) {
-				const setting = assert(this.getSetting(name), "invalid setting")
-				
-				if(typeof enabled === "boolean") {
-					setting.enabled = enabled
-					setting.isDefault = false
-				} else {
-					setting.enabled = setting.enabledByDefault
-					setting.isDefault = true
-				}
-				
-				this.saveState()
-				
-				for(const node of document.querySelectorAll(selector)) {
-					this.updateNodeSetting(node, setting)
 				}
 			},
 			
@@ -92,14 +63,15 @@ const Navigation = {
 			},
 			
 			updateAll() {
-				for(const node of document.querySelectorAll(selector)) {
-					this.update(node)
+				for(const node of document.querySelectorAll(this.nodeSelector)) {
+					this.updateNode(node)
+					this.update?.(node)
 				}
 			},
 			
-			updateNodeSetting(node, setting) {
-				let className = setting.class || setting.name
-				let enabled = setting.enabled
+			updateNode(node) {
+				let className = this.class
+				let enabled = this.enabled
 				
 				if(className[0] === "!") {
 					className = className.slice(1)
@@ -110,23 +82,38 @@ const Navigation = {
 			},
 			
 			addNode(node) {
-				node.classList.add(`btr-nav-${this.name}`)
+				node.classList.add(this.nodeSelector.slice(1))
 				
-				for(const setting of this.settings) {
-					this.updateNodeSetting(node, setting)
-				}
-				
+				this.updateNode(node)
 				this.nodeAdded?.(node)
-				this.update(node)
+				this.update?.(node)
+				
+				for(const setting of Object.values(this.settings)) {
+					if(setting.nodeSelector === this.nodeSelector) {
+						setting.addNode?.(node)
+					}
+				}
 			}
 		}
 		
-		for(const setting of element.settings) {
-			const enabledByDefault = setting.enabled === true
+		if(element.parent) {
+			let settingName = element.name
 			
-			setting.enabledByDefault = enabledByDefault
-			setting.enabled = enabledByDefault
-			setting.isDefault = true
+			if(settingName.startsWith(`${element.parent.name}_`)) {
+				settingName = settingName.slice(element.parent.name.length + 1)
+			}
+			
+			element.parent.settings[settingName] = element
+		}
+		
+		if(elementInfo.settings) {
+			for(const [name, setting] of Object.entries(elementInfo.settings)) {
+				setting.nodeSelector = element.nodeSelector
+				setting.parent = element
+				setting.class ??= name
+				setting.update ??= null
+				Navigation.register(`${element.name}_${name}`, setting)
+			}
 		}
 		
 		let state = this.getElementStates()[element.name]
@@ -135,17 +122,6 @@ const Navigation = {
 		if(typeof state?.enabled === "boolean") {
 			element.enabled = state.enabled
 			element.isDefault = false
-		}
-		
-		if(state?.settings) {
-			for(const [name, enabled] of Object.entries(state.settings)) {
-				const setting = element.getSetting(name)
-				
-				if(setting) {
-					setting.enabled = enabled
-					setting.isDefault = false
-				}
-			}
 		}
 		
 		if(SETTINGS.get("navigation.enabled") && location.host !== "create.roblox.com") {
@@ -176,6 +152,8 @@ const Navigation = {
 			
 			attach()
 		}
+		
+		return element
 	},
 	
 	init() {
@@ -264,9 +242,9 @@ const Navigation = {
 		Navigation.register("header_notifications", {
 			label: "Show Notifications",
 			
-			settings: [
-				{ name: "reduce_margins", label: "Reduce Margin", enabled: true }
-			],
+			settings: {
+				reduce_margins: { label: "Reduce Margin", enabled: true }
+			},
 			
 			selector: "#navbar-stream",
 			enabled: true
@@ -275,9 +253,9 @@ const Navigation = {
 		Navigation.register("header_friends", {
 			label: "Show Friends",
 			
-			settings: [
-				{ name: "show_notifs", label: "Show Requests", enabled: true, class: "!hide_notifs" }
-			],
+			settings: {
+				show_notifs: { label: "Show Requests", enabled: true, class: "!hide_notifs" }
+			},
 			
 			update(node) {
 				node.style.display = this.enabled ? "" : "none"
@@ -310,9 +288,9 @@ const Navigation = {
 		Navigation.register("header_messages", {
 			label: "Show Messages",
 			
-			settings: [
-				{ name: "show_notifs", label: "Show Unread", enabled: true, class: "!hide_notifs" }
-			],
+			settings: {
+				show_notifs: { label: "Show Unread", enabled: true, class: "!hide_notifs" }
+			},
 			
 			update(node) {
 				node.style.display = this.enabled ? "" : "none"
@@ -358,9 +336,9 @@ const Navigation = {
 		Navigation.register("sidebar_messages", {
 			label: "Show Messages",
 			
-			settings: [
-				{ name: "show_notifs", label: "Show Unread", enabled: true, class: "!hide_notifs" }
-			],
+			settings: {
+				show_notifs: { label: "Show Unread", enabled: true, class: "!hide_notifs" }
+			},
 			
 			selector: "#nav-message",
 			enabled: false,
@@ -379,9 +357,9 @@ const Navigation = {
 		Navigation.register("sidebar_friends", {
 			label: "Show Friends",
 			
-			settings: [
-				{ name: "show_notifs", label: "Show Requests", enabled: true, class: "!hide_notifs" }
-			],
+			settings: {
+				show_notifs: { label: "Show Requests", enabled: true, class: "!hide_notifs" }
+			},
 			
 			selector: "#nav-friends",
 			enabled: false,

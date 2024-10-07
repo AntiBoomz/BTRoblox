@@ -526,6 +526,8 @@ const SettingsModal = {
 			}
 			
 			for(const element of Object.values(Navigation.elements)) {
+				if(element.parent) { continue }
+				
 				const checkbox = createCheckbox(element.label || element.name, enabled => {
 					element.setEnabled(enabled)
 				})
@@ -539,9 +541,9 @@ const SettingsModal = {
 				})
 				
 				if(element.settings) {
-					for(const setting of element.settings) {
+					for(const setting of Object.values(element.settings)) {
 						const settingCheckbox = createCheckbox(setting.label || setting.name, enabled => {
-							element.setSettingEnabled(setting.name, enabled)
+							setting.setEnabled(enabled)
 						})
 						
 						settingCheckbox.elem.style.paddingLeft = "20px"
