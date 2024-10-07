@@ -770,11 +770,11 @@ pageInit.common = () => {
 								const json = JSON.parse(text)
 								
 								if(settings.home.favoritesAtTop && json?.sorts) {
-									const favs = json.sorts.find(x => x.topic === "Favorites")
+									const favs = json.sorts.find(x => x.topic === "Favorites" || x.topicId === 100000001) // topic gets localized so use topicId as backup
 									
 									if(favs) {
 										const index = json.sorts.indexOf(favs)
-										const continueIndex = json.sorts.findIndex(x => x.topic === "Continue")
+										const continueIndex = json.sorts.findIndex(x => x.topic === "Continue" || x.topicId === 100000003) // topic gets localized so use topicId as backup
 										
 										if(index > 1) {
 											json.sorts.splice(index, 1)
