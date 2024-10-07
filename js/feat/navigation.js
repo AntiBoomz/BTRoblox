@@ -341,7 +341,7 @@ const Navigation = {
 			},
 			
 			selector: "#nav-message",
-			enabled: false,
+			enabled: true,
 			
 			update(node) {
 				node.parentNode.style.display = this.enabled ? "" : "none"
@@ -362,7 +362,7 @@ const Navigation = {
 			},
 			
 			selector: "#nav-friends",
-			enabled: false,
+			enabled: true,
 			
 			update(node) {
 				node.parentNode.style.display = this.enabled ? "" : "none"
