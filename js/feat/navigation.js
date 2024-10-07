@@ -349,7 +349,14 @@ const Navigation = {
 			
 			nodeAdded(node) {
 				const update = () => Navigation.elements.header_messages.updateAll()
-				new MutationObserver(update).observe(node, { childList: true, subtree: true, attributeFilter: ["href"] })
+				
+				new MutationObserver(update).observe(node, {
+					childList: true,
+					subtree: true,
+					characterData: true,
+					attributeFilter: ["href"]
+				})
+				
 				update()
 			}
 		})
@@ -370,7 +377,14 @@ const Navigation = {
 			
 			nodeAdded(node) {
 				const update = () => Navigation.elements.header_friends.updateAll()
-				new MutationObserver(update).observe(node, { childList: true, subtree: true, attributeFilter: ["href"] })
+				
+				new MutationObserver(update).observe(node, {
+					childList: true,
+					subtree: true,
+					characterData: true,
+					attributeFilter: ["href"]
+				})
+				
 				update()
 			}
 		})
