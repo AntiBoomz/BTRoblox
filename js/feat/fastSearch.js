@@ -173,39 +173,27 @@ const btrFastSearch = {
 			const matches = Object.entries(userCache)
 				.map(([name, user]) => {
 					const x = {
-						name, user, isAlias: name !== user.Username.toLowerCase()
+						name,
+						user,
+						isAlias: name !== user.Username.toLowerCase()
 					}
 					
-					if(!x.user.Hidden) {
-						if(name === search) {
+					if(!x.user.Hidden && (name === search || x.user.IsFriend && !x.isAlias)) {
+						const display = (user.DisplayName || "").toLowerCase()
+						
+						const nameIndex = name.indexOf(search)
+						const displayIndex = display.indexOf(search)
+						
+						if(nameIndex !== -1 || displayIndex !== -1) {
 							if(!user.DisplayName || user.DisplayName === user.Username) {
 								x.display = user.Username
-								x.index = 0
+								x.index = nameIndex
 							} else {
 								x.display = `${user.DisplayName} (@${user.Username})`
-								x.index = user.DisplayName.length + 3
+								x.index = displayIndex !== -1 ? displayIndex : user.DisplayName.length + 3 + nameIndex
 							}
-							x.sort = 0
-						} else if(x.user.IsFriend && !x.isAlias) {
-							const display = user.DisplayName.toLowerCase()
 							
-							const nameIndex = name.indexOf(search)
-							const displayIndex = display.indexOf(search)
-							
-							if(nameIndex !== -1 && (displayIndex === -1 || nameIndex < displayIndex)) {
-								if(!user.DisplayName || user.DisplayName === user.Username) {
-									x.display = user.Username
-									x.index = nameIndex
-								} else {
-									x.display = `${user.DisplayName} (@${user.Username})`
-									x.index = user.DisplayName.length + 3 + nameIndex
-								}
-								x.sort = nameIndex + x.display.length / 200
-							} else if(displayIndex !== -1) {
-								x.display = `${user.DisplayName} (@${user.Username})`
-								x.index = displayIndex
-								x.sort = displayIndex + x.display.length / 200
-							}
+							x.sort = name === search ? 0 : x.index + x.display.length / 200
 						}
 					}
 					
@@ -446,20 +434,17 @@ const btrFastSearch = {
 							reloadSearchResults(true)
 							return
 						}
-
-						const user = userCache[search] = {
-							Username: data.name,
-							DisplayName: data.displayName,
-							UserId: data.id,
-							HasVerifiedBadge: data.hasVerifiedBadge
-						}
-
-						const name = user.Username.toLowerCase()
-						if(search !== name) {
-							if(userCache[name]) {
-								userCache[search] = userCache[name]
-							} else {
-								userCache[name] = user
+						
+						const user = userCache[data.name.toLowerCase()]
+						
+						if(user && !user.Temporary) {
+							userCache[search] = user
+						} else {
+							userCache[search] = {
+								Username: data.name,
+								DisplayName: data.displayName,
+								UserId: data.id,
+								HasVerifiedBadge: data.hasVerifiedBadge
 							}
 						}
 
