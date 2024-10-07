@@ -14,9 +14,9 @@ html .btr-home-friends .friends-carousel-container {
 	padding-right: 0;
 }
 
-html .btr-home-friends .friends-carousel-list-container {
+html .btr-home-friends .friends-carousel-container > div {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(110px,1fr));
+	grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
 	grid-template-rows: repeat(var(--btr-friend-rows, 1), auto) 0 0 0 0 0 0 0 0 0;
 }
 
