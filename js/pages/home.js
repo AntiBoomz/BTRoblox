@@ -91,47 +91,10 @@ pageInit.home = () => {
 		
 		// legacy angular friends
 		
-		// angularHook.modifyTemplate("people-list-container", template => {
-		// 	template.$find(".people-list-container").setAttribute("ng-class", `{"btr-home-secondRow": btrShowSecondRow}`)
-		// })
-		
-		// angularHook.modifyTemplate("people-list", template => {
-		// 	template.$find(".hlist").setAttribute("style", "--btr-width: {{btrWidth * 128}}px;")
-		// })
-		
 		InjectJS.inject(() => {
 			const { angularHook } = window.BTRoblox
 			
 			angularHook.hijackModule("peopleList", {
-				// peopleListContainerController(handler, args, argsMap) {
-				// 	const result = handler.apply(this, args)
-					
-				// 	try {
-				// 		const { $scope } = argsMap
-						
-				// 		$scope.btrShowSecondRow = false
-						
-				// 		try { $scope.btrShowSecondRow = !!localStorage.getItem("BTRoblox:homeShowSecondRow") }
-				// 		catch(ex) { console.error(ex) }
-						
-				// 		$scope.$watch("library.numOfFriends", numOfFriends => {
-				// 			if(numOfFriends == null) { return }
-							
-				// 			$scope.btrShowSecondRow = numOfFriends > ($scope.layout.maxNumberOfFriendsDisplayed / 2)
-				// 			$scope.btrWidth = Math.ceil(Math.min($scope.layout.maxNumberOfFriendsDisplayed, numOfFriends) / 2)
-							
-				// 			if($scope.btrShowSecondRow) {
-				// 				localStorage.setItem("BTRoblox:homeShowSecondRow", "true")
-				// 			} else {
-				// 				localStorage.removeItem("BTRoblox:homeShowSecondRow")
-				// 			}
-				// 		})
-				// 	} catch(ex) {
-				// 		console.error(ex)
-				// 	}
-					
-				// 	return result
-				// },
 				layoutService(handler, args) {
 					const result = handler.apply(this, args)
 					result.maxNumberOfFriendsDisplayed *= 2
