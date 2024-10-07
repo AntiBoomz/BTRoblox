@@ -35,6 +35,8 @@ Links
     * [Game search](#game-search)
   * [apis.roblox.com/platform-chat-api](#apisrobloxcomplatform-chat-api)
     * [Platform chat](#platform-chat)
+  * [apis.roblox.com/showcases-api](#apisrobloxcomshowcases-api)
+    * [Get player's showcased assets](#get-players-showcased-assets)
   * [develop.roblox.com](#developrobloxcom)
     * [Get saved versions of an asset](#get-saved-versions-of-an-asset)
     * [Get published versions of an asset](#get-published-versions-of-an-asset)
@@ -49,7 +51,6 @@ Links
     * [Get place details](#get-place-details)
     * [Get place settings](#get-place-settings-requires-edit-access)
     * [Get collections of an user](#get-collections-of-an-user)
-    * [Get player badges of an user](#get-player-badges-of-an-user-only-returns-first-6)
     * [Get games on an user's profile](#get-games-on-an-users-profile)
     * [Get favorites of an user](#get-favorites-of-an-user)
     * [Delete asset from inventory](#delete-asset-from-inventory)
@@ -246,6 +247,11 @@ apis.roblox.com/platform-chat-api
   ```
   
 
+apis.roblox.com/showcases-api
+---------
+#### Get player's showcased assets
+* GET https://apis.roblox.com/showcases-api/v1/users/profile/playerassets-json?assetTypeId=10&userId=4719353
+  * Supported assetTypeIds: 10 (Models), 11 (Clothing)
 
 develop.roblox.com
 -------------
@@ -633,9 +639,6 @@ ww<span>w.roblox.com
 
 #### Get collections of an user
 * GET https://www.roblox.com/users/profile/robloxcollections-json?userId=4719353
-
-#### Get player badges of an user (only returns first 6)
-* GET https://www.roblox.com/users/profile/playerassets-json?assetTypeId=21&userId=4719353
 
 #### Get games on an user's profile
 * GET https://www.roblox.com/users/profile/playergames-json?userId=4719353
