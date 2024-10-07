@@ -403,6 +403,22 @@ const Navigation = {
 			}
 		})
 		
+		Navigation.register("sidebar_premium", {
+			label: "Show Premium",
+			
+			reactInject: {
+				selector: ".left-col-list",
+				index: { selector: { key: "blog" }, offset: -1 },
+				html: `
+				<li>
+					<a href=/premium/membership id=nav-premium class="dynamic-overflow-container text-nav">
+						<div><span class=icon-nav-premium-btr></span></div>
+						<span class="font-header-2 dynamic-ellipsis-item">Premium</span>
+					</a>
+				</li>`
+			}
+		})
+		
 		Navigation.register("sidebar_blogfeed", {
 			label: "Show Blog Feed",
 			
@@ -447,19 +463,25 @@ const Navigation = {
 			}
 		})
 		
-		Navigation.register("sidebar_premium", {
-			label: "Show Premium",
+		Navigation.register("sidebar_shop", {
+			label: "Show Official Store",
 			
-			reactInject: {
-				selector: ".left-col-list",
-				index: { selector: { key: "blog" }, offset: -1 },
-				html: `
-				<li>
-					<a href=/premium/membership id=nav-premium class="dynamic-overflow-container text-nav">
-						<div><span class=icon-nav-premium-btr></span></div>
-						<span class="font-header-2 dynamic-ellipsis-item">Premium</span>
-					</a>
-				</li>`
+			selector: "#nav-shop",
+			enabled: true,
+			
+			update(node) {
+				node.parentNode.style.display = this.enabled ? "" : "none"
+			}
+		})
+		
+		Navigation.register("sidebar_giftcards", {
+			label: "Show Gift Cards",
+			
+			selector: "#nav-giftcards",
+			enabled: true,
+			
+			update(node) {
+				node.parentNode.style.display = this.enabled ? "" : "none"
 			}
 		})
 		
