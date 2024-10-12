@@ -523,17 +523,6 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	width: 33.33%;
 }
 
-/* Friends */
-
-.btr-profile .home-friends .people-list {
-	height: 296px;
-	max-height: 296px;
-}
-
-.btr-profile .home-friends .friend {
-	width: 20%;
-}
-
 /* Favorites */
 
 html .btr-profile .btr-profile-favorites .game-card {

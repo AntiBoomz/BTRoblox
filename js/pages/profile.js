@@ -85,40 +85,6 @@ pageInit.profile = userId => {
 	const presencePromise = new Promise(resolve => resolve(RobloxApi.presence.getPresence([userId]).then(json => json?.userPresences?.[0])))
 	
 	bodyWatcher.$watch(".profile-container").$then()
-		.$watch(".rbx-tabs-horizontal", cont => {
-			cont.before(newCont)
-			cont.setAttribute("ng-if", "false") // Let's make angular clean it up :)
-
-			cont.$watch(".profile-about", about => {
-				newCont.$find(".profile-about").setAttribute("ng-controller", about.getAttribute("ng-controller"))
-	
-				about
-					.$watch("profile-description,.profile-about-content", desc => {
-						if(desc.classList.contains("profile-about-content") && desc.closest("profile-description")) {
-							// in case it selected profile-about-content in the new profile-description
-							desc = desc.closest("profile-description")
-						}
-
-						newCont.$find(".placeholder-desc").replaceWith(desc)
-
-						if(desc.matches("profile-description")) {
-							newCont.$find(".btr-profile-about > .container-header").style.visibility = "hidden"
-						}
-					})
-					.$watch("#aliases-container", aliases => {
-						newCont.$find(".placeholder-aliases").replaceWith(aliases)
-					})
-					.$watch(".profile-about-footer", footer => {
-						newCont.$find(".placeholder-footer").replaceWith(footer)
-			
-						const tooltip = footer.$find(".tooltip-pastnames")
-						if(tooltip) { tooltip.setAttribute("data-container", "body") } // Display tooltip over side panel
-					})
-					.$watch("social-link-icon-list", social => {
-						newCont.$find(".btr-profile-about").prepend(social)
-					})
-			})
-		})
 		.$watch(".profile-header-top .avatar-status", statusContainer => {
 			const statusDiv = html`<div class="btr-header-status-parent"></div>`
 			newCont.$find(".placeholder-status").replaceWith(statusDiv)
@@ -145,6 +111,39 @@ pageInit.profile = userId => {
 					statusDiv.replaceChildren(html`<span class="btr-header-status-text btr-status-offline">Offline</span>`)
 				}
 			})
+		})
+		.$watch(".rbx-tabs-horizontal", cont => {
+			cont.before(newCont)
+			cont.setAttribute("ng-if", "false") // Let's make angular clean it up :)
+		})
+		.$watch(".profile-about", about => {
+			newCont.$find(".profile-about").setAttribute("ng-controller", about.getAttribute("ng-controller"))
+
+			about
+				.$watch("profile-description,.profile-about-content", desc => {
+					if(desc.classList.contains("profile-about-content") && desc.closest("profile-description")) {
+						// in case it selected profile-about-content in the new profile-description
+						desc = desc.closest("profile-description")
+					}
+
+					newCont.$find(".placeholder-desc").replaceWith(desc)
+
+					if(desc.matches("profile-description")) {
+						newCont.$find(".btr-profile-about > .container-header").style.visibility = "hidden"
+					}
+				})
+				.$watch("#aliases-container", aliases => {
+					newCont.$find(".placeholder-aliases").replaceWith(aliases)
+				})
+				.$watch(".profile-about-footer", footer => {
+					newCont.$find(".placeholder-footer").replaceWith(footer)
+		
+					const tooltip = footer.$find(".tooltip-pastnames")
+					if(tooltip) { tooltip.setAttribute("data-container", "body") } // Display tooltip over side panel
+				})
+				.$watch("social-link-icon-list", social => {
+					newCont.$find(".btr-profile-about").prepend(social)
+				})
 		})
 		.$watch(".profile-avatar", async avatar => {
 			newCont.$find(".placeholder-avatar").replaceWith(avatar)
@@ -188,6 +187,10 @@ pageInit.profile = userId => {
 					setVisible(false)
 				}
 			})
+		})
+		.$watch("#friends-carousel-container", friends => {
+			newCont.$find(".placeholder-friends").replaceWith(friends)
+			initReactFriends()
 		})
 		.$watch(".profile-statistics", outerStats => {
 			newCont.$find(".placeholder-stats").replaceWith(outerStats)
@@ -545,9 +548,6 @@ pageInit.profile = userId => {
 			switcher.$watch(">.hlist").$then().$watchAll(".slide-item-container", slide => {
 				gameItems.push(new GameItem(slide))
 			})
-		})
-		.$watch("#people-list-container", friends => {
-			newCont.$find(".placeholder-friends").replaceWith(friends)
 		})
 		.$watch(".favorite-games-container", favorites => favorites.remove())
 		.$watch(".profile-collections", collections => {
