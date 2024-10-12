@@ -190,7 +190,7 @@ pageInit.profile = userId => {
 		})
 		.$watch("#friends-carousel-container", friends => {
 			newCont.$find(".placeholder-friends").replaceWith(friends)
-			initReactFriends()
+			initReactFriends(true)
 		})
 		.$watch(".profile-statistics", outerStats => {
 			newCont.$find(".placeholder-stats").replaceWith(outerStats)

@@ -1,13 +1,14 @@
 "use strict"
 
-const initReactFriends = () => { // TODO: Move elsewhere
-	InjectJS.inject(() => {
 		const { reactHook, contentScript, settings } = BTRoblox
+const initReactFriends = forceSecondRow => { // TODO: Move elsewhere
+	InjectJS.inject(forceSecondRow => {
+		const showSecondRow = forceSecondRow || settings.home.friendsSecondRow
 	
 		reactHook.hijackConstructor( // FriendsList
 			(type, props) => "friendsList" in props, 
 			(target, thisArg, args) => {
-				if(settings.home.friendsSecondRow) {
+				if(showSecondRow) {
 					const friendsList = args[0].friendsList
 					
 					reactHook.hijackUseState( // visibleFriendsList
@@ -21,7 +22,7 @@ const initReactFriends = () => { // TODO: Move elsewhere
 				try { result.props.className = `${result.props.className ?? ""} btr-friends-list` }
 				catch(ex) { console.error(ex) }
 				
-				if(settings.home.friendsSecondRow) {
+				if(showSecondRow) {
 					try { result.props.className = `${result.props.className ?? ""} btr-friends-secondRow` }
 					catch(ex) { console.error(ex) }
 				}
@@ -96,12 +97,12 @@ const initReactFriends = () => { // TODO: Move elsewhere
 				}
 			)
 		}
-	})
 	
 	if(SETTINGS.get("home.friendsShowUsername")) {
 		InjectJS.send("updateFriends", btrFriends.getFriends())
 		btrFriends.loadFriends(friends => InjectJS.send("updateFriends", friend))
 	}
+	}, forceSecondRow)
 }
 
 pageInit.home = () => {

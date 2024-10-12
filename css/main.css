@@ -1256,7 +1256,7 @@ body div.btr-invalid-layered:hover::after {
 	--btr-friend-rows: 2;
 }
 
-html .react-friends-carousel-container:has(.btr-friends-list) {
+html .react-friends-carousel-container:has(.btr-friends-secondRow) {
 	min-height: 187px;
 	height: auto;
 }
