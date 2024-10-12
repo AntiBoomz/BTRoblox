@@ -1,8 +1,8 @@
 "use strict"
 
-		const { reactHook, contentScript, settings } = BTRoblox
 const initReactFriends = forceSecondRow => { // TODO: Move elsewhere
 	InjectJS.inject(forceSecondRow => {
+		const { reactHook, hijackXHR, settings } = BTRoblox
 		const showSecondRow = forceSecondRow || settings.home.friendsSecondRow
 	
 		reactHook.hijackConstructor( // FriendsList
@@ -34,8 +34,26 @@ const initReactFriends = forceSecondRow => { // TODO: Move elsewhere
 		if(settings.home.friendsShowUsername) {
 			const friendsState = reactHook.createGlobalState({})
 			
-			contentScript.listen("updateFriends", friends => {
-				friendsState.set(friends)
+			hijackXHR(request => {
+				if(request.method === "POST" && request.url === "https://apis.roblox.com/user-profile-api/v1/user/profiles/get-profiles") {
+					request.onRequest.push(request => {
+						const json = JSON.parse(request.body)
+						
+						if(!json.fields.includes("names.username")) {
+							json.fields.push("names.username")
+						}
+						
+						request.body = JSON.stringify(json)
+					})
+					
+					request.onResponse.push(json => {
+						for(const user of json.profileDetails) {
+							friendsState.value[user.userId] = user
+						}
+						
+						friendsState.update()
+					})
+				}
 			})
 			
 			reactHook.hijackConstructor( // FriendTileContent
@@ -57,7 +75,7 @@ const initReactFriends = forceSecondRow => { // TODO: Move elsewhere
 										className: "friends-carousel-tile-sublabel btr-friends-carousel-username-label",
 										children: reactHook.createElement("span", {
 											className: "btr-friends-carousel-username",
-											children: `@${friend.name}`
+											children: `@${friend.names.username}`
 										})
 									})
 								)
@@ -97,11 +115,6 @@ const initReactFriends = forceSecondRow => { // TODO: Move elsewhere
 				}
 			)
 		}
-	
-	if(SETTINGS.get("home.friendsShowUsername")) {
-		InjectJS.send("updateFriends", btrFriends.getFriends())
-		btrFriends.loadFriends(friends => InjectJS.send("updateFriends", friend))
-	}
 	}, forceSecondRow)
 }
 
@@ -111,20 +124,19 @@ pageInit.home = () => {
 	// legacy angular friends stuff (just in case react stuff gets disabled?)
 	
 	if(SETTINGS.get("home.friendsShowUsername")) {
-		document.$watch(">body", body => body.classList.add("btr-home-showUsername", "btr-home-friends"))
+		document.$watch(">body", body => body.classList.add("btr-home-friends"))
 		
 		angularHook.modifyTemplate("people", card => {
 			const container = card.$find(".friend-parent-container")
 			
 			if(container) {
-				document.body.classList.add("btr-home-showUsername")
 				container.after(html`<div class="text-overflow xsmall text-label btr-people-username" title="@{{friend.name}}">@{{friend.name}}</div>`)
 			}
 		})
 	}
 	
 	if(SETTINGS.get("home.friendsSecondRow")) {
-		document.$watch(">body", body => body.classList.add("btr-home-secondRow", "btr-home-friends"))
+		document.$watch(">body", body => body.classList.add("btr-home-friends"))
 
 		InjectJS.inject(() => {
 			const { angularHook } = window.BTRoblox
