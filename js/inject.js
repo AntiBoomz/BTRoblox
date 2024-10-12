@@ -1,6 +1,6 @@
 "use strict"
 
-const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
+const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE, selectedRobuxToCashOption) => {
 	"use strict"
 	
 	const BTRoblox = window.BTRoblox = window.BTRoblox || {}
@@ -134,6 +134,22 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 	}
 	
 	//
+	
+	const formatNumber = num => String(num).replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/yg, "$1,")
+	
+	const RobuxToCash = {
+		getSelectedOption() {
+			return selectedRobuxToCashOption
+		},
+		convert(robux) {
+			const option = this.getSelectedOption()
+
+			const cash = Math.round((robux * option.cash) / option.robux + 0.4999) / 100
+			const cashString = formatNumber(cash.toFixed(option.currency.numFractions))
+
+			return `${option.currency.symbol}${cashString}`
+		}
+	}
 	
 	const contentScript = {
 		messageListeners: {},
@@ -981,6 +997,7 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 		settings,
 		currentPage,
 		IS_DEV_MODE,
+		RobuxToCash,
 		
 		contentScript,
 		angularHook,

@@ -587,6 +587,35 @@ pageInit.itemdetails = (category, assetIdString) => {
 				}
 			})
 		}
+		
+		// Sponsored
+		
+		InjectJS.inject(() => {
+			const { reactHook, RobuxToCash } = window.BTRoblox
+			
+			reactHook.hijackElement( // ItemCardPrice
+				elem => elem.props.className?.includes("text-robux-tile"),
+				elem => {
+					const originalText = elem.props.children
+					if(typeof originalText !== "string") { return }
+					
+					const robux = parseInt(originalText.replace(/\D/g, ""), 10)
+					
+					if(Number.isSafeInteger(robux)) {
+						const cash = RobuxToCash.convert(robux)
+						
+						elem.props.children = [
+							originalText,
+							reactHook.createElement("span", {
+								className: "btr-robuxToCash-tile",
+								children: ` (${cash})`,
+								title: `R$ ${originalText.trim()}`
+							})
+						]
+					}
+				}
+			)
+		})
 	}
 
 	if(SETTINGS.get("general.hoverPreview")) {

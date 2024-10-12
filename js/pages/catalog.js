@@ -269,12 +269,29 @@ const OwnerAssetCache = {
 
 pageInit.catalog = () => {
 	if(RobuxToCash.isEnabled()) {
-		angularHook.modifyTemplate("item-card", template => {
-			for(const label of template.$findAll(".item-card-price .text-robux-tile")) {
-				const cashText = ` (${RobuxToCash.convertAngular("(item.lowestPrice||item.price)")})`
-				label.after(html`<span class=btr-robuxToCash-tile ng-if="${label.getAttribute("ng-if")}">${cashText}</span>`)
-				label.parentNode.setAttribute("title", `R$ {{::getDisplayPrice() || item.lowestPrice | number}}${cashText}`)
-			}
+		InjectJS.inject(() => {
+			const { reactHook, RobuxToCash } = window.BTRoblox
+			
+			reactHook.hijackElement( // ItemCardPrice
+				elem => elem.props.className?.includes("text-robux-tile") && typeof(elem.props.children) === "string",
+				elem => {
+					const originalText = elem.props.children
+					const robux = parseInt(originalText.replace(/\D/g, ""), 10)
+					
+					if(Number.isSafeInteger(robux)) {
+						const cash = RobuxToCash.convert(robux)
+						
+						elem.props.children = [
+							originalText,
+							reactHook.createElement("span", {
+								className: "btr-robuxToCash-tile",
+								children: ` (${cash})`,
+								title: `R$ ${originalText.trim()}`
+							})
+						]
+					}
+				}
+			)
 		})
 	}
 
@@ -285,57 +302,6 @@ pageInit.catalog = () => {
 	}
 
 	if(!SETTINGS.get("catalog.enabled")) { return }
-	document.$watch("body", body => body.classList.add("btr-catalog"))
-
-	angularHook.modifyTemplate("item-card", template => {
-		for(const cont of template.$findAll(".item-card-container")) {
-			cont.classList.add("btr-item-card-container")
-	
-			const hover = html`<div class="btr-item-card-more" ng-show="item.itemType==='Asset'||item.purchaseCount!==undefined&&item.purchaseCount>0">
-				<div class="text-overflow item-card-label" ng-show="item.itemType==='Asset'">Updated: <span class=btr-updated-label>Loading...</span></div>
-				<div class="text-overflow item-card-label" ng-show="item.purchaseCount!==undefined&&item.purchaseCount>0">Sales: {{item.purchaseCount | number:0}}</div>
-			</div>`
-	
-			cont.$find(".item-card-caption").append(hover)
-		}
-	})
-
-	document.$on("mouseover", ".btr-item-card-container", ev => {
-		const self = ev.currentTarget
-
-		if(self.dataset.hoverStats) { return }
-		self.dataset.hoverStats = true
-
-		const anchor = self.closest("a")
-		const update = () => {
-			const matches = anchor.href.match(/\/(catalog|bundles)\/(\d+)\//, "$1")
-			if(!matches) { return }
-	
-			const assetType = matches[1]
-			const assetId = matches[2]
-			if(!Number.isSafeInteger(+assetId)) { return }
-	
-			if(assetType !== "bundles") {
-				RobloxApi.economy.getAssetDetails(assetId).then(data => {
-					const ulabel = self.$find(".btr-updated-label")
-					ulabel.textContent = `${$.dateSince(data.Updated)}`
-					ulabel.parentNode.title = ulabel.parentNode.textContent
-				})
-			}
-
-			return true
-		}
-
-		if(!update()) {
-			const observer = new MutationObserver(() => {
-				if(update()) {
-					observer.disconnect()
-				}
-			})
-
-			observer.observe(anchor, { attributes: true, attributeFilter: ["href"] })
-		}
-	})
 
 	if(SETTINGS.get("catalog.showOwnedAssets")) {
 		const updateOwnedAssets = ownedAssets => {
@@ -373,8 +339,6 @@ pageInit.catalog = () => {
 				currentRequest = []
 
 				$.setImmediate(() => {
-					// MESSAGING.send("filterOwnedAssets", currentRequest, updateOwnedAssets)
-					
 					const assetIds = currentRequest
 					currentRequest = null
 					
@@ -402,7 +366,7 @@ pageInit.catalog = () => {
 		document.$watch("#results").$then()
 			.$watchAll(".hlist", hlist => {
 				hlist.$watchAll(".list-item", item => {
-					item.$watch([".item-card-container", ".item-card-thumb-container"], (anchor, thumb) => {
+					item.$watch([".item-card-link", ".item-card-thumb-container"], (anchor, thumb) => {
 						checkItem(anchor, thumb)
 						
 						new MutationObserver(() => {

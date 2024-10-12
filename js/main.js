@@ -11,7 +11,8 @@ if(document.contentType === "text/html" && location.protocol !== "blob") {
 				INJECT_SCRIPT,
 				SETTINGS.serialize(),
 				currentPage ? { name: currentPage.name, matches: currentPage.matches } : null,
-				IS_DEV_MODE
+				IS_DEV_MODE,
+				RobuxToCash.getSelectedOption()
 			)
 			
 			btrThemes.init()
