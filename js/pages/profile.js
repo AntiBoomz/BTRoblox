@@ -75,6 +75,7 @@ pageInit.profile = userId => {
 		</div>
 
 		<div class=btr-profile-bottom>
+			<div class=placeholder-posts style=display:none></div>
 			<div class=placeholder-collections style=display:none></div>
 			<div class=placeholder-inventory style=display:none></div>
 		</div>
@@ -187,6 +188,9 @@ pageInit.profile = userId => {
 					setVisible(false)
 				}
 			})
+		})
+		.$watch(".profile-posts", posts => {
+			newCont.$find(".placeholder-posts").replaceWith(posts)
 		})
 		.$watch("#friends-carousel-container", friends => {
 			newCont.$find(".placeholder-friends").replaceWith(friends)
