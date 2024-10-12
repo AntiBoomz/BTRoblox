@@ -45,6 +45,94 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 		return bool
 	}
 	
+	const xhrTransforms = []
+	
+	const hijackXHR = fn => {
+		xhrTransforms.push(fn)
+		
+		if(xhrTransforms.length === 1) {
+			const xhrDetails = new WeakMap()
+			
+			hijackFunction(XMLHttpRequest.prototype, "open", (target, xhr, args) => {
+				const method = args[0]
+				const url = args[1]
+				
+				xhrDetails.delete(xhr)
+				
+				if(typeof method === "string" && typeof url === "string") {
+					const request = {
+						method: method,
+						url: url,
+						onRequest: [],
+						onResponse: []
+					}
+					
+					for(const fn of xhrTransforms) {
+						try { fn(request) }
+						catch(ex) { console.error(ex) }
+					}
+					
+					if(request.onResponse.length) {
+						const responseText = {
+							configurable: true,
+							
+							get() {
+								delete xhr.responseText
+								let text = xhr.responseText
+								
+								try {
+									const json = JSON.parse(text)
+									
+									for(const fn of request.onResponse) {
+										try { fn(json, request) }
+										catch(ex) { console.error(ex) }
+									}
+									
+									text = JSON.stringify(json)
+								} catch(ex) {
+									console.error(ex)
+								}
+								
+								Object.defineProperty(xhr, "responseText", responseText)
+								return text
+							}
+						}
+						
+						Object.defineProperty(xhr, "responseText", responseText)
+					}
+					
+					args[0] = request.method
+					args[1] = request.url
+					
+					if(request.onRequest.length) {
+						xhrDetails.set(xhr, request)
+					}
+				}
+				
+				return target.apply(xhr, args)
+			})
+			
+			hijackFunction(XMLHttpRequest.prototype, "send", (target, xhr, args) => {
+				const request = xhrDetails.get(xhr)
+				
+				if(request) {
+					xhrDetails.delete(xhr)
+					
+					request.body = args[0]
+					
+					for(const fn of request.onRequest) {
+						try { fn(request) }
+						catch(ex) { console.error(ex) }
+					}
+					
+					args[0] = request.body
+				}
+				
+				return target.apply(xhr, args)
+			})
+		}
+	}
+	
 	//
 	
 	const contentScript = {
@@ -899,6 +987,7 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE) => {
 		reactHook,
 		
 		hijackFunction,
+		hijackXHR,
 		onReady,
 		onSet,
 		assert

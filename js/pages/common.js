@@ -754,67 +754,46 @@ pageInit.common = () => {
 		})
 	}
 	
-	if(SETTINGS.get("home.favoritesAtTop") || SETTINGS.get("home.hideFriendActivity")) { // also applies to discover sorts so the code is here
+	if(SETTINGS.get("home.favoritesAtTop")) {
 		InjectJS.inject(() => {
-			const { hijackFunction, settings } = window.BTRoblox
+			const { hijackXHR, settings } = window.BTRoblox
 			
-			hijackFunction(XMLHttpRequest.prototype, "open", (target, xhr, args) => {
-				const url = args[1]
-				
-				if(typeof url === "string") {
-					let replaceText
-					
-					if(url === "https://apis.roblox.com/discovery-api/omni-recommendation" || url === "https://apis.roblox.com/discovery-api/omni-recommendation-metadata") {
-						replaceText = text => {
-							try {
-								const json = JSON.parse(text)
-								
-								if(settings.home.favoritesAtTop && json?.sorts) {
-									const favs = json.sorts.find(x => x.topic === "Favorites" || x.topicId === 100000001) // topic gets localized so use topicId as backup
-									
-									if(favs) {
-										const index = json.sorts.indexOf(favs)
-										const continueIndex = json.sorts.findIndex(x => x.topic === "Continue" || x.topicId === 100000003) // topic gets localized so use topicId as backup
-										
-										if(index > 1) {
-											json.sorts.splice(index, 1)
-											json.sorts.splice(continueIndex !== -1 ? continueIndex + 1 : 1, 0, favs)
-										}
-									}
-								}
-								
-								if(settings.home.hideFriendActivity && json?.contentMetadata?.Game) {
-									for(const gameData of Object.values(json.contentMetadata.Game)) {
-										delete gameData.friendActivityTitle
-									}
-								}
-								
-								text = JSON.stringify(json)
-							} catch(ex) {
-								console.error(ex)
-							}
+			hijackXHR(request => {
+				if(request.method === "POST" && request.url.match(/^https:\/\/apis\.roblox\.com\/discovery-api\/omni-recommendation(-metadata)?$/i)) {
+					request.onResponse.push(json => {
+						if(settings.home.favoritesAtTop && json?.sorts) {
+							const favs = json.sorts.find(x => x.topic === "Favorites" || x.topicId === 100000001) // topic gets localized so use topicId as backup
 							
-							return text
-						}
-					}
-					
-					if(replaceText) {
-						const responseText = {
-							configurable: true,
-							
-							get() {
-								delete xhr.responseText
-								const value = replaceText(xhr.responseText)
-								Object.defineProperty(xhr, "responseText", responseText)
-								return value
+							if(favs) {
+								const index = json.sorts.indexOf(favs)
+								const continueIndex = json.sorts.findIndex(x => x.topic === "Continue" || x.topicId === 100000003) // topic gets localized so use topicId as backup
+								
+								if(index > 1) {
+									json.sorts.splice(index, 1)
+									json.sorts.splice(continueIndex !== -1 ? continueIndex + 1 : 1, 0, favs)
+								}
 							}
 						}
-						
-						Object.defineProperty(xhr, "responseText", responseText)
-					}
+					})
 				}
-				
-				return target.apply(xhr, args)
+			})
+		})
+	}
+	
+	if(SETTINGS.get("home.hideFriendActivity")) {
+		InjectJS.inject(() => {
+			const { hijackXHR, settings } = window.BTRoblox
+			
+			hijackXHR(request => {
+				if(request.method === "POST" && request.url.match(/^https:\/\/apis\.roblox\.com\/discovery-api\/omni-recommendation(-metadata)?$/i)) {
+					request.onResponse.push(json => {
+						if(json?.contentMetadata?.Game) {
+							for(const gameData of Object.values(json.contentMetadata.Game)) {
+								delete gameData.friendActivityTitle
+							}
+						}
+					})
+				}
 			})
 		})
 	}
