@@ -15,17 +15,18 @@ const Navigation = {
 	},
 	
 	register(name, elementInfo) {
-		const selector = `.btr-nav-${name}`
 		const enabledByDefault = elementInfo.enabled !== false
 		
 		const element = this.elements[name] = {
-			settings: [],
+			nodeSelector: `.btr-nav-node-${name}`,
+			class: name,
 			
 			update(node) {
 				node.style.display = this.enabled ? "" : "none"
 			},
 			
 			...elementInfo,
+			settings: {},
 			name: name,
 			
 			enabledByDefault: enabledByDefault,
@@ -42,39 +43,9 @@ const Navigation = {
 					state.enabled = this.enabled
 				}
 				
-				for(const setting of this.settings) {
-					if(!setting.isDefault) {
-						if(!state) { state = {} }
-						if(!state.settings) { state.settings = {} }
-						state.settings[setting.name] = setting.enabled
-					}
-				}
-				
 				if(JSON.stringify(prevState) !== JSON.stringify(state)) {
 					states[this.name] = state
 					SETTINGS.set("navigation.elements", JSON.stringify(states))
-				}
-			},
-			
-			getSetting(name) {
-				return this.settings.find(x => x.name === name)
-			},
-			
-			setSettingEnabled(name, enabled) {
-				const setting = assert(this.getSetting(name), "invalid setting")
-				
-				if(typeof enabled === "boolean") {
-					setting.enabled = enabled
-					setting.isDefault = false
-				} else {
-					setting.enabled = setting.enabledByDefault
-					setting.isDefault = true
-				}
-				
-				this.saveState()
-				
-				for(const node of document.querySelectorAll(selector)) {
-					this.updateNodeSetting(node, setting)
 				}
 			},
 			
@@ -92,14 +63,15 @@ const Navigation = {
 			},
 			
 			updateAll() {
-				for(const node of document.querySelectorAll(selector)) {
-					this.update(node)
+				for(const node of document.querySelectorAll(this.nodeSelector)) {
+					this.updateNode(node)
+					this.update?.(node)
 				}
 			},
 			
-			updateNodeSetting(node, setting) {
-				let className = setting.class || setting.name
-				let enabled = setting.enabled
+			updateNode(node) {
+				let className = this.class
+				let enabled = this.enabled
 				
 				if(className[0] === "!") {
 					className = className.slice(1)
@@ -110,23 +82,38 @@ const Navigation = {
 			},
 			
 			addNode(node) {
-				node.classList.add(`btr-nav-${this.name}`)
+				node.classList.add(this.nodeSelector.slice(1))
 				
-				for(const setting of this.settings) {
-					this.updateNodeSetting(node, setting)
-				}
-				
+				this.updateNode(node)
 				this.nodeAdded?.(node)
-				this.update(node)
+				this.update?.(node)
+				
+				for(const setting of Object.values(this.settings)) {
+					if(setting.nodeSelector === this.nodeSelector) {
+						setting.addNode?.(node)
+					}
+				}
 			}
 		}
 		
-		for(const setting of element.settings) {
-			const enabledByDefault = setting.enabled === true
+		if(element.parent) {
+			let settingName = element.name
 			
-			setting.enabledByDefault = enabledByDefault
-			setting.enabled = enabledByDefault
-			setting.isDefault = true
+			if(settingName.startsWith(`${element.parent.name}_`)) {
+				settingName = settingName.slice(element.parent.name.length + 1)
+			}
+			
+			element.parent.settings[settingName] = element
+		}
+		
+		if(elementInfo.settings) {
+			for(const [name, setting] of Object.entries(elementInfo.settings)) {
+				setting.nodeSelector = element.nodeSelector
+				setting.parent = element
+				setting.class ??= name
+				setting.update ??= null
+				Navigation.register(`${element.name}_${name}`, setting)
+			}
 		}
 		
 		let state = this.getElementStates()[element.name]
@@ -135,17 +122,6 @@ const Navigation = {
 		if(typeof state?.enabled === "boolean") {
 			element.enabled = state.enabled
 			element.isDefault = false
-		}
-		
-		if(state?.settings) {
-			for(const [name, enabled] of Object.entries(state.settings)) {
-				const setting = element.getSetting(name)
-				
-				if(setting) {
-					setting.enabled = enabled
-					setting.isDefault = false
-				}
-			}
 		}
 		
 		if(SETTINGS.get("navigation.enabled") && location.host !== "create.roblox.com") {
@@ -162,7 +138,7 @@ const Navigation = {
 				}
 				
 				if(element.reactInject) {
-					reactInject({
+					reactHook.inject({
 						...element.reactInject,
 						callback(node) {
 							element.addNode(node)
@@ -176,6 +152,8 @@ const Navigation = {
 			
 			attach()
 		}
+		
+		return element
 	},
 	
 	init() {
@@ -193,16 +171,61 @@ const Navigation = {
 			}
 		})
 		
+		Navigation.register("header_charts_rename", {
+			label: "Rename Charts to Discover",
+			enabled: false,
+			
+			update(node) {
+				if(node.nodeName === "TITLE") {
+					if(location.pathname.toLowerCase().startsWith("/charts")) {
+						if(this.enabled) {
+							if(document.title.includes("Charts")) {
+								this.replacedTitle = true
+								document.title = document.title.replace(/Charts/, "Discover")
+							}
+						} else {
+							if(this.replacedTitle && document.title.includes("Discover")) {
+								document.title = document.title.replace(/Discover/, "Charts")
+							}
+						}
+					}
+				} else {
+					if(this.enabled) {
+						if(node.textContent === "Charts") {
+							node.classList.add("btr-charts-rename")
+							node.textContent = "Discover"
+						}
+					} else {
+						if(node.classList.contains("btr-charts-rename") && node.textContent === "Discover") {
+							node.textContent = "Charts"
+						}
+					}
+				}
+			},
+			
+			init() {
+				document.$watch("#header").$then().$watch("ul.rbx-navbar", navbar => {
+					const chartsButton = navbar.$find(`.rbx-navbar a[href^="/charts"]`)
+					
+					if(chartsButton) {
+						this.addNode(chartsButton)
+					}
+				}, { continuous: true })
+				
+				document.$watch("title", title => this.addNode(title))
+			}
+		})
+		
 		Navigation.register("header_robux", {
 			label: "Show Robux",
 			enabled: false,
 			
 			init() {
 				document.$watch("#header").$then().$watch("ul.rbx-navbar", navbar => {
-					const robuxBtn = navbar.$find(`.rbx-navbar a[href^="/robux"]`)
+					const robuxBtn = navbar.$find(`.rbx-navbar a[href^="/robux"], .rbx-navbar a[href^="/upgrades/robux"]`)?.parentNode || navbar.$find(`#navigation-robux-container, #navigation-robux-mobile-container`)
 					
 					if(robuxBtn) {
-						this.addNode(robuxBtn.parentNode)
+						this.addNode(robuxBtn)
 					}
 				}, { continuous: true })
 			}
@@ -219,9 +242,9 @@ const Navigation = {
 		Navigation.register("header_notifications", {
 			label: "Show Notifications",
 			
-			settings: [
-				{ name: "reduce_margins", label: "Reduce Margin", enabled: true }
-			],
+			settings: {
+				reduce_margins: { label: "Reduce Margin", enabled: true }
+			},
 			
 			selector: "#navbar-stream",
 			enabled: true
@@ -230,9 +253,9 @@ const Navigation = {
 		Navigation.register("header_friends", {
 			label: "Show Friends",
 			
-			settings: [
-				{ name: "show_notifs", label: "Show Requests", enabled: true, class: "!hide_notifs" }
-			],
+			settings: {
+				show_notifs: { label: "Show Requests", enabled: true, class: "!hide_notifs" }
+			},
 			
 			update(node) {
 				node.style.display = this.enabled ? "" : "none"
@@ -265,9 +288,9 @@ const Navigation = {
 		Navigation.register("header_messages", {
 			label: "Show Messages",
 			
-			settings: [
-				{ name: "show_notifs", label: "Show Unread", enabled: true, class: "!hide_notifs" }
-			],
+			settings: {
+				show_notifs: { label: "Show Unread", enabled: true, class: "!hide_notifs" }
+			},
 			
 			update(node) {
 				node.style.display = this.enabled ? "" : "none"
@@ -313,12 +336,12 @@ const Navigation = {
 		Navigation.register("sidebar_messages", {
 			label: "Show Messages",
 			
-			settings: [
-				{ name: "show_notifs", label: "Show Unread", enabled: true, class: "!hide_notifs" }
-			],
+			settings: {
+				show_notifs: { label: "Show Unread", enabled: true, class: "!hide_notifs" }
+			},
 			
 			selector: "#nav-message",
-			enabled: false,
+			enabled: true,
 			
 			update(node) {
 				node.parentNode.style.display = this.enabled ? "" : "none"
@@ -326,7 +349,14 @@ const Navigation = {
 			
 			nodeAdded(node) {
 				const update = () => Navigation.elements.header_messages.updateAll()
-				new MutationObserver(update).observe(node, { childList: true, subtree: true, attributeFilter: ["href"] })
+				
+				new MutationObserver(update).observe(node, {
+					childList: true,
+					subtree: true,
+					characterData: true,
+					attributeFilter: ["href"]
+				})
+				
 				update()
 			}
 		})
@@ -334,12 +364,12 @@ const Navigation = {
 		Navigation.register("sidebar_friends", {
 			label: "Show Friends",
 			
-			settings: [
-				{ name: "show_notifs", label: "Show Requests", enabled: true, class: "!hide_notifs" }
-			],
+			settings: {
+				show_notifs: { label: "Show Requests", enabled: true, class: "!hide_notifs" }
+			},
 			
 			selector: "#nav-friends",
-			enabled: false,
+			enabled: true,
 			
 			update(node) {
 				node.parentNode.style.display = this.enabled ? "" : "none"
@@ -347,7 +377,14 @@ const Navigation = {
 			
 			nodeAdded(node) {
 				const update = () => Navigation.elements.header_friends.updateAll()
-				new MutationObserver(update).observe(node, { childList: true, subtree: true, attributeFilter: ["href"] })
+				
+				new MutationObserver(update).observe(node, {
+					childList: true,
+					subtree: true,
+					characterData: true,
+					attributeFilter: ["href"]
+				})
+				
 				update()
 			}
 		})
@@ -380,6 +417,22 @@ const Navigation = {
 			}
 		})
 		
+		Navigation.register("sidebar_premium", {
+			label: "Show Premium",
+			
+			reactInject: {
+				selector: ".left-col-list",
+				index: { selector: { key: "blog" }, offset: -1 },
+				html: `
+				<li>
+					<a href=/premium/membership id=nav-premium class="dynamic-overflow-container text-nav">
+						<div><span class=icon-nav-premium-btr></span></div>
+						<span class="font-header-2 dynamic-ellipsis-item">Premium</span>
+					</a>
+				</li>`
+			}
+		})
+		
 		Navigation.register("sidebar_blogfeed", {
 			label: "Show Blog Feed",
 			
@@ -390,6 +443,7 @@ const Navigation = {
 					this.loadedFeed = true
 					
 					const blogfeed = node.$find("#btr-blogfeed")
+					const parser = new DOMParser()
 					
 					const updateBlogFeed = blogFeedData => {
 						blogfeed.replaceChildren()
@@ -401,7 +455,9 @@ const Navigation = {
 									${item.title.trim() + " "}
 									<span class="btr-feeddate">(${$.dateSince(item.date)})</span>
 								</div>
-								<div class="btr-feeddesc">${item.desc}</div>
+								<div class="btr-feeddesc">${
+									parser.parseFromString(item.desc, "text/html").documentElement.textContent.replace(/\s+/g, " ").trim().slice(0, 220)
+								}</div>
 							</a>`)
 						}
 					}
@@ -421,19 +477,25 @@ const Navigation = {
 			}
 		})
 		
-		Navigation.register("sidebar_premium", {
-			label: "Show Premium",
+		Navigation.register("sidebar_shop", {
+			label: "Show Official Store",
 			
-			reactInject: {
-				selector: ".left-col-list",
-				index: { selector: { key: "blog" }, offset: -1 },
-				html: `
-				<li>
-					<a href=/premium/membership id=nav-premium class="dynamic-overflow-container text-nav">
-						<div><span class=icon-nav-premium-btr></span></div>
-						<span class="font-header-2 dynamic-ellipsis-item">Premium</span>
-					</a>
-				</li>`
+			selector: "#nav-shop",
+			enabled: true,
+			
+			update(node) {
+				node.parentNode.style.display = this.enabled ? "" : "none"
+			}
+		})
+		
+		Navigation.register("sidebar_giftcards", {
+			label: "Show Gift Cards",
+			
+			selector: "#nav-giftcards",
+			enabled: true,
+			
+			update(node) {
+				node.parentNode.style.display = this.enabled ? "" : "none"
 			}
 		})
 		

@@ -128,7 +128,7 @@ pageInit.messages = function() {
 	
 	document.$watch(">body", body => body.classList.add("btr-messages"))
 
-	modifyTemplate("messages-nav", template => {
+	angularHook.modifyTemplate("messages-nav", template => {
 		const curPage = template.$find(".CurrentPage")
 
 		if(curPage) {
@@ -183,9 +183,9 @@ pageInit.messages = function() {
 	})
 	
 	InjectJS.inject(() => {
-		const { hijackAngular, hijackFunction, IS_DEV_MODE } = window.BTRoblox
+		const { angularHook, hijackFunction, IS_DEV_MODE } = window.BTRoblox
 		
-		hijackAngular("messages", {
+		angularHook.hijackModule("messages", {
 			messagesNav(handler, args, argMap) {
 				const result = handler.apply(this, args)
 

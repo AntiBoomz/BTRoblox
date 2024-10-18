@@ -310,6 +310,21 @@ if(IS_BACKGROUND_PAGE) {
 		}
 	}
 
+	// Add support for locale urls
+	
+	for(const entry of ContextMenu.items) {
+		if(entry.targetUrlPatterns) {
+			for(let i = entry.targetUrlPatterns.length; i--;) {
+				const pattern = entry.targetUrlPatterns[i]
+				const index = pattern.indexOf(".roblox.com/") + 11
+				
+				if(index !== -1) {
+					entry.targetUrlPatterns.push(`${pattern.slice(0, index)}/*${pattern.slice(index)}`)
+				}
+			}
+		}
+	}
+	
 	// Add page versions for every item
 
 	for(let i = 0, len = ContextMenu.items.length; i < len; i++) {

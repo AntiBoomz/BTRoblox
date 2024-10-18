@@ -1,5 +1,60 @@
 "use strict"
 
+const btrFriends = { // TODO: Move this elsewhere
+	friendsPromise: null,
+	friendsCached: null,
+	friendsLoaded: false,
+	
+	getFriends() {
+		if(this.friendsCached) { return this.friendsCached }
+		
+		try {
+			const data = btrLocalStorage.getItem("fastsearchCache")
+			
+			if(data) {
+				return this.friendsCached = data
+			}
+		} catch(ex) {
+			console.error(ex)
+		}
+		
+		return this.friendsCached = {}
+	},
+	
+	loadFriends() {
+		if(!this.friendsPromise) {
+			this.friendsPromise = loggedInUserPromise.then(userId => {
+				return RobloxApi.friends.getFriends(userId).then(json => {
+					const friendsCached = {}
+					
+					for(const friend of json.data) {
+						const cacheEntry = {
+							name: friend.name,
+							displayName: friend.displayName,
+							verified: friend.hasVerifiedBadge
+						}
+						
+						if(cacheEntry.displayName === cacheEntry.name) {
+							delete cacheEntry.displayName
+						}
+						
+						friendsCached[friend.id] = cacheEntry
+					}
+					
+					this.friendsCached = friendsCached
+					this.friendsLoaded = true
+					
+					btrLocalStorage.setItem("fastsearchCache", this.friendsCached)
+					
+					return friendsCached
+				})
+			})
+		}
+		
+		return this.friendsPromise
+	},
+}
+
 const btrFastSearch = {
 	init() {
 		const usernameRegex = /^[a-zA-Z0-9]+(?:[ _.]?[a-zA-Z0-9]+)?$/
@@ -7,7 +62,6 @@ const btrFastSearch = {
 		
 		let currentSearchText = ""
 		let lastResultsLoaded = 0
-		let friendsLoaded = false
 		
 		const thumbnailsToRequest = []
 		const thumbnailCache = {}
@@ -18,22 +72,16 @@ const btrFastSearch = {
 		let lastPresenceRequest = 0
 		let presencePromise = null
 		
-		try {
-			const data = btrLocalStorage.getItem("fastsearchCache")
-			
-			if(data) {
-				for(const [idString, entry] of Object.entries(data)) {
-					userCache[entry.name.toLowerCase()] = {
-						Username: entry.name,
-						DisplayName: entry.displayName ?? entry.name,
-						HasVerifiedBadge: entry.verified || false,
-						UserId: +idString,
-						IsFriend: true
-					}
-				}
+		let shouldLoadFriends = !btrFriends.friendsLoaded
+		
+		for(const [idString, entry] of Object.entries(btrFriends.getFriends())) {
+			userCache[entry.name.toLowerCase()] = {
+				Username: entry.name,
+				DisplayName: entry.displayName ?? entry.name,
+				HasVerifiedBadge: entry.verified || false,
+				UserId: +idString,
+				IsFriend: true
 			}
-		} catch(ex) {
-			console.error(ex)
 		}
 
 		//
@@ -125,29 +173,27 @@ const btrFastSearch = {
 			const matches = Object.entries(userCache)
 				.map(([name, user]) => {
 					const x = {
-						name, user, isAlias: name !== user.Username.toLowerCase()
+						name,
+						user,
+						isAlias: name !== user.Username.toLowerCase()
 					}
 					
-					if(!x.user.Hidden) {
-						if(name === search) {
-							x.display = user.Username
-							x.index = 0
-							x.sort = 0
-						} else if(x.user.IsFriend && !x.isAlias) {
-							const display = user.DisplayName.toLowerCase()
-							
-							const nameIndex = name.indexOf(search)
-							const displayIndex = display.indexOf(search)
-							
-							if(nameIndex !== -1 && (displayIndex === -1 || nameIndex < displayIndex)) {
+					if(!x.user.Hidden && (name === search || x.user.IsFriend && !x.isAlias)) {
+						const display = (user.DisplayName || "").toLowerCase()
+						
+						const nameIndex = name.indexOf(search)
+						const displayIndex = display.indexOf(search)
+						
+						if(nameIndex !== -1 || displayIndex !== -1) {
+							if(!user.DisplayName || user.DisplayName === user.Username) {
 								x.display = user.Username
 								x.index = nameIndex
-								x.sort = nameIndex + x.display.length / 200
-							} else if(displayIndex !== -1) {
-								x.display = user.DisplayName
-								x.index = displayIndex
-								x.sort = displayIndex + x.display.length / 200
+							} else {
+								x.display = `${user.DisplayName} (@${user.Username})`
+								x.index = displayIndex !== -1 ? displayIndex : user.DisplayName.length + 3 + nameIndex
 							}
+							
+							x.sort = name === search ? 0 : x.index + x.display.length / 200
 						}
 					}
 					
@@ -388,20 +434,17 @@ const btrFastSearch = {
 							reloadSearchResults(true)
 							return
 						}
-
-						const user = userCache[search] = {
-							Username: data.name,
-							DisplayName: data.displayName,
-							UserId: data.id,
-							HasVerifiedBadge: data.hasVerifiedBadge
-						}
-
-						const name = user.Username.toLowerCase()
-						if(search !== name) {
-							if(userCache[name]) {
-								userCache[search] = userCache[name]
-							} else {
-								userCache[name] = user
+						
+						const user = userCache[data.name.toLowerCase()]
+						
+						if(user && !user.Temporary) {
+							userCache[search] = user
+						} else {
+							userCache[search] = {
+								Username: data.name,
+								DisplayName: data.displayName,
+								UserId: data.id,
+								HasVerifiedBadge: data.hasVerifiedBadge
 							}
 						}
 
@@ -410,45 +453,29 @@ const btrFastSearch = {
 				}
 			}
 
-			if(!friendsLoaded) {
-				friendsLoaded = true
-
-				loggedInUserPromise.then(userId => {
-					RobloxApi.friends.getFriends(userId).then(json => {
-						for(const [name, entry] of Object.entries(userCache)) {
-							if(entry.IsFriend) {
-								delete userCache[name]
-							}
+			if(shouldLoadFriends) {
+				shouldLoadFriends = false
+				
+				btrFriends.loadFriends().then(friends => {
+					for(const [name, entry] of Object.entries(userCache)) {
+						if(entry.IsFriend) {
+							delete userCache[name]
 						}
-
-						const friendsCache = {}
+					}
+					
+					for(const [idString, entry] of Object.entries(friends)) {
+						const user = userCache[entry.name.toLowerCase()] = {
+							Username: entry.name,
+							DisplayName: entry.displayName ?? entry.name,
+							HasVerifiedBadge: entry.verified || false,
+							UserId: +idString,
+							IsFriend: true
+						}
 						
-						for(const friend of json.data) {
-							const cacheEntry = {
-								name: friend.name,
-								displayName: friend.displayName,
-								verified: friend.hasVerifiedBadge
-							}
-							
-							if(cacheEntry.displayName === cacheEntry.name) {
-								delete cacheEntry.displayName
-							}
-							
-							friendsCache[friend.id] = cacheEntry
-
-							userCache[friend.name.toLowerCase()] = {
-								Username: friend.name,
-								DisplayName: friend.displayName,
-								UserId: friend.id,
-								IsFriend: true
-							}
-
-							requestPresence(friend.id)
-						}
-
-						btrLocalStorage.setItem("fastsearchCache", friendsCache)
-						reloadSearchResults(true)
-					})
+						requestPresence(user.UserId)
+					}
+					
+					reloadSearchResults(true)
 				})
 			}
 
@@ -571,7 +598,7 @@ const btrFastSearch = {
 			new MutationObserver(requestClassUpdate).observe(search, { subtree: true, attributes: true, attributeFilter: ["class"] })
 		}, { continuous: true })
 		
-		reactInject({
+		reactHook.inject({
 			selector: "#navbar-universal-search ul, .navbar-search ul",
 			index: 0,
 			html: `<div id="btr-fastsearch-container"><div style=display:none></div></div>`

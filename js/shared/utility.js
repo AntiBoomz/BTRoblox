@@ -892,7 +892,7 @@ if(self.localStorage) {
 			for(let i = localStorage.length; i--;) {
 				const key = localStorage.key(i)
 				
-				if(key.startsWith("btrLayeredCache-") || key.startsWith("btr-")) { // Remove legacy data
+				if(key.startsWith("btrLayeredCache-") || key.startsWith("btr-") || key === "BTRoblox:homeShowSecondRow") { // Remove legacy data
 					if(key === "btr-sv-settings") {
 						try { this.setItem("svSettings", JSON.parse(localStorage.getItem(key))) }
 						catch {}
@@ -964,10 +964,12 @@ const html = function(...args) {
 	return elem
 }
 
-const assert = (bool, ...args) => {
-	if(!bool) { throw new Error(...args) }
-	return bool
+const assert = (value, ...args) => {
+	if(!value) { throw new Error(...args) }
+	return value
 }
+
+const assert_warn = (value, ...args) => (!value && console.warn(...args), value)
 
 const stringToBuffer = str => {
 	const buff = new ArrayBuffer(str.length)

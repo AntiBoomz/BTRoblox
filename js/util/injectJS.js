@@ -3,18 +3,9 @@
 const InjectJS = {
 	messageListeners: {},
 	
-	inject(args, fn) {
-		if(typeof args === "function") {
-			fn = args
-			args = []
-		}
-		
+	inject(fn, ...args) {
 		if(typeof fn !== "function") {
 			throw new TypeError("fn is not a function")
-		}
-		
-		if(!Array.isArray(args)) {
-			args = [args]
 		}
 		
 		const injector = document.createElement("div")

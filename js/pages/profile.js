@@ -75,93 +75,76 @@ pageInit.profile = userId => {
 		</div>
 
 		<div class=btr-profile-bottom>
+			<div class=placeholder-posts style=display:none></div>
 			<div class=placeholder-collections style=display:none></div>
 			<div class=placeholder-inventory style=display:none></div>
 		</div>
 	</div>`
 
 	const bodyWatcher = document.$watch("body", body => body.classList.add("btr-profile")).$then()
-
+	
+	const presencePromise = new Promise(resolve => resolve(RobloxApi.presence.getPresence([userId]).then(json => json?.userPresences?.[0])))
+	
 	bodyWatcher.$watch(".profile-container").$then()
+		.$watch(".profile-header-top .avatar-status", statusContainer => {
+			const statusDiv = html`<div class="btr-header-status-parent"></div>`
+			newCont.$find(".placeholder-status").replaceWith(statusDiv)
+			
+			presencePromise.then(presence => {
+				if(presence?.userPresenceType === 3) { // studio
+					statusDiv.replaceChildren(html`<span class="btr-header-status-text btr-status-studio">In Studio</span>`)
+					
+				} else if(presence?.userPresenceType === 2 && presence.placeId) {
+					statusDiv.replaceChildren(
+						html`<a href="/games/${presence.placeId}/" title="${presence.lastLocation}"><span class="btr-header-status-text btr-status-ingame">${presence.lastLocation}</span></a>`,
+						html`<a class="btr-header-status-follow-button" title="Follow" onclick="Roblox.GameLauncher.followPlayerIntoGame(${userId})">\uD83D\uDEAA</a>`
+					)
+					
+				} else if(presence?.userPresenceType === 2) {
+					statusDiv.replaceChildren(
+						html`<span class="btr-header-status-text btr-status-ingame">In Game</span>`
+					)
+					
+				} else if(presence?.userPresenceType) { // online
+					statusDiv.replaceChildren(html`<span class="btr-header-status-text btr-status-online">Online</span>`)
+					
+				} else {
+					statusDiv.replaceChildren(html`<span class="btr-header-status-text btr-status-offline">Offline</span>`)
+				}
+			})
+		})
 		.$watch(".rbx-tabs-horizontal", cont => {
 			cont.before(newCont)
 			cont.setAttribute("ng-if", "false") // Let's make angular clean it up :)
-
-			cont.$watch(".profile-about", about => {
-				newCont.$find(".profile-about").setAttribute("ng-controller", about.getAttribute("ng-controller"))
-	
-				about
-					.$watch("profile-description,.profile-about-content", desc => {
-						if(desc.classList.contains("profile-about-content") && desc.closest("profile-description")) {
-							// in case it selected profile-about-content in the new profile-description
-							desc = desc.closest("profile-description")
-						}
-
-						newCont.$find(".placeholder-desc").replaceWith(desc)
-
-						if(desc.matches("profile-description")) {
-							newCont.$find(".btr-profile-about > .container-header").style.visibility = "hidden"
-						}
-					})
-					.$watch("#aliases-container", aliases => {
-						newCont.$find(".placeholder-aliases").replaceWith(aliases)
-					})
-					.$watch(".profile-about-footer", footer => {
-						newCont.$find(".placeholder-footer").replaceWith(footer)
-			
-						const tooltip = footer.$find(".tooltip-pastnames")
-						if(tooltip) { tooltip.setAttribute("data-container", "body") } // Display tooltip over side panel
-					})
-					.$watch(".social-links,.profile-social-networks", social => {
-						newCont.$find(".btr-profile-about").prepend(social)
-					})
-			})
 		})
-		.$watch(".profile-header-top .header-caption", () => { // Wait for the first element after status
-			const status = $(".profile-avatar-status")
-			const statusDiv = html`<div class="btr-header-status-parent"></div>`
-			newCont.$find(".placeholder-status").replaceWith(statusDiv)
-			const statusText = html`<span class="btr-header-status-text"></span>`
-			statusDiv.append(statusText)
-			const statusLabel = html`<span></span>`
-			statusText.append(statusLabel)
+		.$watch(".profile-about", about => {
+			newCont.$find(".profile-about").setAttribute("ng-controller", about.getAttribute("ng-controller"))
 
-			if(!status) {
-				statusText.classList.add("btr-status-offline")
-				statusLabel.textContent = "Offline"
-			} else {
-				const statusTitle = status.getAttribute("title")
-
-				if(status.classList.contains("icon-game")) {
-					statusText.classList.add("btr-status-ingame")
-					statusLabel.textContent = statusTitle || "In Game"
-					
-					const link = status.parentElement
-					if(link.href && link.href.includes("PlaceId=")) {
-						const anchor = html`<a href="${link.href}" title="${status.title}"></a>`
-						statusText.before(anchor)
-						anchor.prepend(statusText)
-						anchor.after(html`<a class="btr-header-status-follow-button" title="Follow" onclick="Roblox.GameLauncher.followPlayerIntoGame(${userId})">\uD83D\uDEAA</a>`)
+			about
+				.$watch("profile-description,.profile-about-content", desc => {
+					if(desc.classList.contains("profile-about-content") && desc.closest("profile-description")) {
+						// in case it selected profile-about-content in the new profile-description
+						desc = desc.closest("profile-description")
 					}
-				} else if(status.classList.contains("icon-studio")) {
-					statusText.classList.add("btr-status-studio")
-					statusLabel.textContent = statusTitle || "In Studio"
 
-					$(".profile-container").$watch("#profile-header-more").$then().$watch(">script", script => {
-						if(script.textContent.includes("play_placeId=")) {
-							const id = +script.textContent.match(/play_placeId=(\d+)/)[1]
-							if(Number.isSafeInteger(id) && id !== 0) {
-								const anchor = html`<a href="/games/${id}/" title="${statusTitle}"></a>`
-								statusText.before(anchor)
-								anchor.prepend(statusText)
-							}
-						}
-					})
-				} else {
-					statusText.classList.add("btr-status-online")
-					statusLabel.textContent = statusTitle || "Online"
-				}
-			}
+					newCont.$find(".placeholder-desc").replaceWith(desc)
+
+					if(desc.matches("profile-description")) {
+						newCont.$find(".btr-profile-about > .container-header").style.visibility = "hidden"
+					}
+				})
+				.$watch("#aliases-container", aliases => {
+					newCont.$find(".placeholder-aliases").replaceWith(aliases)
+				})
+				.$watch(".profile-about-footer", footer => {
+					newCont.$find(".placeholder-footer").replaceWith(footer)
+		
+					const tooltip = footer.$find(".tooltip-pastnames")
+					if(tooltip) { tooltip.setAttribute("data-container", "body") } // Display tooltip over side panel
+				})
+				.$watch("social-link-icon-list", social => {
+					newCont.$find(".btr-profile-about").prepend(social)
+				})
 		})
 		.$watch(".profile-avatar", async avatar => {
 			newCont.$find(".placeholder-avatar").replaceWith(avatar)
@@ -206,6 +189,13 @@ pageInit.profile = userId => {
 				}
 			})
 		})
+		.$watch(".profile-posts", posts => {
+			newCont.$find(".placeholder-posts").replaceWith(posts)
+		})
+		.$watch("#friends-carousel-container", friends => {
+			newCont.$find(".placeholder-friends").replaceWith(friends)
+			initReactFriends(true)
+		})
 		.$watch(".profile-statistics", outerStats => {
 			newCont.$find(".placeholder-stats").replaceWith(outerStats)
 			outerStats.classList.add("btr-profileStats")
@@ -226,33 +216,35 @@ pageInit.profile = userId => {
 						stats.prepend(label)
 					}
 					
-					if($(".profile-avatar-status")) {
-						label.$find(".text-lead").textContent = "Now"
-						return
-					}
-					
-					let numRetries = 0
-					
-					const getLastOnline = () => {
-						RobloxApi.presence.getLastOnline([userId]).then(json => {
-							if(!json?.lastOnlineTimestamps?.length) {
-								if(numRetries < 2) {
-									numRetries += 1
-									setTimeout(getLastOnline, numRetries * 2000)
-								} else {
-									label.$find(".text-lead").textContent = "Failed"
+					presencePromise.then(presence => {
+						if(presence?.userPresenceType) {
+							label.$find(".text-lead").textContent = "Now"
+							return
+						}
+						
+						let numRetries = 0
+						
+						const getLastOnline = () => {
+							RobloxApi.presence.getLastOnline([userId]).then(json => {
+								if(!json?.lastOnlineTimestamps?.length) {
+									if(numRetries < 2) {
+										numRetries += 1
+										setTimeout(getLastOnline, numRetries * 2000)
+									} else {
+										label.$find(".text-lead").textContent = "Failed"
+									}
+									return
 								}
-								return
-							}
-							
-							const lastOnline = new Date(json.lastOnlineTimestamps[0].lastOnline)
-							
-							label.$find(".text-lead").textContent = `${lastOnline.$since()}`
-							label.$find(".text-lead").title = lastOnline.$format("MMM D, YYYY | hh:mm A (T)")
-						})
-					}
-					
-					getLastOnline()
+								
+								const lastOnline = new Date(json.lastOnlineTimestamps[0].lastOnline)
+								
+								label.$find(".text-lead").textContent = `${lastOnline.$since()}`
+								label.$find(".text-lead").title = lastOnline.$format("MMM D, YYYY | hh:mm A (T)")
+							})
+						}
+						
+						getLastOnline()
+					})
 				})
 			}
 		})
@@ -433,8 +425,6 @@ pageInit.profile = userId => {
 								</a>
 								<div data-toggle="btr-placedrop-${this.placeId}" style="display:none">
 									<ul class="dropdown-menu" role="menu">
-										<li><a onclick=Roblox.GameLauncher.editGameInStudio(${this.placeId})><div>Edit</div></a></li>
-										<li><a href="/places/${this.placeId}/update"><div>Configure this Place</div></a></li>
 										<li><a class=btr-btn-toggle-profile data-placeid="${this.placeId}"><div>Remove from Profile</div></a></li>
 									</ul>
 								</div>
@@ -444,15 +434,14 @@ pageInit.profile = userId => {
 
 							gamePromise.then(data => {
 								if(!data) { return }
-
-								dropdown.$find(".dropdown-menu").children[1].after(
-									html`<li><a href=/universes/configure?id=${data.universeId}><div>Configure this Experience</div></a></li>`,
-									html`<li><a href=/localization/games/${data.universeId}/configure><div>Configure Localization</div></a></li>`,
-								)
 								
-								dropdown.$find(".dropdown-menu").children[0].after(
-									html`<li><a href="https://create.roblox.com/creations/experiences/${this.placeId}/stats"><div>Developer Stats</div></a></li>`,
+								dropdown.$find(".dropdown-menu").prepend(
+									html`<li><a onclick="Roblox.GameLauncher.editGameInStudio(${this.placeId}, ${data.universeId})"><div>Edit</div></a></li>`,
+									html`<li><a href="https://create.roblox.com/dashboard/creations/experiences/${data.universeId}/overview"><div>View Analytics</div></a></li>`,
 									html`<li><a href=/sponsored/experiences/${data.universeId}/create><div>Sponsor this Experience</div></a></li>`,
+									html`<li><a href="https://create.roblox.com/dashboard/creations/experiences/${data.universeId}/places/${this.placeId}/configure"><div>Configure this Place</div></a></li>`,
+									html`<li><a href="https://create.roblox.com/dashboard/creations/experiences/${data.universeId}/configure"><div>Configure this Experience</div></a></li>`,
+									html`<li><a href="https://create.roblox.com/dashboard/creations/experiences/${data.universeId}/localization"><div>Configure Localization</div></a></li>`,
 								)
 							})
 						})
@@ -490,9 +479,17 @@ pageInit.profile = userId => {
 								descContent.textContent = data.description
 
 								if(!data.isPlayable) {
+									const prohibitedReasons = {
+										UniverseDoesNotHaveARootPlace: "This game has no root place.",
+										UniverseRootPlaceIsNotActive: "This game is not active",
+										InsufficientPermissionFriendsOnly: "This game is friends only.",
+										InsufficientPermissionGroupOnly: "Group members only.",
+										UnderReview: "This game is under moderation review."
+									}
+									
 									const btnCont = this.item.$find(".btr-game-playbutton-container")
 									btnCont.classList.add("btr-place-prohibited")
-									btnCont.textContent = ProhibitedReasons[data.reasonProhibited] || data.reasonProhibited
+									btnCont.textContent = prohibitedReasons[data.reasonProhibited] || data.reasonProhibited
 								}
 							}
 
@@ -555,9 +552,6 @@ pageInit.profile = userId => {
 			switcher.$watch(">.hlist").$then().$watchAll(".slide-item-container", slide => {
 				gameItems.push(new GameItem(slide))
 			})
-		})
-		.$watch("#people-list-container", friends => {
-			newCont.$find(".placeholder-friends").replaceWith(friends)
 		})
 		.$watch(".favorite-games-container", favorites => favorites.remove())
 		.$watch(".profile-collections", collections => {
@@ -797,6 +791,7 @@ pageInit.profile = userId => {
 				data = {
 					items: [],
 					nextPage: 1,
+					nextPageCursor: "",
 					hasMore: true
 				}
 				
@@ -808,7 +803,7 @@ pageInit.profile = userId => {
 			
 			while(data.hasMore && pageEnd > data.items.length) {
 				isLoading = true
-				const json = await RobloxApi.www.getFavorites(userId, category, 100, data.nextPage, 150, 150)
+				const json = await RobloxApi.www.getFavorites(userId, category, 100, data.nextPageCursor, 150, 150)
 				isLoading = false
 				
 				if(!json?.IsValid) {
@@ -817,18 +812,18 @@ pageInit.profile = userId => {
 				
 				data.items.push(...json.Data.Items)
 				
-				const expectedTotalItems = json.Data.Start + 100
-				
 				data.nextPage += 1
-				data.hasMore = expectedTotalItems < json.Data.TotalItems
-				data.totalItems = data.hasMore ? json.Data.TotalItems - (expectedTotalItems - data.items.length) : data.items.length
+				data.nextPageCursor = json.Data.NextCursor
+				
+				data.hasMore = !!data.nextPageCursor
+				data.totalItems = data.hasMore ? Math.max(data.items.length + 1, json.Data.TotalItems - ((data.nextPage - 1) * 100 - data.items.length)) : data.items.length
 			}
 			
 			pager.setPage(page)
 			pager.setMaxPage(Math.floor((data.totalItems - 1) / pageSize) + 1)
 			hlist.replaceChildren()
 			
-			if(data.items.length === 0) {
+			if(pageStart >= data.items.length) {
 				const categoryName = dropdownLabel.textContent
 				hlist.append(html`<div class='section-content-off btr-section-content-off'>This user has no favorite ${categoryName}</div>`)
 				return
@@ -885,9 +880,9 @@ pageInit.profile = userId => {
 	}
 	
 	InjectJS.inject(() => {
-		const { hijackAngular } = window.BTRoblox
+		const { angularHook } = window.BTRoblox
 		
-		hijackAngular("peopleList", {
+		angularHook.hijackModule("peopleList", {
 			layoutService(handler, args) {
 				const result = handler.apply(this, args)
 				result.maxNumberOfFriendsDisplayed = 10

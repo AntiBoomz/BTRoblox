@@ -68,7 +68,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 #header .btr-nav-notif {
 	box-sizing: content-box;
 	position: absolute;
-	display: flex;
+	display: block;
 	top: -2px;
 	right: -2px;
 
@@ -76,13 +76,12 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	padding: 0px 4px;
 	height: 16px;
 	min-width: 8px;
-	align-items: center;
-	justify-content: center;
+	text-align: center;
 
 	color: #191919;
 	font-size: 10px;
 	font-weight: bold;
-	line-height: 1.4em;
+	line-height: 17px;
 
 	border-radius: 10px;
 	border: 2px solid #0074bd;
@@ -200,7 +199,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 }
 
 #btr-blogfeed .btr-feed:hover {
-	background: rgba(0,0,0,0.08);
+	background: rgba(0, 0, 0, 0.1);
 }
 
 #btr-blogfeed .btr-feedcreator, #btr-blogfeed .btr-feeddate {
@@ -221,7 +220,7 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	overflow: hidden;
 	max-height: 0;
 	width: 100%;
-	opacity: .75;
+	opacity: 0.8;
 	font-weight: 300;
 	transition: max-height 0.4s;
 	margin-top: 4px;
@@ -1182,6 +1181,57 @@ a:not(.disabled):hover > .btr-icon-content {
 	z-index: 2;
 }
 
+body div.btr-invalid-layered {
+	position: absolute;
+	left: 6px;
+	top: 6px;
+	width: 16px;
+	height: 16px;
+	box-sizing: border-box;
+	z-index: 2;
+	border-radius: 8px;
+	background: rgba(200, 20, 20, 1);
+	color: #fff;
+	text-align: center;
+	line-height: 14px;
+	font-weight: 600;
+	font-size: 14px;
+	cursor: default;
+	user-select: none;
+	pointer-events: all;
+}
+
+.btr-layered-loading .btr-invalid-layered {
+	left: 22px;
+}
+
+body div.btr-invalid-layered:hover::after {
+	content: "Unable to preview some layered clothing.";
+	display: block;
+	position: absolute;
+	left: 100%;
+	top: 0;
+	bottom: 0;
+	padding-left: 4px;
+	color: #fff;
+	pointer-events: none;
+	text-align: left;
+	font-size: 12px;
+	font-weight: normal;
+	opacity: 0.7;
+	z-index: 10000;
+	
+	width: 400px;
+}
+
+.item-card div.btr-invalid-layered:hover::after {
+	max-width: 100px;
+}
+
+.light-theme div.btr-invalid-layered:hover::after {
+	color: #333;
+}
+
 /* groups.shoutAlertsInNotifStream */
 
 .btr-notif-desc {
@@ -1198,4 +1248,83 @@ a:not(.disabled):hover > .btr-icon-content {
 .btr-hide-ads .top-abp-container,.btr-hide-ads #AdvertisingLeaderboard,.btr-hide-ads .btr-hide-ads #AdvertisementRight,
 .btr-hide-ads #MessagesAdSkyscraper,.btr-hide-ads .Ads_WideSkyscraper,.btr-hide-ads .profile-ads-container,.btr-hide-ads #ad {
 	display: none !important;
+}
+
+/* react friends list */
+
+.btr-friends-secondRow {
+	--btr-friend-rows: 2;
+}
+
+html .react-friends-carousel-container:has(.btr-friends-secondRow) {
+	min-height: 187px;
+	height: auto;
+}
+
+html .btr-friends-list .friends-carousel-container {
+	padding-left: 0;
+	padding-right: 0;
+}
+
+html .btr-friends-list .friends-carousel-container > div {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+	grid-template-rows: repeat(var(--btr-friend-rows, 1), auto) repeat(100, 0);
+}
+
+html .btr-friends-list .friends-carousel-tile #friend-tile-button {
+	width: 100%;
+	padding: 0;
+}
+
+html .btr-friends-list .friends-carousel-tile .avatar {
+	margin-left: auto;
+	margin-right: auto;
+}
+
+html .btr-friends-list .friends-carousel-tile .friends-carousel-tile-name {
+	width: 100%;
+	justify-content: center;
+}
+
+html .btr-friends-list .friends-carousel-tile .friends-carousel-display-name {
+	max-width: 100%;
+	width: auto;
+}
+
+html .btr-friends-list .friends-carousel-tile:has(.friend-tile-verified-badge) .friends-carousel-display-name {
+	/* account for verified badge (21px wide) */
+	max-width: calc(100% - 21px);
+}
+
+html .btr-friends-list .friends-carousel-tile .btr-friends-carousel-username-label {
+	margin-top: -6px;
+	margin-bottom: -4px;
+}
+
+html .btr-friends-list .friends-carousel-tile .btr-friends-carousel-username {
+	font-size: .7em;
+	color: #b8b8b8;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+
+html .btr-friends-list .light-theme .friends-carousel-tile .btr-friends-carousel-username {
+	color: #737373;
+}
+
+/* fix dropdown game thumbnails when loading (shimmer class messes with size) */
+
+html .btr-friends-list .friends-carousel-tile .friend-tile-dropdown .friend-tile-game-card {
+	float: left;
+	width: 100px;
+	height: 100px;
+}
+
+/* friend dropdown "Chat with X" text wrap to second line with long names which looks odd */
+
+html .btr-friends-list .friends-carousel-tile .friend-tile-dropdown .friend-tile-dropdown-button:has(.icon-chat-gray) {
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
 }

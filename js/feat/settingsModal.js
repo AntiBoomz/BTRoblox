@@ -12,19 +12,23 @@ const SettingsModal = {
 		
 		if(visible) {
 			document.$watch(">body", body => this.visible && body.appendChild(this.settingsDiv))
-	
-			const copyThemeFromElement = target => {
-				this.settingsDiv.classList.toggle("btr-light-theme", target.classList.contains("light-theme"))
-				this.settingsDiv.classList.toggle("btr-dark-theme", target.classList.contains("dark-theme"))
-			}
-		
-			document.$watch(".light-theme:not(.btr-settings-modal), .dark-theme:not(.btr-settings-modal)", target => {
-				if(this.themeObserver || !this.settingsDiv.parentNode) { return }
+			
+			if(location.hostname === "create.roblox.com") {
+				this.settingsDiv.classList.add("btr-dark-theme")
+			} else {
+				const copyThemeFromElement = target => {
+					this.settingsDiv.classList.toggle("btr-light-theme", target.classList.contains("light-theme"))
+					this.settingsDiv.classList.toggle("btr-dark-theme", target.classList.contains("dark-theme"))
+				}
+			
+				document.$watch(".light-theme:not(.btr-settings-modal), .dark-theme:not(.btr-settings-modal)", target => {
+					if(this.themeObserver || !this.settingsDiv.parentNode) { return }
 
-				this.themeObserver = new MutationObserver(() => copyThemeFromElement(target))
-				this.themeObserver.observe(target, { attributeFilter: ["class"], attributes: true })
-				copyThemeFromElement(target)
-			})
+					this.themeObserver = new MutationObserver(() => copyThemeFromElement(target))
+					this.themeObserver.observe(target, { attributeFilter: ["class"], attributes: true })
+					copyThemeFromElement(target)
+				})
+			}
 
 			const lastContentOpen = sessionStorage.getItem("btr-settings-open")
 			if(lastContentOpen && this.contentDivs[lastContentOpen]) {
@@ -442,7 +446,7 @@ const SettingsModal = {
 				</div>
 				<div class=btr-settings-footer>
 					<div class=btr-settings-footer-version>v${chrome.runtime.getManifest().version}</div>
-					<a href=https://twitter.com/AntiBoomz target=_blank title="Contact me on Twitter" class=btr-settings-footer-twitter></a>
+					<a href=https://x.com/AntiBoomz target=_blank title="Contact me on X" class=btr-settings-footer-x></a>
 					<a href=https://www.roblox.com/users/4719353/profile target=_blank title="Check me out on Roblox" class=btr-settings-footer-roblox></a>
 					<div class=btr-settings-footer-text>Refresh the page to apply settings</div>
 				</div>
@@ -522,6 +526,8 @@ const SettingsModal = {
 			}
 			
 			for(const element of Object.values(Navigation.elements)) {
+				if(element.parent) { continue }
+				
 				const checkbox = createCheckbox(element.label || element.name, enabled => {
 					element.setEnabled(enabled)
 				})
@@ -535,9 +541,9 @@ const SettingsModal = {
 				})
 				
 				if(element.settings) {
-					for(const setting of element.settings) {
+					for(const setting of Object.values(element.settings)) {
 						const settingCheckbox = createCheckbox(setting.label || setting.name, enabled => {
-							element.setSettingEnabled(setting.name, enabled)
+							setting.setEnabled(enabled)
 						})
 						
 						settingCheckbox.elem.style.paddingLeft = "20px"

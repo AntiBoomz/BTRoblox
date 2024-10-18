@@ -7,15 +7,15 @@ function enableRedesign() {
 	})
 
 	if(SETTINGS.get("groups.modifySmallSocialLinksTitle")) {
-		modifyTemplate(["social-link-icon-list", "social-link-icon"], (listTemplate, iconTemplate) => {
+		angularHook.modifyTemplate(["social-link-icon-list", "social-link-icon"], (listTemplate, iconTemplate) => {
 			iconTemplate.$find("a").title = `{{ $ctrl.title || $ctrl.type }}`
 			listTemplate.$find("social-link-icon").title = "socialLink.title"
 		})
 		
 		InjectJS.inject(() => {
-			const { hijackAngular } = window.BTRoblox
+			const { angularHook } = window.BTRoblox
 			
-			hijackAngular("socialLinksJumbotron", {
+			angularHook.hijackModule("socialLinksJumbotron", {
 				socialLinkIcon(component) {
 					component.bindings.title = "<"
 				}
@@ -37,7 +37,7 @@ function enableRedesign() {
 			update()
 		})
 		
-		modifyTemplate(["group-base", "group-games", "group-about", "group-tab"], (baseTemplate, gamesTemplate, aboutTemplate, tabTemplate) => {
+		angularHook.modifyTemplate(["group-base", "group-games", "group-about", "group-tab"], (baseTemplate, gamesTemplate, aboutTemplate, tabTemplate) => {
 			const groupHeader = baseTemplate.$find(".group-header")
 			const groupAbout = groupHeader.parentNode
 			const groupContainer = groupAbout.parentNode
@@ -51,8 +51,15 @@ function enableRedesign() {
 			groupAbout.after(socialLinks)
 			
 			const shout = aboutTemplate.$find(".group-shout")
-			shout.classList.add("btr-shout-container")
-			groupAbout.after(shout)
+			if(shout) {
+				shout.classList.add("btr-shout-container")
+				groupAbout.after(shout)
+			}
+			
+			const announcement = aboutTemplate.$find("#group-announcements")
+			if(announcement) {
+				groupAbout.after(announcement)
+			}
 			
 			// Show group wall on all tabs
 			
@@ -80,21 +87,21 @@ function enableRedesign() {
 			aboutTemplate.$find("group-members-list")?.setAttribute("ng-show", "!groupDetailsConstants.tabs.about.btrCustomTab")
 		})
 
-		modifyTemplate("group-members-list", template => {
+		angularHook.modifyTemplate("group-members-list", template => {
 			template.$find(".dropdown-menu li a").title = `{{ role.name }}`
 			template.$find(".dropdown-menu li a .role-member-count").title = `{{ role.memberCount | number }}`
 		})
 	}
 
 	if(SETTINGS.get("groups.selectedRoleCount")) {
-		modifyTemplate("group-members-list", template => {
+		angularHook.modifyTemplate("group-members-list", template => {
 			const label = template.$find(".group-dropdown > button .rbx-selection-label")
 			label.after(html`<span class=btr-role-member-count title="{{ $ctrl.data.currentRoleMemberCount | number }}" ng-if="$ctrl.data.currentRoleMemberCount>0">({{ $ctrl.data.currentRoleMemberCount | abbreviate }})</span>`)
 		})
 	}
 
 	if(SETTINGS.get("general.enableContextMenus")) {
-		modifyTemplate("group-members-list", template => {
+		angularHook.modifyTemplate("group-members-list", template => {
 			template.$find(".dropdown-menu li").dataset.btrRank = `{{ role.rank }}`
 		})
 
@@ -131,7 +138,7 @@ function enableRedesign() {
 	}
 
 	if(SETTINGS.get("groups.pagedGroupWall")) {
-		modifyTemplate("group-wall", template => {
+		angularHook.modifyTemplate("group-wall", template => {
 			template.firstElementChild.setAttribute("infinite-scroll-disabled", "true")
 
 			template.$find(".group-wall").parentNode.append(html`
@@ -149,7 +156,7 @@ function enableRedesign() {
 		})
 		
 		InjectJS.inject(() => {
-			const { hijackAngular, IS_DEV_MODE } = window.BTRoblox
+			const { angularHook, IS_DEV_MODE } = window.BTRoblox
 			
 			const createCustomPager = (ctrl, { $scope }) => {
 				const wallPosts = []
@@ -316,7 +323,7 @@ function enableRedesign() {
 				}
 			}
 	
-			hijackAngular("group", {
+			angularHook.hijackModule("group", {
 				groupWallController(func, args, argMap) {
 					const result = func.apply(this, args)
 	

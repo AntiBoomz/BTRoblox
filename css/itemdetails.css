@@ -366,6 +366,15 @@ html body .btr-thumb-btn-container .btr-thumb-btn {
 .btr-thumb-popup.btr-body-popup input[type=range]:not(:disabled)::-webkit-slider-thumb:hover { box-shadow: none; }
 .btr-thumb-popup.btr-body-popup input[type=range]:not(:disabled)::-moz-range-thumb:hover { box-shadow: none; }
 
+/* fix default bundle animation button positioning */
+
+@media (min-width: 992px) {
+	body .bundle-animation-btn-container {
+		bottom: unset;
+		top: 369px;
+	}
+}
+
 /* */
 
 .btr-animation-name {

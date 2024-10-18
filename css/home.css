@@ -1,52 +1,30 @@
-.btr-hide-ads .content {
-	max-width: 970px;
+/* legacy angular friends */
+
+html .btr-home-friends .people-list-container {
+	min-height: 148px;
+	height: auto
 }
 
-/* Friend stuff */
-
-#people-list-container .people-list-container {
-	float: none;
-	overflow: hidden;
+html .btr-home-friends .people-list-container .people-list {
+	max-height: unset;
+	height: auto;
+	margin-bottom: 0;
 }
 
-.btr-home-showUsername .people-list-container,
-.btr-home-secondRow .people-list-container {
-	--btr-friend-height: 148px;
-	--btr-friend-rows: 1;
+html .btr-home-friends .people-list-container .hlist {
+	grid-template-rows: repeat(var(--btr-friend-rows, 1), auto) repeat(100, 0);
 }
 
-.btr-home-showUsername .people-list-container {
-	--btr-friend-height: 152px;
+html .btr-home-friends .people-list-container .hlist .friend {
+	height: auto;
+	margin-bottom: 16px;
 }
 
-.btr-home-secondRow .people-list-container {
-	--btr-friend-rows: 2;
+html .btr-home-friends .people-list-container .hlist .avatar-container {
+	margin: 0 auto;
 }
 
-.btr-home-showUsername .people-list-container,
-.btr-home-secondRow .people-list-container {
-	height: calc(var(--btr-friend-rows) * var(--btr-friend-height) + 42px);
-}
-
-.btr-home-showUsername .people-list-container .people-list,
-.btr-home-secondRow .people-list-container .people-list {
-	max-height: none;
-	height: calc(var(--btr-friend-rows) * var(--btr-friend-height));
-}
-
-.btr-home-showUsername .people-list-container .people-list .friend,
-.btr-home-secondRow .people-list-container .people-list .friend {
-	height: var(--btr-friend-height);
-}
-
-.btr-home-showUsername .people-list-container .people-list .friend a,
-.btr-home-secondRow .people-list-container .people-list .friend a {
-	padding-bottom: 8px; /* This moves the popup lower */
-}
-
-.people-list-container .btr-people-username {
+html .btr-home-friends .people-list-container .btr-people-username {
 	text-align: center;
-	margin-top: -5px;
-	margin-bottom: 2px;
-	font-weight: 0;
+	margin-top: -4px;
 }

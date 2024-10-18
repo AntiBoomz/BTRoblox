@@ -217,84 +217,21 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 	})
 }
 
-const validAssetUrlCache = {}
-const getCurrentValidAssetUrl = async (assetId, assetTypeId) => validAssetUrlCache[assetId] = validAssetUrlCache[assetId] || new Promise(resolve => {
-	if(InvalidDownloadableAssetTypeIds.includes(assetTypeId)) {
-		return resolve(null) // This asset is not a downloadable one (badge, gamepasses)
-	}
+const canDownloadAssetCache = {}
+const canDownloadAsset = (assetId, assetTypeId) => canDownloadAssetCache[assetId] = canDownloadAssetCache[assetId] || (async () => {
+	// NOTE: This assumes you have the marketplace/itemdetails page for the item open at the moment
+	// Marketplace pages for models you don't have access to are hidden, so we dont need to check those
 	
-	const defaultAssetUrl = AssetCache.toAssetUrl(assetId)
-	
-	if(BTRoblox.currentPage.name === "itemdetails") {
-		const itemCont = $("#item-container")
-		let creatorId = parseInt(itemCont?.dataset.expectedSellerId, 10)
+	if(/*assetTypeId === AssetType.Model ||*/ assetTypeId === AssetType.Plugin || assetTypeId === AssetType.Audio) {
+		const json = await RobloxApi.assetdelivery.requestAssetV2(assetId, { browserAssetRequest: true })
 		
-		if(Number.isNaN(creatorId)) {
-			creatorId = parseInt($(`.item-name-container a[href$="/profile"]`)?.href.match(/\/users\/(\d+)\//i)?.[1], 10)
-		}
-		
-		if(creatorId === 1 || creatorId === loggedInUser) {
-			return resolve(defaultAssetUrl)
-		}
-		
-		if($("#configure-item")) {
-			return resolve(defaultAssetUrl)
-		}
-	} else if(BTRoblox.currentPage.name === "marketplace") {
-		const configureButton = $(`a[href*="/library/configure?id=${assetId}"]`)
-		
-		if(configureButton) {
-			return resolve(defaultAssetUrl)
+		if(!json?.locations) {
+			return false
 		}
 	}
 	
-	if(assetTypeId === AssetType.Audio || assetTypeId === AssetType.Shirt || assetTypeId === AssetType.Pants || assetTypeId === AssetType.TShirt) {
-		// Disabling this for clothing because people were using btr to steal and reupload clothing
-		const promises = []
-		
-		if(IS_DEV_MODE && assetTypeId !== AssetType.Audio) {
-			return resolve(defaultAssetUrl)
-		}
-		
-		promises.push(RobloxApi.economy.getAssetDetails(assetId).then(json => {
-			if(json?.Creator?.Id === 1 || json?.Creator?.Id === loggedInUser) {
-				resolve(defaultAssetUrl)
-			}
-		}))
-		
-		promises.push(RobloxApi.develop.userCanManage(loggedInUser, assetId).then(json => {
-			if(json?.CanManage) {
-				resolve(defaultAssetUrl)
-			}
-		}))
-		
-		Promise.allSettled(promises).finally(() => resolve(null))
-		return
-	}
-	
-	if(assetTypeId === AssetType.Model || assetTypeId === AssetType.Plugin) {
-		if(BTRoblox.currentPage.name === "itemdetails") {
-			const itemCont = $("#item-container")
-			
-			if(itemCont?.dataset.userassetId) {
-				return resolve(defaultAssetUrl) // We have this asset in our inventory
-			}
-		}
-		
-		RobloxApi.assetdelivery.requestAssetV2(assetId).then(json => {
-			if(!json.locations) {
-				console.log("no locations")
-				return resolve(null)
-			}
-			
-			resolve(defaultAssetUrl)
-		})
-		
-		return
-	}
-	
-	resolve(defaultAssetUrl)
-})
+	return true
+})()
 
 const initExplorer = async (assetId, assetTypeId, isBundle) => {
 	if(!SETTINGS.get("itemdetails.explorerButton") || !isBundle && InvalidExplorableAssetTypeIds.includes(assetTypeId)) {
@@ -302,12 +239,8 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 	}
 	
 	if(!isBundle) {
-		const assetUrl = await getCurrentValidAssetUrl(assetId, assetTypeId)
-		
-		if(!assetUrl) {
-			console.log("no valid asset url")
-			return
-		}
+		const canDownload = await canDownloadAsset(assetId, assetTypeId)
+		if(!canDownload) { return }
 	}
 	
 	const btnCont = html`
@@ -356,13 +289,15 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 				
 				} else if(assetTypeId === AssetType.Head || assetTypeId === AssetType.DynamicHead) {
 					AssetCache.loadModel(assetId, { async: true, onProgress: updateLoadingText, format: "avatar_meshpart_head" }, model => {
-						AssetCache.loadModel(assetId, { async: true }, model => explorer.addModel("Default", model))
+						AssetCache.loadModel(assetId, { async: true }, model => explorer.addModel("SpecialMesh", model))
 						explorer.addModel("MeshPart", model)
 					})
 					
 				} else if(AccessoryAssetTypeIds.includes(assetTypeId)) {
 					AssetCache.loadModel(assetId, { async: true, onProgress: updateLoadingText, format: "avatar_meshpart_accessory" }, model => {
-						AssetCache.loadModel(assetId, { async: true }, model => explorer.addModel("Default", model))
+						if(assetTypeId <= AssetType.WaistAccessory) { // is not layered clothing
+							AssetCache.loadModel(assetId, { async: true }, model => explorer.addModel("SpecialMesh", model))
+						}
 						explorer.addModel("MeshPart", model)
 					})
 					
@@ -394,10 +329,8 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 		return
 	}
 
-	const assetUrl = await getCurrentValidAssetUrl(assetId, assetTypeId)
-	if(!assetUrl) {
-		return
-	}
+	const canDownload = await canDownloadAsset(assetId, assetTypeId)
+	if(!canDownload) { return }
 	
 	const btnCont = html`
 	<div class=btr-download-button-container>
@@ -418,7 +351,7 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 	}
 
 	const doNamedDownload = event => {
-		const self = event.currentTarget
+		const target = event.currentTarget
 		event.preventDefault()
 		
 		if(downloadButton.classList.contains("disabled")) {
@@ -428,8 +361,10 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 		downloadButton.classList.add("disabled")
 		downloadButton.classList.add("loading")
 
-		if(assetTypeId === AssetType.Mesh && self.classList.contains("btr-download-obj")) {
-			AssetCache.loadMesh(assetUrl, mesh => {
+		const format = target.getAttribute("format") ?? undefined
+		
+		if(format === "obj") {
+			AssetCache.loadMesh(assetId, mesh => {
 				downloadButton.classList.remove("disabled")
 				downloadButton.classList.remove("loading")
 				
@@ -468,7 +403,7 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 				download(lines.join("\n"), "obj")
 			})
 		} else {
-			AssetCache.loadBuffer(assetUrl, { browserAssetRequest: assetTypeId === AssetType.Audio }, buffer => {
+			AssetCache.loadBuffer(assetId, { browserAssetRequest: assetTypeId === AssetType.Audio, format: format }, buffer => {
 				downloadButton.classList.remove("disabled")
 				downloadButton.classList.remove("loading")
 				
@@ -481,7 +416,9 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 			})
 		}
 	}
-
+	
+	const assetUrl = AssetCache.toAssetUrl(assetId)
+	
 	if(assetTypeId === AssetType.Mesh) {
 		downloadButton.dataset.toggle = "popover"
 		downloadButton.dataset.bind = "popover-btr-download"
@@ -490,10 +427,10 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 		<div class=rbx-popover-content data-toggle=popover-btr-download>
 			<ul class=dropdown-menu role=menu>
 				<li>
-					<a class=btr-download-mesh href="${assetUrl}">Download as .mesh</a>
+					<a class=btr-download href="${assetUrl}">Download as .mesh</a>
 				</li>
 				<li>
-					<a class=btr-download-obj>Download as .obj</a>
+					<a class=btr-download format=obj>Download as .obj</a>
 				</li>
 			</ul>
 		</div>`
@@ -505,14 +442,58 @@ const initDownloadButton = async (assetId, assetTypeId) => {
 			</li>`)
 			
 			btnCont.$on("click", ".btr-log-mesh", () => {
-				AssetCache.loadMesh(assetUrl, mesh => {
+				AssetCache.loadMesh(assetId, mesh => {
 					console.log(mesh)
 				})
 			})
 		}
 		
 		downloadButton.after(popoverTemplate)
-		btnCont.$on("click", ".btr-download-mesh, .btr-download-obj", doNamedDownload)
+		btnCont.$on("click", ".btr-download", doNamedDownload)
+		
+	} else if(assetTypeId === AssetType.Head || assetTypeId === AssetType.DynamicHead) {
+		downloadButton.dataset.toggle = "popover"
+		downloadButton.dataset.bind = "popover-btr-download"
+		
+		const popoverTemplate = html`
+		<div class=rbx-popover-content data-toggle=popover-btr-download>
+			<ul class=dropdown-menu role=menu>
+				<li>
+					<a class=btr-download format=avatar_meshpart_head href="${assetUrl}">Download MeshPart</a>
+				</li>
+				<li>
+					<a class=btr-download>Download SpecialMesh</a>
+				</li>
+			</ul>
+		</div>`
+		
+		downloadButton.after(popoverTemplate)
+		btnCont.$on("click", ".btr-download", doNamedDownload)
+		
+	} else if(AccessoryAssetTypeIds.includes(assetTypeId)) {
+		if(assetTypeId <= AssetType.WaistAccessory) {
+			downloadButton.dataset.toggle = "popover"
+			downloadButton.dataset.bind = "popover-btr-download"
+			
+			const popoverTemplate = html`
+			<div class=rbx-popover-content data-toggle=popover-btr-download>
+				<ul class=dropdown-menu role=menu>
+					<li>
+						<a class=btr-download format=avatar_meshpart_accessory href="${assetUrl}">Download MeshPart</a>
+					</li>
+					<li>
+						<a class=btr-download>Download SpecialMesh</a>
+					</li>
+				</ul>
+			</div>`
+			
+			downloadButton.after(popoverTemplate)
+			btnCont.$on("click", ".btr-download", doNamedDownload)
+		} else {
+			downloadButton.href = assetUrl
+			downloadButton.setAttribute("format", "avatar_meshpart_accessory")
+			downloadButton.$on("click", doNamedDownload)
+		}
 	} else {
 		downloadButton.href = assetUrl
 		downloadButton.$on("click", doNamedDownload)
@@ -531,10 +512,8 @@ const initContentButton = async (assetId, assetTypeId) => {
 		return
 	}
 
-	const assetUrl = await getCurrentValidAssetUrl(assetId, assetTypeId)
-	if(!assetUrl) {
-		return
-	}
+	const canDownload = await canDownloadAsset(assetId, assetTypeId)
+	if(!canDownload) { return }
 	
 	const btnCont = html`
 	<div class=btr-content-button-container>
@@ -595,7 +574,7 @@ pageInit.itemdetails = (category, assetIdString) => {
 				})
 		
 		if(category !== "game-pass") {
-			modifyTemplate("recommendations", template => {
+			angularHook.modifyTemplate("recommendations", template => {
 				for(const label of template.$findAll(".item-card-price .text-robux-tile")) {
 					const cashText = ` (${RobuxToCash.convertAngular("item.price")})`
 					const cashTitle = `R$ {{::${label.getAttribute("ng-bind")}}}${cashText}`
@@ -608,6 +587,35 @@ pageInit.itemdetails = (category, assetIdString) => {
 				}
 			})
 		}
+		
+		// Sponsored
+		
+		InjectJS.inject(() => {
+			const { reactHook, RobuxToCash } = window.BTRoblox
+			
+			reactHook.hijackElement( // ItemCardPrice
+				elem => elem.props.className?.includes("text-robux-tile"),
+				elem => {
+					const originalText = elem.props.children
+					if(typeof originalText !== "string") { return }
+					
+					const robux = parseInt(originalText.replace(/\D/g, ""), 10)
+					
+					if(Number.isSafeInteger(robux)) {
+						const cash = RobuxToCash.convert(robux)
+						
+						elem.props.children = [
+							originalText,
+							reactHook.createElement("span", {
+								className: "btr-robuxToCash-tile",
+								children: ` (${cash})`,
+								title: `R$ ${originalText.trim()}`
+							})
+						]
+					}
+				}
+			)
+		})
 	}
 
 	if(SETTINGS.get("general.hoverPreview")) {
@@ -625,19 +633,7 @@ pageInit.itemdetails = (category, assetIdString) => {
 	}
 
 	if(!SETTINGS.get("itemdetails.enabled")) { return }
-
-	document.$watch("#AjaxCommentsContainer").$then().$watch(".comments").$then()
-		.$watchAll(".comment-item", comment => {
-			const span = comment.$find(".text-date-hint")
-			const fixedDate = robloxTimeToDate(span.textContent.replace("|", ""))
-
-			if(fixedDate) {
-				span.setAttribute("btr-timestamp", "")
-				span.textContent = fixedDate.$format("MMM D, YYYY | hh:mm A (T)")
-			}
-		})
 	
-
 	if(SETTINGS.get("itemdetails.addOwnersList")) {
 		let wasOwnersListSetup = false
 		

@@ -48,7 +48,9 @@ const DEFAULT_SETTINGS = {
 	avatar: {
 		enabled: { value: true },
 		removeAccessoryLimits: { value: true },
-		removeLayeredLimits: { value: false }
+		removeLayeredLimits: { value: true },
+		fullRangeBodyColors: { value: true },
+		assetRefinement: { value: false }
 	},
 	catalog: {
 		enabled: { value: true },

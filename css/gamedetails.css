@@ -36,17 +36,29 @@ body .btr-game-main-container {
 	overflow-wrap: break-word;
 }
 
-.btr-description {
-	float: left;
-	width: 100%;
-	padding: 0;
-}
-
-.btr-description .game-description {
+.btr-game-main-container .game-description-container {
 	padding: 6px 12px;
-	margin-bottom: 10px;
+	padding-bottom: 0;
+	margin-bottom: 0;
+	clear: both;
 }
 
+.btr-game-main-container .game-description-container > .container-header {
+	display: none;
+}
+
+/* legacy description stuff */
+
+.btr-game-main-container .game-about-container > .section-content {
+	padding: 6px 12px;
+	padding-bottom: 0;
+	margin-bottom: 0;
+	clear: both;
+}
+
+.btr-game-main-container .game-about-container > .container-header {
+	display: none;
+}
 
 /* Badges */
 
@@ -208,8 +220,13 @@ html body .btr-universe-box {
 	row-gap: 12px; /* looked a bit bad with no gap at all */
 }
 
-.btr-gamedetails .rbx-game-status {
+.btr-gamedetails .server-player-count-gauge {
+	display: none;
+}
+
+.btr-gamedetails .server-list-section .card-list .card-item div.rbx-game-status {
 	white-space: pre-line;
+	margin: 0;
 }
 
 /* VIP Servers */
@@ -247,8 +264,8 @@ html body .btr-universe-box {
 	background: transparent !important;
 }
 
-.btr-gamedetails #about #rbx-private-servers,
-.btr-gamedetails #about #private-server-container-about-tab {
+.btr-gamedetails #game-details-about-tab-container #rbx-private-servers,
+.btr-gamedetails #game-details-about-tab-container #private-server-container-about-tab {
 	display: none !important;
 }
 
