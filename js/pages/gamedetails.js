@@ -695,7 +695,20 @@ pageInit.gamedetails = placeId => {
 					}
 				}
 
-				row.$find("p.para-overflow").classList.remove("para-overflow")
+				const desc = row.$find("p.para-overflow")
+				desc.classList.add("btr-desc-content")
+				desc.classList.remove("para-overflow")
+				
+				if(desc.scrollHeight > desc.clientHeight + 10) {
+					const moreBtn = html`<span class="btr-badge-more text-link cursor-pointer">See More</span>`
+					desc.after(moreBtn)
+					
+					moreBtn.$on("click", () => {
+						const open = !desc.classList.contains("btr-desc-open")
+						desc.classList.toggle("btr-desc-open", open)
+						moreBtn.textContent = open ? `See Less` : `See More`
+					})
+				}
 
 				if(SETTINGS.get("gamedetails.showBadgeOwned")) {
 					const match = url.match(/(?:catalog|badges)\/(\d+)\//)

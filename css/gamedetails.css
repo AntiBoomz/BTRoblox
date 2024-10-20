@@ -62,24 +62,24 @@ body .btr-game-main-container {
 
 /* Badges */
 
-.btr-badges-container {
+html body .btr-badges-container {
 	margin-bottom: 18px;
 }
 
-.btr-badges-container .badge-row { /* Badge height + 10px */
-	min-height:110px;
-	max-height:160px; /* Regular height */
-	height:auto;
+html body .btr-badges-container .badge-row { /* Badge height + 10px */
+	min-height: 110px;
+	max-height: 160px; /* Regular height */
+	height: auto;
 }
 
-.btr-badges-container .badge-row .badge-image,
-.btr-badges-container .badge-row .badge-image img,
-.btr-badges-container .badge-row .badge-image thumbnail-2d { /* Regular size is 150x150 */
+html body .btr-badges-container .badge-row .badge-image,
+html body .btr-badges-container .badge-row .badge-image img,
+html body .btr-badges-container .badge-row .badge-image thumbnail-2d { /* Regular size is 150x150 */
 	width: 100px;
 	height: 100px;
 }
 
-.btr-badges-container .badge-row .badge-content {
+html body .btr-badges-container .badge-row .badge-content {
 	width: calc(100% - 100px);
 	min-height: 100px;
 	padding-left: 4px;
@@ -87,15 +87,19 @@ body .btr-game-main-container {
 	flex-direction: row;
 }
 
-.btr-badges-container .badge-row .badge-data-container {
+html body .btr-badges-container .badge-row .badge-data-container {
 	flex: 1 1 auto;
 }
 
-.btr-badges-container .badge-row .badge-data-container > p {
+html body .btr-badges-container .badge-row .badge-data-container .btr-desc-content {
+	position: relative;
 	height: 46px;
-	margin: 4px 0px;
 	
+	margin: 4px 0px;
 	font-size: 14px;
+	
+	white-space: pre-line;
+	word-wrap: break-word;
 
 	overflow: hidden;
 	display: -webkit-box;
@@ -103,12 +107,36 @@ body .btr-game-main-container {
 	-webkit-box-orient: vertical;
 }
 
-.btr-badges-container .badge-row .badge-data-container .btr-unlock-date {
+/* html body .btr-badges-container .badge-row .badge-data-container:has(.btr-badge-more) .btr-desc-content {
+	-webkit-line-clamp: 1;
+	height: 22px;
+} */
+
+html body .btr-badges-container .badge-row .badge-data-container .btr-desc-content.btr-desc-open {
+	height: auto;
+	-webkit-line-clamp: unset;
+}
+
+html body .btr-badges-container .badge-row .badge-data-container .btr-badge-more {
+	display: block;
+	width: fit-content;
+	margin-top: -9px;
+	font-size: 14px;
+	user-select: none;
+	margin-bottom: -20px;
+}
+
+html body .btr-badges-container .badge-row .badge-data-container .btr-desc-open + .btr-badge-more {
+	margin-top: -4px;
+}
+
+html body .btr-badges-container .badge-row .badge-data-container .btr-unlock-date {
+	display: block;
 	opacity: 0.3;
 	font-size: 12px;
 }
 
-.btr-badges-container .badge-row .badge-stats-container {
+html body .btr-badges-container .badge-row .badge-stats-container {
 	flex: 1 0 fit-content;
 	height: 100px;
 	margin: 0;
@@ -118,26 +146,27 @@ body .btr-game-main-container {
 	align-items: center;
 }
 
-.btr-badges-container.btr-compact-stats .badge-row .badge-stats-container {
+html body .btr-badges-container.btr-compact-stats .badge-row .badge-stats-container {
 	min-width: 200px;
+	margin: 0;
 	
 	display: grid;
 	grid: repeat(3, 33.333%) / max-content auto;
 }
 
-.btr-badges-container.btr-compact-stats .badge-row .badge-stats-container::before {
+html body .btr-badges-container.btr-compact-stats .badge-row .badge-stats-container::before {
 	display: none;
 }
 
-.btr-badges-container.btr-compact-stats .badge-row .badge-stats-container > li {
+html body .btr-badges-container.btr-compact-stats .badge-row .badge-stats-container > li {
 	display: contents;
 }
 
-.btr-badges-container.btr-compact-stats .badge-row .badge-stats-container > li > div {
+html body .btr-badges-container.btr-compact-stats .badge-row .badge-stats-container > li > div {
 	font-size: 14px;
 }
 
-.btr-badges-container.btr-compact-stats .badge-row .badge-stats-container .text-label {
+html body .btr-badges-container.btr-compact-stats .badge-row .badge-stats-container .text-label {
 	grid-column: 1;
 	display: flex;
 	align-items: center;
@@ -146,7 +175,7 @@ body .btr-game-main-container {
 	padding-right: 6px;
 }
 
-.btr-badges-container.btr-compact-stats .badge-row .badge-stats-container .badge-stats-info {
+html body .btr-badges-container.btr-compact-stats .badge-row .badge-stats-container .badge-stats-info {
 	grid-column: 2;
 	display: flex;
 	align-items: center;
@@ -156,15 +185,15 @@ body .btr-game-main-container {
 }
 
 
-.btr-badges-container .badge-row {
+html body .btr-badges-container .badge-row {
 	transition: opacity 1s;
 }
 
-.btr-badges-container .badge-row.btr-notowned {
+html body .btr-badges-container .badge-row.btr-notowned {
 	opacity: .5;
 }
 
-.btr-badges-container .badge-row.btr-badgeownedloading:before {
+html body .btr-badges-container .badge-row.btr-badgeownedloading:before {
 	position: absolute;
 	content: "";
 	width: 16px;
