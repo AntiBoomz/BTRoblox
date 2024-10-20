@@ -24,8 +24,12 @@ html .btr-redesign group-description .group-description-text {
 	line-height: 1.4em;
 }
 
+html .btr-redesign group-description .group-description-text.content-height {
+	height: 94px;
+}
+
 html .btr-redesign group-description .group-description:has(>.hidden) .group-description-text {
-	max-height: 96px;
+	max-height: 94px;
 	height: auto;
 }
 
