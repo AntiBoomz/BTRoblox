@@ -146,8 +146,8 @@ pageInit.inventory = () => {
 			const { angularHook, contentScript, IS_DEV_MODE } = window.BTRoblox
 			
 			angularHook.hijackModule("inventory", {
-				inventoryContentController(handler, args, argsMap) {
-					const result = handler.apply(this, args)
+				inventoryContentController(target, thisArg, args, argsMap) {
+					const result = target.apply(thisArg, args)
 					
 					try {
 						const { $scope } = argsMap

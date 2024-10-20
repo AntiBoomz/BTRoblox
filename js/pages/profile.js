@@ -883,8 +883,8 @@ pageInit.profile = userId => {
 		const { angularHook } = window.BTRoblox
 		
 		angularHook.hijackModule("peopleList", {
-			layoutService(handler, args) {
-				const result = handler.apply(this, args)
+			layoutService(target, thisArg, args, argsMap) {
+				const result = target.apply(thisArg, args)
 				result.maxNumberOfFriendsDisplayed = 10
 				return result
 			}

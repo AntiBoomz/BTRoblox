@@ -186,11 +186,11 @@ pageInit.messages = function() {
 		const { angularHook, hijackFunction, IS_DEV_MODE } = window.BTRoblox
 		
 		angularHook.hijackModule("messages", {
-			messagesNav(handler, args, argMap) {
-				const result = handler.apply(this, args)
+			messagesNav(target, thisArg, args, argsMap) {
+				const result = target.apply(thisArg, args)
 
 				try {
-					const { $location } = argMap
+					const { $location } = argsMap
 					
 					hijackFunction(result, "link", (target, thisArg, args) => {
 						try {

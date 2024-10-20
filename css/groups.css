@@ -5,21 +5,39 @@ body.btr-hide-ads .content {
 /* Groups redesign */
 
 .btr-redesign group-description .section,
-.btr-redesign group-description .section-content,
-.btr-redesign group-description .group-description-footer {
+.btr-redesign group-description .section-content {
 	display: contents;
+}
+
+.btr-redesign group-description .container-header {
+	position: static;
+	min-height: unset;
+	margin-bottom: 0;
 }
 
 .btr-redesign group-description .container-header h2 {
 	font-size: 16px;
-	padding: 4px 0 16px 0;
+	padding: 4px 0;
+}
+
+html .btr-redesign group-description .group-description-text {
+	line-height: 1.4em;
+}
+
+html .btr-redesign group-description .group-description:has(>.hidden) .group-description-text {
+	max-height: 96px;
+	height: auto;
+}
+
+.btr-redesign group-description .group-description-footer {
+	margin-top: 8px;
+}
+
+.btr-redesign group-description .group-description-footer:not(:has(>:first-child)) {
+	display: none;
 }
 
 /* Social icons */
-
-.btr-redesign group-description .container-header {
-	position: static;
-}
 
 .btr-redesign social-link-icon-list {
 	position: absolute;
@@ -30,14 +48,15 @@ body.btr-hide-ads .content {
 /* Other */
 
 .btr-redesign .btr-group-about {
-	margin-bottom: 18px;
+	margin-bottom: 0;
 }
 
 .btr-redesign .btr-shout-container .shout-container {
-	margin-bottom: 18px;
+	margin-bottom: 0;
 }
 
-.btr-redesign .community-link-display {
+.btr-redesign .community-link-display,
+.btr-redesign .community-link-display-link {
 	margin-bottom: 0;
 }
 
@@ -48,6 +67,10 @@ body.btr-hide-ads .content {
 
 .btr-redesign .tab-content {
 	float: none;
+}
+
+.btr-redesign group-members-list .container-header.group-members-list-container-header h2 {
+	padding: 5px 0
 }
 
 .btr-redesign group-members-list .dropdown-menu li a:defined {
@@ -89,19 +112,16 @@ body.btr-hide-ads .content {
 	padding-right: 2px;
 }
 
+.btr-redesign #horizontal-tabs:has(>li:nth-child(4)) { --btr-num-tabs: 4; }
+.btr-redesign #horizontal-tabs:has(>li:nth-child(5)) { --btr-num-tabs: 5; }
+.btr-redesign #horizontal-tabs:has(>li:nth-child(6)) { --btr-num-tabs: 6; }
+.btr-redesign #horizontal-tabs:has(>li:nth-child(7)) { --btr-num-tabs: 7; }
 
-.btr-redesign .btr-hasGames .rbx-tabs-horizontal .group-tab,
-.btr-redesign .btr-hasPayouts .rbx-tabs-horizontal .group-tab {
-	width: 25%;
+.btr-redesign #horizontal-tabs > li {
+	width: calc(100% / var(--btr-num-tabs, 3));
 }
 
-.btr-redesign .btr-hasGames.btr-hasPayouts .rbx-tabs-horizontal .group-tab {
-	width: 20%;
-}
-
-.btr-redesign .btr-group-container:not(.btr-hasGames) #btr-games,
-.btr-redesign .btr-group-container:not(.btr-hasPayouts) #btr-payouts,
-.btr-redesign .btr-group-container.btr-hasPayouts:not(.btr-showPayouts) group-payouts,
+.btr-redesign .btr-hide-payouts,
 .btr-hideBigSocial social-links-container {
 	display: none;
 }

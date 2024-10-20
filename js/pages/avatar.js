@@ -103,8 +103,8 @@ pageInit.avatar = () => {
 					})
 					
 					angularHook.hijackModule("avatar", {
-						avatarController(handler, args, argsMap) {
-							const result = handler.apply(this, args)
+						avatarController(target, thisArg, args, argsMap) {
+							const result = target.apply(thisArg, args)
 							
 							try {
 								const { $scope, avatarConstantService } = argsMap
@@ -195,8 +195,8 @@ pageInit.avatar = () => {
 			onSet(window, "Roblox", Roblox => {
 				onSet(Roblox, "AvatarAccoutrementService", AvatarAccoutrementService => {
 					angularHook.hijackModule("avatar", {
-						avatarController(handler, args, argsMap) {
-							const result = handler.apply(this, args)
+						avatarController(target, thisArg, args, argsMap) {
+							const result = target.apply(thisArg, args)
 							
 							try {
 								const { $scope } = argsMap
@@ -287,8 +287,8 @@ pageInit.avatar = () => {
 			const { angularHook, contentScript } = window.BTRoblox
 			
 			angularHook.hijackModule("avatar", {
-				avatarController(handler, args, argsMap) {
-					const result = handler.apply(this, args)
+				avatarController(target, thisArg, args, argsMap) {
+					const result = target.apply(thisArg, args)
 					
 					try {
 						const { $scope, $rootScope, avatarConstantService } = argsMap

@@ -201,13 +201,13 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE, selectedRobuxToCashOp
 				
 				if(typeof fn === "function") {
 					hijackFunction(a, b, (target, thisArg, args) => {
-						const argMap = {}
+						const argsMap = {}
 						
 						for(const [i, arg] of Object.entries(args)) {
-							argMap[injects[i]] = arg
+							argsMap[injects[i]] = arg
 						}
 						
-						return callback.call(thisArg, target, args, argMap)
+						return callback(target, thisArg, args, argsMap)
 					})
 				}
 			}

@@ -655,7 +655,7 @@ pageInit.common = () => {
 			})
 			
 			angularHook.hijackModule("notificationStream", {
-				notificationStreamController(handler, args, argsMap) {
+				notificationStreamController(target, thisArg, args, argsMap) {
 					try {
 						const { $scope, notificationStreamService } = argsMap
 						let addShoutsToNotifs = false
@@ -712,12 +712,12 @@ pageInit.common = () => {
 						if(IS_DEV_MODE) { alert("hijackAngular Error") }
 					}
 					
-					const result = handler.apply(this, args)
+					const result = target.apply(thisArg, args)
 					return result
 				},
 				
-				notificationStreamService(handler, args, argsMap) {
-					const result = handler.apply(this, args)
+				notificationStreamService(target, thisArg, args, argsMap) {
+					const result = target.apply(thisArg, args)
 					
 					try {
 						hijackFunction(result, "unreadCount", (target, thisArg, args) => {
@@ -810,11 +810,11 @@ pageInit.common = () => {
 				const { angularHook, IS_DEV_MODE } = window.BTRoblox
 				
 				angularHook.hijackModule("chat", {
-					chatController(func, args, argMap) {
-						const result = func.apply(this, args)
+					chatController(target, thisArg, args, argsMap) {
+						const result = target.apply(thisArg, args)
 
 						try {
-							const { $scope, chatUtility } = argMap
+							const { $scope, chatUtility } = argsMap
 
 							const library = $scope.chatLibrary
 							const width = library.chatLayout.widthOfChat
