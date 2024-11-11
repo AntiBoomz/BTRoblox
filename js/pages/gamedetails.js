@@ -1,6 +1,50 @@
 "use strict"
 
 pageInit.gamedetails = placeId => {
+	$.ready(() => {
+		const placeEdit = $("#game-context-menu .dropdown-menu .VisitButtonEditGLI")
+		if(placeEdit) {
+			placeEdit.parentNode.parentNode.append(
+				html`<li><a class=btr-download-place><div>Download</div></a></li>`
+			)
+
+			document.$on("click", ".btr-download-place", () => {
+				AssetCache.loadBuffer(placeId, ab => {
+					const blobUrl = URL.createObjectURL(new Blob([ab]))
+
+					const splitPath = window.location.pathname.split("/")
+					const type = getAssetFileType(9, ab)
+
+					startDownload(blobUrl, `${splitPath[splitPath.length - 1]}.${type}`)
+					URL.revokeObjectURL(blobUrl)
+				})
+			})
+			
+			initExplorer(placeId, AssetType.Place).then(btnCont => {
+				if(!btnCont) { return }
+				
+				const target = $("#game-context-menu")
+				
+				btnCont.$find(".btr-explorer-button").style.display = "none"
+				btnCont.style.position = "absolute"
+				btnCont.style.width = `${target.clientWidth}px`
+				btnCont.style.height = `${0}px`
+				btnCont.style.left = `${target.offsetLeft}px`
+				btnCont.style.top = `${target.offsetTop + target.clientHeight}px`
+				
+				target.after(btnCont)
+				
+				placeEdit.parentNode.parentNode.append(
+					html`<li><a class=btr-open-in-explorer><div>Open in Explorer</div></a></li>`
+				)
+				
+				document.$on("click", ".btr-open-in-explorer", () => {
+					btnCont.$find(".btr-explorer-button").click()
+				})
+			})
+		}
+	})
+	
 	if(!SETTINGS.get("gamedetails.enabled")) { return }
 	
 	InjectJS.inject(() => {
@@ -817,49 +861,5 @@ pageInit.gamedetails = placeId => {
 					label.textContent = `${$.dateSince(data.Updated)}`
 				}
 			)
-	})
-		
-	$.ready(() => {
-		const placeEdit = $("#game-context-menu .dropdown-menu .VisitButtonEditGLI")
-		if(placeEdit) {
-			placeEdit.parentNode.parentNode.append(
-				html`<li><a class=btr-download-place><div>Download</div></a></li>`
-			)
-
-			document.$on("click", ".btr-download-place", () => {
-				AssetCache.loadBuffer(placeId, ab => {
-					const blobUrl = URL.createObjectURL(new Blob([ab]))
-
-					const splitPath = window.location.pathname.split("/")
-					const type = getAssetFileType(9, ab)
-
-					startDownload(blobUrl, `${splitPath[splitPath.length - 1]}.${type}`)
-					URL.revokeObjectURL(blobUrl)
-				})
-			})
-			
-			initExplorer(placeId, AssetType.Place).then(btnCont => {
-				if(!btnCont) { return }
-				
-				const target = $("#game-context-menu")
-				
-				btnCont.$find(".btr-explorer-button").style.display = "none"
-				btnCont.style.position = "absolute"
-				btnCont.style.width = `${target.clientWidth}px`
-				btnCont.style.height = `${0}px`
-				btnCont.style.left = `${target.offsetLeft}px`
-				btnCont.style.top = `${target.offsetTop + target.clientHeight}px`
-				
-				target.after(btnCont)
-				
-				placeEdit.parentNode.parentNode.append(
-					html`<li><a class=btr-open-in-explorer><div>Open in Explorer</div></a></li>`
-				)
-				
-				document.$on("click", ".btr-open-in-explorer", () => {
-					btnCont.$find(".btr-explorer-button").click()
-				})
-			})
-		}
 	})
 }
