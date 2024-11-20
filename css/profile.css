@@ -251,6 +251,10 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	width: 33.33%;
 }
 
+.btr-profile .profile-stats-container .profile-stat .text-lead::before {
+	content: "\200b";
+}
+
 /* About Footer */
 
 .btr-profile .profile-about-footer {
