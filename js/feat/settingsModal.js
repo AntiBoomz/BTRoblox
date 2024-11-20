@@ -324,7 +324,7 @@ const SettingsModal = {
 					</group>
 					<group label=Profile path=profile toggleable>
 						<checkbox label="Embed Inventory" path=embedInventoryEnabled></checkbox>
-						<checkbox label="Show Last Online" path=lastOnline></checkbox>
+						<!--checkbox label="Show Last Online" path=lastOnline></checkbox-->
 					</group>
 					<group label=Groups path=groups toggleable=redesign>
 						<div>

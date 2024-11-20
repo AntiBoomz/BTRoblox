@@ -200,53 +200,53 @@ pageInit.profile = userId => {
 			newCont.$find(".placeholder-stats").replaceWith(outerStats)
 			outerStats.classList.add("btr-profileStats")
 
-			if(SETTINGS.get("profile.lastOnline")) {
-				outerStats.$watch(".profile-stats-container", stats => {
-					stats.classList.add("btr-lastOnline")
+			// if(SETTINGS.get("profile.lastOnline")) {
+			// 	outerStats.$watch(".profile-stats-container", stats => {
+			// 		stats.classList.add("btr-lastOnline")
 
-					const label = html`
-					<li class=profile-stat>
-						<p class=text-label>Last Online</p>
-						<p class=text-lead>Loading</p>
-					</li>`
+			// 		const label = html`
+			// 		<li class=profile-stat>
+			// 			<p class=text-label>Last Online</p>
+			// 			<p class=text-lead>Loading</p>
+			// 		</li>`
 
-					if(stats.firstElementChild) {
-						stats.firstElementChild.after(label)
-					} else {
-						stats.prepend(label)
-					}
+			// 		if(stats.firstElementChild) {
+			// 			stats.firstElementChild.after(label)
+			// 		} else {
+			// 			stats.prepend(label)
+			// 		}
 					
-					presencePromise.then(presence => {
-						if(presence?.userPresenceType) {
-							label.$find(".text-lead").textContent = "Now"
-							return
-						}
+			// 		presencePromise.then(presence => {
+			// 			if(presence?.userPresenceType) {
+			// 				label.$find(".text-lead").textContent = "Now"
+			// 				return
+			// 			}
 						
-						let numRetries = 0
+			// 			let numRetries = 0
 						
-						const getLastOnline = () => {
-							RobloxApi.presence.getLastOnline([userId]).then(json => {
-								if(!json?.lastOnlineTimestamps?.length) {
-									if(numRetries < 2) {
-										numRetries += 1
-										setTimeout(getLastOnline, numRetries * 2000)
-									} else {
-										label.$find(".text-lead").textContent = "Failed"
-									}
-									return
-								}
+			// 			const getLastOnline = () => {
+			// 				RobloxApi.presence.getLastOnline([userId]).then(json => {
+			// 					if(!json?.lastOnlineTimestamps?.length) {
+			// 						if(numRetries < 2) {
+			// 							numRetries += 1
+			// 							setTimeout(getLastOnline, numRetries * 2000)
+			// 						} else {
+			// 							label.$find(".text-lead").textContent = "Failed"
+			// 						}
+			// 						return
+			// 					}
 								
-								const lastOnline = new Date(json.lastOnlineTimestamps[0].lastOnline)
+			// 					const lastOnline = new Date(json.lastOnlineTimestamps[0].lastOnline)
 								
-								label.$find(".text-lead").textContent = `${lastOnline.$since()}`
-								label.$find(".text-lead").title = lastOnline.$format("MMM D, YYYY | hh:mm A (T)")
-							})
-						}
+			// 					label.$find(".text-lead").textContent = `${lastOnline.$since()}`
+			// 					label.$find(".text-lead").title = lastOnline.$format("MMM D, YYYY | hh:mm A (T)")
+			// 				})
+			// 			}
 						
-						getLastOnline()
-					})
-				})
-			}
+			// 			getLastOnline()
+			// 		})
+			// 	})
+			// }
 		})
 		.$watch("#roblox-badges-container", badges => {
 			newCont.$find(".placeholder-robloxbadges").replaceWith(badges)

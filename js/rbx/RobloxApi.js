@@ -357,15 +357,15 @@ const RobloxApi = {
 				body: JSON.stringify({ userIds })
 			}).then(res => res.json()),
 		
-		getLastOnline: userIds =>
-			xsrfFetch(`https://presence.roblox.com/v1/presence/last-online`, {
-				method: "POST",
-				credentials: "include",
-				headers: {
-					"Content-Type": "application/json"
-				},
-				body: JSON.stringify({ userIds })
-			}).then(res => res.json())
+		// getLastOnline: userIds =>
+		// 	xsrfFetch(`https://presence.roblox.com/v1/presence/last-online`, {
+		// 		method: "POST",
+		// 		credentials: "include",
+		// 		headers: {
+		// 			"Content-Type": "application/json"
+		// 		},
+		// 		body: JSON.stringify({ userIds })
+		// 	}).then(res => res.json())
 	},
 	thumbnails: {
 		getAvatarHeadshots: (userIds, size = "150x150") =>
