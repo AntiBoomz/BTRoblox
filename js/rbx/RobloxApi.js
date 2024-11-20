@@ -415,6 +415,15 @@ const RobloxApi = {
 				body: JSON.stringify({ usernames, excludeBannedUsers })
 			}).then(res => res.json())
 	},
+	userProfiles: {
+		getProfiles: (userIds, fields) => 
+			xsrfFetch(`https://apis.roblox.com/user-profile-api/v1/user/profiles/get-profiles`, {
+				method: "POST",
+				credentials: "include",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ userIds, fields })
+			}).then(res => res.json())
+	},
 	www: {
 		getFavorites: (userId, assetTypeId, itemsPerPage, cursor, thumbWidth=150, thumbHeight=150) =>
 			xsrfFetch(`https://www.roblox.com/users/favorites/list-json?userId=${userId}&assetTypeId=${assetTypeId}&itemsPerPage=${itemsPerPage}&cursor=${cursor}&thumbWidth=${thumbWidth}&thumbHeight=${thumbHeight}`, {

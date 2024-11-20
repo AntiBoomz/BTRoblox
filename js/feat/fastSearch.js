@@ -24,7 +24,21 @@ const btrFriends = { // TODO: Move this elsewhere
 	loadFriends() {
 		if(!this.friendsPromise) {
 			this.friendsPromise = loggedInUserPromise.then(userId => {
-				return RobloxApi.friends.getFriends(userId).then(json => {
+				return RobloxApi.friends.getFriends(userId).then(async json => {
+					if(json?.data?.[0]?.name === "") {
+						// Friends api is not returning names for some ungodly reason
+						const profiles = await RobloxApi.userProfiles.getProfiles(json.data.map(x => x.id), ["names.username", "names.displayName"])
+						
+						for(const profile of profiles.profileDetails) {
+							const entry = json.data.find(x => x.id === profile.userId)
+							
+							if(entry) {
+								entry.name = profile.names.username
+								entry.displayName = profile.names.displayName
+							}
+						}
+					}
+					
 					const friendsCached = {}
 					
 					for(const friend of json.data) {
