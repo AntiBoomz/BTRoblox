@@ -50,12 +50,12 @@ const PAGE_INFO = {
 		css: ["games.css"]
 	},
 	groups: {
-		matches: ["^/groups/(\\d+)/*"],
+		matches: ["^/groups/(\\d+)/*", "^/communities/(\\d+)/*"],
 		js: ["pages/groups.js"],
 		css: ["groups.css"]
 	},
 	groupadmin: {
-		matches: ["^/groups/configure$"],
+		matches: ["^/groups/configure$", "^/communities/configure$"],
 		js: ["pages/groupadmin.js"],
 		css: []
 	},
