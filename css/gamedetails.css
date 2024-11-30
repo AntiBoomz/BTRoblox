@@ -76,8 +76,8 @@ html body .btr-badges-container .badge-row .badge-image,
 html body .btr-badges-container .badge-row .badge-image img,
 html body .btr-badges-container .badge-row .badge-image thumbnail-2d,
 html body .btr-badges-container .badge-row .badge-image .badge-image-container { /* Regular size is 150x150 */
-	width: 100px;
-	height: 100px;
+	width: 100px !important;
+	height: 100px !important;
 }
 
 html body .btr-badges-container .badge-row .badge-content {
