@@ -591,7 +591,7 @@ pageInit.common = () => {
 					streamItem.dataset.btrPopulated = true
 					streamItem.style.padding = "0"
 					
-					const url = `/groups/${shout.groupId}/${formatUrlName(shout.groupName)}`
+					const url = `/communities/${shout.groupId}/${formatUrlName(shout.groupName)}`
 					
 					streamItem.append(html`
 					<div class=legacy-notif-base>
