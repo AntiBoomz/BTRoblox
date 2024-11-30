@@ -35,7 +35,12 @@ const RBXAnimator = (() => {
 			x => 1 - bounce(1 - x),
 			x => bounce(x),
 			x => (x < .5 ? 0.5 - 0.5 * bounce(1 - 2 * x) : 1 - 0.5 * bounce(2 - 2 * x))
-		]
+		],
+		[ // CubicV2
+			x => x ** 3,
+			x => 1 - (1 - x) ** 3,
+			x => (x < .5 ? 4 * x ** 3 : 1 - 4 * (1 - x) ** 3)
+		],
 	]
 	
 	const eulerToQuat = (x, y, z, order) => {
