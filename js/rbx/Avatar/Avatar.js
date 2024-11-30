@@ -741,7 +741,7 @@ const RBXAvatar = (() => {
 				}
 				
 				const wrapLayer = hanInst.Children.find(x => x.ClassName === "WrapLayer")
-				if(wrapLayer) {
+				if(wrapLayer && wrapLayer.Enabled !== false) { // Enabled defaults to true for some ungodly reason
 					acc.wrapLayer = {
 						cageMeshId: wrapLayer.CageMeshId ?? "",
 						cageOrigin: RBXAvatar.CFrameToMatrix4(...wrapLayer.CageOrigin),
