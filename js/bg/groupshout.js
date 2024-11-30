@@ -295,7 +295,7 @@
 				saveShoutCache()
 			}
 			
-			chrome.tabs.create({ url: `https://www.roblox.com/groups/${id}/group` })
+			chrome.tabs.create({ url: `https://www.roblox.com/communities/${id}/group` })
 			chrome.notifications.clear(notifId)
 		}
 	})

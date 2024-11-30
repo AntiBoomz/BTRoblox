@@ -67,7 +67,8 @@ if(IS_BACKGROUND_PAGE) {
 				targetUrlPatterns: [
 					"*://*.roblox.com/*roup.aspx*gid=*",
 					"*://*.roblox.com/*roups.aspx*gid=*",
-					"*://*.roblox.com/groups/*/*"
+					"*://*.roblox.com/groups/*/*",
+					"*://*.roblox.com/communities/*/*"
 				]
 			},
 			{
@@ -168,7 +169,7 @@ if(IS_BACKGROUND_PAGE) {
 					break
 				}
 				case "groupLink": {
-					const groupId = data ?? linkUrl.replace(/^.*(?:groups?.aspx.*[?&]gid=|\/groups\/)(\d+).*$/i, "$1")
+					const groupId = data ?? linkUrl.replace(/^.*(?:groups?.aspx.*[?&]gid=|\/groups\/|\/communities\/)(\d+).*$/i, "$1")
 					copyToClipboard(groupId)
 					break
 				}

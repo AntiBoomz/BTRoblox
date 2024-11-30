@@ -704,7 +704,7 @@ pageInit.profile = userId => {
 					const parent = html`
 					<li class="list-item game-card ${index < pageSize ? "visible" : ""}">
 						<div class="card-item game-card-container">
-							<a href="/groups/${group.id}/${formatUrlName(group.name)}" title="${group.name}">
+							<a href="/communities/${group.id}/${formatUrlName(group.name)}" title="${group.name}">
 								<div class=game-card-thumb-container>
 									<img class="game-card-thumb card-thumb" src="">
 								</div>
