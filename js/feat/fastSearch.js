@@ -211,7 +211,7 @@ const btrFastSearch = {
 								x.index = displayIndex !== -1 ? displayIndex : user.DisplayName.length + 3 + nameIndex
 							}
 							
-							x.sort = name === search ? 0 : x.index + x.display.length / 200
+							x.sort = name === search ? 0 : (displayIndex !== -1 ? displayIndex : nameIndex) + x.display.length / 200
 						}
 					}
 					
