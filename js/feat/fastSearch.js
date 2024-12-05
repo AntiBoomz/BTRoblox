@@ -7,52 +7,45 @@ const btrFriends = { // TODO: Move this elsewhere
 	
 	getFriends() {
 		if(this.friendsCached) { return this.friendsCached }
+		const friends = {}
 		
 		try {
 			const data = btrLocalStorage.getItem("fastsearchCache")
 			
 			if(data) {
-				return this.friendsCached = data
+				for(const [id, friend] of Object.entries(data)) {
+					friends[id] = friend
+				}
 			}
 		} catch(ex) {
 			console.error(ex)
 		}
 		
-		return this.friendsCached = {}
+		this.friendsCached = friends
+		return friends
 	},
 	
 	loadFriends() {
 		if(!this.friendsPromise) {
 			this.friendsPromise = loggedInUserPromise.then(userId => {
 				return RobloxApi.friends.getFriends(userId).then(async json => {
-					if(json?.data?.[0]?.name === "") {
-						// Friends api is not returning names for some ungodly reason
-						const profiles = await RobloxApi.userProfiles.getProfiles(json.data.map(x => x.id), ["names.username", "names.displayName"])
-						
-						for(const profile of profiles.profileDetails) {
-							const entry = json.data.find(x => x.id === profile.userId)
-							
-							if(entry) {
-								entry.name = profile.names.username
-								entry.displayName = profile.names.displayName
-							}
-						}
-					}
-					
 					const friendsCached = {}
 					
-					for(const friend of json.data) {
-						const cacheEntry = {
-							name: friend.name,
-							displayName: friend.displayName,
-							verified: friend.hasVerifiedBadge
-						}
+					if(json.data.length > 0) {
+						const profiles = await RobloxApi.userProfiles.getProfiles(json.data.map(x => x.id), ["isVerified", "names.username", "names.displayName"])
 						
-						if(cacheEntry.displayName === cacheEntry.name) {
-							delete cacheEntry.displayName
+						for(const profile of profiles.profileDetails) {
+							const friend = {
+								name: profile.names.username,
+								displayName: profile.names.displayName,
+								verified: profile.isVerified
+							}
+							
+							if(friend.displayName === friend.name) { delete friend.displayName }
+							if(!friend.verified) { delete friend.verified }
+							
+							friendsCached[profile.userId] = friend
 						}
-						
-						friendsCached[friend.id] = cacheEntry
 					}
 					
 					this.friendsCached = friendsCached
