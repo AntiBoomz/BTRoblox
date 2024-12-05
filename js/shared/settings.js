@@ -35,6 +35,7 @@ const DEFAULT_SETTINGS = {
 		friendsSecondRow: { value: false },
 		friendPresenceLinks: { value: true },
 		favoritesAtTop: { value: false },
+		hideSponsored: { value: true },
 		hideFriendActivity: { value: false }
 	},
 	messages: {

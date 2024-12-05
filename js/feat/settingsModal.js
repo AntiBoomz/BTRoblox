@@ -320,6 +320,7 @@ const SettingsModal = {
 						<checkbox label="Show More Friends" path=friendsSecondRow></checkbox>
 						<checkbox label="Show Friend Usernames" path=friendsShowUsername></checkbox>
 						<checkbox label="Move Favorites to Top" path=favoritesAtTop></checkbox>
+						<checkbox label="Hide Sponsored Games" path=hideSponsored></checkbox>
 						<checkbox label="Hide Friend Activity" path=hideFriendActivity></checkbox>
 					</group>
 					<group label=Profile path=profile toggleable>
