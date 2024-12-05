@@ -88,14 +88,18 @@ const btrFastSearch = {
 		
 		let shouldLoadFriends = !btrFriends.friendsLoaded
 		
-		for(const [idString, entry] of Object.entries(btrFriends.getFriends())) {
-			userCache[entry.name.toLowerCase()] = {
-				Username: entry.name,
-				DisplayName: entry.displayName ?? entry.name,
-				HasVerifiedBadge: entry.verified || false,
-				UserId: +idString,
-				IsFriend: true
+		try {
+			for(const [idString, entry] of Object.entries(btrFriends.getFriends())) {
+				userCache[entry.name.toLowerCase()] = {
+					Username: entry.name,
+					DisplayName: entry.displayName ?? entry.name,
+					HasVerifiedBadge: entry.verified || false,
+					UserId: +idString,
+					IsFriend: true
+				}
 			}
+		} catch(ex) {
+			console.error(ex)
 		}
 
 		//
