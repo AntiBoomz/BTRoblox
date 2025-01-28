@@ -57,7 +57,16 @@ if(IS_BACKGROUND_PAGE) {
 				title: "Copy game pass id",
 				contexts: ["link"],
 				targetUrlPatterns: [
-					"*://*.roblox.com/game-pass/*/*"
+					"*://*.roblox.com/game-pass/*/*",
+					"*://create.roblox.com/dashboard/creations/experiences/*/passes/*"
+				]
+			},
+			{
+				id: "productLink",
+				title: "Copy product id",
+				contexts: ["link"],
+				targetUrlPatterns: [
+					"*://create.roblox.com/dashboard/creations/experiences/*/developer-products/*"
 				]
 			},
 			{
@@ -153,8 +162,8 @@ if(IS_BACKGROUND_PAGE) {
 			}
 			
 			switch(menuId.replace(/_page$/, "")) {
-				case "assetLink": case "bundleLink": case "badgeLink": case "gamepassLink": case "pluginLink": {
-					const assetId = data ?? linkUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library|bundles|badges|game-pass|plugins|places|marketplace(?:\/asset)?|store(?:\/asset)?)\/(?:refer\/)?)(\d+).*$/i, "$1")
+				case "assetLink": case "bundleLink": case "badgeLink": case "gamepassLink": case "pluginLink": case "productLink": {
+					const assetId = data ?? linkUrl.replace(/^.*(?:[&?]id=|\/(?:catalog|library|bundles|badges|game-pass|passes|developer-products|plugins|places|marketplace(?:\/asset)?|store(?:\/asset)?)\/(?:refer\/)?)(\d+).*$/i, "$1")
 					copyToClipboard(assetId)
 					break
 				}
