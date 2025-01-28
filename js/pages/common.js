@@ -496,17 +496,11 @@ pageInit.common = () => {
 			onSet(window, "CoreUtilities", CoreUtilities => {
 				hijackFunction(CoreUtilities.abbreviateNumber, "getTruncValue", (target, thisArg, args) => {
 					if(hijackTruncValue && args.length === 1) {
-						const result = target.apply(thisArg, args)
-
-						if(result.endsWith("+") && result.length < 5) {
-							try {
-								return target.apply(thisArg, [args[0], null, null, result.length - 1])
-							} catch(ex) {
-								console.error(ex)
-							}
+						try {
+							return target.apply(thisArg, [args[0], 100_000, null, 2])
+						} catch(ex) {
+							console.error(ex)
 						}
-
-						return result
 					}
 
 					return target.apply(thisArg, args)
