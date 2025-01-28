@@ -392,11 +392,8 @@ pageInit.common = () => {
 				if(lastText === text) { return }
 				
 				lastText = text
-				
-				const matches = text.trim().match(/([\d,]+)/)
-				if(!matches) { return }
 
-				const amt = parseInt(matches[0].replace(/\D/g, ""), 10)
+				const amt = parseInt(text.replace(/\D/g, ""), 10)
 				if(!Number.isSafeInteger(amt)) { return }
 
 				span.textContent = RobuxToCash.convert(amt)
