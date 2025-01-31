@@ -730,12 +730,17 @@ pageInit.gamedetails = placeId => {
 				label.replaceChildren(link)
 				
 				if(SETTINGS.get("gamedetails.compactBadgeStats")) {
-					const rarityLabel = row.$find(".badge-stats-container .badge-stats-info")
-					const rarity = rarityLabel.textContent.match(/^\s*(\d+\.\d+%)\s*\((.*)\)\s*$/)
-					
-					if(rarity) {
-						rarityLabel.textContent = rarity[1]
-						rarityLabel.title = rarity[2]
+					for(const valueLabel of row.$findAll(".badge-stats-container .badge-stats-info")) {
+						const rarity = valueLabel.textContent.match(/^\s*(\d+\.\d+%)\s*\((.*)\)\s*$/)
+						if(rarity) {
+							valueLabel.textContent = rarity[1]
+							valueLabel.title = rarity[2]
+						}
+						
+						const count = valueLabel.textContent.match(/^\d+$/)
+						if(count) {
+							valueLabel.textContent = Intl.NumberFormat().format(+count)
+						}
 					}
 				}
 
