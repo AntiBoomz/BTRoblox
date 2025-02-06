@@ -1071,39 +1071,5 @@ pageInit.itemdetails = (category, assetIdString) => {
 				itemCont.classList.add("btr-shopping-cart-shown")
 			})
 		})
-
-		if(SETTINGS.get("itemdetails.imageBackgrounds") && (assetTypeId === 1 || assetTypeId === 13)) {
-			itemCont.$watch("#AssetThumbnail", thumb => {
-				const btns = html`
-				<div class="btr-bg-btn-cont">
-					<div class="btr-bg-btn" data-color="white"></div>
-					<div class="btr-bg-btn" data-color="black"></div>
-					<div class="btr-bg-btn" data-color="none"></div>
-				</div>`
-
-				thumb.append(btns)
-
-				btns.$on("click", ".btr-bg-btn", ev => {
-					const color = ev.currentTarget.dataset.color
-					const prev = btns.$find(".selected")
-
-					if(prev) { prev.classList.remove("selected") }
-					ev.currentTarget.classList.add("selected")
-
-					thumb.dataset.btrBg = color
-					btrLocalStorage.setItem("itemThumbBg", color)
-				})
-					.$on("mouseover", ".btr-bg-btn", ev => {
-						thumb.dataset.btrBg = ev.currentTarget.dataset.color
-					})
-					.$on("mouseout", ".btr-bg-btn", () => {
-						thumb.dataset.btrBg = btrLocalStorage.getItem("itemThumbBg")
-					})
-
-
-				const selectedBg = btrLocalStorage.getItem("itemThumbBg") || "white"
-				btns.$find(`[data-color="${selectedBg}"]`).click()
-			})
-		}
 	})
 }

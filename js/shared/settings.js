@@ -71,7 +71,6 @@ const DEFAULT_SETTINGS = {
 		showSales: { value: true },
 		showCreatedAndUpdated: { value: true },
 
-		imageBackgrounds: { value: true },
 		addOwnersList: { value: true }
 	},
 	gamedetails: {
