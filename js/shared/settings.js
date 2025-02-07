@@ -71,7 +71,7 @@ const DEFAULT_SETTINGS = {
 		showSales: { value: true },
 		showCreatedAndUpdated: { value: true },
 
-		addOwnersList: { value: true }
+		addOwnersList: { value: true, hidden: true }
 	},
 	gamedetails: {
 		enabled: { value: true },

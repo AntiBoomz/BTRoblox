@@ -347,7 +347,6 @@ const SettingsModal = {
 						<checkbox label="Show Explorer Button" path=explorerButton></checkbox>
 						<checkbox label="Show Download Button" path=downloadButton></checkbox>
 						<checkbox label="Show Content Button" path=contentButton></checkbox>
-						<checkbox label="Show Owners Button" path=addOwnersList></checkbox>
 					</group>
 					<group label=Inventory path=inventory toggleable>
 						<checkbox label="Inventory Tools" path=inventoryTools></checkbox>

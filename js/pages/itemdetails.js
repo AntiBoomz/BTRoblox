@@ -626,6 +626,7 @@ pageInit.itemdetails = (category, assetIdString) => {
 
 	if(!SETTINGS.get("itemdetails.enabled")) { return }
 	
+	/*
 	if(SETTINGS.get("itemdetails.addOwnersList")) {
 		let wasOwnersListSetup = false
 		
@@ -867,6 +868,7 @@ pageInit.itemdetails = (category, assetIdString) => {
 			})
 		})
 	}
+	*/
 	
 	
 	document.$watch("#type-content", typeField => {
