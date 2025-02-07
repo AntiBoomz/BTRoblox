@@ -623,14 +623,6 @@ pageInit.itemdetails = (category, assetIdString) => {
 			HoverPreview.register(".item-card", ".item-card-thumb-container")
 		})
 	}
-	
-	if(SETTINGS.get("general.useNativeAudioPlayer")) {
-		document.$watch("#item-container", itemContainer => {
-			itemContainer.$watch(".MediaPlayerIcon[data-mediathumb-url]", mediaPlayer => {
-				useNativeAudioPlayer(mediaPlayer, true)
-			})
-		})
-	}
 
 	if(!SETTINGS.get("itemdetails.enabled")) { return }
 	
@@ -847,7 +839,7 @@ pageInit.itemdetails = (category, assetIdString) => {
 		const itemIdPromise = new Promise(resolve => {
 			if(category === "bundles") {
 				document.$watch(
-					".bundle-items .item-card-link[href]",
+					".bundle-items .item-card-link[href], #item-list-container-included-items .item-card-link[href]",
 					x => !x.textContent.trim().startsWith("Rthro"),
 					firstItem => {
 						const itemId = firstItem.href.replace(/^.*roblox\.com\/[^/]+\/(\d+).*$/, "$1")
@@ -858,177 +850,210 @@ pageInit.itemdetails = (category, assetIdString) => {
 				resolve(assetId)
 			}
 		})
-
-
+		
 		itemIdPromise.then(itemId => {
 			RobloxApi.inventory.getAssetOwners(itemId, 10).then(json => {
 				if(!json?.data) {
 					return
 				}
-
-				document.$watch("#item-container").$then()
-					.$watch(">asset-resale-pane, >#recommendations-container,>.bundle-items", parent => {
-						const title = parent.id === "recommendations-container" ? "Recommended"
-							: parent.classList.contains("bundle-items") ? "Included Items"
-								: "Resellers"
-						
-						setupOwnersList(parent, title, itemId, json)
-					})
-			})
-		})
-	}
-
-	if(SETTINGS.get("itemdetails.showCreatedAndUpdated") && category !== "bundles") {
-		const createdLabel = html`
-		<div class="clearfix item-field-container">
-			<div class="font-header-1 text-subheader text-label text-overflow field-label">Created</div>
-			<span class="field-content"></div>
-		</div>`
-
-		let updatedLabel
-
-		let createdTS
-		let updatedTS
-
-		const apply = () => {
-			if(!updatedLabel || !createdTS) {
-				return
-			}
-
-			createdLabel.$find(".field-content").textContent = new Date(createdTS).$format("MMM DD, YYYY h:mm:ss A")
-			updatedLabel.$find(".field-content").textContent = new Date(updatedTS).$format("MMM DD, YYYY h:mm:ss A")
-		}
-
-		document.$watch(
-			"#item-details .item-field-container .field-label",
-			label => label.textContent === "Updated",
-			label => {
-				updatedLabel = label.parentNode
-				updatedLabel.before(createdLabel)
-				apply()
-
-				updatedLabel.$find(".field-content").classList.remove("date-time-i18n")
-			}
-		)
-
-		if(category === "game-pass") {
-			RobloxApi.gamepasses.getGamepassDetails(assetId).then(data => {
-				createdTS = data.Created
-				updatedTS = data.Updated
-				apply()
-			})
-		} else if(category === "badges") {
-			RobloxApi.badges.getBadgeDetails(assetId).then(data => {
-				createdTS = data.created
-				updatedTS = data.updated
-				apply()
-			})
-		} else {
-			RobloxApi.economy.getAssetDetails(assetId).then(data => {
-				createdTS = data.Created
-				updatedTS = data.Updated
-				apply()
-			})
-		}
-	}
-	
-	if(SETTINGS.get("itemdetails.showSales") && category !== "bundles") {
-		const elem = html`
-		<div class="clearfix item-field-container" style="display:none">
-			<div class="font-header-1 text-label text-overflow field-label">Sales</div>
-			<span class="field-content btr-sales"></div>
-		</div>`
-		
-		document.$watch("#item-details").$then()
-			.$watch(
-				">.item-field-container>.field-label, >.item-info-row-container>.row-label",
-				label => label.textContent === "Description",
-				label => {
-					if(label.classList.contains("row-label")) {
-						const label = elem.$find(".field-label")
-						const content = elem.$find(".field-content")
-						
-						elem.classList.remove("item-field-container")
-						label.classList.remove("field-label")
-						content.classList.remove("field-content")
-						
-						elem.classList.add("item-info-row-container")
-						label.classList.add("row-label")
-						content.classList.add("row-content")
-					}
+				
+				document.$watch("asset-resale-pane, #recommendations-container, .bundle-items, #item-list-container-recommendations, #item-list-container-included-items", parent => {
+					const title = (parent.id === "recommendations-container" || parent.id === "item-list-container-recommendations") ? "Recommended"
+						: (parent.classList.contains("bundle-items") || parent.id === "item-list-container-included-items") ? "Included Items"
+						: "Resellers"
 					
-					label.parentNode.before(elem)
-				}
-			)
-
-		const show = () => elem.style.display = ""
-		const hide = () => elem.style.display = "none"
-		
-		const apply = sales => {
-			elem.$find(".btr-sales").textContent = formatNumber(sales)
-			show()
-		}
-		
-		let canConfigure = false
-		
-		document.$watch("#configure-item", () => {
-			canConfigure = true
-			show()
-		})
-
-		if(category === "game-pass") {
-			RobloxApi.gamepasses.getGamepassDetails(assetId).then(data => {
-				const sales = data?.Sales
-				
-				if(Number.isSafeInteger(sales) && (canConfigure || sales > 0)) {
-					apply(sales)
-				} else {
-					hide()
-				}
-			})
-		} else if(category === "badges") {
-			elem.$find(".text-label").textContent = "Awarded"
-			show()
-			
-			RobloxApi.badges.getBadgeDetails(assetId).then(data => {
-				const numAwarded = data?.statistics?.awardedCount
-				
-				if(Number.isSafeInteger(numAwarded)) {
-					apply(numAwarded)
-				} else {
-					hide()
-				}
-			})
-		} else {
-			RobloxApi.economy.getAssetDetails(assetId).then(data => {
-				const sales = data?.Sales
-				
-				if(Number.isSafeInteger(sales) && (canConfigure || sales > 0)) {
-					apply(sales)
-				} else {
-					hide()
-				}
-			})
-		}
-	}
-
-	if(category === "bundles") {
-		document.$watch("#item-container > .section-content", () => {
-			initPreview(assetId, null, true)
-			
-			initExplorer(assetId, null, true).then(btnCont => {
-				if(!btnCont) { return }
-				const parent = $("#item-container > .section-content")
-				
-				parent.append(btnCont)
-				parent.parentNode.classList.add("btr-explorer-btn-shown")
+					setupOwnersList(parent, title, itemId, json)
+				})
 			})
 		})
-
-		return
 	}
 	
+	
+	document.$watch("#type-content", typeField => {
+		const isNewStyle = !!$("#item-details-container")
+		
+		const createRow = (label, content) => {
+			return isNewStyle ? html`
+			<div class="clearfix item-info-row-container" style=display:none>
+				<div class="font-header-1 text-subheader text-label text-overflow row-label">${label}</div>
+				<span class="btr-row-value font-body text">${content}</span>
+			</div>` : html`
+			<div class="clearfix item-field-container" style=display:none>
+				<div class="font-header-1 text-subheader text-label text-overflow field-label">${label}</div>
+				<span class="btr-row-value field-content">${content}</span>
+			</div>`
+		}
+		
+		if(SETTINGS.get("itemdetails.showSales") && category !== "bundles") {
+			const salesContainer = createRow("Sales", "")
+			
+			typeField.parentNode.after(salesContainer)
+			
+			const show = sales => {
+				if(typeof sales === "number") { salesContainer.$find(".btr-row-value").textContent = formatNumber(sales) }
+				salesContainer.style.display = ""
+			}
+			
+			const hide = () => {
+				salesContainer.style.display = "none"
+			}
+			
+			let canConfigure = false
+			
+			document.$watch("#configure-item", () => {
+				canConfigure = true
+				show()
+			})
+
+			if(category === "game-pass") {
+				RobloxApi.gamepasses.getGamepassDetails(assetId).then(data => {
+					const sales = data?.Sales
+					
+					if(Number.isSafeInteger(sales) && (canConfigure || sales > 0)) {
+						show(sales)
+					} else {
+						hide()
+					}
+				})
+			} else if(category === "badges") {
+				salesContainer.$find(".text-label").textContent = "Awarded"
+				show()
+				
+				RobloxApi.badges.getBadgeDetails(assetId).then(data => {
+					const numAwarded = data?.statistics?.awardedCount
+					
+					if(Number.isSafeInteger(numAwarded)) {
+						show(numAwarded)
+					} else {
+						hide()
+					}
+				})
+			} else {
+				RobloxApi.economy.getAssetDetails(assetId).then(data => {
+					const sales = data?.Sales
+					
+					if(Number.isSafeInteger(sales) && (canConfigure || sales > 0)) {
+						show(sales)
+					} else {
+						hide()
+					}
+				})
+			}
+		}
+		
+		if(SETTINGS.get("itemdetails.showCreatedAndUpdated") && category !== "bundles") {
+			const createdContainer = createRow("Created", "")
+			const updatedContainer = createRow("Updated", "")
+			
+			typeField.parentNode.after(createdContainer, updatedContainer)
+			
+			const show = (created, updated) => {
+				if(created) { createdContainer.$find(".btr-row-value").textContent = new Date(created).$format("MMM DD, YYYY h:mm:ss A") }
+				if(updated) { updatedContainer.$find(".btr-row-value").textContent = new Date(updated).$format("MMM DD, YYYY h:mm:ss A") }
+				createdContainer.style.display = ""
+				updatedContainer.style.display = ""
+			}
+			
+			const hide = () => {
+				createdContainer.style.display = "none"
+				updatedContainer.style.display = "none"
+			}
+			
+			document.$watch("#item-details").$then().$watchAll("div", container => {
+				console.log(container.firstElementChild?.textContent)
+				if(container.firstElementChild?.textContent === "Updated" && container !== updatedContainer) {
+					container.remove()
+				}
+			})
+			
+			show()
+
+			if(category === "game-pass") {
+				RobloxApi.gamepasses.getGamepassDetails(assetId).then(data => {
+					show(data.Created, data.Updated)
+				})
+			} else if(category === "badges") {
+				RobloxApi.badges.getBadgeDetails(assetId).then(data => {
+					show(data.created, data.updated)
+				})
+			} else {
+				RobloxApi.economy.getAssetDetails(assetId).then(data => {
+					show(data.Created, data.Updated)
+				})
+			}
+		}
+	})
+	
+	// new item details, only used in catalog for now?
+	document.$watch("#item-details-container", async container => {
+		InjectJS.inject(assetId => {
+			const { hijackXHR, contentScript } = window.BTRoblox
+			
+			hijackXHR(request => {
+				if(request.url.startsWith(`https://catalog.roblox.com/v1/catalog/items/${assetId}/details`)) {
+					request.onResponse.push(json => {
+						contentScript.send("itemDetails", json)
+					})
+				}
+			})
+		}, assetId)
+		
+		const json = await new Promise(resolve => InjectJS.listen("itemDetails", resolve))
+		let assetTypeId = null
+		let isBundle = false
+		
+		if(category === "bundles") {
+			isBundle = true
+		} else {
+			assetTypeId = json.assetType
+		}
+		
+		initPreview(assetId, assetTypeId, isBundle)
+		
+		// buttons
+		
+		const parent = html`<div class=btr-buttons></div>`
+		
+		const parentPromise = container.$watch(".item-details-info-header > .left", left => {
+			left.after(parent)
+		})
+		
+		initExplorer(assetId, assetTypeId, isBundle).then(btnCont => {
+			if(!btnCont) { return }
+			parent.append(btnCont)
+		})
+		
+		initDownloadButton(assetId, assetTypeId, isBundle).then(btnCont => {
+			if(!btnCont) { return }
+			parent.append(btnCont)
+		})
+		
+		initContentButton(assetId, assetTypeId, isBundle).then(btnCont => {
+			if(!btnCont) { return }
+			parent.append(btnCont)
+		})
+		
+	})
+	
+	
+	// legacy item details, still in use
 	document.$watch("#item-container", itemCont => {
+		if(category === "bundles") {
+			document.$watch("#item-container > .section-content", () => {
+				initPreview(assetId, null, true)
+				
+				initExplorer(assetId, null, true).then(btnCont => {
+					if(!btnCont) { return }
+					const parent = $("#item-container > .section-content")
+					
+					parent.append(btnCont)
+					parent.parentNode.classList.add("btr-explorer-btn-shown")
+				})
+			})
+	
+			return
+		}
+		
 		let assetTypeId = parseInt(itemCont.dataset.assetTypeId, 10)
 		
 		if(category === "game-pass") {
@@ -1065,10 +1090,6 @@ pageInit.itemdetails = (category, assetIdString) => {
 				
 				parent.append(btnCont)
 				parent.parentNode.classList.add("btr-content-btn-shown")
-			})
-			
-			itemCont.$watch("#item-info-container-frontend", () => {
-				itemCont.classList.add("btr-shopping-cart-shown")
 			})
 		})
 	})

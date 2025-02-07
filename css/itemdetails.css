@@ -8,11 +8,41 @@
 	word-break: break-word;
 }
 
+.item-details-info-header:has(.shopping-cart-btn-container) {
+	--btr-buttons-top-padding: 17px;
+	--btr-buttons-right-padding: 8px;
+}
+
+.btr-buttons { /* new item details */
+	display: flex;
+	flex-direction: row;
+	padding-top: var(--btr-buttons-top-padding, 5px);
+	padding-right: var(--btr-buttons-right-padding, 0px);
+	
+	& > div {
+		margin-left: 12px;
+	}
+	
+	.btr-content-button {
+		order: 1;
+	}
+	
+	.btr-download-button {
+		order: 2;
+	}
+	
+	.btr-explorer-button-container {
+		order: 3;
+	}
+}
+
+/* old item details */
+
 .menu-shown {
 	--btr-menu-offset-x: 38px;
 }
 
-.btr-shopping-cart-shown {
+.item-details-info-header:has(.shopping-cart-btn-container) {
 	--btr-menu-offset-x: 42px;
 	--btr-menu-offset-y: 4px;
 }
@@ -29,33 +59,35 @@
 	--btr-content-visible: 1;
 }
 
-.btr-explorer-button-container,
-.btr-download-button,
-.btr-content-button {
-	position: absolute;
-	top: calc(var(--btr-menu-offset-y, 0px) + 12px);
-	right: calc(var(--btr-menu-offset-x, 0px) + 12px);
-}
-
-#item-container .item-name-container h1 {
-	padding-right: calc((
-		var(--btr-explorer-visible, 0) +
-		var(--btr-download-visible, 0) +
-		var(--btr-content-visible, 0)
-	) * 38px + var(--btr-menu-offset-x, 0px) + 12px);
-}
-
-#item-container .btr-download-button {
-	right: calc((
-		var(--btr-explorer-visible, 0)
-	) * 38px + var(--btr-menu-offset-x, 0px) + 12px);
-}
-
-#item-container .btr-content-button {
-	right: calc((
-		var(--btr-explorer-visible, 0) +
-		var(--btr-download-visible, 0)
-	) * 38px + var(--btr-menu-offset-x, 0px) + 12px);
+#item-container { 
+	.btr-explorer-button-container,
+	.btr-download-button,
+	.btr-content-button {
+		position: absolute;
+		top: calc(var(--btr-menu-offset-y, 0px) + 12px);
+		right: calc(var(--btr-menu-offset-x, 0px) + 12px);
+	}
+	
+	.item-name-container h1 {
+		padding-right: calc((
+			var(--btr-explorer-visible, 0) +
+			var(--btr-download-visible, 0) +
+			var(--btr-content-visible, 0)
+		) * 38px + var(--btr-menu-offset-x, 0px) + 12px);
+	}
+	
+	.btr-download-button {
+		right: calc((
+			var(--btr-explorer-visible, 0)
+		) * 38px + var(--btr-menu-offset-x, 0px) + 12px);
+	}
+	
+	.btr-content-button {
+		right: calc((
+			var(--btr-explorer-visible, 0) +
+			var(--btr-download-visible, 0)
+		) * 38px + var(--btr-menu-offset-x, 0px) + 12px);
+	}
 }
 
 /* */
@@ -65,7 +97,6 @@
 	height: 420px;
 	width: 420px;
 
-	top: 0;
 	z-index: 2;
 	--btr-btn-color: #fff;
 	--btr-btn-color-disabled: #eee;
