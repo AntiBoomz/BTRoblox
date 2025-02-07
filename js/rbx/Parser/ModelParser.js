@@ -169,7 +169,7 @@ const RBXBinaryParser = {
 		assert_warn(reader.GetRemaining() === 0, "[RBXBinaryParser] unexpected data after END chunk")
 		
 		const chunkBuffer = new Uint8Array(maxChunkSize)
-		const onProgress = params?.onProgress
+		const onProgress = params?.onProgress || null // cast falsy values to nill so we can do ?.()
 		const isAsync = params?.async
 		
 		parser.promise = (async () => {
