@@ -131,7 +131,7 @@
 }
 
 .dark-theme .btr-preview-container {
-	background: #393b3d;
+	background: rgba(39,41,48,.5);
 }
 
 /* */
@@ -143,18 +143,20 @@
 	flex-direction: column;
 
 	vertical-align: bottom;
-	margin: 12px;
-	margin-left: -2px;
+	padding-right: 10px;
+	padding-bottom: 56px;
+	
+	row-gap: 8px;
 	
 	position: absolute;
-	bottom: 56px;
+	bottom: 0;
 	right: 0;
 	
 	pointer-events: all;
 }
 
 .btr-preview-active .btr-thumb-btn-container {
-	bottom: 0px;
+	padding-bottom: 10px;
 }
 
 .btr-preview-inactive .btr-thumb-btn-container .btr-thumb-btn:not(.btr-preview-btn) {
@@ -170,13 +172,6 @@
 html body .btr-thumb-btn-container .btr-thumb-btn {
 	position: relative;
 	display: inline-flex;
-	width: 38px;
-	height: 38px;
-	
-	background-color: var(--btr-btn-color) !important;
-
-	margin: 12px 0 0;
-	border-radius: 3px;
 
 	justify-content: center;
 	align-items: center;
@@ -187,7 +182,7 @@ html body .btr-thumb-btn-container .btr-thumb-btn {
 }
 
 .btr-thumb-btn:hover {
-	box-shadow: 0 1px 3px rgba(150,150,150,0.74);
+	/* box-shadow: 0 1px 3px rgba(150,150,150,0.74); */
 }
 
 .btr-thumb-btn [class^="btr-icon"] {
@@ -212,7 +207,6 @@ html body .btr-thumb-btn-container .btr-thumb-btn {
 
 .dark-theme .btr-thumb-btn span {
 	filter: brightness(0) invert(1);
-	opacity: 0.7;
 }
 
 .dark-theme .btr-thumb-btn.checked span {
@@ -326,7 +320,7 @@ html body .btr-thumb-btn-container .btr-thumb-btn {
 	width: 18px;
 	height: 18px;
 	left: -18px;
-	bottom: 70px;
+	bottom: 62px;
 
 	border: 10px solid transparent;
 	border-right-color: var(--popup-bg);
