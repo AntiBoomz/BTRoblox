@@ -56,9 +56,6 @@ const DEFAULT_SETTINGS = {
 		enabled: { value: true },
 		showOwnedAssets: { value: false }
 	},
-	develop: {
-		addListedButtons: { value: true }
-	},
 	itemdetails: {
 		enabled: { value: true },
 		itemPreviewer: { value: true },
