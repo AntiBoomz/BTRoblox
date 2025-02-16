@@ -5,7 +5,7 @@ html {
 	--btr-nav-color: #121212;
 	--btr-body-padding: -24px;
 	
-	background: var(--btr-theme-color) url(/res/bg_simblk.png) left top repeat fixed !important;
+	background: var(--btr-theme-color) url(/res/bg_simblk.webp) left top repeat fixed !important;
 	min-height: 100%;
 }
 

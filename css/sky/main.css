@@ -3,7 +3,7 @@ html {
 }
 
 html body {
-	background: #9AE4E8 url(/res/bg_sky.png) left 40px no-repeat fixed !important;
+	background: #9AE4E8 url(/res/bg_sky.webp) left 40px no-repeat fixed !important;
 }
 
 html body.btr-no-hamburger {
