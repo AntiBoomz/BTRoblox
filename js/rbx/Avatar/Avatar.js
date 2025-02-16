@@ -2047,7 +2047,7 @@ const RBXAvatar = (() => {
 				if(acc.wrapLayer) {
 					if(invalidLayeredAssetIds[acc.asset.id]) { continue }
 					
-					if(acc.obj.rbxMeshLoading) { // Don't request layered stuff if mesh is not loaded yet
+					if(acc.obj.rbxMeshLoading) { // Don't request layered stuff if all meshes are not loaded yet
 						return false
 					}
 					
@@ -2651,6 +2651,7 @@ const RBXAvatar = (() => {
 			
 			for(const acc of Object.values(this.accessories)) {
 				if(!acc.obj.rbxMesh || !request.accessories.find(x => x.id === acc.asset.id)) { continue }
+				if(!acc.obj.rbxBones) { continue }
 				
 				let result = accessoriesProcessed[acc.asset.id]
 				
