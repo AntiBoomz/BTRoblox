@@ -1062,9 +1062,10 @@ a:not(.disabled):hover > .btr-icon-content {
 
 .btr-item-owned {
 	position: absolute;
-	bottom: -2px;
+	/* bottom: -2px; */
+	top: 2px;
 	right: -2px;
-	z-index: 1000;
+	z-index: 1;
 	width: 34px;
 	height: 34px;
 	background: #02b757;

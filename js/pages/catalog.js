@@ -365,7 +365,7 @@ pageInit.catalog = () => {
 
 		document.$watch("#results").$then()
 			.$watchAll(".hlist", hlist => {
-				hlist.$watchAll(".list-item", item => {
+				hlist.$watchAll(".catalog-item-container", item => {
 					item.$watch([".item-card-link", ".item-card-thumb-container"], (anchor, thumb) => {
 						checkItem(anchor, thumb)
 						
