@@ -1031,7 +1031,7 @@ const Explorer = (() => {
 					if(item) {
 						const icon = ApiDump.getExplorerIconIndex(item.inst.ClassName)
 						
-						line.icon.style.backgroundPosition = `-${icon * 16}px 0`
+						line.icon.style.backgroundPosition = `-${(icon % 64) * 16}px ${Math.floor(icon / 64) * 16}px`
 						line.nameLabel.textContent = item.inst.Name
 						
 						line.btn.classList.toggle("btr-explorer-has-children", item ? item.children.length > 0 : false)
