@@ -297,7 +297,7 @@ pageInit.catalog = () => {
 
 	if(SETTINGS.get("general.hoverPreview")) {
 		loadOptionalLibrary("previewer").then(() => {
-			HoverPreview.register(".item-card", ".item-card-thumb-container")
+			HoverPreview.register(".catalog-item-container", ".item-card-thumb-container")
 		})
 	}
 
