@@ -800,7 +800,7 @@ a:not(.disabled):hover > .btr-icon-content {
 	height: 16px;
 	margin: 0 6px 0 3px;
 
-	background-image: url(/res/class_images.webp);
+	background-image: url(/res/class_images.png);
 	background-repeat: no-repeat;
 }
 
