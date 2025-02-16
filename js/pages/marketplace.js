@@ -1,13 +1,28 @@
 "use strict"
 
 pageInit.marketplace = () => {
-	const addRipple = btnCont => {
-		btnCont?.$find(">a").$on("mousedown", () => {
+	const addRipple = (elem, position) => {
+		elem?.$on("mousedown", event => {
 			const ripple = html`<div class=btr-replica-ripple></div>`
-			btnCont.$find(">a").append(ripple)
+			elem.append(ripple)
 			setTimeout(() => ripple.remove(), 1e3)
+			
+			if(position) {
+				const rect = elem.getBoundingClientRect()
+				ripple.style.left = `${event.clientX - rect.x}px`
+				ripple.style.top = `${event.clientY - rect.y}px`
+			}
 		})
 	}
+	
+	document.$on("mouseover", ".btr-download-popover li", event => {
+		const target = event.currentTarget
+		
+		if(!target.dataset.btrAddedRipple) {
+			target.dataset.btrAddedRipple = true
+			addRipple(target, true)
+		}
+	})
 	
 	class AssetDetailsPage {
 		constructor(assetId) {
@@ -32,7 +47,7 @@ pageInit.marketplace = () => {
 			if(!elem) { return }
 			
 			this.buttons[name] = elem
-			addRipple(elem)
+			addRipple(elem.$find(">a"))
 			
 			this.updateButtons()
 		}

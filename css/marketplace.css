@@ -53,6 +53,7 @@ a.disabled > .btr-icon-content {
 }
 
 .btr-replica-ripple {
+	pointer-events: none;
 	display: block;
 	position: absolute;
 	left: 50%;
@@ -62,6 +63,7 @@ a.disabled > .btr-icon-content {
 	transform: translate(-50%, -50%);
 	animation: 0.4s ease-out ripple-anim;
 	
+	padding-bottom: 0;
 	height: 0%;
 	width: 0%;
 	opacity: 0;
@@ -76,7 +78,89 @@ a.disabled > .btr-icon-content {
 	}
 	100% {
 		width: 100%;
-		height: 100%;
+		/* height: 100%; */
+		padding-bottom: 100%;
 		opacity: 0;
 	}
+}
+
+
+/* mesh download dropdown style */
+
+.btr-download-button-container {
+	position: relative;
+}
+
+.btr-download-popover {
+	position: absolute;
+	z-index: 1000;
+	right: 0;
+	border-radius: 8px;
+	box-shadow: rgba(0, 0, 0, 0.16) 0px 6px 20px 0px, rgba(0, 0, 0, 0.12) 0px 4px 16px 0px;
+	background: rgb(31, 32, 36);
+	color: rgb(255, 255, 255);
+	margin-top: 8px;
+	min-width: 240px;
+	display: block;
+
+	pointer-events: none;
+	opacity: 0;
+	
+	transition: opacity 235ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btr-download-popover.visible {
+	opacity: 1;
+	pointer-events: inherit;
+}
+
+.btr-download-popover > ul {
+	list-style: none;
+	margin: 0px;
+	padding: 8px 0px;
+	position: relative;
+	outline: 0px;
+}
+
+.btr-download-popover > ul > li {
+	overflow: hidden;
+	color: rgb(187, 188, 190);
+	border-radius: 8px;
+	margin: 0px 8px;
+	padding: 0;
+
+	-webkit-tap-highlight-color: transparent;
+	background-color: transparent;
+	outline: 0px;
+	border: 0px;
+	cursor: pointer;
+	user-select: none;
+	vertical-align: middle;
+	appearance: none;
+	font-family: "Builder Sans", Helvetica, Arial, san-serif;
+	font-weight: 300;
+	font-style: normal;
+	font-size: 16px;
+	line-height: 140%;
+	display: flex;
+	-webkit-box-pack: start;
+	justify-content: flex-start;
+	-webkit-box-align: center;
+	align-items: center;
+	position: relative;
+	text-decoration: none;
+	min-height: auto;
+	box-sizing: border-box;
+	white-space: nowrap;
+}
+
+.btr-download-popover > ul > li a {
+	flex: 1 1 auto;
+	display: block;
+	padding: 8px;
+}
+
+.btr-download-popover > ul > li:hover {
+	color: rgb(255, 255, 255);
+	background-color: rgba(187, 194, 209, 0.08);
 }
