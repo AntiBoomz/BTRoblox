@@ -29,11 +29,6 @@ const PAGE_INFO = {
 		js: ["pages/avatar.js"],
 		css: ["catalog.css"]
 	},
-	develop: {
-		matches: ["^/develop"],
-		js: ["pages/develop.js"],
-		css: ["develop.css"]
-	},
 	friends: {
 		matches: ["^/users/(\\d+)/friends", "^/users/friends"],
 		js: ["pages/friends.js"],

@@ -102,7 +102,6 @@
 				"js/pages/common.js",
 				"js/pages/avatar.js",
 				"js/pages/catalog.js",
-				"js/pages/develop.js",
 				"js/pages/friends.js",
 				"js/pages/gamedetails.js",
 				"js/pages/groups.js",
