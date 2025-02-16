@@ -962,7 +962,6 @@ pageInit.itemdetails = (category, assetIdString) => {
 			}
 			
 			document.$watch("#item-details").$then().$watchAll("div", container => {
-				console.log(container.firstElementChild?.textContent)
 				if(container.firstElementChild?.textContent === "Updated" && container !== updatedContainer) {
 					container.remove()
 				}
