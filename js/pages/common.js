@@ -745,7 +745,7 @@ pageInit.common = () => {
 		})
 	}
 	
-	if(SETTINGS.get("home.favoritesAtTop")) {
+	if(SETTINGS.get("home.favoritesAtTop") || SETTINGS.get("home.hideSponsored") ) {
 		InjectJS.inject(() => {
 			const { hijackXHR, settings } = window.BTRoblox
 			
@@ -763,6 +763,14 @@ pageInit.common = () => {
 									json.sorts.splice(index, 1)
 									json.sorts.splice(continueIndex !== -1 ? continueIndex + 1 : 1, 0, favs)
 								}
+							}
+						}
+
+						if(settings.home.hideSponsored && json?.sorts) {
+							const sponsoredIndex = json.sorts.findIndex(x => x.topic === "Sponsored" || x.topicId === 400000000)
+
+							if(sponsoredIndex !== -1) {
+								json.sorts.splice(sponsoredIndex, 1);
 							}
 						}
 					})
