@@ -72,7 +72,19 @@ pageInit.gamedetails = placeId => {
 			let promise = promises[url]
 			
 			if(!promise) {
-				promise = promises[url] = fetch(url, { credentials: "include" }).then(res => (res.ok ? res.json() : null)).catch(() => null).finally(() => delete promises[url])
+				let numRetries = 0
+				
+				const tryRetry = async res => {
+					if(res.status === 429 && numRetries < 2) {
+						numRetries += 1
+						await new Promise(resolve => setTimeout(resolve, 3e3))
+						return fetch(url, { credentials: "include" })
+					}
+					
+					return res
+				}
+				
+				promise = promises[url] = fetch(url, { credentials: "include" }).then(tryRetry).then(res => (res.ok ? res.json() : null)).catch(() => null).finally(() => delete promises[url])
 			}
 			
 			const json = await promise
@@ -384,34 +396,6 @@ pageInit.gamedetails = placeId => {
 			)
 		}
 		
-		reactHook.hijackConstructor( // RunningGameServers
-			(type, props) => props.getGameServers,
-			(target, thisArg, args) => {
-				const [props] = args
-				
-				if(settings.gamedetails.addServerPager && (props.getGameServers?.name === "getPublicGameInstances" || props.getGameServers === btrGetPublicGameInstances)) {
-					props.getGameServers = btrGetPublicGameInstances
-					
-					const result = target.apply(thisArg, args)
-					
-					try {
-						const serverList = reactHook.queryElement(result, x => x.props.gameInstances)
-						
-						if(serverList) {
-							serverList.props.btrPagerEnabled = true
-						}
-						
-					} catch(ex) {
-						console.error(ex)
-					}
-					
-					return result
-				}
-				
-				return target.apply(thisArg, args)
-			}
-		)
-		
 		const useSyncExternalStore = (subscribe, getSnapshot) => {
 			const [counter, setCounter] = React.useState(0)
 			const snapshot = getSnapshot()
@@ -441,6 +425,58 @@ pageInit.gamedetails = placeId => {
 				}
 			})
 		}
+		
+		reactHook.hijackConstructor(
+			(type, props) => props.getGameServers,
+			(target, thisArg, args) => {
+				const props = args[0]
+				
+				if(settings.gamedetails.addServerPager && (props.getGameServers?.name === "getPublicGameInstances" || props.getGameServers === btrGetPublicGameInstances)) {
+					props.getGameServers = btrGetPublicGameInstances
+				}
+				
+				return target.apply(thisArg, args)
+			}
+		)
+		
+		reactHook.hijackConstructor(
+			(type, props) => props.loadMoreGameInstances && "headerTitle" in props,
+			(target, thisArg, args) => {
+				const props = args[0]
+				
+				if(props.type === "public") {
+					props.btrPagerEnabled = true
+					props.showLoadMoreButton = false
+				}
+				
+				const result = target.apply(thisArg, args)
+				
+				try {
+					const list = reactHook.queryElement(result, x => x.props.id?.includes("running-games"))
+					
+					if(props.btrPagerEnabled) {
+						list.props.children.push(
+							React.createElement(btrPagerConstructor, {
+								refreshGameInstances: props.refreshGameInstances
+							})
+						)
+					}
+					
+					const ul = reactHook.queryElement(list, x => x.type === "ul", 5)
+					const servers = ul?.props?.children
+					
+					if(servers) {
+						for(const server of [servers].flat()) {
+							server.props.btrGameInstance = props?.gameInstances?.find(x => x.id === server.props.id)
+						}
+					}
+				} catch(ex) {
+					console.error(ex)
+				}
+				
+				return result
+			}
+		)
 		
 		reactHook.hijackConstructor( // GameInstanceCard
 			(type, props) => props.gameServerStatus,
@@ -479,7 +515,7 @@ pageInit.gamedetails = placeId => {
 							if(showRegion && regionSetting !== "combined") {
 								status.props.children += `\nRegion: ${
 									!serverDetails ? "Loading" :
-									serverDetails.location ? serverDetails.location.country.name :
+									serverDetails.location ? serverDetails.location.country.name === "United States" ? serverDetails.location.region.name : serverDetails.location.country.name :
 									serverDetails.statusText
 								}`
 									
@@ -512,6 +548,10 @@ pageInit.gamedetails = placeId => {
 										`${serverDetails.location.city}` 
 									) :
 									serverDetails.statusTextLong
+								
+								status.props.title += ` (${serverDetails?.address})`
+								
+								console.log(serverDetails)
 							}
 						}
 					}
@@ -521,57 +561,14 @@ pageInit.gamedetails = placeId => {
 			}
 		)
 		
-		reactHook.hijackConstructor( // GameSection
-			(type, props) => props.loadMoreGameInstances,
-			(target, thisArg, args) => {
-				if(args[0].btrPagerEnabled) {
-					args[0].showLoadMoreButton = false
+		reactHook.hijackUseStateGlobal(
+			(value, index) => ["tab-about", "tab-game-instances", "tab-store"].includes(value),
+			(value, initial) => {
+				if(value === "tab-about" && window.location.hash !== "#!/about") {
+					return "tab-game-instances"
 				}
 				
-				const result = target.apply(thisArg, args)
-				
-				try {
-					const list = reactHook.queryElement(result, x => x.props.id?.includes("running-games"))
-					
-					if(args[0].btrPagerEnabled) {
-						list.props.children.push(
-							React.createElement(btrPagerConstructor, {
-								refreshGameInstances: args[0].refreshGameInstances
-							})
-						)
-					}
-					
-					const ul = reactHook.queryElement(list, x => x.type === "ul", 5)
-					const servers = ul?.props?.children
-					
-					if(servers) {
-						for(const server of [servers].flat()) {
-							server.props.btrGameInstance = args[0]?.gameInstances?.find(x => x.id === server.props.id)
-						}
-					}
-				} catch(ex) {
-					console.error(ex)
-				}
-				
-				return result
-			}
-		)
-		
-		reactHook.hijackConstructor( // App (serverList)
-			(type, props) => type.toString().includes("getPublicGameInstances"),
-			(target, thisArg, args) => {
-				reactHook.hijackUseState( // currentTab
-					(value, index) => ["tab-about", "tab-game-instances", "tab-store"].includes(value),
-					(value, initial) => {
-						if(initial && value === "tab-about" && window.location.hash !== "#!/about") {
-							return "tab-game-instances"
-						}
-						
-						return value
-					}
-				)
-				
-				return target.apply(thisArg, args)
+				return value
 			}
 		)
 	})

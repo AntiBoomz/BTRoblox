@@ -367,6 +367,7 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE, selectedRobuxToCashOp
 		constructorReplaces: [],
 		elementListeners: [],
 		injectedContent: [],
+		globalHijackState: [],
 		renderTarget: null,
 		
 		//
@@ -542,6 +543,10 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE, selectedRobuxToCashOp
 			
 			if(!renderTarget.hijackState) { renderTarget.hijackState = [] }
 			renderTarget.hijackState.push({ filter, transform })
+		},
+		
+		hijackUseStateGlobal(filter, transform) {
+			this.globalHijackState.push({ filter, transform })
 		},
 		
 		//
@@ -755,96 +760,92 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE, selectedRobuxToCashOp
 			return recurse([root], matches, 5, true)
 		},
 		
-		getProxy(type, props) {
-			let typeFn
-			let key
+		applyProxy(result) {
+			const type = result.type
+			// const props = result.props
+			
+			if(!type) { return }
+			
+			let target, key, render
 			
 			if(typeof type === "function") {
-				typeFn = type
+				if(type.prototype?.isReactComponent) {
+					target = type.prototype
+					key = "render"
+					render = type.prototype.render
+				} else {
+					target = result
+					key = "type"
+					render = type
+				}
 			} else if(typeof type === "object") {
 				if(typeof type.render === "function") {
-					typeFn = type.render
+					target = type
 					key = "render"
+					render = type.render
 				} else if(typeof type.type === "function") {
-					typeFn = type.type
+					target = type
 					key = "type"
+					render = type.type
 				}
 			}
 			
-			if(!typeFn) {
-				return null
-			}
-			
-			const handlers = this.constructorReplaces.filter(info => info.filter(typeFn, props))
-			
-			if(!handlers.length) {
-				return null
-			}
-			
-			let cache = this.constructorProxies.get(type)
-			
-			if(!cache) {
-				cache = {}
-				this.constructorProxies.set(type, cache)
-			}
-			
-			const cacheKey = handlers.map(x => x.index).join("_")
-			let proxy = cache[cacheKey]
-			
-			if(!proxy) {
-				proxy = typeFn
+			if(typeof render === "function") {
+				let proxy = this.constructorProxies.get(render)
 				
-				for(const info of handlers) {
-					proxy = new Proxy(proxy, { apply: info.handler })
-				}
-				
-				if(key) {
-					const fnProxy = proxy
-					
-					proxy = new Proxy(type, {
-						get(target, _key) {
-							return _key === key ? fnProxy : target[_key]
+				if(!proxy) {
+					proxy = new Proxy(render, {
+						apply(render, thisArg, args) {
+							if(reactHook.renderTarget) {
+								const props = args[0]
+								let proxy = render
+									
+								for(const info of reactHook.constructorReplaces) {
+									if(info.filter(render, props)) {
+										proxy = new Proxy(proxy, {
+											apply: info.handler
+										})
+									}
+								}
+								
+								return proxy.apply(thisArg, args)
+							}
+							
+							return render.apply(thisArg, args)
 						}
 					})
+					
+					this.constructorProxies.set(proxy, true)
+					
+					// Okay, this is hacky as heck...
+					// There's user level code that breaks if result.type is directly
+					// set to proxy, so we need to make it only return proxy when we're
+					// not rendering a component.
+					
+					target[key] = proxy
+					
+					// Object.defineProperty(target, key, {
+					// 	configurable: true,
+					// 	get() {
+					// 		return reactHook.renderTarget ? render : proxy
+					// 	},
+					// 	set: x => {
+					// 		delete target[key]
+					// 		target[key] = x
+					// 	}
+					// })
 				}
-				
-				this.constructorProxies.set(proxy, false)
-				cache[cacheKey] = proxy
 			}
-			
-			return proxy
 		},
 		
 		onCreateElement(target, thisArg, args) {
 			let result = target.apply(thisArg, args)
 			
-			try {
-				const type = result.type
-				
-				if(this.constructorProxies.get(type) !== false) {
-					const proxy = this.getProxy(type, result.props)
-					
-					if(proxy) {
-						// Okay, this is hacky as heck...
-						// There's user level code that breaks if result.type is directly
-						// set to proxy, so we need to make it only return proxy when we're
-						// not rendering a component.
-						
-						Object.defineProperty(result, "type", {
-							configurable: true,
-							get() {
-								return reactHook.renderTarget ? type : proxy
-							},
-							set: x => {
-								delete result.type
-								result.type = x
-							}
-						})
-					}
-				}
-			} catch(ex) {
-				console.error(ex)
-			}
+			// try {
+			// 	this.applyProxy(result)
+			// } catch(ex) {
+			// 	console.error(ex)
+			// }
 			
 			for(const { filter, handler } of this.elementListeners) {
 				try {
@@ -872,30 +873,34 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE, selectedRobuxToCashOp
 		onUseState(target, thisArg, args) {
 			const renderTarget = this.renderTarget
 			
-			if(!renderTarget?.hijackState) {
-				const result = target.apply(thisArg, args)
-				
-				if(renderTarget) {
-					renderTarget.state.push(result)
-				}
-				
-				return result
+			if(!renderTarget) {
+				return target.apply(thisArg, args)
 			}
-				
+			
 			const stateIndex = renderTarget.state.length
 			const matching = []
 			
-			for(const filter of renderTarget.hijackState) {
-				if(!filter.resolved && filter.filter(args[0], stateIndex)) {
-					filter.resolved = true
-					
-					if(filter.transform) {
-						args[0] = filter.transform(args[0], true)
+			const run = (list, canResolve) => {
+				for(const filter of list) {
+					if(!filter.resolved && filter.filter(args[0], stateIndex)) {
+						if(canResolve) {
+							filter.resolved = true
+						}
+						
+						if(filter.transform) {
+							args[0] = filter.transform(args[0], true)
+						}
+						
+						matching.push(filter)
 					}
-					
-					matching.push(filter)
 				}
 			}
+			
+			if(renderTarget.hijackState) {
+				run(renderTarget.hijackState, true)
+			}
+			
+			run(this.globalHijackState)
 			
 			const result = target.apply(thisArg, args)
 			
@@ -926,24 +931,61 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE, selectedRobuxToCashOp
 			
 			// let lastFiber
 				
-			// Object.defineProperty(Object.prototype, "updateQueue", {
-			// 	configurable: true,
-			// 	get() { return undefined },
-			// 	set(value) {
-			// 		Object.defineProperty(this, "updateQueue", {
-			// 			enumerable: true,
-			// 			configurable: true,
-			// 			get() { return value },
-			// 			set(_value) {
-			// 				value = _value
+			Object.defineProperty(Object.prototype, "lanes", {
+				configurable: true,
+				get() { return undefined },
+				set(value) {
+					Object.defineProperty(this, "lanes", {
+						enumerable: true,
+						configurable: true,
+						writable: true,
+						value: value
+					})
+					
+					if("tag" in this && "pendingProps" in this) {
+						const fiber = this
+						
+						if(!fiber.btrAttached) {
+							fiber.btrAttached = true
 							
-			// 				if(value === null) {
-			// 					lastFiber = this
-			// 				}
-			// 			}
-			// 		})
-			// 	}
-			// })
+							let type = fiber.type
+							try {
+								reactHook.applyProxy(fiber)
+							} catch(ex) {
+								console.error(ex)
+							}
+							
+							Object.defineProperty(fiber, "type", {
+								configurable: true,
+								get() { return type },
+								set(newType) {
+									type = newType
+									try {
+										reactHook.applyProxy(fiber)
+									} catch(ex) {
+										console.error(ex)
+									}
+								}
+							})
+						}
+					}
+					
+					// console.log("fiber?", this)
+					
+					// Object.defineProperty(this, "updateQueue", {
+					// 	enumerable: true,
+					// 	configurable: true,
+					// 	get() { return value },
+					// 	set(_value) {
+					// 		value = _value
+							
+					// 		if(value === null) {
+					// 			lastFiber = this
+					// 		}
+					// 	}
+					// })
+				}
+			})
 			
 			Object.defineProperty(dispatcher, "current", {
 				enumerable: true,
