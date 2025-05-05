@@ -631,12 +631,6 @@ ww<span>w.roblox.com
 * GET https://www.roblox.com/my/account/json
 * GET https://www.roblox.com/my/settings/json
 
-#### Get place details
-* GET https://www.roblox.com/places/api-get-details?assetId=1818
-
-#### Get place settings (requires edit access)
-* GET https://www.roblox.com/places/1818/settings
-
 #### Get collections of an user
 * GET https://www.roblox.com/users/profile/robloxcollections-json?userId=4719353
 
