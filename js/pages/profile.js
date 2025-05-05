@@ -31,7 +31,7 @@ pageInit.profile = userId => {
 					<div class="section-content-off btr-section-content-off">This user has no Roblox Badges</div>
 				</div>
 			</div>
-			<div class=btr-profile-playerbadges>
+			<div class=btr-profile-playerbadges style=display:none>
 				<div class=container-header><h2>Player Badges</h2></div>
 				<div class=section-content>
 					<ul class=hlist>
@@ -592,6 +592,7 @@ pageInit.profile = userId => {
 			if(!badges.length) {
 				hlist.append(html`<div class="section-content-off btr-section-content-off">This user has no Player Badges</div>`)
 			} else {
+				newCont.$find(".btr-profile-playerbadges").stylelist.display = ""
 				hlist.after(pager)
 				
 				for(const data of badges) {
