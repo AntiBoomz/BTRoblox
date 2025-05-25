@@ -5,12 +5,9 @@ if(document.contentType === "text/html" && location.protocol !== "blob") {
 		document.documentElement.prepend(BTRoblox.element)
 		
 		SETTINGS.load(() => {
-			const currentPage = BTRoblox.currentPage
-			
 			InjectJS.inject(
 				INJECT_SCRIPT,
 				SETTINGS.serialize(),
-				currentPage ? { name: currentPage.name, matches: currentPage.matches } : null,
 				IS_DEV_MODE,
 				RobuxToCash.getSelectedOption()
 			)
@@ -24,11 +21,32 @@ if(document.contentType === "text/html" && location.protocol !== "blob") {
 				try { pageInit.common() }
 				catch(ex) { console.error(ex) }
 			}
-		
-			if(currentPage && pageInit[currentPage.name]) {
-				try { pageInit[currentPage.name].apply(null, currentPage.matches) }
-				catch(ex) { console.error(ex) }
+			
+			const initialized = {}
+			
+			const updateCurrentPage = initial => {
+				const previousPage = BTRoblox.currentPage
+				const currentPage = getCurrentPage()
+				
+				BTRoblox.currentPage = currentPage
+				InjectJS.send("setCurrentPage", currentPage ? { name: currentPage.name, matches: currentPage.matches } : null)
+				
+				if(previousPage?.name !== currentPage?.name || initial) {
+					btrThemes.update()
+				}
+				
+				if(currentPage && !initialized[currentPage.name]) {
+					initialized[currentPage.name] = true
+					
+					if(pageInit[currentPage.name]) {
+						try { pageInit[currentPage.name].apply(null, currentPage.matches) }
+						catch(ex) { console.error(ex) }
+					}
+				}
 			}
+			
+			updateCurrentPage(true)
+			InjectJS.listen("locationchange", updateCurrentPage)
 		})
 		
 		SHARED_DATA.initContentScript()

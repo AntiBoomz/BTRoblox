@@ -548,59 +548,32 @@ pageInit.itemdetails = (category, assetIdString) => {
 	const assetId = Number.parseInt(assetIdString, 10)
 
 	if(RobuxToCash.isEnabled()) {
-		document.$watch(".icon-robux-price-container .text-robux-lg", label => {
-			const cash = RobuxToCash.convert(parseInt(label.textContent.replace(/\D/g, ""), 10))
-			
-			label.after(
-				html`<span class=btr-robuxToCash-big>&nbsp;(${cash})</span>`
-			)
-		})
-			.$watch("#item-average-price", label => {
-				const update = () => {
-					const amt = parseInt(label.textContent.replace(/\D/g, ""), 10)
-					
-					if(!Number.isSafeInteger(amt)) {
-						return
-					}
-					
-					observer.disconnect()
-					
-					const cash = RobuxToCash.convert(amt)
-					label.textContent += ` (${cash})`
-				}
-
-				const observer = new MutationObserver(update)
-				observer.observe(label, { characterData: true })
-				update()
-			})
-			.$watch(".resellers .vlist").$then()
-				.$watchAll(".list-item", item => {
-					const label = item.$find(".reseller-price-container .text-robux")
-					const btn = item.$find(".PurchaseButton")
-
-					const cash = RobuxToCash.convert(+(btn ? btn.dataset.expectedPrice : ""))
-					label.textContent += ` (${cash})`
-				})
-		
-		if(category !== "game-pass") {
-			angularHook.modifyTemplate("recommendations", template => {
-				for(const label of template.$findAll(".item-card-price .text-robux-tile")) {
-					const cashText = ` (${RobuxToCash.convertAngular("item.price")})`
-					const cashTitle = `R$ {{::${label.getAttribute("ng-bind")}}}${cashText}`
-					
-					const span = html`<span class=btr-robuxToCash-tile ng-show="${label.getAttribute("ng-show")}">${cashText}</span>`
-					span.setAttribute("title", cashTitle)
-					
-					label.after(span)
-					label.setAttribute("title", cashTitle)
-				}
-			})
-		}
-		
-		// Sponsored
-		
 		InjectJS.inject(() => {
-			const { reactHook, RobuxToCash } = window.BTRoblox
+			const { reactHook, contentScript, RobuxToCash } = window.BTRoblox
+			
+			// Item price
+			
+			reactHook.hijackElement(
+				elem => elem.props.className?.includes("text-robux-lg"),
+				elem => {
+					const originalText = elem.props.children
+					const robux = parseInt(originalText.replace(/\D/g, ""), 10)
+					
+					if(Number.isSafeInteger(robux)) {
+						const cash = RobuxToCash.convert(robux)
+						
+						elem.props.children = [
+							originalText,
+							reactHook.createElement("span", {
+								className: "btr-robuxToCash-big",
+								children: ` (${cash})`
+							})
+						]
+					}
+				}
+			)
+			
+			// Sponsored / Recommendations
 			
 			reactHook.hijackElement( // ItemCardPrice
 				elem => elem.props.className?.includes("text-robux-tile"),
@@ -624,6 +597,33 @@ pageInit.itemdetails = (category, assetIdString) => {
 					}
 				}
 			)
+		})
+		
+		document.$watch("#item-average-price", label => {
+			const update = () => {
+				const amt = parseInt(label.textContent.replace(/\D/g, ""), 10)
+				
+				if(!Number.isSafeInteger(amt)) {
+					return
+				}
+				
+				observer.disconnect()
+				
+				const cash = RobuxToCash.convert(amt)
+				label.textContent += ` (${cash})`
+			}
+
+			const observer = new MutationObserver(update)
+			observer.observe(label, { characterData: true })
+			update()
+		})
+		
+		document.$watch(".resellers .vlist").$then().$watchAll(".list-item", item => {
+			const label = item.$find(".reseller-price-container .text-robux")
+			const btn = item.$find(".PurchaseButton")
+
+			const cash = RobuxToCash.convert(+(btn ? btn.dataset.expectedPrice : ""))
+			label.textContent += ` (${cash})`
 		})
 	}
 

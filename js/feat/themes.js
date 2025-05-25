@@ -2,18 +2,36 @@
 
 const btrThemes = {
 	cssFiles: ["main.css", "settingsmodal.css"],
-	themeStyles: [],
+	pageFiles: [],
+	themeFiles: [],
+	
+	theme: "default",
 
 	setTheme(theme) {
-		removeCSS(...this.themeStyles.splice(0, this.themeStyles.length))
+		removeCSS(...this.themeFiles.splice(0, this.themeFiles.length))
 
+		this.theme = theme
+		
 		if(theme !== "default") {
-			this.themeStyles.push(
-				...this.cssFiles.map(path => `css/${theme}/${path}`)
+			this.themeFiles.push(
+				...this.cssFiles.map(path => `css/${theme}/${path}`),
+				...this.pageFiles.map(path => `css/${theme}/${path}`)
 			)
 		}
 
-		injectCSS(...this.themeStyles)
+		injectCSS(...this.themeFiles)
+	},
+	
+	update() {
+		removeCSS(...this.pageFiles.splice(0, this.pageFiles.length))
+		
+		this.pageFiles.push(
+			...(BTRoblox.currentPage?.css ?? []).map(subPath => `css/${subPath}`)
+		)
+		
+		injectCSS(...this.pageFiles)
+		
+		this.setTheme(this.theme)
 	},
 	
 	init() {
@@ -21,10 +39,6 @@ const btrThemes = {
 			this.cssFiles.push("create.css")
 		}
 		
-		if(BTRoblox.currentPage?.css) {
-			this.cssFiles.push(...BTRoblox.currentPage.css)
-		}
-
 		injectCSS(...this.cssFiles.map(subPath => `css/${subPath}`))
 
 		this.setTheme("default")

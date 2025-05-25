@@ -102,32 +102,32 @@ const PAGE_INFO = {
 	}
 }
 
-if(IS_CONTENT_SCRIPT) {
-	const currentPage = (() => {
-		for(const [name, page] of Object.entries(PAGE_INFO)) {
-			const domainMatches = page.domainMatches ?? ["www.roblox.com", "web.roblox.com"]
-			
-			if(!domainMatches.includes(location.hostname)) {
-				continue
+const getCurrentPage = () => {
+	for(const [name, page] of Object.entries(PAGE_INFO)) {
+		const domainMatches = page.domainMatches ?? ["www.roblox.com", "web.roblox.com"]
+		
+		if(!domainMatches.includes(location.hostname)) {
+			continue
+		}
+		
+		for(let pattern of page.matches) {
+			// Add support for locale urls
+			if(pattern.startsWith("^")) {
+				pattern = `^(?:/\\w{2}|/\\w{2}-\\w{2,3})?${pattern.slice(1)}`
 			}
+			//
 			
-			for(let pattern of page.matches) {
-				// Add support for locale urls
-				if(pattern.startsWith("^")) {
-					pattern = `^(?:/\\w{2}|/\\w{2}-\\w{2,3})?${pattern.slice(1)}`
-				}
-				//
-				
-				const matches = location.pathname.match(new RegExp(pattern, "i"))
-				if(matches) {
-					return { ...page, name, matches: matches.slice(1) }
-				}
+			const matches = location.pathname.match(new RegExp(pattern, "i"))
+			if(matches) {
+				return { ...page, name, matches: matches.slice(1) }
 			}
 		}
-	
-		return null
-	})()
-	
+	}
+
+	return null
+}
+
+if(IS_CONTENT_SCRIPT) {
 	const btrElement = document.createElement("btroblox")
 	const btrStyle = document.createElement("style")
 	btrStyle.type = "text/css"
@@ -136,6 +136,6 @@ if(IS_CONTENT_SCRIPT) {
 	
 	window.BTRoblox = {
 		element: btrElement,
-		currentPage
+		currentPage: null
 	}
 }

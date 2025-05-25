@@ -286,6 +286,11 @@ const RobloxApi = {
 			xsrfFetch(`https://catalog.roblox.com/v1/users/${userId}/bundles?${new URLSearchParams(urlParams).toString()}`, {
 				credentials: "include"
 			}).then(res => res.json()),
+			
+		getFavorites: (userId, assetType, limit=10, cursor="") =>
+			xsrfFetch(`https://catalog.roblox.com/v1/favorites/users/${userId}/favorites/${assetType}/assets?limit=${limit}&cursor=${cursor}`, {
+				credentials: "include"
+			}).then(res => res.json()),
 	},
 	develop: {
 	},
@@ -313,7 +318,12 @@ const RobloxApi = {
 		getPlaceDetails: placeIds =>
 			xsrfFetch(`https://games.roblox.com/v1/games/multiget-place-details?placeIds=${placeIds.join("&placeIds=")}`, {
 				credentials: "include"
-			}).then(res => res.json())
+			}).then(res => res.json()),
+			
+		getFavorites: (userId, limit=10, cursor="") =>
+			xsrfFetch(`https://games.roblox.com/v2/users/${userId}/favorite/games?limit=${limit}&cursor=${cursor}`, {
+				credentials: "include"
+			}).then(res => res.json()),
 	},
 	inventory: {
 		getUserInventory: (userId, urlParams) =>
@@ -392,7 +402,19 @@ const RobloxApi = {
 			xsrfFetch(`https://thumbnails.roblox.com/v1/badges/icons?badgeIds=${badgeIds.join(",")}&size=${size}&format=Png`, {
 				credentials: "include"
 			}).then(res => res.json()),
-		
+			
+		getGameIcons: (gameIds, size = "150x150") =>
+			xsrfFetch(`https://thumbnails.roblox.com/v1/games/icons?universeIds=${gameIds.join(",")}&size=${size}&format=Png`, {
+				credentials: "include"
+			}).then(res => res.json()),
+			
+		batch: requests =>
+			xsrfFetch(`https://thumbnails.roblox.com/v1/batch`, {
+				credentials: "include",
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(requests)
+			}).then(res => res.json()),
 	},
 	users: {
 		getUserDetails: userIds =>
@@ -424,12 +446,13 @@ const RobloxApi = {
 				body: JSON.stringify({ userIds, fields })
 			}).then(res => res.json())
 	},
-	www: {
-		getFavorites: (userId, assetTypeId, itemsPerPage, cursor, thumbWidth=150, thumbHeight=150) =>
-			xsrfFetch(`https://www.roblox.com/users/favorites/list-json?userId=${userId}&assetTypeId=${assetTypeId}&itemsPerPage=${itemsPerPage}&cursor=${cursor}&thumbWidth=${thumbWidth}&thumbHeight=${thumbHeight}`, {
+	toolboxService: {
+		getFavorites: (userId, assetTypeId, limit=10, cursor="") =>
+			xsrfFetch(`https://apis.roblox.com/toolbox-service/v1/favorites/user/${userId}/${assetTypeId}?limit=${limit}&cursor=${cursor}`, {
 				credentials: "include"
 			}).then(res => res.json()),
-		
+	},
+	www: {
 		getProfilePlayerGames: userId =>
 			xsrfFetch(`https://www.roblox.com/users/profile/playergames-json?userId=${userId}`, {
 				credentials: "include"

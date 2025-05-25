@@ -268,33 +268,6 @@ const OwnerAssetCache = {
 }
 
 pageInit.catalog = () => {
-	if(RobuxToCash.isEnabled()) {
-		InjectJS.inject(() => {
-			const { reactHook, RobuxToCash } = window.BTRoblox
-			
-			reactHook.hijackElement( // ItemCardPrice
-				elem => elem.props.className?.includes("text-robux-tile") && typeof(elem.props.children) === "string",
-				elem => {
-					const originalText = elem.props.children
-					const robux = parseInt(originalText.replace(/\D/g, ""), 10)
-					
-					if(Number.isSafeInteger(robux)) {
-						const cash = RobuxToCash.convert(robux)
-						
-						elem.props.children = [
-							originalText,
-							reactHook.createElement("span", {
-								className: "btr-robuxToCash-tile",
-								children: ` (${cash})`,
-								title: `R$ ${originalText.trim()}`
-							})
-						]
-					}
-				}
-			)
-		})
-	}
-
 	if(SETTINGS.get("general.hoverPreview")) {
 		loadOptionalLibrary("previewer").then(() => {
 			HoverPreview.register(".catalog-item-container", ".item-card-thumb-container")
@@ -304,37 +277,9 @@ pageInit.catalog = () => {
 	if(!SETTINGS.get("catalog.enabled")) { return }
 
 	if(SETTINGS.get("catalog.showOwnedAssets")) {
-		const updateOwnedAssets = ownedAssets => {
-			for(const [assetId, isOwned] of Object.entries(ownedAssets)) {
-				const elems = document.$findAll(`.item-card-thumb-container[data-btr-owned-id="${assetId}"]`)
-				
-				for(const thumb of elems) {
-					const ownedLabel = thumb.$find(".btr-item-owned")
-
-					if(isOwned) {
-						if(!ownedLabel) {
-							thumb.append(html`<span class=btr-item-owned><span class=icon-checkmark-white-bold title="You own this item" style="bottom:auto;left:auto;"></span></span>`)
-						}
-					} else {
-						if(ownedLabel) {
-							ownedLabel.remove()
-						}
-					}
-				}
-			}
-		}
-
 		let currentRequest
-		const checkItem = (anchor, thumb) => {
-			const match = anchor.href && anchor.href.match(/\/(catalog|library|bundles)\/(\d+)/)
-
-			if(!match) {
-				delete thumb.dataset.btrOwnedId
-				return
-			}
-
-			const id = match[1] === "bundles" ? "b" + match[2] : match[2]
-
+		
+		InjectJS.listen("checkOwnedAsset", assetId => {
 			if(!currentRequest) {
 				currentRequest = []
 
@@ -352,31 +297,71 @@ pageInit.catalog = () => {
 						}
 					}
 					
-					updateOwnedAssets(initData)
-					OwnerAssetCache.update(changes => updateOwnedAssets(changes))
+					InjectJS.send("updateOwnedAssets", initData)
+					OwnerAssetCache.update(changes => InjectJS.send("updateOwnedAssets", changes))
 					
 					currentRequest = null
 				})
 			}
 
-			currentRequest.push(id)
-			thumb.dataset.btrOwnedId = id
-		}
-
-		document.$watch("#results").$then()
-			.$watchAll(".hlist", hlist => {
-				hlist.$watchAll(".catalog-item-container", item => {
-					item.$watch([".item-card-link", ".item-card-thumb-container"], (anchor, thumb) => {
-						checkItem(anchor, thumb)
-						
-						new MutationObserver(() => {
-							checkItem(anchor, thumb)
-						}).observe(anchor, {
-							attributes: true,
-							attributeFilter: ["href"]
-						})
-					})
-				})
+			currentRequest.push(assetId)
+		})
+		
+		InjectJS.inject(() => {
+			const { reactHook, contentScript } = window.BTRoblox
+			
+			const ownedAssets = {}
+			
+			contentScript.listen("updateOwnedAssets", changes => {
+				for(const [assetId, isOwned] of Object.entries(changes)) {
+					ownedAssets[+assetId]?.set(isOwned)
+				 }
 			})
+			
+			reactHook.hijackConstructor( // ItemCard
+				(type, props) => "unitsAvailableForConsumption" in props && "id" in props,
+				(target, thisArg, args) => {
+					const props = args[0]
+					const result = target.apply(thisArg, args)
+					
+					if(props.type === "Asset" && props.id) {
+						let state = ownedAssets[props.id]
+						
+						if(!state) {
+							state = reactHook.createGlobalState(false)
+							ownedAssets[props.id] = state
+							
+							contentScript.send("checkOwnedAsset", props.id)
+						}
+						
+						const owned = reactHook.useGlobalState(state)
+						
+						if(owned) {
+							result.props.className = (result.props.className ?? "") + " btr-owned"
+							
+							const parent = reactHook.queryElement(result, x => x.props.className?.includes("item-card-link"))
+							
+							if(parent) {
+								let children = parent.props.children
+								
+								if(!Array.isArray(children)) {
+									children = parent.props.children = children ? [children] : []
+								}
+								
+								children.unshift(reactHook.createElement("span", {
+									className: "btr-item-owned",
+									children: reactHook.createElement("span", {
+										className: "icon-checkmark-white-bold",
+										title: "You own this item"
+									})
+								}))
+							}
+						}
+					}
+					
+					return result
+				}
+			)
+		})
 	}
 }

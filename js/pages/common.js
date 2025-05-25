@@ -324,7 +324,163 @@ const useNativeAudioPlayer = (mediaPlayer, bigPlayer) => {
 	})
 }
 
+//
 
+const initReactFriends = () => {
+	InjectJS.inject(() => {
+		const { reactHook, hijackXHR, settings } = BTRoblox
+	
+		reactHook.hijackConstructor( // FriendsList
+			(type, props) => "friendsList" in props, 
+			(target, thisArg, args) => {
+				let showSecondRow = false
+				
+				if(BTRoblox.currentPage?.name === "home") {
+					showSecondRow = settings.home.friendsSecondRow
+				} else if(BTRoblox.currentPage?.name === "profile") {
+					showSecondRow = true
+				}
+				
+				if(showSecondRow) {
+					const friendsList = args[0].friendsList
+					
+					reactHook.hijackUseState( // visibleFriendsList
+						(value, index) => value === friendsList,
+						(value, initial) => (value && friendsList) ? friendsList.slice(0, value.length * 2) : value
+					)
+				}
+				
+				const result = target.apply(thisArg, args)
+				
+				try { result.props.className = `${result.props.className ?? ""} btr-friends-list` }
+				catch(ex) { console.error(ex) }
+				
+				if(showSecondRow) {
+					try { result.props.className = `${result.props.className ?? ""} btr-friends-secondRow` }
+					catch(ex) { console.error(ex) }
+				}
+				
+				return result
+			}
+		)
+		
+		if(settings.home.friendsShowUsername) {
+			const friendsState = reactHook.createGlobalState({})
+			
+			hijackXHR(request => {
+				if(request.method === "POST" && request.url === "https://apis.roblox.com/user-profile-api/v1/user/profiles/get-profiles") {
+					request.onRequest.push(request => {
+						const json = JSON.parse(request.body)
+						
+						if(!json.fields.includes("names.username")) {
+							json.fields.push("names.username")
+						}
+						
+						request.body = JSON.stringify(json)
+					})
+					
+					request.onResponse.push(json => {
+						for(const user of json.profileDetails) {
+							friendsState.value[user.userId] = user
+						}
+						
+						friendsState.update()
+					})
+				}
+			})
+			
+			reactHook.hijackConstructor( // FriendTileContent
+				(type, props) => props.displayName && props.userProfileUrl,
+				(target, thisArg, args) => {
+					const result = target.apply(thisArg, args)
+					
+					try {
+						const userId = args[0].id
+						
+						const labels = reactHook.queryElement(result, x => x.props.className?.includes("friends-carousel-tile-labels"))
+						if(labels && Array.isArray(labels.props.children)) {
+							const friends = reactHook.useGlobalState(friendsState)
+							const friend = friends[userId]
+							
+							if(friend) {
+								labels.props.children.splice(1, 0, 
+									reactHook.createElement("div", {
+										className: "friends-carousel-tile-sublabel btr-friends-carousel-username-label",
+										children: reactHook.createElement("span", {
+											className: "btr-friends-carousel-username",
+											children: `@${friend.names.username}`
+										})
+									})
+								)
+							}
+						}
+					} catch(ex) {
+						console.error(ex)
+					}
+					
+					return result
+				}
+			)
+		}
+		
+		if(settings.home.friendPresenceLinks) {
+			reactHook.hijackConstructor( // FriendTileDropdown
+				(type, props) => props.friend && props.gameUrl,
+				(target, thisArg, args) => {
+					const result = target.apply(thisArg, args)
+					
+					try {
+						const card = result.props.children?.[0]
+						
+						if(card?.props.className?.includes("in-game-friend-card")) {
+							result.props.children[0] = reactHook.createElement("a", {
+								href: args[0].gameUrl,
+								style: { display: "contents" },
+								onClick: event => event.preventDefault(),
+								children: card
+							})
+						}
+					} catch(ex) {
+						console.error(ex)
+					}
+					
+					return result
+				}
+			)
+		}
+	})
+}
+
+const initReactRobuxToCash = () => {
+	if(RobuxToCash.isEnabled()) {
+		InjectJS.inject(() => {
+			const { reactHook, RobuxToCash } = window.BTRoblox
+			
+			reactHook.hijackElement( // ItemCardPrice
+				elem => elem.props.className?.includes("text-robux-tile") && typeof(elem.props.children) === "string",
+				elem => {
+					const originalText = elem.props.children
+					const robux = parseInt(originalText.replace(/\D/g, ""), 10)
+					
+					if(Number.isSafeInteger(robux)) {
+						const cash = RobuxToCash.convert(robux)
+						
+						elem.props.children = [
+							originalText,
+							reactHook.createElement("span", {
+								className: "btr-robuxToCash-tile",
+								children: ` (${cash})`,
+								title: `R$ ${originalText.trim()}`
+							})
+						]
+					}
+				}
+			)
+		})
+	}
+}
+
+//
 
 pageInit.common = () => {
 	// Init global features
@@ -332,16 +488,17 @@ pageInit.common = () => {
 	Navigation.init()
 	SettingsModal.enable()
 	
+	// Init common react
+	
+	initReactFriends()
+	initReactRobuxToCash()
+	
 	//
 	
 	const headWatcher = document.$watch(">head").$then()
 	const bodyWatcher = document.$watch(">body", body => {
 		body.classList.toggle("btr-no-hamburger", SETTINGS.get("navigation.noHamburger"))
 		body.classList.toggle("btr-hide-ads", SETTINGS.get("general.hideAds"))
-
-		if(BTRoblox.currentPage) {
-			body.dataset.btrPage = BTRoblox.currentPage.name
-		}
 	}).$then()
 
 	headWatcher.$watch(`meta[name="user-data"]`, meta => {
@@ -752,17 +909,20 @@ pageInit.common = () => {
 			hijackXHR(request => {
 				if(request.method === "POST" && request.url.match(/^https:\/\/apis\.roblox\.com\/discovery-api\/omni-recommendation(-metadata)?$/i)) {
 					request.onResponse.push(json => {
+						console.log("beep boop", json)
+						
 						if(settings.home.favoritesAtTop && json?.sorts) {
-							const favs = json.sorts.find(x => x.topic === "Favorites" || x.topicId === 100000001) // topic gets localized so use topicId as backup
+							const favoritesSort = json.sorts.find(x => x.topicId === 100000001)
+							const continueSort = json.sorts.find(x => x.topicId === 100000003)
 							
-							if(favs) {
-								const index = json.sorts.indexOf(favs)
-								const continueIndex = json.sorts.findIndex(x => x.topic === "Continue" || x.topicId === 100000003) // topic gets localized so use topicId as backup
-								
-								if(index > 1) {
-									json.sorts.splice(index, 1)
-									json.sorts.splice(continueIndex !== -1 ? continueIndex + 1 : 1, 0, favs)
-								}
+							if(favoritesSort) {
+								json.sorts.splice(json.sorts.indexOf(favoritesSort), 1)
+								json.sorts.splice(1, 0, favoritesSort)
+							}
+							
+							if(continueSort) {
+								json.sorts.splice(json.sorts.indexOf(continueSort), 1)
+								json.sorts.splice(1, 0, continueSort)
 							}
 						}
 					})

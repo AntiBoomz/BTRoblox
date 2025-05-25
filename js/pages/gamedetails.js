@@ -514,17 +514,19 @@ pageInit.gamedetails = placeId => {
 						if(status) {
 							if(showRegion && regionSetting !== "combined") {
 								status.props.children += `\nRegion: ${
-									!serverDetails ? "Loading" :
-									serverDetails.location ? serverDetails.location.country.name === "United States" ? serverDetails.location.region.name : serverDetails.location.country.name :
-									serverDetails.statusText
+									!serverDetails ? "Loading"
+									: !serverDetails.location ? serverDetails.statusText
+									: `${serverDetails.location.city}, ${serverDetails.location.country.name === "United States" ? serverDetails.location.region.code : serverDetails.location.country.code}`
 								}`
 									
 								// Okay, this is hacky, BUT...
 								// United Kingdom wraps over by 1 character, so let's increase size for it lmao
-								if(serverDetails?.location?.country.name === "United Kingdom") {
-									if(!status.props.style) { status.props.style = {} }
-									status.props.style.width = "105%"
-								}
+								// not needed anymore
+								
+								// if(serverDetails?.location?.country.name === "United Kingdom") {
+								// 	if(!status.props.style) { status.props.style = {} }
+								// 	status.props.style.width = "105%"
+								// }
 							}
 							
 							if(showPing) {
@@ -541,17 +543,16 @@ pageInit.gamedetails = placeId => {
 							
 							if(showRegion) {
 								status.props.title = 
-									!serverDetails ? "Loading" :
-									serverDetails.location ? (
-										serverDetails.location.country.code === "US" ? `${serverDetails.location.city}, ${serverDetails.location.region.code}, ${serverDetails.location.country.name}` :
-										serverDetails.location.city !== serverDetails.location.country.name ? `${serverDetails.location.city}, ${serverDetails.location.country.name}` :
-										`${serverDetails.location.city}` 
-									) :
-									serverDetails.statusTextLong
+									!serverDetails ? "Loading"
+									: !serverDetails.location ? serverDetails.statusTextLong
+									: (
+										serverDetails.location.country.name === "United States" ? `${serverDetails.location.city}, ${serverDetails.location.region.name}, ${serverDetails.location.country.name}`
+										: `${serverDetails.location.city}, ${serverDetails.location.country.name}` 
+									)
 								
-								status.props.title += ` (${serverDetails?.address})`
-								
-								console.log(serverDetails)
+								if(serverDetails?.address) {
+									status.props.title += ` (${serverDetails?.address})`
+								}
 							}
 						}
 					}

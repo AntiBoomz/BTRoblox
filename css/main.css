@@ -1065,6 +1065,8 @@ a:not(.disabled):hover > .btr-icon-content {
 	/* bottom: -2px; */
 	top: 2px;
 	right: -2px;
+	bottom: auto;
+	left: auto;
 	z-index: 1;
 	width: 34px;
 	height: 34px;
@@ -1135,9 +1137,17 @@ a:not(.disabled):hover > .btr-icon-content {
 	overflow: hidden;
 }
 
-.btr-preview-container-parent > :not(.btr-preview-container):not(.btr-item-owned) {
+.btr-preview-container-parent > :not(.btr-preview-container):not(.btr-item-owned):not(.add-to-cart-btn-container) {
 	opacity: 0 !important;
 	transition: none !important;
+}
+
+.btr-preview-container-parent > .add-to-cart-btn-container {
+	z-index: 2;
+}
+
+.btr-preview-container-parent > .add-to-cart-btn-container:not(:hover) {
+	opacity: 0.2 !important;
 }
 
 .btr-hover-preview-camera-rotate {

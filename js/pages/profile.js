@@ -2,7 +2,7 @@
 
 pageInit.profile = userId => {
 	if(!SETTINGS.get("profile.enabled")) { return }
-
+	
 	const newCont = html`
 	<div class=btr-profile-container>
 		<div class=btr-profile-left>
@@ -57,8 +57,7 @@ pageInit.profile = userId => {
 			</div>
 			<div class=placeholder-friends>
 				<div class=container-header><h2>Friends</h2></div>
-				<div class=section-content>
-					<div class="section-content-off btr-section-content-off">This user has no Friends</div>
+				<div class="spinner spinner-default">
 				</div>
 			</div>
 			<div class=btr-profile-favorites>
@@ -158,7 +157,7 @@ pageInit.profile = userId => {
 
 			avatar.classList.remove("section")
 			avatarLeft.classList.remove("col-sm-6", "section-content")
-			avatarRight.classList.remove("col-sm-6", "section-content")
+			avatarRight.classList.remove("col-sm-6")
 
 			avatarRight.style.transition = "none" // stop transition on page load
 			setTimeout(() => avatarRight.style.transition = "", 1e3)
@@ -193,60 +192,15 @@ pageInit.profile = userId => {
 			newCont.$find(".placeholder-posts").replaceWith(posts)
 		})
 		.$watch("#friends-carousel-container", friends => {
-			newCont.$find(".placeholder-friends").replaceWith(friends)
-			initReactFriends(true)
+			newCont.$find(".placeholder-friends").after(friends)
+			
+			friends.$watch(".friends-carousel-container", () => {
+				newCont.$find(".placeholder-friends").remove()
+			})
 		})
 		.$watch(".profile-statistics", outerStats => {
 			newCont.$find(".placeholder-stats").replaceWith(outerStats)
 			outerStats.classList.add("btr-profileStats")
-
-			// if(SETTINGS.get("profile.lastOnline")) {
-			// 	outerStats.$watch(".profile-stats-container", stats => {
-			// 		stats.classList.add("btr-lastOnline")
-
-			// 		const label = html`
-			// 		<li class=profile-stat>
-			// 			<p class=text-label>Last Online</p>
-			// 			<p class=text-lead>Loading</p>
-			// 		</li>`
-
-			// 		if(stats.firstElementChild) {
-			// 			stats.firstElementChild.after(label)
-			// 		} else {
-			// 			stats.prepend(label)
-			// 		}
-					
-			// 		presencePromise.then(presence => {
-			// 			if(presence?.userPresenceType) {
-			// 				label.$find(".text-lead").textContent = "Now"
-			// 				return
-			// 			}
-						
-			// 			let numRetries = 0
-						
-			// 			const getLastOnline = () => {
-			// 				RobloxApi.presence.getLastOnline([userId]).then(json => {
-			// 					if(!json?.lastOnlineTimestamps?.length) {
-			// 						if(numRetries < 2) {
-			// 							numRetries += 1
-			// 							setTimeout(getLastOnline, numRetries * 2000)
-			// 						} else {
-			// 							label.$find(".text-lead").textContent = "Failed"
-			// 						}
-			// 						return
-			// 					}
-								
-			// 					const lastOnline = new Date(json.lastOnlineTimestamps[0].lastOnline)
-								
-			// 					label.$find(".text-lead").textContent = `${lastOnline.$since()}`
-			// 					label.$find(".text-lead").title = lastOnline.$format("MMM D, YYYY | hh:mm A (T)")
-			// 				})
-			// 			}
-						
-			// 			getLastOnline()
-			// 		})
-			// 	})
-			// }
 		})
 		.$watch("#roblox-badges-container", badges => {
 			newCont.$find(".placeholder-robloxbadges").replaceWith(badges)
@@ -592,7 +546,7 @@ pageInit.profile = userId => {
 			if(!badges.length) {
 				hlist.append(html`<div class="section-content-off btr-section-content-off">This user has no Player Badges</div>`)
 			} else {
-				newCont.$find(".btr-profile-playerbadges").stylelist.display = ""
+				badgesElem.style.display = ""
 				hlist.after(pager)
 				
 				for(const data of badges) {
@@ -804,20 +758,84 @@ pageInit.profile = userId => {
 			
 			while(data.hasMore && pageEnd > data.items.length) {
 				isLoading = true
-				const json = await RobloxApi.www.getFavorites(userId, category, 100, data.nextPageCursor, 150, 150)
+				
+				const CreatorStoreAssetTypes = [
+					AssetType.Audio, AssetType.Model, AssetType.Decal, AssetType.Animation,
+					AssetType.Plugin, AssetType.MeshPart, AssetType.Video
+				]
+				
+				let json
+				
+				if(category === AssetType.Place) {
+					json = await RobloxApi.games.getFavorites(userId, 100, data.nextPageCursor)
+						.then(json => {
+							json.data = json.data.map(x => ({
+								url: `/games/${x.rootPlace?.id}/`,
+								id: x.rootPlace?.id,
+								gameId: x.id,
+								assetTypeId: category,
+								name: x.name,
+								creator: {
+									id: x.creator.id,
+									type: x.creator.type,
+									name: x.creator.name,
+									verified: false
+								}
+							}))
+							
+							return json
+						})
+				} else if(CreatorStoreAssetTypes.includes(category)) {
+					json = await RobloxApi.toolboxService.getFavorites(userId, category, 100, data.nextPageCursor)
+						.then(json => {
+							json.data = json.data.map(x => ({
+								url: `https://create.roblox.com/store/asset/${x.asset.id}/`,
+								id: x.asset.id,
+								assetTypeId: x.asset.assetTypeId,
+								name: x.asset.name,
+								creator: {
+									id: x.creator.creator.match(/\/(\d+)/)?.[1],
+									type: x.creator.creator.includes("user/") ? "User" : "Group",
+									name: x.creator.name,
+									verified: x.creator.verified
+								}
+							}))
+							
+							return json
+						})
+				} else {
+					json = await RobloxApi.catalog.getFavorites(userId, category, 100, data.nextPageCursor)
+						.then(json => {
+							json.data = json.data.map(x => ({
+								url: `/catalog/${x.id}/`,
+								id: x.id,
+								assetTypeId: x.assetType,
+								name: x.name,
+								creator: {
+									id: x.creatorTargetId,
+									type: x.creatorType, 
+									name: x.creatorName,
+									verified: x.creatorHasVerifiedBadge
+								}
+							}))
+							
+							return json
+						})
+				}
+				
 				isLoading = false
 				
-				if(!json?.IsValid) {
+				if(!json?.data) {
 					return
 				}
 				
-				data.items.push(...json.Data.Items)
+				data.items.push(...json.data)
 				
 				data.nextPage += 1
-				data.nextPageCursor = json.Data.NextCursor
+				data.nextPageCursor = json.nextPageCursor
 				
 				data.hasMore = !!data.nextPageCursor
-				data.totalItems = data.hasMore ? Math.max(data.items.length + 1, json.Data.TotalItems - ((data.nextPage - 1) * 100 - data.items.length)) : data.items.length
+				data.totalItems = data.hasMore ? data.items.length + 1 : data.items.length
 			}
 			
 			pager.setPage(page)
@@ -829,28 +847,51 @@ pageInit.profile = userId => {
 				hlist.append(html`<div class='section-content-off btr-section-content-off'>This user has no favorite ${categoryName}</div>`)
 				return
 			}
-
+			
+			const requests = []
+			const cards = []
+			
 			for(let i = pageStart; i < pageEnd; i++) {
 				const item = data.items[i]
 				if(!item) { break }
 				
-				hlist.append(html`
+				const card = html`
 				<li class="list-item game-card">
 					<div class="card-item game-card-container">
-						<a href="${item.Item.AbsoluteUrl}" title="${item.Item.Name}">
+						<a href="${item.url}" title="${item.name}">
 							<div class="game-card-thumb-container">
-								<img class="game-card-thumb card-thumb" alt="${item.Item.Name}" src="${item.Thumbnail.Url || ""}">
+								<img class="game-card-thumb card-thumb" src="">
 							</div>
-							<div class="text-overflow game-card-name" title="${item.Item.Name}" ng-non-bindable>${item.Item.Name}</div>
+							<div class="text-overflow game-card-name" title="${item.name}" ng-non-bindable>${item.name}</div>
 						</a>
 						<div class="game-card-name-secondary btr-creator-link-container">
 							<span class="text-secondary">By </span>
-							<a class="text-link text-overflow btr-creator-link" title="${item.Creator.Name}" href="${item.Creator.CreatorProfileLink}">
-								${item.Creator.Name}
+							<a class="text-link text-overflow btr-creator-link" title="${item.creator.name}" href="${item.creator.type === "User" ? `/users/${item.creator.id}/profile` : `/communities/${item.creator.id}/community`}">
+								${item.creator.name}
 							</a>
 						</div>
 					</div>
-				</li>`)
+				</li>`
+				
+				requests.push({
+					format: "webp",
+					requestId: `${i}`,
+					size: "150x150",
+					targetId: category === AssetType.Place ? item.gameId : item.id,
+					type: category === AssetType.Place ? "GameIcon" : "Asset"
+				})
+				cards.push(card)
+				
+				hlist.append(card)
+			}
+			
+			if(requests.length) {
+				RobloxApi.thumbnails.batch(requests).then(json => {
+					for(const thumb of json.data) {
+						const index = requests.findIndex(x => x.targetId === thumb.targetId)
+						cards[index].$find(".game-card-thumb").src = thumb.imageUrl ?? ""
+					}
+				})
 			}
 		}
 
@@ -904,6 +945,10 @@ pageInit.profile = userId => {
 			newCont.$find(".placeholder-inventory").replaceWith(cont)
 		} else {
 			newCont.$find(".placeholder-inventory").remove()
+		}
+		
+		if(!$("#friends-carousel-container")) {
+			newCont.$find(".placeholder-friends")?.remove()
 		}
 	})
 }

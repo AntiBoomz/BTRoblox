@@ -1,4 +1,4 @@
-.btr-item-owned ~ .btr-preview-container .btr-hover-preview-camera-rotate {
+.btr-owned .btr-hover-preview-camera-rotate {
 	top: 8px;
 	right: 28px;
 }

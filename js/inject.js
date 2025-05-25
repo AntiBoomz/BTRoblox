@@ -1,6 +1,6 @@
 "use strict"
 
-const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE, selectedRobuxToCashOption) => {
+const INJECT_SCRIPT = (settings, IS_DEV_MODE, selectedRobuxToCashOption) => {
 	"use strict"
 	
 	const BTRoblox = window.BTRoblox = window.BTRoblox || {}
@@ -1027,6 +1027,10 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE, selectedRobuxToCashOp
 		init() {
 			contentScript.listen("reactInject", data => reactHook.inject(data))
 			onSet(window, "React", this.onReact.bind(this))
+			onSet(window, "ReactJSX", jsx => {
+				hijackFunction(jsx, "jsxs", this.onCreateElement.bind(this))
+				hijackFunction(jsx, "jsx", this.onCreateElement.bind(this))
+			})
 		}
 	}
 	
@@ -1035,9 +1039,36 @@ const INJECT_SCRIPT = (settings, currentPage, IS_DEV_MODE, selectedRobuxToCashOp
 	reactHook.init()
 	angularHook.init()
 	
+	//
+	
+	history.pushState = new Proxy(history.pushState, {
+		apply(target, thisArg, args) {
+			const result = target.apply(thisArg, args)
+			contentScript.send("locationchange")
+			return result
+		}
+	})
+	
+	history.replaceState = new Proxy(history.replaceState, {
+		apply(target, thisArg, args) {
+			const result = target.apply(thisArg, args)
+			contentScript.send("locationchange")
+			return result
+		}
+	})
+	
+	window.addEventListener("popstate", () => {
+		contentScript.send("locationchange")
+	})
+	
+	contentScript.listen("setCurrentPage", currentPage => {
+		BTRoblox.currentPage = currentPage
+	})
+	
+	//
+	
 	Object.assign(window.BTRoblox, {
 		settings,
-		currentPage,
 		IS_DEV_MODE,
 		RobuxToCash,
 		
