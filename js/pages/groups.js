@@ -80,27 +80,38 @@ function enableRedesign() {
 
 			const desc = aboutTemplate.$find("group-description")
 			if(desc) {
+				desc.removeAttribute("ng-switch-when")
 				groupHeader.after(desc)
+			}
+			
+			const forumsDiscovery = aboutTemplate.$find("group-forums-discovery")
+			if(forumsDiscovery) {
+				forumsDiscovery.removeAttribute("ng-switch-when")
+				groupAbout.after(forumsDiscovery)
 			}
 			
 			const socialLinks = aboutTemplate.$find("social-links-container")
 			if(socialLinks) {
+				socialLinks.removeAttribute("ng-switch-when")
 				groupAbout.after(socialLinks)
 			}
 			
 			const shout = aboutTemplate.$find(".group-shout")
 			if(shout) {
+				shout.removeAttribute("ng-switch-when")
 				shout.classList.add("btr-shout-container")
 				groupAbout.after(shout)
 			}
 			
 			const announcement = aboutTemplate.$find("#group-announcements")
 			if(announcement) {
+				announcement.removeAttribute("ng-switch-when")
 				groupAbout.after(announcement)
 			}
 			
 			const events = aboutTemplate.$find("group-events")
 			if(events) {
+				events.removeAttribute("ng-switch-when")
 				groupAbout.after(events)
 			}
 			
@@ -129,16 +140,28 @@ function enableRedesign() {
 			)
 			
 			baseTemplate.$find("group-about,[group-about]")?.setAttribute("ng-show", `!(layout.activeTab && layout.activeTab.btrCustomTab)`)
-			aboutTemplate.$find("group-payouts,[group-payouts]")?.setAttribute("btrlayout", "layout")
-			aboutTemplate.$find("group-payouts,[group-payouts]")?.setAttribute("ng-show", `layout.activeTab.btrCustomTab === "payouts"`)
-			aboutTemplate.$find("group-games,[group-games]")?.setAttribute("ng-show", `layout.activeTab.btrCustomTab === "games"`)
 			
-			groupContainer.append(
-				aboutTemplate.$find("group-payouts,[group-payouts]"),
-				aboutTemplate.$find("group-games,[group-games]"),
-				aboutTemplate.$find("group-wall,[group-wall]")
-			)
+			const payouts = aboutTemplate.$find("group-payouts,[group-payouts]")
+			if(payouts) {
+				payouts.removeAttribute("ng-switch-when")
+				payouts.setAttribute("btrlayout", "layout")
+				payouts.setAttribute("ng-show", `layout.activeTab.btrCustomTab === "payouts"`)
+				groupContainer.parentNode.append(payouts)
+			}
 			
+			const games = aboutTemplate.$find("group-games,[group-games]")
+			if(games) {
+				games.removeAttribute("ng-switch-when")
+				games.setAttribute("ng-show", `layout.activeTab.btrCustomTab === "games"`)
+				groupContainer.parentNode.append(games)
+			}
+			
+			const wall = aboutTemplate.$find("group-wall,[group-wall]")
+			if(wall) {
+				wall.removeAttribute("ng-switch-when")
+				wall.setAttribute("ng-show", "layout.activeTab !== groupDetailsConstants.tabs.forums")
+				groupContainer.parentNode.append(wall)
+			}
 		})
 		
 		angularHook.modifyTemplate("group-tab", template => {
