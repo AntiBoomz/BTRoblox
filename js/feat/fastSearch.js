@@ -522,6 +522,7 @@ const btrFastSearch = {
 							next = searchResults[searchIndex + 1]
 						} else {
 							next = container.nextElementSibling
+							prevent = true
 						}
 					}
 				} else {
@@ -540,7 +541,7 @@ const btrFastSearch = {
 				if(next) {
 					selected.classList.remove(selectedClass)
 					next.classList.add(selectedClass)
-
+					
 					if(prevent) {
 						ev.stopImmediatePropagation()
 						ev.stopPropagation()
@@ -600,7 +601,7 @@ const btrFastSearch = {
 			}, 0)
 		}
 		
-		document.$watch("#header").$then().$watch("#navbar-universal-search, .navbar-search, #navbar-search-input", search => {
+		document.$watch("#header").$then().$watch("#navbar-universal-search, .navbar-search", search => {
 			search.$on("keydown", "input", keyDown)
 			search.$on("keyup", "input", keyUp, { capture: true })
 			search.$on("input", "input", update)
@@ -609,10 +610,15 @@ const btrFastSearch = {
 			new MutationObserver(requestClassUpdate).observe(search, { subtree: true, attributes: true, attributeFilter: ["class"] })
 		}, { continuous: true })
 		
-		reactHook.inject({
-			selector: "#navbar-universal-search ul, .navbar-search ul",
-			index: 0,
-			html: `<div id="btr-fastsearch-container"><div style=display:none></div></div>`
+		InjectJS.inject(() => {
+			const { reactHook } = BTRoblox
+			
+			reactHook.inject("#navbar-universal-search, .navbar-search", elem => {
+				elem.find("ul")?.prepend(reactHook.createElement("div", {
+					id: "btr-fastsearch-container",
+					dangerouslySetInnerHTML: { __html: "" }
+				}))
+			})
 		})
 	}
 }

@@ -15,6 +15,8 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 	let bundleType
 	let preview
 	
+	let previewPromise = new Promise(resolve => {})
+	
 	const setOutfit = outfitId => {
 		if(!preview) {
 			currentOutfitId = outfitId
@@ -63,6 +65,8 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 			
 			preview.playAnimation(defaultAnims.idle[0])
 		}
+		
+		previewPromise.$resolve(preview)
 	})
 		
 	const addAsset = async (assetId, assetTypeId, assetName, meta) => {
@@ -196,7 +200,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 	}
 	
 	Promise.all(assetPromises).then(async () => {
-		if(!preview) { return }
+		if(!preview) { return null }
 		
 		await preview.waitForAppearance()
 		
@@ -214,7 +218,13 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 			preview.setEnabled(false)
 			preview.setVisible(false)
 		}
+	}).finally(() => {
+		if(!preview) {
+			previewPromise.$resolve(null)
+		}
 	})
+	
+	return previewPromise
 }
 
 const canDownloadAssetCache = {}
@@ -324,7 +334,11 @@ const initExplorer = async (assetId, assetTypeId, isBundle) => {
 	return btnCont
 }
 
-const initDownloadButton = async (assetId, assetTypeId) => {
+const initDownloadButton = async (assetId, assetTypeId, isBundle) => {
+	if(isBundle) {
+		return
+	}
+	
 	if(!SETTINGS.get("itemdetails.downloadButton") || InvalidDownloadableAssetTypeIds.includes(assetTypeId)) {
 		return
 	}
@@ -544,86 +558,20 @@ const initContentButton = async (assetId, assetTypeId) => {
 	return btnCont
 }
 
-pageInit.itemdetails = (category, assetIdString) => {
-	const assetId = Number.parseInt(assetIdString, 10)
-
+pageInit.itemdetails = () => {
 	if(RobuxToCash.isEnabled()) {
-		InjectJS.inject(() => {
-			const { reactHook, contentScript, RobuxToCash } = window.BTRoblox
-			
-			// Item price
-			
-			reactHook.hijackElement(
-				elem => elem.props.className?.includes("text-robux-lg"),
-				elem => {
-					const originalText = elem.props.children
-					const robux = parseInt(originalText.replace(/\D/g, ""), 10)
-					
-					if(Number.isSafeInteger(robux)) {
-						const cash = RobuxToCash.convert(robux)
-						
-						elem.props.children = [
-							originalText,
-							reactHook.createElement("span", {
-								className: "btr-robuxToCash-big",
-								children: ` (${cash})`
-							})
-						]
-					}
-				}
-			)
-			
-			// Sponsored / Recommendations
-			
-			reactHook.hijackElement( // ItemCardPrice
-				elem => elem.props.className?.includes("text-robux-tile"),
-				elem => {
-					const originalText = elem.props.children
-					if(typeof originalText !== "string") { return }
-					
-					const robux = parseInt(originalText.replace(/\D/g, ""), 10)
-					
-					if(Number.isSafeInteger(robux)) {
-						const cash = RobuxToCash.convert(robux)
-						
-						elem.props.children = [
-							originalText,
-							reactHook.createElement("span", {
-								className: "btr-robuxToCash-tile",
-								children: ` (${cash})`,
-								title: `R$ ${originalText.trim()}`
-							})
-						]
-					}
-				}
-			)
-		})
-		
-		document.$watch("#item-average-price", label => {
-			const update = () => {
-				const amt = parseInt(label.textContent.replace(/\D/g, ""), 10)
-				
-				if(!Number.isSafeInteger(amt)) {
-					return
-				}
-				
-				observer.disconnect()
-				
-				const cash = RobuxToCash.convert(amt)
-				label.textContent += ` (${cash})`
+		angularHook.modifyTemplate("asset-resale-data-pane", template => {
+			for(const elem of template.$findAll(`.text-robux`)) {
+				const cashText = ` (${RobuxToCash.convertAngular(elem.getAttribute("ng-bind").replace(/\|.*$/, "").replace(/^.*formatNumber\((.*)\)[^)]*$/, "$1"))})`
+				elem.after(html`<span class=btr-robuxToCash>${cashText}</span>`)
 			}
-
-			const observer = new MutationObserver(update)
-			observer.observe(label, { characterData: true })
-			update()
 		})
 		
-		document.$watch(".resellers .vlist").$then().$watchAll(".list-item", item => {
-			const label = item.$find(".reseller-price-container .text-robux")
-			const btn = item.$find(".PurchaseButton")
-
-			const cash = RobuxToCash.convert(+(btn ? btn.dataset.expectedPrice : ""))
-			label.textContent += ` (${cash})`
+		angularHook.modifyTemplate("resellers-list", template => {
+			for(const elem of template.$findAll(`.text-robux`)) {
+				const cashText = ` (${RobuxToCash.convertAngular(elem.getAttribute("ng-bind").replace(/\|.*$/, "").replace(/^.*formatNumber\((.*)\)[^)]*$/, "$1"))})`
+				elem.after(html`<span class=btr-robuxToCash>${cashText}</span>`)
+			}
 		})
 	}
 
@@ -635,253 +583,261 @@ pageInit.itemdetails = (category, assetIdString) => {
 
 	if(!SETTINGS.get("itemdetails.enabled")) { return }
 	
-	/*
-	if(SETTINGS.get("itemdetails.addOwnersList")) {
-		let wasOwnersListSetup = false
+	// if(SETTINGS.get("itemdetails.addOwnersList")) {
+	// 	let wasOwnersListSetup = false
 		
-		const setupOwnersList = (parent, name, ownerAssetId, initData) => {
-			if(wasOwnersListSetup) { return }
-			wasOwnersListSetup = true
+	// 	const setupOwnersList = (parent, name, ownerAssetId, initData) => {
+	// 		if(wasOwnersListSetup) { return }
+	// 		wasOwnersListSetup = true
 
-			const owners = html`
-			<div class=btr-owners-container style=display:none>
-				<div class=container-header>
-					<h2>Owners</h2>
-				</div>
-				<div class=section-content>
-				</div>
-				<button class="btn-control-sm btr-see-more-owners">See More</button>
-			</div>`
+	// 		const owners = html`
+	// 		<div class=btr-owners-container style=display:none>
+	// 			<div class=container-header>
+	// 				<h2>Owners</h2>
+	// 			</div>
+	// 			<div class=section-content>
+	// 			</div>
+	// 			<button class="btn-control-sm btr-see-more-owners">See More</button>
+	// 		</div>`
 
-			const ownersList = owners.$find(".section-content")
-			parent.before(owners)
+	// 		const ownersList = owners.$find(".section-content")
+	// 		parent.before(owners)
 
-			//
+	// 		//
 
-			let firstLoaded = false
-			let isLoading = false
-			let cursor = ""
+	// 		let firstLoaded = false
+	// 		let isLoading = false
+	// 		let cursor = ""
 
-			const btns = html`<div style="position: relative; float: right; height: 28px; margin-bottom: -28px; margin-top: 5px;"></div>`
-			const parBtn = html`<button class="btn-secondary-xs active" style=float:right;margin:2px;>${name}</button>`
-			const ownBtn = html`<button class=btn-control-xs style=float:right;margin:2px;>Owners</button>`
+	// 		const btns = html`<div style="position: relative; float: right; height: 28px; margin-bottom: -28px; margin-top: 5px;"></div>`
+	// 		const parBtn = html`<button class="btn-secondary-xs active" style=float:right;margin:2px;>${name}</button>`
+	// 		const ownBtn = html`<button class=btn-control-xs style=float:right;margin:2px;>Owners</button>`
 
-			btns.append(parBtn, ownBtn)
-			owners.before(btns)
+	// 		btns.append(parBtn, ownBtn)
+	// 		owners.before(btns)
 
-			ownBtn.$on("click", () => {
-				parBtn.classList.replace("btn-secondary-xs", "btn-control-xs")
-				ownBtn.classList.replace("btn-control-xs", "btn-secondary-xs")
+	// 		ownBtn.$on("click", () => {
+	// 			parBtn.classList.replace("btn-secondary-xs", "btn-control-xs")
+	// 			ownBtn.classList.replace("btn-control-xs", "btn-secondary-xs")
 
-				parBtn.classList.remove("active")
-				ownBtn.classList.add("active")
+	// 			parBtn.classList.remove("active")
+	// 			ownBtn.classList.add("active")
 
-				parent.style.display = "none"
-				owners.style.display = ""
+	// 			parent.style.display = "none"
+	// 			owners.style.display = ""
 
-				if(!firstLoaded && !initData) {
-					loadOwners()
-				}
-			})
+	// 			if(!firstLoaded && !initData) {
+	// 				loadOwners()
+	// 			}
+	// 		})
 
-			parBtn.$on("click", () => {
-				ownBtn.classList.replace("btn-secondary-xs", "btn-control-xs")
-				parBtn.classList.replace("btn-control-xs", "btn-secondary-xs")
+	// 		parBtn.$on("click", () => {
+	// 			ownBtn.classList.replace("btn-secondary-xs", "btn-control-xs")
+	// 			parBtn.classList.replace("btn-control-xs", "btn-secondary-xs")
 
-				ownBtn.classList.remove("active")
-				parBtn.classList.add("active")
+	// 			ownBtn.classList.remove("active")
+	// 			parBtn.classList.add("active")
 
-				owners.style.display = "none"
-				parent.style.display = ""
-			})
+	// 			owners.style.display = "none"
+	// 			parent.style.display = ""
+	// 		})
 
-			//
+	// 		//
 			
-			const seeMore = owners.$find(".btr-see-more-owners")
+	// 		const seeMore = owners.$find(".btr-see-more-owners")
 
-			const createElement = ({ userId, userName, item }) => {
-				const url = userId ? `/users/${userId}/profile` : ""
+	// 		const createElement = ({ userId, userName, item }) => {
+	// 			const url = userId ? `/users/${userId}/profile` : ""
 
-				const elem = html`
-				<div class=btr-owner-item>
-					<a href="${url}" title="${userName}" class="avatar avatar-headshot-md list-header">
-						<img class=avatar-card-image 
-							src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
-							alt="${userName}"
-						>
-					</a>
-					<div class=btr-owner-cont>
-						<a class="text-name username" title="${userName}" href="${url}">${userName}</a>
-						<div class=btr-owner-date>Since ${new Date(item.updated).$format("M/D/YYYY hh:mm:ss")}</div>
-					</div>
-					<div class=btr-serial>${item.serialNumber ? `#${item.serialNumber}` : `N/A`}</div>
-				</div>`
+	// 			const elem = html`
+	// 			<div class=btr-owner-item>
+	// 				<a href="${url}" title="${userName}" class="avatar avatar-headshot-md list-header">
+	// 					<img class=avatar-card-image 
+	// 						src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
+	// 						alt="${userName}"
+	// 					>
+	// 				</a>
+	// 				<div class=btr-owner-cont>
+	// 					<a class="text-name username" title="${userName}" href="${url}">${userName}</a>
+	// 					<div class=btr-owner-date>Since ${new Date(item.updated).$format("M/D/YYYY hh:mm:ss")}</div>
+	// 				</div>
+	// 				<div class=btr-serial>${item.serialNumber ? `#${item.serialNumber}` : `N/A`}</div>
+	// 			</div>`
 
-				if(userId) {
-					RobloxApi.thumbnails.getAvatarHeadshots([userId]).then(json => {
-						elem.$find(".avatar-card-image").src = json.data[0].imageUrl
-					})
-				} else {
-					for(const anchor of elem.$findAll("a")) {
-						anchor.removeAttribute("href")
-					}
-				}
+	// 			if(userId) {
+	// 				RobloxApi.thumbnails.getAvatarHeadshots([userId]).then(json => {
+	// 					elem.$find(".avatar-card-image").src = json.data[0].imageUrl
+	// 				})
+	// 			} else {
+	// 				for(const anchor of elem.$findAll("a")) {
+	// 					anchor.removeAttribute("href")
+	// 				}
+	// 			}
 
-				return elem
-			}
+	// 			return elem
+	// 		}
 
-			const getNames = request => {
-				const userIds = Object.keys(request)
-				if(!userIds.length) { return Promise.resolve() }
+	// 		const getNames = request => {
+	// 			const userIds = Object.keys(request)
+	// 			if(!userIds.length) { return Promise.resolve() }
 
-				return RobloxApi.users.getUserDetails(userIds).then(json => {
-					for(const user of json.data) {
-						const list = request[user.id]
+	// 			return RobloxApi.users.getUserDetails(userIds).then(json => {
+	// 				for(const user of json.data) {
+	// 					const list = request[user.id]
 						
-						if(list) {
-							for(const entry of list) {
-								entry.userName = user.name
-							}
-						}
-					}
-				})
-			}
+	// 					if(list) {
+	// 						for(const entry of list) {
+	// 							entry.userName = user.name
+	// 						}
+	// 					}
+	// 				}
+	// 			})
+	// 		}
 
-			const createElements = (data, isInitial) => {
-				const request = {}
-				const elems = []
+	// 		const createElements = (data, isInitial) => {
+	// 			const request = {}
+	// 			const elems = []
 				
-				for(const item of data) {
-					if(item.owner && (item.owner.type !== "User" || item.owner.id === 1)) { continue }
-					if(!item.owner && !item.serialNumber) { continue }
+	// 			for(const item of data) {
+	// 				if(item.owner && (item.owner.type !== "User" || item.owner.id === 1)) { continue }
+	// 				if(!item.owner && !item.serialNumber) { continue }
 
-					if(item.owner) {
-						const userId = item.owner.id
+	// 				if(item.owner) {
+	// 					const userId = item.owner.id
 
-						const self = {
-							item,
-							userId,
-							userName: `User#${userId}`
-						}
+	// 					const self = {
+	// 						item,
+	// 						userId,
+	// 						userName: `User#${userId}`
+	// 					}
 
-						const list = request[userId] = request[userId] || []
-						list.push(self)
-						elems.push(self)
-					} else {
-						const self = {
-							item,
-							userId: 0,
-							userName: `Hidden User`
-						}
+	// 					const list = request[userId] = request[userId] || []
+	// 					list.push(self)
+	// 					elems.push(self)
+	// 				} else {
+	// 					const self = {
+	// 						item,
+	// 						userId: 0,
+	// 						userName: `Hidden User`
+	// 					}
 
-						elems.push(self)
-					}
-				}
+	// 					elems.push(self)
+	// 				}
+	// 			}
 
-				getNames(request).finally(() => {
-					isLoading = false
-					seeMore.textContent = "See More"
-					seeMore.removeAttribute("disabled")
+	// 			getNames(request).finally(() => {
+	// 				isLoading = false
+	// 				seeMore.textContent = "See More"
+	// 				seeMore.removeAttribute("disabled")
 					
-					if(!firstLoaded && !isInitial) {
-						firstLoaded = true
-						ownersList.replaceChildren()
-					}
+	// 				if(!firstLoaded && !isInitial) {
+	// 					firstLoaded = true
+	// 					ownersList.replaceChildren()
+	// 				}
 					
-					for(const elem of elems) {
-						ownersList.append(createElement(elem))
-					}
-				})
-			}
+	// 				for(const elem of elems) {
+	// 					ownersList.append(createElement(elem))
+	// 				}
+	// 			})
+	// 		}
 
-			const loadOwners = () => {
-				if(isLoading) { return }
-				isLoading = true
+	// 		const loadOwners = () => {
+	// 			if(isLoading) { return }
+	// 			isLoading = true
 
-				seeMore.textContent = "Loading..."
-				seeMore.setAttribute("disabled", "")
+	// 			seeMore.textContent = "Loading..."
+	// 			seeMore.setAttribute("disabled", "")
 
-				const maxRetries = 10
-				let retriesLeft = maxRetries
+	// 			const maxRetries = 10
+	// 			let retriesLeft = maxRetries
 
-				const request = () => {
-					RobloxApi.inventory.getAssetOwners(ownerAssetId, 100, cursor).then(json => {
-						if(!json?.data) {
-							if(retriesLeft > 0) {
-								retriesLeft--
-								seeMore.textContent = `Loading... (${maxRetries - retriesLeft})`
-								setTimeout(request, 2e3)
-							} else {
-								isLoading = false
+	// 			const request = () => {
+	// 				RobloxApi.inventory.getAssetOwners(ownerAssetId, 100, cursor).then(json => {
+	// 					if(!json?.data) {
+	// 						if(retriesLeft > 0) {
+	// 							retriesLeft--
+	// 							seeMore.textContent = `Loading... (${maxRetries - retriesLeft})`
+	// 							setTimeout(request, 2e3)
+	// 						} else {
+	// 							isLoading = false
 	
-								const failText = seeMore.textContent = "Failed to load owners, try again later"
-								setTimeout(() => (seeMore.textContent === failText ? seeMore.textContent = "See More" : null), 2e3)
+	// 							const failText = seeMore.textContent = "Failed to load owners, try again later"
+	// 							setTimeout(() => (seeMore.textContent === failText ? seeMore.textContent = "See More" : null), 2e3)
 	
-								seeMore.removeAttribute("disabled")
-							}
-							return
-						}
+	// 							seeMore.removeAttribute("disabled")
+	// 						}
+	// 						return
+	// 					}
 	
-						if(json.nextPageCursor) {
-							cursor = json.nextPageCursor
-						} else {
-							seeMore.remove()
-						}
+	// 					if(json.nextPageCursor) {
+	// 						cursor = json.nextPageCursor
+	// 					} else {
+	// 						seeMore.remove()
+	// 					}
 	
-						createElements(json.data)
-					})
-				}
+	// 					createElements(json.data)
+	// 				})
+	// 			}
 				
-				request()
-			}
+	// 			request()
+	// 		}
 
-			if(initData) {
-				createElements(initData.data, true)
+	// 		if(initData) {
+	// 			createElements(initData.data, true)
 
-				if(!initData.nextPageCursor) {
-					seeMore.remove()
-				}
-			}
+	// 			if(!initData.nextPageCursor) {
+	// 				seeMore.remove()
+	// 			}
+	// 		}
 
-			seeMore.$on("click", loadOwners)
-		}
+	// 		seeMore.$on("click", loadOwners)
+	// 	}
 
-		const itemIdPromise = new Promise(resolve => {
-			if(category === "bundles") {
-				document.$watch(
-					".bundle-items .item-card-link[href], #item-list-container-included-items .item-card-link[href]",
-					x => !x.textContent.trim().startsWith("Rthro"),
-					firstItem => {
-						const itemId = firstItem.href.replace(/^.*roblox\.com\/[^/]+\/(\d+).*$/, "$1")
-						resolve(itemId)
-					}
-				)
-			} else {
-				resolve(assetId)
-			}
-		})
+	// 	const itemIdPromise = new Promise(resolve => {
+	// 		if(category === "bundles") {
+	// 			document.$watch(
+	// 				".bundle-items .item-card-link[href], #item-list-container-included-items .item-card-link[href]",
+	// 				x => !x.textContent.trim().startsWith("Rthro"),
+	// 				firstItem => {
+	// 					const itemId = firstItem.href.replace(/^.*roblox\.com\/[^/]+\/(\d+).*$/, "$1")
+	// 					resolve(itemId)
+	// 				}
+	// 			)
+	// 		} else {
+	// 			resolve(assetId)
+	// 		}
+	// 	})
 		
-		itemIdPromise.then(itemId => {
-			RobloxApi.inventory.getAssetOwners(itemId, 10).then(json => {
-				if(!json?.data) {
-					return
-				}
+	// 	itemIdPromise.then(itemId => {
+	// 		RobloxApi.inventory.getAssetOwners(itemId, 10).then(json => {
+	// 			if(!json?.data) {
+	// 				return
+	// 			}
 				
-				document.$watch("asset-resale-pane, #recommendations-container, .bundle-items, #item-list-container-recommendations, #item-list-container-included-items", parent => {
-					const title = (parent.id === "recommendations-container" || parent.id === "item-list-container-recommendations") ? "Recommended"
-						: (parent.classList.contains("bundle-items") || parent.id === "item-list-container-included-items") ? "Included Items"
-						: "Resellers"
+	// 			document.$watch("asset-resale-pane, #recommendations-container, .bundle-items, #item-list-container-recommendations, #item-list-container-included-items", parent => {
+	// 				const title = (parent.id === "recommendations-container" || parent.id === "item-list-container-recommendations") ? "Recommended"
+	// 					: (parent.classList.contains("bundle-items") || parent.id === "item-list-container-included-items") ? "Included Items"
+	// 					: "Resellers"
 					
-					setupOwnersList(parent, title, itemId, json)
-				})
-			})
-		})
-	}
-	*/
+	// 				setupOwnersList(parent, title, itemId, json)
+	// 			})
+	// 		})
+	// 	})
+	// }
 	
-	
-	document.$watch("#type-content", typeField => {
+	document.$watch("#type-content, .item-type-field-container", typeField => {
+		const currentPage = BTRoblox.currentPage
+		if(currentPage?.name !== "itemdetails") { return }
+		
+		const [category, assetIdString] = currentPage.matches
+		const assetId = Number.parseInt(assetIdString, 10)
+		
 		const isNewStyle = !!$("#item-details-container")
+		
+		if(typeField.id !== "type-content") {
+			typeField = typeField.$find(".field-content")
+			if(!typeField) { return }
+		}
 		
 		const createRow = (label, content) => {
 			return isNewStyle ? html`
@@ -890,7 +846,7 @@ pageInit.itemdetails = (category, assetIdString) => {
 				<span class="btr-row-value font-body text">${content}</span>
 			</div>` : html`
 			<div class="clearfix item-field-container" style=display:none>
-				<div class="font-header-1 text-subheader text-label text-overflow field-label">${label}</div>
+				<div class="text-label text-overflow field-label">${label}</div>
 				<span class="btr-row-value field-content">${content}</span>
 			</div>`
 		}
@@ -953,6 +909,15 @@ pageInit.itemdetails = (category, assetIdString) => {
 		}
 		
 		if(SETTINGS.get("itemdetails.showCreatedAndUpdated") && category !== "bundles") {
+			// remove old created/updated label
+			const oldLabel =
+				isNewStyle ? Array.from($.all("#item-details .wait-for-i18n-format-render, #item-details .-content")).find(x => !isNaN(Date.parse(x.textContent)))
+				: $("#item-details .date-time-i18n")
+			
+			if(oldLabel) {
+				oldLabel.parentNode.remove()
+			}
+			
 			const createdContainer = createRow("Created", "")
 			const updatedContainer = createRow("Updated", "")
 			
@@ -970,12 +935,6 @@ pageInit.itemdetails = (category, assetIdString) => {
 				updatedContainer.style.display = "none"
 			}
 			
-			document.$watch("#item-details").$then().$watchAll("div", container => {
-				if(container.firstElementChild?.textContent === "Updated" && container !== updatedContainer) {
-					container.remove()
-				}
-			})
-			
 			show()
 
 			if(category === "game-pass") {
@@ -992,115 +951,81 @@ pageInit.itemdetails = (category, assetIdString) => {
 				})
 			}
 		}
+	}, { continuous: true })
+	
+	InjectJS.inject(() => {
+		const { reactHook } = window.BTRoblox
+		
+		reactHook.hijackConstructor(
+			(type, props) => "itemDetails" in props,
+			(target, thisArg, args) => {
+				const result = target.apply(thisArg, args)
+				
+				try {
+					const props = args[0]
+					
+					if(result?.props?.className?.includes("item-details-info-header")) {
+						const { itemDetails } = props
+						
+						result.props.children.splice(1, 0, reactHook.createElement("div", {
+							className: "btr-buttons",
+							dangerouslySetInnerHTML: { __html: "" },
+							
+							"data-btr-asset-id": itemDetails.id,
+							"data-btr-asset-type-id": itemDetails.assetType,
+							"data-btr-item-type": itemDetails.itemType,
+						}))
+					}
+				} catch(ex) {
+					console.error(ex)
+				}
+				
+				return result
+			}
+		)
 	})
 	
-	// new item details, only used in catalog for now?
-	document.$watch("#item-details-container", async container => {
-		InjectJS.inject(assetId => {
-			const { hijackXHR, contentScript } = window.BTRoblox
+	document.$watch(".btr-buttons", buttons => {
+		const assetId = +buttons.dataset.btrAssetId
+		const itemType = buttons.dataset.btrItemType
+		
+		const isBundle = itemType === "Bundle"
+		const assetTypeId = isBundle ? null : +buttons.dataset.btrAssetTypeId
+		
+		initPreview(assetId, assetTypeId, isBundle).then(preview => {
+			if(!document.contains(buttons)) { return } // already changed page
 			
-			hijackXHR(request => {
-				if(request.url.startsWith(`https://catalog.roblox.com/v1/catalog/items/${assetId}/details`)) {
-					request.onResponse.push(json => {
-						contentScript.send("itemDetails", json)
-					})
-				}
-			})
-		}, assetId)
-		
-		const json = await new Promise(resolve => InjectJS.listen("itemDetails", resolve))
-		let assetTypeId = null
-		let isBundle = false
-		
-		if(category === "bundles") {
-			isBundle = true
-		} else {
-			assetTypeId = json.assetType
-		}
-		
-		initPreview(assetId, assetTypeId, isBundle)
-		
-		// buttons
-		
-		const parent = html`<div class=btr-buttons></div>`
-		
-		const parentPromise = container.$watch(".item-details-info-header > .left", left => {
-			left.after(parent)
+			const parent = document.querySelector(".item-thumbnail-container, #item-thumbnail-container-frontend").parentNode
+			preview.setParent(parent)
 		})
 		
 		initExplorer(assetId, assetTypeId, isBundle).then(btnCont => {
 			if(!btnCont) { return }
-			parent.append(btnCont)
+			buttons.append(btnCont)
 		})
 		
 		initDownloadButton(assetId, assetTypeId, isBundle).then(btnCont => {
 			if(!btnCont) { return }
-			parent.append(btnCont)
+			buttons.append(btnCont)
 		})
 		
 		initContentButton(assetId, assetTypeId, isBundle).then(btnCont => {
 			if(!btnCont) { return }
-			parent.append(btnCont)
+			buttons.append(btnCont)
 		})
-		
-	})
+	}, { continuous: true })
 	
-	
-	// legacy item details, still in use
-	document.$watch("#item-container", itemCont => {
-		if(category === "bundles") {
-			document.$watch("#item-container > .section-content", () => {
-				initPreview(assetId, null, true)
-				
-				initExplorer(assetId, null, true).then(btnCont => {
-					if(!btnCont) { return }
-					const parent = $("#item-container > .section-content")
-					
-					parent.append(btnCont)
-					parent.parentNode.classList.add("btr-explorer-btn-shown")
-				})
-			})
-	
-			return
-		}
-		
-		let assetTypeId = parseInt(itemCont.dataset.assetTypeId, 10)
-		
-		if(category === "game-pass") {
-			assetTypeId = AssetType.GamePass
-		}
-		
-		if(!Number.isSafeInteger(assetTypeId)) {
-			if(IS_DEV_MODE) { alert(`Invalid assetTypeId for ${itemCont.dataset.assetType}`) }
-			return
-		}
-
-		initPreview(assetId, assetTypeId)
-
-		itemCont.$watch(">.section-content", () => {
-			initExplorer(assetId, assetTypeId).then(btnCont => {
-				if(!btnCont) { return }
-				const parent = $("#item-container > .section-content")
-				
-				parent.append(btnCont)
-				parent.parentNode.classList.add("btr-explorer-btn-shown")
-			})
+	// legacy item details page (used for badges/gamepasses)
+	document.$watch("#item-container", container => {
+		container.$watch(".text-robux-lg", elem => {
+			const originalText = elem.textContent
+			const robux = parseInt(originalText.replace(/\D/g, ""), 10)
 			
-			initDownloadButton(assetId, assetTypeId).then(btnCont => {
-				if(!btnCont) { return }
-				const parent = $("#item-container > .section-content")
+			if(Number.isSafeInteger(robux)) {
+				const cash = RobuxToCash.convert(robux)
 				
-				parent.append(btnCont)
-				parent.parentNode.classList.add("btr-download-btn-shown")
-			})
-			
-			initContentButton(assetId, assetTypeId).then(btnCont => {
-				if(!btnCont) { return }
-				const parent = $("#item-container > .section-content")
-				
-				parent.append(btnCont)
-				parent.parentNode.classList.add("btr-content-btn-shown")
-			})
+				elem.append(html`<span class=btr-robuxToCash-big> (${cash})</span>`)
+			}
 		})
-	})
+	}, { continuous: true })
 }

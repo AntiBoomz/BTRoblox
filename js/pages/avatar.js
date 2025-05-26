@@ -29,21 +29,21 @@ pageInit.avatar = () => {
 							<div class="scale-label font-body">({{item.meta.position.X}}, {{item.meta.position.Y}}, {{item.meta.position.Z}})</div>
 							<div style="width:100%;clear:both">
 								<input type="range" class="pr0" step="0.01"
-									style="width:32%;--btr-input-perc:{{(item.meta.position.X-btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].position.xPosition)/(btrAvatarRules.accessoryRefinementUpperBounds[item.assetType.name].position.xPosition-btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].position.xPosition)*100}}%;"
-									min="{{btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].position.xPosition}}"
-									max="{{btrAvatarRules.accessoryRefinementUpperBounds[item.assetType.name].position.xPosition}}"
+									style="width:32%;--btr-input-perc:{{(item.meta.position.X-btrBounds[item.assetType.id].position.X.min)/(btrBounds[item.assetType.id].position.X.max-btrBounds[item.assetType.id].position.X.min)*100}}%;"
+									min="{{btrBounds[item.assetType.id].position.X.min}}"
+									max="{{btrBounds[item.assetType.id].position.X.max}}"
 									ng-model="item.meta.position.X"
 									on-input-finished="btrUpdateItem(item)">
 								<input type="range" class="pr0" step="0.01"
-									style="width:32%;margin-left:2%;margin-right:2%;--btr-input-perc:{{(item.meta.position.Y-btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].position.yPosition)/(btrAvatarRules.accessoryRefinementUpperBounds[item.assetType.name].position.yPosition-btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].position.yPosition)*100}}%;"
-									min="{{btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].position.yPosition}}"
-									max="{{btrAvatarRules.accessoryRefinementUpperBounds[item.assetType.name].position.yPosition}}"
+									style="width:32%;margin-left:2%;margin-right:2%;--btr-input-perc:{{(item.meta.position.Y-btrBounds[item.assetType.id].position.Y.min)/(btrBounds[item.assetType.id].position.Y.max-btrBounds[item.assetType.id].position.Y.min)*100}}%;"
+									min="{{btrBounds[item.assetType.id].position.Y.min}}"
+									max="{{btrBounds[item.assetType.id].position.Y.max}}"
 									ng-model="item.meta.position.Y"
 									on-input-finished="btrUpdateItem(item)">
 								<input type="range" class="pr0" step="0.01"
-									style="width:32%;--btr-input-perc:{{(item.meta.position.Z-btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].position.zPosition)/(btrAvatarRules.accessoryRefinementUpperBounds[item.assetType.name].position.zPosition-btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].position.zPosition)*100}}%;"
-									min="{{btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].position.zPosition}}"
-									max="{{btrAvatarRules.accessoryRefinementUpperBounds[item.assetType.name].position.zPosition}}"
+									style="width:32%;--btr-input-perc:{{(item.meta.position.Z-btrBounds[item.assetType.id].position.Z.min)/(btrBounds[item.assetType.id].position.Z.max-btrBounds[item.assetType.id].position.Z.min)*100}}%;"
+									min="{{btrBounds[item.assetType.id].position.Z.min}}"
+									max="{{btrBounds[item.assetType.id].position.Z.max}}"
 									ng-model="item.meta.position.Z"
 									on-input-finished="btrUpdateItem(item)">
 							</div>
@@ -52,21 +52,21 @@ pageInit.avatar = () => {
 							<div class="scale-label font-body">({{item.meta.rotation.X}}, {{item.meta.rotation.Y}}, {{item.meta.rotation.Z}})</div>
 							<div style="width:100%;clear:both">
 								<input type="range" class="pr0" step="1"
-									style="width:32%;--btr-input-perc:{{(item.meta.rotation.X-btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].rotation.xRotation)/(btrAvatarRules.accessoryRefinementUpperBounds[item.assetType.name].rotation.xRotation-btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].rotation.xRotation)*100}}%;"
-									min="{{btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].rotation.xRotation}}"
-									max="{{btrAvatarRules.accessoryRefinementUpperBounds[item.assetType.name].rotation.xRotation}}"
+									style="width:32%;--btr-input-perc:{{(item.meta.rotation.X-btrBounds[item.assetType.id].rotation.X.min)/(btrBounds[item.assetType.id].rotation.X.max-btrBounds[item.assetType.id].rotation.X.min)*100}}%;"
+									min="{{btrBounds[item.assetType.id].rotation.X.min}}"
+									max="{{btrBounds[item.assetType.id].rotation.X.max}}"
 									ng-model="item.meta.rotation.X"
 									on-input-finished="btrUpdateItem(item)">
 								<input type="range" class="pr0" step="1"
-									style="width:32%;margin-left:2%;margin-right:2%;--btr-input-perc:{{(item.meta.rotation.Y-btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].rotation.yRotation)/(btrAvatarRules.accessoryRefinementUpperBounds[item.assetType.name].rotation.yRotation-btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].rotation.yRotation)*100}}%;"
-									min="{{btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].rotation.yRotation}}"
-									max="{{btrAvatarRules.accessoryRefinementUpperBounds[item.assetType.name].rotation.yRotation}}"
+									style="width:32%;margin-left:2%;margin-right:2%;--btr-input-perc:{{(item.meta.rotation.Y-btrBounds[item.assetType.id].rotation.Y.min)/(btrBounds[item.assetType.id].rotation.Y.max-btrBounds[item.assetType.id].rotation.Y.min)*100}}%;"
+									min="{{btrBounds[item.assetType.id].rotation.Y.min}}"
+									max="{{btrBounds[item.assetType.id].rotation.Y.max}}"
 									ng-model="item.meta.rotation.Y"
 									on-input-finished="btrUpdateItem(item)">
 								<input type="range" class="pr0" step="1"
-									style="width:32%;--btr-input-perc:{{(item.meta.rotation.Z-btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].rotation.zRotation)/(btrAvatarRules.accessoryRefinementUpperBounds[item.assetType.name].rotation.zRotation-btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].rotation.zRotation)*100}}%;"
-									min="{{btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].rotation.zRotation}}"
-									max="{{btrAvatarRules.accessoryRefinementUpperBounds[item.assetType.name].rotation.zRotation}}"
+									style="width:32%;--btr-input-perc:{{(item.meta.rotation.Z-btrBounds[item.assetType.id].rotation.Z.min)/(btrBounds[item.assetType.id].rotation.Z.max-btrBounds[item.assetType.id].rotation.Z.min)*100}}%;"
+									min="{{btrBounds[item.assetType.id].rotation.Z.min}}"
+									max="{{btrBounds[item.assetType.id].rotation.Z.max}}"
 									ng-model="item.meta.rotation.Z"
 									on-input-finished="btrUpdateItem(item)">
 							</div>
@@ -74,9 +74,9 @@ pageInit.avatar = () => {
 							<div class="text-label font-subheader-1">Scale</div>
 							<div class="scale-label font-body">{{item.btrScale}}</div>
 							<input type="range" class="pr0" step="0.01"
-								style="--btr-input-perc:{{(item.btrScale-btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].scale.xScale)/(btrAvatarRules.accessoryRefinementUpperBounds[item.assetType.name].scale.xScale-btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].scale.xScale)*100}}%;"
-								min="{{btrAvatarRules.accessoryRefinementLowerBounds[item.assetType.name].scale.xScale}}"
-								max="{{btrAvatarRules.accessoryRefinementUpperBounds[item.assetType.name].scale.xScale}}"
+								style="--btr-input-perc:{{(item.btrScale-btrBounds[item.assetType.id].scale.X.min)/(btrBounds[item.assetType.id].scale.X.max-btrBounds[item.assetType.id].scale.X.min)*100}}%;"
+								min="{{btrBounds[item.assetType.id].scale.X.min}}"
+								max="{{btrBounds[item.assetType.id].scale.X.max}}"
 								ng-model="item.btrScale"
 								on-input-finished="btrUpdateItem(item)">
 						</div>
@@ -152,19 +152,22 @@ pageInit.avatar = () => {
 								
 								$scope.$on(avatarConstantService.events.avatarRulesLoaded, (event, rules) => {
 									$scope.btrAvatarRules = avatarRules = rules
-									
-									const min = $scope.btrAvatarRules.accessoryRefinementLowerBounds.Hat
-									const max = avatarRules.accessoryRefinementUpperBounds.Hat
-									
 									$scope.btrBounds = {}
 									
-									for(const [key,val] of Object.entries(min)) {
-										const parent = $scope.btrBounds[key] = {}
+									for(const [assetTypeName, lowerBounds] of Object.entries(avatarRules.accessoryRefinementLowerBounds)) {
+										const upperBounds = avatarRules.accessoryRefinementUpperBounds[assetTypeName]
 										
-										for(const [key2,val2] of Object.entries(val)) {
-											parent[key2.slice(0, 1).toUpperCase()] = {
-												min: val2,
-												max: max[key][key2]
+										const wearableAssetType = avatarRules.wearableAssetTypes.find(x => x.name.replace(/\s/, "") === assetTypeName)
+										const assetBounds = $scope.btrBounds[wearableAssetType?.id] = {}
+										
+										for(const [category, values] of Object.entries(lowerBounds)) {
+											const bounds = assetBounds[category] = {}
+											
+											for(const [key, value] of Object.entries(values)) {
+												bounds[key.slice(0, 1).toUpperCase()] = {
+													min: value,
+													max: upperBounds[category][key]
+												}
 											}
 										}
 									}

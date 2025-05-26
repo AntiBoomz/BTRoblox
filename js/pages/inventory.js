@@ -73,17 +73,6 @@ pageInit.inventory = () => {
 			})
 		}
 	}
-	
-	if(RobuxToCash.isEnabled()) {
-		angularHook.modifyTemplate("assets-explorer", template => {
-			const label = template.$find(".item-card-price .text-robux-tile")
-			if(!label) { return }
-
-			const cashText = ` (${RobuxToCash.convertAngular("item.Product.PriceInRobux")})`
-			label.after(html`<span class=btr-robuxToCash-tile ng-show="${label.getAttribute("ng-show")}">${cashText}</span>`)
-			label.parentNode.setAttribute("title", `{{::${label.getAttribute("ng-bind")}}}${cashText}`)
-		})
-	}
 
 	if(SETTINGS.get("general.hoverPreview")) {
 		loadOptionalLibrary("previewer").then(() => {

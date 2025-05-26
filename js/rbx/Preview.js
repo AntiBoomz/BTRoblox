@@ -414,7 +414,7 @@ class ItemPreviewer extends AvatarPreviewer {
 
 		window.scene = this.scene
 		this.currentOutfit = "current"
-		this.isShown = false
+		this.isVisible = false
 		this.animMap = {}
 
 		const container = html`<div class=btr-preview-container-itempage></div>`
@@ -630,16 +630,16 @@ class ItemPreviewer extends AvatarPreviewer {
 		
 		this.on("enabled", () => {
 			previewBtn.classList.add("checked")
-			this.container.parentNode?.classList.add("btr-preview-active")
-			this.container.parentNode?.classList.remove("btr-preview-inactive")
+			this.parent?.classList.add("btr-preview-active")
+			this.parent?.classList.remove("btr-preview-inactive")
 			
 			disableOrigThumbs()
 		})
 
 		this.on("disabled", () => {
 			previewBtn.classList.remove("checked")
-			this.container.parentNode?.classList.remove("btr-preview-active")
-			this.container.parentNode?.classList.add("btr-preview-inactive")
+			this.parent?.classList.remove("btr-preview-active")
+			this.parent?.classList.add("btr-preview-inactive")
 		})
 
 		previewBtn.$on("click", () => this.setEnabled(!this.enabled))
@@ -691,30 +691,34 @@ class ItemPreviewer extends AvatarPreviewer {
 		super.setOutfitAccessoriesVisible(bool)
 		this.hatsBtn.classList.toggle("checked", this.outfitAccessoriesVisible)
 	}
+	
+	setParent(parent) {
+		if(!parent) { parent = null }
+		if(this.parent === parent) { return }
+		
+		this.parent?.classList.remove("btr-preview-active")
+		this.parent?.classList.remove("btr-preview-inactive")
+		
+		this.parent = parent
+		this.updateParent()
+	}
 
 	setVisible(bool) {
-		if(this.isShown === !!bool) { return }
-		this.isShown = !!bool
+		if(this.isVisible === !!bool) { return }
+		this.isVisible = !!bool
 		
-		if(this.isShown) {
-			document.$watch(".item-thumbnail-container, #item-thumbnail-container-frontend", thumbCont => {
-				if(this.isShown && !this.container.parentNode) {
-					thumbCont.before(this.container)
-					
-					this.container.parentNode?.classList.toggle("btr-preview-active", this.enabled)
-					this.container.parentNode?.classList.toggle("btr-preview-inactive", !this.enabled)
-				}
-			})
-			
+		this.updateParent()
+	}
+	
+	updateParent() {
+		if(this.isVisible) {
+			this.parent?.classList.toggle("btr-preview-active", this.enabled)
+			this.parent?.classList.toggle("btr-preview-inactive", !this.enabled)
+			this.parent?.prepend(this.container)
 		} else {
-			this.container.parentNode?.classList.remove("btr-preview-active")
-			this.container.parentNode?.classList.remove("btr-preview-inactive")
+			this.parent?.classList.remove("btr-preview-active")
+			this.parent?.classList.remove("btr-preview-inactive")
 			this.container.remove()
-			
-			if(this.observer) {
-				this.observer.disconnect()
-				this.observer = null
-			}
 		}
 	}
 
@@ -1092,10 +1096,9 @@ const HoverPreview = (() => {
 		debounceCounter++
 
 		if(preview) {
-			const parent = preview.container.parentNode
-			if(parent instanceof Element) { parent.classList.remove("btr-preview-container-parent") }
-
 			preview.setEnabled(false)
+			
+			preview.container.parentNode?.classList.remove("btr-preview-container-parent")
 			preview.container.remove()
 
 			while(lastPreviewedAssets.length) {
@@ -1183,7 +1186,7 @@ const HoverPreview = (() => {
 						}
 						
 						updatePreviewCamera()
-
+						
 						thumbCont.append(preview.container)
 						thumbCont.classList.add("btr-preview-container-parent")
 					})

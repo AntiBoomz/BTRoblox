@@ -596,28 +596,6 @@ pageInit.gamedetails = placeId => {
 	const midContainer = html`
 	<div class="col-xs-12 btr-mid-container"></div>`
 
-	if(RobuxToCash.isEnabled()) {
-		document.$watch("#rbx-passes-container").$then()
-			.$watchAll(".list-item", item => {
-				const label = item.$find(".text-robux")
-				if(!label) { return }
-
-				const cash = RobuxToCash.convert(parseInt(label.textContent.replace(/\D/g, ""), 10))
-				label.after(html`<span class=btr-robuxToCash-tile>&nbsp;(${cash})</span>`)
-				label.parentNode.setAttribute("title", `R$ ${label.parentNode.textContent.trim()}`)
-			})
-		
-		document.$watch("#rbx-gear-container").$then()
-			.$watchAll(".list-item", item => {
-				const label = item.$find(".text-robux")
-				if(!label) { return }
-
-				const cash = RobuxToCash.convert(parseInt(label.textContent.textContent.replace(/\D/g, ""), 10))
-				label.after(html`<span class=btr-robuxToCash-tile>&nbsp;(${cash})</span>`)
-				label.parentNode.setAttribute("title", `R$ ${label.parentNode.textContent.trim()}`)
-			})
-	}
-
 	const watcher = document.$watch("body", body => body.classList.add("btr-gamedetails")).$then()
 		.$watch(["#tab-about", "#tab-game-instances"], (aboutTab, gameTab) => {
 			aboutTab.$find(".text-lead").textContent = "Recommended"
@@ -659,12 +637,12 @@ pageInit.gamedetails = placeId => {
 					
 					parent.$watch("#btr-description-wrapper", descCont => {
 						newContainer.append(descCont)
-						reactHook.redirectEvents(descCont, parent)
+						redirectEvents(descCont, parent)
 					})
 					
 					parent.$watch("#btr-recommendations-wrapper", recCont => {
 						$("#about").append(recCont)
-						reactHook.redirectEvents(recCont, parent)
+						redirectEvents(recCont, parent)
 					})
 				})
 			} else {
@@ -801,44 +779,32 @@ pageInit.gamedetails = placeId => {
 	InjectJS.inject(() => {
 		const { reactHook, hijackFunction } = BTRoblox
 		
-		reactHook.inject({
-			selector: ".game-description-container",
-			
-			callback(result) {
-				return React.createElement("div", { style: { display: "contents" } },
-					React.createElement("div", { id: "btr-description-wrapper", style: { display: "contents" } }, result)
-				)
-			}
+		reactHook.inject(".game-description-container", elem => {
+			return reactHook.createElement("div", { style: { display: "contents" } },
+				reactHook.createElement("div", { id: "btr-description-wrapper", style: { display: "contents" } }, elem[0])
+			)
 		})
 		
-		reactHook.inject({
-			selector: ".container-list.games-detail",
-			
-			callback(result) {
-				return React.createElement("div", { style: { display: "contents" } },
-					React.createElement("div", { id: "btr-recommendations-wrapper", style: { display: "contents" } }, result)
-				)
-			}
+		reactHook.inject(".container-list.games-detail", elem => {
+			return reactHook.createElement("div", { style: { display: "contents" } },
+				reactHook.createElement("div", { id: "btr-recommendations-wrapper", style: { display: "contents" } }, elem[0])
+			)
 		})
 		
-		reactHook.inject({
-			selector: ".game-social-links .btn-secondary-lg",
+		reactHook.inject(".game-social-links .btn-secondary-lg", elem => {
+			const socials = reactHook.renderTarget?.state[0]?.[0]
+			const entry = socials?.find(x => x.id === +elem[0].key)
 			
-			callback(result) {
-				const socials = reactHook.renderTarget?.state[0]?.[0]
-				const entry = socials?.find(x => x.id === +result.key)
+			if(entry) {
+				elem[0].props.href = entry.url
 				
-				if(entry) {
-					result.props.href = entry.url
+				hijackFunction(elem[0].props, "onClick", (target, thisArg, args) => {
+					const event = args[0]
+					event.preventDefault()
 					
-					hijackFunction(result.props, "onClick", (target, thisArg, args) => {
-						const event = args[0]
-						event.preventDefault()
-						
-						const result = target.apply(thisArg, args)
-						return result
-					})
-				}
+					const result = target.apply(thisArg, args)
+					return result
+				})
 			}
 		})
 	})

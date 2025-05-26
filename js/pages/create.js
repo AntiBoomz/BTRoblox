@@ -111,7 +111,7 @@ pageInit.create = () => {
 										this.processedModules.add(module)
 										
 										for(const fn of this.moduleHandlers) {
-											try { fn(module) }
+											try { fn(module, target) }
 											catch(ex) { console.error(ex) }
 										}
 									}
@@ -154,7 +154,9 @@ pageInit.create = () => {
 		
 		const { objects } = webpackHook
 		
-		webpackHook.onModule(module => {
+		objects.Mui = {}
+		
+		webpackHook.onModule((module, target) => {
 			if("jsx" in module && "jsxs" in module) {
 				hijackFunction(module, "jsx", reactHook.onCreateElement.bind(reactHook))
 				hijackFunction(module, "jsxs", reactHook.onCreateElement.bind(reactHook))
@@ -167,11 +169,15 @@ pageInit.create = () => {
 			} else if("useRouter" in module) {
 				objects.NextRouter = module
 			}
-		})
-		
-		webpackHook.onProperty(["Menu", "MenuItem"], obj => {
-			if(!objects.Mui) {
-				objects.Mui = obj
+			
+			const moduleCode = target.toString()
+			
+			if(moduleCode.includes(`name:"MenuItem"`)) {
+				objects.Mui.MenuItem = Object.values(module)[0]
+			} else if(moduleCode.includes(`name:"Button"`)) {
+				objects.Mui.Button = Object.values(module)[0]
+			} else if(moduleCode.includes(`name:"Divider"`)) {
+				objects.Mui.Divider = Object.values(module)[0]
 			}
 		})
 		
@@ -255,7 +261,7 @@ pageInit.create = () => {
 								index = children.findIndex(x => x?.key === "Action.CopyUniverseID")
 								if(index !== -1) { children.splice(index, 1) }
 								
-								index = children.findIndex(x => x?.props.children === "Copy Start Place ID")
+								index = children.findIndex(x => x?.props.itemKey === "Action.CopyStartPlaceID")
 								if(index !== -1) { children[index].props.style = { display: "none" } } // HACK: Keep in dom for styling purposes
 								
 								index = children.findIndex(x => x?.key === "Action.OpenExperienceDetails")
@@ -266,7 +272,7 @@ pageInit.create = () => {
 									children[index] = Link(`https://www.roblox.com/games/${args[0].creation.assetId}/`, entry)
 								}
 								
-								index = children.findIndex(x => x?.key === "Configure Localization")
+								index = children.findIndex(x => x?.key === "Action.ConfigureLocalization")
 								if(index !== -1) {
 									const entry = children[index]
 									delete entry.props.onClick
@@ -274,7 +280,7 @@ pageInit.create = () => {
 									children[index] = Link(`/dashboard/creations/experiences/${args[0].creation.universeId}/localization`, entry)
 								}
 								
-								index = children.findIndex(x => x?.key === "View Real Time Stats")
+								index = children.findIndex(x => x?.key === "Action.ViewRealTimeStats")
 								if(index !== -1) {
 									const entry = children[index]
 									delete entry.props.onClick
@@ -308,7 +314,7 @@ pageInit.create = () => {
 							} else if(args[0].itemType === "CatalogAsset") {
 								let index = children.findIndex(x => x?.key === "Action.OpenInNewTab")
 								if(index !== -1) { children.splice(index, 1) }
-									
+								
 								children.splice(
 									0, 0,
 									Link(
@@ -320,6 +326,14 @@ pageInit.create = () => {
 										objects.jsx(objects.Mui.MenuItem, { children: "Configure Asset" })
 									)
 								)
+								
+								index = children.findIndex(x => x?.props?.itemKey === "Action.Analytics")
+								if(index !== -1) {
+									const entry = children[index]
+									delete entry.props.onClick
+									
+									children[index] = Link(`/dashboard/creations/catalog/${args[0].creation.assetId}/analytics`, entry)
+								}
 								
 								index = children.findIndex(x => x?.key === "Action.CopyURL")
 								if(index !== -1) { children.splice(index, 1) }

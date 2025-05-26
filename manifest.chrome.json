@@ -71,7 +71,6 @@
 				
 				"js/util/injectJS.js",
 				"js/util/injectCSS.js",
-				"js/util/reactHook.js",
 				"js/util/angularHook.js",
 				"js/util/loadOptionalLibrary.js",
 				

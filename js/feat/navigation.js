@@ -133,16 +133,13 @@ const Navigation = {
 				
 				if(element.selector) {
 					document.$watch(element.selector, node => {
-						element.addNode(node)
-					})
-				}
-				
-				if(element.reactInject) {
-					reactHook.inject({
-						...element.reactInject,
-						callback(node) {
-							element.addNode(node)
+						if(element.html) {
+							const newNode = element.html.cloneNode(true)
+							node.replaceWith(newNode)
+							node = newNode
 						}
+						
+						element.addNode(node)
 					})
 				}
 				
@@ -257,6 +254,15 @@ const Navigation = {
 				show_notifs: { label: "Show Requests", enabled: true, class: "!hide_notifs" }
 			},
 			
+			selector: "#btr-placeholder-friends",
+			html: html`
+				<li id="btr-navbar-friends" class="navbar-icon-item">
+					<a class="rbx-menu-item" href="/users/friends">
+						<span class="icon-nav-friend-btr"></span>
+						<span class="btr-nav-notif rbx-text-navbar-right" style="display:none;"></span>
+					</a>
+				</li>`,
+			
 			update(node) {
 				node.style.display = this.enabled ? "" : "none"
 				if(!this.enabled) { return }
@@ -270,18 +276,6 @@ const Navigation = {
 				link.href = orig.href
 				notif.textContent = origNotif ? origNotif.textContent.trim() : ""
 				notif.style.display = origNotif ? "" : "none"
-			},
-			
-			reactInject: {
-				selector: "ul.navbar-right",
-				index: { selector: { hasProps: ["robuxAmount"] }, offset: -1 },
-				html: `
-				<li id="btr-navbar-friends" class="navbar-icon-item">
-					<a class="rbx-menu-item" href="/Friends.aspx">
-						<span class="icon-nav-friend-btr"></span>
-						<span class="btr-nav-notif rbx-text-navbar-right" style="display:none;"></span>
-					</a>
-				</li>`
 			}
 		})
 		
@@ -291,6 +285,15 @@ const Navigation = {
 			settings: {
 				show_notifs: { label: "Show Unread", enabled: true, class: "!hide_notifs" }
 			},
+			
+			selector: "#btr-placeholder-messages",
+			html: html`
+				<li id="btr-navbar-messages" class="navbar-icon-item">
+					<a class="rbx-menu-item" href="/my/messages">
+						<span class="icon-nav-message-btr"></span>
+						<span class="btr-nav-notif rbx-text-navbar-right" style="display:none;"></span>
+					</a>
+				</li>`,
 			
 			update(node) {
 				node.style.display = this.enabled ? "" : "none"
@@ -305,18 +308,6 @@ const Navigation = {
 				link.href = orig.href
 				notif.textContent = origNotif ? origNotif.textContent.trim() : ""
 				notif.style.display = origNotif ? "" : "none"
-			},
-			
-			reactInject: {
-				selector: "ul.navbar-right",
-				index: { selector: { hasProps: ["robuxAmount"] }, offset: -1 },
-				html: `
-				<li id="btr-navbar-messages" class="navbar-icon-item">
-					<a class="rbx-menu-item" href="/My/Messages#!/inbox">
-						<span class="icon-nav-message-btr"></span>
-						<span class="btr-nav-notif rbx-text-navbar-right" style="display:none;"></span>
-					</a>
-				</li>`
 			}
 		})
 		
@@ -404,37 +395,34 @@ const Navigation = {
 			label: "Show Money",
 			enabled: false,
 			
-			reactInject: {
-				selector: ".left-col-list",
-				index: { selector: { key: "trade" } },
-				html: `
-				<li>
+			selector: "#btr-placeholder-money",
+			html: html`
+				<li id=btr-nav-money>
 					<a href="/transactions" id=nav-money class="dynamic-overflow-container text-nav">
 						<div><span class="icon-nav-trade"></span></div>
 						<span class="font-header-2 dynamic-ellipsis-item">Money</span>
 					</a>
 				</li>`,
-			}
 		})
 		
 		Navigation.register("sidebar_premium", {
 			label: "Show Premium",
 			
-			reactInject: {
-				selector: ".left-col-list",
-				index: { selector: { key: "blog" }, offset: -1 },
-				html: `
-				<li>
+			selector: "#btr-placeholder-premium",
+			html: html`
+				<li id=btr-nav-premium>
 					<a href=/premium/membership id=nav-premium class="dynamic-overflow-container text-nav">
 						<div><span class=icon-nav-premium-btr></span></div>
 						<span class="font-header-2 dynamic-ellipsis-item">Premium</span>
 					</a>
 				</li>`
-			}
 		})
 		
 		Navigation.register("sidebar_blogfeed", {
 			label: "Show Blog Feed",
+			
+			selector: "#btr-placeholder-blogfeed",
+			html: html`<div id=btr-blogfeed-container><li id=btr-blogfeed></li></div>`,
 			
 			update(node) {
 				node.style.display = this.enabled ? "" : "none"
@@ -469,12 +457,6 @@ const Navigation = {
 					}
 				}
 			},
-			
-			reactInject: {
-				selector: ".left-col-list",
-				index: { selector: { key: "blog" } },
-				html: `<div id=btr-blogfeed-container><li id=btr-blogfeed></li></div>`,
-			}
 		})
 		
 		Navigation.register("sidebar_shop", {
@@ -504,6 +486,56 @@ const Navigation = {
 			
 			selector: ".left-col-list > .rbx-upgrade-now",
 			enabled: false
+		})
+		
+		InjectJS.inject(() => {
+			const { reactHook } = BTRoblox
+			
+			reactHook.inject("ul.navbar-right", elem => {
+				const robux = elem.find(x => "robuxAmount" in x.props)
+				
+				if(robux) {
+					robux.before(
+						reactHook.createElement("div", {
+							id: "btr-placeholder-friends",
+							dangerouslySetInnerHTML: { __html: "" }
+						}),
+						reactHook.createElement("div", {
+							id: "btr-placeholder-messages",
+							dangerouslySetInnerHTML: { __html: "" }
+						}),
+					)
+				}
+			})
+			
+			reactHook.inject(".left-col-list", elem => {
+				const trade = elem.find(x => x.key === "trade")
+				if(trade) {
+					trade.after(
+						reactHook.createElement("div", {
+							id: "btr-placeholder-money",
+							dangerouslySetInnerHTML: { __html: "" }
+						}),
+					)
+				}
+				
+				const blog = elem.find(x => x.key === "blog")
+				if(blog) {
+					blog.before(
+						reactHook.createElement("div", {
+							id: "btr-placeholder-premium",
+							dangerouslySetInnerHTML: { __html: "" }
+						}),
+					)
+					
+					blog.after(
+						reactHook.createElement("div", {
+							id: "btr-placeholder-blogfeed",
+							dangerouslySetInnerHTML: { __html: "" }
+						}),
+					)
+				}
+			})
 		})
 	}
 }

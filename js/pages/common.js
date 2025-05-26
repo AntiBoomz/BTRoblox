@@ -326,6 +326,83 @@ const useNativeAudioPlayer = (mediaPlayer, bigPlayer) => {
 
 //
 
+let redirectIndexCounter = 0
+const redirectEvents = (from, to) => {
+	const redirectIndex = redirectIndexCounter
+	redirectIndexCounter += 2
+	
+	from.dataset.redirectEvents = redirectIndex
+	to.dataset.redirectEvents = redirectIndex + 1
+	
+	InjectJS.inject((fromSelector, toSelector) => {
+		const from = document.querySelector(fromSelector)
+		const to = document.querySelector(toSelector)
+		
+		if(!from || !to) {
+			console.log("redirectEvents fail", fromSelector, toSelector, from, to)
+			return
+		}
+		
+		const events = [
+			"cancel", "click", "close", "contextmenu", "copy", "cut", "auxclick", "dblclick",
+			"dragend", "dragstart", "drop", "focusin", "focusout", "input", "invalid",
+			"keydown", "keypress", "keyup", "mousedown", "mouseup", "paste", "pause", "play",
+			"pointercancel", "pointerdown", "pointerup", "ratechange", "reset", "seeked",
+			"submit", "touchcancel", "touchend", "touchstart", "volumechange", "drag", "dragenter",
+			"dragexit", "dragleave", "dragover", "mousemove", "mouseout", "mouseover", "pointermove",
+			"pointerout", "pointerover", "scroll", "toggle", "touchmove", "wheel", "abort",
+			"animationend", "animationiteration", "animationstart", "canplay", "canplaythrough",
+			"durationchange", "emptied", "encrypted", "ended", "error", "gotpointercapture", "load",
+			"loadeddata", "loadedmetadata", "loadstart", "lostpointercapture", "playing", "progress",
+			"seeking", "stalled", "suspend", "timeupdate", "transitionend", "waiting", "change",
+			"compositionend", "textInput", "compositionstart", "compositionupdate"
+		]
+		
+		const methods = [
+			"stopImmediatePropagation", "stopPropagation", "preventDefault",
+			"getModifierState", "composedPath",
+		]
+		
+		const callback = event => {
+			const clone = new event.constructor(event.type, new Proxy(event, {
+				get(target, prop) {
+					return prop === "bubbles" ? false : target[prop]
+				}
+			}))
+			
+			Object.defineProperties(clone, {
+				target: { value: event.target },
+				bubbles: { value: event.bubbles },
+			})
+			
+			for(const method of methods) {
+				if(typeof clone[method] === "function") {
+					clone[method] = new Proxy(clone[method], {
+						apply(target, thisArg, args) {
+							if(thisArg === clone) {
+								target.apply(thisArg, args)
+								return event[method].apply(event, args)
+							}
+							
+							return target.apply(thisArg, args)
+						}
+					})
+				}
+			}
+			
+			if(!to.dispatchEvent(clone)) {
+				event.preventDefault()
+			}
+		}
+		
+		for(const event of events) {
+			from.addEventListener(event, callback, { capture: true })
+		}
+	}, `[data-redirect-events="${redirectIndex}"]`, `[data-redirect-events="${redirectIndex + 1}"]`)
+}
+
+//
+
 const initReactFriends = () => {
 	InjectJS.inject(() => {
 		const { reactHook, hijackXHR, settings } = BTRoblox
@@ -452,32 +529,80 @@ const initReactFriends = () => {
 }
 
 const initReactRobuxToCash = () => {
-	if(RobuxToCash.isEnabled()) {
-		InjectJS.inject(() => {
-			const { reactHook, RobuxToCash } = window.BTRoblox
+	if(!RobuxToCash.isEnabled()) { return }
+	
+	InjectJS.inject(() => {
+		const { reactHook, RobuxToCash } = window.BTRoblox
+		
+		reactHook.inject(".text-robux-lg", elem => {
+			const originalText = elem[0].props.children
+			if(typeof originalText !== "string") { return }
 			
-			reactHook.hijackElement( // ItemCardPrice
-				elem => elem.props.className?.includes("text-robux-tile") && typeof(elem.props.children) === "string",
-				elem => {
-					const originalText = elem.props.children
-					const robux = parseInt(originalText.replace(/\D/g, ""), 10)
-					
-					if(Number.isSafeInteger(robux)) {
-						const cash = RobuxToCash.convert(robux)
-						
-						elem.props.children = [
-							originalText,
-							reactHook.createElement("span", {
-								className: "btr-robuxToCash-tile",
-								children: ` (${cash})`,
-								title: `R$ ${originalText.trim()}`
-							})
-						]
-					}
-				}
-			)
+			const robux = parseInt(originalText.replace(/\D/g, ""), 10)
+			
+			if(Number.isSafeInteger(robux)) {
+				const cash = RobuxToCash.convert(robux)
+				
+				elem[0].props["data-btr-rtc"] = true
+				elem.append(reactHook.createElement("span", {
+					className: "btr-robuxToCash-big",
+					children: ` (${cash})`
+				}))
+			}
 		})
-	}
+		
+		reactHook.inject(".text-robux-tile", elem => {
+			const originalText = elem[0].props.children
+			if(typeof originalText !== "string") { return }
+			
+			const robux = parseInt(originalText.replace(/\D/g, ""), 10)
+			
+			if(Number.isSafeInteger(robux)) {
+				const cash = RobuxToCash.convert(robux)
+				
+				elem[0].props["data-btr-rtc"] = true
+				elem.append(reactHook.createElement("span", {
+					className: "btr-robuxToCash-tile",
+					children: ` (${cash})`,
+					title: `R$ ${originalText.trim()}`
+				}))
+			}
+		})
+		
+		reactHook.inject(".text-robux", elem => {
+			const originalText = elem[0].props.children
+			if(typeof originalText !== "string") { return }
+			
+			const robux = parseInt(originalText.replace(/\D/g, ""), 10)
+			
+			if(Number.isSafeInteger(robux)) {
+				const cash = RobuxToCash.convert(robux)
+				
+				elem[0].props["data-btr-rtc"] = true
+				// elem[0].props.children += ` (${cash})`
+				elem.append(reactHook.createElement("span", {
+					className: "btr-robuxToCash",
+					children: ` (${cash})`,
+					title: `R$ ${originalText.trim()}`
+				}))
+			}
+		})
+		
+		reactHook.inject(".icon-robux-container", elem => {
+			const child = elem.find(x => "amount" in x.props)
+			
+			if(child) {
+				const cash = RobuxToCash.convert(child[0].props.amount ?? 0)
+				
+				child.after(reactHook.createElement("span", {
+					className: "btr-robuxToCash",
+					children: ` (${cash})`
+				}))
+				
+				return
+			}
+		})
+	})
 }
 
 //
@@ -512,10 +637,14 @@ pageInit.common = () => {
 	
 	//
 	
-	reactHook.inject({
-		selector: "#settings-popover-menu",
-		index: 0,
-		html: `<li><a class="rbx-menu-item btr-settings-toggle">BTR Settings</a></li>`
+	InjectJS.inject(() => {
+		const { reactHook } = BTRoblox
+		
+		reactHook.inject("#settings-popover-menu", elem => {
+			elem.prepend(reactHook.createElement("li", {
+				dangerouslySetInnerHTML: { __html: `<a class="rbx-menu-item btr-settings-toggle">BTR Settings</a>`}
+			}))
+		})
 	})
 	
 	bodyWatcher.$watch("#roblox-linkify", linkify => {

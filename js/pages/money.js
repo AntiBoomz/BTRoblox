@@ -2,35 +2,25 @@
 
 pageInit.money = function() {
 	if(RobuxToCash.isEnabled()) {
-		const update = span => {
-			const amt = parseInt(span.textContent.replace(/\D/g, ""), 10)
+		InjectJS.inject(() => {
+			const { reactHook, RobuxToCash } = window.BTRoblox
 			
-			if(Number.isSafeInteger(amt)) {
-				const cash = RobuxToCash.convert(amt)
-				let cashLabel = span.nextElementSibling
+			reactHook.inject(".balance-label.icon-robux-container", elem => {
+				const list = elem[0].props.children[0]?.props.children
 				
-				if(!cashLabel || !cashLabel.matches("cashlabel")) {
-					cashLabel = html`<cashlabel style=color:#060;font-size:12px;></cashlabel>`
-					span.after(cashLabel)
+				if(Array.isArray(list)) {
+					const robux = parseInt(list.at(-1).replace(/\D/g, ""), 10)
+					
+					if(Number.isSafeInteger(robux)) {
+						const cash = RobuxToCash.convert(robux)
+						
+						list.push(reactHook.createElement("span", {
+							className: "btr-robuxToCash",
+							children: ` (${cash})`
+						}))
+					}
 				}
-				
-				cashLabel.textContent = ` (${cash})`
-			}
-		}
-		
-		const observe = () => {
-			const list = document.$findAll("#transactions-page-container .amount.icon-robux-container > span:not([btr-cash]):last-of-type")
-			
-			for(const span of list) {
-				span.setAttribute("btr-cash", true)
-				new MutationObserver(() => update(span)).observe(span, { characterData: true, subtree: true })
-				update(span)
-			}
-		}
-		
-		document.$watch("#transactions-page-container", cont => {
-			new MutationObserver(observe).observe(cont, { childList: true, subtree: true })
-			observe()
+			})
 		})
 	}
 }
