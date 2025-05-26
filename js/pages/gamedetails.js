@@ -4,6 +4,18 @@ pageInit.gamedetails = () => {
 	onPageLoad(placeIdString => {
 		const placeId = Number.parseInt(placeIdString, 10)
 		
+		if(RobuxToCash.isEnabled()) {
+			document.$watch("#rbx-passes-container").$then()
+				.$watch(".text-robux", label => {
+					const robux = parseInt(label.textContent.replace(/\D/g, ""), 10)
+					
+					if(Number.isSafeInteger(robux)) {
+						const cash = RobuxToCash.convert(robux)
+						label.after(html`<span class=btr-robuxToCash-tile>&nbsp;(${cash})</span>`)
+					}
+				}, { continuous: true })
+		}
+		
 		document.$watch("#content").$then().$watch(">#game-detail-page").$then()
 			.$watch("#game-context-menu .dropdown-menu .VisitButtonEditGLI", placeEdit => {
 				placeEdit.parentNode.parentNode.append(

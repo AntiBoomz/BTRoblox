@@ -562,7 +562,6 @@ const initReactRobuxToCash = () => {
 			if(Number.isSafeInteger(robux)) {
 				const cash = RobuxToCash.convert(robux)
 				
-				elem[0].props["data-btr-rtc"] = true
 				elem.append(reactHook.createElement("span", {
 					className: "btr-robuxToCash-big",
 					children: ` (${cash})`
@@ -579,7 +578,6 @@ const initReactRobuxToCash = () => {
 			if(Number.isSafeInteger(robux)) {
 				const cash = RobuxToCash.convert(robux)
 				
-				elem[0].props["data-btr-rtc"] = true
 				elem.append(reactHook.createElement("span", {
 					className: "btr-robuxToCash-tile",
 					children: ` (${cash})`,
@@ -597,8 +595,6 @@ const initReactRobuxToCash = () => {
 			if(Number.isSafeInteger(robux)) {
 				const cash = RobuxToCash.convert(robux)
 				
-				elem[0].props["data-btr-rtc"] = true
-				// elem[0].props.children += ` (${cash})`
 				elem.append(reactHook.createElement("span", {
 					className: "btr-robuxToCash",
 					children: ` (${cash})`,
