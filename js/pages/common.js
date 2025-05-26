@@ -1038,8 +1038,6 @@ pageInit.common = () => {
 			hijackXHR(request => {
 				if(request.method === "POST" && request.url.match(/^https:\/\/apis\.roblox\.com\/discovery-api\/omni-recommendation(-metadata)?$/i)) {
 					request.onResponse.push(json => {
-						console.log("beep boop", json)
-						
 						if(settings.home.favoritesAtTop && json?.sorts) {
 							const favoritesSort = json.sorts.find(x => x.topicId === 100000001)
 							const continueSort = json.sorts.find(x => x.topicId === 100000003)
