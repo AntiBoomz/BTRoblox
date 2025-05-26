@@ -1,6 +1,6 @@
 "use strict"
 
-pageInit.money = function() {
+pageInit.money = () => {
 	if(RobuxToCash.isEnabled()) {
 		InjectJS.inject(() => {
 			const { reactHook, RobuxToCash } = window.BTRoblox

@@ -35,18 +35,51 @@ if(document.contentType === "text/html" && location.protocol !== "blob") {
 					btrThemes.update()
 				}
 				
-				if(currentPage && !initialized[currentPage.name]) {
-					initialized[currentPage.name] = true
-					
-					if(pageInit[currentPage.name]) {
-						try { pageInit[currentPage.name].apply(null, currentPage.matches) }
-						catch(ex) { console.error(ex) }
+				if(previousPage) {
+					if(pageReset[previousPage.name]) {
+						for(const fn of pageReset[previousPage.name]) {
+							try { fn.apply(null, previousPage.matches) }
+							catch(ex) { console.error(ex) }
+						}
 					}
 				}
+				
+				if(currentPage) {
+					if(!initialized[currentPage.name]) {
+						initialized[currentPage.name] = true
+						
+						if(pageInit[currentPage.name]) {
+							try { pageInit[currentPage.name]() }
+							catch(ex) { console.error(ex) }
+						}
+					}
+					
+					if(pageLoad[currentPage.name]) {
+						for(const fn of pageLoad[currentPage.name]) {
+							try { fn.apply(null, currentPage.matches) }
+							catch(ex) { console.error(ex) }
+						}
+					}
+				}
+				
+				return currentPage
 			}
 			
 			updateCurrentPage(true)
-			InjectJS.listen("locationchange", updateCurrentPage)
+			
+			if(location.host !== "create.roblox.com") {
+				document.$watch("#content", content => {
+					const marker = html`<div id=btr-detect-content style=display:none></div>`
+					content.append(marker)
+					
+					new MutationObserver(() => {
+						if(!marker.parentNode) {
+							content.append(marker)
+							updateCurrentPage()
+						}
+					}).observe(content, { childList: true })
+				})
+			}
 		})
 		
 		SHARED_DATA.initContentScript()

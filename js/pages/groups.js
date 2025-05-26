@@ -1,11 +1,14 @@
 "use strict"
 
-function enableRedesign() {
-	document.$watch("body", body => {
-		body.classList.toggle("btr-redesign", SETTINGS.get("groups.modifyLayout"))
-		body.classList.toggle("btr-hideBigSocial", SETTINGS.get("groups.hideBigSocial"))
-	})
+pageInit.groups = () => {
+	if(SETTINGS.get("general.hoverPreview")) {
+		loadOptionalLibrary("previewer").then(() => {
+			HoverPreview.register(".item-card", ".item-card-thumb-container")
+		})
+	}
 
+	if(!SETTINGS.get("groups.redesign")) { return }
+	
 	if(SETTINGS.get("groups.modifySmallSocialLinksTitle")) {
 		angularHook.modifyTemplate(["social-link-icon-list", "social-link-icon"], (listTemplate, iconTemplate) => {
 			iconTemplate.$find("a").title = `{{ $ctrl.title || $ctrl.type }}`
@@ -435,16 +438,19 @@ function enableRedesign() {
 			})
 		})
 	}
-}
-
-pageInit.groups = () => {
-	if(SETTINGS.get("general.hoverPreview")) {
-		loadOptionalLibrary("previewer").then(() => {
-			HoverPreview.register(".item-card", ".item-card-thumb-container")
+	
+	onPageReset(() => {
+		document.body?.classList.remove("btr-redesign")
+		document.body?.classList.remove("btr-hideBigSocial")
+	})
+	
+	onPageLoad(() => {
+		document.$watch("body", body => {
+			document.body.classList.toggle("btr-redesign", SETTINGS.get("groups.modifyLayout"))
+			document.body.classList.toggle("btr-hideBigSocial", SETTINGS.get("groups.hideBigSocial"))
 		})
-	}
-
-	if(SETTINGS.get("groups.redesign")) {
-		enableRedesign()
-	}
+		
+		// document.$watch("#content").$then().$watch(">#group-container", container => {
+		// }, { continuous: true })
+	})
 }

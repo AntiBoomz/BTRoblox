@@ -1,9 +1,7 @@
 "use strict"
 
 pageInit.avatar = () => {
-	if(!SETTINGS.get("avatar.enabled")) {
-		return
-	}
+	if(!SETTINGS.get("avatar.enabled")) { return }
 	
 	angularHook.modifyTemplate("avatar-base", template => {
 		const redraw = template.$find(".redraw-avatar .text-link")
@@ -15,7 +13,13 @@ pageInit.avatar = () => {
 	})
 	
 	if(SETTINGS.get("avatar.assetRefinement")) {
-		document.$watch("body", body => body.classList.add("btr-avatar-refinement"))
+		onPageReset(() => {
+			document.body?.classList.remove("btr-avatar-refinement")
+		})
+		
+		onPageLoad(() => {
+			document.$watch("body", body => body.classList.add("btr-avatar-refinement"))
+		})
 		
 		angularHook.modifyTemplate("avatar-base", template => {
 			template.$find(".redraw-avatar").after(

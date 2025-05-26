@@ -2,6 +2,25 @@
 
 const pageInit = {}
 
+const pageReset = {}
+const pageLoad = {}
+
+const onPageLoad = fn => {
+	const pageName = BTRoblox.currentPage?.name
+	assert(pageName)
+	
+	pageLoad[pageName] ??= []
+	pageLoad[pageName].push(fn)
+}
+
+const onPageReset = fn => {
+	const pageName = BTRoblox.currentPage?.name
+	assert(pageName)
+	
+	pageReset[pageName] ??= []
+	pageReset[pageName].push(fn)
+}
+
 let loggedInUserPromise = new Promise(() => {})
 let loggedInUser = -1
 
@@ -406,7 +425,7 @@ const redirectEvents = (from, to) => {
 const initReactFriends = () => {
 	InjectJS.inject(() => {
 		const { reactHook, hijackXHR, settings } = BTRoblox
-	
+		
 		reactHook.hijackConstructor( // FriendsList
 			(type, props) => "friendsList" in props, 
 			(target, thisArg, args) => {
@@ -1026,33 +1045,6 @@ pageInit.common = () => {
 					}
 					
 					return result
-				}
-			})
-		})
-	}
-	
-	if(SETTINGS.get("home.favoritesAtTop")) {
-		InjectJS.inject(() => {
-			const { hijackXHR, settings } = window.BTRoblox
-			
-			hijackXHR(request => {
-				if(request.method === "POST" && request.url.match(/^https:\/\/apis\.roblox\.com\/discovery-api\/omni-recommendation(-metadata)?$/i)) {
-					request.onResponse.push(json => {
-						if(settings.home.favoritesAtTop && json?.sorts) {
-							const favoritesSort = json.sorts.find(x => x.topicId === 100000001)
-							const continueSort = json.sorts.find(x => x.topicId === 100000003)
-							
-							if(favoritesSort) {
-								json.sorts.splice(json.sorts.indexOf(favoritesSort), 1)
-								json.sorts.splice(1, 0, favoritesSort)
-							}
-							
-							if(continueSort) {
-								json.sorts.splice(json.sorts.indexOf(continueSort), 1)
-								json.sorts.splice(1, 0, continueSort)
-							}
-						}
-					})
 				}
 			})
 		})

@@ -366,7 +366,6 @@ const INJECT_SCRIPT = (settings, IS_DEV_MODE, selectedRobuxToCashOption) => {
 		cachedSelectors: {},
 		constructorProxies: new WeakMap(),
 		constructorReplaces: [],
-		elementListeners: [],
 		injectedContent: [],
 		globalHijackState: [],
 		renderTarget: null,
@@ -887,15 +886,7 @@ const INJECT_SCRIPT = (settings, IS_DEV_MODE, selectedRobuxToCashOption) => {
 			})
 		},
 		
-		hijackElement(filter, handler) {
-			if(!handler) {
-				handler = filter
-				filter = null
-			}
-			this.elementListeners.push({ filter, handler })
-		},
-		
-		hijackUseState(filter, transform) {
+		hijackUseState(filter, transform, permanent) {
 			const renderTarget = this.renderTarget
 			
 			if(!renderTarget) {
@@ -903,7 +894,7 @@ const INJECT_SCRIPT = (settings, IS_DEV_MODE, selectedRobuxToCashOption) => {
 			}
 			
 			if(!renderTarget.hijackState) { renderTarget.hijackState = [] }
-			renderTarget.hijackState.push({ filter, transform })
+			renderTarget.hijackState.push({ filter, transform, permanent })
 		},
 		
 		hijackUseStateGlobal(filter, transform) {
@@ -985,16 +976,6 @@ const INJECT_SCRIPT = (settings, IS_DEV_MODE, selectedRobuxToCashOption) => {
 		onCreateElement(target, thisArg, args) {
 			let result = target.apply(thisArg, args)
 			
-			for(const listener of this.elementListeners) {
-				try {
-					if(!listener.filter || listener.filter(result)) {
-						listener.handler(result)
-					}
-				} catch(ex) {
-					console.error(ex)
-				}
-			}
-			
 			for(const content of this.injectedContent) {
 				try {
 					const matching = []
@@ -1065,7 +1046,7 @@ const INJECT_SCRIPT = (settings, IS_DEV_MODE, selectedRobuxToCashOption) => {
 			}
 			
 			if(renderTarget.hijackState) {
-				run(renderTarget.hijackState, true)
+				run(renderTarget.hijackState, !renderTarget.permanent)
 			}
 			
 			run(this.globalHijackState)
@@ -1195,26 +1176,6 @@ const INJECT_SCRIPT = (settings, IS_DEV_MODE, selectedRobuxToCashOption) => {
 	angularHook.init()
 	
 	//
-	
-	history.pushState = new Proxy(history.pushState, {
-		apply(target, thisArg, args) {
-			const result = target.apply(thisArg, args)
-			contentScript.send("locationchange")
-			return result
-		}
-	})
-	
-	history.replaceState = new Proxy(history.replaceState, {
-		apply(target, thisArg, args) {
-			const result = target.apply(thisArg, args)
-			contentScript.send("locationchange")
-			return result
-		}
-	})
-	
-	window.addEventListener("popstate", () => {
-		contentScript.send("locationchange")
-	})
 	
 	contentScript.listen("setCurrentPage", currentPage => {
 		BTRoblox.currentPage = currentPage

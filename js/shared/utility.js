@@ -219,7 +219,7 @@ const $ = (() => {
 					observer.listeners = []
 					observer.target = target
 
-					observer.observe(target, { childList: true, subtree: true })
+					observer.observe(target, { childList: true, subtree: true, attributeFilter: ["class", "id"] })
 				}
 
 				observer.listeners.push(item)
@@ -432,7 +432,8 @@ const $ = (() => {
 				if(!watchAllSelectorRegex.test(selector)) {
 					throw new Error(`Invalid selector '${selector}', only simple selectors allowed`)
 				}
-
+				
+				let attributeFilter
 				let matches
 
 				if(selector === "*") {
@@ -440,9 +441,11 @@ const $ = (() => {
 				} else if(selector[0] === ".") {
 					const match = selector.slice(1)
 					matches = node => node.classList.contains(match)
+					attributeFilter = ["class"]
 				} else if(selector[0] === "#") {
 					const match = selector.slice(1)
 					matches = node => node.id === match
+					attributeFilter = ["id"]
 				} else {
 					const match = selector.toLowerCase()
 					matches = node => node.nodeName.toLowerCase() === match
@@ -483,11 +486,26 @@ const $ = (() => {
 						observer.listeners = []
 						observer.target = target
 
-						observer.observe(target, { childList: true, subtree: false })
+						observer.observe(target, { childList: true, subtree: false, attributeFilter: attributeFilter })
 					}
 
 					observer.listeners.push(item)
 				}
+			},
+			
+			onRemove(target, callback) {
+				if(!document.contains(target)) {
+					return callback()
+				}
+				
+				const listener = $.onDomChanged(() => {
+					if(!document.contains(target)) {
+						listener.disconnect()
+						return callback()
+					}
+				})
+				
+				return listener
 			},
 
 			find(self, selector) {
@@ -612,7 +630,8 @@ const $ = (() => {
 		})
 
 		Assign([self.Node, Node], {
-			$wrapWith(...args) { return $.wrapWith(this, ...args) }
+			$wrapWith(...args) { return $.wrapWith(this, ...args) },
+			$onRemove(...args) { return $.onRemove(this, ...args) }
 		})
 	} else {
 		$ = {}

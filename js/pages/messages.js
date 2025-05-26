@@ -123,11 +123,9 @@ class MarkAllAsReadAction {
 	}
 }
 
-pageInit.messages = function() {
+pageInit.messages = () => {
 	if(!SETTINGS.get("messages.enabled")) { return }
 	
-	document.$watch(">body", body => body.classList.add("btr-messages"))
-
 	angularHook.modifyTemplate("messages-nav", template => {
 		const curPage = template.$find(".CurrentPage")
 
@@ -221,5 +219,16 @@ pageInit.messages = function() {
 				return result
 			}
 		})
+	})
+	
+	onPageReset(() => {
+		document.body?.classList.remove("btr-messages")
+	})
+	
+	onPageLoad(() => {
+		document.$watch("body", body => body.classList.add("btr-messages"))
+		
+		// document.$watch("#content").$then().$watch(">.messages-container", messages => {
+		// })
 	})
 }

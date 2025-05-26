@@ -173,7 +173,7 @@ const resolveServerDetails = details => {
 }
 
 const getServerDetails = (placeId, jobId, callback) => {
-	const cached = btrLocalStorage.getItem(`serverDetails-${jobId}`)
+	const cached = btrLocalStorage.getItem(`serverDetailsV2-${jobId}`)
 	
 	if(cached) {
 		callback(resolveServerDetails(cached))
@@ -187,7 +187,7 @@ const getServerDetails = (placeId, jobId, callback) => {
 			MESSAGING.send("getServerAddress", { placeId: placeId, jobId: jobId }, details => {
 				delete gettingServerDetails[jobId]
 				
-				btrLocalStorage.setItem(`serverDetails-${jobId}`, details, { expires: Date.now() + (details.success ? 60 * 60e3 : 15e3) })
+				btrLocalStorage.setItem(`serverDetailsV2-${jobId}`, details, { expires: Date.now() + (details.success ? 60 * 60e3 : 15e3) })
 				
 				resolve(resolveServerDetails(details))
 			})
