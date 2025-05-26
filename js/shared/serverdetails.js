@@ -3,6 +3,7 @@
 const serverRegionsByIp = {
 	// NYC servers are actually in Secaucus, New Jersey, but aint nobody know where that is
 	// London servers are actually in Slough
+	Non118: { city: "Ashburn", country: { name: "United States", code: "US" }, region: { name: "Virginia", code: "VA" } },
 	"128.116.0.0": { city: "Ashburn", country: { name: "United States", code: "US" }, region: { name: "Virginia", code: "VA" } },
 	"128.116.1.0": { city: "Los Angeles", country: { name: "United States", code: "US" }, region: { name: "California", code: "CA" } },
 	"128.116.5.0": { city: "Frankfurt", country: { name: "Germany", code: "DE" }, region: { name: "Hesse", code: "HE" } },
@@ -24,6 +25,7 @@ const serverRegionsByIp = {
 	"128.116.56.0": { city: "Ashburn", country: { name: "United States", code: "US" }, region: { name: "Virginia", code: "VA" } },
 	"128.116.57.0": { city: "San Jose", country: { name: "United States", code: "US" }, region: { name: "California", code: "CA" } },
 	"128.116.63.0": { city: "Los Angeles", country: { name: "United States", code: "US" }, region: { name: "California", code: "CA" } },
+	"128.116.64.0": { city: "San Mateo", country: { name: "United States", code: "US" }, region: { name: "California", code: "CA" } },
 	"128.116.67.0": { city: "San Jose", country: { name: "United States", code: "US" }, region: { name: "California", code: "CA" } },
 	"128.116.74.0": { city: "Ashburn", country: { name: "United States", code: "US" }, region: { name: "Virginia", code: "VA" } },
 	"128.116.80.0": { city: "Ashburn", country: { name: "United States", code: "US" }, region: { name: "Virginia", code: "VA" } },
@@ -154,7 +156,7 @@ const resolveServerDetails = details => {
 	}
 	
 	const address = details.address
-	const location = serverRegionsByIp[address.replace(/^(128\.116\.\d+)\.\d+$/, "$1.0")]
+	const location = address.startsWith("128.116") ? serverRegionsByIp[address.replace(/^(128\.116\.\d+)\.\d+$/, "$1.0")] : serverRegionsByIp.Non118
 				
 	if(!location) {
 		return {
