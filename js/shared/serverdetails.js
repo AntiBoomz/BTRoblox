@@ -144,7 +144,7 @@ const resolveServerDetails = details => {
 				success: false,
 				status: details.status,
 				statusText: "Unknown",
-				statusTextLong: `Unable to fetch server location: Unknown status ${json.status}`
+				statusTextLong: `Unable to fetch server location: Unknown status ${details.status}`
 			}
 		}
 		
