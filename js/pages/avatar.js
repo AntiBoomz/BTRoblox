@@ -126,10 +126,6 @@ pageInit.avatar = () => {
 									}
 								}
 								
-								$scope.btrUpdateSlider = $event => {
-									console.log($event)
-								}
-								
 								$scope.btrUpdateItem = item => {
 									if(item.meta?.scale && item.btrScale) {
 										item.meta.scale.X = item.btrScale
