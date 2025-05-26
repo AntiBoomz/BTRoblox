@@ -830,6 +830,7 @@ const RBXAvatar = (() => {
 	
 	const tempMatrix = new THREE.Matrix4()
 	const tempVector = new THREE.Vector3()
+	const tempEuler = new THREE.Euler()
 	
 	let compositeRenderer
 	
@@ -1899,10 +1900,18 @@ const RBXAvatar = (() => {
 				}
 				
 				const parent = attachment ? attachment.parent : this.parts.Head
+				let meta = acc.asset?.meta
 				
 				if(parent) {
 					// Scale
 					this.getScaleMod(parent.name, acc.scaleType, parent.rbxScaleType, acc.obj.rbxScaleMod)
+					
+					if(meta?.scale) {
+						acc.obj.rbxScaleMod.x *= meta.scale.X ?? 1
+						acc.obj.rbxScaleMod.y *= meta.scale.Y ?? 1
+						acc.obj.rbxScaleMod.z *= meta.scale.Z ?? 1
+					}
+					
 					acc.obj.scale.set(...(acc.scale || [1, 1, 1])).multiply(acc.obj.rbxScaleMod)
 					
 					// Position
@@ -1919,9 +1928,29 @@ const RBXAvatar = (() => {
 						}
 					}
 					
+					if(meta?.position) {
+						acc.bakedCFrame.elements[12] += (meta.position.X ?? 0) * acc.obj.rbxScaleMod.x
+						acc.bakedCFrame.elements[13] += (meta.position.Y ?? 0) * acc.obj.rbxScaleMod.y
+						acc.bakedCFrame.elements[14] += (meta.position.Z ?? 0) * acc.obj.rbxScaleMod.z
+					}
+					
+					if(meta?.rotation) {
+						tempVector.setFromMatrixPosition(acc.bakedCFrame)
+						acc.bakedCFrame.setPosition(0, 0, 0)
+						
+						acc.bakedCFrame.premultiply(tempMatrix.makeRotationFromEuler(tempEuler.set(
+							(meta.rotation.X ?? 0) / 180 * Math.PI,
+							(meta.rotation.Y ?? 0) / 180 * Math.PI,
+							(meta.rotation.Z ?? 0) / 180 * Math.PI,
+							"YXZ"
+						)))
+						
+						acc.bakedCFrame.setPosition(tempVector)
+					}
+					
 					// Mesh offset (not scaled)
 					if(acc.offset) {
-						acc.bakedCFrame.multiply(tempMatrix.makeTranslation(...acc.offset))
+						acc.bakedCFrame.add(tempMatrix.makeTranslation(...acc.offset))
 					}
 					
 					//
