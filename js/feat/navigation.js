@@ -488,54 +488,61 @@ const Navigation = {
 			enabled: false
 		})
 		
-		InjectJS.inject(() => {
-			const { reactHook } = BTRoblox
-			
-			reactHook.inject("ul.navbar-right", elem => {
-				const robux = elem.find(x => "robuxAmount" in x.props)
+		if(SETTINGS.get("navigation.enabled") && location.host !== "create.roblox.com") {
+			InjectJS.inject(() => {
+				const { reactHook } = BTRoblox
 				
-				if(robux) {
-					robux.before(
-						reactHook.createElement("div", {
-							id: "btr-placeholder-friends",
-							dangerouslySetInnerHTML: { __html: "" }
-						}),
-						reactHook.createElement("div", {
-							id: "btr-placeholder-messages",
-							dangerouslySetInnerHTML: { __html: "" }
-						}),
-					)
-				}
-			})
-			
-			reactHook.inject(".left-col-list", elem => {
-				const trade = elem.find(x => x.key === "trade")
-				if(trade) {
-					trade.after(
-						reactHook.createElement("div", {
-							id: "btr-placeholder-money",
-							dangerouslySetInnerHTML: { __html: "" }
-						}),
-					)
-				}
-				
-				const blog = elem.find(x => x.key === "blog")
-				if(blog) {
-					blog.before(
-						reactHook.createElement("div", {
-							id: "btr-placeholder-premium",
-							dangerouslySetInnerHTML: { __html: "" }
-						}),
-					)
+				reactHook.inject("ul.navbar-right", elem => {
+					const robux = elem.find(x => "robuxAmount" in x.props)
 					
-					blog.after(
-						reactHook.createElement("div", {
-							id: "btr-placeholder-blogfeed",
-							dangerouslySetInnerHTML: { __html: "" }
-						}),
-					)
-				}
+					if(robux) {
+						robux.before(
+							reactHook.createElement("div", {
+								id: "btr-placeholder-friends",
+								style: { display: "none" },
+								dangerouslySetInnerHTML: { __html: "" }
+							}),
+							reactHook.createElement("div", {
+								id: "btr-placeholder-messages",
+								style: { display: "none" },
+								dangerouslySetInnerHTML: { __html: "" }
+							}),
+						)
+					}
+				})
+				
+				reactHook.inject(".left-col-list", elem => {
+					const trade = elem.find(x => x.key === "trade")
+					if(trade) {
+						trade.after(
+							reactHook.createElement("div", {
+								id: "btr-placeholder-money",
+								style: { display: "none" },
+								dangerouslySetInnerHTML: { __html: "" }
+							}),
+						)
+					}
+					
+					const blog = elem.find(x => x.key === "blog")
+					if(blog) {
+						blog.before(
+							reactHook.createElement("div", {
+								id: "btr-placeholder-premium",
+								style: { display: "none" },
+								dangerouslySetInnerHTML: { __html: "" }
+							}),
+						)
+						
+						blog.after(
+							reactHook.createElement("div", {
+								id: "btr-placeholder-blogfeed",
+								style: { display: "none" },
+								dangerouslySetInnerHTML: { __html: "" }
+							}),
+						)
+					}
+				})
 			})
-		})
+		}
 	}
 }
