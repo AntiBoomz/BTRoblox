@@ -599,8 +599,7 @@ const initReactRobuxToCash = () => {
 				
 				elem.append(reactHook.createElement("span", {
 					className: "btr-robuxToCash-tile",
-					children: ` (${cash})`,
-					title: `R$ ${originalText.trim()}`
+					children: ` (${cash})`
 				}))
 			}
 		})
@@ -616,8 +615,7 @@ const initReactRobuxToCash = () => {
 				
 				elem.append(reactHook.createElement("span", {
 					className: "btr-robuxToCash",
-					children: ` (${cash})`,
-					title: `R$ ${originalText.trim()}`
+					children: ` (${cash})`
 				}))
 			}
 		})
