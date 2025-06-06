@@ -15,34 +15,6 @@ pageInit.profile = () => {
 		})
 	})
 	
-	InjectJS.inject(() => {
-		const { reactHook } = BTRoblox
-		
-		// detect if friends are hidden
-		
-		reactHook.hijackConstructor(
-			(type, props) => "profileUserId" in props && "isOwnUser" in props, 
-			(target, thisArg, args) => {
-				const result = target.apply(thisArg, args)
-				
-				try {
-					if(result?.props?.className?.includes("0-friends")) {
-						const state = reactHook.renderTarget?.state
-						const friendsList = state?.find(x => Array.isArray(x[0]) && x[0].length > 0 && x[0][0] && "combinedName" in x[0][0])
-						
-						if(friendsList) {
-							result.props.className += " btr-friends-hidden"
-						}
-					}
-				} catch(ex) {
-					console.error(ex)
-				}
-				
-				return result
-			}
-		)
-	})
-	
 	onPageReset(() => {
 		document.body?.classList.remove("btr-profile")
 	})
@@ -242,7 +214,7 @@ pageInit.profile = () => {
 				.$watch("#friends-carousel-container", friends => {
 					newCont.$find(".placeholder-friends").after(friends)
 					
-					friends.$watch(".friends-carousel-container, .btr-friends-hidden", () => {
+					friends.$watch(".friends-carousel-container", () => {
 						newCont.$find(".placeholder-friends").remove()
 					})
 				})

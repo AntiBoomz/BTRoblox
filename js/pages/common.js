@@ -426,6 +426,25 @@ const initReactFriends = () => {
 	InjectJS.inject(() => {
 		const { reactHook, hijackXHR, settings } = BTRoblox
 		
+		reactHook.hijackConstructor( // FriendsCarouselContainer
+			(type, props) => "profileUserId" in props && "carouselName" in props, 
+			(target, thisArg, args) => {
+				if(BTRoblox.currentPage?.name === "home") {
+					reactHook.hijackUseState(
+						(value, index) => value === false && index == 4,
+						(value, initial) => initial ? true : value
+					)
+				} else if(BTRoblox.currentPage?.name === "profile") {
+					reactHook.hijackUseState(
+						(value, index) => value === true && index == 3,
+						(value, initial) => initial ? false : value
+					)
+				}
+				
+				return target.apply(thisArg, args)
+			}
+		)
+		
 		reactHook.hijackConstructor( // FriendsList
 			(type, props) => "friendsList" in props, 
 			(target, thisArg, args) => {
