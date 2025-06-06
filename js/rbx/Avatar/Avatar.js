@@ -1950,7 +1950,7 @@ const RBXAvatar = (() => {
 					
 					// Mesh offset (not scaled)
 					if(acc.offset) {
-						acc.bakedCFrame.add(tempMatrix.makeTranslation(...acc.offset))
+						acc.bakedCFrame.multiply(tempMatrix.makeTranslation(...acc.offset))
 					}
 					
 					//
