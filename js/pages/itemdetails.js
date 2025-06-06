@@ -915,7 +915,7 @@ pageInit.itemdetails = () => {
 					})
 
 					if(category === "game-pass") {
-						RobloxApi.gamepasses.getGamepassDetails(assetId).then(data => {
+						RobloxApi.gamepasses.getGamepassProductInfo(assetId).then(data => {
 							const sales = data?.Sales
 							
 							if(Number.isSafeInteger(sales) && (canConfigure || sales > 0)) {
@@ -986,7 +986,7 @@ pageInit.itemdetails = () => {
 					show()
 
 					if(category === "game-pass") {
-						RobloxApi.gamepasses.getGamepassDetails(assetId).then(data => {
+						RobloxApi.gamepasses.getGamepassProductInfo(assetId).then(data => {
 							show(data.Created, data.Updated)
 						})
 					} else if(category === "badges") {

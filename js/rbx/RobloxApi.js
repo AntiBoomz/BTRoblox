@@ -309,6 +309,11 @@ const RobloxApi = {
 	},
 	gamepasses: {
 		getGamepassDetails: cacheResult(10e3, backgroundCall(gamepassId =>
+			xsrfFetch(`https://apis.roblox.com/game-passes/v1/game-passes/${gamepassId}/details`, {
+				credentials: "include"
+			}).then(res => res.json())
+		)),
+		getGamepassProductInfo: cacheResult(10e3, backgroundCall(gamepassId =>
 			xsrfFetch(`https://apis.roblox.com/game-passes/v1/game-passes/${gamepassId}/product-info`, {
 				credentials: "include"
 			}).then(res => res.json())
