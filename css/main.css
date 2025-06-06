@@ -1272,6 +1272,11 @@ html .react-friends-carousel-container:has(.btr-friends-secondRow) {
 	height: auto;
 }
 
+html .react-friends-carousel-container:has(.btr-friends-loading-two-lines) {
+	min-height: 325px;
+	height: auto;
+}
+
 html .btr-friends-list .friends-carousel-container {
 	padding-left: 0;
 	padding-right: 0;

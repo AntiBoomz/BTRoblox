@@ -448,20 +448,33 @@ const initReactFriends = () => {
 		reactHook.hijackConstructor( // FriendsList
 			(type, props) => "friendsList" in props, 
 			(target, thisArg, args) => {
+				let storeSecondRow = false
 				let showSecondRow = false
 				
 				if(BTRoblox.currentPage?.name === "home") {
 					showSecondRow = settings.home.friendsSecondRow
+					storeSecondRow = true
 				} else if(BTRoblox.currentPage?.name === "profile") {
 					showSecondRow = true
 				}
 				
+				const friendsList = args[0].friendsList
+				
 				if(showSecondRow) {
-					const friendsList = args[0].friendsList
-					
 					reactHook.hijackUseState( // visibleFriendsList
 						(value, index) => value === friendsList,
-						(value, initial) => (value && friendsList) ? friendsList.slice(0, value.length * 2) : value
+						(value, initial) => {
+							if(value && friendsList && !initial) {
+								if(storeSecondRow) {
+									const isTwoLines = value.length < friendsList.length
+									localStorage.setItem("BTRoblox:homeFriendsIsTwoLines", isTwoLines ? "true" : "false")
+								}
+								
+								return friendsList.slice(0, value.length * 2)
+							}
+							
+							return value
+						}
 					)
 				}
 				
@@ -473,6 +486,11 @@ const initReactFriends = () => {
 				if(showSecondRow) {
 					try { result.props.className = `${result.props.className ?? ""} btr-friends-secondRow` }
 					catch(ex) { console.error(ex) }
+					
+					if(storeSecondRow && !friendsList && localStorage.getItem("BTRoblox:homeFriendsIsTwoLines") === "true") {
+						try { result.props.className = `${result.props.className ?? ""} btr-friends-loading-two-lines` }
+						catch(ex) { console.error(ex) }
+					}
 				}
 				
 				return result
