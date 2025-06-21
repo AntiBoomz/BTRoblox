@@ -82,8 +82,9 @@ const SkippableAssetTypes = [
 
 const LayeredAssetTypes = [64, 65, 66, 67, 68, 69, 70, 71, 72]
 
-const R15Anims = [507766388, 507766951, 507766666]
-const R6Anims = [180435571, 180435792]
+//idle, walk, run, jump, fall, climb
+const R15Anims = [507766388, 913402848, 913376220, 507765000, 507767968, 507765644]
+const R6Anims = [180435571, 180426354, 180426354, 125750702, 180436148, 180436334]
 
 const R6AnimParts = ["Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
 
@@ -179,6 +180,9 @@ class AvatarPreviewer extends EventEmitter {
 		if(this.enabled) {
 			if(!this.currentAnim && !this.defaultAnimationsDisabled) {
 				this.loadDefaultAnimation()
+			}
+			else if (this.currentAnim) {
+				this.playAnimation(this.currentAnim)
 			}
 		}
 
@@ -396,6 +400,13 @@ class AvatarPreviewer extends EventEmitter {
 	playAnimation(animId) {
 		this.currentAnim = animId
 		this.loadingAnim = null
+
+		if (this.playerType == "R6") {
+			const r15Index = R15Anims.indexOf(animId);
+			if (r15Index !== -1) {
+				animId = R6Anims[r15Index];
+			}
+		}
 
 		if(this.playingAnim) {
 			this.scene.avatar.animator.stop(this.playingAnim.track)
