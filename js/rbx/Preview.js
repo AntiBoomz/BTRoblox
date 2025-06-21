@@ -82,9 +82,9 @@ const SkippableAssetTypes = [
 
 const LayeredAssetTypes = [64, 65, 66, 67, 68, 69, 70, 71, 72]
 
-//idle, walk, run, jump, fall, climb
-const R15Anims = [507766388, 913402848, 913376220, 507765000, 507767968, 507765644]
-const R6Anims = [180435571, 180426354, 180426354, 125750702, 180436148, 180436334]
+//idle, walk, run, jump, fall, climb, swim
+const R15Anims = [507766388, 913402848, 913376220, 507765000, 507767968, 507765644, 913384386]
+const R6Anims = [180435571, 180426354, 180426354, 125750702, 180436148, 180436334, 180426354] //swim is just run?
 
 const R6AnimParts = ["Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"]
 
