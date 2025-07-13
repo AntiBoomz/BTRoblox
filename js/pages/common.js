@@ -448,29 +448,37 @@ const initReactFriends = () => {
 		reactHook.hijackConstructor( // FriendsList
 			(type, props) => "friendsList" in props, 
 			(target, thisArg, args) => {
-				let storeSecondRow = false
+				const props = args[0]
+				const friendsList = props.friendsList
+				const carouselName = props.carouselName
+				
 				let showSecondRow = false
 				
-				if(BTRoblox.currentPage?.name === "home") {
-					showSecondRow = settings.home.friendsSecondRow
-					storeSecondRow = true
-				} else if(BTRoblox.currentPage?.name === "profile") {
+				if(carouselName === "WebHomeFriendsCarousel") {
 					showSecondRow = true
+				} else if(carouselName === "WebProfileFriendsCarousel") {
+					showSecondRow = true
+					
+					// Fixes an issue where profile friends list shows one too few friends
+					props.isAddFriendsTileEnabled = false
 				}
-				
-				const friendsList = args[0].friendsList
 				
 				if(showSecondRow) {
 					reactHook.hijackUseState( // visibleFriendsList
 						(value, index) => value === friendsList,
 						(value, initial) => {
 							if(value && friendsList && !initial) {
-								if(storeSecondRow) {
+								let count = value.length * 2
+								
+								if(carouselName === "WebHomeFriendsCarousel") {
 									const isTwoLines = value.length < friendsList.length
 									localStorage.setItem("BTRoblox:homeFriendsIsTwoLines", isTwoLines ? "true" : "false")
+									
+									// account for Add Friends button
+									count += 1
 								}
 								
-								return friendsList.slice(0, value.length * 2)
+								return friendsList.slice(0, count)
 							}
 							
 							return value
@@ -487,9 +495,11 @@ const initReactFriends = () => {
 					try { result.props.className = `${result.props.className ?? ""} btr-friends-secondRow` }
 					catch(ex) { console.error(ex) }
 					
-					if(storeSecondRow && !friendsList && localStorage.getItem("BTRoblox:homeFriendsIsTwoLines") === "true") {
-						try { result.props.className = `${result.props.className ?? ""} btr-friends-loading-two-lines` }
-						catch(ex) { console.error(ex) }
+					if(carouselName === "WebHomeFriendsCarousel") {
+						if(!friendsList && localStorage.getItem("BTRoblox:homeFriendsIsTwoLines") === "true") {
+							try { result.props.className = `${result.props.className ?? ""} btr-friends-loading-two-lines` }
+							catch(ex) { console.error(ex) }
+						}
 					}
 				}
 				
