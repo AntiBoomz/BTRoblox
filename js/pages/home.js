@@ -27,4 +27,37 @@ pageInit.home = () => {
 			})
 		})
 	}
+	
+	if(SETTINGS.get("home.instantGameHoverAction")) {
+		InjectJS.inject(() => {
+			const { reactHook } = window.BTRoblox
+			
+			reactHook.inject(".hover-game-tile.old-hover", elem => {
+				const props = elem[0].props
+				
+				const [isFocused, setIsFocused] = reactHook.React.useState(false)
+				
+				props.className = (props.className ?? "").replace(/\bfocused\b/, "")
+				props.className += " btr-game-hover-fix"
+				
+				if(isFocused) {
+					props.className += " focused"
+				}
+				
+				props.onMouseOver = new Proxy(props.onMouseOver ?? (() => {}), {
+					apply(target, thisArg, args) {
+						setIsFocused(true)
+						return target.apply(thisArg, args)
+					}
+				})
+				
+				props.onMouseLeave = new Proxy(props.onMouseLeave ?? (() => {}), {
+					apply(target, thisArg, args) {
+						setIsFocused(false)
+						return target.apply(thisArg, args)
+					}
+				})
+			})
+		})
+	}
 }

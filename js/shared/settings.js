@@ -35,7 +35,8 @@ const DEFAULT_SETTINGS = {
 		friendsSecondRow: { value: false },
 		friendPresenceLinks: { value: true },
 		favoritesAtTop: { value: false },
-		hideFriendActivity: { value: false }
+		hideFriendActivity: { value: false },
+		instantGameHoverAction: { value: false }
 	},
 	messages: {
 		enabled: { value: true }

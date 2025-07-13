@@ -4,3 +4,7 @@
 	aspect-ratio: 1;
 	height: auto;
 }
+
+.btr-game-hover-fix {
+	transition-delay: 0s !important;
+}
