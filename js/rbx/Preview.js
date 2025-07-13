@@ -175,7 +175,7 @@ class AvatarPreviewer extends EventEmitter {
 
 		this.playerType = playerType
 		this.scene.avatar.setPlayerType(playerType)
-
+		
 		if(this.enabled) {
 			if(!this.currentAnim && !this.defaultAnimationsDisabled) {
 				this.loadDefaultAnimation()
@@ -380,6 +380,14 @@ class AvatarPreviewer extends EventEmitter {
 	}
 
 	loadDefaultAnimation() {
+		this.stopAnimation()
+
+		if(this.enabled) {
+			this.loadAnimation(this.playerType === "R15" ? R15Anims[0] : R6Anims[0])
+		}
+	}
+	
+	stopAnimation() {
 		this.currentAnim = null
 		this.loadingAnim = null
 
@@ -387,21 +395,13 @@ class AvatarPreviewer extends EventEmitter {
 			this.scene.avatar.animator.stop(this.playingAnim.track)
 			this.playingAnim = null
 		}
-
-		if(this.enabled) {
-			this.loadAnimation(this.playerType === "R15" ? R15Anims[0] : R6Anims[0])
-		}
 	}
-
+	
 	playAnimation(animId) {
+		this.stopAnimation()
+		
 		this.currentAnim = animId
-		this.loadingAnim = null
-
-		if(this.playingAnim) {
-			this.scene.avatar.animator.stop(this.playingAnim.track)
-			this.playingAnim = null
-		}
-
+		
 		if(this.enabled) {
 			this.loadAnimation(animId)
 		}

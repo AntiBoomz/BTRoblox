@@ -46,7 +46,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 		]
 		
 		if(!disabledTypes.includes(assetTypeId) && bundleType !== "AvatarAnimations") {
-			const defaultAnims = {
+			const defaultAnimsR15 = {
 				run: [913376220],
 				walk: [913402848],
 				swim: [913384386],
@@ -57,13 +57,33 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 				climb: [507765644]
 			}
 			
-			for(const [animType, assetIds] of Object.entries(defaultAnims)) {
-				for(const assetId of assetIds) {
-					preview.addBundleAnimation(assetId, animType, "")
-				}
+			const defaultAnimsR6 = {
+				run: [180426354],
+				walk: [],
+				swim: [],
+				swimidle: [],
+				jump: [125750702],
+				idle: [180435571, 180435792],
+				fall: [180436148],
+				climb: [180436334]
 			}
 			
-			preview.playAnimation(defaultAnims.idle[0])
+			const applyAnimation = () => {
+				const anims = preview.playerType === "R6" ? defaultAnimsR6 : defaultAnimsR15
+				
+				for(const [category, assetIds] of Object.entries(anims)) {
+					preview.removeBundleAnimations(category)
+					
+					for(const assetId of assetIds) {
+						preview.addBundleAnimation(assetId, category, "")
+					}
+				}
+				
+				preview.playAnimation(anims.idle[0])
+			}
+			
+			preview.on("playerTypeChanged", applyAnimation)
+			applyAnimation()
 		}
 		
 		previewPromise.$resolve(preview)
@@ -1012,6 +1032,7 @@ pageInit.itemdetails = () => {
 					const assetTypeId = isBundle ? null : +buttons.dataset.btrAssetTypeId
 					
 					initPreview(assetId, assetTypeId, isBundle).then(preview => {
+						if(!preview) { return } // preview didnt load
 						if(!document.contains(buttons)) { return } // already changed page
 						
 						const parent = document.querySelector(".item-thumbnail-container, #item-thumbnail-container-frontend").parentNode
