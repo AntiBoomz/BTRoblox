@@ -1293,6 +1293,7 @@ html .btr-friends-list .friends-carousel-tile #friend-tile-button {
 	padding: 0;
 }
 
+html .btr-friends-list .friends-carousel-tile .add-friends-icon-container,
 html .btr-friends-list .friends-carousel-tile .avatar {
 	margin-left: auto;
 	margin-right: auto;
