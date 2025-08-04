@@ -86,11 +86,23 @@ pageInit.groups = () => {
 					const result = target.apply(thisArg, args)
 					
 					try {
-						thisArg.$doCheck = () => {
-							if(thisArg.layout) {
-								thisArg.layout.btrPayoutsEnabled = (thisArg.recipients?.length ?? 0) > 0
+						const { groupPayoutsService } = argsMap
+						const controller = thisArg
+						
+						hijackFunction(groupPayoutsService, "getGroupPayoutRecipients", (target, thisArg, args) => {
+							const result = target.apply(thisArg, args)
+							
+							try {
+								result.then(
+									recipients => controller.layout.btrPayoutsEnabled = recipients.length > 0,
+									() => controller.layout.btrPayoutsEnabled = false
+								)
+							} catch(ex) {
+								console.error(ex)
 							}
-						}
+							
+							return result
+						})
 					} catch(ex) {
 						console.error(ex)
 					}
