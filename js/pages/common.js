@@ -376,9 +376,9 @@ const initReactFriends = () => {
 				let showSecondRow = false
 				
 				if(carouselName === "WebHomeFriendsCarousel") {
-					showSecondRow = true
+					showSecondRow = settings.home.friendsSecondRow
 				} else if(carouselName === "WebProfileFriendsCarousel") {
-					showSecondRow = true
+					showSecondRow = settings.home.friendsSecondRow
 					
 					// Fixes an issue where profile friends list shows one too few friends
 					props.isAddFriendsTileEnabled = false
