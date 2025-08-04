@@ -712,9 +712,9 @@ const INJECT_SCRIPT = (settings, IS_DEV_MODE, selectedRobuxToCashOption) => {
 					}
 					
 					if(newSelectors.length > 0 && depth > 0) {
-						path.push(child)
+						if(path) { path.push(child) }
 						const result = this._queryList([child.props.children], newSelectors, depth - 1, all, path)
-						path.pop()
+						if(path) { path.pop() }
 						
 						if(result) {
 							return result
