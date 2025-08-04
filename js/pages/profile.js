@@ -4,13 +4,38 @@ pageInit.profile = () => {
 	if(!SETTINGS.get("profile.enabled")) { return }
 	
 	InjectJS.inject(() => {
-		const { angularHook } = window.BTRoblox
+		const { angularHook, reactHook, IS_DEV_MODE } = window.BTRoblox
 		
 		angularHook.hijackModule("peopleList", {
 			layoutService(target, thisArg, args, argsMap) {
 				const result = target.apply(thisArg, args)
 				result.maxNumberOfFriendsDisplayed = 10
 				return result
+			}
+		})
+		
+		reactHook.inject(".profile-tab-content", tabContent => {
+			for(const child of tabContent[0].props.children) {
+				switch(child.key) {
+				case "About":
+				case "CurrentlyWearing":
+				case "FavoriteExperiences":
+				case "Friends":
+				case "Collections":
+				case "Communities":
+				case "RobloxBadges":
+				case "PlayerBadges":
+				case "Statistics":
+				case "Experiences":
+				case "CreationsModels":
+				case "Clothing":
+					delete child.props.children
+					break
+				default:
+					if(IS_DEV_MODE) {
+						console.log(`Unknown component '${child.key}'`)
+					}
+				}
 			}
 		})
 	})
@@ -24,7 +49,7 @@ pageInit.profile = () => {
 		
 		document.$watch("body", body => body.classList.add("btr-profile"))
 		
-		document.$watch(".profile-platform-container", profileContainer => {
+		document.$watch([".profile-platform-container", ".profile-container"], (profileContainer, angularContainer) => {
 			const newCont = html`
 			<div class=btr-profile-container>
 				<div class=btr-profile-left>
@@ -106,10 +131,10 @@ pageInit.profile = () => {
 			
 			profileContainer
 				.$watch(".profile-tabs", tabs => {
-					tabs.parentNode.before(newCont)
+					// tabs.parentNode.before(newCont)
 					tabs.parentNode.style.display = "none"
 				})
-				.$watch(".profile-header-top .avatar-status", statusContainer => {
+				.$watch(".profile-header .avatar-status", statusContainer => {
 					const statusDiv = html`<div class="btr-header-status-parent"></div>`
 					newCont.$find(".placeholder-status").replaceWith(statusDiv)
 					
@@ -135,6 +160,16 @@ pageInit.profile = () => {
 							statusDiv.replaceChildren(html`<span class="btr-header-status-text btr-status-offline">Offline</span>`)
 						}
 					})
+				})
+			
+			// roblox hides the angular container since it's meant to use the react side
+			angularContainer.style.all = "unset"
+			angularContainer.style.display = "contents"
+			
+			angularContainer
+				.$watch(".rbx-tabs-horizontal", tabs => {
+					tabs.before(newCont)
+					// tabs.setAttribute("ng-if", "false") // have angular clear it
 				})
 				.$watch(".profile-about", about => {
 					const newAbout = newCont.$find(".btr-profile-about")
@@ -530,7 +565,9 @@ pageInit.profile = () => {
 						gameItems.push(new GameItem(slide))
 					})
 				})
-				.$watch(".favorite-games-container", favorites => favorites.remove())
+				.$watch(".favorite-games-container", favorites => {
+					favorites.remove()
+				})
 				.$watch(".profile-collections", collections => {
 					collections.classList.remove("layer", "gray-layer-on")
 					newCont.$find(".placeholder-collections").replaceWith(collections)

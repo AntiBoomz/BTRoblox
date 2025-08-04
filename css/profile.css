@@ -5,10 +5,6 @@
 	width: 1072px;
 }
 
-.btr-profile .profile-container {
-	max-width: none;
-}
-
 .btr-profile .btr-profile-left,
 .btr-profile .btr-profile-right {
 	display: inline-block;
