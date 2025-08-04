@@ -168,6 +168,7 @@ const Navigation = {
 			}
 		})
 		
+		/*
 		Navigation.register("header_charts_rename", {
 			label: "Rename Charts to Discover",
 			enabled: false,
@@ -212,6 +213,7 @@ const Navigation = {
 				document.$watch("title", title => this.addNode(title))
 			}
 		})
+			*/
 		
 		Navigation.register("header_robux", {
 			label: "Show Robux",
