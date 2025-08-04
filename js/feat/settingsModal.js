@@ -326,7 +326,6 @@ const SettingsModal = {
 					</group>
 					<group label=Profile path=profile toggleable>
 						<checkbox label="Embed Inventory" path=embedInventoryEnabled></checkbox>
-						<!--checkbox label="Show Last Online" path=lastOnline></checkbox-->
 					</group>
 					<group label=Groups path=groups toggleable>
 						<checkbox label="Modify Layout" path=modifyLayout></checkbox>
@@ -335,7 +334,7 @@ const SettingsModal = {
 					<group label="Game Details" path=gamedetails toggleable>
 						<checkbox label="Highlight Owned Badges" path=showBadgeOwned></checkbox>
 						<checkbox label="Compact Badge Stats" path=compactBadgeStats></checkbox>
-						<checkbox label="Server List Pages" path=addServerPager></checkbox>
+						<checkbox label="Paged Server List" path=addServerPager></checkbox>
 					</group>
 					<group label="Item Details" path=itemdetails toggleable>
 						<checkbox label="Item Previewer" path=itemPreviewer></checkbox>
@@ -350,9 +349,9 @@ const SettingsModal = {
 					<group label=Catalog path=catalog toggleable>
 						<checkbox label="Show Owned Items" path=showOwnedAssets></checkbox>
 					</group>
-					<group label="Create (WIP)" path=create toggleable>
-						<checkbox label="Version History Changes" path=downloadVersion></checkbox>
-						<checkbox label="Asset Options Changes" path=assetOptions></checkbox>
+					<group label="Create" path=create toggleable>
+						<checkbox label="Downloadable Version History" path=downloadVersion></checkbox>
+						<checkbox label="Modify Asset Options" path=assetOptions></checkbox>
 					</group>
 					<group label="Advanced" minimizable minimized>
 						<div id=btr-settings-wip>

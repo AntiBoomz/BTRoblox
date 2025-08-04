@@ -93,7 +93,6 @@ const DEFAULT_SETTINGS = {
 	profile: {
 		enabled: { value: true },
 		embedInventoryEnabled: { value: true },
-		// lastOnline: { value: true }
 	},
 }
 
