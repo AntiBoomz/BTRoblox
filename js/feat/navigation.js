@@ -248,7 +248,7 @@ const Navigation = {
 		})
 		
 		Navigation.register("header_friends", {
-			label: "Show Friends",
+			label: "Show Connections",
 			
 			settings: {
 				show_notifs: { label: "Show Requests", enabled: true, class: "!hide_notifs" }
@@ -353,7 +353,7 @@ const Navigation = {
 		})
 		
 		Navigation.register("sidebar_friends", {
-			label: "Show Friends",
+			label: "Show Connect",
 			
 			settings: {
 				show_notifs: { label: "Show Requests", enabled: true, class: "!hide_notifs" }

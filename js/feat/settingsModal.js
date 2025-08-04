@@ -315,10 +315,10 @@ const SettingsModal = {
 						<button btr-tab=navigation class=btn-control-xs>Modify Buttons</button>
 					</group>
 					<group label=Home path=home>
-						<checkbox label="Show More Friends" path=friendsSecondRow></checkbox>
-						<checkbox label="Show Friend Usernames" path=friendsShowUsername></checkbox>
+						<checkbox label="Show More Connections" path=friendsSecondRow></checkbox>
+						<checkbox label="Show Connection Usernames" path=friendsShowUsername></checkbox>
 						<checkbox label="Move Favorites to Top" path=favoritesAtTop></checkbox>
-						<checkbox label="Hide Friend Activity" path=hideFriendActivity></checkbox>
+						<checkbox label="Hide Connection Activity" path=hideFriendActivity></checkbox>
 					</group>
 					<group label=Profile path=profile toggleable>
 						<checkbox label="Embed Inventory" path=embedInventoryEnabled></checkbox>
