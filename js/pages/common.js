@@ -350,19 +350,27 @@ const initReactFriends = () => {
 		reactHook.hijackConstructor( // FriendsCarouselContainer
 			(type, props) => "profileUserId" in props && "carouselName" in props, 
 			(target, thisArg, args) => {
-				if(BTRoblox.currentPage?.name === "home") {
-					reactHook.hijackUseState(
-						(value, index) => value === false && index == 4,
-						(value, initial) => initial ? true : value
-					)
-				} else if(BTRoblox.currentPage?.name === "profile") {
-					reactHook.hijackUseState(
-						(value, index) => value === true && index == 3,
-						(value, initial) => initial ? false : value
-					)
+				const props = args[0]
+				const carouselName = props.carouselName
+				
+				// disable MustHideConnections so that friends load in faster
+				reactHook.hijackUseState(
+					(value, index) => value === false && index == 4,
+					(value, initial) => initial ? true : value
+				)
+				
+				const result = target.apply(thisArg, args)
+				
+				// if MustHideConnect is enabled, communicate that to profile code somehow
+				if(reactHook.renderTarget?.state?.[4]?.[0] === false) {
+					const noFriendsLabel = reactHook.querySelector(result, ".friends-carousel-0-friends")
+					console.log("C:", noFriendsLabel)
+					if(noFriendsLabel) {
+						noFriendsLabel.props.className += " btr-friends-carousel-disabled"
+					}
 				}
 				
-				return target.apply(thisArg, args)
+				return result
 			}
 		)
 		

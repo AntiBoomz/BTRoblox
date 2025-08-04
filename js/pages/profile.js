@@ -252,7 +252,7 @@ pageInit.profile = () => {
 				.$watch("#friends-carousel-container", friends => {
 					newCont.$find(".placeholder-friends").after(friends)
 					
-					friends.$watch(".friends-carousel-container", () => {
+					friends.$watch(".friends-carousel-container, .btr-friends-carousel-disabled", () => {
 						newCont.$find(".placeholder-friends").remove()
 					})
 				})
