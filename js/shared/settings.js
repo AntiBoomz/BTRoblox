@@ -34,7 +34,8 @@ const DEFAULT_SETTINGS = {
 		friendPresenceLinks: { value: true },
 		favoritesAtTop: { value: false },
 		hideFriendActivity: { value: false },
-		instantGameHoverAction: { value: false }
+		instantGameHoverAction: { value: false },
+		showRecommendationPlayerCount: { value: true }
 	},
 	messages: {
 		enabled: { value: true }

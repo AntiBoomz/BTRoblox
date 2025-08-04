@@ -28,6 +28,21 @@ pageInit.home = () => {
 		})
 	}
 	
+	if(SETTINGS.get("home.showRecommendationPlayerCount")) {
+		InjectJS.inject(() => {
+			const { reactHook } = window.BTRoblox
+			
+			reactHook.hijackConstructor(
+				(type, props) => "wideTileType" in props && "gameData" in props && "playerCountStyle" in props,
+				(target, thisArg, args) => {
+					const props = args[0]
+					props.playerCountStyle = "Footer"
+					return target.apply(thisArg, args)
+				}
+			)
+		})
+	}
+	
 	if(SETTINGS.get("home.instantGameHoverAction")) {
 		InjectJS.inject(() => {
 			const { reactHook } = window.BTRoblox
