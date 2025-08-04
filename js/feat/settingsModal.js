@@ -300,7 +300,7 @@ const SettingsModal = {
 						<checkbox label="Show 'Copy Id' Context Items" path=enableContextMenus></checkbox>
 						<checkbox label="Higher Robux Precision" path=higherRobuxPrecision></checkbox>
 						
-						<div style="display: inline-block; width: 50%; padding: 6px 2px;float:right;">
+						<div style="display: inline-block; width: 50%; padding: 2px; float: right;">
 							<label style="">Robux to Cash Conversion Rate</label>
 							<span style="width: calc(100% - 14px); display: inline-flex;">
 								<select id=btr-robuxToCash-currency style="flex: 0 1 auto"></select>
@@ -309,6 +309,10 @@ const SettingsModal = {
 							<span class=btr-setting-reset-button path=general.robuxToUSDRate></span>
 						</div>
 						
+						<div>
+							<checkbox label="Group Shout Notifications" path=groups.shoutAlerts></checkbox>
+							<button btr-tab=shoutFilters class=btn-control-xs>Modify Shout Notifications</button>
+						</div>
 					</group>
 					<group label=Navigation path=navigation toggleable>
 						<checkbox label="Keep Sidebar Open" path=noHamburger require=false></checkbox>
@@ -324,15 +328,9 @@ const SettingsModal = {
 						<checkbox label="Embed Inventory" path=embedInventoryEnabled></checkbox>
 						<!--checkbox label="Show Last Online" path=lastOnline></checkbox-->
 					</group>
-					<group label=Groups path=groups toggleable=redesign>
-						<div>
-							<checkbox label="Group Shout Notifications" path=shoutAlerts require=false></checkbox>
-							<button btr-tab=shoutFilters class=btn-control-xs>Modify Shout Notifications</button>
-						</div>
-						<div>
-							<empty></empty>
-							<button btr-tab=groupRedesign class=btn-control-xs>Modify Redesign Options</button>
-						</div>
+					<group label=Groups path=groups toggleable>
+						<checkbox label="Modify Layout" path=modifyLayout></checkbox>
+						<checkbox label="Paged Group Wall" path=pagedGroupWall></checkbox>
 					</group>
 					<group label="Game Details" path=gamedetails toggleable>
 						<checkbox label="Highlight Owned Badges" path=showBadgeOwned></checkbox>
@@ -384,7 +382,7 @@ const SettingsModal = {
 					</div>
 					<group path=groups>
 						<div>
-							<checkbox label="Enable Group Shout Notifications" path=shoutAlerts></checkbox>
+							<checkbox label="Enable Group Shout Notifications" path=shoutAlerts require=false></checkbox>
 						</div>
 						<checkbox label="Browser Notifications" path=shoutAlertBrowserNotifs require=shoutAlerts></checkbox>
 						<checkbox label="Show In Notification Stream" path=shoutAlertsInNotifStream require=shoutAlerts></checkbox>
@@ -427,19 +425,6 @@ const SettingsModal = {
 							</select>
 						</group>
 					</div>
-				</div>
-				<div class=btr-settings-content id=btr-settings-group-redesign data-name=groupRedesign>
-					<div class=btr-settings-content-header>
-						<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
-						<h4>Group Redesign Options</h4>
-					</div>
-					<group label="Redesign" toggleable=redesign path=groups>
-						<checkbox label="Modify Layout" path=modifyLayout require=redesign></checkbox>
-						<checkbox label="Make Group Wall Paged" path=pagedGroupWall require=redesign></checkbox>
-						<checkbox label="Show Selected Role Member Count" path=selectedRoleCount require=redesign></checkbox>
-						<checkbox label="Hide Large Social Container" path=hideBigSocial require=redesign></checkbox>
-						<checkbox label="Show Title On Social Icon Hover" path=modifySmallSocialLinksTitle require=redesign></checkbox>
-					</group>
 				</div>
 				<div class=btr-settings-footer>
 					<div class=btr-settings-footer-version>v${chrome.runtime.getManifest().version}</div>

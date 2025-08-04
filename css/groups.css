@@ -1,73 +1,10 @@
-body.btr-hide-ads .content {
-	max-width: calc(1478px - 166px);
+@media (min-width: 992px) {
+	html body.btr-no-hamburger .wrap.has-groups-list-sidebar .groups-list-sidebar {
+		left: 175px;
+	}
 }
 
 /* Groups redesign */
-
-.btr-redesign group-description .section,
-.btr-redesign group-description .section-content {
-	display: contents;
-}
-
-.btr-redesign group-description .container-header {
-	position: static;
-	min-height: unset;
-	margin-bottom: 0;
-}
-
-.btr-redesign group-description .container-header h2 {
-	font-size: 16px;
-	padding: 4px 0;
-}
-
-html .btr-redesign group-description .group-description-text {
-	line-height: 1.4em;
-}
-
-html .btr-redesign group-description .group-description-text.content-height {
-	height: 94px;
-}
-
-html .btr-redesign group-description .group-description:has(>.hidden) .group-description-text {
-	max-height: 94px;
-	height: auto;
-}
-
-.btr-redesign group-description .group-description-footer {
-	margin-top: 8px;
-}
-
-.btr-redesign group-description .group-description-footer:not(:has(>:first-child)) {
-	display: none;
-}
-
-/* Social icons */
-
-.btr-redesign social-link-icon-list {
-	position: absolute;
-	top: 6px;
-	right: 44px;
-}
-
-/* Other */
-
-.btr-redesign .btr-group-about {
-	margin-bottom: 0;
-}
-
-.btr-redesign .btr-shout-container .shout-container {
-	margin-bottom: 0;
-}
-
-.btr-redesign .community-link-display,
-.btr-redesign .community-link-display-link {
-	margin-bottom: 0;
-}
-
-.btr-redesign .rbx-tabs-horizontal {
-	margin-top: 18px;
-	margin-bottom: 8px;
-}
 
 .btr-redesign .tab-content {
 	float: none;
@@ -114,20 +51,6 @@ html .btr-redesign group-description .group-description:has(>.hidden) .group-des
 	line-height: 26px;
 	font-weight: 300;
 	padding-right: 2px;
-}
-
-.btr-redesign #horizontal-tabs:has(>li:nth-child(4)) { --btr-num-tabs: 4; }
-.btr-redesign #horizontal-tabs:has(>li:nth-child(5)) { --btr-num-tabs: 5; }
-.btr-redesign #horizontal-tabs:has(>li:nth-child(6)) { --btr-num-tabs: 6; }
-.btr-redesign #horizontal-tabs:has(>li:nth-child(7)) { --btr-num-tabs: 7; }
-
-.btr-redesign #horizontal-tabs > li {
-	width: calc(100% / var(--btr-num-tabs, 3));
-}
-
-.btr-redesign .btr-hide-payouts,
-.btr-hideBigSocial social-links-container {
-	display: none;
 }
 
 /* Paged group wall */

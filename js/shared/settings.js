@@ -80,12 +80,11 @@ const DEFAULT_SETTINGS = {
 		shoutAlerts: { value: false },
 		shoutAlertBrowserNotifs: { value: true },
 		shoutAlertsInNotifStream: { value: false },
-		redesign: { value: true },
+		
+		enabled: { value: true },
 		modifyLayout: { value: true },
 		selectedRoleCount: { value: true },
 		pagedGroupWall: { value: true },
-		hideBigSocial: { value: true },
-		modifySmallSocialLinksTitle: { value: true }
 	},
 	inventory: {
 		enabled: { value: true },

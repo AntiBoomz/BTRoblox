@@ -357,6 +357,12 @@
 	position: relative;
 }
 
+.btr-settings-content group::after {
+	content: "";
+	display: block;
+	clear: both;
+}
+
 .btr-settings-content group.btr-group-disabled {
 	background:rgba(0, 0, 0, 0.02);
 }

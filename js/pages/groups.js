@@ -7,30 +7,9 @@ pageInit.groups = () => {
 		})
 	}
 
-	if(!SETTINGS.get("groups.redesign")) { return }
-	
-	if(SETTINGS.get("groups.modifySmallSocialLinksTitle")) {
-		angularHook.modifyTemplate(["social-link-icon-list", "social-link-icon"], (listTemplate, iconTemplate) => {
-			iconTemplate.$find("a").title = `{{ $ctrl.title || $ctrl.type }}`
-			listTemplate.$find("social-link-icon").title = "socialLink.title"
-		})
-		
-		InjectJS.inject(() => {
-			const { angularHook } = window.BTRoblox
-			
-			angularHook.hijackModule("socialLinksJumbotron", {
-				socialLinkIcon(component) {
-					component.bindings.title = "<"
-				}
-			})
-		})
-	}
+	if(!SETTINGS.get("groups.enabled")) { return }
 
 	if(SETTINGS.get("groups.modifyLayout")) {
-		document.$watch(["#about", "#btr-games"], (about, games) => {
-			about.after(games)
-		})
-		
 		InjectJS.inject(() => {
 			const { angularHook, hijackFunction } = window.BTRoblox
 			
@@ -39,11 +18,58 @@ pageInit.groups = () => {
 					const result = target.apply(thisArg, args)
 					
 					try {
-						const { $scope } = argsMap
+						const { $scope, groupDetailsConstants } = argsMap
+						
+						groupDetailsConstants.tabs.about.translationKey = "Heading.Members"
+						
+						groupDetailsConstants.tabs.games = {
+							state: "about",
+							btrCustomTab: "games",
+							translationKey: "Heading.Games"
+						}
+						
+						groupDetailsConstants.tabs.payouts = {
+							state: "about",
+							btrCustomTab: "payouts",
+							translationKey: "Heading.Payouts"
+						}
+						
+						$scope.btrCustomTab = {
+							name: null
+						}
+						
+						hijackFunction($scope, "groupDetailsTabs", (target, thisArg, args) => {
+							let result = target.apply(thisArg, args)
+							
+							const entries = Object.entries(result)
+							
+							if($scope.library?.currentGroup?.areGroupGamesVisible) {
+								entries.splice(1, 0, ["games", groupDetailsConstants.tabs.games])
+							}
+							
+							if($scope.isAuthenticatedUser && $scope.layout?.btrPayoutsEnabled) {
+								entries.push(["payouts", groupDetailsConstants.tabs.payouts])
+							}
+							
+							result = Object.fromEntries(entries)
+							
+							return result
+						})
 						
 						// this doesnt get called unless we start on group shout page
 						// doing it here since we always show shouts
 						$scope.initVerifiedBadgesForGroupShout()
+					} catch(ex) {
+						console.error(ex)
+					}
+					
+					return result
+				},
+				groupTab(target, thisArg, args) {
+					const result = target.apply(thisArg, args)
+					
+					try {
+						result.scope.btrCustomTab = "="
 					} catch(ex) {
 						console.error(ex)
 					}
@@ -54,15 +80,15 @@ pageInit.groups = () => {
 			
 			angularHook.hijackModule("groupPayouts", {
 				groupPayouts(component) {
-					component.bindings.btrlayout = "="
+					component.bindings.layout = "="
 				},
 				groupPayoutsController(target, thisArg, args, argsMap) {
 					const result = target.apply(thisArg, args)
 					
 					try {
 						thisArg.$doCheck = () => {
-							if(thisArg.btrlayout) {
-								thisArg.btrlayout.btrPayoutsEnabled = (thisArg.recipients?.length ?? 0) > 0
+							if(thisArg.layout) {
+								thisArg.layout.btrPayoutsEnabled = (thisArg.recipients?.length ?? 0) > 0
 							}
 						}
 					} catch(ex) {
@@ -75,115 +101,59 @@ pageInit.groups = () => {
 		})
 		
 		angularHook.modifyTemplate(["group-base", "group-about"], (baseTemplate, aboutTemplate) => {
-			const groupHeader = baseTemplate.$find(".group-header")
-			const groupAbout = groupHeader.parentNode
-			const groupContainer = groupAbout.parentNode
-			groupContainer.classList.add("btr-group-container")
-			groupAbout.classList.add("btr-group-about")
-
-			const desc = aboutTemplate.$find("group-description")
-			if(desc) {
-				desc.removeAttribute("ng-switch-when")
-				groupHeader.after(desc)
+			const tabs = baseTemplate.$find(".rbx-tabs-horizontal")
+			
+			// move most things out of about and into the main container
+			const hoist = [
+				aboutTemplate.$find("group-events"),
+				aboutTemplate.$find("#group-announcements"),
+				aboutTemplate.$find(".group-shout"),
+				aboutTemplate.$find("social-links-container"),
+				aboutTemplate.$find("group-forums-discovery")
+			]
+			
+			for(const element of hoist) {
+				if(!element) { continue }
+				
+				element.removeAttribute("ng-switch-when")
+				tabs.before(element)
 			}
 			
-			const forumsDiscovery = aboutTemplate.$find("group-forums-discovery")
-			if(forumsDiscovery) {
-				forumsDiscovery.removeAttribute("ng-switch-when")
-				groupAbout.after(forumsDiscovery)
+			// toggle members/games/payouts based on custom tab
+			const members = aboutTemplate.$find("group-members-list")
+			if(members) {
+				members.setAttribute("ng-show", `!btrCustomTab.name`)
 			}
-			
-			const socialLinks = aboutTemplate.$find("social-links-container")
-			if(socialLinks) {
-				socialLinks.removeAttribute("ng-switch-when")
-				groupAbout.after(socialLinks)
-			}
-			
-			const shout = aboutTemplate.$find(".group-shout")
-			if(shout) {
-				shout.removeAttribute("ng-switch-when")
-				shout.classList.add("btr-shout-container")
-				groupAbout.after(shout)
-			}
-			
-			const announcement = aboutTemplate.$find("#group-announcements")
-			if(announcement) {
-				announcement.removeAttribute("ng-switch-when")
-				groupAbout.after(announcement)
-			}
-			
-			const events = aboutTemplate.$find("group-events")
-			if(events) {
-				events.removeAttribute("ng-switch-when")
-				groupAbout.after(events)
-			}
-			
-			// Give games and payouts their own tabs
-			
-			const list = baseTemplate.$find("#horizontal-tabs")
-
-			list.append(
-				html`
-				<li
-					id="btr-games"
-					ng-class="{'active': layout.activeTab.state === 'about' && layout.activeTab.btrCustomTab === 'games'}"
-					ng-if="library.currentGroup.areGroupGamesVisible" ng-click="groupDetailsConstants.tabs.about.btrCustomTab='games'"
-					class="rbx-tab group-tab"
-					ui-sref="about"
-				><a class=rbx-tab-heading><span class=text-lead ng-bind="'Heading.Games' | translate"></span></a></li>`,
-				html`
-				<li
-					id="btr-payouts"
-					ng-class="{'active': layout.activeTab.state === 'about' && layout.activeTab.btrCustomTab === 'payouts'}"
-					ng-if="isAuthenticatedUser && layout.btrPayoutsEnabled"
-					ng-click="groupDetailsConstants.tabs.about.btrCustomTab='payouts'"
-					class="rbx-tab group-tab"
-					ui-sref="about"
-				><a class=rbx-tab-heading><span class=text-lead ng-bind="'Heading.Payouts' | translate"></span></a></li>`
-			)
-			
-			baseTemplate.$find("group-about,[group-about]")?.setAttribute("ng-show", `!(layout.activeTab && layout.activeTab.btrCustomTab)`)
-			
-			const payouts = aboutTemplate.$find("group-payouts,[group-payouts]")
-			if(payouts) {
-				payouts.removeAttribute("ng-switch-when")
-				payouts.setAttribute("btrlayout", "layout")
-				payouts.setAttribute("ng-show", `layout.activeTab.btrCustomTab === "payouts"`)
-				groupContainer.parentNode.append(payouts)
-			}
-			
-			const games = aboutTemplate.$find("group-games,[group-games]")
+						
+			const games = aboutTemplate.$find("group-games")
 			if(games) {
-				games.removeAttribute("ng-switch-when")
-				games.setAttribute("ng-show", `layout.activeTab.btrCustomTab === "games"`)
-				groupContainer.parentNode.append(games)
+				games.setAttribute("ng-show", `btrCustomTab.name === "games"`)
 			}
 			
-			const wall = aboutTemplate.$find("group-wall,[group-wall]")
+			const payouts = aboutTemplate.$find("group-payouts")
+			if(payouts) {
+				payouts.setAttribute("layout", "layout")
+				payouts.setAttribute("ng-show", `btrCustomTab.name === "payouts"`)
+			}
+			
+			// move group wall into the main container so it's visible in most views
+			const wall = aboutTemplate.$find("group-wall")
 			if(wall) {
 				wall.removeAttribute("ng-switch-when")
 				wall.setAttribute("ng-show", "layout.activeTab !== groupDetailsConstants.tabs.forums")
-				groupContainer.parentNode.append(wall)
+				tabs.parentNode.append(wall)
 			}
 		})
 		
 		angularHook.modifyTemplate("group-tab", template => {
 			const tab = template.$find(".rbx-tab")
 			
-			tab.setAttribute("ng-class", tab.getAttribute("ng-class").replace(/activeTab === tab/, "activeTab === tab && !tab.btrCustomTab"))
-			tab.setAttribute("ng-click", "tab.btrCustomTab = null")
+			tab.setAttribute("btr-custom-tab", "btrCustomTab")
+			tab.setAttribute("ng-class", tab.getAttribute("ng-class").replace(/activeTab === tab/, "activeTab.state === tab.state && btrCustomTab.name == tab.btrCustomTab"))
+			tab.setAttribute("ng-click", "btrCustomTab.name = tab.btrCustomTab")
 			
-			// rename About to Members
-			
-			const binding = tab.$find(".text-lead")
-			
-			if(binding?.getAttribute("ng-bind")) {
-				binding.setAttribute("ng-bind", binding.getAttribute("ng-bind").replace(/^\s*(.*)?(\s*\|\s*translate\s*)$/i, "($1 === 'Heading.About' ? 'Heading.Members' : $1)$2"))
-			}
-		})
-		
-		angularHook.modifyTemplate("group-description", template => {
-			template.$find(".container-header")?.setAttribute("ng-if", "$ctrl.canViewDescription()")
+			// it only supports up to 5 tabs by default, so just hardcode width
+			tab.setAttribute("style", "width: calc(100% / {{numTabs}});")
 		})
 
 		angularHook.modifyTemplate("group-members-list", template => {
@@ -241,7 +211,7 @@ pageInit.groups = () => {
 			template.firstElementChild.setAttribute("infinite-scroll-disabled", "true")
 
 			template.$find(".group-wall").parentNode.append(html`
-			<div class="btr-pager-holder btr-comment-pager">
+			<div class="btr-pager-holder btr-comment-pager" ng-show="!hideWallPost">
 				<ul class=btr-pager>
 					<li class=btr-pager-first><button class=btn-generic-first-page-sm ng-disabled="!btrPagerStatus.prev" ng-click=btrPagerStatus.prev&&btrLoadWallPosts("first")><span class=icon-first-page></span></button></li>
 					<li class=btr-pager-prev><button class=btn-generic-left-sm ng-disabled="!btrPagerStatus.prev" ng-click=btrPagerStatus.prev&&btrLoadWallPosts("prev")><span class=icon-left></span></button></li>
@@ -441,16 +411,11 @@ pageInit.groups = () => {
 	
 	onPageReset(() => {
 		document.body?.classList.remove("btr-redesign")
-		document.body?.classList.remove("btr-hideBigSocial")
 	})
 	
 	onPageLoad(() => {
 		document.$watch("body", body => {
 			document.body.classList.toggle("btr-redesign", SETTINGS.get("groups.modifyLayout"))
-			document.body.classList.toggle("btr-hideBigSocial", SETTINGS.get("groups.hideBigSocial"))
 		})
-		
-		// document.$watch("#content").$then().$watch(">#group-container", container => {
-		// }, { continuous: true })
 	})
 }

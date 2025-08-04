@@ -186,7 +186,7 @@ const INJECT_SCRIPT = (settings, IS_DEV_MODE, selectedRobuxToCashOption) => {
 		
 		moduleListeners: [],
 		loadedModules: {},
-
+		
 		applyEntry(module, entry, callback) {
 			const [, type, data] = entry
 			
@@ -218,15 +218,21 @@ const INJECT_SCRIPT = (settings, IS_DEV_MODE, selectedRobuxToCashOption) => {
 				hijack(data, data.length - 1, data)
 			}
 		},
-
-		initEntry(module, entry) {
-			const name = entry[2][0]
-			const listeners = this.moduleListeners[module.name]?.[name]
-			if(!listeners) { return }
+		
+		applyConfig(module, config, callback) {
+			const injects = config[2][0]
 			
-			for(const callback of listeners) {
-				this.applyEntry(module, entry, callback)
-			}
+			if(typeof injects[injects.length - 1] !== "function") { return }
+			
+			hijackFunction(injects, injects.length - 1, (target, thisArg, args) => {
+				const argsMap = {}
+				
+				for(let i = 0; i < injects.length - 1; i++) {
+					argsMap[injects[i]] = args[i]
+				}
+				
+				return callback(target, thisArg, args, argsMap)
+			})
 		},
 		
 		//
@@ -238,10 +244,10 @@ const INJECT_SCRIPT = (settings, IS_DEV_MODE, selectedRobuxToCashOption) => {
 			catch(ex) {}
 			
 			if(module) {
-				for(const data of module._invokeQueue) {
-					const callback = objects[data[2][0]]
+				for(const entry of module._invokeQueue) {
+					const callback = objects[entry[2][0]]
 					if(callback) {
-						this.applyEntry(module, data, callback)
+						this.applyEntry(module, entry, callback)
 					}
 				}
 			}
@@ -251,6 +257,23 @@ const INJECT_SCRIPT = (settings, IS_DEV_MODE, selectedRobuxToCashOption) => {
 				this.moduleListeners[moduleName][name] = this.moduleListeners[moduleName][name] ?? []
 				this.moduleListeners[moduleName][name].push(callback)
 			}
+		},
+		
+		hijackConfig(moduleName, callback) {
+			let module
+			
+			try { module = angular.module(moduleName) }
+			catch(ex) {}
+			
+			if(module) {
+				for(const config of module._configBlocks) {
+					this.applyConfig(module, config, callback)
+				}
+			}
+			
+			this.moduleListeners[moduleName] = this.moduleListeners[moduleName] ?? {}
+			this.moduleListeners[moduleName].__configs = this.moduleListeners[moduleName].__configs ?? []
+			this.moduleListeners[moduleName].__configs.push(callback)
 		},
 		
 		//
@@ -303,20 +326,42 @@ const INJECT_SCRIPT = (settings, IS_DEV_MODE, selectedRobuxToCashOption) => {
 				})
 			}
 			
-			for(const entry of module._invokeQueue) {
-				this.initEntry(module, entry)
-			}
-			
-			const init = (target, thisArg, args) => {
-				for(const entry of args) {
-					this.initEntry(module, entry)
+			const route = (queue, callback) => {
+				for(const entry of queue) {
+					callback(entry)
 				}
 				
-				return target.apply(thisArg, args)
+				const init = (target, thisArg, args) => {
+					for(const entry of args) {
+						callback(entry)
+					}
+					
+					return target.apply(thisArg, args)
+				}
+				
+				hijackFunction(queue, "unshift", init)
+				hijackFunction(queue, "push", init)
 			}
 			
-			hijackFunction(module._invokeQueue, "unshift", init)
-			hijackFunction(module._invokeQueue, "push", init)
+			route(module._configBlocks, config => {
+				const listeners = this.moduleListeners[module.name]?.__configs
+				if(!listeners) { return }
+				
+				for(const callback of listeners) {
+					this.applyConfig(module, config, callback)
+				}
+			})
+			
+			route(module._invokeQueue, entry => {
+				const name = entry[2][0]
+				
+				const listeners = this.moduleListeners[module.name]?.[name]
+				if(!listeners) { return }
+				
+				for(const callback of listeners) {
+					this.applyEntry(module, entry, callback)
+				}
+			})
 		},
 		
 		init() {
