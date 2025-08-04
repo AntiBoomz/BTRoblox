@@ -24,11 +24,11 @@ pageInit.profile = () => {
 		
 		document.$watch("body", body => body.classList.add("btr-profile"))
 		
-		document.$watch("#content").$then().$watch(">.profile-container", profileContainer => {
+		document.$watch(".profile-platform-container", profileContainer => {
 			const newCont = html`
 			<div class=btr-profile-container>
 				<div class=btr-profile-left>
-					<div class="btr-profile-about profile-about">
+					<div class=btr-profile-about>
 						<div class=container-header><h2>About</h2></div>
 						<div class=section-content>
 							<div class=placeholder-status style=display:none></div>
@@ -105,6 +105,10 @@ pageInit.profile = () => {
 			const presencePromise = new Promise(resolve => resolve(RobloxApi.presence.getPresence([userId]).then(json => json?.userPresences?.[0])))
 			
 			profileContainer
+				.$watch(".profile-tabs", tabs => {
+					tabs.parentNode.before(newCont)
+					tabs.parentNode.style.display = "none"
+				})
 				.$watch(".profile-header-top .avatar-status", statusContainer => {
 					const statusDiv = html`<div class="btr-header-status-parent"></div>`
 					newCont.$find(".placeholder-status").replaceWith(statusDiv)
@@ -132,13 +136,12 @@ pageInit.profile = () => {
 						}
 					})
 				})
-				.$watch(".rbx-tabs-horizontal", cont => {
-					cont.before(newCont)
-					cont.setAttribute("ng-if", "false") // Let's make angular clean it up :)
-				})
 				.$watch(".profile-about", about => {
-					newCont.$find(".profile-about").setAttribute("ng-controller", about.getAttribute("ng-controller"))
-
+					const newAbout = newCont.$find(".btr-profile-about")
+					
+					newAbout.setAttribute("ng-controller", about.getAttribute("ng-controller"))
+					newAbout.classList.add("profile-about")
+					
 					about
 						.$watch("profile-description,.profile-about-content", desc => {
 							if(desc.classList.contains("profile-about-content") && desc.closest("profile-description")) {
@@ -714,7 +717,7 @@ pageInit.profile = () => {
 				})
 			}
 
-			function initFavorites() { // Favorites
+			function initFavorites() {
 				const favorites = newCont.$find(".btr-profile-favorites")
 				const hlist = favorites.$find(".hlist")
 				hlist.setAttribute("ng-non-bindable", "")
@@ -940,11 +943,8 @@ pageInit.profile = () => {
 				const friends = newCont.$find(".placeholder-friends")
 				if(friends) { friends.remove() }
 			}
-
+			
 			$.ready(() => {
-				const oldContainer = profileContainer.$find(">.rbx-tabs-horizontal")
-				if(oldContainer) { oldContainer.remove() }
-
 				if(SETTINGS.get("profile.embedInventoryEnabled") && userId !== 1) {
 					const cont = html`<div></div>`
 					const iframe = html`<iframe id="btr-injected-inventory" src="/users/${userId}/inventory" scrolling="no">`
