@@ -438,6 +438,53 @@ pageInit.groups = () => {
 			})
 		})
 	}
+
+	document.$watch(".groups-list-sidebar", sidebar => {
+		// fix sidebar being covered by menu
+		sidebar.style.left = "174px";
+		sidebar.style.padding = "24px 20px 20px 20px";
+
+		// fix footer container being overlayed by groups list
+		const footerContainer = document.getElementById("footer-container");
+		if (footerContainer) {
+			footerContainer.style.left = "527px";
+		}
+
+		const toggleButton = document.createElement("button");
+		toggleButton.textContent = "<";
+		toggleButton.style.position = "fixed";
+		toggleButton.style.top = "46px";
+		toggleButton.style.left = "468px";
+		toggleButton.style.zIndex = "1000";
+		toggleButton.style.padding = "6px -10px";
+		toggleButton.style.cursor = "pointer";
+		toggleButton.style.fontSize = "14px";
+		toggleButton.style.border = "0px solid #ccc";
+		toggleButton.style.background = "#34353b";
+		toggleButton.style.borderRadius = "24%";
+		toggleButton.style.width = "24px";
+		toggleButton.style.height = "24px";
+
+		let isVisible = true;
+		toggleButton.onclick = () => {
+			isVisible = !isVisible;
+			sidebar.style.visibility = isVisible ? "" : "hidden";
+			toggleButton.textContent = isVisible ? "<" : ">";
+			toggleButton.style.left = isVisible ? "468px" : "182px";
+			// move content to left when sidebar not visible
+			const content = document.getElementById("content");
+			if (content) {
+				content.style.marginLeft = isVisible ? "327px" : "12px";
+			}
+			// fix footer container being overlayed by groups list when visible
+			const footerContainer = document.getElementById("footer-container");
+			if (footerContainer) {
+				footerContainer.style.left = isVisible ? "527px" : "327px";
+			}
+		};
+
+		document.body.appendChild(toggleButton);
+	});
 	
 	onPageReset(() => {
 		document.body?.classList.remove("btr-redesign")
