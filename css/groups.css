@@ -4,6 +4,12 @@
 	}
 }
 
+@media (min-width: 1688px) {
+	html body #content {
+		margin-left: 327px;
+	}
+}
+
 /* Groups redesign */
 
 .btr-redesign .tab-content {
