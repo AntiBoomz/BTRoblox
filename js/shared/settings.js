@@ -10,7 +10,6 @@ const DEFAULT_SETTINGS = {
 		hideChat: { value: false },
 		smallChatButton: { value: true },
 		fastSearch: { value: true },
-		fixAudioVolume: { value: true },
 
 		robuxToUSDRate: { value: "none", hidden: true },
 
@@ -22,7 +21,6 @@ const DEFAULT_SETTINGS = {
 		higherRobuxPrecision: { value: true },
 		enableContextMenus: { value: true },
 		
-		useNativeAudioPlayer: { value: false },
 		fixFirefoxLocalStorageIssue: { value: false }
 	},
 	create: {

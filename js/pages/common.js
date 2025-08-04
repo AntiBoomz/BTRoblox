@@ -264,85 +264,6 @@ function createPager(noSelect, hideWhenEmpty) {
 	return pager
 }
 
-let currentNativeAudioPlayer
-const useNativeAudioPlayer = (mediaPlayer, bigPlayer) => {
-	mediaPlayer.$on("click", ev => {
-		ev.preventDefault()
-		ev.stopPropagation()
-		ev.stopImmediatePropagation()
-		
-		if(currentNativeAudioPlayer?.element === mediaPlayer) {
-			currentNativeAudioPlayer.close()
-			return
-		}
-		
-		currentNativeAudioPlayer?.close()
-		
-		const mediaUrl = mediaPlayer.dataset.mediathumbUrl
-		
-		const audio = html`<audio id="btr-native-player" controls autoplay>`
-		audio.src = mediaUrl
-		audio.volume = SETTINGS.get("general.fixAudioVolume") ? 0.5 : 1
-		
-		if(bigPlayer) {
-			audio.style.cssText = `position:absolute;left:10px;bottom:11px;width:calc(100% - 50px - 20px);height:38px;border-radius:100px;box-shadow:0 0px 3px 1px rgba(0,0,0,0.15);`
-			mediaPlayer.parentNode.after(audio)
-		} else {
-			const parent = document.documentElement
-			const target = mediaPlayer
-			
-			const rect0 = parent.getBoundingClientRect()
-			const rect1 = target.getBoundingClientRect()
-			
-			audio.style.cssText = `position:absolute;transform:translateX(-50%);width:360px;height:38px;border-radius:100px;box-shadow:0 0px 3px 1px rgba(0,0,0,0.15);z-index:1000`
-			audio.style.left = `${rect1.x + rect1.width / 2 - rect0.x}px`
-			audio.style.top = `${rect1.y + rect1.height + 4 - rect0.y}px`
-			
-			parent.append(audio)
-		}
-		
-		mediaPlayer.classList.add("icon-pause")
-		mediaPlayer.classList.remove("icon-play")
-		
-		const audioPlayer = currentNativeAudioPlayer = {
-			element: mediaPlayer,
-			interval: setInterval(() => {
-				if(mediaPlayer.offsetWidth === 0) {
-					audioPlayer.close()
-				}
-			}, 100),
-			
-			close() {
-				if(currentNativeAudioPlayer === this) {
-					currentNativeAudioPlayer = null
-				}
-				
-				clearInterval(this.interval)
-				
-				mediaPlayer.classList.remove("icon-pause")
-				mediaPlayer.classList.add("icon-play")
-				audio.remove()
-			}
-		}
-		
-		audio.$on("error", () => {
-			fetch(mediaUrl).then(async res => {
-				const toDataURL = blob => new Promise((resolve, reject) => {
-					const fileReader = new FileReader()
-					fileReader.onload = ev => resolve(ev.target.result)
-					fileReader.onerror = err => reject(err)
-					fileReader.readAsDataURL(blob)
-				})
-				
-				toDataURL(await res.blob()).then(
-					src => audio.src = src,
-					() => audioPlayer.close()
-				)
-			})
-		}, { once: true })
-	})
-}
-
 //
 
 let redirectIndexCounter = 0
@@ -862,35 +783,6 @@ pageInit.common = () => {
 					return result
 				}
 			)
-		})
-	}
-	
-	if(SETTINGS.get("general.fixAudioVolume")) {
-		InjectJS.inject(() => {
-			const { hijackFunction, onReady } = window.BTRoblox
-			
-			onReady(() => {
-				const audioService = window.Roblox?.Audio?.AudioService
-				
-				if(audioService) {
-					hijackFunction(audioService, "getAudioPlayer", (target, thisArg, args) => {
-						const origAudio = window.Audio
-		
-						const audioProxy = new Proxy(origAudio, {
-							construct(target, args) {
-								const audio = new target(...args)
-								audio.volume = 0.3
-								return audio
-							}
-						})
-		
-						window.Audio = audioProxy
-						const result = target.apply(thisArg, args)
-						window.Audio = origAudio
-						return result
-					})
-				}
-			})
 		})
 	}
 	

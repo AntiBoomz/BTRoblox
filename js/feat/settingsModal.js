@@ -309,8 +309,6 @@ const SettingsModal = {
 							<span class=btr-setting-reset-button path=general.robuxToUSDRate></span>
 						</div>
 						
-						<checkbox label="Lower Default Audio Volume" path=fixAudioVolume></checkbox>
-						<checkbox label="Audio Player Controls" path=useNativeAudioPlayer></checkbox>
 					</group>
 					<group label=Navigation path=navigation toggleable>
 						<checkbox label="Keep Sidebar Open" path=noHamburger require=false></checkbox>

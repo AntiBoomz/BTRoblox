@@ -79,17 +79,6 @@ pageInit.inventory = () => {
 			HoverPreview.register(".item-card", ".item-card-thumb-container")
 		})
 	}
-	
-	if(SETTINGS.get("general.useNativeAudioPlayer")) {
-		document.$watch("#assetsItems").$then()
-			.$watchAll(".list-item", item => {
-				const mediaPlayer = item.$find(".MediaPlayerIcon[data-mediathumb-url]")
-				
-				if(mediaPlayer) {
-					useNativeAudioPlayer(mediaPlayer)
-				}
-			})
-	}
 
 	if(!SETTINGS.get("inventory.enabled")) { return }
 
