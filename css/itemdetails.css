@@ -40,6 +40,12 @@
 	}
 }
 
+/* avoid overlapping native thumbnail buttons */
+
+.item-details-thumbnail-container .thumbnail-ui-container .bottom-align-container {
+	z-index: 2;
+}
+
 /* old item details */
 
 .menu-shown {
