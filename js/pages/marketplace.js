@@ -78,7 +78,7 @@ pageInit.marketplace = () => {
 		}
 		
 		updateAnchor() {
-			const anchor = document.querySelector(`button[data-testid="getAsset"]`)?.parentNode || null
+			const anchor = document.querySelector(`button[data-testid="getAsset"],button[data-testid="PLAYWRIGHT_getAsset"]`)?.parentNode || null
 			if(anchor === this.anchor) { return }
 			
 			this.anchor = anchor
