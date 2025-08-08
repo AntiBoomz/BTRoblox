@@ -297,7 +297,7 @@ const RBXAnimator = (() => {
 							for(const [key, keyframes] of Object.entries(input)) {
 								const index = keyframes.findIndex(x => x.time > info.timePosition)
 								
-								if(index === 0) {
+								if(index === 0 || keyframes.length === 0) {
 									continue
 								}
 								
@@ -340,7 +340,7 @@ const RBXAnimator = (() => {
 					} else {
 						const index = keyframes.findIndex(x => x.time > info.timePosition)
 						
-						if(index === 0) {
+						if(index === 0 || keyframes.length === 0) {
 							continue
 						}
 						
