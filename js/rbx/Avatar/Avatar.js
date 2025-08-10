@@ -370,7 +370,7 @@ const RBXAvatar = (() => {
 
 	class AvatarAsset extends EventEmitter {
 		constructor(assetId, assetTypeId, meta) {
-			assert(Number.isSafeInteger(assetTypeId), "no assetTypeId")
+			$.assert(Number.isSafeInteger(assetTypeId), "no assetTypeId")
 			super()
 			
 			this.id = assetId

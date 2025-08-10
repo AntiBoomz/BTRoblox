@@ -66,7 +66,7 @@ const RBXAnimationParser = {
 
 	parse(sequence) {
 		if(Array.isArray(sequence)) { sequence = sequence[0] }
-		assert(sequence instanceof RBXInstance, "sequence is not an Instance")
+		$.assert(sequence instanceof RBXInstance, "sequence is not an Instance")
 		
 		const priority = sequence.Priority ?? 1000 // 1000 is Core, the lowest priority
 			
@@ -136,7 +136,7 @@ const RBXAnimationParser = {
 					const curves = keyframes[curveType][component.Name.toLowerCase()]
 					if(!curves) { continue }
 					
-					const reader = new ByteReader(stringToBuffer(component.ValuesAndTimes))
+					const reader = new ByteReader($.stringToBuffer(component.ValuesAndTimes))
 					
 					reader.Jump(4)
 					const valueCount = reader.UInt32LE()
@@ -155,7 +155,7 @@ const RBXAnimationParser = {
 					reader.Jump(4)
 					const timeCount = reader.UInt32LE()
 					
-					assert(timeCount == valueCount, "value and time count do not match")
+					$.assert(timeCount == valueCount, "value and time count do not match")
 					
 					for(let i = 0; i < timeCount; i++) {
 						const time = curves[i].time = reader.UInt32LE() / 2400

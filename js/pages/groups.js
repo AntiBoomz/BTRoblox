@@ -2,7 +2,7 @@
 
 pageInit.groups = () => {
 	if(SETTINGS.get("general.hoverPreview")) {
-		loadOptionalLibrary("previewer").then(() => {
+		loadOptionalFeature("previewer").then(() => {
 			HoverPreview.register(".item-card", ".item-card-thumb-container")
 		})
 	}
@@ -10,9 +10,7 @@ pageInit.groups = () => {
 	if(!SETTINGS.get("groups.enabled")) { return }
 
 	if(SETTINGS.get("groups.modifyLayout")) {
-		InjectJS.inject(() => {
-			const { angularHook, hijackFunction } = window.BTRoblox
-			
+		injectScript.call("groupsModifyLayout", () => {
 			angularHook.hijackModule("group", {
 				groupController(target, thisArg, args, argsMap) {
 					const result = target.apply(thisArg, args)
@@ -112,7 +110,7 @@ pageInit.groups = () => {
 			})
 		})
 		
-		angularHook.modifyTemplate(["group-base", "group-about"], (baseTemplate, aboutTemplate) => {
+		modifyAngularTemplate(["group-base", "group-about"], (baseTemplate, aboutTemplate) => {
 			const tabs = baseTemplate.$find(".rbx-tabs-horizontal")
 			
 			// move most things out of about and into the main container
@@ -157,7 +155,7 @@ pageInit.groups = () => {
 			}
 		})
 		
-		angularHook.modifyTemplate("group-tab", template => {
+		modifyAngularTemplate("group-tab", template => {
 			const tab = template.$find(".rbx-tab")
 			
 			tab.setAttribute("btr-custom-tab", "btrCustomTab")
@@ -168,21 +166,21 @@ pageInit.groups = () => {
 			tab.setAttribute("style", "width: calc(100% / {{numTabs}});")
 		})
 
-		angularHook.modifyTemplate("group-members-list", template => {
+		modifyAngularTemplate("group-members-list", template => {
 			template.$find(".dropdown-menu li a").title = `{{ role.name }}`
 			template.$find(".dropdown-menu li a .role-member-count").title = `{{ role.memberCount | number }}`
 		})
 	}
 
 	if(SETTINGS.get("groups.selectedRoleCount")) {
-		angularHook.modifyTemplate("group-members-list", template => {
+		modifyAngularTemplate("group-members-list", template => {
 			const label = template.$find(".group-dropdown > button .rbx-selection-label")
 			label.after(html`<span class=btr-role-member-count title="{{ $ctrl.data.currentRoleMemberCount | number }}" ng-if="$ctrl.data.currentRoleMemberCount>0">({{ $ctrl.data.currentRoleMemberCount | abbreviate }})</span>`)
 		})
 	}
 
 	if(SETTINGS.get("general.enableContextMenus")) {
-		angularHook.modifyTemplate("group-members-list", template => {
+		modifyAngularTemplate("group-members-list", template => {
 			template.$find(".dropdown-menu li").dataset.btrRank = `{{ role.rank }}`
 		})
 
@@ -219,7 +217,7 @@ pageInit.groups = () => {
 	}
 
 	if(SETTINGS.get("groups.pagedGroupWall")) {
-		angularHook.modifyTemplate("group-wall", template => {
+		modifyAngularTemplate("group-wall", template => {
 			template.firstElementChild.setAttribute("infinite-scroll-disabled", "true")
 
 			template.$find(".group-wall").parentNode.append(html`
@@ -236,9 +234,7 @@ pageInit.groups = () => {
 			</div>`)
 		})
 		
-		InjectJS.inject(() => {
-			const { angularHook, IS_DEV_MODE } = window.BTRoblox
-			
+		injectScript.call("pagedGroupWall", () => {
 			const createCustomPager = (ctrl, { $scope }) => {
 				const wallPosts = []
 				const pageSize = 10

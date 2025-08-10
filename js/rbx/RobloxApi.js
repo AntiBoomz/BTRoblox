@@ -115,7 +115,7 @@ const backgroundCall = callback => {
 	backgroundCallCounter++
 	
 	if(IS_BACKGROUND_PAGE) {
-		MESSAGING.listen({
+		contentScript.listen({
 			[messageId]({ args, xsrf }, respond) {
 				if(xsrf && (!cachedXsrfToken || invalidXsrfTokens[cachedXsrfToken]) && !invalidXsrfTokens[xsrf]) {
 					cachedXsrfToken = xsrf
@@ -138,7 +138,7 @@ const backgroundCall = callback => {
 			cachedXsrfToken = document.querySelector("meta[name='csrf-token']")?.dataset.token ?? null
 		}
 
-		MESSAGING.send(messageId, { args: await wrapArgs(args), xsrf: cachedXsrfToken }, async result => {
+		backgroundScript.send(messageId, { args: await wrapArgs(args), xsrf: cachedXsrfToken }, async result => {
 			if(result.success) {
 				resolve(await unwrapArgs(result.result))
 			} else {
@@ -292,6 +292,22 @@ const RobloxApi = {
 				credentials: "include"
 			}).then(res => res.json()),
 	},
+	chat: {
+		getUserConversations: (pageNumber=1, pageSize=10) =>
+			xsrfFetch(`https://chat.roblox.com/v2/get-user-conversations?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
+				credentials: "include",
+				xsrf: true
+			}).then(res => res.json()),
+		
+		markAsRead: conversationId =>
+			xsrfFetch(`https://chat.roblox.com/v2/mark-as-read`, {
+				method: "POST",
+				credentials: "include",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ conversationId: conversationId }),
+				xsrf: true
+			}).then(res => res.json()),
+	},
 	develop: {
 	},
 	economy: {
@@ -327,6 +343,12 @@ const RobloxApi = {
 			
 		getFavorites: (userId, limit=10, cursor="") =>
 			xsrfFetch(`https://games.roblox.com/v2/users/${userId}/favorite/games?limit=${limit}&cursor=${cursor}`, {
+				credentials: "include"
+			}).then(res => res.json()),
+	},
+	groups: {
+		getUserGroupRoles: userId =>
+			xsrfFetch(`https://groups.roblox.com/v1/users/${userId}/groups/roles`, {
 				credentials: "include"
 			}).then(res => res.json()),
 	},
@@ -366,9 +388,7 @@ const RobloxApi = {
 			xsrfFetch(`https://presence.roblox.com/v1/presence/users`, {
 				method: "POST",
 				credentials: "include",
-				headers: {
-					"Content-Type": "application/json"
-				},
+				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ userIds })
 			}).then(res => res.json()),
 		
@@ -376,11 +396,32 @@ const RobloxApi = {
 		// 	xsrfFetch(`https://presence.roblox.com/v1/presence/last-online`, {
 		// 		method: "POST",
 		// 		credentials: "include",
-		// 		headers: {
-		// 			"Content-Type": "application/json"
-		// 		},
+		// 		headers: { "Content-Type": "application/json" },
 		// 		body: JSON.stringify({ userIds })
 		// 	}).then(res => res.json())
+	},
+	privatemessages: {
+		getMessages: (pageNumber=1, pageSize=20, messageTab="Inbox") =>
+			xsrfFetch(`https://privatemessages.roblox.com/v1/messages?pageSize=${pageSize}&messageTab=${messageTab}&pageNumber=${pageNumber}`, {
+				credentials: "include",
+				cache: "no-store"
+			}).then(res => res.json()),
+			
+		getUnreadCount: () =>
+			xsrfFetch(`https://privatemessages.roblox.com/v1/messages/unread/count`, {
+				credentials: "include",
+				cache: "no-store"
+			}).then(res => res.json()),
+			
+		markAsRead: messageIds =>
+			xsrfFetch(`https://privatemessages.roblox.com/v1/messages/mark-read`, {
+				method: "POST",
+				credentials: "include",
+				cache: "no-store",
+				headers: { "Content-Type": "application/json" },
+				xsrf: true,
+				body: JSON.stringify({ messageIds })
+			}).then(res => res.json()),
 	},
 	thumbnails: {
 		getAvatarHeadshots: (userIds, size = "150x150") =>
@@ -426,12 +467,8 @@ const RobloxApi = {
 			xsrfFetch(`https://users.roblox.com/v1/users`, {
 				method: "POST",
 				credentials: "include",
-				headers: {
-					"Content-Type": "application/json"
-				},
-				body: JSON.stringify({
-					userIds: userIds
-				})
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ userIds: userIds })
 			}).then(res => res.json()),
 			
 		getUsersByUsernames: (usernames, excludeBannedUsers=true) =>

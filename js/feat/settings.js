@@ -238,7 +238,7 @@ const SETTINGS = {
 				if(IS_BACKGROUND_PAGE) {
 					this._save()
 				} else {
-					MESSAGING.send("setSetting", { path: settingPath, value, default: !!isDefault })
+					backgroundScript.send("setSetting", { path: settingPath, value, default: !!isDefault })
 				}
 			}
 
@@ -336,7 +336,7 @@ const SETTINGS = {
 }
 
 if(IS_BACKGROUND_PAGE) {
-	MESSAGING.listen({
+	contentScript.listen({
 		setSetting(data, respond) {
 			SETTINGS.load(() => {
 				SETTINGS._set(data.path, data.value, data.default, true)

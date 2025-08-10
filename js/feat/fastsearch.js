@@ -610,9 +610,7 @@ const btrFastSearch = {
 			new MutationObserver(requestClassUpdate).observe(search, { subtree: true, attributes: true, attributeFilter: ["class"] })
 		}, { continuous: true })
 		
-		InjectJS.inject(() => {
-			const { reactHook } = BTRoblox
-			
+		injectScript.call("fastsearch", () => {
 			reactHook.inject("#navbar-universal-search, .navbar-search", elem => {
 				elem.find("ul")?.prepend(reactHook.createElement("div", {
 					id: "btr-fastsearch-container",

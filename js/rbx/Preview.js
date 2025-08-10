@@ -1081,14 +1081,27 @@ const HoverPreview = (() => {
 			}
 
 			reqId = requestAnimationFrame(update)
-
-			document.documentElement.$on("mouseup", () => {
+			
+			const mouseup = ev => {
 				if(ev.button !== 0) { return }
+				ev.preventDefault()
+				ev.stopImmediatePropagation()
+				
+				document.documentElement
+					.$off("mouseup", mouseup)
+					.$on("click", ev => { // ignore next click event
+						ev.preventDefault()
+						ev.stopImmediatePropagation()
+					}, { once: true, capture: true })
+				
 				cancelAnimationFrame(reqId)
-			}, { once: true })
+			}
 
+			document.documentElement.$on("mouseup", mouseup)
+			
 			ev.preventDefault()
-		}).$on("click", ev => ev.preventDefault())
+			ev.stopImmediatePropagation()
+		})
 	}
 
 	const clearTarget = () => {

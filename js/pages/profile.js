@@ -3,9 +3,7 @@
 pageInit.profile = () => {
 	if(!SETTINGS.get("profile.enabled")) { return }
 	
-	InjectJS.inject(() => {
-		const { angularHook, reactHook, IS_DEV_MODE } = window.BTRoblox
-		
+	injectScript.call("profile", () => {
 		angularHook.hijackModule("peopleList", {
 			layoutService(target, thisArg, args, argsMap) {
 				const result = target.apply(thisArg, args)
@@ -701,10 +699,7 @@ pageInit.profile = () => {
 				pager.onsetpage = loadPage
 
 				$.ready(() => {
-					const url = `https://groups.roblox.com/v1/users/${userId}/groups/roles`
-					
-					$.fetch(url).then(async response => {
-						const json = await response.json()
+					RobloxApi.groups.getUserGroupRoles(userId).then(async json => {
 						const numGroups = json.data.length
 
 						pager.setMaxPage(Math.floor((numGroups - 1) / pageSize) + 1)
@@ -739,9 +734,8 @@ pageInit.profile = () => {
 						}
 
 						hlist.style["min-height"] = `${hlist.scrollHeight + 1}px`
-
-						const thumbUrl = `https://thumbnails.roblox.com/v1/groups/icons?format=png&groupIds=${Object.keys(thumbs).join(",")}&size=150x150`
-						const thumbData = await $.fetch(thumbUrl).then(resp => resp.json())
+						
+						const thumbData = await RobloxApi.thumbnails.getGroupIcons(Object.keys(thumbs))
 						
 						for(const thumbInfo of thumbData.data) {
 							if(thumbInfo.imageUrl) {

@@ -199,7 +199,7 @@ const Explorer = (() => {
 
 		async openSourceViewer(inst, propName) {
 			if(!this.sourceViewerLoadPromise) {
-				this.sourceViewerLoadPromise = loadOptionalLibrary("sourceViewer").then(async () => {
+				this.sourceViewerLoadPromise = loadOptionalFeature("sourceViewer").then(async () => {
 					await new Promise(resolve => setTimeout(resolve, 16)) // wait for styles to load in
 				})
 			}

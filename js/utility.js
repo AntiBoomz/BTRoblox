@@ -1,5 +1,25 @@
 "use strict"
 
+const IS_MANIFEST_V3 = chrome.runtime.getManifest().manifest_version === 3
+const IS_FIREFOX = !!chrome.runtime.getManifest().browser_specific_settings?.gecko
+const IS_CHROME = !IS_FIREFOX
+
+const IS_BACKGROUND_PAGE = !self.window || chrome.extension?.getBackgroundPage?.() === self.window
+const IS_CONTENT_SCRIPT = !IS_BACKGROUND_PAGE
+const IS_DEV_MODE = chrome.runtime.getManifest().short_name === "BTRoblox_DEV"
+
+const STORAGE = chrome.storage.local
+
+const THROW_DEV_WARNING = errorString => {
+	console.warn(errorString)
+
+	if(IS_DEV_MODE) {
+		alert(errorString)
+	}
+}
+
+//
+
 const $ = (() => {
 	let $
 	
@@ -640,63 +660,6 @@ const $ = (() => {
 	Object.assign($, {
 		each(self, cb) { Array.prototype.forEach.call(self, cb) },
 		
-		fetch(url, init = {}) {
-			if(init.body) {
-				if(init.body instanceof URLSearchParams) {
-					init._body = { type: "URLSearchParams", data: init.body.toString() }
-					delete init.body
-				} else if(typeof init.body !== "string") {
-					throw new TypeError("init.body should be a string")
-				}
-			}
-
-			if(init.xsrf) {
-				if(!cachedXsrfToken) {
-					const matches = document.documentElement.innerHTML.match(/XsrfToken\.setToken\('([^']+)'\)/)
-
-					if(matches) {
-						cachedXsrfToken = matches[1]
-					}
-				}
-
-				init.xsrf = cachedXsrfToken || true
-			}
-
-			return new Promise((resolve, reject) => {
-				MESSAGING.send("fetch", [url, init], async respData => {
-					if(!respData.success) {
-						console.error("$.fetch Error:", respData.error)
-						reject(new Error(respData.error))
-						return
-					}
-					
-					let blob = respData.blob
-					
-					if(IS_CHROME) {
-						blob = new Blob([new Uint8Array(blob.body)], { type: blob.type })
-					}
-					
-					const resp = new Response(blob, {
-						status: respData.status,
-						statusText: respData.statusText,
-						headers: new Headers(respData.headers)
-					})
-
-					Object.defineProperties(resp, {
-						redirected: { value: respData.redirected },
-						type: { value: respData.type },
-						url: { value: respData.url }
-					})
-
-					if(!resp.ok) {
-						console.error(`${init.method && init.method.toUpperCase() || "GET"} ${resp.url} ${resp.status} (${resp.statusText})`)
-					}
-
-					resolve(resp)
-				})
-			})
-		},
-		
 		onceFn(fn) {
 			let result
 			return function(...args) {
@@ -804,6 +767,36 @@ const $ = (() => {
 			}
 
 			return (hash >>> 0).toString(16).toUpperCase()
+		},
+		
+		assert(value, ...args) {
+			if(!value) { throw new Error(...args) }
+			return value
+		},
+		assert_warn(value, ...args) {
+			return (!value && console.warn(...args), value)
+		},
+		
+		stringToBuffer(str) {
+			const buff = new ArrayBuffer(str.length)
+			const view = new Uint8Array(buff)
+
+			for(let i = str.length; i--;) {
+				view[i] = str.charCodeAt(i)
+			}
+
+			return buff
+		},
+
+		bufferToString(buffer) {
+			if(buffer instanceof ArrayBuffer) { buffer = new Uint8Array(buffer) }
+			const result = []
+
+			for(let i = 0; i < buffer.length; i += 0x8000) {
+				result.push(String.fromCharCode.apply(null, buffer.subarray(i, i + 0x8000)))
+			}
+
+			return result.join("")
 		}
 	})
 
@@ -981,33 +974,4 @@ const html = function(...args) {
 	if(elem) { elem.remove() }
 
 	return elem
-}
-
-const assert = (value, ...args) => {
-	if(!value) { throw new Error(...args) }
-	return value
-}
-
-const assert_warn = (value, ...args) => (!value && console.warn(...args), value)
-
-const stringToBuffer = str => {
-	const buff = new ArrayBuffer(str.length)
-	const view = new Uint8Array(buff)
-
-	for(let i = str.length; i--;) {
-		view[i] = str.charCodeAt(i)
-	}
-
-	return buff
-}
-
-const bufferToString = buffer => {
-	if(buffer instanceof ArrayBuffer) { buffer = new Uint8Array(buffer) }
-	const result = []
-
-	for(let i = 0; i < buffer.length; i += 0x8000) {
-		result.push(String.fromCharCode.apply(null, buffer.subarray(i, i + 0x8000)))
-	}
-
-	return result.join("")
 }

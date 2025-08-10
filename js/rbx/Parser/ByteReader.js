@@ -10,7 +10,7 @@ class ByteReader extends Uint8Array {
 			args[0] = args[0].buffer
 		}
 		
-		assert(args[0] instanceof ArrayBuffer, "buffer is not an ArrayBuffer")
+		$.assert(args[0] instanceof ArrayBuffer, "buffer is not an ArrayBuffer")
 		super(...args)
 
 		this.index = 0
@@ -72,7 +72,7 @@ class ByteReader extends Uint8Array {
 	DoubleLE() { return this.view.getFloat64((this.index += 8) - 8, true) }
 	DoubleBE() { return this.view.getFloat64((this.index += 8) - 8, false) }
 
-	String(n) { return bufferToString(this.Array(n)) }
+	String(n) { return $.bufferToString(this.Array(n)) }
 
 	// LZ4
 	
@@ -88,11 +88,11 @@ class ByteReader extends Uint8Array {
 		const [comLength, decomLength] = this.LZ4Header()
 		
 		if(comLength === 0) {
-			assert(this.GetRemaining() >= decomLength, "[ByteReader.LZ4Header] unexpected eof")
+			$.assert(this.GetRemaining() >= decomLength, "[ByteReader.LZ4Header] unexpected eof")
 			return this.Array(decomLength)
 		}
 		
-		assert(this.GetRemaining() >= comLength, "[ByteReader.LZ4Header] unexpected eof")
+		$.assert(this.GetRemaining() >= comLength, "[ByteReader.LZ4Header] unexpected eof")
 		
 		if(!buffer || buffer.length < decomLength) {
 			buffer = new Uint8Array(decomLength)
@@ -115,7 +115,7 @@ class ByteReader extends Uint8Array {
 				} while(lastByte === 0xFF)
 			}
 			
-			assert(this.index + literalLength <= endIndex, "[ByteReader.LZ4] unexpected eof")
+			$.assert(this.index + literalLength <= endIndex, "[ByteReader.LZ4] unexpected eof")
 
 			for(let i = 0; i < literalLength; i++) {
 				data[index++] = this[this.index++]
@@ -134,7 +134,7 @@ class ByteReader extends Uint8Array {
 				
 				matchLength += 4 // Minimum match is 4 bytes, so 4 is added to the length
 				
-				assert(index + matchLength <= decomLength, "[ByteReader.LZ4] output size mismatch")
+				$.assert(index + matchLength <= decomLength, "[ByteReader.LZ4] output size mismatch")
 				
 				for(let i = 0; i < matchLength; i++) {
 					data[index++] = data[matchIndex++]
@@ -142,8 +142,8 @@ class ByteReader extends Uint8Array {
 			}
 		}
 
-		assert(this.index === endIndex, "[ByteReader.LZ4] input size mismatch")
-		assert(index === decomLength, "[ByteReader.LZ4] output size mismatch")
+		$.assert(this.index === endIndex, "[ByteReader.LZ4] input size mismatch")
+		$.assert(index === decomLength, "[ByteReader.LZ4] output size mismatch")
 		
 		return data
 	}

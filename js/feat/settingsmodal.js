@@ -4,7 +4,7 @@ const SettingsModal = {
 	enabled: false,
 	
 	toggle(force) {
-		assert(this.enabled, "not enabled")
+		$.assert(this.enabled, "not enabled")
 		this.init()
 		
 		const visible = typeof force === "boolean" ? force : this.settingsDiv.parentNode !== document.body
@@ -83,7 +83,7 @@ const SettingsModal = {
 	},
 	
 	switchContent(name) {
-		assert(this.enabled, "not enabled")
+		$.assert(this.enabled, "not enabled")
 		
 		if(this.currentContent === name) { return }
 
@@ -109,7 +109,7 @@ const SettingsModal = {
 	},
 	
 	initShoutFilters() {
-		assert(this.enabled, "not enabled")
+		$.assert(this.enabled, "not enabled")
 		
 		const filterContent = this.settingsDiv.$find("#btr-settings-shout-filters")
 		const enabledList = filterContent.$find(".btr-filter-enabled")
@@ -150,11 +150,11 @@ const SettingsModal = {
 			if((shoutFilters.mode === "blacklist") !== !state) { // if blacklist and state or !blacklist and !state
 				if(index === -1) { return }
 				list.splice(index, 1)
-				MESSAGING.send("setShoutFilter", { id: id, mode: shoutFilters.mode, state: false })
+				backgroundScript.send("setShoutFilter", { id: id, mode: shoutFilters.mode, state: false })
 			} else {
 				if(index !== -1) { return }
 				list.push(id)
-				MESSAGING.send("setShoutFilter", { id: id, mode: shoutFilters.mode, state: true })
+				backgroundScript.send("setShoutFilter", { id: id, mode: shoutFilters.mode, state: true })
 			}
 			
 			updateLists()
@@ -207,7 +207,7 @@ const SettingsModal = {
 
 		const setFilterMode = mode => {
 			shoutFilters.mode = mode
-			MESSAGING.send("setShoutFilterMode", shoutFilters.mode)
+			backgroundScript.send("setShoutFilterMode", shoutFilters.mode)
 			updateFilterMode()
 		}
 
@@ -215,8 +215,7 @@ const SettingsModal = {
 		disabledLabel.$on("click", () => setFilterMode("whitelist"))
 
 		loggedInUserPromise.then(async userId => {
-			const resp = await $.fetch(`https://groups.roblox.com/v1/users/${userId}/groups/roles`)
-			const json = await resp.json()
+			const json = await RobloxApi.groups.getUserGroupRoles(userId)
 			
 			for(const group of json.data.map(x => x.group).sort((a, b) => (a.name < b.name ? -1 : 1))) {
 				const tile = group.tile = html`
@@ -256,7 +255,7 @@ const SettingsModal = {
 			updateLists()
 		})
 
-		MESSAGING.send("getShoutFilters", data => {
+		backgroundScript.send("getShoutFilters", data => {
 			Object.assign(shoutFilters, data)
 			isDataLoaded = true
 
@@ -266,7 +265,7 @@ const SettingsModal = {
 	},
 	
 	init() {
-		assert(this.enabled, "not enabled")
+		$.assert(this.enabled, "not enabled")
 		if(this.settingsDiv) { return }
 		
 		this.settingsDiv = html`
@@ -459,24 +458,12 @@ const SettingsModal = {
 		this.settingsDiv.$on("click", ".btr-close-subcontent", () => this.switchContent("main"))
 
 		this.settingsDiv.$on("click", "#btr-fix-chat", () => {
-			$.fetch("https://chat.roblox.com/v2/get-user-conversations?pageNumber=1&pageSize=10", {
-				credentials: "include",
-				xsrf: true
-			}).then(async resp => {
-				const json = await resp.json()
-				
+			RobloxApi.chat.getUserConversations(1, 10).then(json => {
 				for(const conversation of json) {
-					$.fetch("https://chat.roblox.com/v2/mark-as-read", {
-						credentials: "include",
-						xsrf: true,
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ conversationId: conversation.id })
-					})
+					RobloxApi.chat.markAsRead(conversation.id)
 				}
 			})
 		})
-		
 		
 		//
 		

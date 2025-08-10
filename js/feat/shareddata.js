@@ -69,18 +69,19 @@ const SHARED_DATA = {
 		this._loadPromise.then(fn)
 	},
 	
-	async initBackgroundScript() {
-		MESSAGING.listen({
-			getSharedData: (_, respond) => {
-				respond(this.data)
-			}
-		})
+	async init() {
+		if(IS_BACKGROUND_PAGE) {
+			contentScript.listen({
+				getSharedData: (_, respond) => {
+					respond(this.data)
+				}
+			})
+			
+			this._loaded = true
+			this._loadPromise.$resolve()
+			return
+		}
 		
-		this._loaded = true
-		this._loadPromise.$resolve()
-	},
-	
-	async initContentScript() {
 		if(IS_CHROME) {
 			let syncLoadErrorCounter = parseInt(sessionStorage.getItem("syncLoadError"), 10)
 			let dataPayload
@@ -108,7 +109,7 @@ const SHARED_DATA = {
 					? `BTRoblox failed to initialize properly for an unknown reason.\nSome features may not work properly for the time being.`
 					: `BTRoblox is currently experiencing issues on the Brave browser.\nSome features may not work properly for the time being.`
 				
-				dataPayload = await new Promise(resolve => MESSAGING.send("getSharedData", data => resolve(data)))
+				dataPayload = await new Promise(resolve => backgroundScript.send("getSharedData", data => resolve(data)))
 			}
 			
 			Object.assign(this.data, dataPayload)
@@ -127,5 +128,5 @@ const SHARED_DATA = {
 }
 
 if(IS_BACKGROUND_PAGE) {
-	SHARED_DATA.initBackgroundScript()
+	SHARED_DATA.init()
 }

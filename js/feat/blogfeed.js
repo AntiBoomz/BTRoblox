@@ -58,7 +58,7 @@ STORAGE.get(["cachedBlogFeedV2"], data => {
 	}
 })
 
-MESSAGING.listen({
+contentScript.listen({
 	requestBlogFeed(_, respond) {
 		if(BlogFeed.cached) {
 			respond(BlogFeed.cached, true)

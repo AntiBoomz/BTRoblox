@@ -300,7 +300,7 @@
 		}
 	})
 
-	MESSAGING.listen({
+	contentScript.listen({
 		async getRecentShouts(data, respond) {
 			const shoutCache = await getShoutCache()
 			const shoutFilters = await getShoutFilters()

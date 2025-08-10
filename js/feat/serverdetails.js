@@ -54,7 +54,7 @@ if(IS_BACKGROUND_PAGE) {
 		})
 	}
 	
-	MESSAGING.listen({
+	contentScript.listen({
 		async getServerAddress(info, respond) {
 			if(IS_CHROME) {
 				if(!userAgentSwitcherEnabled) {
@@ -182,7 +182,7 @@ const getServerDetails = (placeId, jobId, callback) => {
 	
 	if(!promise) {
 		promise = gettingServerDetails[jobId] = new Promise(resolve => {
-			MESSAGING.send("getServerAddress", { placeId: placeId, jobId: jobId }, details => {
+			backgroundScript.send("getServerAddress", { placeId: placeId, jobId: jobId }, details => {
 				delete gettingServerDetails[jobId]
 				
 				btrLocalStorage.setItem(`serverDetailsV2-${jobId}`, details, { expires: Date.now() + (details.success ? 60 * 60e3 : 15e3) })

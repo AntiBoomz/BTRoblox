@@ -7,7 +7,7 @@
 	"version": "3.6.19",
 	"author": "AntiBoomz",
 
-	"minimum_chrome_version": "96",
+	"minimum_chrome_version": "111",
 	"incognito": "split",
 
 	"action": {
@@ -19,7 +19,7 @@
 	},
 
 	"background": {
-		"service_worker": "js/_chrome/serviceWorker.js"
+		"service_worker": "js/serviceworker.js"
 	},
 	
 	"host_permissions": [
@@ -53,34 +53,42 @@
 			"exclude_matches": [
 				"*://*/userads/*",
 				"*://*/user-sponsorship/*",
-				"*://*/build/upload",
 				"*://*/*/userads/*",
-				"*://*/*/user-sponsorship/*",
-				"*://*/*/build/upload"
+				"*://*/*/user-sponsorship/*"
 			],
 			"js": [
-				"js/rbx/Constants.js",
+				"js/inject.js"
+			],
+			"run_at": "document_start",
+			"all_frames": true,
+			"world": "MAIN"
+		},
+		{
+			"matches": [
+				"*://www.roblox.com/*",
+				"*://web.roblox.com/*"
+			],
+			"exclude_matches": [
+				"*://*/userads/*",
+				"*://*/user-sponsorship/*",
+				"*://*/*/userads/*",
+				"*://*/*/user-sponsorship/*"
+			],
+			"js": [
+				"js/utility.js",
 				
-				"js/shared/common.js",
-				"js/shared/utility.js",
-				"js/shared/messaging.js",
-				"js/shared/sharedData.js",
-				"js/shared/settings.js",
-				"js/shared/contextmenu.js",
-				"js/shared/serverdetails.js",
-				
-				"js/util/injectJS.js",
-				"js/util/injectCSS.js",
-				"js/util/angularHook.js",
-				"js/util/loadOptionalLibrary.js",
-				
-				"js/feat/themes.js",
+				"js/feat/shareddata.js",
+				"js/feat/settings.js",
 				"js/feat/adblock.js",
-				"js/feat/fastSearch.js",
+				"js/feat/fastsearch.js",
 				"js/feat/navigation.js",
-				"js/feat/robuxToCash.js",
-				"js/feat/settingsModal.js",
+				"js/feat/robuxtocash.js",
+				"js/feat/contextmenu.js",
+				"js/feat/loadfeature.js",
+				"js/feat/settingsmodal.js",
+				"js/feat/serverdetails.js",
 				
+				"js/rbx/Constants.js",
 				"js/rbx/AssetCache.js",
 				"js/rbx/RobloxApi.js",
 
@@ -98,10 +106,36 @@
 				"js/pages/money.js",
 				"js/pages/profile.js",
 				
-				"js/pages/create.js",
-				"js/pages/marketplace.js",
+				"js/main.js"
+			],
+			"run_at": "document_start",
+			"all_frames": true
+		},
+		{
+			"matches": [
+				"*://create.roblox.com/*"
+			],
+			"js": [
+				"js/utility.js",
 				
-				"js/inject.js",
+				"js/feat/shareddata.js",
+				"js/feat/settings.js",
+				"js/feat/adblock.js",
+				"js/feat/navigation.js",
+				"js/feat/robuxtocash.js",
+				"js/feat/contextmenu.js",
+				"js/feat/loadfeature.js",
+				"js/feat/settingsmodal.js",
+				
+				"js/rbx/Constants.js",
+				"js/rbx/AssetCache.js",
+				"js/rbx/RobloxApi.js",
+				
+				"js/pages/common.js",
+				"js/pages/create.js",
+				"js/pages/create_dashboard.js",
+				"js/pages/create_store.js",
+				
 				"js/main.js"
 			],
 			"run_at": "document_start",

@@ -3,7 +3,7 @@
 pageInit.avatar = () => {
 	if(!SETTINGS.get("avatar.enabled")) { return }
 	
-	angularHook.modifyTemplate("avatar-base", template => {
+	modifyAngularTemplate("avatar-base", template => {
 		const redraw = template.$find(".redraw-avatar .text-link")
 		
 		if(redraw) {
@@ -21,7 +21,7 @@ pageInit.avatar = () => {
 			document.$watch("body", body => body.classList.add("btr-avatar-refinement"))
 		})
 		
-		angularHook.modifyTemplate("avatar-base", template => {
+		modifyAngularTemplate("avatar-base", template => {
 			template.$find(".redraw-avatar").after(
 				html`
 				<div class=btr-avatar-refinement-container>
@@ -89,9 +89,7 @@ pageInit.avatar = () => {
 			)
 		})
 		
-		InjectJS.inject(() => {
-			const { angularHook, hijackFunction, onSet, IS_DEV_MODE } = window.BTRoblox
-			
+		injectScript.call("assetRefinement", () => {
 			onSet(window, "Roblox", Roblox => {
 				onSet(Roblox, "AvatarAccoutrementService", AvatarAccoutrementService => {
 					let wearingAssets
@@ -189,9 +187,7 @@ pageInit.avatar = () => {
 	}
 	
 	if(SETTINGS.get("avatar.removeAccessoryLimits")) {
-		InjectJS.inject(() => {
-			const { angularHook, hijackFunction, onSet, settings, IS_DEV_MODE } = window.BTRoblox
-			
+		injectScript.call("removeAccessoryLimits", () => {
 			const accessoryAssetTypeIds = [8, 41, 42, 43, 44, 45, 46, 47, 57, 58]
 			const layeredAssetTypeIds = [64, 65, 66, 67, 68, 69, 70, 71, 72]
 			
@@ -281,14 +277,12 @@ pageInit.avatar = () => {
 	}
 	
 	if(SETTINGS.get("avatar.fullRangeBodyColors")) {
-		angularHook.modifyTemplate("avatar-tab-content", template => {
+		modifyAngularTemplate("avatar-tab-content", template => {
 			const bodyColors = template.$find("#bodyColors")
 			bodyColors.classList.add("btr-bodyColors")
 		})
 		
-		InjectJS.inject(() => {
-			const { angularHook, contentScript } = window.BTRoblox
-			
+		injectScript.call("fullRangeBodyColors", () => {
 			angularHook.hijackModule("avatar", {
 				avatarController(target, thisArg, args, argsMap) {
 					const result = target.apply(thisArg, args)
@@ -343,9 +337,9 @@ pageInit.avatar = () => {
 				const json = await RobloxApi.avatar.setBodyColors(bodyColor3s)
 				
 				if(json && !json.errors) {
-					InjectJS.send("skinColorUpdated")
+					injectScript.send("skinColorUpdated")
 				} else {
-					InjectJS.send("skinColorError")
+					injectScript.send("skinColorError")
 				}
 			}
 			
@@ -367,7 +361,7 @@ pageInit.avatar = () => {
 			
 			let debounce = 0
 			
-			InjectJS.listen("updateSkinColors", async () => {
+			injectScript.listen("updateSkinColors", async () => {
 				const deb = ++debounce
 				const newColor3s = (await RobloxApi.avatar.getCurrentAvatar()).bodyColor3s
 				

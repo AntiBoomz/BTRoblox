@@ -68,10 +68,8 @@ const btrAdblock = {
 			}
 		})
 		
-		InjectJS.inject(() => {
-			const { onReady } = window.BTRoblox
-			
-			onReady(() => {
+		injectScript.call("adblock.js", () => {
+			util.ready(() => {
 				if(window.Roblox?.PrerollPlayer) {
 					window.Roblox.PrerollPlayer.waitForPreroll = x => $.Deferred().resolve(x)
 				}

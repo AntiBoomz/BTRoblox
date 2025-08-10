@@ -72,7 +72,7 @@ class RBXInstanceArray extends Array {
 
 class RBXInstance {
 	constructor(className) {
-		assert(typeof className === "string", "className is not a string")
+		$.assert(typeof className === "string", "className is not a string")
 		
 		this.Children = []
 		this.Properties = {}
@@ -81,8 +81,8 @@ class RBXInstance {
 	}
 
 	setProperty(name, value, type) {
-		assert(type != null || value == null, "type cant be null")
-		assert(type == null || RBXDataTypes.includes(type), `invalid type ${type}`)
+		$.assert(type != null || value == null, "type cant be null")
+		$.assert(type == null || RBXDataTypes.includes(type), `invalid type ${type}`)
 		
 		const canSet = name !== "Children" && name !== "Properties" && !(name in Object.getPrototypeOf(this))
 		
@@ -113,8 +113,8 @@ const RBXBinaryParser = {
 	parse(buffer, params) {
 		const reader = new ByteReader(buffer)
 		
-		assert(reader.Match("<roblox"), "[RBXBinaryParser] Not a valid RBXM file")
-		assert_warn(reader.Match("\x21\x89\xFF\x0D\x0A\x1A\x0A\x00\x00"), "[RBXBinaryParser] Header bytes did not match (Did binary format change?)")
+		$.assert(reader.Match("<roblox"), "[RBXBinaryParser] Not a valid RBXM file")
+		$.assert_warn(reader.Match("\x21\x89\xFF\x0D\x0A\x1A\x0A\x00\x00"), "[RBXBinaryParser] Header bytes did not match (Did binary format change?)")
 
 		const typeCount = reader.UInt32LE()
 		const instanceCount = reader.UInt32LE()
@@ -150,14 +150,14 @@ const RBXBinaryParser = {
 			const [comLength, decomLength] = reader.LZ4Header()
 			
 			if(comLength > 0) {
-				assert(reader.GetRemaining() >= comLength, "[RBXBinaryParser] unexpected eof")
+				$.assert(reader.GetRemaining() >= comLength, "[RBXBinaryParser] unexpected eof")
 				reader.Jump(comLength)
 				
 				if(decomLength > maxChunkSize) {
 					maxChunkSize = decomLength
 				}
 			} else {
-				assert(reader.GetRemaining() >= decomLength, "[RBXBinaryParser] unexpected eof")
+				$.assert(reader.GetRemaining() >= decomLength, "[RBXBinaryParser] unexpected eof")
 				reader.Jump(decomLength)
 			}
 			
@@ -166,7 +166,7 @@ const RBXBinaryParser = {
 			}
 		}
 		
-		assert_warn(reader.GetRemaining() === 0, "[RBXBinaryParser] unexpected data after END chunk")
+		$.assert_warn(reader.GetRemaining() === 0, "[RBXBinaryParser] unexpected data after END chunk")
 		
 		const chunkBuffer = new Uint8Array(maxChunkSize)
 		const onProgress = params?.onProgress || null // cast falsy values to nill so we can do ?.()
@@ -231,7 +231,7 @@ const RBXBinaryParser = {
 			parser.meta[key] = value
 		}
 		
-		assert_warn(chunk.GetRemaining() === 0, "[RBXBinaryParser] META chunk has extra data")
+		$.assert_warn(chunk.GetRemaining() === 0, "[RBXBinaryParser] META chunk has extra data")
 	},
 	
 	parseSSTR(parser, chunk) {
@@ -248,7 +248,7 @@ const RBXBinaryParser = {
 				parser.sharedStrings[i] = { md5, value }
 			}
 			
-			assert_warn(chunk.GetRemaining() === 0, "[RBXBinaryParser] SSTR chunk has extra data")
+			$.assert_warn(chunk.GetRemaining() === 0, "[RBXBinaryParser] SSTR chunk has extra data")
 		} else {
 			console.warn(`[RBXBinaryParser] unknown SSTR version ${version}`)
 		}
@@ -299,14 +299,14 @@ const RBXBinaryParser = {
 			}
 		}
 		
-		assert_warn(chunk.GetRemaining() === 0, `[RBXBinaryParser] INST chunk ${className}(${count}) isService=${isService} has extra data ${chunk.GetRemaining()}`)
+		$.assert_warn(chunk.GetRemaining() === 0, `[RBXBinaryParser] INST chunk ${className}(${count}) isService=${isService} has extra data ${chunk.GetRemaining()}`)
 	},
 
 	parsePROP(parser, chunk) {
 		const type = parser.types[chunk.UInt32LE()]
 		const name = chunk.String(chunk.UInt32LE())
 		
-		assert(chunk.GetRemaining() > 0, "[RBXBinaryParser] PROP chunk is empty??")
+		$.assert(chunk.GetRemaining() > 0, "[RBXBinaryParser] PROP chunk is empty??")
 		
 		const count = type.instances.length
 		const parseProperties = values => {
@@ -657,7 +657,7 @@ const RBXBinaryParser = {
 			}
 		}
 		
-		assert_warn(chunk.GetRemaining() === 0, `[RBXBinaryParser] PROP ${type.className}.${name}(${count}) valueType=${valueType} has extra data ${chunk.GetRemaining()}`)
+		$.assert_warn(chunk.GetRemaining() === 0, `[RBXBinaryParser] PROP ${type.className}.${name}(${count}) valueType=${valueType} has extra data ${chunk.GetRemaining()}`)
 	},
 
 	parsePRNT(parser, chunk) {
@@ -684,7 +684,7 @@ const RBXBinaryParser = {
 			}
 		}
 		
-		assert_warn(chunk.GetRemaining() === 0, "[RBXBinaryParser] PRNT chunk has extra data")
+		$.assert_warn(chunk.GetRemaining() === 0, "[RBXBinaryParser] PRNT chunk has extra data")
 	}
 }
 
@@ -739,7 +739,7 @@ const RBXXmlParser = {
 				return bytes
 			}
 			
-			return bufferToString(decodeBase64(value, 9, -3))
+			return $.bufferToString(decodeBase64(value, 9, -3))
 		}
 		
 		return value
@@ -751,7 +751,7 @@ const RBXXmlParser = {
 	},
 
 	parse(buffer, params) {
-		const xml = new DOMParser().parseFromString(this.escapeXml(bufferToString(buffer)), "text/xml").documentElement
+		const xml = new DOMParser().parseFromString(this.escapeXml($.bufferToString(buffer)), "text/xml").documentElement
 
 		const parser = {
 			// parser internal data
@@ -984,7 +984,7 @@ const RBXXmlParser = {
 const RBXModelParser = {
 	parse(buffer, params) {
 		const reader = new ByteReader(buffer)
-		assert(reader.String(7) === "<roblox", "Not a valid RBXM file")
+		$.assert(reader.String(7) === "<roblox", "Not a valid RBXM file")
 
 		if(reader.Byte() === 0x21) {
 			return RBXBinaryParser.parse(buffer, params)

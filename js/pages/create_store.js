@@ -1,6 +1,10 @@
 "use strict"
 
-pageInit.marketplace = () => {
+pageInit.create_store = () => {
+	if(!SETTINGS.get("create.enabled")) {
+		return
+	}
+	
 	const addRipple = (elem, position) => {
 		elem?.$on("mousedown", event => {
 			const ripple = html`<div class=btr-replica-ripple></div>`
@@ -143,10 +147,8 @@ pageInit.marketplace = () => {
 		stateChanged()
 		window.addEventListener("popstate", stateChanged)
 		
-		InjectJS.listen("stateChange", stateChanged)
-		InjectJS.inject(() => {
-			const { hijackFunction, contentScript } = window.BTRoblox
-			
+		injectScript.listen("stateChange", stateChanged)
+		injectScript.call("marketplacePageChanged", () => {
 			hijackFunction(history, "pushState", (target, thisArg, args) => {
 				const result = target.apply(thisArg, args)
 				contentScript.send("stateChange")

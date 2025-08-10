@@ -361,7 +361,7 @@ if(IS_BACKGROUND_PAGE) {
 		ContextMenu.update()
 	}
 
-	MESSAGING.listen({
+	contentScript.listen({
 		setCustomContextMenuItems(items, respond, port) {
 			ContextMenu.customContextMenuItems = items
 			ContextMenu.update()
@@ -408,7 +408,7 @@ if(IS_BACKGROUND_PAGE) {
 				}
 			}
 			
-			MESSAGING.send("setCustomContextMenuItems", menuItems)
+			backgroundScript.send("setCustomContextMenuItems", menuItems)
 		},
 		
 		onFocus() {
@@ -524,21 +524,23 @@ if(IS_BACKGROUND_PAGE) {
 			if(element.matches(":hover")) {
 				entry.onHover()
 			}
-		}
-	}
-	
-	document.documentElement.$on("mouseenter", () => ContextMenu.onFocus())
-	document.documentElement.$on("mouseleave", () => ContextMenu.onFocusLost())
-	
-	if(document.documentElement.matches(":hover")) {
-		ContextMenu.onFocus()
-	}
-	
-	$.onDomChanged(() => {
-		for(const entry of ContextMenu.activeContextMenus) {
-			if(!document.documentElement.contains(entry.element)) {
-				entry.kill()
+		},
+		
+		init() {
+			document.documentElement.$on("mouseenter", () => ContextMenu.onFocus())
+			document.documentElement.$on("mouseleave", () => ContextMenu.onFocusLost())
+			
+			if(document.documentElement.matches(":hover")) {
+				ContextMenu.onFocus()
 			}
+			
+			$.onDomChanged(() => {
+				for(const entry of ContextMenu.activeContextMenus) {
+					if(!document.documentElement.contains(entry.element)) {
+						entry.kill()
+					}
+				}
+			})
 		}
-	})
+	}
 }

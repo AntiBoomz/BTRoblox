@@ -269,7 +269,7 @@ const OwnerAssetCache = {
 
 pageInit.catalog = () => {
 	if(SETTINGS.get("general.hoverPreview")) {
-		loadOptionalLibrary("previewer").then(() => {
+		loadOptionalFeature("previewer").then(() => {
 			HoverPreview.register(".catalog-item-container", ".item-card-thumb-container")
 		})
 	}
@@ -279,7 +279,7 @@ pageInit.catalog = () => {
 	if(SETTINGS.get("catalog.showOwnedAssets")) {
 		let currentRequest
 		
-		InjectJS.listen("checkOwnedAsset", assetId => {
+		injectScript.listen("checkOwnedAsset", assetId => {
 			if(!currentRequest) {
 				currentRequest = []
 
@@ -297,8 +297,8 @@ pageInit.catalog = () => {
 						}
 					}
 					
-					InjectJS.send("updateOwnedAssets", initData)
-					OwnerAssetCache.update(changes => InjectJS.send("updateOwnedAssets", changes))
+					injectScript.send("updateOwnedAssets", initData)
+					OwnerAssetCache.update(changes => injectScript.send("updateOwnedAssets", changes))
 					
 					currentRequest = null
 				})
@@ -307,9 +307,7 @@ pageInit.catalog = () => {
 			currentRequest.push(assetId)
 		})
 		
-		InjectJS.inject(() => {
-			const { reactHook, contentScript } = window.BTRoblox
-			
+		injectScript.call("showOwnedAssets", () => {
 			const ownedAssets = {}
 			
 			contentScript.listen("updateOwnedAssets", changes => {

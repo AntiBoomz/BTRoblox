@@ -2,12 +2,6 @@
 
 class MarkAllAsReadAction {
 	constructor() {
-		this.getUnreadCountUrl = `https://privatemessages.roblox.com/v1/messages/unread/count`
-		this.getMessagesUrl = `https://privatemessages.roblox.com/v1/messages?pageSize=20&messageTab=Inbox&pageNumber=`
-		this.markAsReadUrl = `https://privatemessages.roblox.com/v1/messages/mark-read`
-
-		this.reqParams = { credentials: "include", cache: "no-store" }
-		
 		this.messagesPerReadRequest = 20 // more than this errors
 		this.threadCount = 5
 		
@@ -30,25 +24,14 @@ class MarkAllAsReadAction {
 	async markAsRead(messageIds) {
 		if(!messageIds.length) { return }
 		
-		const postParams = {
-			method: "POST",
-			credentials: "include",
-			cache: "no-store",
-			headers: { "Content-Type": "application/json" },
-			xsrf: true,
-			body: JSON.stringify({ messageIds })
-		}
-		
-		const tryFetch = () => $.fetch(this.markAsReadUrl, postParams).catch(tryFetch)
+		const tryFetch = () => RobloxApi.privatemessages.markAsRead(messageIds).catch(tryFetch)
 		return tryFetch()
 	}
 
 	async loadPage(pageNum) {
-		const tryFetch = () => $.fetch(this.getMessagesUrl + pageNum, this.reqParams).catch(tryFetch)
+		const tryFetch = () => RobloxApi.privatemessages.getMessages(pageNum).catch(tryFetch)
 		
-		return tryFetch().then(async resp => {
-			const json = await resp.json()
-			
+		return tryFetch().then(async json => {
 			for(const msg of json.collection) {
 				if(!msg.isRead) {
 					this.unreadMessageIds.push(msg.id)
@@ -81,9 +64,9 @@ class MarkAllAsReadAction {
 		
 		this.setButtonText("Processing...")
 		
-		const tryFetch = () => $.fetch(this.getUnreadCountUrl, this.reqParams).catch(tryFetch)
+		const tryFetch = () => RobloxApi.privatemessages.getUnreadCount().catch(tryFetch)
 		
-		this.unreadMessagesTotal = await tryFetch().then(async resp => (await resp.json()).count)
+		this.unreadMessagesTotal = await tryFetch().then(json => json.count)
 		this.unreadMessagesLeft = this.unreadMessagesTotal
 		
 		const threads = []
@@ -126,7 +109,7 @@ class MarkAllAsReadAction {
 pageInit.messages = () => {
 	if(!SETTINGS.get("messages.enabled")) { return }
 	
-	angularHook.modifyTemplate("messages-nav", template => {
+	modifyAngularTemplate("messages-nav", template => {
 		const curPage = template.$find(".CurrentPage")
 
 		if(curPage) {
@@ -169,7 +152,7 @@ pageInit.messages = () => {
 		markAllAsRead.execute().then(() => {
 			markAllAsRead = null
 			
-			InjectJS.inject(() => {
+			injectScript.call("refreshMessages", () => {
 				const scope = angular.element(document.querySelector(`div[ng-controller="messagesController"]`))?.scope()
 				
 				if(scope) {
@@ -180,9 +163,7 @@ pageInit.messages = () => {
 		})
 	})
 	
-	InjectJS.inject(() => {
-		const { angularHook, hijackFunction, IS_DEV_MODE } = window.BTRoblox
-		
+	injectScript.call("messages", () => {
 		angularHook.hijackModule("messages", {
 			messagesNav(target, thisArg, args, argsMap) {
 				const result = target.apply(thisArg, args)

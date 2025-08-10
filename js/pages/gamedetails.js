@@ -61,9 +61,7 @@ pageInit.gamedetails = () => {
 	
 	if(!SETTINGS.get("gamedetails.enabled")) { return }
 	
-	InjectJS.inject(() => {
-		const { settings, reactHook } = window.BTRoblox
-		
+	injectScript.call("pagedServers", () => {
 		const largePageSize = 100
 		const pageSize = 12
 		
@@ -428,7 +426,7 @@ pageInit.gamedetails = () => {
 		const onRegionsChanged = new Set()
 		
 		if(settings.gamedetails.showServerRegion) {
-			BTRoblox.contentScript.listen("setServerRegion", (jobId, details) => {
+			contentScript.listen("setServerRegion", (jobId, details) => {
 				if(JSON.stringify(details) !== JSON.stringify(globalServerRegions[jobId])) {
 					globalServerRegions[jobId] = details
 					
@@ -517,7 +515,7 @@ pageInit.gamedetails = () => {
 						}, () => globalServerRegions[jobId])
 						
 						React.useEffect(() => {
-							BTRoblox.contentScript.send("getServerRegion", placeId, jobId)
+							contentScript.send("getServerRegion", placeId, jobId)
 						}, [jobId])
 					}
 					
@@ -588,9 +586,7 @@ pageInit.gamedetails = () => {
 		)
 	})
 	
-	InjectJS.inject(() => {
-		const { reactHook, hijackFunction } = BTRoblox
-		
+	injectScript.call("gamedetails", () => {
 		reactHook.inject(".game-description-container", elem => {
 			return reactHook.createElement("div", { style: { display: "contents" } },
 				reactHook.createElement("div", { id: "btr-description-wrapper", style: { display: "contents" } }, elem[0])
@@ -624,13 +620,13 @@ pageInit.gamedetails = () => {
 	if(SETTINGS.get("gamedetails.showServerRegion")) {
 		const requesting = {}
 		
-		InjectJS.listen("getServerRegion", (placeId, jobId) => {
+		injectScript.listen("getServerRegion", (placeId, jobId) => {
 			if(typeof jobId !== "string" || requesting[jobId]) { return }
 			requesting[jobId] = true
 			
 			getServerDetails(placeId, jobId, details => {
 				delete requesting[jobId]
-				InjectJS.send("setServerRegion", jobId, details)
+				injectScript.send("setServerRegion", jobId, details)
 			})
 		})
 	}

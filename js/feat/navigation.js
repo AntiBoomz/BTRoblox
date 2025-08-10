@@ -452,7 +452,7 @@ const Navigation = {
 						}
 					}
 					
-					MESSAGING.send("requestBlogFeed", data => updateBlogFeed(data))
+					backgroundScript.send("requestBlogFeed", data => updateBlogFeed(data))
 					
 					if(SHARED_DATA.get("blogfeed")) {
 						updateBlogFeed(SHARED_DATA.get("blogfeed"))
@@ -491,9 +491,7 @@ const Navigation = {
 		})
 		
 		if(SETTINGS.get("navigation.enabled") && location.host !== "create.roblox.com") {
-			InjectJS.inject(() => {
-				const { reactHook } = BTRoblox
-				
+			injectScript.call("navigation", () => {
 				reactHook.inject("ul.navbar-right", elem => {
 					const robux = elem.find(x => "robuxAmount" in x.props)
 					

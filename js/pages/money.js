@@ -2,9 +2,7 @@
 
 pageInit.money = () => {
 	if(RobuxToCash.isEnabled()) {
-		InjectJS.inject(() => {
-			const { reactHook, RobuxToCash } = window.BTRoblox
-			
+		injectScript.call("money", () => {
 			reactHook.inject(".balance-label.icon-robux-container", elem => {
 				const list = elem[0].props.children[0]?.props.children
 				

@@ -181,7 +181,7 @@ const AssetCache = (() => {
 		},
 		
 		loadAnimation: createMethod(async (buffer, assetRequest) => {
-			await loadOptionalLibrary("parser")
+			await loadOptionalFeature("parser")
 			
 			const findSequence = array => {
 				for(const inst of array) {
@@ -207,7 +207,7 @@ const AssetCache = (() => {
 			return RBXAnimationParser.parse(findSequence(RBXModelParser.parse(buffer).result))
 		}),
 		loadModel: createMethod(async (buffer, assetRequest) => {
-			await loadOptionalLibrary("parser")
+			await loadOptionalFeature("parser")
 			
 			if(assetRequest.params?.async) {
 				return RBXModelParser.parse(
@@ -218,7 +218,7 @@ const AssetCache = (() => {
 			return RBXModelParser.parse(buffer).result
 		}),
 		loadMesh: createMethod(async (buffer, assetRequest) => {
-			await loadOptionalLibrary("parser")
+			await loadOptionalFeature("parser")
 			return RBXMeshParser.parse(buffer)
 		}),
 		
@@ -235,7 +235,7 @@ const AssetCache = (() => {
 			}
 		})),
 		loadBuffer: createMethod((buffer, assetRequest) => buffer),
-		loadText: createMethod((buffer, assetRequest) => bufferToString(buffer)),
+		loadText: createMethod((buffer, assetRequest) => $.bufferToString(buffer)),
 
 		getHashUrl(hash, prefix="c") {
 			let code = 31

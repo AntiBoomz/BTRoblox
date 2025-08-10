@@ -75,7 +75,7 @@ pageInit.inventory = () => {
 	}
 
 	if(SETTINGS.get("general.hoverPreview")) {
-		loadOptionalLibrary("previewer").then(() => {
+		loadOptionalFeature("previewer").then(() => {
 			HoverPreview.register(".item-card", ".item-card-thumb-container")
 		})
 	}
@@ -88,7 +88,7 @@ pageInit.inventory = () => {
 			2, 11, 12, 21
 		]
 
-		angularHook.modifyTemplate("assets-explorer", template => {
+		modifyAngularTemplate("assets-explorer", template => {
 			const visibility = `$ctrl.staticData.isOwnPage && (${
 				validAssetTypes
 					.map(x => `$ctrl.currentData.AssetTypeId === ${x}`)
@@ -118,11 +118,9 @@ pageInit.inventory = () => {
 			$(".btr-it-btn")?.classList.toggle("disabled", !$(".btr-it-box:checked"))
 		}
 
-		InjectJS.listen("inventoryUpdateEnd", updateButtons)
+		injectScript.listen("inventoryUpdateEnd", updateButtons)
 		
-		InjectJS.inject(() => {
-			const { angularHook, contentScript, IS_DEV_MODE } = window.BTRoblox
-			
+		injectScript.call("inventoryTools", () => {
 			angularHook.hijackModule("inventory", {
 				inventoryContentController(target, thisArg, args, argsMap) {
 					const result = target.apply(thisArg, args)
@@ -202,7 +200,7 @@ pageInit.inventory = () => {
 						if(--itemsLeft === 0) {
 							isRemoving = false
 							
-							InjectJS.inject(() => {
+							injectScript.call("refreshInventory", () => {
 								const scope = angular.element(document.querySelector("assets-explorer")).scope()
 								const ctrl = scope?.$parent?.$ctrl
 								

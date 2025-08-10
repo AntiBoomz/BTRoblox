@@ -3,13 +3,13 @@
 const RBXMeshParser = {
 	parse(buffer) {
 		const reader = new ByteReader(buffer)
-		assert(reader.String(8) === "version ", "Invalid mesh file")
+		$.assert(reader.String(8) === "version ", "Invalid mesh file")
 
 		const version = reader.String(4)
 		switch(version) {
 		case "1.00":
 		case "1.01":
-			return this.parseText(bufferToString(buffer))
+			return this.parseText($.bufferToString(buffer))
 		case "2.00":
 		case "3.00":
 		case "3.01":
@@ -24,14 +24,14 @@ const RBXMeshParser = {
 
 	parseText(str) {
 		const lines = str.split(/\r?\n/)
-		assert(lines.length === 3, "Invalid mesh version 1 file (Wrong amount of lines)")
+		$.assert(lines.length === 3, "Invalid mesh version 1 file (Wrong amount of lines)")
 
 		const version = lines[0]
 		const faceCount = lines[1]
 		const data = lines[2]
 
 		const vectors = data.replace(/\s+/g, "").slice(1, -1).split("][")
-		assert(vectors.length === faceCount * 9, "Length mismatch")
+		$.assert(vectors.length === faceCount * 9, "Length mismatch")
 
 		const scaleMultiplier = version === "version 1.00" ? 0.5 : 1
 		const vertexCount = faceCount * 3
@@ -64,10 +64,10 @@ const RBXMeshParser = {
 
 	parseBin(buffer, version) {
 		const reader = new ByteReader(buffer)
-		assert(reader.String(12) === `version ${version}`, "Bad header")
+		$.assert(reader.String(12) === `version ${version}`, "Bad header")
 
 		const newline = reader.Byte()
-		assert(newline === 0x0A || newline === 0x0D && reader.Byte() === 0x0A, "Bad newline")
+		$.assert(newline === 0x0A || newline === 0x0D && reader.Byte() === 0x0A, "Bad newline")
 
 		const begin = reader.GetIndex()
 		
@@ -86,7 +86,7 @@ const RBXMeshParser = {
 
 		if(version === "2.00") {
 			headerSize = reader.UInt16LE()
-			assert(headerSize >= 12, `Invalid header size ${headerSize}`)
+			$.assert(headerSize >= 12, `Invalid header size ${headerSize}`)
 
 			vertexSize = reader.Byte()
 			faceSize = reader.Byte()
@@ -95,7 +95,7 @@ const RBXMeshParser = {
 			
 		} else if(version.startsWith("3.")) {
 			headerSize = reader.UInt16LE()
-			assert(headerSize >= 16, `Invalid header size ${headerSize}`)
+			$.assert(headerSize >= 16, `Invalid header size ${headerSize}`)
 
 			vertexSize = reader.Byte()
 			faceSize = reader.Byte()
@@ -106,7 +106,7 @@ const RBXMeshParser = {
 			
 		} else if(version.startsWith("4.")) {
 			headerSize = reader.UInt16LE()
-			assert(headerSize >= 24, `Invalid header size ${headerSize}`)
+			$.assert(headerSize >= 24, `Invalid header size ${headerSize}`)
 
 			reader.Jump(2) // uint16 lodType;
 			vertexCount = reader.UInt32LE()
@@ -121,7 +121,7 @@ const RBXMeshParser = {
 			
 		} else if(version.startsWith("5.")) {
 			headerSize = reader.UInt16LE()
-			assert(headerSize >= 32, `Invalid header size ${headerSize}`)
+			$.assert(headerSize >= 32, `Invalid header size ${headerSize}`)
 
 			reader.Jump(2) // uint16 meshCount;
 			vertexCount = reader.UInt32LE()
@@ -139,9 +139,9 @@ const RBXMeshParser = {
 		
 		reader.SetIndex(begin + headerSize)
 		
-		assert(vertexSize >= 36, `Invalid vertex size ${vertexSize}`)
-		assert(faceSize >= 12, `Invalid face size ${faceSize}`)
-		assert(lodSize >= 4, `Invalid lod size ${lodSize}`)
+		$.assert(vertexSize >= 36, `Invalid vertex size ${vertexSize}`)
+		$.assert(faceSize >= 12, `Invalid face size ${faceSize}`)
+		$.assert(lodSize >= 4, `Invalid lod size ${lodSize}`)
 
 		const fileEnd = reader.GetIndex()
 			+ (vertexCount * vertexSize)
@@ -153,7 +153,7 @@ const RBXMeshParser = {
 			+ (subsetCount * 72)
 			+ (facsDataSize)
 		
-		assert(fileEnd === reader.GetLength(), `Invalid file size (expected ${reader.GetLength()}, got ${fileEnd})`)
+		$.assert(fileEnd === reader.GetLength(), `Invalid file size (expected ${reader.GetLength()}, got ${fileEnd})`)
 		
 		const faces = new Uint32Array(faceCount * 3)
 		const vertices = new Float32Array(vertexCount * 3)
@@ -265,7 +265,7 @@ const RBXMeshParser = {
 				const nameStart = nameTableStart + reader.UInt32LE()
 				const nameEnd = reader.indexOf(0, nameStart)
 				
-				bone.name = bufferToString(reader.subarray(nameStart, nameEnd))
+				bone.name = $.bufferToString(reader.subarray(nameStart, nameEnd))
 				bone.parent = mesh.bones[reader.UInt16LE()]
 				bone.lodParent = mesh.bones[reader.UInt16LE()]
 				bone.culling = reader.FloatLE()

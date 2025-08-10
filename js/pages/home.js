@@ -2,9 +2,7 @@
 
 pageInit.home = () => {
 	if(SETTINGS.get("home.favoritesAtTop")) {
-		InjectJS.inject(() => {
-			const { hijackXHR, settings } = window.BTRoblox
-			
+		injectScript.call("favoritesAtTop", () => {
 			hijackXHR(request => {
 				if(request.method === "POST" && request.url.match(/^https:\/\/apis\.roblox\.com\/discovery-api\/omni-recommendation(-metadata)?$/i)) {
 					request.onResponse.push(json => {
@@ -29,9 +27,7 @@ pageInit.home = () => {
 	}
 	
 	if(SETTINGS.get("home.showRecommendationPlayerCount")) {
-		InjectJS.inject(() => {
-			const { reactHook } = window.BTRoblox
-			
+		injectScript.call("showRecommendationPlayerCount", () => {
 			reactHook.hijackConstructor(
 				(type, props) => "wideTileType" in props && "gameData" in props && "playerCountStyle" in props,
 				(target, thisArg, args) => {
@@ -44,9 +40,7 @@ pageInit.home = () => {
 	}
 	
 	if(SETTINGS.get("home.instantGameHoverAction")) {
-		InjectJS.inject(() => {
-			const { reactHook } = window.BTRoblox
-			
+		injectScript.call("instantGameHoverAction", () => {
 			reactHook.inject(".hover-game-tile.old-hover", elem => {
 				const props = elem[0].props
 				
