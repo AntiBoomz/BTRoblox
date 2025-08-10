@@ -1140,7 +1140,8 @@ const RBXAvatar = (() => {
 			this.root.position.copy(this.offset)
 			this.root.rotation.copy(this.offsetRot)
 			
-			this.root.position.y += this.hipHeight + (this.parts.HumanoidRootPart?.rbxSize[1] ?? 0) / 2
+			const rootPart = this.parts.HumanoidRootPart
+			rootPart?.matrixNoScale.makeTranslation(0, this.hipHeight + (rootPart?.rbxSize[1] ?? 0) / 2, 0)
 			
 			// Update joints
 			for(const joint of this.sortedJointsArray) {
@@ -1158,9 +1159,12 @@ const RBXAvatar = (() => {
 				
 				joint.matrixNoScale.multiplyMatrices(joint.part0.matrixNoScale, joint.bakedC0).multiply(joint.transform)
 				joint.part1.matrixNoScale.multiplyMatrices(joint.matrixNoScale, joint.bakedC1Inverse)
-				
-				joint.part1.matrix.copy(joint.part1.matrixNoScale).scale(joint.part1.scale)
-				joint.part1.matrixWorldNeedsUpdate = true
+			}
+			
+			// Update parts
+			for(const part of Object.values(this.parts)) {
+				part.matrix.copy(part.matrixNoScale).scale(part.scale)
+				part.matrixWorldNeedsUpdate = true
 			}
 			
 			// Update accessories
@@ -1234,6 +1238,7 @@ const RBXAvatar = (() => {
 			}
 
 			this.shouldRefreshBodyParts = true
+			this.shouldRefreshLayeredClothing = true
 		}
 
 		setBodyColors(bodyColors) {
@@ -2244,12 +2249,15 @@ const RBXAvatar = (() => {
 			}
 			
 			// Calculate layeredMatrix for all parts
+			this.parts.HumanoidRootPart.layeredMatrix.copy(this.parts.HumanoidRootPart.matrixNoScale)
+			
 			for(const joint of this.sortedJointsArray) {
 				joint.layeredMatrix.multiplyMatrices(joint.part0.layeredMatrix, joint.bakedC0)
 				joint.part1.layeredMatrix.multiplyMatrices(joint.layeredMatrix, joint.bakedC1Inverse)
 			}
 
 			// Find and locate anchor
+			
 			const anchor = groups.find(x => x.name.startsWith("Handle") && x.faces.length === 36 && $.hashString(JSON.stringify([x.faces, x.uvs])) === "4734F03A")
 			if(!anchor) { return console.log("Found no anchor") }
 			
@@ -2257,36 +2265,51 @@ const RBXAvatar = (() => {
 			
 			const attachment = this.attachments.HatAttachment
 			const scaleMod = this.getScaleMod(attachment.parent.name, "Classic", attachment.parent.rbxScaleType)
-			const bakedCFrame = scalePosition(new THREE.Matrix4().makeTranslation(-0.013, -0.554, -0.657), scaleMod)
+			const bakedCFrame = scalePosition(new THREE.Matrix4().makeTranslation(-0.01328277587890625, -0.5544552803039551, -0.65679931640625), scaleMod)
 			
-			const layeredAnchorMatrix = attachment.parent.layeredMatrix.clone().multiply(attachment.bakedCFrame).multiply(bakedCFrame)
-			const inverseRenderMatrix = new THREE.Matrix4()
+			const anchorMatrix = attachment.parent.layeredMatrix.clone().multiply(attachment.bakedCFrame).multiply(bakedCFrame)
+			
+			const min = [Infinity, Infinity, Infinity]
+			const max = [-Infinity, -Infinity, -Infinity]
 			
 			for(let i = 0; i < anchor.vertices.length; i += 3) {
-				inverseRenderMatrix.elements[12] += anchor.vertices[i]
-				inverseRenderMatrix.elements[13] += anchor.vertices[i + 1]
-				inverseRenderMatrix.elements[14] += anchor.vertices[i + 2]
+				const x = anchor.vertices[i]
+				const y = anchor.vertices[i + 1]
+				const z = anchor.vertices[i + 2]
+				
+				min[0] = Math.min(min[0], x)
+				min[1] = Math.min(min[1], y)
+				min[2] = Math.min(min[2], z)
+				
+				max[0] = Math.max(max[0], x)
+				max[1] = Math.max(max[1], y)
+				max[2] = Math.max(max[2], z)
 			}
 			
-			inverseRenderMatrix.elements[12] /= anchor.vertices.length / 3
-			inverseRenderMatrix.elements[13] /= anchor.vertices.length / 3
-			inverseRenderMatrix.elements[14] /= anchor.vertices.length / 3
+			const inverseRenderMatrix = new THREE.Matrix4().makeTranslation(
+				(max[0] + min[0]) / 2,
+				(max[1] + min[1]) / 2,
+				(max[2] + min[2]) / 2
+			).invert().premultiply(anchorMatrix)
 			
-			inverseRenderMatrix.invert().premultiply(layeredAnchorMatrix)
+			// NOTE: As far as I can tell, the character seems to be consistently positioned at (0, 100.01 + characterAndAccessoriesAABB.Size.Y / 2, 0)
+			// so we could technically skip this anchor stuff and do the aabb calculation ourselves...
+			
+			//
 			
 			const transform = new THREE.Matrix4()
 			const vertex = new THREE.Matrix4()
 			
 			// Resolve bodyparts
-			const uvBoxes = [
-				[0, 0, 1, 1],
-				[0, 752 / 1024, 388 / 1024, 272 / 1024],
-				[240 / 1024, 456 / 1024, 256 / 1024, 296 / 1024],
-				[496 / 1024, 740 / 1024, 264 / 1024, 284 / 1024],
-				[760 / 1024, 740 / 1024, 264 / 1024, 284 / 1024],
-				[496 / 1024, 456 / 1024, 264 / 1024, 284 / 1024],
-				[760 / 1024, 456 / 1024, 264 / 1024, 284 / 1024],
-			]
+			const uvBoxes = {
+				full:     [0, 0, 1, 1],
+				torso:    [  0 / 916, 296 / 568, 388 / 916, 272 / 568],
+				head:     [132 / 916,   0 / 568, 256 / 916, 296 / 568],
+				leftarm:  [388 / 916, 284 / 568, 264 / 916, 284 / 568],
+				rightarm: [652 / 916, 284 / 568, 264 / 916, 284 / 568],
+				leftleg:  [388 / 916,   0 / 568, 264 / 916, 284 / 568],
+				rightleg: [652 / 916,   0 / 568, 264 / 916, 284 / 568],
+			}
 			
 			const getGroupMatch = (obj, group, box) => {
 				const mesh = obj.rbxMesh
@@ -2351,20 +2374,17 @@ const RBXAvatar = (() => {
 			let numEmptyPartsAccepted = 15 - playerGroups.length
 			
 			for(const part of Object.values(this.parts)) {
-				const assetId = part.rbxBodypart?.asset?.id
 				const mesh = part.rbxMesh
+				if(!mesh) { continue }
 				
-				if(!mesh || !request.bodyparts.find(x => x.id === assetId)) { continue }
-				
+				const partBox = uvBoxes[part.name.replace(/Upper|Lower/g, "").replace(/Hand/g, "Arm").replace(/Foot/g, "Leg").toLowerCase()]
 				const matches = []
 				
 				for(const group of playerGroups) {
-					for(const box of uvBoxes) {
-						const mapping = getGroupMatchPartial(part, group, box)
-						
-						if(mapping) {
-							matches.push({ group, box, mapping })
-						}
+					const mapping = partBox && getGroupMatchPartial(part, group, partBox) || getGroupMatchPartial(part, group, uvBoxes.full)
+					
+					if(mapping) {
+						matches.push({ group, mapping })
 					}
 				}
 				
@@ -2380,7 +2400,7 @@ const RBXAvatar = (() => {
 							console.log(groups)
 						}
 						
-						return false
+						continue
 					}
 					
 					numEmptyPartsAccepted -= 1
@@ -2407,7 +2427,9 @@ const RBXAvatar = (() => {
 					let closest
 					
 					for(const match of matches) {
-						const step = Math.floor(group.vertices.length / 3 / 50) * 3
+						const { group } = match
+						
+						const step = Math.max(1, Math.floor(group.vertices.length / 3 / 50)) * 3
 						let x = 0, y = 0, z = 0, count = 0
 						
 						for(let i = 0; i < group.vertices.length; i += step) {
@@ -2417,7 +2439,7 @@ const RBXAvatar = (() => {
 							count += 1
 						}
 						
-						const distance = (x / count - px) ** 2 + (x / count - py) ** 2 + (x / count - pz) ** 2
+						const distance = (x / count - px) ** 2 + (y / count - py) ** 2 + (z / count - pz) ** 2
 						
 						if(distance < closestDistance) {
 							closestDistance = distance
@@ -2438,29 +2460,28 @@ const RBXAvatar = (() => {
 				const vertices = mesh.vertices.slice()
 				const normals = mesh.normals.slice()
 				
-				for(let mapIndex = 0; mapIndex < mapping.length; mapIndex++) {
-					const groupIndex = mapIndex * 3
-					const meshIndex = mapping[mapIndex] * 3
+				for(let index = 0; index < group.vertices.length; index += 3) {
+					const mappedIndex = mapping[index / 3] * 3
 					
 					vertex.makeTranslation(
-						group.vertices[groupIndex + 0],
-						group.vertices[groupIndex + 1],
-						group.vertices[groupIndex + 2]
+						group.vertices[index + 0],
+						group.vertices[index + 1],
+						group.vertices[index + 2]
 					).premultiply(transform)
 					
-					vertices[meshIndex + 0] = vertex.elements[12] / part.rbxScale[0]
-					vertices[meshIndex + 1] = vertex.elements[13] / part.rbxScale[1]
-					vertices[meshIndex + 2] = vertex.elements[14] / part.rbxScale[2]
+					vertices[mappedIndex + 0] = vertex.elements[12] / part.rbxScale[0]
+					vertices[mappedIndex + 1] = vertex.elements[13] / part.rbxScale[1]
+					vertices[mappedIndex + 2] = vertex.elements[14] / part.rbxScale[2]
 					
 					vertex.makeTranslation(
-						group.normals[groupIndex + 0] - transform.elements[12],
-						group.normals[groupIndex + 1] - transform.elements[13],
-						group.normals[groupIndex + 2] - transform.elements[14]
+						group.normals[index + 0] - transform.elements[12],
+						group.normals[index + 1] - transform.elements[13],
+						group.normals[index + 2] - transform.elements[14]
 					).premultiply(transform)
 					
-					normals[meshIndex + 0] = vertex.elements[12]
-					normals[meshIndex + 1] = vertex.elements[13]
-					normals[meshIndex + 2] = vertex.elements[14]
+					normals[mappedIndex + 0] = vertex.elements[12]
+					normals[mappedIndex + 1] = vertex.elements[13]
+					normals[mappedIndex + 2] = vertex.elements[14]
 				}
 				
 				// Order of faces doesn't seem to matter though, so we can just directly use the group faces as long as we map the vertex indices
@@ -2479,7 +2500,7 @@ const RBXAvatar = (() => {
 			}
 			
 			// Resolve accessories
-			const handleGroups = groups.filter(x => x.name.startsWith("Handle") && x !== anchor).sort((a, b) => b.uvs.length - a.uvs.length)
+			const handleGroups = groups.filter(x => x.name.startsWith("Handle")).sort((a, b) => b.uvs.length - a.uvs.length)
 			let numEmptyAccessoriesAccepted = request.accessories.length - handleGroups.length
 			
 			const accessoriesProcessed = {}
@@ -2491,7 +2512,7 @@ const RBXAvatar = (() => {
 				const matches = []
 					
 				for(const group of handleGroups) {
-					if(getGroupMatch(obj, group, uvBoxes[0])) {
+					if(getGroupMatch(obj, group, uvBoxes.full)) {
 						matches.push(group)
 					}
 				}
