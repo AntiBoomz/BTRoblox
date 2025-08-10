@@ -118,8 +118,7 @@ pageInit.groups = () => {
 				aboutTemplate.$find("group-events"),
 				aboutTemplate.$find("#group-announcements"),
 				aboutTemplate.$find(".group-shout"),
-				aboutTemplate.$find("social-links-container"),
-				aboutTemplate.$find("group-forums-discovery")
+				aboutTemplate.$find("social-links-container")
 			]
 			
 			for(const element of hoist) {
@@ -146,7 +145,14 @@ pageInit.groups = () => {
 				payouts.setAttribute("ng-show", `btrCustomTab.name === "payouts"`)
 			}
 			
-			// move group wall into the main container so it's visible in most views
+			// move discovery and group wall below the main container so it's visible in most views
+			const discovery = aboutTemplate.$find("group-forums-discovery")
+			if(discovery) {
+				discovery.removeAttribute("ng-switch-when")
+				discovery.setAttribute("ng-show", "layout.activeTab !== groupDetailsConstants.tabs.forums")
+				tabs.parentNode.append(discovery)
+			}
+			
 			const wall = aboutTemplate.$find("group-wall")
 			if(wall) {
 				wall.removeAttribute("ng-switch-when")
