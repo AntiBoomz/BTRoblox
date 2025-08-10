@@ -41,7 +41,10 @@ pageInit.create_dashboard = () => {
 							result.props.children = children
 							
 							if(args[0].itemType === "Game") {
-								let index = children.findIndex(x => x?.key === "Action.OpenInNewTab")
+								let index = children.findIndex(x => x?.props?.onClick && reactHook.queryElement(x, x => x?.props?.itemKey === "Action.CopyURL"))
+								if(index !== -1) { children.splice(index, 1) }
+								
+								index = children.findIndex(x => x?.key === "Action.OpenInNewTab")
 								if(index !== -1) { children.splice(index, 1) }
 								
 								index = children.findIndex(x => x?.key === "Action.CopyURL")
