@@ -2986,7 +2986,7 @@ document.addEventListener("btroblox/init", ev => {
 				(target, thisArg, args) => {
 					const props = args[0]
 					
-					if(props.type === "public") {
+					if(props.type === "public" && settings.gamedetails.addServerPager) {
 						props.btrPagerEnabled = true
 						props.showLoadMoreButton = false
 					}

@@ -455,7 +455,7 @@ pageInit.gamedetails = () => {
 			(target, thisArg, args) => {
 				const props = args[0]
 				
-				if(props.type === "public") {
+				if(props.type === "public" && settings.gamedetails.addServerPager) {
 					props.btrPagerEnabled = true
 					props.showLoadMoreButton = false
 				}
