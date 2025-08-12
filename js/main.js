@@ -285,12 +285,6 @@ const removeCSS = (...paths) => {
 //
 
 let currentPageCSS = []
-let currentTheme = "default"
-
-const setTheme = theme => {
-	currentTheme = theme
-	updatePageCSS()
-}
 
 const updatePageCSS = () => {
 	const cssFiles = ["main.css", "settingsmodal.css"]
@@ -303,12 +297,14 @@ const updatePageCSS = () => {
 		cssFiles.push(...currentPage.css)
 	}
 	
-	if(currentTheme !== "default") {
-		cssFiles.push(...cssFiles.map(path => `${currentTheme}/${path}`))
+	const theme = SETTINGS.get("general.theme")
+	
+	if(theme !== "default") {
+		cssFiles.push(...cssFiles.map(path => `${theme}/${path}`))
 	}
 	
 	insertCSS(...cssFiles.map(path => `css/${path}`))
-	removeCSS(...currentPageCSS.filter(path => !cssFiles.includes(path)))
+	removeCSS(...currentPageCSS.filter(path => !cssFiles.includes(path)).map(path => `css/${path}`))
 	
 	currentPageCSS = cssFiles
 }
@@ -424,6 +420,10 @@ if(document.contentType === "text/html" && location.protocol !== "blob" && docum
 				}).observe(content, { childList: true })
 			})
 		}
+		
+		//
+		
+		SETTINGS.onChange("general.theme", () => updatePageCSS())
 	})
 	
 	SHARED_DATA.init()
