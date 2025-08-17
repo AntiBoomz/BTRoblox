@@ -21,7 +21,7 @@ const optionalFeatures = {
 	},
 	sourceViewer: {
 		assets: [
-			"js/feat/sourceViewer.js",
+			"js/feat/sourceviewer.js",
 			"css/sourceviewer.css"
 		]
 	},
