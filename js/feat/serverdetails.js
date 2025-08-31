@@ -27,6 +27,7 @@ const serverRegionsByIp = {
 	"128.116.80.0": { city: "Ashburn", country: { name: "United States", code: "US" }, region: { name: "Virginia", code: "VA" } },
 	"128.116.81.0": { city: "San Jose", country: { name: "United States", code: "US" }, region: { name: "California", code: "CA" } },
 	"128.116.84.0": { city: "Chicago", country: { name: "United States", code: "US" }, region: { name: "Illinois", code: "IL" } },
+	"128.116.86.0": { city: "São Paulo", country: { name: "Brazil", code: "BR" }, region: { name: "São Paulo", code: "SP" } },
 	"128.116.87.0": { city: "Ashburn", country: { name: "United States", code: "US" }, region: { name: "Virginia", code: "VA" } },
 	"128.116.88.0": { city: "Chicago", country: { name: "United States", code: "US" }, region: { name: "Illinois", code: "IL" } },
 	"128.116.95.0": { city: "Dallas", country: { name: "United States", code: "US" }, region: { name: "Texas", code: "TX" } },
