@@ -349,7 +349,7 @@ const RobuxToCash = {
 			{ name: "none", cash: 1, robux: 1 }
 		],
 		USD: [
-			{ name: "devex", cash: 350, robux: 1000 }
+			{ name: "devex", cash: 380, robux: 1000 }
 		]
 	},
 
