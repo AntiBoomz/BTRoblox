@@ -24,11 +24,11 @@ class ByteReader extends Uint8Array {
 	Jump(n) { this.index += n }
 
 	Array(n) {
-		const result = new Uint8Array(this.buffer, this.index, n)
+		const result = new Uint8Array(this.buffer, this.byteOffset + this.index, n)
 		this.index += n
 		return result
 	}
-
+	
 	Match(match) {
 		let index = this.index
 		
