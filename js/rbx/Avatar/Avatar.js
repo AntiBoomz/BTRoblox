@@ -1138,10 +1138,10 @@ const RBXAvatar = (() => {
 			this.animator.update()
 			
 			this.root.position.copy(this.offset)
-			this.root.rotation.copy(this.offsetRot)
+			// this.root.rotation.copy(this.offsetRot)
 			
 			const rootPart = this.parts.HumanoidRootPart
-			rootPart?.matrixNoScale.makeTranslation(0, this.hipHeight + (rootPart?.rbxSize[1] ?? 0) / 2, 0)
+			rootPart?.matrixNoScale.makeRotationFromEuler(this.offsetRot).setPosition(0, this.hipHeight + (rootPart?.rbxSize[1] ?? 0) / 2, 0)
 			
 			// Update joints
 			for(const joint of this.sortedJointsArray) {
