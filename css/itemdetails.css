@@ -71,7 +71,7 @@
 	width: 420px;
 
 	z-index: 2;
-	--btr-btn-color: #fff;
+	--btr-btn-color: #e3e4e9;
 	--btr-btn-color-disabled: #eee;
 }
 
@@ -148,15 +148,17 @@ html body .btr-thumb-btn-container .btr-thumb-btn {
 
 	justify-content: center;
 	align-items: center;
+	
+	background-color: var(--btr-btn-color) !important;
 
 	z-index: 5;
 
 	cursor: pointer;
 }
 
-.btr-thumb-btn:hover {
-	/* box-shadow: 0 1px 3px rgba(150,150,150,0.74); */
-}
+/* .btr-thumb-btn:hover {
+	box-shadow: 0 1px 3px rgba(150,150,150,0.74);
+} */
 
 .btr-thumb-btn [class^="btr-icon"] {
 	flex: 0 0 auto;
@@ -409,7 +411,7 @@ body .btr-bundle-animations .btr-bundle-btn-alt {
     height: 38px;
     margin: 0 0 0 12px;
 	transition: .05s linear .05s;
-	border: 1px solid #B8B8B8;
+	/* border: 1px solid #B8B8B8; */
 
 	background-color: var(--btr-btn-color) !important;
 
@@ -417,10 +419,10 @@ body .btr-bundle-animations .btr-bundle-btn-alt {
 	justify-content: center;
 }
 
-.btr-bundle-animations .btr-bundle-btn:not([disabled]):hover,
+/* .btr-bundle-animations .btr-bundle-btn:not([disabled]):hover,
 .btr-bundle-animations .btr-bundle-btn-alt:hover {
 	box-shadow: 0 1px 4px 0 rgba(25,25,25,0.3);
-}
+} */
 
 .btr-bundle-animations .btr-bundle-btn[disabled] {
 	background-color: var(--btr-btn-color-disabled) !important;
@@ -467,6 +469,8 @@ body .btr-bundle-animations .btr-bundle-btn-alt {
 	margin: 0;
 	margin-top: -1px;
 	margin-bottom: -12px;
+	
+	background-color: light-dark(lch(from var(--btr-btn-color) calc(l - 5) c h), lch(from var(--btr-btn-color) calc(l + 5) c h)) !important;
 
 	border-radius: 3px;
 	align-items: end;
