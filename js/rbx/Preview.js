@@ -1048,7 +1048,7 @@ const HoverPreview = (() => {
 		}
 
 		preview.scene.cameraFocus.copy(box.max).add(box.min).multiplyScalar(0.5)
-		preview.scene.cameraFocus.y += (box.max.y - box.min.y) * 0.01
+		// preview.scene.cameraFocus.y += (box.max.y - box.min.y) * 0.01
 		preview.scene.cameraZoom = Math.max(2.5, box.max.clone().sub(box.min).length() * 0.9)
 		
 		setCameraDir(cameraDir || "Front")
@@ -1062,6 +1062,8 @@ const HoverPreview = (() => {
 		preview.container.style.pointerEvents = "none"
 		
 		preview.scene.cameraControlsEnabled = false
+		preview.scene.cameraSlideEnabled = false
+		preview.scene.cameraSlide = 0
 		preview.scene.cameraRotation.set(...frontCameraRotation)
 
 		const rotBtn = html`<span class="btr-hover-preview-camera-rotate"></span>`

@@ -11,6 +11,7 @@ const RBXScene = (() => {
 			this.cameraMaxZoom = 25
 			this.cameraZoom = 10
 			this.cameraSlide = 0
+			this.cameraSlideEnabled = true
 			this.cameraFocus = new THREE.Vector3(0, 4, 0)
 			this.cameraOffset = new THREE.Vector3(0, 0, 0)
 			this.cameraRotation = new THREE.Euler(.05, 0, 0, "YXZ")
@@ -166,24 +167,26 @@ const RBXScene = (() => {
 			this.cameraDir.set(0, 0, 1).applyEuler(this.cameraRotation)
 			
 			//
-			let minSlide = 2
-			let maxSlide = 5.5
-			
-			if(this.avatar.playerType === "R15" && this.avatar.joints.LowerTorso) {
-				maxSlide =
-					this.avatar.hipHeight
-					+ this.avatar.parts.HumanoidRootPart.rbxSize[1] / 2
-					+ this.avatar.joints.LowerTorso.bakedC0.elements[13]
-					+ this.avatar.joints.LowerTorso.bakedC1Inverse.elements[13]
-					+ this.avatar.joints.Head.bakedC0.elements[13]
-					+ this.avatar.joints.Head.bakedC1Inverse.elements[13]
-					+ 1
+			if(this.cameraSlideEnabled) {
+				let minSlide = 2
+				let maxSlide = 5.5
+				
+				if(this.avatar.playerType === "R15" && this.avatar.joints.LowerTorso) {
+					maxSlide =
+						this.avatar.hipHeight
+						+ this.avatar.parts.HumanoidRootPart.rbxSize[1] / 2
+						+ this.avatar.joints.LowerTorso.bakedC0.elements[13]
+						+ this.avatar.joints.LowerTorso.bakedC1Inverse.elements[13]
+						+ this.avatar.joints.Head.bakedC0.elements[13]
+						+ this.avatar.joints.Head.bakedC1Inverse.elements[13]
+						+ 1
+				}
+				
+				minSlide -= this.cameraFocus.y + this.cameraOffset.y
+				maxSlide -= this.cameraFocus.y + this.cameraOffset.y
+				
+				this.cameraSlide = Math.max(minSlide, Math.min(maxSlide, this.cameraSlide))
 			}
-			
-			minSlide -= this.cameraFocus.y + this.cameraOffset.y
-			maxSlide -= this.cameraFocus.y + this.cameraOffset.y
-			
-			this.cameraSlide = Math.max(minSlide, Math.min(maxSlide, this.cameraSlide))
 			//
 			
 			const focus = this.cameraFocus.clone()
