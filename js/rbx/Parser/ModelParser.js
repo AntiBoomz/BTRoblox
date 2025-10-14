@@ -257,7 +257,7 @@ const RBXBinaryParser = {
 	parseINST(parser, chunk) {
 		const typeId = chunk.UInt32LE()
 		const className = chunk.String(chunk.UInt32LE())
-		const isService = chunk.Byte()
+		const isService = chunk.UInt8()
 		const count = chunk.UInt32LE()
 
 		const type = {
@@ -310,7 +310,7 @@ const RBXBinaryParser = {
 		
 		const count = type.instances.length
 		const parseProperties = values => {
-			const typeIndex = chunk.Byte()
+			const typeIndex = chunk.UInt8()
 			const typeName = RBXDataTypes[typeIndex] || "Unknown"
 			let valueType = typeName
 			
@@ -323,7 +323,7 @@ const RBXBinaryParser = {
 				break
 			case "bool":
 				for(let i = 0; i < count; i++) {
-					values[i] = chunk.Byte() !== 0
+					values[i] = chunk.UInt8() !== 0
 				}
 				break
 			case "int":
@@ -375,7 +375,7 @@ const RBXBinaryParser = {
 			}
 			case "Faces":
 				for(let i = 0; i < count; i++) {
-					const data = chunk.Byte()
+					const data = chunk.UInt8()
 	
 					values[i] = {
 						Right: !!(data & 1),
@@ -389,7 +389,7 @@ const RBXBinaryParser = {
 				break
 			case "Axes":
 				for(let i = 0; i < count; i++) {
-					const data = chunk.Byte()
+					const data = chunk.UInt8()
 					
 					values[i] = {
 						X: !!(data & 1),
@@ -448,7 +448,7 @@ const RBXBinaryParser = {
 			case "CFrame": {
 				for(let vi = 0; vi < count; vi++) {
 					const value = values[vi] = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
-					const type = chunk.Byte()
+					const type = chunk.UInt8()
 	
 					if(type !== 0) {
 						const right = this.Faces[Math.floor((type - 1) / 6)]
@@ -545,15 +545,29 @@ const RBXBinaryParser = {
 			}
 			case "PhysicalProperties":
 				for(let i = 0; i < count; i++) {
-					const enabled = chunk.Byte() !== 0
+					const byte = chunk.UInt8()
+					
+					const enabled = byte & 1
+					const version2 = byte & 2
 					
 					if(enabled) {
-						values[i] = {
-							Density: chunk.RBXFloat(),
-							Friction: chunk.RBXFloat(),
-							Elasticity: chunk.RBXFloat(),
-							FrictionWeight: chunk.RBXFloat(),
-							ElasticityWeight: chunk.RBXFloat()
+						if(version2) {
+							values[i] = {
+								Density: chunk.FloatLE(),
+								Friction: chunk.FloatLE(),
+								Elasticity: chunk.FloatLE(),
+								FrictionWeight: chunk.FloatLE(),
+								ElasticityWeight: chunk.FloatLE(),
+								AcousticAbsorption: chunk.FloatLE(),
+							}
+						} else {
+							values[i] = {
+								Density: chunk.RBXFloat(),
+								Friction: chunk.RBXFloat(),
+								Elasticity: chunk.RBXFloat(),
+								FrictionWeight: chunk.RBXFloat(),
+								ElasticityWeight: chunk.RBXFloat()
+							}
 						}
 					} else {
 						values[i] = false
@@ -576,7 +590,7 @@ const RBXBinaryParser = {
 					values[i] = {
 						Family: chunk.String(chunk.UInt32LE()),
 						Weight: chunk.UInt16LE(),
-						Style: chunk.Byte(),
+						Style: chunk.UInt8(),
 						CachedFaceId: chunk.String(chunk.UInt32LE())
 					}
 				}
@@ -661,7 +675,7 @@ const RBXBinaryParser = {
 	},
 
 	parsePRNT(parser, chunk) {
-		chunk.Byte()
+		chunk.UInt8()
 		const count = chunk.UInt32LE()
 		
 		const childIds = chunk.RBXInterleavedInt32(count, parser.arrays[parser.arrayIndex++])
