@@ -29,6 +29,7 @@ const optionalFeatures = {
 		assets: [
 			"js/rbx/Parser/ByteReader.js",
 			"js/rbx/Parser/ModelParser.js",
+			"js/rbx/Parser/DracoBitstream.js",
 			"js/rbx/Parser/MeshParser.js",
 			"js/rbx/Parser/AnimationParser.js"
 		]
