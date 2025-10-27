@@ -10,7 +10,7 @@ class ByteReader extends Uint8Array {
 			args[0] = args[0].buffer
 		}
 		
-		$.assert(args[0] instanceof ArrayBuffer, "buffer is not an ArrayBuffer")
+		$.assert(args[0] instanceof ArrayBuffer || args[0] instanceof window.ArrayBuffer, "buffer is not an ArrayBuffer")
 		super(...args)
 
 		this.index = 0
@@ -74,25 +74,10 @@ class ByteReader extends Uint8Array {
 
 	String(n) { return $.bufferToString(this.Array(n)) }
 
-	// LZ4
+	// Compression
 	
-	LZ4Header() {
-		const comLength = this.UInt32LE()
-		const decomLength = this.UInt32LE()
-		const checksum = this.Jump(4) // always 0
-		
-		return [comLength, decomLength]
-	}
-	
-	LZ4(buffer) {
-		const [comLength, decomLength] = this.LZ4Header()
-		
-		if(comLength === 0) {
-			$.assert(this.GetRemaining() >= decomLength, "[ByteReader.LZ4Header] unexpected eof")
-			return this.Array(decomLength)
-		}
-		
-		$.assert(this.GetRemaining() >= comLength, "[ByteReader.LZ4Header] unexpected eof")
+	LZ4(comLength, decomLength, buffer) {
+		$.assert(this.GetRemaining() >= comLength, "[ByteReader.LZ4] unexpected eof")
 		
 		if(!buffer || buffer.length < decomLength) {
 			buffer = new Uint8Array(decomLength)

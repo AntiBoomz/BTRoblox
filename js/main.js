@@ -182,7 +182,7 @@ const injectScript = {
 
 	send(action, ...args) {
 		BTRoblox.element.dispatchEvent(new CustomEvent(`btroblox/inject/${action}`, {
-			detail: IS_FIREFOX ? cloneInto(args, window.wrappedJSObject) : args
+			detail: IS_FIREFOX ? cloneInto(args, window, { cloneFunctions: true, wrapReflectors: true }) : args
 		}))
 	},
 
@@ -195,7 +195,7 @@ const injectScript = {
 			BTRoblox.element.addEventListener(`btroblox/content/${action}`, ev => {
 				let args
 				
-				try { args = IS_FIREFOX ? cloneInto(ev.detail, window) : ev.detail }
+				try { args = IS_FIREFOX ? cloneInto(ev.detail, window, { cloneFunctions: true, wrapReflectors: true }) : ev.detail }
 				catch(ex) {}
 				
 				args = Array.isArray(args) ? args : []
@@ -212,7 +212,7 @@ const injectScript = {
 	
 	init(...args) {
 		document.dispatchEvent(new CustomEvent(`btroblox/init`, {
-			detail: IS_FIREFOX ? cloneInto(args, window.wrappedJSObject) : args
+			detail: IS_FIREFOX ? cloneInto(args, window, { cloneFunctions: true, wrapReflectors: true }) : args
 		}))
 	}
 }

@@ -502,8 +502,9 @@ pageInit.profile = () => {
 											btnCont.textContent = prohibitedReasons[data.reasonProhibited] || data.reasonProhibited
 										}
 									}
-
-									robloxLinkify(descContent)
+									
+									injectScript.call("linkify", target => $(target).linkify(), descContent)
+									
 									updateDesc()
 								})
 							}

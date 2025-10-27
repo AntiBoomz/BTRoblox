@@ -49,15 +49,6 @@ const AccessoryAssetTypeIds = [8, 41, 42, 43, 44, 45, 46, 47, 57, 58, 64, 65, 66
 const formatNumber = num => String(num).replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/yg, "$1,")
 const formatUrlName = (name, def = "Name") => encodeURIComponent(name.replace(/[']/g, "").replace(/\W+/g, "-").replace(/^-+|-+$/g, "") || def)
 
-let linkifyCounter = 0
-const robloxLinkify = target => {
-	const className = `btr-linkify-${linkifyCounter++}`
-	target.classList.add("linkify", className)
-	
-	injectScript.call("linkify", className => $?.(`.${className}`).linkify?.(), className)
-	target.classList.remove(className)
-}
-
 //
 
 function onMouseEnter(element, selector, callback) {
@@ -1504,7 +1495,7 @@ pageInit.www = () => {
 						</div>
 					</div>`)
 					
-					robloxLinkify(streamItem.$find(".btr-notif-desc"))
+					injectScript.call("linkify", target => $(target).linkify(), streamItem.$find(".btr-notif-desc"))
 					
 					requestGroupIcon(shout.groupId).then(icon => {
 						const thumbnail = streamItem.$find(".thumbnail-2d-container")

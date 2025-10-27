@@ -1572,7 +1572,6 @@ document.addEventListener("btroblox/init", ev => {
 				}
 			)
 		},
-		"linkify": className => $?.(`.${className}`).linkify?.(),
 		"redirectEvents": (fromSelector, toSelector) => {
 			const from = document.querySelector(fromSelector)
 			const to = document.querySelector(toSelector)
@@ -1973,6 +1972,7 @@ document.addEventListener("btroblox/init", ev => {
 				}
 			)
 		},
+		"linkify": target => $(target).linkify(),
 		"shoutAlerts": () => {
 			const shoutNotifications = []
 			const shoutListeners = []

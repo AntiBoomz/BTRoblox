@@ -140,14 +140,22 @@ const RBXBinaryParser = {
 		}
 		
 		// preallocate a buffer that fits the biggest decompressed chunk
-		const chunkIndices = []
+		const chunks = []
 		let maxChunkSize = 0
 		
 		while(true) {
-			chunkIndices.push(reader.GetIndex())
-			
 			const chunkType = reader.String(4)
-			const [comLength, decomLength] = reader.LZ4Header()
+			
+			const comLength = reader.UInt32LE()
+			const decomLength = reader.UInt32LE()
+			reader.Jump(4) // reserved
+			
+			chunks.push({
+				chunkType: chunkType,
+				comLength: comLength,
+				decomLength: decomLength,
+				dataStartIndex: reader.GetIndex()
+			})
 			
 			if(comLength > 0) {
 				$.assert(reader.GetRemaining() >= comLength, "[RBXBinaryParser] unexpected eof")
@@ -176,12 +184,20 @@ const RBXBinaryParser = {
 			let lastYielded = performance.now()
 			
 			onProgress?.(0)
-			for(let i = 0; i < chunkIndices.length; i++) {
-				reader.SetIndex(chunkIndices[i])
+			for(let i = 0; i < chunks.length; i++) {
+				const { chunkType, comLength, decomLength, dataStartIndex } = chunks[i]
 				
-				const chunkType = reader.String(4)
-				const chunkReader = new ByteReader(reader.LZ4(chunkBuffer))
+				let data
 				
+				if(comLength === 0) {
+					reader.SetIndex(dataStartIndex)
+					data = reader.Array(decomLength)
+				} else {
+					reader.SetIndex(dataStartIndex)
+					data = reader.LZ4(comLength, decomLength, chunkBuffer)
+				}
+				
+				const chunkReader = new ByteReader(data)
 				parser.arrayIndex = 0 // reset arrays
 				
 				switch(chunkType) {
@@ -210,7 +226,7 @@ const RBXBinaryParser = {
 				}
 				
 				if(isAsync && performance.now() > lastYielded + 33) {
-					onProgress?.(i / chunkIndices.length)
+					onProgress?.(i / chunks.length)
 					lastYielded = await new Promise(resolve => requestAnimationFrame(resolve))
 				}
 			}
