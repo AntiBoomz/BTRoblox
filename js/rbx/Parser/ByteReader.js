@@ -133,18 +133,12 @@ class ByteReader extends Uint8Array {
 		return data
 	}
 
-	// RBX
-
-	RBXFloat() {
-		const uint32 = this.UInt32LE()
-		ByteReader.Converter.setUint32(0, uint32 << 31 | uint32 >>> 1)
-		return ByteReader.Converter.getFloat32(0)
-	}
+	// Interleaved
 	
-	RBXInterleavedUint16(count, result) {
+	RBXInterleavedUInt16(count, result) {
 		for(let i = 0; i < count; i++) {
 			result[i] =
-				this[this.index + i + count * 0] << 8 |
+				this[this.index + i + count * 0] * 256 +
 				this[this.index + i + count * 1]
 		}
 
@@ -152,12 +146,12 @@ class ByteReader extends Uint8Array {
 		return result
 	}
 	
-	RBXInterleavedUint32(count, result) {
+	RBXInterleavedUInt32(count, result) {
 		for(let i = 0; i < count; i++) {
 			result[i] =
-				this[this.index + i + count * 0] << 24 |
-				this[this.index + i + count * 1] << 16 |
-				this[this.index + i + count * 2] << 8 |
+				this[this.index + i + count * 0] * 16777216 +
+				this[this.index + i + count * 1] * 65536 +
+				this[this.index + i + count * 2] * 256 +
 				this[this.index + i + count * 3]
 		}
 
@@ -165,17 +159,17 @@ class ByteReader extends Uint8Array {
 		return result
 	}
 	
-	RBXInterleavedUint64(count, result) {
+	RBXInterleavedUInt64(count, result) {
 		for(let i = 0; i < count; i++) {
 			result[i] = BigInt(
-				this[this.index + i + count * 0] << 24 |
-				this[this.index + i + count * 1] << 16 |
-				this[this.index + i + count * 2] << 8 |
+				this[this.index + i + count * 0] * 16777216 +
+				this[this.index + i + count * 1] * 65536 +
+				this[this.index + i + count * 2] * 256 +
 				this[this.index + i + count * 3]
-			) * (2n ** 32n) + BigInt(
-				this[this.index + i + count * 4] << 24 |
-				this[this.index + i + count * 5] << 16 |
-				this[this.index + i + count * 6] << 8 |
+			) << 32n | BigInt(
+				this[this.index + i + count * 4] * 16777216 +
+				this[this.index + i + count * 5] * 65536 +
+				this[this.index + i + count * 6] * 256 +
 				this[this.index + i + count * 7]
 			)
 		}
@@ -185,7 +179,7 @@ class ByteReader extends Uint8Array {
 	}
 	
 	RBXInterleavedInt16(count, result) {
-		this.RBXInterleavedUint16(count, result)
+		this.RBXInterleavedUInt16(count, result)
 		
 		for(let i = 0; i < count; i++) {
 			const value = result[i]
@@ -196,7 +190,7 @@ class ByteReader extends Uint8Array {
 	}
 
 	RBXInterleavedInt32(count, result) {
-		this.RBXInterleavedUint32(count, result)
+		this.RBXInterleavedUInt32(count, result)
 		
 		for(let i = 0; i < count; i++) {
 			const value = result[i]
@@ -207,7 +201,7 @@ class ByteReader extends Uint8Array {
 	}
 	
 	RBXInterleavedInt64(count, result) {
-		this.RBXInterleavedUint64(count, result)
+		this.RBXInterleavedUInt64(count, result)
 		
 		for(let i = 0; i < count; i++) {
 			const value = result[i]
@@ -218,7 +212,7 @@ class ByteReader extends Uint8Array {
 	}
 
 	RBXInterleavedFloat(count, result) {
-		this.RBXInterleavedUint32(count, result)
+		this.RBXInterleavedUInt32(count, result)
 		
 		for(let i = 0; i < count; i++) {
 			const uint32 = result[i]

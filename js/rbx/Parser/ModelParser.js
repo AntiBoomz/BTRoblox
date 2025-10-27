@@ -1,10 +1,10 @@
 "use strict"
 
 const RBXDataTypes = [
-	"Unknown", "string", "bool", "int", "float", "double", "UDim", "UDim2", "Ray", "Faces", "Axes", "BrickColor", "Color3",
-	"Vector2", "Vector3", "Vector2int16", "CFrame", "Quaternion", "Enum", "Instance", "Vector3int16", "NumberSequence",
-	"ColorSequence", "NumberRange", "Rect2D", "PhysicalProperties", "Color3uint8", "int64", "SharedString", "UnknownScriptFormat",
-	"Optional", "UniqueId", "Font", "SecurityCapabilities"
+	"Unknown", "string", "bool", "int", "float", "double", "UDim", "UDim2", "Ray", "Faces",
+	"Axes", "BrickColor", "Color3", "Vector2", "Vector3", "Vector2int16", "CFrame", "Quaternion", "Enum", "Instance",
+	"Vector3int16", "NumberSequence", "ColorSequence", "NumberRange", "Rect2D", "PhysicalProperties", "Color3uint8", "int64", "SharedString", "UnknownScriptFormat",
+	"Optional", "UniqueId", "Font", "SecurityCapabilities", "Content"
 ]
 
 const RBXInstanceUtils = {
@@ -333,8 +333,7 @@ const RBXBinaryParser = {
 			switch(typeName) {
 			case "string":
 				for(let i = 0; i < count; i++) {
-					const len = chunk.UInt32LE()
-					values[i] = chunk.String(len)
+					values[i] = chunk.String(chunk.UInt32LE())
 				}
 				break
 			case "bool":
@@ -344,15 +343,9 @@ const RBXBinaryParser = {
 				break
 			case "int":
 				chunk.RBXInterleavedInt32(count, values)
-				for(let i = 0; i < count; i++) {
-					values[i] = values[i]
-				}
 				break
 			case "float":
 				chunk.RBXInterleavedFloat(count, values)
-				for(let i = 0; i < count; i++) {
-					values[i] = values[i]
-				}
 				break
 			case "double":
 				for(let i = 0; i < count; i++) {
@@ -383,8 +376,8 @@ const RBXBinaryParser = {
 			case "Ray": {
 				for(let i = 0; i < count; i++) {
 					values[i] = [
-						[chunk.RBXFloat(), chunk.RBXFloat(), chunk.RBXFloat()],
-						[chunk.RBXFloat(), chunk.RBXFloat(), chunk.RBXFloat()]
+						[chunk.FloatLE(), chunk.FloatLE(), chunk.FloatLE()],
+						[chunk.FloatLE(), chunk.FloatLE(), chunk.FloatLE()]
 					]
 				}
 				break
@@ -415,7 +408,7 @@ const RBXBinaryParser = {
 				}
 				break
 			case "BrickColor":
-				chunk.RBXInterleavedUint32(count, values)
+				chunk.RBXInterleavedUInt32(count, values)
 				break
 			case "Color3": {
 				const r = chunk.RBXInterleavedFloat(count, parser.arrays[parser.arrayIndex++])
@@ -445,19 +438,25 @@ const RBXBinaryParser = {
 				break
 			}
 			case "Vector2int16": { // Best guess, not used anywhere
-				const vecX = chunk.RBXInterleavedInt16(count, parser.arrays[parser.arrayIndex++])
-				const vecY = chunk.RBXInterleavedInt16(count, parser.arrays[parser.arrayIndex++])
+				const vecX = chunk.RBXInterleavedUInt16(count, parser.arrays[parser.arrayIndex++])
+				const vecY = chunk.RBXInterleavedUInt16(count, parser.arrays[parser.arrayIndex++])
+				
+				const int16be = x => ((x << 8 | x >>> 8) & 0x7FFF) - ((x << 8) & 0x8000)
+				
 				for(let i = 0; i < count; i++) {
-					values[i] = [vecX[i], vecY[i]]
+					values[i] = [int16be(vecX[i]), int16be(vecY[i])]
 				}
 				break
 			}
-			case "Vector3int16": { // Best guess, used in TerrainRegion
-				const vecX = chunk.RBXInterleavedInt16(count, parser.arrays[parser.arrayIndex++])
-				const vecY = chunk.RBXInterleavedInt16(count, parser.arrays[parser.arrayIndex++])
-				const vecZ = chunk.RBXInterleavedInt16(count, parser.arrays[parser.arrayIndex++])
+			case "Vector3int16": {
+				const vecX = chunk.RBXInterleavedUInt16(count, parser.arrays[parser.arrayIndex++])
+				const vecY = chunk.RBXInterleavedUInt16(count, parser.arrays[parser.arrayIndex++])
+				const vecZ = chunk.RBXInterleavedUInt16(count, parser.arrays[parser.arrayIndex++])
+				
+				const int16be = x => ((x << 8 | x >>> 8) & 0x7FFF) - ((x << 8) & 0x8000)
+				
 				for(let i = 0; i < count; i++) {
-					values[i] = [vecX[i], vecY[i], vecZ[i]]
+					values[i] = [int16be(vecX[i]), int16be(vecY[i]), int16be(vecZ[i])]
 				}
 				break
 			}
@@ -498,7 +497,7 @@ const RBXBinaryParser = {
 				break
 			}
 			case "Enum":
-				chunk.RBXInterleavedUint32(count, values)
+				chunk.RBXInterleavedUInt32(count, values)
 				break
 			case "Instance": {
 				const refIds = chunk.RBXInterleavedInt32(count, parser.arrays[parser.arrayIndex++])
@@ -535,9 +534,10 @@ const RBXBinaryParser = {
 					for(let j = 0; j < length; j++) {
 						sequence.push({
 							Time: chunk.FloatLE(),
-							Color: [chunk.FloatLE(), chunk.FloatLE(), chunk.FloatLE()],
-							EnvelopeMaybe: chunk.FloatLE()
+							Value: [chunk.FloatLE(), chunk.FloatLE(), chunk.FloatLE()]
 						})
+						
+						chunk.FloatLE() // unused (enveloipe?)
 					}
 					
 					values[i] = sequence
@@ -563,29 +563,21 @@ const RBXBinaryParser = {
 				for(let i = 0; i < count; i++) {
 					const byte = chunk.UInt8()
 					
-					const enabled = byte & 1
-					const version2 = byte & 2
-					
-					if(enabled) {
-						if(version2) {
-							values[i] = {
-								Density: chunk.FloatLE(),
-								Friction: chunk.FloatLE(),
-								Elasticity: chunk.FloatLE(),
-								FrictionWeight: chunk.FloatLE(),
-								ElasticityWeight: chunk.FloatLE(),
-								AcousticAbsorption: chunk.FloatLE(),
-							}
-						} else {
-							values[i] = {
-								Density: chunk.RBXFloat(),
-								Friction: chunk.RBXFloat(),
-								Elasticity: chunk.RBXFloat(),
-								FrictionWeight: chunk.RBXFloat(),
-								ElasticityWeight: chunk.RBXFloat()
-							}
+					if(byte === 0 || byte === 2) {
+						values[i] = false
+						
+					} else if(byte === 1 || byte === 3) {
+						values[i] = {
+							Density: chunk.FloatLE(),
+							Friction: chunk.FloatLE(),
+							Elasticity: chunk.FloatLE(),
+							FrictionWeight: chunk.FloatLE(),
+							ElasticityWeight: chunk.FloatLE(),
+							AcousticAbsorption: byte & 2 ? chunk.FloatLE() : 1
 						}
+						
 					} else {
+						console.warn(`[RBXBinaryParser] Unknown PhysicalProperties format ${byte}`)
 						values[i] = false
 					}
 				}
@@ -613,20 +605,43 @@ const RBXBinaryParser = {
 				break
 			case "int64":
 				chunk.RBXInterleavedInt64(count, values)
-				for(let i = 0; i < count; i++) {
-					values[i] = values[i].toString()
-				}
 				break
 			case "SecurityCapabilities":
-				// No clue what format this actually is in.
-				// 8 bytes per value, shows up as 0 in xml, so this is either an int64 or uint64
-				chunk.RBXInterleavedUint64(count, values)
+				chunk.RBXInterleavedInt64(count, values)
+				
 				for(let i = 0; i < count; i++) {
-					values[i] = values[i].toString()
+					const value = values[i]
+					
+					values[i] = {
+						RunClientScript: (value & 256n) !== 0n,
+						RunServerScript: (value & 512n) !== 0n,
+						AccessOutsideWrite: (value & 2048n) !== 0n,
+						AssetRequire: (value & 65536n) !== 0n,
+						LoadString: (value & 131072n) !== 0n,
+						ScriptGlobals: (value & 262144n) !== 0n,
+						CreateInstances: (value & 524288n) !== 0n,
+						Basic: (value & 1048576n) !== 0n,
+						Audio: (value & 2097152n) !== 0n,
+						DataStore: (value & 4194304n) !== 0n,
+						Network: (value & 8388608n) !== 0n,
+						Physics: (value & 16777216n) !== 0n,
+						UI: (value & 33554432n) !== 0n,
+						CSG: (value & 67108864n) !== 0n,
+						Chat: (value & 134217728n) !== 0n,
+						Animation: (value & 268435456n) !== 0n,
+						Avatar: (value & 536870912n) !== 0n,
+						Input: (value & 1073741824n) !== 0n,
+						Environment: (value & 2147483648n) !== 0n,
+						RemoteEvent: (value & 4294967296n) !== 0n,
+						LegacySound: (value & 8589934592n) !== 0n,
+						Players: (value & 17179869184n) !== 0n,
+						CapabilityControl: (value & 34359738368n) !== 0n,
+					}
 				}
+				
 				break
 			case "SharedString":
-				chunk.RBXInterleavedUint32(count, values)
+				chunk.RBXInterleavedUInt32(count, values)
 				for(let i = 0; i < count; i++) {
 					values[i] = parser.sharedStrings[values[i]].value
 				}
@@ -659,12 +674,57 @@ const RBXBinaryParser = {
 				}
 				break
 			}
+			case "Content": {
+				const sourceTypes = chunk.RBXInterleavedInt32(count, parser.arrays[parser.arrayIndex++])
+				
+				const numUris = chunk.UInt32LE()
+				const uris = parser.arrays[parser.arrayIndex++]
+				
+				for(let i = 0; i < numUris; i++) {
+					uris[i] = chunk.String(chunk.UInt32LE())
+				}
+				
+				const numObjects = chunk.UInt32LE()
+				const objects = chunk.RBXInterleavedInt32(numObjects, parser.arrays[parser.arrayIndex++])
+				
+				const numObjectsExternal = chunk.UInt32LE()
+				const objectsExternal = chunk.RBXInterleavedInt32(numObjectsExternal, parser.arrays[parser.arrayIndex++])
+				
+				let uriCounter = 0
+				let objectCounter = 0
+				
+				for(let i = 0; i < count; i++) {
+					const sourceType = sourceTypes[i]
+					
+					if(sourceType === 1) {
+						values[i] = {
+							SourceType: sourceType,
+							Uri: uris[uriCounter++]
+						}
+						
+					} else if(sourceType === 2) {
+						objectCounter += objects[objectCounter++]
+						
+						values[i] = {
+							SourceType: sourceType,
+							Object: objectCounter
+						}
+						
+					} else {
+						values[i] = {
+							SourceType: sourceType
+						}
+					}
+				}
+				
+				break
+			}
 			case "Quaternion": // Not used anywhere?
 			default:
 				if(!typeName) {
 					console.warn(`[RBXBinaryParser] Unknown dataType 0x${dataType.toString(16).toUpperCase()} (${dataType}) for ${type.className}.${name}`)
 				} else {
-					console.warn(`[RBXBinaryParser] Unimplemented dataType '${typeName}' for ${type.className}.${name}`)
+					console.warn(`[RBXBinaryParser] Unimplemented dataType ${typeIndex} '${typeName}' for ${type.className}.${name}`)
 				}
 				
 				for(let i = 0; i < count; i++) {
@@ -885,7 +945,7 @@ const RBXXmlParser = {
 			const name = propNode.attributes.name.value
 			
 			const children = getChildren(propNode)
-			const value = getValue(propNode, "")
+			let value = getValue(propNode, "")
 
 			switch(propNode.nodeName) {
 			case "string":
@@ -894,7 +954,7 @@ const RBXXmlParser = {
 				inst.setProperty(name, this.unescapeXml(value), "string")
 				break
 			case "Content":
-				inst.setProperty(name, this.unescapeXml(getValue(children.url, "")), "string")
+				inst.setProperty(name, this.unescapeXml(getValue(children.url ?? children.uri, "")), "string")
 				break
 			case "double":
 				inst.setProperty(name, +value, "double")
@@ -906,7 +966,7 @@ const RBXXmlParser = {
 				inst.setProperty(name, +value, "int")
 				break
 			case "int64":
-				inst.setProperty(name, value, "int64")
+				inst.setProperty(name, BigInt(value), "int64")
 				break
 			case "bool":
 				inst.setProperty(name, value === "true", "bool")
@@ -999,7 +1059,33 @@ const RBXXmlParser = {
 				inst.setProperty(name, parser.sharedStrings[value].value, "string")
 				break
 			case "SecurityCapabilities":
-				inst.setProperty(name, +value, "SecurityCapabilities")
+				value = BigInt(value)
+				
+				inst.setProperty(name, {
+					RunClientScript: (value & 256n) !== 0n,
+					RunServerScript: (value & 512n) !== 0n,
+					AccessOutsideWrite: (value & 2048n) !== 0n,
+					AssetRequire: (value & 65536n) !== 0n,
+					LoadString: (value & 131072n) !== 0n,
+					ScriptGlobals: (value & 262144n) !== 0n,
+					CreateInstances: (value & 524288n) !== 0n,
+					Basic: (value & 1048576n) !== 0n,
+					Audio: (value & 2097152n) !== 0n,
+					DataStore: (value & 4194304n) !== 0n,
+					Network: (value & 8388608n) !== 0n,
+					Physics: (value & 16777216n) !== 0n,
+					UI: (value & 33554432n) !== 0n,
+					CSG: (value & 67108864n) !== 0n,
+					Chat: (value & 134217728n) !== 0n,
+					Animation: (value & 268435456n) !== 0n,
+					Avatar: (value & 536870912n) !== 0n,
+					Input: (value & 1073741824n) !== 0n,
+					Environment: (value & 2147483648n) !== 0n,
+					RemoteEvent: (value & 4294967296n) !== 0n,
+					LegacySound: (value & 8589934592n) !== 0n,
+					Players: (value & 17179869184n) !== 0n,
+					CapabilityControl: (value & 34359738368n) !== 0n,
+				}, "SecurityCapabilities")
 				break
 			case "UniqueId":
 				inst.setProperty(name, value, "UniqueId")
