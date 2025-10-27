@@ -490,6 +490,13 @@ const Navigation = {
 			enabled: false
 		})
 		
+		Navigation.register("sidebar_events", {
+			label: "Show Events",
+			
+			selector: ".left-col-list > .rbx-platform-event-container",
+			enabled: true
+		})
+		
 		if(SETTINGS.get("navigation.enabled") && location.host !== "create.roblox.com") {
 			injectScript.call("navigation", () => {
 				reactHook.inject("ul.navbar-right", elem => {
