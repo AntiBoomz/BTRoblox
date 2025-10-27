@@ -2,7 +2,6 @@
 
 {
 	const shoutCheckerQueue = []
-	let numAvailableShoutCheckers = 3
 	let checkingForGroupShouts = false
 	let lastCheckedForGroups = 0
 	
@@ -116,15 +115,39 @@
 		return result
 	}
 	
-	const checkNextShout = () => {
-		if(!numAvailableShoutCheckers || !shoutCheckerQueue.length) {
+	let shoutCheckInterval = 1000 // api is limited to 100 request per 60 seconds and we dont want to use all of the budget
+	let nextCanCheckShout = 0
+	
+	let rateLimitRemaining = 100
+	let rateLimitReset = 0
+	
+	const checkNextShout = async () => {
+		if(!shoutCheckerQueue.length) {
+			checkingForGroupShouts = false
+			lastCheckedForGroups = Date.now()
 			return
 		}
 		
 		const groupId = shoutCheckerQueue.shift()
-		numAvailableShoutCheckers--
+		
+		rateLimitRemaining -= 1
+		
+		if(rateLimitRemaining <= 10 && Date.now() < rateLimitReset) {
+			await new Promise(resolve => setTimeout(resolve, rateLimitReset - Date.now()))
+		}
+		
+		if(Date.now() < nextCanCheckShout) {
+			await new Promise(resolve => setTimeout(resolve, nextCanCheckShout - Date.now()))
+		}
+		
+		nextCanCheckShout = Date.now() + shoutCheckInterval
 		
 		fetch(`https://groups.roblox.com/v1/groups/${groupId}/`).then(async resp => {
+			if(resp.headers.get("x-ratelimit-limit")) {
+				rateLimitRemaining = +resp.headers.get("x-ratelimit-remaining")
+				rateLimitReset = Date.now() + +resp.headers.get("x-ratelimit-reset") * 1000 + 3000 // seems to give 429 right after reset
+			}
+			
 			if(!resp.ok) {
 				console.log("Bad response (not ok)", resp.status, resp.statusText, await resp.text())
 				return
@@ -202,10 +225,7 @@
 					})
 				}
 			}
-		}).finally(() => {
-			numAvailableShoutCheckers++
-			checkNextShout()
-		})
+		}).finally(checkNextShout)
 	}
 	
 	const getCurrentGroups = async () => {
@@ -234,11 +254,9 @@
 				if((blacklist && includes) || (!blacklist && !includes)) { continue }
 				
 				shoutCheckerQueue.push(groupId)
-				checkNextShout()
 			}
-		}).finally(() => {
-			checkingForGroupShouts = false
-			lastCheckedForGroups = Date.now()
+			
+			checkNextShout()
 		})
 	}
 	
