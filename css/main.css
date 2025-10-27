@@ -930,7 +930,8 @@ a:not(.disabled):hover > .btr-icon-content {
 }
 
 .btr-property-value input[type="checkbox"] {
-	margin-top: 5px;
+	margin: 0;
+	margin-top: 3px;
 	pointer-events: none;
 }
 

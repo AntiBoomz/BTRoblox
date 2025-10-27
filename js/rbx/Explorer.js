@@ -36,14 +36,13 @@ const Explorer = (() => {
 	const RenamedProperties = {
 		Color3uint8: "Color", formFactorRaw: "FormFactor", Health_XML: "Health", xmlRead_MaxDistance_3: "MaxDistance",
 		shape: "Shape", size: "Size", formFactor: "FormFactor", archivable: "Archivable", style: "Style",
-		MeshID: "MeshId"
+		MeshID: "MeshId", MaterialVariantSerialized: "MaterialVariant", DefinesCapabilities: "Sandboxed"
 	}
 
 	const fixNum = v => { return Math.round(v * 1e3) / 1e3 }
 	const fixNums = arr => arr.map(x => fixNum(x))
 
 	const sortPropertyGroups = (a, b) => (a.Order === b.Order ? (a.Name < b.Name ? -1 : 1) : a.Order - b.Order)
-	const sortProperties = (a, b) => (a[0] < b[0] ? -1 : 1)
 	const sortChildren = (a, b) => {
 		const ao = ApiDump.getExplorerOrder(a.inst.ClassName)
 		const bo = ApiDump.getExplorerOrder(b.inst.ClassName)
@@ -388,10 +387,19 @@ const Explorer = (() => {
 			const target = this.selection[0].inst
 			header.textContent = `Properties - ${target.ClassName} "${target.Name}"`
 
-			const groups = []
-			const groupMap = {}
+			const hidden = {
+				AttributesSerialize: true,
+				Tags: true
+			}
 			
-			const hidden = {}
+			if(!target.DefinesCapabilities) {
+				hidden.Sandboxed = true
+				hidden.Capabilities = true
+			}
+			
+			if(target.SourceAssetId == -1) { // intentional == to account for bigints
+				hidden.SourceAssetId = true
+			}
 			
 			if("TopSurface" in target.Properties) {
 				const sides = ["Back", "Bottom", "Front", "Left", "Right", "Top"]
@@ -430,6 +438,19 @@ const Explorer = (() => {
 				}
 			}
 			
+			const groups = {
+				Tags: {
+					Name: "Tags",
+					Order: 1001,
+					Properties: []
+				},
+				Attributes: {
+					Name: "Attributes",
+					Order: 1002,
+					Properties: []
+				}
+			}
+			
 			for(let [name, prop] of Object.entries(target.Properties)) {
 				if(RenamedProperties[name] && RenamedProperties[name] in target.Properties) {
 					continue
@@ -447,23 +468,146 @@ const Explorer = (() => {
 					group = "Data"
 				}
 				
-				let groupData = groupMap[group]
+				let groupData = groups[group]
 				if(!groupData) {
 					const order = GroupOrders.indexOf(group)
 					
-					groupData = groupMap[group] = {
+					groupData = groups[group] = {
 						Name: group,
 						Order: order === -1 ? 1000 : order,
 						Properties: []
 					}
-
-					groups.push(groupData)
 				}
 
 				groupData.Properties.push([name, prop])
 			}
+			
+			if("Tags" in target.Properties && target.Properties.Tags.value.length > 0) {
+				for(const tag of target.Properties.Tags.value.split("\0")) {
+					groups.Tags.Properties.push([tag])
+				}
+			}
+			
+			if("AttributesSerialize" in target.Properties && target.Properties.AttributesSerialize.value.length > 0) {
+				const reader = new ByteReader($.stringToBuffer(target.Properties.AttributesSerialize.value))
+				
+				const numAttributes = reader.UInt32LE()
+				
+				outer:
+				for(let i = 0; i < numAttributes; i++) {
+					const name = reader.String(reader.UInt32LE())
+					const type = reader.UInt8()
+					let value
+					
+					switch(type) {
+					case 0x02:
+						value = { type: "string", value: reader.String(reader.UInt32LE()) }
+						break
+					case 0x03:
+						value = { type: "bool", value: reader.UInt8() !== 0 }
+						break
+					case 0x04:
+						value = { type: "int", value: reader.Int32LE() }
+						break
+					case 0x05:
+						value = { type: "float", value: reader.FloatLE() }
+						break
+					case 0x06:
+						value = { type: "double", value: reader.DoubleLE() }
+						break
+					case 0x09:
+						value = { type: "UDim", value: [reader.FloatLE(), reader.Int32LE()] }
+						break
+					case 0x0A:
+						value = { type: "UDim2", value: [[reader.FloatLE(), reader.Int32LE()], [reader.FloatLE(), reader.Int32LE()]] }
+						break
+					case 0x0E:
+						value = { type: "BrickColor", value: reader.UInt32LE() }
+						break
+					case 0x0F:
+						value = { type: "Color3", value: [reader.FloatLE(), reader.FloatLE(), reader.FloatLE()] }
+						break
+					case 0x10:
+						value = { type: "Vector2", value: [reader.FloatLE(), reader.FloatLE()] }
+						break
+					case 0x11:
+						value = { type: "Vector3", value: [reader.FloatLE(), reader.FloatLE(), reader.FloatLE()] }
+						break
+					case 0x14:
+						value = { type: "CFrame", value: [reader.FloatLE(), reader.FloatLE(), reader.FloatLE(), 1, 0, 0, 0, 1, 0, 0, 0, 1] }
+						
+						const id = reader.UInt8()
+						
+						if(id === 0) {
+							for(let i = 3; i < 12; i++) {
+								value.value[i] = reader.FloatLE()
+							}
+						} else {
+							const faces = [[1, 0, 0], [0, 1, 0], [0, 0, 1], [-1, 0, 0], [0, -1, 0], [0, 0, -1]]
+							const right = faces[Math.floor((id - 1) / 6)]
+							const up = faces[(id - 1) % 6]
+							const back = [
+								right[1] * up[2] - up[1] * right[2],
+								right[2] * up[0] - up[2] * right[0],
+								right[0] * up[1] - up[0] * right[1]
+							]
+		
+							for(let i = 0; i < 3; i++) {
+								value.value[3 + i * 3] = right[i]
+								value.value[4 + i * 3] = up[i]
+								value.value[5 + i * 3] = back[i]
+							}
+						}
+						
+						break
+					case 0x15:
+						value = { type: "EnumAttribute", value: [reader.String(reader.UInt32LE()), reader.UInt32LE()] }
+						break
+					case 0x17:
+						value = { type: "NumberSequence", value: [] }
+						
+						const numberSequenceLength = reader.UInt32LE()
+		
+						for(let i = 0; i < numberSequenceLength; i++) {
+							value.value.push({
+								Envelope: reader.FloatLE(),
+								Time: reader.FloatLE(),
+								Value: reader.FloatLE()
+							})
+						}
+						break
+					case 0x19:
+						value = { type: "ColorSequence", value: [] }
+						
+						const colorSequenceLength = reader.UInt32LE()
+		
+						for(let i = 0; i < colorSequenceLength; i++) {
+							value.value.push({
+								Envelope: reader.FloatLE(),
+								Time: reader.FloatLE(),
+								Value: [reader.FloatLE(), reader.FloatLE(), reader.FloatLE()],
+							})
+						}
+						break
+					case 0x1B:
+						value = { type: "NumberRange", value: [reader.FloatLE(), reader.FloatLE()] }
+						break
+					case 0x1C:
+						value = { type: "Rect", value: [[reader.FloatLE(), reader.FloatLE()], [reader.FloatLE(), reader.FloatLE()]] }
+						break
+					case 0x21:
+						value = { type: "Font", value: { Weight: reader.UInt16LE(), Style: reader.UInt8(), Family: reader.String(reader.UInt32LE()), CachedFaceId: reader.String(reader.UInt32LE()) } }
+						break
+					default:
+						console.warn(`Unknown attribute type '${type}' for ${name}`)
+						break outer
+					}
+					
+					groups.Attributes.Properties.push([name, value])
+				}
+			}
 
-			for(const group of groups.sort(sortPropertyGroups)) {
+			for(const group of Object.values(groups).sort(sortPropertyGroups)) {
 				const titleButton = html`<div class=btr-property-group><div class=btr-property-group-more></div>${group.Name}</div>`
 				const propertiesList = html`<div class=btr-properties-list></div>`
 				propertyContainer.append(titleButton, propertiesList)
@@ -472,7 +616,6 @@ const Explorer = (() => {
 
 				titleButton.$find(".btr-property-group-more").$on("click", ev => {
 					titleButton.classList.toggle("closed")
-
 					ev.stopPropagation()
 				})
 
@@ -485,7 +628,37 @@ const Explorer = (() => {
 					}
 				})
 				
-				for(const [name, prop] of group.Properties.sort(sortProperties)) {
+				if(group.Name === "Attributes") {
+					group.Properties.sort((a, b) => (a[0].toLowerCase() < b[0].toLowerCase() ? -1 : 1))
+				} else {
+					group.Properties.sort((a, b) => (a[0] < b[0] ? -1 : 1))
+				}
+				
+				if(group.Properties.length === 0) {
+					const cont = html`
+					<div class=btr-property>
+						<div class=btr-property-more></div>
+						<div class="btr-property-name btr-property-readonly" style="grid-column: auto / span 2">No ${group.Name.slice(0, -1)} has been added</div>
+					</div>`
+					
+					propertiesList.append(cont)
+				}
+				
+				if(group.Name === "Tags") {
+					for(const [name] of group.Properties) {
+						const cont = html`
+						<div class=btr-property>
+							<div class=btr-property-more></div>
+							<div class=btr-property-name title=${name} style="grid-column: auto / span 2">${name}</div>
+						</div>`
+						
+						propertiesList.append(cont)
+					}
+					
+					continue
+				}
+				
+				for(const [name, prop] of group.Properties) {
 					const value = prop.value
 					let type = prop.type
 
@@ -504,7 +677,6 @@ const Explorer = (() => {
 					}
 
 					switch(type) {
-					case "SecurityCapabilities":
 					case "int64":
 					case "int":
 						valueItem.textContent = value
@@ -564,6 +736,12 @@ const Explorer = (() => {
 					}
 					case "BrickColor":
 						valueItem.textContent = BrickColor[value]?.name || String(value) + " (Unknown BrickColor)"
+						if(BrickColor[value]) {
+							valueItem.prepend(html`<span class=btr-color3-preview style=background-color:rgb(${BrickColor[value].color.join(",")})></span>`)
+						}
+						break
+					case "EnumAttribute":
+						valueItem.textContent = `${ApiDump.getEnumName(value[0], value[1]) || `Enum.${value[0]} ${value[1]}`}`
 						break
 					case "Enum":
 						valueItem.textContent = `${ApiDump.getPropertyEnumName(target.ClassName, name, value) || value}`
@@ -579,7 +757,7 @@ const Explorer = (() => {
 						break
 					case "PhysicalProperties":
 						valueItem.textContent = value ?
-							fixNums([value.Density, value.Friction, value.Elasticity, value.FrictionWeight, value.ElasticityWeight]).join(", ") :
+							fixNums([value.Density, value.Friction, value.Elasticity, value.FrictionWeight, value.ElasticityWeight, value.AcousticAbsorption]).join(", ") :
 							"false"
 						break
 					case "Font":
@@ -592,11 +770,29 @@ const Explorer = (() => {
 						valueItem.textContent = `${fixNums(value).join(", ")}`
 						break
 					case "ColorSequence":
-						valueItem.textContent = value.map(x => `(${fixNums([x.Time])[0]}, (${fixNums(x.Color).map(num => Math.round(num * 255)).join(", ")}))`).join(", ")
+						valueItem.textContent = value.map(x => `(${fixNums([x.Time])[0]}, (${fixNums(x.Value).map(num => Math.round(num * 255)).join(", ")}))`).join(", ")
 						break
 					case "Axes":
 					case "Faces":
 						valueItem.textContent = Object.entries(value).filter(x => x[1]).map(x => x[0]).join(", ")
+						break
+					case "Ray":
+						valueItem.textContent = `{${fixNums(value[0]).join(", ")}}, {${fixNums(value[1]).join(", ")}}`
+						break
+					case "Content":
+						const sourceType = ApiDump.getEnumName("ContentSourceType", value.SourceType)
+						
+						if(sourceType === "Uri") {
+							valueItem.textContent = value.Uri
+						} else if(sourceType === "Object") {
+							valueItem.textContent = `{${value.Object}}`
+						} else {
+							valueItem.textContent = sourceType
+						}
+						
+						break
+					case "SecurityCapabilities":
+						valueItem.textContent = Object.entries(value).filter(x => x[1]).map(x => x[0]).join(" | ")
 						break
 					default:
 						console.log("Unknown property type", type, name, prop)
