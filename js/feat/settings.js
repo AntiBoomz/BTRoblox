@@ -21,7 +21,8 @@ const DEFAULT_SETTINGS = {
 		higherRobuxPrecision: { value: true },
 		enableContextMenus: { value: true },
 		
-		fixFirefoxLocalStorageIssue: { value: false }
+		fixFirefoxLocalStorageIssue: { value: false },
+		experiments: { value: "", hidden: true }
 	},
 	create: {
 		enabled: { value: true, version: 2 },

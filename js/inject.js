@@ -2120,6 +2120,100 @@ document.addEventListener("btroblox/init", ev => {
 				}
 			})
 		},
+		"experiments": () => {
+			const modified = {}
+			const initial = {}
+			const layers = {}
+			
+			const modify = (experiment, key, value) => {
+				modified[experiment] ??= {}
+				
+				if(typeof value === "string") {
+					try { modified[experiment][key] = JSON.parse(value) }
+					catch(ex) { delete modified[experiment][key] }
+				} else {
+					delete modified[experiment][key]
+				}
+				
+				if(layers[experiment]) {
+					const modifiedValue = key in modified[experiment] ? modified[experiment][key] : value
+					
+					for(const layer of layers[experiment]) {
+						layer[key] = modifiedValue
+					}
+				}
+			}
+			
+			contentScript.listen("updateExperiment", modify)
+			
+			try {
+				const saved = JSON.parse(settings.general.experiments || {})
+				
+				if(saved) {
+					for(const [experiment, values] of Object.entries(saved)) {
+						for(const [key, value] of Object.entries(values)) {
+							modify(experiment, key, value)
+						}
+					}
+				}
+			} catch(ex) {
+				console.error(ex)
+			}
+			
+			const populate = (experiment, key, value) => {
+				if(key === "then" || key === "toJSON") { return }
+				
+				initial[experiment] ??= {}
+				if(key in initial[experiment]) { return }
+				
+				initial[experiment][key] = value
+				contentScript.send("populateExperiment", experiment, key, value)
+			}
+			
+			onSet(window, "Roblox", Roblox => {
+				onSet(Roblox, "ExperimentationService", ExperimentationService => {
+					hijackFunction(ExperimentationService, "getAllValuesForLayer", (target, thisArg, args) => {
+						let result = target.apply(thisArg, args)
+						
+						if(result instanceof Promise) {
+							const experiment = args[0]
+							
+							result = result.then(layer => {
+								try {
+									for(const [key, value] of Object.entries(layer)) {
+										populate(experiment, key, value)
+									}
+									
+									layers[experiment] ??= []
+									layers[experiment].push(layer)
+									
+									if(modified[experiment]) {
+										for(const [key, modifiedValue] of Object.entries(modified[experiment])) {
+											layer[key] = modifiedValue
+										}
+									}
+									
+									return new Proxy(layer, {
+										get(target, key) {
+											populate(experiment, key, undefined)
+											return target[key]
+										}
+									})
+								} catch(ex) {
+									if(IS_DEV_MODE) {
+										console.error(ex)
+									}
+								}
+								
+								return layer
+							})
+						}
+						
+						return result
+					})
+				})
+			})
+		},
 		"hijackAuth": () => {
 			let didSendFirstAuth = false
 			

@@ -355,12 +355,16 @@ const SettingsModal = {
 					<group label="Advanced" minimizable minimized>
 						<div id=btr-settings-wip>
 						</div>
+						<details id=btr-settings-experiments>
+							<summary>Roblox Experiment Editor</summary>
+						</details>
 						<div style="margin-top: 12px; float:right; width: 100%; clear:both">
 							<button id=btr-fix-chat class=btn-control-xs style=float:left>Fix invis chat messages</button>
 							<button id=btr-reset-settings class=btn-control-xs style=float:right>Reset settings to default</button>
 						</div>
 					</group>
 				</div>
+				
 				<div class=btr-settings-content data-name=navigation>
 					<div class=btr-settings-content-header>
 						<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
@@ -373,6 +377,7 @@ const SettingsModal = {
 						</group>
 					</div>
 				</div>
+				
 				<div class=btr-settings-content id=btr-settings-shout-filters data-name=shoutFilters>
 					<div class=btr-settings-content-header>
 						<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
@@ -669,26 +674,14 @@ const SettingsModal = {
 				while(contentContainer.nextSibling) {
 					contentContainer.append(contentContainer.nextSibling)
 				}
-
-				const updateGroup = () => {
-					if(group.hasAttribute("minimized")) {
-						contentContainer.style.height = `0px`
-					} else {
-						contentContainer.style.height = `${contentContainer.scrollHeight}px`
-					}
-				}
-
+				
 				title.$on("click", () => {
 					if(group.hasAttribute("minimized")) {
 						group.removeAttribute("minimized")
 					} else {
 						group.setAttribute("minimized", "")
 					}
-
-					updateGroup()
 				})
-
-				$.setImmediate(updateGroup)
 			}
 			
 			if(group.hasAttribute("toggleable")) {
@@ -940,5 +933,129 @@ const SettingsModal = {
 			SETTINGS.onChange(settingPath, update)
 			update()
 		}
+		
+		this.robloxExperimentsChanged()
+	},
+	
+	experiments: {},
+	
+	getSavedExperiments() {
+		const data = SETTINGS.get("general.experiments")
+		let saved
+		
+		try { saved = JSON.parse(data || "{}") }
+		catch(ex) { console.error(ex) }
+		
+		return saved instanceof Object && !Array.isArray(saved) ? saved : {}
+	},
+	
+	robloxExperimentsChanged() {
+		if(!this.settingsDiv) { return }
+		
+		const populate = (experiments, defaultToUndefined) => {
+			for(const [experiment, values] of Object.entries(experiments)) {
+				let group = this.experiments[experiment]
+				
+				if(!group) {
+					const contents = html`<details class=group open><summary title=${experiment}>${experiment}</summary></details>`
+					
+					group = this.experiments[experiment] = {
+						name: experiment,
+						contents: contents,
+						entries: {}
+					}
+					
+					const keys = Object.keys(this.experiments).sort()
+					const next = this.experiments[keys[keys.indexOf(experiment) + 1]]
+					
+					if(next) {
+						next.contents.before(contents)
+					} else {
+						this.settingsDiv.$find("#btr-settings-experiments").append(contents)
+					}
+				}
+				
+				for(const [key, value] of Object.entries(values)) {
+					let entry = group.entries[key]
+					
+					if(!entry) {
+						const label = html`<div class=name title=${key}>${key}</div>`
+						const resetButton = html`<span class=btr-setting-reset-button><span class=btr-cross></span></span>`
+						const input = html`<input class=value type=text>`
+						
+						const update = initial => {
+							resetButton.style.display = input.value ? "" : "none"
+							
+							let parsedValue = undefined
+							let valid = true
+							
+							if(input.value) {
+								try { JSON.parse(input.value) }
+								catch(ex) { valid = false }
+							}
+							
+							input.classList.toggle("invalid", !valid)
+							
+							if(initial) { return }
+							
+							injectScript.send("updateExperiment", experiment, key, input.value)
+							
+							const data = this.getSavedExperiments()
+							
+							if(input.value) {
+								data[experiment] ??= {}
+								data[experiment][key] = input.value
+							} else {
+								if(data[experiment]) {
+									delete data[experiment][key]
+									
+									if(Object.keys(data[experiment]).length === 0) {
+										delete data[experiment]
+									}
+								}
+							}
+							
+							SETTINGS.set("general.experiments", JSON.stringify(data))
+						}
+						
+						input.value = this.getSavedExperiments()[experiment]?.[key] || ""
+						update(true)
+						
+						resetButton.$on("click", () => {
+							input.value = ""
+							update()
+						})
+						
+						input.$on("keydown", ev => ev.keyCode === 13 && input.blur())
+						input.$on("blur", () => update())
+						
+						label.append(resetButton)
+						
+						entry = group.entries[key] = {
+							label: label,
+							resetButton: resetButton,
+							input: input,
+							
+							experiment: experiment,
+							key: key
+						}
+						
+						const keys = Object.keys(group.entries).sort()
+						const next = group.entries[keys[keys.indexOf(key) + 1]]
+						
+						if(next) {
+							next.label.before(label, input)
+						} else {
+							group.contents.append(label, input)
+						}
+					}
+					
+					entry.input.placeholder = JSON.stringify(defaultToUndefined ? undefined : value)
+				}
+			}
+		}
+		
+		populate(this.getSavedExperiments(), true)
+		populate(robloxExperiments)
 	}
 }
