@@ -394,7 +394,7 @@ const Navigation = {
 		})
 		
 		Navigation.register("sidebar_money", {
-			label: "Show Money",
+			label: "Show Transactions",
 			enabled: false,
 			
 			selector: "#btr-placeholder-money",
@@ -402,7 +402,7 @@ const Navigation = {
 				<li id=btr-nav-money>
 					<a href="/transactions" id=nav-money class="dynamic-overflow-container text-nav">
 						<div><span class="icon-nav-trade"></span></div>
-						<span class="font-header-2 dynamic-ellipsis-item">Money</span>
+						<span class="font-header-2 dynamic-ellipsis-item">Transactions</span>
 					</a>
 				</li>`,
 		})
