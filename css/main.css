@@ -175,68 +175,66 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 
 #btr-blogfeed-container {
 	display: contents;
-}
-
-#btr-blogfeed {
-	margin-top: -3px;
-}
-
-#btr-blogfeed .btr-feed {
-	display: block;
-	font-size: 12px;
-	padding-left: 8px;
-	padding-right: 4px;
-	padding-top: 4px;
-	padding-bottom: 4px;
-	background-color: transparent;
-	text-decoration: none;
-	overflow: hidden;
-	color: #191919;
-}
-
-.dark-theme #btr-blogfeed .btr-feed {
-	color: #BDBEBE;
-}
-
-#btr-blogfeed .btr-feed:hover {
-	background: rgba(0, 0, 0, 0.1);
-}
-
-#btr-blogfeed .btr-feedcreator, #btr-blogfeed .btr-feeddate {
-	opacity: 0.85;
-	font-size: 10px;
-	font-weight: normal;
-	margin: 0 !important;
-	white-space: nowrap;
-}
-
-#btr-blogfeed .btr-feedtitle {
-	font-weight: 500;
-	line-height: 12px;
-	font-size: 12px;
-}
-
-#btr-blogfeed .btr-feeddesc {
-	overflow: hidden;
-	max-height: 0;
-	width: 100%;
-	opacity: 0.8;
-	font-weight: 300;
-	transition: max-height 0.4s;
-	margin-top: 4px;
-	margin-bottom: 0px;
-	font-size: 11px;
 	
-	display: -webkit-box;
-	-webkit-box-orient: vertical;
-	text-overflow: ellipsis;
-	-webkit-line-clamp: 7;
+	#btr-blogfeed {
+		margin-top: -3px;
+		
+		.btr-feed {
+			display: block;
+			font-size: 12px;
+			padding-left: 8px;
+			padding-right: 4px;
+			padding-top: 4px;
+			padding-bottom: 4px;
+			background-color: transparent;
+			text-decoration: none;
+			overflow: hidden;
+			color: light-dark(#191919, #BDBEBE);
+		}
+
+		.btr-feed:hover {
+			background: rgba(0, 0, 0, 0.1);
+		}
+
+		.btr-feedcreator, .btr-feeddate {
+			opacity: 0.85;
+			font-size: 10px;
+			font-weight: normal;
+			margin: 0 !important;
+			white-space: nowrap;
+		}
+
+		.btr-feedtitle {
+			font-weight: 500;
+			line-height: 12px;
+			font-size: 12px;
+		}
+
+		.btr-feeddesc {
+			overflow: hidden;
+			max-height: 0;
+			width: 100%;
+			opacity: 0.8;
+			font-weight: 300;
+			transition: max-height 0.4s;
+			margin-top: 4px;
+			margin-bottom: 0px;
+			font-size: 11px;
+			
+			display: -webkit-box;
+			-webkit-box-orient: vertical;
+			text-overflow: ellipsis;
+			-webkit-line-clamp: 7;
+		}
+
+		/* .btr-feed:hover > .btr-feeddesc {
+			max-height: 106px;
+			margin-bottom: 4px;
+		} */
+	}
 }
 
-#btr-blogfeed .btr-feed:hover > .btr-feeddesc {
-	max-height: 106px;
-	margin-bottom: 4px;
-}
+
 
 /* PAGER */
 
