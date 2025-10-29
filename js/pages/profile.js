@@ -52,42 +52,49 @@ pageInit.profile = () => {
 			<div class=btr-profile-container>
 				<div class=btr-profile-left>
 					<div class=btr-profile-about>
-						<div class=container-header><h2>About</h2></div>
+						<div class=container-header><h2 ng-bind="'Heading.AboutTab' | translate">About</h2></div>
 						<div class=section-content>
 							<div class=placeholder-status style=display:none></div>
-							<div class=placeholder-avatar style=display:none></div>
-							<div class=placeholder-desc>
-								<div class=profile-about-content>
+							<div class=placeholder-avatar>
+								<div class=profile-avatar-left></div>
+							</div>
+							<div class=btr-profile-description>
+								<div class="placeholder-desc profile-about-content">
 									<pre id=profile-about-text class=profile-about-text>
 										<span class="profile-about-content-text text-label">
-											This user has no description
 										</span>
 									</pre>
 								</div>
 							</div>
 							<div class=placeholder-aliases style=display:none></div>
-							<div class=placeholder-stats style=display:none></div>
+							<div class="placeholder-stats profile-statistics">
+								<ul class=profile-stats>
+								</ul>
+							</div>
 							<div class=placeholder-footer style=display:none></div>
 						</div>
 					</div>
-					<div class=placeholder-robloxbadges style=display:none>
-						<div class=container-header><h2>Roblox Badges</h2></div>
-						<div class=section-content>
-							<div class="section-content-off btr-section-content-off">This user has no Roblox Badges</div>
-						</div>
-					</div>
-					<div class=btr-profile-playerbadges style=display:none>
-						<div class=container-header><h2>Player Badges</h2></div>
+					<div class=btr-profile-robloxbadges>
+						<div class=container-header><h2 ng-bind="'Heading.RobloxBadge' | translate">Roblox Badges</h2></div>
 						<div class=section-content>
 							<ul class=hlist>
+								<span class="spinner spinner-default"></span>
+							</ul>
+						</div>
+					</div>
+					<div class=btr-profile-playerbadges>
+						<div class=container-header><h2 ng-bind="'Heading.PlayerBadge' | translate">Badges</h2></div>
+						<div class=section-content>
+							<ul class=hlist>
+								<span class="spinner spinner-default"></span>
 							</ul>
 						</div>
 					</div>
 					<div class=btr-profile-groups>
-						<div class=container-header><h2>Groups</h2></div>
+						<div class=container-header><h2 ng-bind="'Heading.Groups' | translate">Communities</h2></div>
 						<div class=section-content>
 							<ul class=hlist>
-								<div class="section-content-off btr-section-content-off">This user is not in any Groups</div>
+								<span class="spinner spinner-default"></span>
 							</ul>
 						</div>
 					</div>
@@ -95,24 +102,23 @@ pageInit.profile = () => {
 
 				<div class=btr-profile-right>
 					<div class=placeholder-games style=display:none>
-						<div class=container-header><h2>Experiences</h2></div>
+						<div class=container-header><h2 ng-bind="'Heading.Games' | translate">Experiences</h2></div>
 						<div class=section-content>
-							<div class="section-content-off btr-section-content-off">This user has no active Games</div>
+							<span class="spinner spinner-default"></span>
 						</div>
 					</div>
 					<div class=placeholder-friends>
-						<div class=container-header><h2>Connections</h2></div>
-						<div class="spinner spinner-default">
-						</div>
+						<div class=container-header><h2 ng-bind="'Heading.Friends' | translate">Connections</h2></div>
+						<div class="spinner spinner-default"></div>
 					</div>
 					<div class=btr-profile-favorites>
 						<div class=container-header>
-							<h2>Favorites</h2>
-							<a href=./favorites class="btn-secondary-xs btn-fixed-width btn-more see-all-link-icon">See All</a>
+							<h2 ng-bind="'Heading.FavoriteGames' | translate">Favorites</h2>
+							<a href="/users/${userId}/favorites" class="btn-secondary-xs btn-fixed-width btn-more see-all-link-icon" ng-bind="'Action.SeeAll' | translate">See All</a>
 						</div>
 						<div class=section-content>
 							<ul class="hlist game-cards">
-								<div class="section-content-off btr-section-content-off">This user has no favorite Places</div>
+								<span class="spinner spinner-default"></span>
 							</ul>
 						</div>
 					</div>
@@ -121,7 +127,15 @@ pageInit.profile = () => {
 				<div class=btr-profile-bottom>
 					<div class=placeholder-posts style=display:none></div>
 					<div class=placeholder-collections style=display:none></div>
-					<div class=placeholder-inventory style=display:none></div>
+					<div class=btr-profile-inventory style=display:none>
+						<div class=container-header>
+							<h2 ng-bind="'Action.Inventory' | translate">Inventory</h2>
+							<div class="collection-btns">
+								<a href="/users/${userId}/inventory" class="btn-min-width btn-secondary-xs btn-more inventory-link see-all-link-icon" ng-bind="'Action.Inventory' | translate">Inventory</a>
+							</div>
+						</div>
+						<div class=placeholder-inventory style=display:none></div>
+					</div>
 				</div>
 			</div>`
 			
@@ -254,23 +268,20 @@ pageInit.profile = () => {
 						newCont.$find(".placeholder-friends").remove()
 					})
 				})
-				.$watch(".profile-statistics", outerStats => {
-					newCont.$find(".placeholder-stats").replaceWith(outerStats)
-					outerStats.classList.add("btr-profileStats")
+				.$watch(".profile-statistics", stats => {
+					newCont.$find(".placeholder-stats").replaceWith(stats)
+					
+					if(!stats.$find(".profile-stats")) {
+						stats.append(html`<ul class=profile-stats></ul>`) // will get cleared by react
+					}
 				})
-				.$watch("#roblox-badges-container", badges => {
-					newCont.$find(".placeholder-robloxbadges").replaceWith(badges)
-
-					badges.$watch(">.section-content", content => {
-						content.classList.remove("remove-panel")
-					})
-				})
-				.$watch("#games-switcher", switcher => {
-					const games = switcher.parentNode
+				.$watch(".profile-game", async games => {
 					newCont.$find(".placeholder-games").replaceWith(games)
-
+					
 					games.classList.add("section")
-
+					
+					const switcher = await games.$watch("#games-switcher").$promise()
+					
 					const grid = games.$find(".game-grid")
 					grid.setAttribute("ng-cloak", "")
 
@@ -278,7 +289,6 @@ pageInit.profile = () => {
 					switcher.setAttribute("ng-if", "false") // Let's make angular clean it up :)
 					switcher.style.display = "none"
 					switcher.after(cont)
-
 
 					const hlist = html`<ul class="hlist btr-games-list" ng-non-bindable></ul>`
 					cont.append(hlist)
@@ -476,7 +486,7 @@ pageInit.profile = () => {
 
 									if(!descContent.textContent.trim()) {
 										descContent.classList.toggle("text-label", true)
-										descContent.textContent = "This game has no description"
+										// descContent.textContent = "This game has no description"
 									} else {
 										descContent.classList.toggle("text-label", false)
 									}
@@ -490,16 +500,21 @@ pageInit.profile = () => {
 
 										if(!data.isPlayable) {
 											const prohibitedReasons = {
-												UniverseDoesNotHaveARootPlace: "This game has no root place.",
+												UniverseDoesNotHaveARootPlace: "This game has no root place",
 												UniverseRootPlaceIsNotActive: "This game is not active",
-												InsufficientPermissionFriendsOnly: "This game is friends only.",
-												InsufficientPermissionGroupOnly: "Group members only.",
-												UnderReview: "This game is under moderation review."
+												InsufficientPermissionFriendsOnly: "This game is friends only",
+												InsufficientPermissionGroupOnly: "Group members only",
+												UnderReview: "This game is under moderation review",
+												PlaceHasNoPublishedVersion: "This place has no published version",
+												ContextualPlayabilityUnrated: "This experience is not accessible because it is unrated"
 											}
 											
-											const btnCont = this.item.$find(".btr-game-playbutton-container")
-											btnCont.classList.add("btr-place-prohibited")
-											btnCont.textContent = prohibitedReasons[data.reasonProhibited] || data.reasonProhibited
+											this.item.$find(".btr-game-playbutton").replaceWith(html`
+												<button title="${prohibitedReasons[data.reasonProhibited] || data.reasonProhibited}" type=button class="btr-place-prohibited btn-common-play-game-unplayable-lg btn-primary-md btn-full-width" disabled>
+													<span class="icon-status-unavailable-secondary"></span>
+													<span class="btn-text">Unavailable</span>
+												</button>
+											`)
 										}
 									}
 									
@@ -567,14 +582,76 @@ pageInit.profile = () => {
 				.$watch(".favorite-games-container", favorites => {
 					favorites.remove()
 				})
+				.$watch("#roblox-badges-container", robloxbadges => {
+					robloxbadges.remove()
+				})
+				.$watch("#player-badges-container", playerbadges => {
+					playerbadges.remove()
+				})
 				.$watch(".profile-collections", collections => {
 					collections.classList.remove("layer", "gray-layer-on")
 					newCont.$find(".placeholder-collections").replaceWith(collections)
+					
+					if(SETTINGS.get("profile.embedInventoryEnabled")) {
+						const link = collections.$find(".inventory-link")
+						if(link) { link.style.display = "none" }
+					}
 				})
 			
-			function initPlayerBadges() {
-				const badgesElem = newCont.$find(".btr-profile-playerbadges")
-				const hlist = badgesElem.$find(".hlist")
+			const initRobloxBadges = () => {
+				const hlist = newCont.$find(".btr-profile-robloxbadges .hlist")
+				const pager = createPager(true)
+				
+				const robloxBadges = []
+				const pageSize = 10
+				
+				let currentPage = 1
+				
+				const openPage = page => {
+					const pageStart = (page - 1) * pageSize
+					const badges = robloxBadges.slice(pageStart, pageStart + pageSize)
+					
+					currentPage = page
+					pager.setPage(currentPage)
+					pager.togglePrev(currentPage > 1)
+					pager.toggleNext(pageStart + pageSize < robloxBadges.length)
+					hlist.replaceChildren()
+					
+					if(!badges?.length) {
+						hlist.append(html`<div class="section-content-off btr-section-content-off">This user has no Roblox Badges</div>`)
+					} else {
+						if(robloxBadges.length > pageSize) { hlist.after(pager) }
+						
+						for(const data of badges) {
+							hlist.append(html`
+							<li class="list-item badge-item asset-item" ng-non-bindable>
+								<a href="/info/roblox-badges#Badge${data.id}" class="badge-link" title="${data.description}">
+									<span class=asset-thumb-container>
+										<img src="${data.imageUrl}">
+									</span>
+									<span class="font-header-2 text-overflow item-name">${data.name}</span>
+								</a>
+							</li>`)
+						}
+					}
+				}
+				
+				pager.onprevpage = () => openPage(currentPage - 1)
+				pager.onnextpage = () => openPage(currentPage + 1)
+				
+				$.ready(async () => {
+					robloxBadges.push(...(await RobloxApi.accountinformation.getRobloxBadges(userId)))
+					openPage(1)
+				})
+			}
+			
+			const initPlayerBadges = () => {
+				// if(userId === 1) {
+				// 	newCont.$find(".btr-profile-playerbadges").remove()
+				// 	return
+				// }
+				
+				const hlist = newCont.$find(".btr-profile-playerbadges .hlist")
 				const pager = createPager(true)
 
 				const thumbClasses = {
@@ -599,14 +676,13 @@ pageInit.profile = () => {
 					currentPage = page
 					pager.setPage(currentPage)
 					pager.togglePrev(currentPage > 1)
-					pager.toggleNext(hasMorePages || pageStart < playerBadges.length - pageSize)
+					pager.toggleNext(hasMorePages || pageStart + pageSize < playerBadges.length)
 					hlist.replaceChildren()
 
 					if(!badges.length) {
 						hlist.append(html`<div class="section-content-off btr-section-content-off">This user has no Player Badges</div>`)
 					} else {
-						badgesElem.style.display = ""
-						hlist.after(pager)
+						if(playerBadges.length > pageSize) { hlist.after(pager) }
 						
 						for(const data of badges) {
 							const badgeUrl = `/badges/${data.id}/${formatUrlName(data.name)}`
@@ -677,10 +753,11 @@ pageInit.profile = () => {
 
 				pager.onprevpage = () => loadPage(currentPage - 1)
 				pager.onnextpage = () => loadPage(currentPage + 1)
-				loadPage(1)
+				
+				$.ready(() => loadPage(1))
 			}
 
-			function initGroups() {
+			const initGroups = () => {
 				const groups = newCont.$find(".btr-profile-groups")
 				const hlist = groups.$find(".hlist")
 				hlist.setAttribute("ng-non-bindable", "")
@@ -749,7 +826,7 @@ pageInit.profile = () => {
 				})
 			}
 
-			function initFavorites() {
+			const initFavorites = () => {
 				const favorites = newCont.$find(".btr-profile-favorites")
 				const hlist = favorites.$find(".hlist")
 				hlist.setAttribute("ng-non-bindable", "")
@@ -771,7 +848,6 @@ pageInit.profile = () => {
 						<li data-value=8><a href=#>Accessories</a></li>
 						<li data-value=24><a href=#>Animations</a></li>
 						<li data-value=3><a href=#>Audio</a></li>
-						<li data-value=21><a href=#>Badges</a></li>
 						<li data-value=13><a href=#>Decals</a></li>
 						<li data-value=18><a href=#>Faces</a></li>
 						<li data-value=19><a href=#>Gear</a></li>
@@ -785,8 +861,7 @@ pageInit.profile = () => {
 						<li data-value=2><a href=#>T-Shirts</a></li>
 					</ul>
 				</div>`
-
-				const dropdownLabel = dropdown.$find(".rbx-selection-label")
+				
 				favorites.$find(".container-header .btn-more").after(dropdown)
 				
 				const favoriteData = {}
@@ -898,7 +973,7 @@ pageInit.profile = () => {
 					hlist.replaceChildren()
 					
 					if(pageStart >= data.items.length) {
-						const categoryName = dropdownLabel.textContent
+						const categoryName = dropdown.$find(`li[data-value="${category}"]`)?.textContent
 						hlist.append(html`<div class='section-content-off btr-section-content-off'>This user has no favorite ${categoryName}</div>`)
 						return
 					}
@@ -964,29 +1039,23 @@ pageInit.profile = () => {
 				pager.onsetpage = page => loadPage(lastCategory, page)
 				$.ready(() => loadPage(9, 1))
 			}
-
+			
+			initRobloxBadges()
+			initPlayerBadges()
 			initGroups()
 			initFavorites()
-
-			if(userId !== 1) {
-				initPlayerBadges()
-			} else {
-				newCont.$find(".btr-profile-playerbadges").remove()
-				const friends = newCont.$find(".placeholder-friends")
-				if(friends) { friends.remove() }
+			
+			if(SETTINGS.get("profile.embedInventoryEnabled")) {
+				newCont.$find(".btr-profile-inventory").style.display = ""
+				
+				$.ready(() => {
+					newCont.$find(".placeholder-inventory").replaceWith(
+						html`<iframe id="btr-injected-inventory" src="/users/${userId}/inventory" scrolling="no">`
+					)
+				})
 			}
 			
 			$.ready(() => {
-				if(SETTINGS.get("profile.embedInventoryEnabled") && userId !== 1) {
-					const cont = html`<div></div>`
-					const iframe = html`<iframe id="btr-injected-inventory" src="/users/${userId}/inventory" scrolling="no">`
-
-					cont.append(iframe)
-					newCont.$find(".placeholder-inventory").replaceWith(cont)
-				} else {
-					newCont.$find(".placeholder-inventory").remove()
-				}
-				
 				if(!$("#friends-carousel-container")) {
 					newCont.$find(".placeholder-friends")?.remove()
 				}

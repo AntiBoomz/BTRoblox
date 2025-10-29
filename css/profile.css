@@ -47,306 +47,226 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	padding: 12px;
 }
 
-/* Social buttons */
-
-.btr-profile .social-link-icon-list {
+.btr-profile .btr-profile-about {
 	position: relative;
-	z-index: 2;
-}
-
-/* Player status */
-
-.btr-profile .btr-header-status-parent {
-	display:block;
-	clear:both;
-	max-width:100%;
-	text-align:center;
-	padding:6px 0;
-}
-
-.btr-profile .btr-header-status-text {
-	font-weight:400;
-	white-space:nowrap;
-	display:inline-block;
-}
-
-.btr-profile .btr-header-status-text span {
-	display:inline-block;
-}
-
-.btr-profile .btr-header-status-text:before {
-	content: "[";
-	padding-right: 2px;
-}
-
-.btr-profile .btr-header-status-text:after {
-	content: "]";
-	padding-left: 2px;
-}
-
-.btr-profile .btr-header-status-follow-button {
-	margin-left: 4px;
-	padding: 2px;
-	color: rgb(2,143,47);
-	font-size: 14px;
-	vertical-align: middle;
-}
-
-
-.btr-profile .btr-status-offline {
-	color:gray;
-}
-
-.btr-profile .btr-status-ingame {
-	color:rgb(2,143,47);
-}
-
-.btr-profile .btr-status-studio {
-	color:rgb(246,136,2);
-}
-
-.btr-profile .btr-status-online {
-	color:rgb(0,162,255);
-}
-
-/* Avatar */
-
-.btr-profile .profile-avatar {
-	position: relative;
-}
-
-.btr-profile .profile-avatar-left {
-	width: 100%;
-	background: transparent !important;
-}
-
-.btr-profile .profile-avatar-left .btr-toggle-items {
-	position: absolute;
-	right: 12px;
-	bottom: 12px;
-}
-
-.btr-profile .profile-avatar-right {
-	position: absolute;
-	width: 100%;
-
-	opacity: 0;
-	pointer-events: none;
-	transition: opacity 0.3s;
-	z-index: 10000;
 	
-	box-shadow: 0 0 8px 0 rgba(0, 0, 0, .1);
+	> .section-content {
+		padding-bottom: 8px;
+	}
+	
+	/* Social buttons */
+	.social-link-icon-list {
+		position: relative;
+		z-index: 2;
+	}
+	
+	/* Player status */
+	.btr-header-status-parent {
+		display: block;
+		clear: both;
+		max-width: 100%;
+		text-align: center;
+		padding: 6px 0;
+		
+		.btr-header-status-text {
+			font-weight: 400;
+			white-space: nowrap;
+			display: inline-block;
+			
+			span {
+				display: inline-block;
+			}
+
+			&:before {
+				content: "[";
+				padding-right: 2px;
+			}
+
+			&:after {
+				content: "]";
+				padding-left: 2px;
+			}
+		}
+		
+		.btr-status-offline {
+			color: gray;
+		}
+
+		.btr-status-ingame {
+			color: rgb(2,143,47);
+		}
+
+		.btr-status-studio {
+			color: rgb(246,136,2);
+		}
+
+		.btr-status-online {
+			color: rgb(0,162,255);
+		}
+
+		.btr-header-status-follow-button {
+			margin-left: 4px;
+			padding: 2px;
+			color: rgb(2,143,47);
+			font-size: 14px;
+			vertical-align: middle;
+		}
+	}
+	
+	/* Avatar */
+	.profile-avatar {
+		position: relative;
+		
+		.profile-avatar-left {
+			width: 100%;
+			background: transparent !important;
+			
+			.btr-toggle-items {
+				position: absolute;
+				right: 12px;
+				bottom: 12px;
+			}
+		}
+		
+		.profile-avatar-right {
+			position: absolute;
+			width: 100%;
+
+			opacity: 0;
+			pointer-events: none;
+			transition: opacity 0.3s;
+			z-index: 10000;
+			
+			box-shadow: 0 0 8px 0 light-dark(rgba(0, 0, 0, .1), rgba(0, 0, 0, .3));
+			
+			&.visible {
+				opacity: 1;
+				pointer-events: initial;
+				transition: opacity 0.3s;
+			}
+		}
+	}
+	
+	/* Description */
+	.btr-profile-description {
+		margin: 10px;
+		
+		profile-description {
+			&,
+			> .profile-about,
+			> .profile-about > .section-content,
+			profile-description-view {
+				display: contents;
+			}
+
+			.container-header {
+				position: absolute;
+				bottom: 100%;
+				left: 0;
+				width: 100%;
+			}
+		}
+		
+		.profile-about-content {
+			text-align: right; /* Align Read More to right */
+			display: block;
+			padding: 0;
+			
+			.profile-about-text {
+				text-align: center;
+
+				.profile-about-content-text {
+					white-space: pre-line;
+				}
+			}
+			
+			.toggle-content {
+				display: inline-block;
+			}
+		}
+	}
+	
+	/* Aliases */
+	#aliases-container {
+		.border-top {
+			display: flex;
+			flex-direction: row;
+			padding-top: 8px;
+			margin-top: 8px;
+			border-color: #E3E3E3;
+		}
+
+		.border-top > div:first-child {
+			flex: 0 0 auto;
+			margin-right: 8px;
+		}
+
+		.border-top .spinner {
+			margin: -1px auto;
+		}
+
+		.user-tag-container {
+			flex: 1 1 auto;
+		}
+	}
+	
+	/* Stats */
+	.profile-statistics {
+		> .profile-stats-header {
+			display: none;
+		}
+		
+		> div {
+			background: none;
+		}
+		
+		.profile-stats {
+			border-top: 1px solid light-dark(#E3E3E3, #494d5a);
+			border-bottom: 1px solid light-dark(#E3E3E3, #494d5a);
+			min-height: 69px;
+			
+			.profile-stat {
+				max-width: 50%;
+				
+				> span {
+					font-size: 14px;
+				}
+			}
+		}
+	}
+
+	/* Footer */
+	.profile-about-footer {
+		border: none;
+	}
 }
 
-.dark-theme.btr-profile .profile-avatar-right {
-	box-shadow: 0 0 8px 0 rgba(0, 0, 0, .3);
-}
+/* Badges */
 
-.btr-profile .profile-avatar-right.visible {
-	opacity: 1;
-	pointer-events: initial;
-	transition: opacity 0.3s;
-}
+.btr-profile .btr-profile-robloxbadges, .btr-profile .btr-profile-playerbadges {
+	.asset-item {
+		width: 20%;
+		
+		.asset-thumb-container {
+			display: inline-block;
+			width: 90px;
+			height: 90x;
+			border-radius: 8px;
+			
+			img {
+				width: 90px;
+				height: 90px;
+			}
+		}
+		
+		.item-name {
+			width: 100%;
+			font-size: 14px;
 
-/* Description */
-
-.btr-profile-about {
-	position: relative;
-}
-
-.btr-profile-about > .section-content {
-	padding-bottom: 8px;
-}
-
-.btr-profile profile-description,
-.btr-profile profile-description > .profile-about,
-.btr-profile profile-description > .profile-about > .section-content,
-.btr-profile profile-description profile-description-view {
-	display: contents;
-}
-
-.btr-profile profile-description .container-header {
-	position: absolute;
-	bottom: 100%;
-	left: 0;
-	width: 100%;
-}
-
-.btr-profile .profile-about-content {
-	text-align: right; /* Align Read More to right */
-}
-
-.btr-profile .profile-about-content .profile-about-text {
-	text-align: center;
-	line-height: 1.5em;
-	overflow: hidden;
-}
-
-.btr-profile .profile-about-content .profile-about-text.para-height {
-	max-height: 265px;
-}
-
-.btr-profile .profile-about-content .profile-about-text.para-overflow-toggle-off {
-	padding-bottom: 26px;
-}
-
-.btr-profile .profile-about-content .profile-about-text .toggle-para {
-	background-color: white;
-	padding-left: 4px
-}
-
-.dark-theme.btr-profile .profile-about-content .profile-about-text .toggle-para {
-	background-color: #393b3d;
-}
-
-.btr-profile .profile-about-content .profile-about-content-text {
-	white-space: pre-line;
-}
-
-/* Aliases */
-
-.btr-profile #aliases-container .border-top {
-	display: flex;
-	flex-direction: row;
-	padding-top: 8px;
-	margin-top: 8px;
-	border-color: #E3E3E3;
-}
-
-.btr-profile #aliases-container .border-top > div:first-child {
-	flex: 0 0 auto;
-	margin-right: 8px;
-}
-
-.btr-profile #aliases-container .border-top .spinner {
-	margin: -1px auto;
-}
-
-.btr-profile #aliases-container .user-tag-container {
-	flex: 1 1 auto;
-}
-
-/* Stats */
-
-.btr-profile .profile-statistics,
-.btr-profile .profile-statistics > .section-content {
-	display: contents !important;
-}
-
-.btr-profile .profile-statistics > .container-header {
-	display: none !important;
-}
-
-.btr-profile .profile-stats-container {
-	border-top: 1px solid #E3E3E3;
-	border-bottom: 1px solid #E3E3E3;
-	margin-top: 10px;
-}
-
-.btr-profile .profile-stats-container.btr-lastOnline .profile-stat {
-	width: 33.33%;
-}
-
-.btr-profile .profile-stats-container .profile-stat .text-lead::before {
-	content: "\200b";
-}
-
-/* About Footer */
-
-.btr-profile .profile-about-footer {
-	border: none;
-}
-
-/* Roblox Badges (new) */
-
-.btr-profile #roblox-badges-container .badge-list {
-	max-height: 256px;
-}
-
-.btr-profile #roblox-badges-container .badge-list.badge-list-more {
-	max-height: none;
-	overflow-x: hidden;
-}
-
-.btr-profile #roblox-badges-container .badge-list > .list-item {
-	width: 20%;
-	text-align: center;
-	overflow: hidden;
-}
-
-.btr-profile #roblox-badges-container .badge-list > .list-item .asset-thumb-container {
-	margin-left: 5px;
-	transform: scale(calc(90 / 140));
-	transform-origin: 0 0;
-
-	margin-bottom: -50px;
-}
-
-.btr-profile #roblox-badges-container .badge-list > .list-item .item-name {
-	width: 100%;
-	font-size: 14px;
-
-	text-align: center;
-	text-overflow: ellipsis;
-}
-
-/* Roblox Badges (Legacy) */
-
-.btr-profile .btr-profile-robloxbadges .badge-list:not(.badge-list-more) {
-	max-height: 246px;
-}
-
-.btr-profile .btr-profile-robloxbadges .asset-item {
-	width: 20%;
-	overflow: hidden;
-}
-
-.btr-profile .btr-profile-robloxbadges .asset-item .asset-thumb-container {
-	display: inline-block;
-	width: 90px;
-	height: 90px;
-
-	border-radius: 8px;
-}
-
-.btr-profile .btr-profile-robloxbadges .asset-item .asset-thumb-container span {
-	/* Resize the background image without needing to redo all positions */
-	transform: scale(calc(90 / 140));
-	transform-origin: 0 0;
-}
-
-.btr-profile .btr-profile-robloxbadges .asset-item .item-name {
-	width: 100%;
-	font-size: 14px;
-
-	text-align: center;
-	padding: 0 1px;
-}
-
-/* Player Badges */
-
-.btr-profile .btr-profile-playerbadges .asset-item {
-	width: 20%;
-}
-
-.btr-profile .btr-profile-playerbadges .asset-item .asset-thumb-container {
-	display: inline-block;
-	width: 90px;
-	height: 90x;
-	border-radius: 8px;
-}
-
-.btr-profile .btr-profile-playerbadges .asset-item .asset-thumb-container img {
-	width: 90px;
-	height: 90px;
-}
-
-.btr-profile .btr-profile-playerbadges .hlist .list-item .item-name {
-	width: 100%;
-	font-size: 14px;
-
-	text-align: center;
-	padding: 0 1px;
+			text-align: center;
+			padding: 0 1px;
+		}
+	}
 }
 
 /* Games */
@@ -496,11 +416,14 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	text-align: center;
 }
 
-.btr-profile .btr-games-list .btr-game-playbutton-container.btr-place-prohibited {
-	opacity: 0.75;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
+.btr-profile .btr-games-list .btr-game-playbutton-container .btr-place-prohibited {
+	width: 88%;
+	padding: 7px;
+	pointer-events: initial;
+	
+	.icon-status-unavailable-secondary {
+		scale: calc(30/36);
+	}
 }
 
 .btr-profile .btr-games-list .btr-game-playbutton {

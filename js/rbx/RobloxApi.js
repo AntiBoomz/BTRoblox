@@ -182,6 +182,12 @@ const xsrfFetch = (url, init = {}) => {
 }
 
 const RobloxApi = {
+	accountinformation: {
+		getRobloxBadges: userId => 
+			xsrfFetch(`https://accountinformation.roblox.com/v1/users/${userId}/roblox-badges`, {
+				credentials: "include"
+			}).then(res => res.json()),
+	},
 	assetdelivery: {
 		requestAssetV2: (urlParams, params) => {
 			if(!IS_BACKGROUND_PAGE && params?.browserAssetRequest) {

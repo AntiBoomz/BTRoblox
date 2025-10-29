@@ -1,33 +1,37 @@
-body.btr-embed,
-body.btr-embed .container-main,
-body.btr-embed .container-main .content {
+body.btr-embed {
 	margin: 0 !important;
 	padding: 0 !important;
-}
-
-body.btr-embed .container-main .content {
-	max-width: none !important;
-}
-
-body.btr-embed>*:not(#wrap),
-body.btr-embed #wrap>*:not(.container-main),
-body.btr-embed .SystemAlert,
-body.btr-embed .recommendations-container,
-body.btr-embed .alert-info,
-body.btr-embed .alert-container,
-body.btr-embed .page-content>h1 {
-	display: none !important;
-}
-
-body.btr-embed .category-tabs {
-	padding-bottom: 60px;
+	
+	.container-main {
+		margin: 0 !important;
+		padding: 0 !important;
+		
+		.content {
+			margin: 0 !important;
+			padding: 0 !important;
+			max-width: none !important;
+			
+			.category-tabs {
+				padding-bottom: 60px;
+			}
+		}
+	}
+	
+	> *:not(#wrap),
+	#wrap>*:not(.container-main),
+	.SystemAlert,
+	.recommendations-container,
+	.alert-info,
+	.alert-container,
+	.page-content>h1,
+	.current-items .container-header .header-content:has(.get-more) {
+		display: none !important;
+	}
 }
 
 body .page-content {
 	padding-top: 16px;
 }
-
-
 
 .btr-it-checkbox input[type="checkbox"]+label:before {
 	background-color:white;
