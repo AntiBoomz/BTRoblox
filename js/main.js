@@ -1,6 +1,5 @@
 "use strict"
 
-const BTRoblox = { element: null }
 let currentPage
 
 //
@@ -181,7 +180,7 @@ const injectScript = {
 	},
 
 	send(action, ...args) {
-		BTRoblox.element.dispatchEvent(new CustomEvent(`btroblox/inject/${action}`, {
+		document.dispatchEvent(new CustomEvent(`btroblox/inject/${action}`, {
 			detail: IS_FIREFOX ? cloneInto(args, window, { cloneFunctions: true, wrapReflectors: true }) : args
 		}))
 	},
@@ -192,7 +191,7 @@ const injectScript = {
 		if(!listeners) {
 			listeners = this.messageListeners[action] = []
 			
-			BTRoblox.element.addEventListener(`btroblox/content/${action}`, ev => {
+			document.addEventListener(`btroblox/content/${action}`, ev => {
 				let args
 				
 				try { args = IS_FIREFOX ? cloneInto(ev.detail, window, { cloneFunctions: true, wrapReflectors: true }) : ev.detail }
@@ -261,7 +260,8 @@ const insertCSS = (...paths) => {
 		styleSheet.href = SETTINGS.get("general.themeHotReload") ? `${chrome.runtime.getURL(path)}?_=${Date.now()}` : chrome.runtime.getURL(path)
 		styleSheet.rel = "stylesheet"
 		
-		BTRoblox.element.append(styleSheet)
+		const parent = document.head || document.documentElement
+		parent.append(styleSheet)
 		
 		activeStyleSheets[path] = styleSheet
 		
@@ -311,15 +311,8 @@ const updatePageCSS = () => {
 
 //
 
-if(document.contentType === "text/html" && location.protocol !== "blob" && document.readyState === "loading" && !document.querySelector("btroblox")) {
-	const btrElement = document.createElement("btroblox")
-	const btrStyle = document.createElement("style")
-	btrStyle.type = "text/css"
-	btrStyle.textContent = "btroblox {display:none!important;}"
-	btrElement.append(btrStyle)
-	
-	document.documentElement.append(btrElement)
-	BTRoblox.element = btrElement
+if(document.contentType === "text/html" && location.protocol !== "blob" && document.readyState === "loading" && !document.documentElement.getAttribute("btr-loaded")) {
+	document.documentElement.setAttribute("btr-loaded", "true")
 	
 	SETTINGS.load(() => {
 		injectScript.init(

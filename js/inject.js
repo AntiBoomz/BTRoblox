@@ -3,7 +3,7 @@
 document.addEventListener("btroblox/init", ev => {
 	const [settings, IS_DEV_MODE, selectedRobuxToCashOption] = ev.detail
 	
-	const BTRoblox = window.BTRoblox = { element: document.querySelector("btroblox") }
+	const BTRoblox = {}
 	let currentPage
 	
 	const util = {
@@ -237,7 +237,7 @@ document.addEventListener("btroblox/init", ev => {
 		messageListeners: {},
 		
 		send(action, ...args) {
-			BTRoblox.element.dispatchEvent(new CustomEvent(`btroblox/content/${action}`, { detail: args }))
+			document.dispatchEvent(new CustomEvent(`btroblox/content/${action}`, { detail: args }))
 		},
 		listen(action, callback) {
 			let listeners = this.messageListeners[action]
@@ -245,7 +245,7 @@ document.addEventListener("btroblox/init", ev => {
 			if(!listeners) {
 				listeners = this.messageListeners[action] = []
 				
-				BTRoblox.element.addEventListener(`btroblox/inject/${action}`, ev => {
+				document.addEventListener(`btroblox/inject/${action}`, ev => {
 					const args = Array.isArray(ev.detail) ? ev.detail : []
 					
 					for(let i = listeners.length; i--;) {
