@@ -634,9 +634,6 @@ ww<span>w.roblox.com
 #### Get collections of an user
 * GET https://www.roblox.com/users/profile/robloxcollections-json?userId=4719353
 
-#### Get games on an user's profile
-* GET https://www.roblox.com/users/profile/playergames-json?userId=4719353
-
 #### Get favorites of an user
 * GET https://www.roblox.com/users/favorites/list-json?userId=4719353&cursor=&assetTypeId=8&itemsPerPage=6
 

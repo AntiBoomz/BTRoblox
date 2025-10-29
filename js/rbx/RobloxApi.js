@@ -391,14 +391,6 @@ const RobloxApi = {
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ userIds })
 			}).then(res => res.json()),
-		
-		// getLastOnline: userIds =>
-		// 	xsrfFetch(`https://presence.roblox.com/v1/presence/last-online`, {
-		// 		method: "POST",
-		// 		credentials: "include",
-		// 		headers: { "Content-Type": "application/json" },
-		// 		body: JSON.stringify({ userIds })
-		// 	}).then(res => res.json())
 	},
 	privatemessages: {
 		getMessages: (pageNumber=1, pageSize=20, messageTab="Inbox") =>
@@ -495,11 +487,6 @@ const RobloxApi = {
 			}).then(res => res.json()),
 	},
 	www: {
-		getProfilePlayerGames: userId =>
-			xsrfFetch(`https://www.roblox.com/users/profile/playergames-json?userId=${userId}`, {
-				credentials: "include"
-			}).then(res => res.json()),
-		
 		deleteAssetFromInventory: assetId =>
 			xsrfFetch(`https://www.roblox.com/asset/delete-from-inventory`, {
 				method: "POST",
