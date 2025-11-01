@@ -1726,7 +1726,7 @@ pageInit.www = () => {
 		contentScript.listen("updateExperiment", modify)
 		
 		try {
-			const saved = JSON.parse(settings.general.experiments || {})
+			const saved = JSON.parse(settings.general.experiments || "{}")
 			
 			if(saved) {
 				for(const [experiment, values] of Object.entries(saved)) {
