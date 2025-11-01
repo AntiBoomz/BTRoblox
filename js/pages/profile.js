@@ -39,7 +39,7 @@ pageInit.profile = () => {
 	})
 	
 	onPageReset(() => {
-		document.body?.classList.remove("btr-profile")
+		document.body?.classList.remove("btr-profile", "btr-has-avatar-redesign")
 	})
 	
 	onPageLoad(userIdString => {
@@ -174,6 +174,31 @@ pageInit.profile = () => {
 					})
 				})
 			
+				
+			const updateAvatarRedesign = () => {
+				const avatarRedesign = profileContainer.$find(".profile-avatar-left.profile-avatar-gradient")
+				
+				if(avatarRedesign) {
+					avatarRedesign.parentNode.classList.add("btr-avatar-redesign-container")
+				}
+				
+				document.body.classList.toggle("btr-has-avatar-redesign", !!avatarRedesign)
+				
+				const currentlyWearing = document.$find(".btr-avatar-container")
+				if(!currentlyWearing) { return }
+				
+				if(avatarRedesign) {
+					avatarRedesign.parentNode.after(currentlyWearing)
+				} else {
+					newCont.$find(".btr-profile-description").before(currentlyWearing)
+				}
+			}	
+				
+			profileContainer.$watch(".profile-avatar-left.profile-avatar-gradient", avatarRedesign => {
+				updateAvatarRedesign()
+				new MutationObserver(updateAvatarRedesign).observe(avatarRedesign.parentNode.parentNode, { childList: true })
+			})
+			
 			// roblox hides the angular container since it's meant to use the react side
 			angularContainer.style.all = "unset"
 			angularContainer.style.display = "contents"
@@ -257,6 +282,9 @@ pageInit.profile = () => {
 							setVisible(false)
 						}
 					})
+					
+					avatar.classList.add("btr-avatar-container")
+					updateAvatarRedesign()
 				})
 				.$watch(".profile-posts", posts => {
 					newCont.$find(".placeholder-posts").replaceWith(posts)
