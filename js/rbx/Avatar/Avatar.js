@@ -3,8 +3,11 @@
 const RBXAvatar = (() => {
 	function getFirstLod(mesh) {
 		if(!mesh.firstLod && mesh.lods.length > 2) {
-			const firstLod = mesh.firstLod = { ...mesh }
-			firstLod.faces = firstLod.faces.subarray(mesh.lods[0] * 3, mesh.lods[1] * 3)
+			const firstLod = mesh.firstLod = {
+				...mesh,
+				faces: mesh.faces.subarray(mesh.lods[0] * 3, mesh.lods[1] * 3),
+				lods: mesh.lods.slice(0, 2)
+			}
 			
 			let maxVertex = 0
 			
@@ -32,7 +35,7 @@ const RBXAvatar = (() => {
 	function applyMesh(obj, mesh) {
 		const geom = obj.geometry
 		
-		if(obj.rbxMesh !== mesh && obj instanceof THREE.SkinnedMesh) {
+		if(obj instanceof THREE.SkinnedMesh) {
 			if(obj.skeleton) {
 				obj.skeleton.dispose()
 				delete obj.skeleton
@@ -85,7 +88,6 @@ const RBXAvatar = (() => {
 			}
 		}
 		
-		obj.rbxMesh = mesh
 		delete obj.rbxLayered
 		
 		geom.setAttribute("position", new THREE.BufferAttribute(mesh.vertices, 3))
@@ -114,7 +116,6 @@ const RBXAvatar = (() => {
 			geom.deleteAttribute("skinWeight")
 		}
 		
-		delete obj.rbxMesh
 		delete obj.rbxLayered
 		
 		geom.deleteAttribute("position")
@@ -1552,6 +1553,7 @@ const RBXAvatar = (() => {
 				if(part.rbxMeshId !== meshId) {
 					part.rbxMeshId = meshId
 					delete part.rbxMeshLoading
+					delete part.rbxMesh
 					
 					clearGeometry(part)
 					
@@ -1561,7 +1563,9 @@ const RBXAvatar = (() => {
 						AssetCache.loadMesh(true, meshId, mesh => {
 							if(part.rbxMeshLoading === meshId) {
 								delete part.rbxMeshLoading
-								applyMesh(part, getFirstLod(mesh))
+								part.rbxMesh = getFirstLod(mesh)
+								
+								applyMesh(part, part.rbxMesh)
 							}
 						})
 					}
@@ -1881,7 +1885,9 @@ const RBXAvatar = (() => {
 						
 						AssetCache.loadMesh(true, acc.meshId, mesh => {
 							delete obj.rbxMeshLoading
-							applyMesh(obj, getFirstLod(mesh))
+							obj.rbxMesh = getFirstLod(mesh)
+							
+							applyMesh(obj, obj.rbxMesh)
 						})
 					}
 					
@@ -1985,78 +1991,6 @@ const RBXAvatar = (() => {
 			this.updateHasInvalidLayeredClothing()
 		}
 		
-		_refreshLayeredClothing() {
-			this.shouldRefreshLayeredClothing = false
-			
-			const request = this.getLayeredRequest()
-			
-			if(request === false) {
-				this.shouldRefreshLayeredClothing = true
-			}
-			
-			if(!request) {
-				if(this.layeredCurrentRequest || this.layeredFinishedRequest) {
-					this.layeredFailedRequest = null
-					this.layeredFinishedRequest = null
-					this.layeredCurrentRequest = null
-					
-					// reset bodyparts
-					for(const part of Object.values(this.parts)) {
-						if(part.rbxLayered) {
-							applyMesh(part, part.rbxMesh)
-						}
-					}
-					
-					// reset accessories
-					for(const acc of this.accessories) {
-						if(acc.obj.rbxLayered) {
-							applyMesh(acc.obj, acc.obj.rbxMesh)
-						}
-					}
-					
-					this.trigger("layeredRequestStateChanged", null)
-				}
-				return
-			}
-			
-			if(request.hash === this.layeredCurrentRequest?.hash) { return }
-			if(request.hash === this.layeredFailedRequest?.hash) { return }
-			
-			this.layeredFailedRequest = null
-			this.layeredFinishedRequest = null
-			this.layeredCurrentRequest = request
-			
-			// reset bodyparts
-			for(const part of Object.values(this.parts)) {
-				if(part.rbxLayered) {
-					applyMesh(part, part.rbxMesh)
-				}
-			}
-			
-			this.trigger("layeredRequestStateChanged", "fetching")
-			
-			this._fetchLayeredClothing(request).then(result => {
-				if(this.layeredCurrentRequest !== request) { return }
-				this.layeredCurrentRequest = null
-				
-				this.trigger("layeredRequestStateChanged", null)
-				this.updateHasInvalidLayeredClothing()
-				
-				if(result) {
-					this.layeredFinishedRequest = request
-				} else {
-					this.layeredFailedRequest = request
-					
-					setTimeout(() => {
-						if(this.layeredFailedRequest === request) {
-							this.layeredFailedRequest = null
-							this.shouldRefreshLayeredClothing = true
-						}
-					}, 2000)
-				}
-			})
-		}
-		
 		updateHasInvalidLayeredClothing() {
 			this.trigger("hasInvalidLayeredClothingChanged", this.hasInvalidLayeredClothing && !this.layeredFinishedRequest?.failedToResolveAllAccessories)
 		}
@@ -2115,13 +2049,8 @@ const RBXAvatar = (() => {
 			}
 			
 			const scales = { ...this.scales }
-			const bodyColors = {}
 			
-			for(const [name, color] of Object.entries(this.bodyColors)) {
-				bodyColors[name + "Color"] = color
-			}
-			
-			const request = { bodyColors, scales, accessories, bodyparts }
+			const request = { scales, accessories, bodyparts }
 			
 			// sort assets by id for hashing
 			accessories.sort((a, b) => b.id - a.id)
@@ -2130,6 +2059,80 @@ const RBXAvatar = (() => {
 			request.hash = $.hashString(JSON.stringify(request))
 			
 			return request
+		}
+		
+		_refreshLayeredClothing() {
+			this.shouldRefreshLayeredClothing = false
+			
+			const request = this.getLayeredRequest()
+			
+			if(request === false) {
+				this.shouldRefreshLayeredClothing = true
+			}
+			
+			if(!request) {
+				if(this.layeredCurrentRequest || this.layeredFinishedRequest) {
+					this.layeredFailedRequest = null
+					this.layeredFinishedRequest = null
+					this.layeredCurrentRequest = null
+					
+					// reset bodyparts
+					for(const part of Object.values(this.parts)) {
+						if(part.rbxLayered) {
+							applyMesh(part, part.rbxMesh)
+						}
+					}
+					
+					// reset accessories
+					for(const acc of this.accessories) {
+						if(acc.obj.rbxLayered) {
+							applyMesh(acc.obj, acc.obj.rbxMesh)
+						}
+					}
+					
+					this.trigger("layeredRequestStateChanged", null)
+					this.updateHasInvalidLayeredClothing()
+				}
+				return
+			}
+			
+			if(request.hash === this.layeredCurrentRequest?.hash) { return }
+			if(request.hash === this.layeredFailedRequest?.hash) { return }
+			
+			this.layeredFailedRequest = null
+			this.layeredFinishedRequest = null
+			this.layeredCurrentRequest = request
+			
+			// reset bodyparts
+			for(const part of Object.values(this.parts)) {
+				if(part.rbxLayered) {
+					applyMesh(part, part.rbxMesh)
+				}
+			}
+			
+			this.trigger("layeredRequestStateChanged", "fetching")
+			this.updateHasInvalidLayeredClothing()
+			
+			this._fetchLayeredClothing(request).then(result => {
+				if(this.layeredCurrentRequest !== request) { return }
+				this.layeredCurrentRequest = null
+				
+				if(result) {
+					this.layeredFinishedRequest = request
+				} else {
+					this.layeredFailedRequest = request
+					
+					setTimeout(() => {
+						if(this.layeredFailedRequest === request) {
+							this.layeredFailedRequest = null
+							this.shouldRefreshLayeredClothing = true
+						}
+					}, 2000)
+				}
+				
+				this.trigger("layeredRequestStateChanged", null)
+				this.updateHasInvalidLayeredClothing()
+			})
 		}
 		
 		async _fetchLayeredClothing(request) {
@@ -2143,7 +2146,10 @@ const RBXAvatar = (() => {
 							...request.accessories,
 							...request.bodyparts
 						],
-						bodyColors: request.bodyColors,
+						bodyColors: {
+							headColor: "FFFFFF", leftArmColor: "FFFFFF", leftLegColor: "FFFFFF",
+							rightArmColor: "FFFFFF", rightLegColor: "FFFFFF", torsoColor: "FFFFFF"
+						},
 						scales: request.scales,
 						playerAvatarType: {
 							playerAvatarType: "R15"
@@ -2311,16 +2317,14 @@ const RBXAvatar = (() => {
 				rightleg: [652 / 916,   0 / 568, 264 / 916, 284 / 568],
 			}
 			
-			const getGroupMatch = (obj, group, box) => {
-				const mesh = obj.rbxMesh
-				
+			const getGroupMatch = (mesh, group, box) => {
 				if(group.uvs.length !== mesh.uvs.length) {
 					return null
 				}
 				
 				const [x0, y0, width, height] = box
 				
-				for(let i = 0; i < group.uvs.length; i += 2) {
+				for(let i = 0, len = group.uvs.length; i < len; i += 2) {
 					const u = (group.uvs[i] - x0) / width
 					const v = (group.uvs[i + 1] - y0) / height
 					
@@ -2335,9 +2339,7 @@ const RBXAvatar = (() => {
 				return true
 			}
 			
-			const getGroupMatchPartial = (obj, group, box) => {
-				const mesh = obj.rbxMesh
-				
+			const getGroupMatchPartial = (mesh, group, box) => {
 				if(group.uvs.length > mesh.uvs.length) {
 					return null
 				}
@@ -2348,7 +2350,7 @@ const RBXAvatar = (() => {
 				let search = 0
 				
 				outer:
-				for(let i = 0; i < group.uvs.length; i += 2) {
+				for(let i = 0, len = group.uvs.length; i < len ; i += 2) {
 					const u = (group.uvs[i] - x0) / width
 					const v = (group.uvs[i + 1] - y0) / height
 					
@@ -2381,7 +2383,7 @@ const RBXAvatar = (() => {
 				const matches = []
 				
 				for(const group of playerGroups) {
-					const mapping = partBox && getGroupMatchPartial(part, group, partBox) || getGroupMatchPartial(part, group, uvBoxes.full)
+					const mapping = partBox && getGroupMatchPartial(mesh, group, partBox) || getGroupMatchPartial(mesh, group, uvBoxes.full)
 					
 					if(mapping) {
 						matches.push({ group, mapping })
@@ -2512,7 +2514,7 @@ const RBXAvatar = (() => {
 				const matches = []
 					
 				for(const group of handleGroups) {
-					if(getGroupMatch(obj, group, uvBoxes.full)) {
+					if(getGroupMatch(mesh, group, uvBoxes.full)) {
 						matches.push(group)
 					}
 				}
@@ -2522,7 +2524,7 @@ const RBXAvatar = (() => {
 						console.log("Could not resolve asset in render")
 						
 						if(IS_DEV_MODE) {
-							console.log(acc.asset.id, obj.rbxMesh)
+							console.log(acc.asset.id, mesh)
 							console.log(matches)
 							console.log(groups)
 							console.log(request)
