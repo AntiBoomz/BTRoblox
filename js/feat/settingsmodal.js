@@ -486,7 +486,7 @@ const SettingsModal = {
 				checkbox.classList.add("btr-settings-checkbox")
 				
 				const labelIndex = labelCounter++
-				const label = html`<label for="btr-settings-input-${labelIndex}">${labelText}</label>`
+				const label = html`<label for="btr-settings-input-${labelIndex}" title="${labelText}">${labelText}</label>`
 				
 				const input = html`<input type=checkbox id="btr-settings-input-${labelIndex}">`
 				const resetButton = html`<span class=btr-setting-reset-button></span>`
@@ -785,7 +785,7 @@ const SettingsModal = {
 				input.id = `btr-settings-input-${labelIndex}`
 
 				const labelText = checkbox.hasAttribute("label") ? checkbox.getAttribute("label") : settingPath
-				const label = html`<label for=btr-settings-input-${labelIndex}>${labelText}</label>`
+				const label = html`<label for=btr-settings-input-${labelIndex} title="${labelText}">${labelText}</label>`
 				checkbox.append(label)
 
 				if(SETTINGS.hasSetting(settingPath)) {
@@ -846,7 +846,7 @@ const SettingsModal = {
 				if(typeof settingValue === "boolean") {
 					const checkbox = html`<checkbox></checkbox>`
 					const input = html`<input id=btr-settings-input-${labelCounter} type=checkbox>`
-					const label = html`<label for=btr-settings-input-${labelCounter++}>${settingPath}`
+					const label = html`<label for=btr-settings-input-${labelCounter++} title="${settingPath}">${settingPath}</label>`
 
 					checkbox.append(input)
 					checkbox.append(label)
