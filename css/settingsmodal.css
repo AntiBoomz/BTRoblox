@@ -703,8 +703,9 @@
 	border-radius: 5px;
 	overflow: hidden;
 	
-	display: grid;
-	grid-template-columns: 50% auto;
+	display: flex;
+	flex-direction: column;
+	
 	border: 1px solid light-dark(#E3E3E3, #494d5a);
 	
 	position: relative;
@@ -717,8 +718,6 @@
 	}
 	
 	.group {
-		display: contents;
-		
 		> summary {
 			padding: 2px 8px;
 			cursor: pointer;
@@ -728,35 +727,40 @@
 			font-size: 12px;
 			font-weight: bold;
 		}
-	}
+		
+		> .contents {
+			display: grid;
+			grid-template-columns: 50% auto;
+		}
+		
+		.name {
+			display: block;
+			font-size: 12px;
+			padding: 4px;
+			padding-left: 16px;
+			border-top: 1px solid light-dark(#E3E3E3, #494d5a);
+			border-right: 1px solid light-dark(#E3E3E3, #494d5a);
+			width: 100%;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			user-select: text;
+		}
 
-	.name {
-		display: block;
-		font-size: 12px;
-		padding: 4px;
-		padding-left: 16px;
-		border-top: 1px solid light-dark(#E3E3E3, #494d5a);
-		border-right: 1px solid light-dark(#E3E3E3, #494d5a);
-		width: 100%;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		user-select: text;
-	}
-
-	.value {
-		display: block;
-		font-size: 12px;
-		padding: 4px 6px;
-		
-		background-color: rgba(208, 217, 251, 0.05);
-		
-		outline: none;
-		border: none;
-		border-top: 1px solid light-dark(#E3E3E3, #494d5a);
-		width: 100%;
-		
-		&.invalid {
-			background-color: rgba(255, 0, 0, 0.05);
+		.value {
+			display: block;
+			font-size: 12px;
+			padding: 4px 6px;
+			
+			background-color: rgba(208, 217, 251, 0.05);
+			
+			outline: none;
+			border: none;
+			border-top: 1px solid light-dark(#E3E3E3, #494d5a);
+			width: 100%;
+			
+			&.invalid {
+				background-color: rgba(255, 0, 0, 0.05);
+			}
 		}
 	}
 

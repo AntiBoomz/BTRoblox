@@ -957,11 +957,12 @@ const SettingsModal = {
 				let group = this.experiments[experiment]
 				
 				if(!group) {
-					const contents = html`<details class=group open><summary title=${experiment}>${experiment}</summary></details>`
+					const details = html`<details class=group open><summary title=${experiment}>${experiment}</summary><div class=contents></div></details>`
 					
 					group = this.experiments[experiment] = {
 						name: experiment,
-						contents: contents,
+						details: details,
+						contents: details.$find(".contents"),
 						entries: {}
 					}
 					
@@ -969,9 +970,9 @@ const SettingsModal = {
 					const next = this.experiments[keys[keys.indexOf(experiment) + 1]]
 					
 					if(next) {
-						next.contents.before(contents)
+						next.details.before(details)
 					} else {
-						this.settingsDiv.$find("#btr-settings-experiments").append(contents)
+						this.settingsDiv.$find("#btr-settings-experiments").append(details)
 					}
 				}
 				
