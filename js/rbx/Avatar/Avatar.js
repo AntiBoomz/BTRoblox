@@ -1992,7 +1992,7 @@ const RBXAvatar = (() => {
 		}
 		
 		updateHasInvalidLayeredClothing() {
-			this.trigger("hasInvalidLayeredClothingChanged", this.hasInvalidLayeredClothing && !this.layeredFinishedRequest?.failedToResolveAllAccessories)
+			this.trigger("hasInvalidLayeredClothingChanged", this.hasInvalidLayeredClothing || this.layeredFinishedRequest?.failedToResolveAllAccessories)
 		}
 		
 		getLayeredRequest() {
@@ -2136,6 +2136,11 @@ const RBXAvatar = (() => {
 		}
 		
 		async _fetchLayeredClothing(request) {
+			if(request.accessories.length > 10) {
+				request.failedToResolveAllAccessories = true
+				return true
+			}
+			
 			let objHash = btrLocalStorage.getItem(`btrLayeredCache-${request.hash}`)
 			
 			if(!objHash) {
