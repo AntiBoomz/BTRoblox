@@ -266,7 +266,7 @@ const DracoBitstream = {
 					this.transformAttribute_Generic(parser, decoder, attribute)
 				}
 			}
-		}	
+		}
 	},
 	
 	decodeAttribute_Generic(stream, parser, decoder, attribute) {
@@ -408,35 +408,37 @@ const DracoBitstream = {
 		// DecodePredictionData
 		
 		if(predictionScheme === MESH_PREDICTION_CONSTRAINED_MULTI_PARALLELOGRAM) {
-			const isCreaseEdge = attribute.isCreaseEdge = []
+			throw "draco edgebreaker not implemented"
+			// const isCreaseEdge = attribute.isCreaseEdge = []
 
-			for(let i = 0; i < 4; i++) {
-				const numFlags = this.LEB128(stream)
+			// for(let i = 0; i < 4; i++) {
+			// 	const numFlags = this.LEB128(stream)
 				
-				if(numFlags > 0) {
-					parser.rans.init_bits(stream)
+			// 	if(numFlags > 0) {
+			// 		parser.rans.init_bits(stream)
 					
-					for(let j = 0; j < numFlags; j++) {
-						isCreaseEdge[i][j] = parser.rans.read_bit() > 0
-					}
-				}
-			}
+			// 		for(let j = 0; j < numFlags; j++) {
+			// 			isCreaseEdge[i][j] = parser.rans.read_bit() > 0
+			// 		}
+			// 	}
+			// }
 			
 		} else if(predictionScheme === MESH_PREDICTION_TEX_COORDS_PORTABLE) {
-			const numOrientations = stream.Int32LE()
+			throw "draco edgebreaker not implemented"
+			// const numOrientations = stream.Int32LE()
 			
-			const texOrientations = attribute.texOrientations = []
+			// const texOrientations = attribute.texOrientations = []
 			
-			parser.rans.init_bits(stream)
+			// parser.rans.init_bits(stream)
 			
-			let last_orientation = true
-			for(let i = 0; i < numOrientations; i++) {
-				if(!parser.rans.read_bit()) {
-					last_orientation = !last_orientation
-				}
+			// let last_orientation = true
+			// for(let i = 0; i < numOrientations; i++) {
+			// 	if(!parser.rans.read_bit()) {
+			// 		last_orientation = !last_orientation
+			// 	}
 				
-				texOrientations.push(last_orientation)
-			}
+			// 	texOrientations.push(last_orientation)
+			// }
 		}
 		
 		// DecodeTransformData
@@ -452,14 +454,15 @@ const DracoBitstream = {
 		// DecodePredictionData
 		
 		if(predictionScheme === MESH_PREDICTION_GEOMETRIC_NORMAL) {
-			const flipNormals = attribute.flipNormals = []
-			const numEntries = numValues / numComponents // ew
+			throw "draco edgebreaker not implemented"
+			// const flipNormals = attribute.flipNormals = []
+			// const numEntries = numValues / numComponents // ew
 			
-			parser.rans.init_bits(stream)
+			// parser.rans.init_bits(stream)
 			
-			for(let i = 0; i < numEntries; i++) {
-				flipNormals.push(parser.rans.read_bit() > 0)
-			}
+			// for(let i = 0; i < numEntries; i++) {
+			// 	flipNormals.push(parser.rans.read_bit() > 0)
+			// }
 		}	
 	},
 	
@@ -485,7 +488,7 @@ const DracoBitstream = {
 			}
 			
 		} else if(predictionTransformType === PREDICTION_TRANSFORM_NORMAL_OCTAHEDRON_CANONICALIZED) {
-			let maxQuantizedValue = (1 << octaMaxQ) - 1
+			let maxQuantizedValue = (1 << attribute.octaMaxQ) - 1
 			let maxValue = maxQuantizedValue - 1
 			let centerValue = maxValue / 2
 			
@@ -503,8 +506,11 @@ const DracoBitstream = {
 					sign_t = (t > 0) ? 1 : -1
 				}
 				
-				let us = t + t - sign_t * centerValue
-				let ut = s + s - sign_s * centerValue
+				const corner_point_s = sign_s * centerValue
+				const corner_point_t = sign_t * centerValue
+				
+				let us = t + t - corner_point_t
+				let ut = s + s - corner_point_s
 				
 				if(sign_s * sign_t >= 0) {
 					us = -us
@@ -512,7 +518,7 @@ const DracoBitstream = {
 				}
 				
 				return [
-					(us + corner_point_s) / 2
+					(us + corner_point_s) / 2,
 					(ut + corner_point_t) / 2
 				]
 			}
@@ -566,8 +572,8 @@ const DracoBitstream = {
 			}
 			
 			const modMax = x => {
-				return x > centerValue ? x - max_quantized_value_
-					: x > centerValue ? x + max_quantized_value_
+				return x > centerValue ? x - maxQuantizedValue
+					: x < -centerValue ? x + maxQuantizedValue
 					: x
 			}
 			
