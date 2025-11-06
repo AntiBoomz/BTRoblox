@@ -39,7 +39,7 @@ pageInit.profile = () => {
 	})
 	
 	onPageReset(() => {
-		document.body?.classList.remove("btr-profile", "btr-has-avatar-redesign")
+		document.body?.classList.remove("btr-profile")
 	})
 	
 	onPageLoad(userIdString => {
@@ -62,6 +62,7 @@ pageInit.profile = () => {
 								<div class="placeholder-desc profile-about-content">
 									<pre id=profile-about-text class=profile-about-text>
 										<span class="profile-about-content-text text-label">
+											<div class="section-content-off btr-section-content-off">This user has no description</div>
 										</span>
 									</pre>
 								</div>
@@ -173,7 +174,6 @@ pageInit.profile = () => {
 						}
 					})
 				})
-			
 				
 			const updateAvatarRedesign = () => {
 				const avatarRedesign = profileContainer.$find(".profile-avatar-left.profile-avatar-gradient")
@@ -181,8 +181,6 @@ pageInit.profile = () => {
 				if(avatarRedesign) {
 					avatarRedesign.parentNode.classList.add("btr-avatar-redesign-container")
 				}
-				
-				document.body.classList.toggle("btr-has-avatar-redesign", !!avatarRedesign)
 				
 				const currentlyWearing = document.$find(".btr-avatar-container")
 				if(!currentlyWearing) { return }
@@ -809,7 +807,10 @@ pageInit.profile = () => {
 						const numGroups = json.data.length
 
 						pager.setMaxPage(Math.floor((numGroups - 1) / pageSize) + 1)
-						if(numGroups === 0) { return }
+						if(numGroups === 0) {
+							hlist.replaceChildren(html`<div class="section-content-off btr-section-content-off">This user is in no Communities</div>`)
+							return
+						}
 						
 						hlist.replaceChildren()
 

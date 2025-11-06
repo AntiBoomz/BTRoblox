@@ -50,14 +50,14 @@ html .dark-theme.btr-profile .btr-section-content-off {
 .btr-profile .btr-profile-about {
 	position: relative;
 	
-	> .section-content {
-		padding-bottom: 8px;
-	}
-	
 	/* Social buttons */
 	.social-link-icon-list {
 		position: relative;
 		z-index: 2;
+	}
+	
+	> .section-content {
+		padding-bottom: 8px;
 	}
 	
 	/* Player status */
@@ -149,7 +149,7 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	
 	/* Description */
 	.btr-profile-description {
-		margin: 10px 10px;
+		padding: 6px 12px 0;
 		
 		profile-description {
 			&,
@@ -177,7 +177,15 @@ html .dark-theme.btr-profile .btr-section-content-off {
 
 				.profile-about-content-text {
 					white-space: pre-line;
+					
+					.btr-section-content-off {
+						padding: 0;
+					}
 				}
+			}
+			
+			.content-height {
+				height: 122px;
 			}
 			
 			.toggle-content {
@@ -212,7 +220,7 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	
 	/* Stats */
 	.profile-statistics {
-		margin-top: 10px;
+		margin-top: 16px;
 		
 		> .profile-stats-header {
 			display: none;
@@ -225,7 +233,8 @@ html .dark-theme.btr-profile .btr-section-content-off {
 		.profile-stats {
 			border-top: 1px solid light-dark(#E3E3E3, #494d5a);
 			border-bottom: 1px solid light-dark(#E3E3E3, #494d5a);
-			min-height: 69px;
+			min-height: 53px;
+			padding: 4px 0;
 			
 			.profile-stat {
 				max-width: 50%;
@@ -243,17 +252,22 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	}
 }
 
-.btr-avatar-redesign-container {
-	contain: layout;
-}
+/* Avatar redesign */
 
-.btr-has-avatar-redesign {
-	.btr-profile-about .btr-header-status-parent {
-		/* display: none; */
+.content:has(.btr-avatar-redesign-container) {
+	.btr-avatar-redesign-container {
+		contain: layout;
+	}
+	
+	.btr-profile-about {
+		.btr-header-status-parent {
+			display: none;
+		}
 	}
 	
 	.profile-avatar {
 		position: relative;
+		margin-top: -30px;
 		
 		.profile-avatar-left {
 			display: contents;
@@ -266,6 +280,7 @@ html .dark-theme.btr-profile .btr-section-content-off {
 				
 				.btr-toggle-items {
 					position: absolute;
+					z-index: 10000;
 					right: 12px;
 					bottom: 12px;
 				}
@@ -293,6 +308,17 @@ html .dark-theme.btr-profile .btr-section-content-off {
 				transition: opacity 0.3s;
 			}
 		}
+	}
+}
+
+/* Header redesign */
+
+.user-profile-header {
+	margin-bottom: 10px;
+	
+	/* Hide new description */
+	div:has(>.description-content) {
+		display: none;
 	}
 }
 
