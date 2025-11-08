@@ -41,8 +41,10 @@ function getOutfitData(id) {
 }
 
 function getPlayerAppearance(userId) {
-	if(!outfitCache["user" + userId]) {
-		return outfitCache["user" + userId] = RobloxApi.avatar.getUserAvatar(userId).then(data => {
+  let avatarKey = (!userId || userId <= 0) ? "default" : "user" + userId
+  
+	if(!outfitCache[avatarKey]) {
+		return outfitCache[avatarKey] = (avatarKey == "default" ? RobloxApi.avatar.getCurrentAvatar() : RobloxApi.avatar.getUserAvatar(userId)).then(data => {
 			data = { ...data }
 			
 			data.bodyColors = solveBodyColors(data.bodyColor3s)
@@ -52,7 +54,7 @@ function getPlayerAppearance(userId) {
 		})
 	}
 
-	return outfitCache["user" + userId]
+	return outfitCache[avatarKey]
 }
 
 function getCurrentAppearance() {
