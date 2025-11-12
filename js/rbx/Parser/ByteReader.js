@@ -79,17 +79,17 @@ class ByteReader extends Uint8Array {
 	LZ4(comLength, decomLength, buffer) {
 		$.assert(this.GetRemaining() >= comLength, "[ByteReader.LZ4] unexpected eof")
 		
-		if(!buffer || buffer.length < decomLength) {
-			buffer = new Uint8Array(decomLength)
+		if(!output || output.length < decomLength) {
+			output = new Uint8Array(decomLength)
+		} else if(output.length > decomLength) {
+			output = output.subarray(0, decomLength)
 		}
 		
-		const data = buffer.length > decomLength ? buffer.subarray(0, decomLength) : buffer
 		const endIndex = this.index + comLength
-		
+		let outputIndex = 0
 		let lastByte = 0
-		let index = 0
 
-		while(index < decomLength) {
+		while(true) {
 			const token = this[this.index++]
 			let literalLength = token >> 4
 
@@ -103,34 +103,36 @@ class ByteReader extends Uint8Array {
 			$.assert(this.index + literalLength <= endIndex, "[ByteReader.LZ4] unexpected eof")
 
 			for(let i = 0; i < literalLength; i++) {
-				data[index++] = this[this.index++]
+				output[outputIndex++] = this[this.index++]
+			}
+			
+			if(this.index === endIndex) {
+				break
 			}
 
-			if(index < decomLength) {
-				let matchIndex = index - this.UInt16LE()
-				let matchLength = token & 0xF
+			let matchIndex = outputIndex - this.UInt16LE()
+			let matchLength = token & 0xF
 
-				if(matchLength === 0xF) {
-					do {
-						lastByte = this[this.index++]
-						matchLength += lastByte
-					} while(lastByte === 0xFF)
-				}
-				
-				matchLength += 4 // Minimum match is 4 bytes, so 4 is added to the length
-				
-				$.assert(index + matchLength <= decomLength, "[ByteReader.LZ4] output size mismatch")
-				
-				for(let i = 0; i < matchLength; i++) {
-					data[index++] = data[matchIndex++]
-				}
+			if(matchLength === 0xF) {
+				do {
+					lastByte = this[this.index++]
+					matchLength += lastByte
+				} while(lastByte === 0xFF)
+			}
+			
+			matchLength += 4 // Minimum match is 4 bytes, so 4 is added to the length
+			
+			$.assert(outputIndex + matchLength <= decomLength, "[ByteReader.LZ4] output size mismatch")
+			
+			for(let i = 0; i < matchLength; i++) {
+				output[outputIndex++] = output[matchIndex++]
 			}
 		}
 
 		$.assert(this.index === endIndex, "[ByteReader.LZ4] input size mismatch")
-		$.assert(index === decomLength, "[ByteReader.LZ4] output size mismatch")
+		$.assert(outputIndex === decomLength, "[ByteReader.LZ4] output size mismatch")
 		
-		return data
+		return output
 	}
 
 	// Interleaved
