@@ -189,11 +189,15 @@ const RBXBinaryParser = {
 				
 				let data
 				
+				reader.SetIndex(dataStartIndex)
+				
 				if(comLength === 0) {
-					reader.SetIndex(dataStartIndex)
 					data = reader.Array(decomLength)
+					
+				} else if(reader.PeekUInt32LE() === 0xFD2FB528) {
+					data = reader.Zstd(comLength, decomLength, chunkBuffer)
+					
 				} else {
-					reader.SetIndex(dataStartIndex)
 					data = reader.LZ4(comLength, decomLength, chunkBuffer)
 				}
 				
