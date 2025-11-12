@@ -72,13 +72,9 @@ const SourceViewer = (() => {
 
 		const content = html`
 		<div class=btr-sourceviewer-source-container>
-			<div class=btr-sourceviewer-linenumbers>
-				<div class=btr-linenumber style="visibility:hidden;">${allLines.length}</div>
-			</div>
-			<div class=btr-sourceviewer-scopes>
-			</div>
-			<div class=btr-sourceviewer-lines contentEditable=true spellcheck=false>
-			</div>
+			<div class=btr-sourceviewer-linenumbers><div class=btr-linenumber style="visibility:hidden;">${allLines.length}</div></div>
+			<div class=btr-sourceviewer-scopes></div>
+			<div class=btr-sourceviewer-lines contentEditable="plaintext-only" spellcheck=false></div>
 		</div>`
 		
 		const linesParent = content.$find(".btr-sourceviewer-lines")
@@ -144,8 +140,8 @@ const SourceViewer = (() => {
 		
 		const finishLine = () => {
 			if(!current) { return }
-			
-			// current.list.append("\n")
+
+			current.list.append("\n")
 			
 			current.templist.replaceWith(current.list)
 			delete current.templist
@@ -249,7 +245,7 @@ const SourceViewer = (() => {
 			list.classList.add("btr-linetext")
 			
 			const templist = list.cloneNode(true)
-			templist.textContent = lineText // + "\n"
+			templist.textContent = lineText + "\n"
 			
 			elem.append(ln, templist)
 			
