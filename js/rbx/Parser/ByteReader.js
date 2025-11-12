@@ -119,7 +119,7 @@ class ByteReader extends Uint8Array {
 		return output
 	}
 	
-	LZ4(comLength, decomLength, buffer) {
+	LZ4(comLength, decomLength, output) {
 		$.assert(this.GetRemaining() >= comLength, "[ByteReader.LZ4] unexpected eof")
 		
 		if(!output || output.length < decomLength) {
