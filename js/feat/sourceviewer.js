@@ -5,8 +5,8 @@ const SourceViewer = (() => {
 
 	const _ParseRegex = new RegExp(
 		[
-			/-?(?:0_*(?:x_*[0-9a-f][0-9a-f_]*|[bB]_*[01][01_]*)|(\d[\d_]*)?\.?\d[\d_]*(?:e[+-]?_*\d[\d_]*)?)/.source, // number
-			/[+\-*/^%~=><]=|\.\.[.=]?/.source, // multi-char ops
+			/0_*x_*[0-9a-f][0-9a-f_]*|0_*b_*[01][01_]*|(\d[\d_]*)?\.?\d[\d_]*(?:e[+-]?_*\d[\d_]*)?/.source, // number
+			/[+\-*/^%~=><]=|\.\.[.=]?|::|->|\/\//.source, // multi-char ops
 			/\[=*\[/.source, // groups
 			/--(?:\[=*\[)?/.source, // comments
 			/\w+/.source, // words
@@ -18,7 +18,7 @@ const SourceViewer = (() => {
 
 	const Keywords = new Set([
 		"function", "local", "end", "if", "elseif", "else", "then", "repeat", "until", "while", "do", "for",
-		"not", "and", "or", "break", "in", "return", "continue"
+		"not", "and", "or", "break", "in", "return", "continue", "export", "type"
 	])
 
 	const Globals = new Set([
@@ -26,6 +26,7 @@ const SourceViewer = (() => {
 		"DockWidgetPluginGuiInfo", "Faces", "Instance", "NumberRange", "NumberSequence", "NumberSequenceKeypoint",
 		"PathWaypoint", "PhysicalProperties", "PluginDrag", "Random", "Ray", "RaycastParams", "Rect", "Region3",
 		"Region3int16", "TweenInfo", "UDim", "UDim2", "Vector2", "Vector2int16", "Vector3", "Vector3int16",
+		"SharedTable"
 
 		"assert", "collectgarbage", "error", "gcinfo", "getfenv", "getmetatable", "ipairs", "loadstring", "newproxy",
 		"next", "pairs", "pcall", "print", "rawequal", "rawget", "rawset", "select", "setfenv", "setmetatable",
@@ -38,24 +39,47 @@ const SourceViewer = (() => {
 	])
 
 	const Tables = {
-		bit32: new Set(["band", "extract", "bor", "bnot", "countrz", "bxor", "arshift", "rshift", "rrotate", "replace", "lshift", "lrotate", "btest", "countlz"]),
-		coroutine: new Set(["resume", "running", "yield", "close", "status", "wrap", "create", "isyieldable"]),
-		debug: new Set(["loadmodule", "traceback", "info", "dumpheap", "resetmemorycategory", "setmemorycategory", "profileend", "profilebegin"]),
 		math: new Set([
-			"log", "ldexp", "rad", "cosh", "round", "random", "frexp", "tanh", "floor", "max", "sqrt", "modf", "huge", "pow", "atan", "tan", "cos", "pi",
-			"noise", "log10", "sign", "acos", "abs", "clamp", "sinh", "asin", "min", "deg", "fmod", "randomseed", "atan2", "ceil", "sin", "exp"
+			"log", "ldexp", "deg", "cosh", "round", "random", "frexp", "tanh", "floor", "max", "sqrt", "modf", "huge", "pow", "acos",
+			"tan", "cos", "pi", "atan", "map", "sign", "ceil", "clamp", "noise", "abs", "exp", "sinh", "asin", "min", "randomseed",
+			"fmod", "rad", "atan2", "log10", "sin", "lerp"
 		]),
-		os: new Set(["clock", "difftime", "time", "date"]),
-		string: new Set(["split", "match", "gmatch", "upper", "gsub", "format", "lower", "sub", "pack", "find", "char", "packsize", "reverse", "byte", "unpack", "rep", "len"]),
-		table: new Set(["getn", "foreachi", "foreach", "sort", "unpack", "freeze", "clear", "pack", "move", "insert", "create", "maxn", "isfrozen", "concat", "clone", "find", "remove"]),
+		buffer: new Set([
+			"readf64", "readu32", "tostring", "readi8", "readu16", "copy", "readu8", "writebits", "writei16", "writeu16", "fromstring",
+			"writef32", "readi32", "fill", "writeu32", "writeu8", "create", "writestring", "writei8", "readbits", "readi16", "writef64",
+			"len", "writei32", "readstring", "readf32"
+		]),
+		debug: new Set([
+			"dumpheap", "getmemorycategory", "resetmemorycategory", "setmemorycategory", "dumpcodesize", "profilebegin", "loadmodule",
+			"profileend", "info", "dumprefs", "traceback"
+		]),
+		table: new Set([
+			"getn", "foreachi", "foreach", "sort", "unpack", "freeze", "clear", "pack", "move", "insert", "create", "maxn", "isfrozen",
+			"concat", "clone", "find", "remove"
+		]),
+		string: new Set([
+			"split", "match", "gmatch", "upper", "gsub", "format", "lower", "sub", "pack", "find", "char", "packsize", "reverse",
+			"byte", "unpack", "rep", "len"
+		]),
+		vector: new Set([
+			"clamp", "ceil", "floor", "one", "abs", "zero", "create", "normalize", "min", "max", "magnitude", "cross", "sign", "angle",
+			"dot", "lerp"
+		]),
+		bit32: new Set([
+			"band", "extract", "byteswap", "bor", "bnot", "countrz", "bxor", "arshift", "rshift", "rrotate", "replace", "lshift",
+			"lrotate", "btest", "countlz"
+		]),
 		utf8: new Set(["offset", "codepoint", "nfdnormalize", "char", "codes", "len", "graphemes", "nfcnormalize", "charpattern"]),
+		coroutine: new Set(["resume", "running", "yield", "close", "status", "wrap", "create", "isyieldable"]),
 		task: new Set(["defer", "cancel", "wait", "desynchronize", "synchronize", "delay", "spawn"]),
+		os: new Set(["clock", "difftime", "time", "date"]),
 	}
 	
 	const Operators = new Set([
 		"+", "-", "*", "/", "%", "^", ">", "<", "=",
 		"+=", "-=", "*=", "/=", "%=", "^=", ">=", "<=", "==", "~=",
-		":", "{", "}", "(", ")", "[", "]", "#", "..", "..="
+		":", "{", "}", "(", ")", "[", "]", "#", "..", "..=",
+		"::", "->", "//"
 	])
 
 	const ScopeIn = new Set(["then", "do", "repeat", "function", "(", "{", "["])
@@ -197,16 +221,19 @@ const SourceViewer = (() => {
 			}
 		}
 
-		const genericAppend = stringChar => {
+		const genericAppend = (char1, char2) => {
 			let newLine = source.indexOf("\n", ParseRegex.lastIndex)
 			if(newLine === -1) { newLine = source.length }
 			
-			if(stringChar) {
-				let nextIndex = ParseRegex.lastIndex
+			if(char1) {
+				let index = ParseRegex.lastIndex - 1
+				let startIndex = index + 1
 
 				while(true) {
-					const index = source.indexOf(stringChar, nextIndex)
-					nextIndex = index + 1
+					const index1 = source.indexOf(char1, index + 1)
+					const index2 = char2 ? source.indexOf(char2, index + 1) : -1
+					
+					index = index1 === -1 ? index2 : index2 === -1 ? index1 : Math.min(index1, index2)
 
 					if(index === -1 || index > newLine) {
 						appendUntil(newLine)
@@ -265,6 +292,7 @@ const SourceViewer = (() => {
 		//
 		
 		const indexState = { depth: 0, parent: "root", state: false }
+		const interpState = []
 		let nextYield = performance.now() + 10
 		let parented = false
 		let depth = 0
@@ -322,15 +350,42 @@ const SourceViewer = (() => {
 			} else if(text === "\"" || text === "'") {
 				textType = "string"
 				genericAppend(text)
+			} else if(text === "`") {
+				textType = "string"
+				genericAppend("`", "{")
+				
+				if(text.slice(-1) === "{") {
+					interpState.push(1)
+				}
+				
 			} else if(Operators.has(text)) {
 				textType = "operator"
+				
+				if(interpState.length > 0) {
+					if(text === "{") {
+						interpState[interpState.length - 1] += 1
+					} else if(text === "}") {
+						if(interpState[interpState.length - 1] > 1) {
+							interpState[interpState.length - 1] -= 1
+						} else {
+							interpState.pop()
+							
+							textType = "string"
+							genericAppend("`", "{")
+							
+							if(text.slice(-1) === "{") {
+								interpState.push(1)
+							}
+						}
+					}
+				}
+				
 			} else if(NumberRegex.test(text)) {
 				textType = "number"
 			} else if(/[^\n\S]+/.test(text)) {
 				textType = "whitespace"
 			}
-
-
+			
 			if(textType !== "whitespace" && textType !== "comment") {
 				if(indexState.state && (text === "." || text === ":")) {
 					indexState.depth += 1
