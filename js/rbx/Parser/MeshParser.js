@@ -214,7 +214,7 @@ const RBXMeshParser = {
 		// Envelope[vertexCount]
 		
 		if(boneCount > 0) {
-			mesh.skinIndices = new Uint8Array(vertexCount * 4)
+			mesh.skinIndices = new Uint16Array(vertexCount * 4)
 			mesh.skinWeights = new Float32Array(vertexCount * 4)
 			
 			for(let i = 0; i < vertexCount; i++) {
@@ -492,7 +492,7 @@ const RBXMeshParser = {
 				case 1: {
 					const numVerts = chunk.UInt32LE()
 					
-					const skinIndices = mesh.skinIndices = new Uint8Array(numVerts * 4)
+					const skinIndices = mesh.skinIndices = new Uint16Array(numVerts * 4)
 					const skinWeights = mesh.skinWeights = new Float32Array(numVerts * 4)
 					
 					for(let i = 0; i < numVerts; i++) {
