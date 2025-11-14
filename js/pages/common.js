@@ -736,6 +736,7 @@ const initPreview = async (assetId, assetTypeId, isBundle) => {
 				}
 				
 				preview.playAnimation(anims.idle[0])
+				preview.canStopAnimationIfAutoSkin = true
 			}
 			
 			preview.on("playerTypeChanged", applyAnimation)

@@ -125,6 +125,10 @@ class AvatarPreviewer extends EventEmitter {
 		const invalidLayeredClothingMarker = html`<div class=btr-invalid-layered>!</div>`
 		
 		this.avatar.on("hasInvalidLayeredClothingChanged", hasInvalidLayeredClothing => {
+			if(this.avatar.hasInvalidAutoSkinnedAccessories && this.canStopAnimationIfAutoSkin) {
+				this.stopAnimation()
+			}
+			
 			if(hasInvalidLayeredClothing) {
 				this.container.append(invalidLayeredClothingMarker)
 			} else {
@@ -153,7 +157,9 @@ class AvatarPreviewer extends EventEmitter {
 			}
 
 			if(!this.playingAnim) {
-				if(this.currentAnim) {
+				if(this.avatar.hasInvalidAutoSkinnedAccessories && this.canStopAnimationIfAutoSkin) {
+					this.stopAnimation()
+				} else if(this.currentAnim) {
 					this.loadAnimation(this.currentAnim)
 				} else if(!this.defaultAnimationsDisabled) {
 					this.loadDefaultAnimation()
@@ -285,7 +291,7 @@ class AvatarPreviewer extends EventEmitter {
 		}
 
 		if(!this.playingAnim && this.loadingAnim) {
-			promises.push(new Promise(resolve => this.once("animationLoaded", () => resolve())))
+			promises.push(new Promise(resolve => this.once("animationPlayed", () => resolve())))
 		}
 
 		return Promise.all(promises)
@@ -313,7 +319,7 @@ class AvatarPreviewer extends EventEmitter {
 	addAssetPreview(assetId, assetTypeId, meta) {
 		if(LayeredAssetTypes.includes(assetTypeId)) {
 			if(!meta) { meta = { order: 1, version: 1 } }
-			meta.order = 10
+			meta = {...meta, order: 10 }
 		}
 		
 		const asset = this.avatar.addAsset(assetId, assetTypeId, meta)
@@ -375,12 +381,13 @@ class AvatarPreviewer extends EventEmitter {
 				this.setPlayerType(R6AnimParts.some(x => x in data.keyframes) ? "R6" : "R15")
 			}
 
-			this.trigger("animationLoaded", data, assetId)
+			this.trigger("animationPlayed", assetId)
 		})
 	}
 
 	loadDefaultAnimation() {
 		this.stopAnimation()
+		this.canStopAnimationIfAutoSkin = true
 
 		if(this.enabled) {
 			this.loadAnimation(this.playerType === "R15" ? R15Anims[0] : R6Anims[0])
@@ -390,11 +397,16 @@ class AvatarPreviewer extends EventEmitter {
 	stopAnimation() {
 		this.currentAnim = null
 		this.loadingAnim = null
+		this.canStopAnimationIfAutoSkin = null
 
 		if(this.playingAnim) {
 			this.scene.avatar.animator.stop(this.playingAnim.track)
 			this.playingAnim = null
+			
+			this.trigger("animationStopped")
 		}
+		
+		this.trigger("currentAnimationChanged", null)
 	}
 	
 	playAnimation(animId) {
@@ -405,6 +417,8 @@ class AvatarPreviewer extends EventEmitter {
 		if(this.enabled) {
 			this.loadAnimation(animId)
 		}
+		
+		this.trigger("currentAnimationChanged", animId)
 	}
 }
 
@@ -643,18 +657,44 @@ class ItemPreviewer extends AvatarPreviewer {
 		})
 
 		previewBtn.$on("click", () => this.setEnabled(!this.enabled))
+		
+		const animationChanged = () => {
+			const playingAnim = this.getAnimation(this.playingAnim?.id)
 
-		this.on("animationLoaded", (data, assetId) => {
-			const anim = this.getAnimation(assetId)
-
-			if(anim && anim.animType === "swim") {
+			if(playingAnim && playingAnim.animType === "swim") {
 				this.scene.avatarOffset.position.set(0, 0, .5)
 				this.scene.avatarOffset.rotation.set(-Math.PI / 2, 0, 0)
 			} else {
 				this.scene.avatarOffset.position.set(0, 0, 0)
 				this.scene.avatarOffset.rotation.set(0, 0, 0)
 			}
-		})
+			
+			const anim = playingAnim || this.getAnimation(this.currentAnim || 0)
+			
+			const label = this.dropdown.$find("[data-bind='label']")
+			label.textContent = !anim ? "" : (anim.isBundleAnim ? "Emotes" : anim.name)
+			label.title = !anim ? "" : (anim.isBundleAnim ? "" : anim.name)
+
+			if(this.hasBundleAnims) {
+				for(const sel of this.bundleAnims.$findAll(".selected")) {
+					sel.classList.remove("selected")
+				}
+
+				if(anim?.isBundleAnim) {
+					for(const sel of anim.selections) {
+						sel.classList.add("selected")
+					}
+				}
+				
+				this.animNameLabel.textContent = !anim ? "" : anim.name
+			}
+		}
+		
+		this.on("animationPlayed", animationChanged)
+		this.on("animationStopped", animationChanged)
+		this.on("currentAnimationChanged", animationChanged)
+		
+		this.addBundleAnimation(0, "NONE")
 	}
 
 	selectOutfit(target) {
@@ -748,34 +788,12 @@ class ItemPreviewer extends AvatarPreviewer {
 		return this.animMap[animId]
 	}
 
-	playAnimation(animId) {
-		const anim = this.getAnimation(animId)
-		if(!anim) { return console.warn("No anim", animId) }
-
-		super.playAnimation(anim.assetId)
-		
-		const label = this.dropdown.$find("[data-bind='label']")
-		label.textContent = anim.isBundleAnim ? "Emotes" : anim.name
-		label.title = anim.isBundleAnim ? "" : anim.name
-
-		if(this.hasBundleAnims) {
-			for(const sel of this.bundleAnims.$findAll(".selected")) {
-				sel.classList.remove("selected")
-			}
-
-			if(anim.isBundleAnim) {
-				for(const sel of anim.selections) {
-					sel.classList.add("selected")
-				}
-			}
-			
-			this.animNameLabel.textContent = anim.name || ""
-		}
-	}
-
 	updateAnimButtons() {
-		if(Object.values(this.animMap).length >= 2) {
-			if(!this.hasBundleAnims && Object.values(this.animMap).find(x => x.isBundleAnim)) {
+		let numDropdownAnims = this.dropdownMenu.children.length
+		let numBundleAnims = Object.values(this.animMap).filter(x => x.isBundleAnim && x.assetId !== 0).length
+		
+		if((numDropdownAnims + numBundleAnims) >= 2) {
+			if(!this.hasBundleAnims && numBundleAnims > 0) {
 				this.hasBundleAnims = true
 				
 				this.bundleAnims.style.display = ""
@@ -784,8 +802,8 @@ class ItemPreviewer extends AvatarPreviewer {
 				// Move camera down
 				this.scene.cameraOffset.y -= 1
 			}
-
-			if(!this.hasDropdown && this.dropdownMenu.children.length >= 1) {
+			
+			if(!this.hasDropdown && numDropdownAnims > 0) {
 				this.hasDropdown = true
 				this.dropdown.style.display = ""
 			}
@@ -809,6 +827,7 @@ class ItemPreviewer extends AvatarPreviewer {
 	
 	addAnimation(assetId, name) {
 		const anims = Object.values(this.animMap).map(x => x.name)
+		
 		if(anims.includes(name)) {
 			for(let i = 2; i < Infinity; i++) {
 				const newName = `${name} (${i})`
@@ -845,24 +864,28 @@ class ItemPreviewer extends AvatarPreviewer {
 		}
 	}
 
-	addBundleAnimation(assetId, origAnimType, assetName) {
-		let animType = origAnimType
+	addBundleAnimation(assetId, animType, assetName) {
+		let bundleType = animType
 		let isAlt = false
 		let altText
 
 		if(animType === "pose") {
 			isAlt = true
 			altText = "POSE"
-			animType = "idle"
+			bundleType = "idle"
 		} else if(animType === "swimidle") {
 			isAlt = true
 			altText = "IDLE"
-			animType = "swim"
+			bundleType = "swim"
+		} else if(animType === "NONE") {
+			isAlt = true
+			altText = "NONE"
+			bundleType = "idle"
 		}
 
-		const root = this.bundleAnims.$find(`.btr-bundle-btn[data-anim="${animType}"]`)
+		const root = this.bundleAnims.$find(`.btr-bundle-btn[data-anim="${bundleType}"]`)
 		if(!root) {
-			this.addAnimation(assetId, animType)
+			this.addAnimation(assetId, bundleType)
 			return
 		}
 		
@@ -876,7 +899,7 @@ class ItemPreviewer extends AvatarPreviewer {
 		const anim = {
 			assetId: assetId,
 			name: assetName,
-			animType: origAnimType,
+			animType: animType,
 			altText: altText,
 			isAlt: isAlt,
 			isBundleAnim: true,
@@ -886,7 +909,7 @@ class ItemPreviewer extends AvatarPreviewer {
 		this.animMap[anim.assetId] = anim
 
 		if(isAlt) {
-			const alts = this.bundleAlts[animType] = this.bundleAlts[animType] || { list: [] }
+			const alts = this.bundleAlts[bundleType] = this.bundleAlts[bundleType] || { list: [] }
 
 			if(!alts.cont) {
 				alts.cont = html`<div class=btr-bundle-alt-container></div>`
@@ -895,6 +918,10 @@ class ItemPreviewer extends AvatarPreviewer {
 
 			btn = html`<div class="btr-bundle-btn-alt btn-control-xs">${anim.altText}</div>`
 			alts.cont.prepend(btn)
+			
+			if(btn.nextElementSibling?.textContent === "NONE") { // keep NONE as topmost
+				btn.nextElementSibling.after(btn)
+			}
 
 			anim.selections.push(alts.cont, btn)
 		} else {
@@ -904,8 +931,12 @@ class ItemPreviewer extends AvatarPreviewer {
 		anim.btn = btn
 		
 		anim.onclick = ev => {
-			this.playAnimation(anim.assetId)
-
+			if(anim.assetId) {
+				this.playAnimation(anim.assetId)
+			} else {
+				this.stopAnimation()
+			}
+			
 			ev.stopImmediatePropagation()
 			ev.preventDefault()
 		}
@@ -962,11 +993,15 @@ const HoverPreview = (() => {
 		let cameraDir
 		
 		for(const asset of lastPreviewedAssets) {
-			const state = asset.getState(preview.avatar.playerType)
+			const state = asset.get(preview.avatar.playerType)
 			if(!state) { continue }
 			
 			for(const acc of state.accessories) {
 				if(!acc.obj) { continue }
+				
+				if(acc.wrapLayer && preview.scene.avatar.layeredCurrentRequest) {
+					continue
+				}
 				
 				addedObjects.add(acc.obj)
 				
@@ -1010,21 +1045,26 @@ const HoverPreview = (() => {
 		//
 		
 		const box = new THREE.Box3()
-		const box2 = new THREE.Box3()
+		const tempVector = new THREE.Vector3()
 
 		const expandBox = () => {
 			preview.avatar.root.updateWorldMatrix(true, true)
 			
 			const expandBy = object => {
 				if(object.geometry instanceof THREE.BufferGeometry && object.geometry.getAttribute("position")) {
-					if(!object.geometry.boundingBox) {
-						object.geometry.computeBoundingBox()
+					const position = object.geometry.getAttribute("position")
+					
+					for(let i = 0; i < position.count; i++) {
+						tempVector.fromBufferAttribute(position, i)
+						
+						if(object.isSkinnedMesh) {
+							object.boneTransform(i, tempVector)
+						}
+						
+						tempVector.applyMatrix4(object.matrixWorld)
+						
+						box.expandByPoint(tempVector)
 					}
-
-					box2.copy(object.geometry.boundingBox)
-					box2.applyMatrix4(object.matrixWorld)
-
-					box.union(box2)
 				}
 				
 				for(const child of object.children) {
@@ -1036,16 +1076,12 @@ const HoverPreview = (() => {
 				expandBy(object)
 			}
 		}
-
-		preview.scene.update()
-		expandBox()
 		
-		if(box.isEmpty()) {
-			box.set(
-				new THREE.Vector3(-2, 0, -0.5),
-				new THREE.Vector3(2, 5, 0.5),
-			)
-		}
+		preview.scene.avatar.animationsDisabled = true
+		preview.scene.update()
+		preview.scene.avatar.animationsDisabled = false
+		
+		expandBox()
 
 		preview.scene.cameraFocus.copy(box.max).add(box.min).multiplyScalar(0.5)
 		// preview.scene.cameraFocus.y += (box.max.y - box.min.y) * 0.01
@@ -1057,6 +1093,12 @@ const HoverPreview = (() => {
 	const initPreview = () => {
 		preview = this.preview = new AvatarPreviewer()
 
+		preview.avatar.on("layeredRequestStateChanged", () => {
+			if(preview.container.parentNode) {
+				updatePreviewCamera()
+			}
+		})
+		
 		// preview.container.style.position = "absolute"
 		// preview.container.style.top = "0"
 		preview.container.style.pointerEvents = "none"
