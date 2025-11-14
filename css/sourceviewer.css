@@ -422,3 +422,4 @@
 .btr-sourceviewer-source-container .btr-sourceviewer-number { color: rgb(0, 127, 127); }
 .btr-sourceviewer-source-container .btr-sourceviewer-operator { color: rgb(127, 127, 0); }
 .btr-sourceviewer-source-container .btr-sourceviewer-nilbool { color: rgb(0, 127, 127); font-weight: bold; }
+.btr-sourceviewer-source-container .btr-sourceviewer-attribute { color: rgb(0, 0, 127); font-weight: bold; }

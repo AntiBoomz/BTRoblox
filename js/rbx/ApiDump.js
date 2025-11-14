@@ -86,6 +86,10 @@ const ApiDump = (() => {
 	}
 
 	return {
+		getEnums() {
+			prepare()
+			return Data.Enums
+		},
 		getEnum(name) {
 			prepare()
 			return Data.Enums[name]
