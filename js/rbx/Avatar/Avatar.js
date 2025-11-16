@@ -2605,9 +2605,7 @@ const RBXAvatar = (() => {
 					let closestDistance = Infinity
 					let closest
 					
-					for(const match of matches) {
-						const { group } = match
-						
+					for(const group of matches) {
 						const step = Math.max(1, Math.floor(group.vertices.length / 3 / 50)) * 3
 						let x = 0, y = 0, z = 0, count = 0
 						
@@ -2622,7 +2620,7 @@ const RBXAvatar = (() => {
 						
 						if(distance < closestDistance) {
 							closestDistance = distance
-							closest = match
+							closest = group
 						}
 					}
 					
