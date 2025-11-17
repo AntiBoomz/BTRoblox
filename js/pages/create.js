@@ -178,8 +178,6 @@ pageInit.create = () => {
 				reactHook.onReact(module)
 				objects.React = module
 				
-			} else if("useRouter" in module) {
-				objects.NextRouter = module
 			}
 			
 			const moduleCode = target.toString()
