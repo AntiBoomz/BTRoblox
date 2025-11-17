@@ -825,7 +825,7 @@ document.addEventListener("btroblox/init", ev => {
 		
 		//
 		
-		wrappedProto: {
+		wrappedProto: Object.defineProperties({
 			btrIsWrapped: true,
 			
 			matches(selector) {
@@ -833,138 +833,131 @@ document.addEventListener("btroblox/init", ev => {
 			},
 			
 			parent() {
-				if(this.path?.length >= 2) {
-					const wrapped = reactHook.wrap(this.path.at(-2))
-					wrapped.path = this.path.slice(0, -1)
-					return wrapped
+				return this.path.length <= 2 ? null : reactHook.wrap(this.path.slice(0, -1))
+			},
+			
+			_children(flatten=false) {
+				let children = this[0].props.children
+				
+				if(!children) {
+					children = this[0].props.children = []
+				} else if(!Array.isArray(children)) {
+					children = this[0].props.children = [children]
 				}
-				return null
+				
+				if(flatten && !this._flattened) {
+					this._flattened = true
+					children = this[0].props.children = children.flat(16)
+				}
+				
+				return children
 			},
 			
 			prepend(elem) {
-				let children = this[0].props.children
-				
-				if(!children) {
-					children = this[0].props.children = []
-				} else if(!Array.isArray(children)) {
-					children = this[0].props.children = [children]
-				}
-				
-				children.unshift(elem.btrIsWrapped ? elem[0] : elem)
+				this._children().unshift(reactHook.unwrap(elem))
 			},
 			
 			append(elem) {
-				let children = this[0].props.children
-				
-				if(!children) {
-					children = this[0].props.children = []
-				} else if(!Array.isArray(children)) {
-					children = this[0].props.children = [children]
-				}
-				
-				children.push(elem.btrIsWrapped ? elem[0] : elem)
-			},
-			
-			replaceWith(elem) {
-				this.before(elem)
-				this.remove()
-			},
-			
-			remove() {
-				const parent = this.path?.length >= 2 ? this.path.at(-2) : null
-				if(!parent) { return }
-				
-				let children = parent.props.children
-				
-				if(!children) {
-					children = parent.props.children = []
-				} else if(!Array.isArray(children)) {
-					children = parent.props.children = [children]
-				}
-				
-				let index = children.indexOf(this[0])
-				
-				if(index === -1) {
-					children = parent.props.children = children.flat(16)
-					index = children.indexOf(this[0])
-				}
-				
-				if(index !== -1) {
-					children.splice(index, 1)
-				}
+				this._children().push(reactHook.unwrap(elem))
 			},
 			
 			before(...elems) {
-				const parent = this.path?.length >= 2 ? this.path.at(-2) : null
-				if(!parent) { return }
+				const parent = this.parent()
 				
-				let children = parent.props.children
-				
-				if(!children) {
-					children = parent.props.children = []
-				} else if(!Array.isArray(children)) {
-					children = parent.props.children = [children]
-				}
-				
-				let index = children.indexOf(this[0])
-				
-				if(index === -1) {
-					children = parent.props.children = children.flat(16)
-					index = children.indexOf(this[0])
-				}
+				const children = parent ? parent._children(true) : this.path[0]
+				const index = children.indexOf(this[0])
 				
 				if(index !== -1) {
-					for(const elem of elems) {
-						children.splice(index, 0, elem.btrIsWrapped ? elem[0] : elem)
-						index += 1
-					}
+					children.splice(index, 0, ...elems.map(reactHook.unwrap))
 				}
 			},
 			
 			after(...elems) {
-				const parent = this.path?.length >= 2 ? this.path.at(-2) : null
-				if(!parent) { return }
+				const parent = this.parent()
 				
-				let children = parent.props.children
-				
-				if(!children) {
-					children = parent.props.children = []
-				} else if(!Array.isArray(children)) {
-					children = parent.props.children = [children]
-				}
-				
-				let index = children.indexOf(this[0])
-				
-				if(index === -1) {
-					children = parent.props.children = children.flat(16)
-					index = children.indexOf(this[0])
-				}
+				const children = parent ? parent._children(true) : this.path[0]
+				const index = children.indexOf(this[0])
 				
 				if(index !== -1) {
-					for(const elem of elems) {
-						children.splice(index + 1, 0, elem.btrIsWrapped ? elem[0] : elem)
-						index += 1
-					}
+					children.splice(index + 1, 0, ...elems.map(reactHook.unwrap))
 				}
+			},
+			
+			replaceWith(...elems) {
+				const parent = this.parent()
+				
+				const children = parent ? parent._children(true) : this.path[0]
+				const index = children.indexOf(this[0])
+				
+				if(index !== -1) {
+					children.splice(index, 1, ...elems.map(reactHook.unwrap))
+				}
+				
+				this.path = [[], this[0]]
+			},
+			
+			remove() {
+				this.replaceWith()
 			},
 			
 			find(selector, depth = 5) {
 				const path = reactHook.querySelector(this[0], selector, depth, true)
 				if(!path) { return null }
 				
-				const wrapped = reactHook.wrap(path.at(-1))
-				wrapped.path = path
-				
-				return wrapped
+				return reactHook.wrap([...this.path, ...path.slice(1)])
 			}
-		},
+		}, {
+			classList: {
+				configurable: true,
+				get() {
+					Object.defineProperty(this, "classList", { value: {
+						contains: input => {
+							return (this[0].props.className ?? "").split(" ").includes(input)
+						},
+						add: (...input) => {
+							const classNames = (this[0].props.className ?? "").split(" ")
+							
+							for(const className of input) {
+								if(!classNames.includes(className)) {
+									classNames.push(className)
+								}
+							}
+							
+							this[0].props.className = classNames.join(" ")
+						},
+						remove: (...input) => {
+							const classNames = (this[0].props.className ?? "").split(" ")
+							
+							for(const className of input) {
+								const index = classNames.indexOf(className)
+								if(index !== -1) {
+									classNames.splice(index, 1)
+								}
+							}
+							
+							this[0].props.className = classNames.join(" ")
+						},
+						toggle: (input, force) => {
+							if(force === true || force !== false && !this.classList.contains(input)) {
+								this.classList.add(input)
+							} else {
+								this.classList.remove(input)
+							}
+						}
+					} })
+					
+					return this.classList
+				}
+			}
+		}),
 		
 		unwrap(elem) {
 			return elem?.btrIsWrapped ? elem[0] : elem
 		},
 		
-		wrap(reactElement) {
-			const wrapped = { [0]: reactElement, __proto__: this.wrappedProto }
+		wrap(path) {
+			if(!Array.isArray(path)) { throw new Error("path is not an array") }
+			const wrapped = { [0]: path.at(-1), path: path, __proto__: this.wrappedProto }
 			return wrapped
 		},
 		
@@ -1007,10 +1000,17 @@ document.addEventListener("btroblox/init", ev => {
 		// 
 		
 		hijackConstructor(filter, handler) {
-			this.constructorReplaces.push({
+			const info = {
 				index: this.constructorReplaces.length,
-				filter, handler
-			})
+				filter, handler,
+				
+				remove() {
+					this.removed = true
+				}
+			}
+			
+			this.constructorReplaces.push(info)
+			return info
 		},
 		
 		hijackUseState(filter, transform, permanent) {
@@ -1037,15 +1037,16 @@ document.addEventListener("btroblox/init", ev => {
 		
 		//
 		
-		flatten(children) {
-			return (Array.isArray(children) ? children : [children]).flat(16)
-		},
-		
 		nextConstructorReplace(render, index, thisArg, args) {
 			for(; index < reactHook.constructorReplaces.length; index++) {
 				const info = reactHook.constructorReplaces[index]
 				
-				if(info.filter(render, args[0])) {
+				if(info.removed) {
+					reactHook.constructorReplaces.splice(index--, 1)
+					continue
+				}
+				
+				if(info.filter(args[0])) {
 					return info.handler(function(...args) {
 						return reactHook.nextConstructorReplace(render, index + 1, this, args)
 					}, thisArg, args)
@@ -1101,29 +1102,27 @@ document.addEventListener("btroblox/init", ev => {
 		},
 		
 		onCreateElement(target, thisArg, args) {
-			let result = target.apply(thisArg, args)
+			const result = target.apply(thisArg, args)
 			
+			const root = [result]
+			let wrapped
+			
+			outer:
 			for(const content of this.injectedContent) {
 				try {
 					const matching = []
-					let wrapped
 					
 					for(const selector of content.selector) {
 						if(reactHook.selectorMatches(result, selector)) {
 							if(selector.next) {
 								matching.push(selector)
 							} else {
-								if(!wrapped) { wrapped = reactHook.wrap(result) }
+								if(!wrapped) { wrapped = reactHook.wrap([root, result]) }
 								
-								const replaced = content.callback(wrapped)
+								content.callback(wrapped)
 								
-								if(replaced) {
-									if(!replaced?.props) {
-										return replaced
-									}
-									
-									result = reactHook.unwrap(replaced)
-									wrapped = null
+								if(!root.includes(result)) {
+									break outer
 								}
 							}
 						}
@@ -1131,10 +1130,13 @@ document.addEventListener("btroblox/init", ev => {
 					
 					if(matching.length > 0) {
 						for(const path of reactHook.querySelectorAll(result, matching, 5, true)) {
-							const wrapped = reactHook.wrap(path.at(-1))
-							wrapped.path = path
+							const child = reactHook.wrap([root, ...path])
 							
-							content.callback(wrapped)
+							content.callback(child)
+							
+							if(!root.includes(result)) {
+								break outer
+							}
 						}
 					}
 					
@@ -1143,7 +1145,7 @@ document.addEventListener("btroblox/init", ev => {
 				}
 			}
 			
-			return result
+			return root.length >= 2 ? root : root[0]
 		},
 		
 		onUseState(target, thisArg, args) {
@@ -1301,6 +1303,28 @@ document.addEventListener("btroblox/init", ev => {
 	
 	const injectedFunctions = {
 		// Insert injected functions here,
+		"avatar": () => {
+			let openAdvancedAccessories
+			
+			reactHook.hijackConstructor(
+				props => !openAdvancedAccessories && "openAdvancedAccessories" in props,
+				(target, thisArg, args) => {
+					openAdvancedAccessories = args[0].openAdvancedAccessories
+					return target.apply(thisArg, args)
+				}
+			)
+			
+			reactHook.inject(".redraw-avatar", redraw => {
+				redraw.classList.add("btr-redraw-avatar")
+				
+				redraw.append(
+					reactHook.createElement("a", {
+						className: "text-link btr-advanced-button",
+						onClick: () => openAdvancedAccessories(),
+					}, "Advanced")
+				)
+			})
+		},
 		"assetRefinement": () => {
 			onSet(window, "Roblox", Roblox => {
 				onSet(Roblox, "AvatarAccoutrementService", AvatarAccoutrementService => {
@@ -1396,125 +1420,30 @@ document.addEventListener("btroblox/init", ev => {
 				})
 			})
 		},
-		"removeAccessoryLimits": () => {
-			const accessoryAssetTypeIds = [8, 41, 42, 43, 44, 45, 46, 47, 57, 58]
-			const layeredAssetTypeIds = [64, 65, 66, 67, 68, 69, 70, 71, 72]
-			
-			onSet(window, "Roblox", Roblox => {
-				onSet(Roblox, "AvatarAccoutrementService", AvatarAccoutrementService => {
-					angularHook.hijackModule("avatar", {
-						avatarController(target, thisArg, args, argsMap) {
-							const result = target.apply(thisArg, args)
-							
-							try {
-								const { $scope } = argsMap
-								
-								hijackFunction($scope, "validateAdvancedAccessories", (target, thisArg, args) => {
-									if(settings.avatar.removeLayeredLimits) {
-										return true
-									}
-									
-									// filter out all hairs so they dont throw errors
-									args[0] = args[0].filter(x => x.assetType !== 41)
-									
-									return target.apply(thisArg, args)
-								})
-							} catch(ex) {
-								console.error(ex)
-								if(IS_DEV_MODE) { alert("hijackAngular Error") }
-							}
-							
-							return result
-						}
-					})
-					
-					hijackFunction(AvatarAccoutrementService, "getAdvancedAccessoryLimit", (target, thisArg, args) => {
-						if(accessoryAssetTypeIds.includes(+args[0]) || layeredAssetTypeIds.includes(+args[0])) {
-							return
-						}
-						
-						return target.apply(thisArg, args)
-					})
-					
-					hijackFunction(AvatarAccoutrementService, "addAssetToAvatar", (target, thisArg, args) => {
-						const result = target.apply(thisArg, args)
-						const assets = [args[0], ...args[1]]
-						
-						let accessoriesLeft = 10
-						let layeredLeft = 10
-						
-						for(let i = 0; i < assets.length; i++) {
-							const asset = assets[i]
-							const assetTypeId = asset?.assetType?.id
-							
-							const isAccessory = accessoryAssetTypeIds.includes(assetTypeId)
-							const isLayered = layeredAssetTypeIds.includes(assetTypeId) || assetTypeId === 41
-							
-							let valid = true
-							
-							if(isAccessory || isLayered) {
-								if(isAccessory && accessoriesLeft <= 0) {
-									valid = false
-								}
-								
-								if(isLayered && layeredLeft <= 0) {
-									valid = false
-								}
-								
-								if(!settings.avatar.removeLayeredLimits && layeredAssetTypeIds.includes(assetTypeId)) {
-									if(!result.includes(asset)) {
-										valid = false
-									}
-								}
-							} else {
-								valid = result.includes(asset)
-							}
-							
-							if(valid) {
-								if(isAccessory) { accessoriesLeft-- }
-								if(isLayered) { layeredLeft-- }
-							} else {
-								assets.splice(i--, 1)
-							}
-						}
-						
-						return assets
-					})
-				})
-			})
-		},
 		"fullRangeBodyColors": () => {
-			angularHook.hijackModule("avatar", {
-				avatarController(target, thisArg, args, argsMap) {
-					const result = target.apply(thisArg, args)
-					
-					try {
-						const { $scope, $rootScope, avatarConstantService } = argsMap
-						
-						contentScript.listen("skinColorUpdated", () => {
-							$scope.refreshThumbnail()
-							$scope.$digest()
-						})
-						
-						contentScript.listen("skinColorError", () => {
-							$scope.systemFeedback.error(avatarConstantService.bodyColors.failedToUpdate)
-							$scope.$digest()
-						})
-						
-						$scope.$on(avatarConstantService.events.avatarDetailsLoaded, (event, avatarDetails) => {
-							contentScript.send("updateSkinColors")
-						})
-
-						$rootScope.$on(avatarConstantService.events.bodyColorsChanged, (event, bodyColors) => {
-							contentScript.send("updateSkinColors")
-						})
-						
-					} catch(ex) {
-						console.error(ex)
-						if(IS_DEV_MODE) { alert("hijackAngular Error") }
-					}
-					
-					return result
+			let forceRefreshThumbnail
+			
+			reactHook.hijackConstructor(
+				props => !forceRefreshThumbnail && "forceRefreshThumbnail" in props,
+				(target, thisArg, args) => {
+					forceRefreshThumbnail = args[0].forceRefreshThumbnail
+					return target.apply(thisArg, args)
+				}
+			)
+			
+			contentScript.listen("forceRefreshThumbnail", () => {
+				forceRefreshThumbnail?.()
+			})
+			
+			contentScript.listen("skinColorError", () => {
+				Roblox.BootstrapWidgets.ToggleSystemMessage($(".alert-warning"), 100, 2000, "Failed to update skin tone.")
+			})
+			
+			hijackXHR(request => {
+				if(request.url.endsWith("/set-body-colors")) {
+					request.onResponse.push(() => {
+						contentScript.send("updateBodyColors")
+					})
 				}
 			})
 		},
@@ -1528,7 +1457,7 @@ document.addEventListener("btroblox/init", ev => {
 			})
 			
 			reactHook.hijackConstructor( // ItemCard
-				(type, props) => "unitsAvailableForConsumption" in props && "id" in props,
+				props => "unitsAvailableForConsumption" in props && "id" in props,
 				(target, thisArg, args) => {
 					const props = args[0]
 					const result = target.apply(thisArg, args)
@@ -1639,7 +1568,7 @@ document.addEventListener("btroblox/init", ev => {
 		},
 		"initReactFriends": () => {
 			reactHook.hijackConstructor( // FriendsCarouselContainer
-				(type, props) => "profileUserId" in props && "carouselName" in props, 
+				props => "profileUserId" in props && "carouselName" in props, 
 				(target, thisArg, args) => {
 					const props = args[0]
 					const carouselName = props.carouselName
@@ -1666,7 +1595,7 @@ document.addEventListener("btroblox/init", ev => {
 			)
 			
 			reactHook.hijackConstructor( // FriendsList
-				(type, props) => "friendsList" in props, 
+				props => "friendsList" in props, 
 				(target, thisArg, args) => {
 					const props = args[0]
 					const friendsList = props.friendsList
@@ -1753,7 +1682,7 @@ document.addEventListener("btroblox/init", ev => {
 				})
 				
 				reactHook.hijackConstructor( // FriendTileContent
-					(type, props) => props.displayName && props.userProfileUrl,
+					props => props.displayName && props.userProfileUrl,
 					(target, thisArg, args) => {
 						const result = target.apply(thisArg, args)
 						
@@ -1788,7 +1717,7 @@ document.addEventListener("btroblox/init", ev => {
 			
 			if(settings.home.friendPresenceLinks) {
 				reactHook.hijackConstructor( // FriendTileDropdown
-					(type, props) => props.friend && props.gameUrl,
+					props => props.friend && props.gameUrl,
 					(target, thisArg, args) => {
 						const result = target.apply(thisArg, args)
 						
@@ -1921,7 +1850,7 @@ document.addEventListener("btroblox/init", ev => {
 		},
 		"cacheRobuxAmount": () => {
 			reactHook.hijackConstructor(
-				(type, props) => "isGetCurrencyCallDone" in props && "isExperimentCallDone" in props && "robuxAmount" in props,
+				props => "isGetCurrencyCallDone" in props && "isExperimentCallDone" in props && "robuxAmount" in props,
 				(target, thisArg, args) => {
 					try {
 						const props = args[0]
@@ -1963,7 +1892,7 @@ document.addEventListener("btroblox/init", ev => {
 			})
 
 			reactHook.hijackConstructor(
-				(type, props) => "robuxAmount" in props && type.toString().includes("nav-robux-amount"),
+				props => "robuxAmount" in props && !("isEligibleForVng" in props),
 				(target, thisArg, args) => {
 					hijackTruncValue = true
 					const result = target.apply(thisArg, args)
@@ -2094,6 +2023,67 @@ document.addEventListener("btroblox/init", ev => {
 						}
 					})
 				}
+			})
+		},
+		"removeAccessoryLimits": () => {
+			const accessoryAssetTypeIds = [8, 41, 42, 43, 44, 45, 46, 47, 57, 58]
+			const layeredAssetTypeIds = [64, 65, 66, 67, 68, 69, 70, 71, 72]
+			
+			onSet(window, "Roblox", Roblox => {
+				onSet(Roblox, "AvatarAccoutrementService", AvatarAccoutrementService => {
+					hijackFunction(AvatarAccoutrementService, "getAdvancedAccessoryLimit", (target, thisArg, args) => {
+						if(accessoryAssetTypeIds.includes(+args[0]) || layeredAssetTypeIds.includes(+args[0])) {
+							return
+						}
+						
+						return target.apply(thisArg, args)
+					})
+					
+					hijackFunction(AvatarAccoutrementService, "addAssetToAvatar", (target, thisArg, args) => {
+						const result = target.apply(thisArg, args)
+						const assets = [args[0], ...args[1]]
+						
+						let accessoriesLeft = 10
+						let layeredLeft = 10
+						
+						for(let i = 0; i < assets.length; i++) {
+							const asset = assets[i]
+							const assetTypeId = asset?.assetType?.id
+							
+							const isAccessory = accessoryAssetTypeIds.includes(assetTypeId)
+							const isLayered = layeredAssetTypeIds.includes(assetTypeId) || assetTypeId === 41
+							
+							let valid = true
+							
+							if(isAccessory || isLayered) {
+								if(isAccessory && accessoriesLeft <= 0) {
+									valid = false
+								}
+								
+								if(isLayered && layeredLeft <= 0) {
+									valid = false
+								}
+								
+								if(!settings.avatar.removeLayeredLimits && layeredAssetTypeIds.includes(assetTypeId)) {
+									if(!result.includes(asset)) {
+										valid = false
+									}
+								}
+							} else {
+								valid = result.includes(asset)
+							}
+							
+							if(valid) {
+								if(isAccessory) { accessoriesLeft-- }
+								if(isLayered) { layeredLeft-- }
+							} else {
+								assets.splice(i--, 1)
+							}
+						}
+						
+						return assets
+					})
+				})
 			})
 		},
 		"smallChatButton": () => {
@@ -2370,8 +2360,6 @@ document.addEventListener("btroblox/init", ev => {
 					reactHook.onReact(module)
 					objects.React = module
 					
-				} else if("useRouter" in module) {
-					objects.NextRouter = module
 				}
 				
 				const moduleCode = target.toString()
@@ -2394,7 +2382,7 @@ document.addEventListener("btroblox/init", ev => {
 			const { objects } = webpackHook
 			
 			reactHook.hijackConstructor(
-				(type, props) => props.settingsHref,
+				props => props.settingsHref,
 				(target, thisArg, args) => {
 					const result = target.apply(thisArg, args)
 					
@@ -2433,15 +2421,15 @@ document.addEventListener("btroblox/init", ev => {
 				const anchor = ev.target.nodeName === "A" ? ev.target : ev.target.closest("a")
 				
 				if(anchor?.classList.contains("btr-next-anchor")) {
-					if(!ev.shiftKey && !ev.ctrlKey && objects.NextRouter) {
+					if(!ev.shiftKey && !ev.ctrlKey && window.next?.router) {
 						ev.preventDefault()
-						objects.NextRouter.router.push(anchor.href)
+						window.next?.router.push(anchor.href)
 					}
 				}
 			})
 			
 			reactHook.hijackConstructor(
-				(type, props) => props.itemType && props.updateItem,
+				props => props.itemType && props.updateItem,
 				(target, thisArg, args) => {
 					const result = target.apply(thisArg, args)
 					
@@ -2556,7 +2544,7 @@ document.addEventListener("btroblox/init", ev => {
 			)
 			
 			reactHook.hijackConstructor(
-				(type, props) => props.menuItems && props.setMenuOpen,
+				props => props.menuItems && props.setMenuOpen,
 				(target, thisArg, args) => {
 					const result = target.apply(thisArg, args)
 					
@@ -2600,7 +2588,7 @@ document.addEventListener("btroblox/init", ev => {
 			const { objects } = webpackHook 
 			
 			reactHook.hijackConstructor(
-				(type, props) => "version" in props,
+				props => "version" in props,
 				(target, thisArg, args) => {
 					const result = target.apply(thisArg, args)
 					
@@ -3063,7 +3051,7 @@ document.addEventListener("btroblox/init", ev => {
 			}
 			
 			reactHook.hijackConstructor(
-				(type, props) => props.getGameServers,
+				props => props.getGameServers,
 				(target, thisArg, args) => {
 					const props = args[0]
 					
@@ -3076,7 +3064,7 @@ document.addEventListener("btroblox/init", ev => {
 			)
 			
 			reactHook.hijackConstructor(
-				(type, props) => props.loadMoreGameInstances && "headerTitle" in props,
+				props => props.loadMoreGameInstances && "headerTitle" in props,
 				(target, thisArg, args) => {
 					const props = args[0]
 					
@@ -3115,7 +3103,7 @@ document.addEventListener("btroblox/init", ev => {
 			)
 			
 			reactHook.hijackConstructor( // GameInstanceCard
-				(type, props) => props.gameServerStatus,
+				props => props.gameServerStatus,
 				(target, thisArg, args) => {
 					const result = target.apply(thisArg, args)
 					const placeId = args[0].placeId
@@ -3212,15 +3200,15 @@ document.addEventListener("btroblox/init", ev => {
 		},
 		"gamedetails": () => {
 			reactHook.inject(".game-description-container", elem => {
-				return reactHook.createElement("div", { style: { display: "contents" } },
+				elem.replaceWith(reactHook.createElement("div", { style: { display: "contents" } },
 					reactHook.createElement("div", { id: "btr-description-wrapper", style: { display: "contents" } }, elem[0])
-				)
+				))
 			})
 			
 			reactHook.inject(".container-list.games-detail", elem => {
-				return reactHook.createElement("div", { style: { display: "contents" } },
+				elem.replaceWith(reactHook.createElement("div", { style: { display: "contents" } },
 					reactHook.createElement("div", { id: "btr-recommendations-wrapper", style: { display: "contents" } }, elem[0])
-				)
+				))
 			})
 			
 			reactHook.inject(".game-social-links .btn-secondary-lg", elem => {
@@ -3544,7 +3532,7 @@ document.addEventListener("btroblox/init", ev => {
 		},
 		"showRecommendationPlayerCount": () => {
 			reactHook.hijackConstructor(
-				(type, props) => "wideTileType" in props && "gameData" in props && "playerCountStyle" in props,
+				props => "wideTileType" in props && "gameData" in props && "playerCountStyle" in props,
 				(target, thisArg, args) => {
 					const props = args[0]
 					props.playerCountStyle = "Footer"
@@ -3621,7 +3609,7 @@ document.addEventListener("btroblox/init", ev => {
 		},
 		"itemdetails": () => {
 			reactHook.hijackConstructor(
-				(type, props) => "itemDetails" in props,
+				props => "itemDetails" in props,
 				(target, thisArg, args) => {
 					const result = target.apply(thisArg, args)
 					

@@ -202,7 +202,7 @@ pageInit.create = () => {
 		const { objects } = webpackHook
 		
 		reactHook.hijackConstructor(
-			(type, props) => props.settingsHref,
+			props => props.settingsHref,
 			(target, thisArg, args) => {
 				const result = target.apply(thisArg, args)
 				

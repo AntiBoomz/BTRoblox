@@ -337,7 +337,7 @@ const redirectEvents = (from, to) => {
 const initReactFriends = () => {
 	injectScript.call("initReactFriends", () => {
 		reactHook.hijackConstructor( // FriendsCarouselContainer
-			(type, props) => "profileUserId" in props && "carouselName" in props, 
+			props => "profileUserId" in props && "carouselName" in props, 
 			(target, thisArg, args) => {
 				const props = args[0]
 				const carouselName = props.carouselName
@@ -364,7 +364,7 @@ const initReactFriends = () => {
 		)
 		
 		reactHook.hijackConstructor( // FriendsList
-			(type, props) => "friendsList" in props, 
+			props => "friendsList" in props, 
 			(target, thisArg, args) => {
 				const props = args[0]
 				const friendsList = props.friendsList
@@ -451,7 +451,7 @@ const initReactFriends = () => {
 			})
 			
 			reactHook.hijackConstructor( // FriendTileContent
-				(type, props) => props.displayName && props.userProfileUrl,
+				props => props.displayName && props.userProfileUrl,
 				(target, thisArg, args) => {
 					const result = target.apply(thisArg, args)
 					
@@ -486,7 +486,7 @@ const initReactFriends = () => {
 		
 		if(settings.home.friendPresenceLinks) {
 			reactHook.hijackConstructor( // FriendTileDropdown
-				(type, props) => props.friend && props.gameUrl,
+				props => props.friend && props.gameUrl,
 				(target, thisArg, args) => {
 					const result = target.apply(thisArg, args)
 					
@@ -1386,7 +1386,7 @@ pageInit.www = () => {
 	if(SETTINGS.get("general.cacheRobuxAmount")) {
 		injectScript.call("cacheRobuxAmount", () => {
 			reactHook.hijackConstructor(
-				(type, props) => "isGetCurrencyCallDone" in props && "isExperimentCallDone" in props && "robuxAmount" in props,
+				props => "isGetCurrencyCallDone" in props && "isExperimentCallDone" in props && "robuxAmount" in props,
 				(target, thisArg, args) => {
 					try {
 						const props = args[0]
@@ -1431,7 +1431,7 @@ pageInit.www = () => {
 			})
 
 			reactHook.hijackConstructor(
-				(type, props) => "robuxAmount" in props && type.toString().includes("nav-robux-amount"),
+				props => "robuxAmount" in props && !("isEligibleForVng" in props),
 				(target, thisArg, args) => {
 					hijackTruncValue = true
 					const result = target.apply(thisArg, args)
@@ -1650,6 +1650,70 @@ pageInit.www = () => {
 						}
 					})
 				}
+			})
+		})
+	}
+	
+	if(SETTINGS.get("avatar.removeAccessoryLimits")) {
+		injectScript.call("removeAccessoryLimits", () => {
+			const accessoryAssetTypeIds = [8, 41, 42, 43, 44, 45, 46, 47, 57, 58]
+			const layeredAssetTypeIds = [64, 65, 66, 67, 68, 69, 70, 71, 72]
+			
+			onSet(window, "Roblox", Roblox => {
+				onSet(Roblox, "AvatarAccoutrementService", AvatarAccoutrementService => {
+					hijackFunction(AvatarAccoutrementService, "getAdvancedAccessoryLimit", (target, thisArg, args) => {
+						if(accessoryAssetTypeIds.includes(+args[0]) || layeredAssetTypeIds.includes(+args[0])) {
+							return
+						}
+						
+						return target.apply(thisArg, args)
+					})
+					
+					hijackFunction(AvatarAccoutrementService, "addAssetToAvatar", (target, thisArg, args) => {
+						const result = target.apply(thisArg, args)
+						const assets = [args[0], ...args[1]]
+						
+						let accessoriesLeft = 10
+						let layeredLeft = 10
+						
+						for(let i = 0; i < assets.length; i++) {
+							const asset = assets[i]
+							const assetTypeId = asset?.assetType?.id
+							
+							const isAccessory = accessoryAssetTypeIds.includes(assetTypeId)
+							const isLayered = layeredAssetTypeIds.includes(assetTypeId) || assetTypeId === 41
+							
+							let valid = true
+							
+							if(isAccessory || isLayered) {
+								if(isAccessory && accessoriesLeft <= 0) {
+									valid = false
+								}
+								
+								if(isLayered && layeredLeft <= 0) {
+									valid = false
+								}
+								
+								if(!settings.avatar.removeLayeredLimits && layeredAssetTypeIds.includes(assetTypeId)) {
+									if(!result.includes(asset)) {
+										valid = false
+									}
+								}
+							} else {
+								valid = result.includes(asset)
+							}
+							
+							if(valid) {
+								if(isAccessory) { accessoriesLeft-- }
+								if(isLayered) { layeredLeft-- }
+							} else {
+								assets.splice(i--, 1)
+							}
+						}
+						
+						return assets
+					})
+				})
 			})
 		})
 	}

@@ -29,7 +29,7 @@ pageInit.home = () => {
 	if(SETTINGS.get("home.showRecommendationPlayerCount")) {
 		injectScript.call("showRecommendationPlayerCount", () => {
 			reactHook.hijackConstructor(
-				(type, props) => "wideTileType" in props && "gameData" in props && "playerCountStyle" in props,
+				props => "wideTileType" in props && "gameData" in props && "playerCountStyle" in props,
 				(target, thisArg, args) => {
 					const props = args[0]
 					props.playerCountStyle = "Footer"

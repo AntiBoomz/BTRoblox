@@ -3,13 +3,27 @@
 pageInit.avatar = () => {
 	if(!SETTINGS.get("avatar.enabled")) { return }
 	
-	modifyAngularTemplate("avatar-base", template => {
-		const redraw = template.$find(".redraw-avatar .text-link")
+	injectScript.call("avatar", () => {
+		let openAdvancedAccessories
 		
-		if(redraw) {
-			redraw.classList.add("btr-redraw-button")
-			redraw.after(html`<a class="text-link btr-advanced-button" ng-click="openAdvancedAccessories();">Advanced</a>`)
-		}
+		reactHook.hijackConstructor(
+			props => !openAdvancedAccessories && "openAdvancedAccessories" in props,
+			(target, thisArg, args) => {
+				openAdvancedAccessories = args[0].openAdvancedAccessories
+				return target.apply(thisArg, args)
+			}
+		)
+		
+		reactHook.inject(".redraw-avatar", redraw => {
+			redraw.classList.add("btr-redraw-avatar")
+			
+			redraw.append(
+				reactHook.createElement("a", {
+					className: "text-link btr-advanced-button",
+					onClick: () => openAdvancedAccessories(),
+				}, "Advanced")
+			)
+		})
 	})
 	
 	if(SETTINGS.get("avatar.assetRefinement")) {
@@ -186,139 +200,36 @@ pageInit.avatar = () => {
 		})
 	}
 	
-	if(SETTINGS.get("avatar.removeAccessoryLimits")) {
-		injectScript.call("removeAccessoryLimits", () => {
-			const accessoryAssetTypeIds = [8, 41, 42, 43, 44, 45, 46, 47, 57, 58]
-			const layeredAssetTypeIds = [64, 65, 66, 67, 68, 69, 70, 71, 72]
-			
-			onSet(window, "Roblox", Roblox => {
-				onSet(Roblox, "AvatarAccoutrementService", AvatarAccoutrementService => {
-					angularHook.hijackModule("avatar", {
-						avatarController(target, thisArg, args, argsMap) {
-							const result = target.apply(thisArg, args)
-							
-							try {
-								const { $scope } = argsMap
-								
-								hijackFunction($scope, "validateAdvancedAccessories", (target, thisArg, args) => {
-									if(settings.avatar.removeLayeredLimits) {
-										return true
-									}
-									
-									// filter out all hairs so they dont throw errors
-									args[0] = args[0].filter(x => x.assetType !== 41)
-									
-									return target.apply(thisArg, args)
-								})
-							} catch(ex) {
-								console.error(ex)
-								if(IS_DEV_MODE) { alert("hijackAngular Error") }
-							}
-							
-							return result
-						}
-					})
-					
-					hijackFunction(AvatarAccoutrementService, "getAdvancedAccessoryLimit", (target, thisArg, args) => {
-						if(accessoryAssetTypeIds.includes(+args[0]) || layeredAssetTypeIds.includes(+args[0])) {
-							return
-						}
-						
-						return target.apply(thisArg, args)
-					})
-					
-					hijackFunction(AvatarAccoutrementService, "addAssetToAvatar", (target, thisArg, args) => {
-						const result = target.apply(thisArg, args)
-						const assets = [args[0], ...args[1]]
-						
-						let accessoriesLeft = 10
-						let layeredLeft = 10
-						
-						for(let i = 0; i < assets.length; i++) {
-							const asset = assets[i]
-							const assetTypeId = asset?.assetType?.id
-							
-							const isAccessory = accessoryAssetTypeIds.includes(assetTypeId)
-							const isLayered = layeredAssetTypeIds.includes(assetTypeId) || assetTypeId === 41
-							
-							let valid = true
-							
-							if(isAccessory || isLayered) {
-								if(isAccessory && accessoriesLeft <= 0) {
-									valid = false
-								}
-								
-								if(isLayered && layeredLeft <= 0) {
-									valid = false
-								}
-								
-								if(!settings.avatar.removeLayeredLimits && layeredAssetTypeIds.includes(assetTypeId)) {
-									if(!result.includes(asset)) {
-										valid = false
-									}
-								}
-							} else {
-								valid = result.includes(asset)
-							}
-							
-							if(valid) {
-								if(isAccessory) { accessoriesLeft-- }
-								if(isLayered) { layeredLeft-- }
-							} else {
-								assets.splice(i--, 1)
-							}
-						}
-						
-						return assets
-					})
-				})
-			})
-		})
-	}
-	
 	if(SETTINGS.get("avatar.fullRangeBodyColors")) {
-		modifyAngularTemplate("avatar-tab-content", template => {
-			const bodyColors = template.$find("#bodyColors")
-			bodyColors.classList.add("btr-bodyColors")
-		})
-		
 		injectScript.call("fullRangeBodyColors", () => {
-			angularHook.hijackModule("avatar", {
-				avatarController(target, thisArg, args, argsMap) {
-					const result = target.apply(thisArg, args)
-					
-					try {
-						const { $scope, $rootScope, avatarConstantService } = argsMap
-						
-						contentScript.listen("skinColorUpdated", () => {
-							$scope.refreshThumbnail()
-							$scope.$digest()
-						})
-						
-						contentScript.listen("skinColorError", () => {
-							$scope.systemFeedback.error(avatarConstantService.bodyColors.failedToUpdate)
-							$scope.$digest()
-						})
-						
-						$scope.$on(avatarConstantService.events.avatarDetailsLoaded, (event, avatarDetails) => {
-							contentScript.send("updateSkinColors")
-						})
-
-						$rootScope.$on(avatarConstantService.events.bodyColorsChanged, (event, bodyColors) => {
-							contentScript.send("updateSkinColors")
-						})
-						
-					} catch(ex) {
-						console.error(ex)
-						if(IS_DEV_MODE) { alert("hijackAngular Error") }
-					}
-					
-					return result
+			let forceRefreshThumbnail
+			
+			reactHook.hijackConstructor(
+				props => !forceRefreshThumbnail && "forceRefreshThumbnail" in props,
+				(target, thisArg, args) => {
+					forceRefreshThumbnail = args[0].forceRefreshThumbnail
+					return target.apply(thisArg, args)
+				}
+			)
+			
+			contentScript.listen("forceRefreshThumbnail", () => {
+				forceRefreshThumbnail?.()
+			})
+			
+			contentScript.listen("skinColorError", () => {
+				Roblox.BootstrapWidgets.ToggleSystemMessage($(".alert-warning"), 100, 2000, "Failed to update skin tone.")
+			})
+			
+			hijackXHR(request => {
+				if(request.url.endsWith("/set-body-colors")) {
+					request.onResponse.push(() => {
+						contentScript.send("updateBodyColors")
+					})
 				}
 			})
 		})
 		
-		document.$watch(".btr-bodyColors", async cont => {
+		document.$watch("#bodyColors", async cont => {
 			const bodyColor3s = (await RobloxApi.avatar.getCurrentAvatar()).bodyColor3s
 			
 			const selector = html`
@@ -332,12 +243,29 @@ pageInit.avatar = () => {
 			</div>`
 			
 			const inputs = {}
+			let debounce = 0
 			
-			const updateColors = async () => {
+			const updateBodyColors = async () => {
+				const deb = ++debounce
+				const newColor3s = (await RobloxApi.avatar.getCurrentAvatar()).bodyColor3s
+				
+				if(debounce === deb) {
+					for(const [name, oldColor] of Object.entries(bodyColor3s)) {
+						const newColor = newColor3s[name]
+						
+						if(newColor.toLowerCase() !== oldColor.toLowerCase()) {
+							bodyColor3s[name] = newColor
+							inputs[name.slice(0, -6)].value = `#${newColor}`
+						}
+					}
+				}
+				
+			}
+			const setBodyColors = async () => {
 				const json = await RobloxApi.avatar.setBodyColors(bodyColor3s)
 				
 				if(json && !json.errors) {
-					injectScript.send("skinColorUpdated")
+					injectScript.send("forceRefreshThumbnail")
 				} else {
 					injectScript.send("skinColorError")
 				}
@@ -354,28 +282,12 @@ pageInit.avatar = () => {
 					
 					if(bodyColor3s[`${name}Color3`].toLowerCase() !== color.toLowerCase()) {
 						bodyColor3s[`${name}Color3`] = color
-						updateColors()
+						setBodyColors()
 					}
 				})
 			}
 			
-			let debounce = 0
-			
-			injectScript.listen("updateSkinColors", async () => {
-				const deb = ++debounce
-				const newColor3s = (await RobloxApi.avatar.getCurrentAvatar()).bodyColor3s
-				
-				if(debounce === deb) {
-					for(const [name, oldColor] of Object.entries(bodyColor3s)) {
-						const newColor = newColor3s[name]
-						
-						if(newColor.toLowerCase() !== oldColor.toLowerCase()) {
-							bodyColor3s[name] = newColor
-							inputs[name.slice(0, -6)].value = `#${newColor}`
-						}
-					}
-				}
-			})
+			injectScript.listen("updateBodyColors", updateBodyColors)
 			
 			cont.$find(".section-content").prepend(selector, html`<hr style=margin-top:40px;margin-bottom:30px;>`)
 		})

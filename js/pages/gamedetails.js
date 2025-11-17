@@ -438,7 +438,7 @@ pageInit.gamedetails = () => {
 		}
 		
 		reactHook.hijackConstructor(
-			(type, props) => props.getGameServers,
+			props => props.getGameServers,
 			(target, thisArg, args) => {
 				const props = args[0]
 				
@@ -451,7 +451,7 @@ pageInit.gamedetails = () => {
 		)
 		
 		reactHook.hijackConstructor(
-			(type, props) => props.loadMoreGameInstances && "headerTitle" in props,
+			props => props.loadMoreGameInstances && "headerTitle" in props,
 			(target, thisArg, args) => {
 				const props = args[0]
 				
@@ -490,7 +490,7 @@ pageInit.gamedetails = () => {
 		)
 		
 		reactHook.hijackConstructor( // GameInstanceCard
-			(type, props) => props.gameServerStatus,
+			props => props.gameServerStatus,
 			(target, thisArg, args) => {
 				const result = target.apply(thisArg, args)
 				const placeId = args[0].placeId
@@ -588,15 +588,15 @@ pageInit.gamedetails = () => {
 	
 	injectScript.call("gamedetails", () => {
 		reactHook.inject(".game-description-container", elem => {
-			return reactHook.createElement("div", { style: { display: "contents" } },
+			elem.replaceWith(reactHook.createElement("div", { style: { display: "contents" } },
 				reactHook.createElement("div", { id: "btr-description-wrapper", style: { display: "contents" } }, elem[0])
-			)
+			))
 		})
 		
 		reactHook.inject(".container-list.games-detail", elem => {
-			return reactHook.createElement("div", { style: { display: "contents" } },
+			elem.replaceWith(reactHook.createElement("div", { style: { display: "contents" } },
 				reactHook.createElement("div", { id: "btr-recommendations-wrapper", style: { display: "contents" } }, elem[0])
-			)
+			))
 		})
 		
 		reactHook.inject(".game-social-links .btn-secondary-lg", elem => {

@@ -1,12 +1,14 @@
 /* Style redraw and advanced buttons */
 
-.btr-redraw-button {
-	margin: 0 !important;
-}
-
-.btr-advanced-button {
-	margin: 0 !important;
-	clear: both;
+.btr-redraw-avatar {
+	button.text-link {
+		margin: 0 !important;
+	}
+	
+	.btr-advanced-button {
+		margin: 0 !important;
+		clear: both;
+	}
 }
 
 /* Scrollable left wrapper */

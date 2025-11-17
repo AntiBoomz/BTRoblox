@@ -31,7 +31,7 @@ pageInit.create_dashboard = () => {
 			})
 			
 			reactHook.hijackConstructor(
-				(type, props) => props.itemType && props.updateItem,
+				props => props.itemType && props.updateItem,
 				(target, thisArg, args) => {
 					const result = target.apply(thisArg, args)
 					
@@ -146,7 +146,7 @@ pageInit.create_dashboard = () => {
 			)
 			
 			reactHook.hijackConstructor(
-				(type, props) => props.menuItems && props.setMenuOpen,
+				props => props.menuItems && props.setMenuOpen,
 				(target, thisArg, args) => {
 					const result = target.apply(thisArg, args)
 					
@@ -194,7 +194,7 @@ pageInit.create_dashboard = () => {
 			const { objects } = webpackHook 
 			
 			reactHook.hijackConstructor(
-				(type, props) => "version" in props,
+				props => "version" in props,
 				(target, thisArg, args) => {
 					const result = target.apply(thisArg, args)
 					

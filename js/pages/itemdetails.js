@@ -27,7 +27,7 @@ pageInit.itemdetails = () => {
 	
 	injectScript.call("itemdetails", () => {
 		reactHook.hijackConstructor(
-			(type, props) => "itemDetails" in props,
+			props => "itemDetails" in props,
 			(target, thisArg, args) => {
 				const result = target.apply(thisArg, args)
 				
