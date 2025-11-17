@@ -23,9 +23,9 @@ pageInit.create_dashboard = () => {
 				const anchor = ev.target.nodeName === "A" ? ev.target : ev.target.closest("a")
 				
 				if(anchor?.classList.contains("btr-next-anchor")) {
-					if(!ev.shiftKey && !ev.ctrlKey && objects.NextRouter) {
+					if(!ev.shiftKey && !ev.ctrlKey && window.next?.router) {
 						ev.preventDefault()
-						objects.NextRouter.router.push(anchor.href)
+						window.next?.router.push(anchor.href)
 					}
 				}
 			})
