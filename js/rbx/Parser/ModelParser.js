@@ -226,7 +226,6 @@ const RBXBinaryParser = {
 					break
 				default:
 					console.warn(`[RBXBinaryParser] Unknown chunk '${chunkType}'`)
-					console.log(chunkReader)
 				}
 				
 				if(isAsync && performance.now() > lastYielded + 33) {
