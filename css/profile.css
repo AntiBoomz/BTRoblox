@@ -331,8 +331,13 @@ html .dark-theme.btr-profile .btr-section-content-off {
 		.asset-thumb-container {
 			display: inline-block;
 			width: 90px;
-			height: 90x;
+			height: 90px;
 			border-radius: 8px;
+			
+			span[class*="icon-badge-"] {
+				transform-origin: left top;
+				scale: calc(90 / 140);
+			}
 			
 			img {
 				width: 90px;

@@ -648,12 +648,34 @@ pageInit.profile = () => {
 					} else {
 						if(robloxBadges.length > pageSize) { hlist.after(pager) }
 						
+						const classNames = {
+							1: "icon-badge-administrator",
+							2: "icon-badge-friendship",
+							3: "icon-badge-combat-initiation",
+							4: "icon-badge-warrior",
+							5: "icon-badge-bloxxer",
+							6: "icon-badge-homestead",
+							7: "icon-badge-bricksmith",
+							8: "icon-badge-inviter",
+							11: "icon-badge-builders-club",
+							12: "icon-badge-veteran",
+							14: "icon-badge-ambassador",
+							15: "icon-badge-turbo-builders-club",
+							16: "icon-badge-outrageous-builders-club",
+							17: "icon-badge-official-model-maker",
+							18: "icon-badge-welcome-to-the-club",
+							33: "icon-badge-official-model-maker",
+							34: "icon-badge-welcome-to-the-club"
+						}
+						
 						for(const data of badges) {
+							const className = 
+							
 							hlist.append(html`
 							<li class="list-item badge-item asset-item" ng-non-bindable>
 								<a href="/info/roblox-badges#Badge${data.id}" class="badge-link" title="${data.description}">
 									<span class=asset-thumb-container>
-										<img src="${data.imageUrl}">
+										<span class="${classNames[data.id] ?? ""}"></span>
 									</span>
 									<span class="font-header-2 text-overflow item-name">${data.name}</span>
 								</a>
