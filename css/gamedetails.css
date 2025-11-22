@@ -86,44 +86,44 @@ html body .btr-badges-container .badge-row .badge-content {
 	padding-left: 4px;
 	display: flex;
 	flex-direction: row;
-}
-
-html body .btr-badges-container .badge-row .badge-data-container {
-	flex: 1 1 auto;
-}
-
-html body .btr-badges-container .badge-row .badge-data-container .btr-desc-content {
-	position: relative;
-	height: 46px;
 	
-	margin: 4px 0px;
-	font-size: 14px;
-	
-	white-space: pre-line;
-	word-wrap: break-word;
-	
-	overflow: hidden;
-}
-
-html body .btr-badges-container .badge-row .badge-data-container .btr-desc-content.btr-desc-open {
-	height: auto;
-}
-
-html body .btr-badges-container .badge-row .badge-data-container .btr-badge-more {
-	display: block;
-	margin-top: -9px;
-	font-size: 14px;
-	user-select: none;
-}
-
-html body .btr-badges-container .badge-row .badge-data-container .btr-desc-open + .btr-badge-more {
-	margin-top: -4px;
-}
-
-html body .btr-badges-container .badge-row .badge-data-container .btr-unlock-date {
-	display: block;
-	opacity: 0.3;
-	font-size: 12px;
+	.badge-data-container {
+		flex: 1 1 auto;
+		
+		.btr-desc-content {
+			position: relative;
+			height: 66px;
+			
+			margin: 4px 0px;
+			font-size: 14px;
+			
+			white-space: pre-line;
+			word-wrap: break-word;
+			
+			overflow: hidden;
+			
+			&.btr-desc-overflow {
+				height: 46px;
+				
+				&.btr-desc-open {
+					height: auto;
+				}
+			}
+		}
+		
+		.btr-badge-more {
+			display: block;
+			margin-top: -9px;
+			font-size: 14px;
+			user-select: none;
+		}
+		
+		.btr-unlock-date {
+			display: block;
+			opacity: 0.3;
+			font-size: 12px;
+		}
+	}
 }
 
 html body .btr-badges-container .badge-row .badge-stats-container {

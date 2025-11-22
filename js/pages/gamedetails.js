@@ -781,7 +781,9 @@ pageInit.gamedetails = () => {
 						desc.classList.add("btr-desc-content")
 						desc.classList.remove("para-overflow")
 						
-						if(desc.scrollHeight > desc.clientHeight + 10) {
+						if(desc.scrollHeight > desc.clientHeight) {
+							desc.classList.add("btr-desc-overflow")
+							
 							const moreBtn = html`<span class="btr-badge-more text-link cursor-pointer">See More</span>`
 							desc.after(moreBtn)
 							
