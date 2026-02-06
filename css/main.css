@@ -1314,8 +1314,8 @@ html .btr-friends-list .friends-carousel-tile:has(.friend-tile-verified-badge) .
 }
 
 html .btr-friends-list .friends-carousel-tile .btr-friends-carousel-username-label {
-	margin-top: -6px;
-	margin-bottom: -4px;
+	margin-top: -2px;
+	margin-bottom: -2px;
 }
 
 html .btr-friends-list .friends-carousel-tile .btr-friends-carousel-username {
