@@ -16,10 +16,8 @@ pageInit.profile = () => {
 			for(const child of tabContent[0].props.children) {
 				switch(child.key) {
 				case "About":
-				case "CurrentlyWearing":
 				case "FavoriteExperiences":
 				case "Friends":
-				case "Collections":
 				case "Communities":
 				case "RobloxBadges":
 				case "PlayerBadges":
@@ -29,6 +27,10 @@ pageInit.profile = () => {
 				case "Clothing":
 					delete child.props.children
 					break
+				case "CurrentlyWearing":
+				case "Collections":
+				case "Store":
+					break // do nothing (we do something with this)
 				default:
 					if(IS_DEV_MODE) {
 						console.log(`Unknown component '${child.key}'`)
@@ -36,10 +38,29 @@ pageInit.profile = () => {
 				}
 			}
 		})
+		
+		hijackXHR(request => {
+			if(request.url === "https://apis.roblox.com/profile-platform-api/v1/profiles/get") {
+				request.onResponse.push(json => {
+					contentScript.send("profileData", json)
+				})
+			}
+		})
+	})
+	
+	const profileDataPromises = {}
+	
+	injectScript.listen("profileData", json => {
+		const promise = profileDataPromises[json.profileId] ??= new Promise(() => {})
+		promise.$resolve(json)
 	})
 	
 	onPageReset(() => {
 		document.body?.classList.remove("btr-profile")
+		
+		for(const key of Object.keys(profileDataPromises)) {
+			delete profileDataPromises[key]
+		}
 	})
 	
 	onPageLoad(userIdString => {
@@ -55,9 +76,6 @@ pageInit.profile = () => {
 						<div class=container-header><h2 ng-bind="'Heading.AboutTab' | translate">About</h2></div>
 						<div class=section-content>
 							<div class=placeholder-status style=display:none></div>
-							<div class=placeholder-avatar>
-								<div class=profile-avatar-left></div>
-							</div>
 							<div class=btr-profile-description>
 								<div class="placeholder-desc profile-about-content">
 									<pre id=profile-about-text class=profile-about-text>
@@ -69,7 +87,15 @@ pageInit.profile = () => {
 							</div>
 							<div class=placeholder-aliases style=display:none></div>
 							<div class="placeholder-stats profile-statistics">
-								<ul class=profile-stats>
+								<ul class=btr-profile-stats>
+									<li>
+										<div class="text-label" ng-bind="'Label.JoinDate' | translate">Join Date</div>
+										<div class="text-lead text-overflow btr-stats-joindate"></div>
+									</li>
+									<li>
+										<div class="text-label" ng-bind="'Label.PlaceVisits' | translate">Place Visits</div>
+										<div class="text-lead text-overflow btr-stats-visits"></div>
+									</li>
 								</ul>
 							</div>
 							<div class=placeholder-footer style=display:none></div>
@@ -127,13 +153,14 @@ pageInit.profile = () => {
 
 				<div class=btr-profile-bottom>
 					<div class=placeholder-posts style=display:none></div>
+					<div class=placeholder-store style=display:none></div>
 					<div class=placeholder-collections style=display:none></div>
 					<div class=btr-profile-inventory style=display:none>
 						<div class=container-header>
-							<h2 ng-bind="'Action.Inventory' | translate">Inventory</h2>
-							<div class="collection-btns">
-								<a href="/users/${userId}/inventory" class="btn-min-width btn-secondary-xs btn-more inventory-link see-all-link-icon" ng-bind="'Action.Inventory' | translate">Inventory</a>
-							</div>
+							<a href="/users/${userId}/inventory">
+								<h2 ng-bind="'Action.Inventory' | translate">Inventory</h2>
+								<span class="icon-chevron-heavy-right"></span>
+							</a>
 						</div>
 						<div class=placeholder-inventory style=display:none></div>
 					</div>
@@ -147,7 +174,7 @@ pageInit.profile = () => {
 					// tabs.parentNode.before(newCont)
 					tabs.parentNode.style.display = "none"
 				})
-				.$watch(".profile-header .avatar-status", statusContainer => {
+				.$watch(".user-profile-header-info .avatar-status", statusContainer => {
 					const statusDiv = html`<div class="btr-header-status-parent"></div>`
 					newCont.$find(".placeholder-status").replaceWith(statusDiv)
 					
@@ -174,27 +201,71 @@ pageInit.profile = () => {
 						}
 					})
 				})
+				.$watch(".user-profile-header", header => {
+					const target = header.$find("> .flex-nowrap > a.radius-circle")
+					
+					if(target) {
+						const btn = html`
+						<a aria-disabled="false" class="relative clip group/interactable focus-visible:outline-focus disabled:outline-none cursor-pointer relative flex justify-center items-center radius-circle stroke-none padding-left-medium padding-right-medium height-800 text-label-medium bg-shift-300 content-action-utility" style="text-decoration: none;">
+							<div role="presentation" class="absolute inset-[0] transition-colors group-hover/interactable:bg-[var(--color-state-hover)] group-active/interactable:bg-[var(--color-state-press)] group-disabled/interactable:bg-none"></div>
+							<span class="text-no-wrap text-truncate-end">More</span>
+						</a>`
+						
+						btn.$on("click", () => {
+							profileContainer.$find(".description-content+.more-btn").click()
+						})
+						
+						target.parentNode.append(btn)
+					}
+				})
+				.$watch(".profile-currently-wearing", wearing => {
+					const toggleItems = html`<span class="btr-toggle-items btn-control btn-control-sm">Show Items</span>`
+					profileContainer.$find(".profile-avatar-left").parentNode.append(toggleItems)
+					
+					const clone = wearing.cloneNode(false)
+					clone.classList.add("btr-currently-wearing", "stroke-muted", "stroke-standard", "shadow-transient-high")
+					clone.append(...wearing.childNodes)
+					toggleItems.after(clone)
+					
+					const onClick = ev => {
+						if(!ev.composedPath().includes(clone) && ev.target !== toggleItems) {
+							toggle()
+						}
+					}
+					
+					const toggle = () => {
+						clone.classList.toggle("visible")
+						toggleItems.textContent = clone.classList.contains("visible") ? "Hide Items" : "Show Items"
+						
+						if(clone.classList.contains("visible")) {
+							document.$on("click", onClick)
+						} else {
+							document.$off("click", onClick)
+						}
+					}
+					
+					toggleItems.$on("click", toggle)
+				})
+				.$watch(".profile-store", store => {
+					const clone = store.cloneNode(false)
+					clone.append(...store.childNodes)
+					
+					newCont.$find(".placeholder-store").replaceWith(clone)
+				})
+				.$watch(".profile-collections", collections => {
+					const clone = collections.cloneNode(false)
+					clone.append(...collections.childNodes)
+					
+					newCont.$find(".placeholder-collections").replaceWith(clone)
+				})
+			
+			const profileDataPromise = profileDataPromises[userIdString] ??= new Promise(() => {})
+			
+			profileDataPromise.then(json => {
+				if(!document.contains(profileContainer)) { return }
 				
-			const updateAvatarRedesign = () => {
-				const avatarRedesign = profileContainer.$find(".profile-avatar-left.profile-avatar-gradient")
-				
-				if(avatarRedesign) {
-					avatarRedesign.parentNode.classList.add("btr-avatar-redesign-container")
-				}
-				
-				const currentlyWearing = document.$find(".btr-avatar-container")
-				if(!currentlyWearing) { return }
-				
-				if(avatarRedesign) {
-					avatarRedesign.parentNode.after(currentlyWearing)
-				} else {
-					newCont.$find(".btr-profile-description").before(currentlyWearing)
-				}
-			}	
-				
-			profileContainer.$watch(".profile-avatar-left.profile-avatar-gradient", avatarRedesign => {
-				updateAvatarRedesign()
-				new MutationObserver(updateAvatarRedesign).observe(avatarRedesign.parentNode.parentNode, { childList: true })
+				newCont.$find(".btr-stats-joindate").textContent = new Date(json.components.Statistics.userJoinedDate).$format("M/D/YYYY")
+				newCont.$find(".btr-stats-visits").textContent = Intl.NumberFormat().format(json.components.Statistics.numberOfVisits)
 			})
 			
 			// roblox hides the angular container since it's meant to use the react side
@@ -238,52 +309,52 @@ pageInit.profile = () => {
 							newCont.$find(".btr-profile-about").prepend(social)
 						})
 				})
-				.$watch(".profile-avatar", async avatar => {
-					newCont.$find(".placeholder-avatar").replaceWith(avatar)
+				// .$watch(".profile-avatar", async avatar => {
+				// 	newCont.$find(".placeholder-avatar").replaceWith(avatar)
 					
-					await avatar.$watch(">.container-header").$promise()
+				// 	await avatar.$watch(">.container-header").$promise()
 					
-					avatar.$find(".container-header").remove()
+				// 	avatar.$find(".container-header").remove()
 
-					const avatarLeft = avatar.$find(".profile-avatar-left")
-					const avatarRight = avatar.$find(".profile-avatar-right")
+				// 	const avatarLeft = avatar.$find(".profile-avatar-left")
+				// 	const avatarRight = avatar.$find(".profile-avatar-right")
 
-					avatar.classList.remove("section")
-					avatarLeft.classList.remove("col-sm-6", "section-content")
-					avatarRight.classList.remove("col-sm-6")
+				// 	avatar.classList.remove("section")
+				// 	avatarLeft.classList.remove("col-sm-6", "section-content")
+				// 	avatarRight.classList.remove("col-sm-6")
 
-					avatarRight.style.transition = "none" // stop transition on page load
-					setTimeout(() => avatarRight.style.transition = "", 1e3)
+				// 	avatarRight.style.transition = "none" // stop transition on page load
+				// 	setTimeout(() => avatarRight.style.transition = "", 1e3)
 
-					const toggleItems = html`<span class="btr-toggle-items btn-control btn-control-sm">Show Items</span>`
-					avatarLeft.$find(".thumbnail-holder").append(toggleItems)
+				// 	const toggleItems = html`<span class="btr-toggle-items btn-control btn-control-sm">Show Items</span>`
+				// 	avatarLeft.$find(".thumbnail-holder").append(toggleItems)
 					
-					//
+				// 	//
 					
-					let visible = false
+				// 	let visible = false
 					
-					const setVisible = bool => {
-						visible = bool
-						avatarRight.classList.toggle("visible", visible)
-						toggleItems.textContent = visible ? "Hide Items" : "Show Items"
-					}
+				// 	const setVisible = bool => {
+				// 		visible = bool
+				// 		avatarRight.classList.toggle("visible", visible)
+				// 		toggleItems.textContent = visible ? "Hide Items" : "Show Items"
+				// 	}
 					
-					toggleItems.$on("click", ev => {
-						setVisible(!visible)
-						ev.stopPropagation()
-						ev.stopImmediatePropagation()
-						ev.preventDefault()
-					})
+				// 	toggleItems.$on("click", ev => {
+				// 		setVisible(!visible)
+				// 		ev.stopPropagation()
+				// 		ev.stopImmediatePropagation()
+				// 		ev.preventDefault()
+				// 	})
 					
-					document.$on("click", ev => {
-						if(visible && !avatarRight.contains(ev.target)) {
-							setVisible(false)
-						}
-					})
+				// 	document.$on("click", ev => {
+				// 		if(visible && !avatarRight.contains(ev.target)) {
+				// 			setVisible(false)
+				// 		}
+				// 	})
 					
-					avatar.classList.add("btr-avatar-container")
-					updateAvatarRedesign()
-				})
+				// 	avatar.classList.add("btr-avatar-container")
+				// 	updateAvatarRedesign()
+				// })
 				.$watch(".profile-posts", posts => {
 					newCont.$find(".placeholder-posts").replaceWith(posts)
 				})
@@ -294,13 +365,13 @@ pageInit.profile = () => {
 						newCont.$find(".placeholder-friends").remove()
 					})
 				})
-				.$watch(".profile-statistics", stats => {
-					newCont.$find(".placeholder-stats").replaceWith(stats)
+				// .$watch(".profile-statistics", stats => {
+				// 	newCont.$find(".placeholder-stats").replaceWith(stats)
 					
-					if(!stats.$find(".profile-stats")) {
-						stats.append(html`<ul class=profile-stats></ul>`) // will get cleared by react
-					}
-				})
+				// 	if(!stats.$find(".profile-stats")) {
+				// 		stats.append(html`<ul class=profile-stats></ul>`) // will get cleared by react
+				// 	}
+				// })
 				.$watch(".profile-game", async games => {
 					newCont.$find(".placeholder-games").replaceWith(games)
 					
@@ -614,15 +685,15 @@ pageInit.profile = () => {
 				.$watch("#player-badges-container", playerbadges => {
 					playerbadges.remove()
 				})
-				.$watch(".profile-collections", collections => {
-					collections.classList.remove("layer", "gray-layer-on")
-					newCont.$find(".placeholder-collections").replaceWith(collections)
+				// .$watch(".profile-collections", collections => {
+				// 	collections.classList.remove("layer", "gray-layer-on")
+				// 	newCont.$find(".placeholder-collections").replaceWith(collections)
 					
-					if(SETTINGS.get("profile.embedInventoryEnabled")) {
-						const link = collections.$find(".inventory-link")
-						if(link) { link.style.display = "none" }
-					}
-				})
+				// 	if(SETTINGS.get("profile.embedInventoryEnabled")) {
+				// 		const link = collections.$find(".inventory-link")
+				// 		if(link) { link.style.display = "none" }
+				// 	}
+				// })
 			
 			const initRobloxBadges = () => {
 				const hlist = newCont.$find(".btr-profile-robloxbadges .hlist")

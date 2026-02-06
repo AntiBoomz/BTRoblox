@@ -222,6 +222,7 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	.profile-statistics {
 		margin-top: 16px;
 		
+		/*
 		> .profile-stats-header {
 			display: none;
 		}
@@ -244,6 +245,22 @@ html .dark-theme.btr-profile .btr-section-content-off {
 				}
 			}
 		}
+		*/
+		
+		.btr-profile-stats {
+			display: flex;
+			min-height: 53px;
+			
+			border-top: 1px solid light-dark(#E3E3E3, #494d5a);
+			border-bottom: 1px solid light-dark(#E3E3E3, #494d5a);
+			padding: 8px 0;
+			
+			>li {
+				flex: 1 1 auto;
+				text-align: center;
+				justify-content: center;
+			}
+		}
 	}
 
 	/* Footer */
@@ -252,62 +269,44 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	}
 }
 
-/* Avatar redesign */
+/* Currently Wearing */
 
-.content:has(.btr-avatar-redesign-container) {
-	.btr-avatar-redesign-container {
-		contain: layout;
+.btr-toggle-items {
+	position: absolute;
+	z-index: 25;
+	right: 12px;
+	bottom: 32px;
+	
+	anchor-name: --btr-wearing-anchor;
+}
+
+.btr-currently-wearing {
+	position: absolute;
+	position-anchor: --btr-wearing-anchor;
+	
+	top: calc(anchor(bottom) + 10px);
+	right: 10px;
+	left: 10px;
+
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.3s;
+	z-index: 25;
+	
+	background: rgb(31, 32, 36);
+	border-radius: 8px;
+	padding: 20px;
+	
+	box-shadow: 0 0 8px 0 light-dark(rgba(0, 0, 0, .1), rgba(0, 0, 0, .3));
+	
+	&.visible {
+		opacity: 1;
+		pointer-events: initial;
+		transition: opacity 0.3s;
 	}
 	
-	.btr-profile-about {
-		.btr-header-status-parent {
-			display: none;
-		}
-	}
-	
-	.profile-avatar {
-		position: relative;
-		margin-top: -30px;
-		
-		.profile-avatar-left {
-			display: contents;
-			
-			.thumbnail-holder {
-				display: contents;
-				> *:not(.btr-toggle-items) {
-					display: none;
-				}
-				
-				.btr-toggle-items {
-					position: absolute;
-					z-index: 25;
-					right: 12px;
-					bottom: 12px;
-				}
-			}
-		}
-		
-		.profile-avatar-right {
-			position: absolute;
-			right: 10px;
-			width: calc(round(down, 50%, 110px) + 44px);
-
-			opacity: 0;
-			pointer-events: none;
-			transition: opacity 0.3s;
-			z-index: 25;
-			
-			background: rgb(31, 32, 36);
-			border-radius: 8px;
-			
-			box-shadow: 0 0 8px 0 light-dark(rgba(0, 0, 0, .1), rgba(0, 0, 0, .3));
-			
-			&.visible {
-				opacity: 1;
-				pointer-events: initial;
-				transition: opacity 0.3s;
-			}
-		}
+	.profile-carousel {
+		padding: 0 !important;
 	}
 }
 
@@ -626,7 +625,7 @@ html .btr-profile .btr-profile-favorites .game-card {
 	padding: 0 4px;
 	margin-top: 2px;
 	margin-bottom: 8px;
-	height: auto;
+	height: 182px;
 
 	display: none;
 }

@@ -3713,10 +3713,8 @@ document.addEventListener("btroblox/init", ev => {
 				for(const child of tabContent[0].props.children) {
 					switch(child.key) {
 					case "About":
-					case "CurrentlyWearing":
 					case "FavoriteExperiences":
 					case "Friends":
-					case "Collections":
 					case "Communities":
 					case "RobloxBadges":
 					case "PlayerBadges":
@@ -3726,11 +3724,23 @@ document.addEventListener("btroblox/init", ev => {
 					case "Clothing":
 						delete child.props.children
 						break
+					case "CurrentlyWearing":
+					case "Collections":
+					case "Store":
+						break // do nothing (we do something with this)
 					default:
 						if(IS_DEV_MODE) {
 							console.log(`Unknown component '${child.key}'`)
 						}
 					}
+				}
+			})
+			
+			hijackXHR(request => {
+				if(request.url === "https://apis.roblox.com/profile-platform-api/v1/profiles/get") {
+					request.onResponse.push(json => {
+						contentScript.send("profileData", json)
+					})
 				}
 			})
 		},
