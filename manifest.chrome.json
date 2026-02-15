@@ -29,11 +29,9 @@
 
 	"permissions": [
 		"declarativeNetRequestWithHostAccess",
-		"notifications",
 		"contextMenus",
 		"scripting",
-		"storage",
-		"alarms"
+		"storage"
 	],
 
 	"web_accessible_resources": [

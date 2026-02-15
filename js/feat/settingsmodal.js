@@ -99,169 +99,6 @@ const SettingsModal = {
 
 		this.currentContent = name
 		sessionStorage.setItem("btr-settings-open", name)
-
-		if(name === "shoutFilters") {
-			if(!this.areFiltersInit) {
-				this.areFiltersInit = true
-				this.initShoutFilters()
-			}
-		}
-	},
-	
-	initShoutFilters() {
-		$.assert(this.enabled, "not enabled")
-		
-		const filterContent = this.settingsDiv.$find("#btr-settings-shout-filters")
-		const enabledList = filterContent.$find(".btr-filter-enabled")
-		const disabledList = filterContent.$find(".btr-filter-disabled")
-		const enabledLabel = enabledList.previousElementSibling
-		const disabledLabel = disabledList.previousElementSibling
-
-		const groups = []
-		const shoutFilters = {}
-
-		let areGroupsLoaded = false
-		let isDataLoaded = false
-
-		const updateLists = () => {
-			if(!areGroupsLoaded || !isDataLoaded) { return }
-			const currentList = shoutFilters[shoutFilters.mode]
-
-			const list0 = shoutFilters.mode === "blacklist" ? enabledList : disabledList
-			const list1 = list0 === disabledList ? enabledList : disabledList
-			
-			for(const group of groups) {
-				const tile = group.tile
-
-				if(currentList.includes(group.id)) {
-					list1.append(tile)
-				} else {
-					list0.append(tile)
-				}
-			}
-		}
-
-		const setGroupEnabled = (id, state) => {
-			if(!isDataLoaded) { return }
-
-			const list = shoutFilters[shoutFilters.mode]
-			const index = list.indexOf(id)
-
-			if((shoutFilters.mode === "blacklist") !== !state) { // if blacklist and state or !blacklist and !state
-				if(index === -1) { return }
-				list.splice(index, 1)
-				backgroundScript.send("setShoutFilter", { id: id, mode: shoutFilters.mode, state: false })
-			} else {
-				if(index !== -1) { return }
-				list.push(id)
-				backgroundScript.send("setShoutFilter", { id: id, mode: shoutFilters.mode, state: true })
-			}
-			
-			updateLists()
-		}
-
-		const isGroupEnabled = id => {
-			if(!isDataLoaded) { return }
-
-			const list = shoutFilters[shoutFilters.mode]
-			const index = list.indexOf(id)
-
-			return shoutFilters.mode === "blacklist" ? index === -1 : index !== -1
-		}
-
-		const onDrop = (state, ev) => {
-			const id = +ev.dataTransfer.getData("btr-group")
-
-			if(Number.isSafeInteger(id)) {
-				setGroupEnabled(id, state)
-			}
-
-			ev.preventDefault()
-			ev.dataTransfer.clearData()
-		}
-
-		const validDrag = ev => {
-			if(ev.dataTransfer.getData("btr-group")) {
-				ev.preventDefault()
-			}
-		}
-
-		enabledList.$on("dragover", validDrag)
-		disabledList.$on("dragover", validDrag)
-		enabledList.$on("drop", onDrop.bind(null, true))
-		disabledList.$on("drop", onDrop.bind(null, false))
-
-		//
-
-		const updateFilterMode = () => {
-			if(shoutFilters.mode === "blacklist") {
-				enabledLabel.textContent = "Enabled (Default)"
-				disabledLabel.textContent = "Disabled"
-			} else {
-				enabledLabel.textContent = "Enabled"
-				disabledLabel.textContent = "Disabled (Default)"
-			}
-
-			updateLists()
-		}
-
-		const setFilterMode = mode => {
-			shoutFilters.mode = mode
-			backgroundScript.send("setShoutFilterMode", shoutFilters.mode)
-			updateFilterMode()
-		}
-
-		enabledLabel.$on("click", () => setFilterMode("blacklist"))
-		disabledLabel.$on("click", () => setFilterMode("whitelist"))
-
-		loggedInUserPromise.then(async userId => {
-			const json = await RobloxApi.groups.getUserGroupRoles(userId)
-			
-			for(const group of json.data.map(x => x.group).sort((a, b) => (a.name < b.name ? -1 : 1))) {
-				const tile = group.tile = html`
-				<li class=btr-filter-group title="${group.name}" draggable=true>
-					<div class=btr-filter-group-icon>
-						<img draggable=false>
-					</div>
-					<div class=btr-filter-group-title>
-						${group.name}
-					</div>
-				</li>`
-
-				tile.$on("dragstart", ev => {
-					ev.dataTransfer.clearData()
-					ev.dataTransfer.setData("btr-group", group.id)
-				})
-
-				tile.$on("click", () => {
-					setGroupEnabled(group.id, !isGroupEnabled(group.id))
-				})
-				
-				groups.push(group)
-			}
-
-			fetch(`https://thumbnails.roblox.com/v1/groups/icons?groupIds=${groups.map(x => x.id).join(",")}&size=150x150&format=Png&isCircular=false`)
-				.then(async resp => {
-					const json = await resp.json()
-					
-					for(const iconData of json.data) {
-						if(iconData.state === "Completed" && iconData.imageUrl) {
-							groups.find(x => x.id === iconData.targetId).tile.$find("img").src = iconData.imageUrl
-						}
-					}
-				})
-
-			areGroupsLoaded = true
-			updateLists()
-		})
-
-		backgroundScript.send("getShoutFilters", data => {
-			Object.assign(shoutFilters, data)
-			isDataLoaded = true
-
-			updateFilterMode()
-			updateLists()
-		})
 	},
 	
 	init() {
@@ -307,11 +144,6 @@ const SettingsModal = {
 							</span>
 							<span class=btr-setting-reset-button path=general.robuxToUSDRate></span>
 						</div>
-						
-						<div>
-							<checkbox label="Group Shout Notifications" path=groups.shoutAlerts></checkbox>
-							<button btr-tab=shoutFilters class=btn-control-xs>Modify Shout Notifications</button>
-						</div>
 					</group>
 					<group label=Navigation path=navigation toggleable>
 						<checkbox label="Keep Sidebar Open" path=noHamburger require=false></checkbox>
@@ -328,7 +160,6 @@ const SettingsModal = {
 					</group>
 					<group label=Groups path=groups toggleable>
 						<checkbox label="Modify Layout" path=modifyLayout></checkbox>
-						<checkbox label="Paged Group Wall" path=pagedGroupWall></checkbox>
 					</group>
 					<group label="Game Details" path=gamedetails toggleable>
 						<checkbox label="Highlight Owned Badges" path=showBadgeOwned></checkbox>
@@ -378,33 +209,6 @@ const SettingsModal = {
 					</div>
 				</div>
 				
-				<div class=btr-settings-content id=btr-settings-shout-filters data-name=shoutFilters>
-					<div class=btr-settings-content-header>
-						<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>
-						<h4>Group Shout Notifications</h4>
-					</div>
-					<group path=groups>
-						<div>
-							<checkbox label="Enable Group Shout Notifications" path=shoutAlerts require=false></checkbox>
-						</div>
-						<checkbox label="Browser Notifications" path=shoutAlertBrowserNotifs require=shoutAlerts></checkbox>
-						<checkbox label="Show In Notification Stream" path=shoutAlertsInNotifStream require=shoutAlerts></checkbox>
-					</group>
-					<div class=btr-filter-lists>
-						<div class=btr-filter-list>
-							<h5 class=btr-filter-list-header>Enabled</h5>
-							<ul class=btr-filter-enabled>
-							</ul>
-						</div>
-						<div class=btr-filter-center>
-						</div>
-						<div class=btr-filter-list>
-							<h5 class=btr-filter-list-header>Disabled</h5>
-							<ul class=btr-filter-disabled>
-							</ul>
-						</div>
-					</div>
-				</div>
 				<div class=btr-settings-content id=btr-settings-item-previewer data-name=itemPreviewerSettings>
 					<div class=btr-settings-content-header>
 						<button class="btn-control-sm btr-close-subcontent"><span class=icon-left></span></button>

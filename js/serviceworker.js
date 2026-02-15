@@ -9,7 +9,6 @@ importScripts(
 	"/js/feat/contextmenu.js",
 	"/js/feat/serverdetails.js",
 	"/js/feat/loadfeature.js",
-	"/js/feat/groupshout.js",
 	
 	"/js/feat/blogfeed.js",
 	

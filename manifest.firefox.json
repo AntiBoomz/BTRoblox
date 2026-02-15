@@ -36,7 +36,6 @@
 			"js/feat/contextmenu.js",
 			"js/feat/serverdetails.js",
 			"js/feat/loadfeature.js",
-			"js/feat/groupshout.js",
 			"js/feat/blogfeed.js",
 			
 			"js/rbx/Constants.js",
@@ -47,11 +46,9 @@
 	"permissions": [
 		"*://*.roblox.com/",
 		"*://*.rbxcdn.com/",
-		"notifications",
 		"contextMenus",
 		"scripting",
-		"storage",
-		"alarms"
+		"storage"
 	],
 
 	"web_accessible_resources": [

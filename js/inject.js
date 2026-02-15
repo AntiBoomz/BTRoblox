@@ -1901,117 +1901,6 @@ document.addEventListener("btroblox/init", ev => {
 				}
 			)
 		},
-		"linkify": target => $(target).linkify(),
-		"shoutAlerts": () => {
-			const shoutNotifications = []
-			const shoutListeners = []
-			
-			contentScript.listen("setRecentShouts", notifs => {
-				shoutNotifications.splice(0, shoutNotifications.length, ...notifs)
-				
-				for(const fn of shoutListeners.splice(0, shoutListeners.length)) {
-					fn(shoutNotifications)
-				}
-			})
-			
-			angularHook.hijackModule("notificationStream", {
-				notificationStreamController(target, thisArg, args, argsMap) {
-					try {
-						const { $scope, notificationStreamService } = argsMap
-						let addShoutsToNotifs = false
-						
-						onSet($scope, "getRecentNotifications", () => {
-							hijackFunction($scope, "getRecentNotifications", (target, thisArg, args) => {
-								addShoutsToNotifs = true
-								const result = target.apply(thisArg, args)
-								addShoutsToNotifs = false
-								
-								return result
-							})
-						})
-						
-						hijackFunction(notificationStreamService, "getRecentNotifications", (target, thisArg, args) => {
-							const result = target.apply(thisArg, args)
-							
-							if(addShoutsToNotifs) {
-								const promise = new Promise(resolve => shoutListeners.push(resolve))
-								contentScript.send("getRecentShouts")
-								
-								return result.then(async data => {
-									const shouts = await promise
-									
-									try {
-										for(const shout of shouts) {
-											const entry = {
-												id: `btr-groupshout-${shout.groupId}`,
-												notificationSourceType: "BTRobloxGroupShout",
-												eventDate: shout.updated,
-												isInteracted: shout.interacted,
-												metadataCollection: [],
-												eventCount: 1,
-												content: null
-											}
-											
-											$scope.notifications[entry.id] = entry
-											
-											if($scope.notificationIds.indexOf(entry.id) === -1) {
-												$scope.notificationIds.push(entry.id)
-											}
-										}
-									} catch(ex) {}
-									
-									return data
-								})
-							}
-							
-							return result
-						})
-						
-					} catch(ex) {
-						console.error(ex)
-						if(IS_DEV_MODE) { alert("hijackAngular Error") }
-					}
-					
-					const result = target.apply(thisArg, args)
-					return result
-				},
-				
-				notificationStreamService(target, thisArg, args, argsMap) {
-					const result = target.apply(thisArg, args)
-					
-					try {
-						hijackFunction(result, "unreadCount", (target, thisArg, args) => {
-							const result = target.apply(thisArg, args)
-							const promise = new Promise(resolve => shoutListeners.push(resolve))
-							
-							contentScript.send("getRecentShouts")
-							
-							return result.then(async data => {
-								const shouts = await promise
-								
-								for(const shout of shouts) {
-									if(!shout.interacted) {
-										data.unreadNotifications += 1
-									}
-								}
-								
-								return data
-							})
-						})
-						
-						hijackFunction(result, "clearUnread", (target, thisArg, args) => {
-							contentScript.send("markShoutsAsInteracted")
-							return target.apply(thisArg, args)
-						})
-					} catch(ex) {
-						console.error(ex)
-						if(IS_DEV_MODE) { alert("hijackAngular Error") }
-					}
-					
-					return result
-				}
-			})
-		},
 		"hideFriendActivity": () => {
 			hijackXHR(request => {
 				if(request.method === "POST" && request.url.match(/^https:\/\/apis\.roblox\.com\/discovery-api\/omni-recommendation(-metadata)?$/i)) {
@@ -3236,14 +3125,6 @@ document.addEventListener("btroblox/init", ev => {
 					try {
 						const { $scope, groupDetailsConstants } = argsMap
 						
-						groupDetailsConstants.tabs.about.translationKey = "Heading.Members"
-						
-						groupDetailsConstants.tabs.games = {
-							state: "about",
-							btrCustomTab: "games",
-							translationKey: "Heading.Games"
-						}
-						
 						groupDetailsConstants.tabs.payouts = {
 							state: "about",
 							btrCustomTab: "payouts",
@@ -3259,10 +3140,6 @@ document.addEventListener("btroblox/init", ev => {
 							
 							const entries = Object.entries(result)
 							
-							if($scope.library?.currentGroup?.areGroupGamesVisible) {
-								entries.splice(1, 0, ["games", groupDetailsConstants.tabs.games])
-							}
-							
 							if($scope.isAuthenticatedUser && $scope.layout?.btrPayoutsEnabled) {
 								entries.push(["payouts", groupDetailsConstants.tabs.payouts])
 							}
@@ -3271,10 +3148,6 @@ document.addEventListener("btroblox/init", ev => {
 							
 							return result
 						})
-						
-						// this doesnt get called unless we start on group shout page
-						// doing it here since we always show shouts
-						$scope.initVerifiedBadgesForGroupShout()
 					} catch(ex) {
 						console.error(ex)
 					}
@@ -3321,187 +3194,6 @@ document.addEventListener("btroblox/init", ev => {
 						})
 					} catch(ex) {
 						console.error(ex)
-					}
-	
-					return result
-				}
-			})
-		},
-		"pagedGroupWall": () => {
-			const createCustomPager = (ctrl, { $scope }) => {
-				const wallPosts = []
-				const pageSize = 10
-				let loadMorePromise = null
-				let nextPageCursor = ""
-				let requestCounter = 0
-				let lastPageNum = 0
-				let isLoadingPosts = false
-				let activeLoadMore = 0
-	
-				const btrPagerStatus = {
-					prev: false,
-					next: false,
-					input: false,
-					pageNum: 1
-				}
-	
-				const setPageNumber = page => {
-					btrPagerStatus.prev = page > 0
-					btrPagerStatus.next = !!nextPageCursor || wallPosts.length > ((page + 1) * pageSize)
-					btrPagerStatus.input = true
-					btrPagerStatus.pageNum = page + 1
-	
-					lastPageNum = page
-	
-					const startIndex = page * pageSize
-					const endIndex = startIndex + pageSize
-	
-					$scope.groupWall.posts = wallPosts.slice(startIndex, endIndex).map($scope.convertResultToPostObject)
-					$scope.$applyAsync()
-				}
-	
-				const loadMorePosts = () => {
-					if(loadMorePromise) {
-						return loadMorePromise
-					}
-					
-					const currentLoadMore = activeLoadMore += 1
-					
-					return loadMorePromise = Promise.resolve().then(async () => {
-						const groupId = ctrl.groupId || $scope.library.currentGroup.id
-						const url = `https://groups.roblox.com/v2/groups/${groupId}/wall/posts?sortOrder=Desc&limit=100&cursor=${nextPageCursor}`
-						
-						let res
-						
-						while(true) {
-							res = await fetch(url, { credentials: "include" })
-							if(activeLoadMore !== currentLoadMore) { return }
-							
-							if(!res.ok) {
-								await new Promise(resolve => setTimeout(resolve, 1e3))
-								if(activeLoadMore !== currentLoadMore) { return }
-								continue
-							}
-							
-							break
-						}
-						
-						const json = await res.json()
-						if(activeLoadMore !== currentLoadMore) { return }
-						
-						nextPageCursor = json.nextPageCursor || null
-						wallPosts.push(...json.data.filter(x => x.poster))
-	
-						loadMorePromise = null
-					})
-				}
-	
-				const requestWallPosts = page => {
-					if(!Number.isSafeInteger(page)) { return }
-					const myCounter = ++requestCounter
-	
-					btrPagerStatus.prev = false
-					btrPagerStatus.next = false
-					btrPagerStatus.input = false
-	
-					page = Math.max(0, Math.floor(page))
-					isLoadingPosts = true
-	
-					const startIndex = page * pageSize
-					const endIndex = startIndex + pageSize
-					
-					const tryAgain = () => {
-						if(requestCounter !== myCounter) { return }
-	
-						if(wallPosts.length < endIndex && nextPageCursor !== null) {
-							loadMorePosts().then(tryAgain)
-							return
-						}
-	
-						const maxPage = Math.max(0, Math.floor((wallPosts.length - 1) / pageSize))
-						setPageNumber(Math.min(maxPage, page))
-	
-						isLoadingPosts = false
-					}
-	
-					tryAgain()
-				}
-	
-				$scope.groupWall.pager.isBusy = () => isLoadingPosts
-				$scope.groupWall.pager.loadNextPage = () => {}
-				$scope.groupWall.pager.loadFirstPage = () => {
-					wallPosts.splice(0, wallPosts.length)
-					nextPageCursor = ""
-					loadMorePromise = null
-					activeLoadMore += 1
-					requestWallPosts(0)
-				}
-				
-				$scope.btrAttachInput = () => {
-					const input = document.querySelector(".btr-comment-pager input")
-		
-					const updateInputWidth = () => {
-						input.style.width = "0px"
-						input.style.width = `${Math.max(32, Math.min(100, input.scrollWidth + 12))}px`
-					}
-					
-					input.addEventListener("input", updateInputWidth)
-					input.addEventListener("change", updateInputWidth)
-					
-					const descriptor = {
-						configurable: true,
-						
-						get() {
-							delete this.value
-							const result = this.value
-							Object.defineProperty(input, "value", descriptor)
-							return result
-						},
-						set(x) {
-							delete this.value
-							this.value = x
-							Object.defineProperty(input, "value", descriptor)
-							updateInputWidth()
-						}
-					}
-					
-					Object.defineProperty(input, "value", descriptor)
-				}
-	
-				$scope.btrPagerStatus = btrPagerStatus
-				$scope.btrLoadWallPosts = cursor => {
-					let pageNum = lastPageNum
-	
-					if(cursor === "prev") {
-						pageNum = lastPageNum - 1
-					} else if(cursor === "next") {
-						pageNum = lastPageNum + 1
-					} else if(cursor === "input") {
-						const input = document.querySelector(".btr-comment-pager input")
-						const value = parseInt(input.value, 10)
-	
-						if(Number.isSafeInteger(value)) {
-							pageNum = Math.max(0, value - 1)
-						}
-					} else if(cursor === "first") {
-						pageNum = lastPageNum - 50
-					} else if(cursor === "last") {
-						pageNum = lastPageNum + 50
-					}
-	
-					requestWallPosts(pageNum)
-				}
-			}
-	
-			angularHook.hijackModule("group", {
-				groupWallController(target, thisArg, args, argsMap) {
-					const result = target.apply(thisArg, args)
-	
-					try {
-						createCustomPager(thisArg, argsMap)
-					} catch(ex) {
-						console.error(ex)
-						if(IS_DEV_MODE) { alert("hijackAngular Error") }
 					}
 	
 					return result
@@ -3744,6 +3436,7 @@ document.addEventListener("btroblox/init", ev => {
 				}
 			})
 		},
+		"linkify": target => $(target).linkify(),
 		"adblock.js": () => {
 			util.ready(() => {
 				if(window.Roblox?.PrerollPlayer) {
