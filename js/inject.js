@@ -3408,7 +3408,6 @@ document.addEventListener("btroblox/init", ev => {
 					case "FavoriteExperiences":
 					case "Friends":
 					case "Communities":
-					case "RobloxBadges":
 					case "PlayerBadges":
 					case "Statistics":
 					case "Experiences":
