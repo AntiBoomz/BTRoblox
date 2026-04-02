@@ -27,6 +27,7 @@ const optionalFeatures = {
 	},
 	parser: {
 		assets: [
+			"lib/fzstd.min.js",
 			"js/rbx/Parser/ByteReader.js",
 			"js/rbx/Parser/ModelParser.js",
 			"js/rbx/Parser/DracoBitstream.js",
