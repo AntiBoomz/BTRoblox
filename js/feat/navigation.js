@@ -250,7 +250,7 @@ const Navigation = {
 		})
 		
 		Navigation.register("header_friends", {
-			label: "Show Connections",
+			label: "Show Friends",
 			
 			settings: {
 				show_notifs: { label: "Show Requests", enabled: true, class: "!hide_notifs" }

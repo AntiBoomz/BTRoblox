@@ -126,7 +126,7 @@ pageInit.profile = () => {
 						</div>
 					</div>
 					<div class=placeholder-friends>
-						<div class=container-header><h2 ng-bind="'Heading.Friends' | translate">Connections</h2></div>
+						<div class=container-header><h2 ng-bind="'Heading.Friends' | translate">Friends</h2></div>
 						<div class="spinner spinner-default"></div>
 					</div>
 					<div class=btr-profile-favorites>
