@@ -2927,24 +2927,25 @@ document.addEventListener("btroblox/init", ev => {
 			const globalServerRegions = {}
 			const onRegionsChanged = new Set()
 			
-			if(settings.gamedetails.showServerRegion) {
-				contentScript.listen("setServerRegion", (jobId, details) => {
-					if(JSON.stringify(details) !== JSON.stringify(globalServerRegions[jobId])) {
-						globalServerRegions[jobId] = details
-						
-						for(const fn of onRegionsChanged) {
-							fn()
-						}
+			contentScript.listen("setServerRegion", (jobId, details) => {
+				if(JSON.stringify(details) !== JSON.stringify(globalServerRegions[jobId])) {
+					globalServerRegions[jobId] = details
+					
+					for(const fn of onRegionsChanged) {
+						fn()
 					}
-				})
-			}
+				}
+			})
+			
+			const regionSetting = settings.gamedetails.showServerRegion
+			const addServerPager = settings.gamedetails.addServerPager
 			
 			reactHook.hijackConstructor(
 				props => props.getGameServers,
 				(target, thisArg, args) => {
 					const props = args[0]
 					
-					if(settings.gamedetails.addServerPager && (props.getGameServers?.name === "getPublicGameInstances" || props.getGameServers === btrGetPublicGameInstances)) {
+					if(addServerPager && props.type === "public") {
 						props.getGameServers = btrGetPublicGameInstances
 					}
 					
@@ -2957,7 +2958,7 @@ document.addEventListener("btroblox/init", ev => {
 				(target, thisArg, args) => {
 					const props = args[0]
 					
-					if(props.type === "public" && settings.gamedetails.addServerPager) {
+					if(addServerPager && props.type === "public") {
 						props.btrPagerEnabled = true
 						props.showLoadMoreButton = false
 					}
@@ -2980,7 +2981,9 @@ document.addEventListener("btroblox/init", ev => {
 						
 						if(servers) {
 							for(const server of [servers].flat()) {
-								server.props.btrGameInstance = props?.gameInstances?.find(x => x.id === server.props.id)
+								if(server?.props) {
+									server.props.ping = props?.gameInstances?.find(x => x.id === server.props.id)?.ping
+								}
 							}
 						}
 					} catch(ex) {
@@ -2994,82 +2997,72 @@ document.addEventListener("btroblox/init", ev => {
 			reactHook.hijackConstructor( // GameInstanceCard
 				props => props.gameServerStatus,
 				(target, thisArg, args) => {
-					const result = target.apply(thisArg, args)
-					const placeId = args[0].placeId
-					const jobId = args[0].id
+					const props = args[0]
+					const placeId = props.placeId
+					const jobId = props.id
 					
-					if(jobId) {
+					const result = target.apply(thisArg, args)
+					
+					try {
+						// add context menu entry to copy jobid
 						const joinBtn = reactHook.queryElement(result, x => x.props.className?.includes("game-server-join-btn"))
 						if(joinBtn) {
 							joinBtn.props["data-btr-instance-id"] = jobId
 						}
 						
-						let serverDetails
-						
-						const regionSetting = settings.gamedetails.showServerRegion
-						const showPing = ["ping", "both", "combined"].includes(regionSetting)
-						const showRegion = ["region", "both", "combined"].includes(regionSetting)
-						
-						if(showRegion) {
-							serverDetails = useSyncExternalStore(callback => {
-								onRegionsChanged.add(callback)
-								return () => onRegionsChanged.delete(callback)
-							}, () => globalServerRegions[jobId])
+						// add region/ping label
+						const status = regionSetting !== "none" && reactHook.queryElement(result, x => x.props.className?.includes("rbx-game-status"))
+						if(status) {
+							let serverDetails
 							
-							React.useEffect(() => {
-								contentScript.send("getServerRegion", placeId, jobId)
-							}, [jobId])
-						}
-						
-						const gameInstance = args[0].btrGameInstance
-						if(gameInstance) {
-							const status = reactHook.queryElement(result, x => x.props.className?.includes("rbx-game-status"))
+							if(regionSetting !== "region") {
+								status.props.children += `\nPing: ${props.ping ?? -1}ms`
+							}
 							
-							if(status) {
-								if(showRegion && regionSetting !== "combined") {
+							if(regionSetting !== "ping") {
+								serverDetails = useSyncExternalStore(callback => {
+									onRegionsChanged.add(callback)
+									return () => onRegionsChanged.delete(callback)
+								}, () => globalServerRegions[jobId])
+								
+								React.useEffect(() => {
+									contentScript.send("getServerRegion", placeId, jobId)
+								}, [jobId])
+								
+								if(regionSetting === "combined") {
+									status.props.children += ` (${
+									!serverDetails ? "Loading" :
+									!serverDetails.location ? serverDetails.statusText :
+									serverDetails.location.country.code
+								})`
+								} else {
 									status.props.children += `\nRegion: ${
-										!serverDetails ? "Loading"
-										: !serverDetails.location ? serverDetails.statusText
-										: `${serverDetails.location.city}, ${serverDetails.location.country.name === "United States" ? serverDetails.location.region.code : serverDetails.location.country.code}`
-								}`
-										
-									// Okay, this is hacky, BUT...
-									// United Kingdom wraps over by 1 character, so let's increase size for it lmao
-									// not needed anymore
-									
-									// if(serverDetails?.location?.country.name === "United Kingdom") {
-									// 	if(!status.props.style) { status.props.style = {} }
-									// 	status.props.style.width = "105%"
-									// }
-								}
-								
-								if(showPing) {
-									status.props.children += `\nPing: ${gameInstance.ping ?? 0}ms`
-									
-									if(showRegion && regionSetting === "combined") {
-										status.props.children += ` (${
 										!serverDetails ? "Loading" :
-										serverDetails.location ? serverDetails.location.country.code :
-										serverDetails.statusText
-									})`
-									}
+										!serverDetails.location ? serverDetails.statusText :
+										`${serverDetails.location.city}, ${
+										serverDetails.location.country.name === "United States" ?
+											serverDetails.location.region.code
+										:
+											serverDetails.location.country.code
+									}`
+								}`
 								}
 								
-								if(showRegion) {
-									status.props.title = 
-										!serverDetails ? "Loading"
-										: !serverDetails.location ? serverDetails.statusTextLong
-										: (
-											serverDetails.location.country.name === "United States" ? `${serverDetails.location.city}, ${serverDetails.location.region.name}, ${serverDetails.location.country.name}`
-											: `${serverDetails.location.city}, ${serverDetails.location.country.name}` 
-										)
-									
-									if(serverDetails?.address) {
-										status.props.title += ` (${serverDetails?.address})`
-									}
+								status.props.title = 
+									!serverDetails ? "Loading" :
+									!serverDetails.location ? serverDetails.statusTextLong :
+									serverDetails.location.country.name === "United States" ?
+										`${serverDetails.location.city}, ${serverDetails.location.region.name}, ${serverDetails.location.country.name}`
+									:
+										`${serverDetails.location.city}, ${serverDetails.location.country.name}`
+								
+								if(serverDetails?.address) {
+									status.props.title += ` (${serverDetails?.address})`
 								}
 							}
 						}
+					} catch(ex) {
+						console.error(ex)
 					}
 					
 					return result
