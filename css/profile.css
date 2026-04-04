@@ -104,6 +104,24 @@ html .dark-theme.btr-profile .btr-section-content-off {
 			text-align: justify;
 		}
 	}
+	
+	/* Stats */
+	
+	.btr-profile-stats {
+		display: flex;
+		min-height: 53px;
+		
+		border-top: 1px solid light-dark(#E3E3E3, #494d5a);
+		/* border-bottom: 1px solid light-dark(#E3E3E3, #494d5a); */
+		margin-top: 12px;
+		padding: 8px 0 0;
+
+		.btr-profile-stat {
+			flex: 1 1 auto;
+			text-align: center;
+			justify-content: center;
+		}
+	}
 }
 
 /* Status */

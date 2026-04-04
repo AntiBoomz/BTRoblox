@@ -215,7 +215,7 @@ document.addEventListener("btroblox/init", ev => {
 	
 	//
 	
-	const formatNumber = num => String(num).replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/yg, "$1,")
+	const formatNumber = num => String(num).replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/yg, "$1,") // Intl.NumberFormat().format(num)
 	
 	const RobuxToCash = {
 		selectedRobuxToCashOption: selectedRobuxToCashOption,
@@ -3389,7 +3389,7 @@ document.addEventListener("btroblox/init", ev => {
 				}
 			})
 			
-			reactHook.inject(".profile-tab-content", tabContent => {
+			reactHook.inject(">.profile-tab-content", tabContent => {
 				for(const child of tabContent[0].props.children) {
 					switch(child.key) {
 					case "About":

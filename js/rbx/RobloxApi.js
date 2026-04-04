@@ -400,6 +400,11 @@ const RobloxApi = {
 			xsrfFetch(`https://games.roblox.com/v2/users/${userId}/favorite/games?limit=${limit}&cursor=${cursor}`, {
 				credentials: "include"
 			}).then(res => res.json()),
+		
+		getUserGames: (userId, limit=10, cursor="") =>
+			xsrfFetch(`https://games.roblox.com/v2/users/${userId}/games?limit=${limit}&cursor=${cursor}`, {
+				credentials: "include"
+			}).then(res => res.json()),
 	},
 	groups: {
 		getUserGroupRoles: userId =>

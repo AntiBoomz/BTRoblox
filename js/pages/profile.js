@@ -12,7 +12,7 @@ pageInit.profile = () => {
 			}
 		})
 		
-		reactHook.inject(".profile-tab-content", tabContent => {
+		reactHook.inject(">.profile-tab-content", tabContent => {
 			for(const child of tabContent[0].props.children) {
 				switch(child.key) {
 				case "About":
@@ -83,6 +83,16 @@ pageInit.profile = () => {
 							<div class=btr-profile-description>
 								<div class=btr-profile-description-content>
 									<span class="spinner spinner-default"></span>
+								</div>
+							</div>
+							<div class=btr-profile-stats style=display:none>
+								<div class=btr-profile-stat>
+									<div class="text-label" ng-bind="'Label.JoinDate' | translate">Join Date</div>
+									<div class="text-lead text-overflow btr-stats-joindate"></div>
+								</div>
+								<div class=btr-profile-stat>
+									<div class="text-label" ng-bind="'Label.PlaceVisits' | translate">Place Visits</div>
+									<div class="text-lead text-overflow btr-stats-placevisits"></div>
 								</div>
 							</div>
 						</div>
@@ -264,6 +274,8 @@ pageInit.profile = () => {
 					newCont.$find(".placeholder-collections").replaceWith(clone)
 				})
 			
+			const gamesPromise = RobloxApi.games.getUserGames(userId, 50)
+			
 			profileDataPromise.then(json => {
 				if(!document.contains(profileContainer)) { return }
 				
@@ -299,9 +311,19 @@ pageInit.profile = () => {
 						newCont.$find(".btr-profile-social-links").append(link)
 					}
 				}
-								
-				// newCont.$find(".btr-stats-joindate").textContent = new Date(json.components.About.joinDateTime).$format("M/D/YYYY")
-				// newCont.$find(".btr-stats-visits").textContent = Intl.NumberFormat().format(json.components.Statistics.numberOfVisits)
+				
+				newCont.$find(".btr-profile-stats").style.display = ""
+				newCont.$find(".btr-stats-joindate").textContent = new Date(json.components.About.joinDateTime).$format("M/D/YYYY")
+				
+				gamesPromise.then(json => {
+					let visits = 0
+					
+					for(const game of json.data) {
+						visits += game.placeVisits
+					}
+					
+					newCont.$find(".btr-stats-placevisits").textContent = formatNumber(visits)
+				})
 				
 				const friendsPlaceholder = newCont.$find(".placeholder-friends")
 				if(friendsPlaceholder) {
@@ -746,33 +768,58 @@ pageInit.profile = () => {
 				
 				const items = []
 				
-				const transition = (item, open) => {
+				const transition = (item, open, instant=false) => {
 					const content = item.$find(".btr-game-content")
 					const height = content.scrollHeight
-					const duration = 0.25
-					
-					content.style.maxHeight = `${height}px`
-					content.style.transition = `max-height ${duration}s ease`
 					
 					if(content._timeout) { clearTimeout(content._timeout) }
 					
-					if(open) {
-						content._timeout = setTimeout(() => content.style.maxHeight = "none", duration * 1e3)
+					if(instant) {
+						content.style.transition = ""
+						content.style.maxHeight = open ? "none" : "0px"
 					} else {
-						content._timeout = setTimeout(() => content.style.maxHeight = "0px", 0)
+						const duration = 0.25
+						
+						content.style.maxHeight = `${height}px`
+						content.style.transition = `max-height ${duration}s ease`
+						
+						if(open) {
+							content._timeout = setTimeout(() => content.style.maxHeight = "none", duration * 1e3)
+						} else {
+							content._timeout = setTimeout(() => content.style.maxHeight = "0px", 0)
+						}
 					}
 				}
 				
-				const select = item => {
+				const select = (item, instant=false) => {
 					const prev = content.$find(".selected")
 					if(prev === item) { return }
 					
 					prev?.classList.remove("selected")
 					item.classList.add("selected")
 					
-					if(prev) { transition(prev, false) }
-					transition(item, true)
+					if(prev) { transition(prev, false, instant) }
+					transition(item, true, instant)
 				}
+				
+				const pager = createPager(false, true)
+				const pageSize = 5
+				
+				content.after(pager)
+
+				function loadPage(page) {
+					pager.setPage(page)
+					
+					for(const [index, obj] of Object.entries(items)) {
+						obj.style.display = Math.floor(index / pageSize) + 1 === page ? "" : "none"
+					}
+					
+					select(items[(page - 1) * pageSize], true)
+				}
+
+				pager.onsetpage = loadPage
+				
+				pager.setMaxPage(Math.floor((initial.experiences.length - 1) / pageSize) + 1)
 				
 				for(const {universeId} of initial.experiences) {
 					const index = items.length
@@ -811,11 +858,10 @@ pageInit.profile = () => {
 						</div>
 					</div>`
 					
+					item.style.display = index < pageSize ? "" : "none"
+					
 					item.$find(".btr-game-button").$on("click", () => select(item))
-					if(index === 0) {
-						item.classList.add("selected")
-						item.$find(".btr-game-content").style.maxHeight = "none"
-					}
+					if(index === 0) { select(item, true) }
 					
 					loggedInUserPromise.then(loggedInUser => {
 						if(userId !== loggedInUser) { return }
