@@ -323,7 +323,7 @@ const btrFastSearch = {
 					}
 					
 					if(user.IsFriend) {
-						label.append(`You are friends.`)
+						label.append(`You are friends`)
 					}
 					
 					if(isAlias) {
