@@ -17,7 +17,6 @@ pageInit.profile = () => {
 				switch(child.key) {
 				case "About":
 				case "FavoriteExperiences":
-				case "Friends":
 				case "Communities":
 				case "PlayerBadges":
 				case "Statistics":
@@ -28,6 +27,7 @@ pageInit.profile = () => {
 					break
 				case "CurrentlyWearing":
 				case "Collections":
+				case "Friends":
 				case "Store":
 					break // do nothing (we do something with this)
 				default:
@@ -67,61 +67,48 @@ pageInit.profile = () => {
 		
 		document.$watch("body", body => body.classList.add("btr-profile"))
 		
-		document.$watch([".profile-platform-container", ".profile-container"], (profileContainer, angularContainer) => {
+		document.$watch(".profile-platform-container", async profileContainer => {
+			await profileContainer.$watch(">*").$promise() // wait for first child
+			
 			const newCont = html`
 			<div class=btr-profile-container>
 				<div class=btr-profile-left>
 					<div class=btr-profile-about>
-						<div class=container-header><h2 ng-bind="'Heading.AboutTab' | translate">About</h2></div>
+						<div class=container-header>
+							<h2 ng-bind="'Heading.AboutTab' | translate">About</h2>
+							<div class=btr-profile-social-links>
+							</div>
+						</div>
 						<div class=section-content>
-							<div class=placeholder-status style=display:none></div>
 							<div class=btr-profile-description>
-								<div class="placeholder-desc profile-about-content">
-									<pre id=profile-about-text class=profile-about-text>
-										<span class="profile-about-content-text text-label">
-											<div class="section-content-off btr-section-content-off">This user has no description</div>
-										</span>
-									</pre>
+								<div class=btr-profile-description-content>
+									<span class="spinner spinner-default"></span>
 								</div>
 							</div>
-							<div class=placeholder-aliases style=display:none></div>
-							<div class="placeholder-stats profile-statistics">
-								<ul class=btr-profile-stats>
-									<li>
-										<div class="text-label" ng-bind="'Label.JoinDate' | translate">Join Date</div>
-										<div class="text-lead text-overflow btr-stats-joindate"></div>
-									</li>
-									<li>
-										<div class="text-label" ng-bind="'Label.PlaceVisits' | translate">Place Visits</div>
-										<div class="text-lead text-overflow btr-stats-visits"></div>
-									</li>
-								</ul>
-							</div>
-							<div class=placeholder-footer style=display:none></div>
 						</div>
 					</div>
 					<div class=btr-profile-playerbadges>
 						<div class=container-header><h2 ng-bind="'Heading.PlayerBadge' | translate">Badges</h2></div>
-						<div class=section-content>
-							<ul class=hlist>
+						<div>
+							<div class=btr-card-list>
 								<span class="spinner spinner-default"></span>
-							</ul>
+							</div>
 						</div>
 					</div>
 					<div class=btr-profile-groups>
 						<div class=container-header><h2 ng-bind="'Heading.Groups' | translate">Communities</h2></div>
-						<div class=section-content>
-							<ul class=hlist>
+						<div>
+							<div class=btr-card-list>
 								<span class="spinner spinner-default"></span>
-							</ul>
+							</div>
 						</div>
 					</div>
 				</div>
 
 				<div class=btr-profile-right>
-					<div class=placeholder-games style=display:none>
+					<div class=btr-profile-games>
 						<div class=container-header><h2 ng-bind="'Heading.Games' | translate">Experiences</h2></div>
-						<div class=section-content>
+						<div class=btr-games-content>
 							<span class="spinner spinner-default"></span>
 						</div>
 					</div>
@@ -131,10 +118,12 @@ pageInit.profile = () => {
 					</div>
 					<div class=btr-profile-favorites>
 						<div class=container-header>
-							<h2 ng-bind="'Heading.FavoriteGames' | translate">Favorites</h2>
-							<a href="/users/${userId}/favorites" class="btn-secondary-xs btn-fixed-width btn-more see-all-link-icon" ng-bind="'Action.SeeAll' | translate">See All</a>
+							<a href="/users/${userId}/favorites">
+								<h2 ng-bind="'Heading.FavoriteGames' | translate">Favorites</h2>
+								<span class="icon-chevron-heavy-right"></span>
+							</a>
 						</div>
-						<div class=section-content>
+						<div>
 							<ul class="hlist game-cards">
 								<span class="spinner spinner-default"></span>
 							</ul>
@@ -158,38 +147,18 @@ pageInit.profile = () => {
 				</div>
 			</div>`
 			
-			const presencePromise = new Promise(resolve => resolve(RobloxApi.presence.getPresence([userId]).then(json => json?.userPresences?.[0])))
+			// const presencePromise = new Promise(resolve => resolve(RobloxApi.presence.getPresence([userId]).then(json => json?.userPresences?.[0])))
+			const profileDataPromise = profileDataPromises[userIdString] ??= new Promise(() => {})
 			
 			profileContainer
 				.$watch(".profile-tabs", tabs => {
-					// tabs.parentNode.before(newCont)
 					tabs.parentNode.style.display = "none"
 				})
-				.$watch(".user-profile-header-info .avatar-status", statusContainer => {
-					const statusDiv = html`<div class="btr-header-status-parent"></div>`
-					newCont.$find(".placeholder-status").replaceWith(statusDiv)
+				.$watch("#friends-carousel-container", friends => {
+					newCont.$find(".placeholder-friends").after(friends)
 					
-					presencePromise.then(presence => {
-						if(presence?.userPresenceType === 3) { // studio
-							statusDiv.replaceChildren(html`<span class="btr-header-status-text btr-status-studio">In Studio</span>`)
-							
-						} else if(presence?.userPresenceType === 2 && presence.placeId) {
-							statusDiv.replaceChildren(
-								html`<a href="/games/${presence.placeId}/" title="${presence.lastLocation}"><span class="btr-header-status-text btr-status-ingame">${presence.lastLocation}</span></a>`,
-								html`<a class="btr-header-status-follow-button" title="Follow" onclick="Roblox.GameLauncher.followPlayerIntoGame(${userId})">\uD83D\uDEAA</a>`
-							)
-							
-						} else if(presence?.userPresenceType === 2) {
-							statusDiv.replaceChildren(
-								html`<span class="btr-header-status-text btr-status-ingame">In Game</span>`
-							)
-							
-						} else if(presence?.userPresenceType) { // online
-							statusDiv.replaceChildren(html`<span class="btr-header-status-text btr-status-online">Online</span>`)
-							
-						} else {
-							statusDiv.replaceChildren(html`<span class="btr-header-status-text btr-status-offline">Offline</span>`)
-						}
+					friends.$watch(">*", cont => {
+						newCont.$find(".placeholder-friends").remove()
 					})
 				})
 				.$watch(".user-profile-header", header => {
@@ -197,7 +166,7 @@ pageInit.profile = () => {
 					
 					if(target) {
 						const btn = html`
-						<a aria-disabled="false" class="relative clip group/interactable focus-visible:outline-focus disabled:outline-none cursor-pointer relative flex justify-center items-center radius-circle stroke-none padding-left-medium padding-right-medium height-800 text-label-medium bg-shift-300 content-action-utility" style="text-decoration: none;">
+						<a aria-disabled="false" class="relative clip group/interactable focus-visible:outline-focus disabled:outline-none cursor-pointer relative flex justify-center items-center radius-circle stroke-none padding-left-medium padding-right-medium height-800 text-label-medium bg-shift-300 content-action-utility" style="text-decoration: none; opacity: 0.5;">
 							<div role="presentation" class="absolute inset-[0] transition-colors group-hover/interactable:bg-[var(--color-state-hover)] group-active/interactable:bg-[var(--color-state-press)] group-disabled/interactable:bg-none"></div>
 							<span class="text-no-wrap text-truncate-end">More</span>
 						</a>`
@@ -207,7 +176,52 @@ pageInit.profile = () => {
 						})
 						
 						target.parentNode.append(btn)
+						
+						header.$watch(".description-content", () => {
+							btn.style.opacity = ""
+						})
 					}
+					
+					header.$watch(".avatar-status", _status => {
+						const statusDiv = html`<div class="btr-header-status-parent text-body-large"></div>`
+						const cont = _status.parentNode
+						cont.append(statusDiv)
+						
+						let lastStatus
+						
+						const update = () => {
+							const status = cont.$find(".avatar-status")
+							
+							if(status !== lastStatus) {
+								lastStatus = status
+								new MutationObserver(update).observe(status, { childList: true, subtree: true, attributeFilter: ["class"] })
+							}
+							
+							const placeId = status?.href?.match(/PlaceId=(\d+)/)?.[1]
+							const game = status?.$find(".game")
+							
+							if(game && placeId) {
+								statusDiv.replaceChildren(
+									html`<a href="/games/${placeId}/" title="${game.title}"><span class="btr-header-status-text btr-status-ingame">${game.title}</span></a>`
+								)
+								
+							// } else if(game) {
+							// 	statusDiv.replaceChildren(html`<span class="btr-header-status-text btr-status-ingame">${game.title}</span>`)
+								
+							// } else if(status?.$find(".studio")) {
+							// 	statusDiv.replaceChildren(html`<span class="btr-header-status-text btr-status-studio">Studio</span>`)
+								
+							// } else if(status?.$find(".online")) {
+							// 	statusDiv.replaceChildren(html`<span class="btr-header-status-text btr-status-online">Online</span>`)
+								
+							} else {
+								statusDiv.replaceChildren() // html`<span class="btr-header-status-text btr-status-offline">Offline</span>`
+							}
+						}
+						
+						new MutationObserver(update).observe(cont, { childList: true })
+						update()
+					})
 				})
 				.$watch(".profile-currently-wearing", wearing => {
 					const toggleItems = html`<span class="btr-toggle-items btn-control btn-control-sm">Show Items</span>`
@@ -250,441 +264,50 @@ pageInit.profile = () => {
 					newCont.$find(".placeholder-collections").replaceWith(clone)
 				})
 			
-			const profileDataPromise = profileDataPromises[userIdString] ??= new Promise(() => {})
-			
 			profileDataPromise.then(json => {
 				if(!document.contains(profileContainer)) { return }
 				
-				newCont.$find(".btr-stats-joindate").textContent = new Date(json.components.Statistics.userJoinedDate).$format("M/D/YYYY")
-				newCont.$find(".btr-stats-visits").textContent = Intl.NumberFormat().format(json.components.Statistics.numberOfVisits)
-			})
-			
-			// roblox hides the angular container since it's meant to use the react side
-			angularContainer.style.all = "unset"
-			angularContainer.style.display = "contents"
-			
-			angularContainer
-				.$watch(".rbx-tabs-horizontal", tabs => {
-					tabs.before(newCont)
-					// tabs.setAttribute("ng-if", "false") // have angular clear it
-				})
-				.$watch(".profile-about", about => {
-					const newAbout = newCont.$find(".btr-profile-about")
-					
-					newAbout.setAttribute("ng-controller", about.getAttribute("ng-controller"))
-					newAbout.classList.add("profile-about")
-					
-					about
-						.$watch("profile-description,.profile-about-content", desc => {
-							if(desc.classList.contains("profile-about-content") && desc.closest("profile-description")) {
-								// in case it selected profile-about-content in the new profile-description
-								desc = desc.closest("profile-description")
-							}
-
-							newCont.$find(".placeholder-desc").replaceWith(desc)
-
-							if(desc.matches("profile-description")) {
-								newCont.$find(".btr-profile-about > .container-header").style.visibility = "hidden"
-							}
-						})
-						.$watch("#aliases-container", aliases => {
-							newCont.$find(".placeholder-aliases").replaceWith(aliases)
-						})
-						.$watch(".profile-about-footer", footer => {
-							newCont.$find(".placeholder-footer").replaceWith(footer)
+				const descText = json?.components?.About?.description
+				const desc = newCont.$find(".btr-profile-description-content")
 				
-							const tooltip = footer.$find(".tooltip-pastnames")
-							if(tooltip) { tooltip.setAttribute("data-container", "body") } // Display tooltip over side panel
+				if(descText) {
+					desc.textContent = descText
+					
+					if(desc.scrollHeight > desc.offsetHeight) {
+						const descToggle = html`<span class="btr-toggle-description">Show More</span>`
+						desc.after(descToggle)
+						
+						descToggle.$on("click", () => {
+							const expanded = !desc.parentNode.classList.contains("expanded")
+							desc.parentNode.classList.toggle("expanded", expanded)
+
+							descToggle.textContent = expanded ? "Show Less" : "Show More"
 						})
-						.$watch("social-link-icon-list", social => {
-							newCont.$find(".btr-profile-about").prepend(social)
-						})
-				})
-				// .$watch(".profile-avatar", async avatar => {
-				// 	newCont.$find(".placeholder-avatar").replaceWith(avatar)
-					
-				// 	await avatar.$watch(">.container-header").$promise()
-					
-				// 	avatar.$find(".container-header").remove()
-
-				// 	const avatarLeft = avatar.$find(".profile-avatar-left")
-				// 	const avatarRight = avatar.$find(".profile-avatar-right")
-
-				// 	avatar.classList.remove("section")
-				// 	avatarLeft.classList.remove("col-sm-6", "section-content")
-				// 	avatarRight.classList.remove("col-sm-6")
-
-				// 	avatarRight.style.transition = "none" // stop transition on page load
-				// 	setTimeout(() => avatarRight.style.transition = "", 1e3)
-
-				// 	const toggleItems = html`<span class="btr-toggle-items btn-control btn-control-sm">Show Items</span>`
-				// 	avatarLeft.$find(".thumbnail-holder").append(toggleItems)
-					
-				// 	//
-					
-				// 	let visible = false
-					
-				// 	const setVisible = bool => {
-				// 		visible = bool
-				// 		avatarRight.classList.toggle("visible", visible)
-				// 		toggleItems.textContent = visible ? "Hide Items" : "Show Items"
-				// 	}
-					
-				// 	toggleItems.$on("click", ev => {
-				// 		setVisible(!visible)
-				// 		ev.stopPropagation()
-				// 		ev.stopImmediatePropagation()
-				// 		ev.preventDefault()
-				// 	})
-					
-				// 	document.$on("click", ev => {
-				// 		if(visible && !avatarRight.contains(ev.target)) {
-				// 			setVisible(false)
-				// 		}
-				// 	})
-					
-				// 	avatar.classList.add("btr-avatar-container")
-				// 	updateAvatarRedesign()
-				// })
-				.$watch(".profile-posts", posts => {
-					newCont.$find(".placeholder-posts").replaceWith(posts)
-				})
-				.$watch("#friends-carousel-container", friends => {
-					newCont.$find(".placeholder-friends").after(friends)
-					
-					friends.$watch(".friends-carousel-container, .btr-friends-carousel-disabled", () => {
-						newCont.$find(".placeholder-friends").remove()
-					})
-				})
-				// .$watch(".profile-statistics", stats => {
-				// 	newCont.$find(".placeholder-stats").replaceWith(stats)
-					
-				// 	if(!stats.$find(".profile-stats")) {
-				// 		stats.append(html`<ul class=profile-stats></ul>`) // will get cleared by react
-				// 	}
-				// })
-				.$watch(".profile-game", async games => {
-					newCont.$find(".placeholder-games").replaceWith(games)
-					
-					games.classList.add("section")
-					
-					const switcher = await games.$watch("#games-switcher").$promise()
-					
-					const grid = games.$find(".game-grid")
-					grid.setAttribute("ng-cloak", "")
-
-					const cont = html`<div id="games-switcher" class="section-content" ng-hide="isGridOn"></div>`
-					switcher.setAttribute("ng-if", "false") // Let's make angular clean it up :)
-					switcher.style.display = "none"
-					switcher.after(cont)
-
-					const hlist = html`<ul class="hlist btr-games-list" ng-non-bindable></ul>`
-					cont.append(hlist)
-
-					const pageSize = 10
-					const pager = createPager(false, true)
-					hlist.after(pager)
-
-					const gameItems = []
-					let selected
-
-					pager.onsetpage = page => {
-						pager.setPage(page)
-						
-						for(const item of gameItems) {
-							item.updateVisibility()
-						}
 					}
-					
-					let thumbnailRequest
-					const requestThumbnail = placeId => {
-						if(!thumbnailRequest || thumbnailRequest.placeIds.length >= 50) {
-							const request = thumbnailRequest = {
-								placeIds: []
-							}
-							
-							request.promise = new Promise(resolve => {
-								setTimeout(() => {
-									if(thumbnailRequest === request) {
-										thumbnailRequest = null
-									}
-									
-									RobloxApi.thumbnails.getAssetThumbnails(request.placeIds, "768x432").then(resolve)
-								}, 0)
-							})
-						}
+				} else {
+					desc.replaceChildren(
+						html`<div class="section-content-off btr-section-content-off">No bio yet</div>`
+					)
+				}
+				
+				const socialLinks = json?.components?.About?.socialLinks
+				if(socialLinks) {
+					for(const [key, entry] of Object.entries(socialLinks)) {
+						if(!entry) { continue }
 						
-						thumbnailRequest.placeIds.push(placeId)
-						
-						return thumbnailRequest.promise.then(json => json.data.find(x => +x.targetId === +placeId))
+						const link = html`<a class=btr-social-link href=${entry?.url}><span class="icon icon-regular-${key === "x" ? "twitter" : key}"></span></a>`
+						newCont.$find(".btr-profile-social-links").append(link)
 					}
-					
-					let detailsRequest
-					const requestDetails = placeId => {
-						if(!detailsRequest || detailsRequest.placeIds.length >= 50) {
-							const request = detailsRequest = {
-								placeIds: []
-							}
-							
-							request.promise = new Promise(resolve => {
-								setTimeout(() => {
-									if(detailsRequest === request) {
-										detailsRequest = null
-									}
-									
-									RobloxApi.games.getPlaceDetails(request.placeIds, "768x432").then(resolve)
-								}, 0)
-							})
-						}
-						
-						detailsRequest.placeIds.push(placeId)
-						
-						return detailsRequest.promise.then(json => json.find(x => +x.placeId === +placeId))
-					}
-
-					class GameItem {
-						constructor(slide) {
-							this.init(slide)
-						}
-
-						async init(slide) {
-							const slideImage = await slide.$watch(".slide-item-image").$promise()
-							const slideName = await slide.$watch(".slide-item-name").$promise()
-							const slideDesc = await slide.$watch(".slide-item-description").$promise()
-							const slideEmblemLink = await slide.$watch(".slide-item-emblem-container > a").$promise()
-							const slideStats = await slide.$watch(".slide-item-stats > .hlist").$promise()
-							
-							const index = this.index = +slide.dataset.index
-							const pageIndex = this.pageIndex = Math.floor(index / pageSize)
-							const placeId = this.placeId = slideImage.dataset.emblemId
-
-							const title = slideName.textContent
-							const desc = slideDesc.textContent
-							const url = slideEmblemLink.href
-							const iconThumb = slideImage.dataset.src
-							this.iconRetryUrl = slideImage.dataset.retry
-
-							const item = this.item = html`
-							<li class=btr-game>
-								<div class=btr-game-button>
-									<span class=btr-game-title>${title}</span>
-								</div>
-								<div class=btr-game-content>
-									<a class=btr-game-thumb-container href="${url}">
-										<img class=btr-game-thumb>
-										<img class=btr-game-icon src="${iconThumb}">
-									</a>
-									<div class=btr-game-desc>
-										<span class=btr-game-desc-content>${desc}</span>
-									</div>
-									<div class=btr-game-info>
-										<div class=btr-game-playbutton-container>
-											<div class="btr-game-playbutton btn-primary-lg VisitButtonPlay VisitButtonPlayGLI" placeid="${placeId}"  data-action=play data-is-membership-level-ok=true>
-												Play
-											</div>
-										</div>
-										<div class=btr-game-stats></div>
-									</div>
-								</div>
-							</li>`
-
-							item.$find(".btr-game-stats").append(slideStats)
-							item.$find(".btr-game-button").$on("click", () => this.toggle())
-
-							hlist.append(item)
-							pager.setMaxPage(pageIndex + 1)
-							gameItems.push(this)
-							
-							requestThumbnail(this.placeId).then(thumb => {
-								this.thumbnailSrc = thumb.imageUrl
+				}
 								
-								if(this.firstVisible) {
-									this.item.$find(".btr-game-thumb").src = this.thumbnailSrc
-								}
-							})
-							
-							this.updateVisibility()
-						}
-
-						updateVisibility() {
-							const visible = this.pageIndex === (pager.curPage - 1)
-							this.item.classList.toggle("visible", visible)
-
-							if(visible && this.index === (pager.curPage - 1) * pageSize) {
-								this.select(true)
-							}
-							
-							if(visible && !this.firstVisible) {
-								this.firstVisible = true
-								
-								if(this.thumbnailSrc) {
-									this.item.$find(".btr-game-thumb").src = this.thumbnailSrc
-								}
-								
-								const gamePromise = requestDetails(this.placeId)
-
-								loggedInUserPromise.then(loggedInUser => {
-									if(userId !== loggedInUser) { return }
-
-									const dropdown = html`
-									<div class="btr-game-dropdown">
-										<a class="rbx-menu-item" data-toggle="popover" data-container="body" data-bind="btr-placedrop-${this.placeId}">
-											<span class="icon-more"></span>
-										</a>
-										<div data-toggle="btr-placedrop-${this.placeId}" style="display:none">
-											<ul class="dropdown-menu" role="menu">
-												<li><a class=btr-btn-toggle-profile data-placeid="${this.placeId}"><div>Remove from Profile</div></a></li>
-											</ul>
-										</div>
-									</div>`
-
-									this.item.$find(".btr-game-button").before(dropdown)
-
-									gamePromise.then(data => {
-										if(!data) { return }
-										
-										dropdown.$find(".dropdown-menu").prepend(
-											html`<li><a onclick="Roblox.GameLauncher.editGameInStudio(${this.placeId}, ${data.universeId})"><div>Edit</div></a></li>`,
-											html`<li><a href="https://create.roblox.com/dashboard/creations/experiences/${data.universeId}/overview"><div>View Analytics</div></a></li>`,
-											html`<li><a href=/sponsored/experiences/${data.universeId}/create><div>Sponsor this Experience</div></a></li>`,
-											html`<li><a href="https://create.roblox.com/dashboard/creations/experiences/${data.universeId}/places/${this.placeId}/configure"><div>Configure this Place</div></a></li>`,
-											html`<li><a href="https://create.roblox.com/dashboard/creations/experiences/${data.universeId}/configure"><div>Configure this Experience</div></a></li>`,
-											html`<li><a href="https://create.roblox.com/dashboard/creations/experiences/${data.universeId}/localization"><div>Configure Localization</div></a></li>`,
-										)
-									})
-								})
-
-								const descElem = this.item.$find(".btr-game-desc")
-								const descContent = this.item.$find(".btr-game-desc-content")
-								const descToggle = html`<span class="btr-toggle-description">Read More</span>`
-
-								descToggle.$on("click", () => {
-									const expanded = !descElem.classList.contains("expanded")
-									descElem.classList.toggle("expanded", expanded)
-
-									descToggle.textContent = expanded ? "Show Less" : "Read More"
-								})
-
-								const updateDesc = () => {
-									if(descContent.offsetHeight > 156) {
-										descElem.append(descToggle)
-									} else {
-										descToggle.remove()
-									}
-
-									if(!descContent.textContent.trim()) {
-										descContent.classList.toggle("text-label", true)
-										// descContent.textContent = "This game has no description"
-									} else {
-										descContent.classList.toggle("text-label", false)
-									}
-								}
-
-								updateDesc()
-
-								gamePromise.then(data => {
-									if(data) {
-										descContent.textContent = data.description
-
-										if(!data.isPlayable) {
-											const prohibitedReasons = {
-												UniverseDoesNotHaveARootPlace: "This game has no root place",
-												UniverseRootPlaceIsNotActive: "This game is not active",
-												InsufficientPermissionFriendsOnly: "This game is friends only",
-												InsufficientPermissionGroupOnly: "Group members only",
-												UnderReview: "This game is under moderation review",
-												PlaceHasNoPublishedVersion: "This place has no published version",
-												ContextualPlayabilityUnrated: "This experience is not accessible because it is unrated"
-											}
-											
-											this.item.$find(".btr-game-playbutton").replaceWith(html`
-												<button title="${prohibitedReasons[data.reasonProhibited] || data.reasonProhibited}" type=button class="btr-place-prohibited btn-common-play-game-unplayable-lg btn-primary-md btn-full-width" disabled>
-													<span class="icon-status-unavailable-secondary"></span>
-													<span class="btn-text">Unavailable</span>
-												</button>
-											`)
-										}
-									}
-									
-									injectScript.call("linkify", target => $(target).linkify(), descContent)
-									
-									updateDesc()
-								})
-							}
-						}
-
-						deselect(instant) {
-							if(this !== selected) { return }
-							selected = null
-
-							this.item.classList.remove("selected")
-			
-							const content = this.item.$find(".btr-game-content")
-							const height = content.scrollHeight
-							const duration = instant ? 0 : .25
-
-							content.style.maxHeight = `${height}px`
-							content.style.transition = `max-height ${duration}s`
-
-							window.requestAnimationFrame(() => content.style.maxHeight = "0px")
-							clearTimeout(this.animTimeout)
-						}
-
-						select(instant) {
-							if(this === selected) { return }
-
-							if(selected) { selected.deselect() }
-							selected = this
-
-							this.item.classList.add("selected")
-
-							const content = this.item.$find(".btr-game-content")
-							const height = content.scrollHeight
-							const duration = instant ? 0 : .25
-
-							content.style.maxHeight = `${height}px`
-							content.style.transition = `max-height ${duration}s`
-
-							this.animTimeout = setTimeout(() => content.style.maxHeight = "none", duration * 1e3)
-						}
-
-						toggle(instant) {
-							if(this !== selected) {
-								this.select(instant)
-							} else {
-								this.deselect(instant)
-							}
-						}
-					}
-					
-					document.body
-						.$on("click", ".btr-btn-toggle-profile", ev => {
-							const placeId = ev.currentTarget.dataset.placeid
-							RobloxApi.inventory.toggleInCollection("asset", placeId, false)
-						})
-
-					switcher.$watch(">.hlist").$then().$watchAll(".slide-item-container", slide => {
-						gameItems.push(new GameItem(slide))
-					})
-				})
-				.$watch(".favorite-games-container", favorites => {
-					favorites.remove()
-				})
-				.$watch("#roblox-badges-container", robloxbadges => {
-					robloxbadges.remove()
-				})
-				.$watch("#player-badges-container", playerbadges => {
-					playerbadges.remove()
-				})
-				// .$watch(".profile-collections", collections => {
-				// 	collections.classList.remove("layer", "gray-layer-on")
-				// 	newCont.$find(".placeholder-collections").replaceWith(collections)
-					
-				// 	if(SETTINGS.get("profile.embedInventoryEnabled")) {
-				// 		const link = collections.$find(".inventory-link")
-				// 		if(link) { link.style.display = "none" }
-				// 	}
-				// })
+				// newCont.$find(".btr-stats-joindate").textContent = new Date(json.components.About.joinDateTime).$format("M/D/YYYY")
+				// newCont.$find(".btr-stats-visits").textContent = Intl.NumberFormat().format(json.components.Statistics.numberOfVisits)
+				
+				const friendsPlaceholder = newCont.$find(".placeholder-friends")
+				if(friendsPlaceholder) {
+					friendsPlaceholder.style.display = "none"
+				}
+			})
 			
 			const initPlayerBadges = () => {
 				// if(userId === 1) {
@@ -692,7 +315,7 @@ pageInit.profile = () => {
 				// 	return
 				// }
 				
-				const hlist = newCont.$find(".btr-profile-playerbadges .hlist")
+				const list = newCont.$find(".btr-profile-playerbadges .btr-card-list")
 				const pager = createPager(true)
 
 				const thumbClasses = {
@@ -703,7 +326,7 @@ pageInit.profile = () => {
 				}
 
 				const playerBadges = []
-				const pageSize = 10
+				const pageSize = 8
 				
 				let currentPage = 1
 				let isLoading = false
@@ -718,29 +341,37 @@ pageInit.profile = () => {
 					pager.setPage(currentPage)
 					pager.togglePrev(currentPage > 1)
 					pager.toggleNext(hasMorePages || pageStart + pageSize < playerBadges.length)
-					hlist.replaceChildren()
+					list.replaceChildren()
 
 					if(!badges.length) {
-						hlist.append(html`<div class="section-content-off btr-section-content-off">This user has no Player Badges</div>`)
-					} else {
-						if(playerBadges.length > pageSize) { hlist.after(pager) }
-						
-						for(const data of badges) {
-							const badgeUrl = `/badges/${data.id}/${formatUrlName(data.name)}`
-							const thumbUrl = data.thumb && data.thumb.imageUrl || "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
-							const thumbClass = data.thumb && thumbClasses[data.thumb.state] || ""
-
-							hlist.append(html`
-							<li class="list-item badge-item asset-item" ng-non-bindable>
-								<a href="${badgeUrl}" class="badge-link" title="${data.name}">
-									<span class=asset-thumb-container>
-										<img class="${thumbClass}" src="${thumbUrl}" data-badgeId="${data.id}">
-									</span>
-									<span class="font-header-2 text-overflow item-name">${data.name}</span>
-								</a>
-							</li>`)
-						}
+						list.append(html`<div class="section-content-off btr-section-content-off">This user has no Player Badges</div>`)
+						newCont.$find(".btr-profile-playerbadges").style.display = "none"
+						return
 					}
+					
+					newCont.$find(".btr-profile-playerbadges").style.display = ""
+					
+					for(const data of badges) {
+						const badgeUrl = `/badges/${data.id}/${formatUrlName(data.name)}`
+						const thumbUrl = data.thumb && data.thumb.imageUrl || "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
+						const thumbClass = data.thumb && thumbClasses[data.thumb.state] || ""
+
+						list.append(html`
+						<div class=card>
+							<a href=${badgeUrl} class=card-link title=${data.name}>
+								<span class=card-thumb-container>
+									<img class="card-thumb ${thumbClass}" src="${thumbUrl}" data-badgeId="${data.id}">
+								</span>
+								<span class="font-header-2 text-overflow card-name">${data.name}</span>
+							</a>
+						</div>`)
+					}
+					
+					if(!list.style.minHeight) {
+						list.style.minHeight = `${list.scrollHeight + 1}px`
+					}
+					
+					if(playerBadges.length > pageSize) { list.after(pager) }
 					
 					const needsThumbs = badges.filter(x => !x.thumbUrl && !x.gettingThumb)
 					if(needsThumbs.length) {
@@ -753,7 +384,7 @@ pageInit.profile = () => {
 								const badge = badges.find(x => x.id === thumb.targetId)
 								badge.thumb = thumb
 
-								const img = hlist.$find(`img[data-badgeId="${badge.id}"`)
+								const img = list.$find(`img[data-badgeId="${badge.id}"`)
 								if(img) {
 									const thumbUrl = badge.thumb.imageUrl || "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
 									const thumbClass = thumbClasses[badge.thumb.state] || ""
@@ -800,19 +431,19 @@ pageInit.profile = () => {
 
 			const initGroups = () => {
 				const groups = newCont.$find(".btr-profile-groups")
-				const hlist = groups.$find(".hlist")
-				hlist.setAttribute("ng-non-bindable", "")
+				const list = groups.$find(".btr-card-list")
+				list.setAttribute("ng-non-bindable", "")
 				const pageSize = 8
 
 				const pager = createPager(false, true)
-				hlist.after(pager)
+				list.after(pager)
 
 				function loadPage(page) {
 					pager.setPage(page)
-
-					$.each(hlist.children, (obj, index) => {
-						obj.classList.toggle("visible", Math.floor(index / pageSize) + 1 === page)
-					})
+					
+					for(const [index, obj] of Object.entries(list.children)) {
+						obj.style.display = Math.floor(index / pageSize) + 1 === page ? "" : "none"
+					}
 				}
 
 				pager.onsetpage = loadPage
@@ -823,47 +454,51 @@ pageInit.profile = () => {
 
 						pager.setMaxPage(Math.floor((numGroups - 1) / pageSize) + 1)
 						if(numGroups === 0) {
-							hlist.replaceChildren(html`<div class="section-content-off btr-section-content-off">This user is in no Communities</div>`)
+							list.replaceChildren(html`<div class="section-content-off btr-section-content-off">This user is in no Communities</div>`)
 							return
 						}
 						
-						hlist.replaceChildren()
+						list.replaceChildren()
 
 						const thumbs = {}
 						const groups = json.data.sort((a, b) => (a.isPrimaryGroup ? -1 : b.isPrimaryGroup ? 1 : 0))
 						
 						for(const [index, { group, role }] of Object.entries(groups)) {
 							const parent = html`
-							<li class="list-item game-card ${index < pageSize ? "visible" : ""}">
-								<div class="card-item game-card-container">
-									<a href="/communities/${group.id}/${formatUrlName(group.name)}" title="${group.name}">
-										<div class=game-card-thumb-container>
-											<img class="game-card-thumb card-thumb" src="">
-										</div>
-										<div class="text-overflow game-card-name">${group.name}</div>
-									</a>
-									<div class="text-overflow game-card-name-secondary text-secondary small">
-										${formatNumber(group.memberCount)} ${group.memberCount === 1 ? "Member" : "Members"}
+							<div class=card>
+								<a class=card-link href="/communities/${group.id}/${formatUrlName(group.name)}" title="${group.name}">
+									<div class=card-thumb-container>
+										<img class=card-thumb>
 									</div>
-									<div class="text-overflow game-card-name-secondary text-secondary small">${role.name}</div>
+									<div class="text-overflow card-name">${group.name}</div>
+								</a>
+								<div class="text-overflow text-secondary small">
+									${formatNumber(group.memberCount)} ${group.memberCount === 1 ? "Member" : "Members"}
 								</div>
-							</li>`
+								<div class="text-overflow text-secondary small">${role.name}</div>
+							</div>`
+							
+							parent.style.display = index < pageSize ? "" : "none"
 
 							const thumb = parent.$find(".card-thumb")
 							thumbs[group.id] = thumb
 
-							hlist.append(parent)
+							list.append(parent)
 						}
 
-						hlist.style["min-height"] = `${hlist.scrollHeight + 1}px`
+						list.style.minHeight = `${list.scrollHeight + 1}px`
 						
-						const thumbData = await RobloxApi.thumbnails.getGroupIcons(Object.keys(thumbs))
+						const thumbIds = Object.keys(thumbs)
 						
-						for(const thumbInfo of thumbData.data) {
-							if(thumbInfo.imageUrl) {
-								thumbs[thumbInfo.targetId].src = thumbInfo.imageUrl
-							} else {
-								thumbs[thumbInfo.targetId].parentNode.classList.add("icon-blocked")
+						for(let i = 0; i < thumbIds.length; i+=100) {
+							const thumbData = await RobloxApi.thumbnails.getGroupIcons(thumbIds.slice(i, i + 100))
+							
+							for(const thumbInfo of thumbData.data) {
+								if(thumbInfo.imageUrl) {
+									thumbs[thumbInfo.targetId].src = thumbInfo.imageUrl
+								} else {
+									thumbs[thumbInfo.targetId].parentNode.classList.add("icon-blocked")
+								}
 							}
 						}
 					})
@@ -906,12 +541,15 @@ pageInit.profile = () => {
 					</ul>
 				</div>`
 				
-				favorites.$find(".container-header .btn-more").after(dropdown)
+				favorites.$find(".container-header").append(dropdown)
 				
 				const favoriteData = {}
 				
 				const loadPage = async (category, page) => {
 					if(isLoading) { return }
+					
+					const changedCategory = lastCategory !== category
+					
 					lastCategory = category
 					
 					let data = favoriteData[category]
@@ -1016,6 +654,10 @@ pageInit.profile = () => {
 					pager.setMaxPage(Math.floor((data.totalItems - 1) / pageSize) + 1)
 					hlist.replaceChildren()
 					
+					if(changedCategory) {
+						hlist.style.minHeight = ""
+					}
+					
 					if(pageStart >= data.items.length) {
 						const categoryName = dropdown.$find(`li[data-value="${category}"]`)?.textContent
 						hlist.append(html`<div class='section-content-off btr-section-content-off'>This user has no favorite ${categoryName}</div>`)
@@ -1059,6 +701,10 @@ pageInit.profile = () => {
 						hlist.append(card)
 					}
 					
+					if(changedCategory) {
+						hlist.style.minHeight = `${hlist.scrollHeight + 1}px`
+					}
+					
 					if(requests.length) {
 						RobloxApi.thumbnails.batch(requests).then(json => {
 							for(const thumb of json.data) {
@@ -1070,6 +716,7 @@ pageInit.profile = () => {
 				}
 
 				const onclick = ev => {
+					ev.preventDefault()
 					const cat = +ev.currentTarget.getAttribute("data-value")
 					if(Number.isSafeInteger(cat)) {
 						loadPage(cat, 1)
@@ -1084,8 +731,203 @@ pageInit.profile = () => {
 				$.ready(() => loadPage(9, 1))
 			}
 			
+			const initGames = async () => {
+				const profileData = await profileDataPromise
+				const initial = profileData?.components?.Experiences
+				
+				const content = newCont.$find(".btr-profile-games > .btr-games-content")
+				
+				if(!initial?.experiences?.length) {
+					content.replaceChildren(
+						html`<div class="section-content-off btr-section-content-off">This user has no experiences</div>`
+					)
+					return
+				}
+				
+				const items = []
+				
+				const transition = (item, open) => {
+					const content = item.$find(".btr-game-content")
+					const height = content.scrollHeight
+					const duration = 0.25
+					
+					content.style.maxHeight = `${height}px`
+					content.style.transition = `max-height ${duration}s ease`
+					
+					if(content._timeout) { clearTimeout(content._timeout) }
+					
+					if(open) {
+						content._timeout = setTimeout(() => content.style.maxHeight = "none", duration * 1e3)
+					} else {
+						content._timeout = setTimeout(() => content.style.maxHeight = "0px", 0)
+					}
+				}
+				
+				const select = item => {
+					const prev = content.$find(".selected")
+					if(prev === item) { return }
+					
+					prev?.classList.remove("selected")
+					item.classList.add("selected")
+					
+					if(prev) { transition(prev, false) }
+					transition(item, true)
+				}
+				
+				for(const {universeId} of initial.experiences) {
+					const index = items.length
+					
+					const item = html`
+					<div class=btr-game>
+						<div class="btr-game-button clip group/interactable">
+							<div class="absolute inset-[0] transition-colors group-hover/interactable:bg-[var(--color-state-hover)] group-active/interactable:bg-[var(--color-state-press)] group-disabled/interactable:bg-none"></div>
+							<span class="btr-game-title shimmer">&nbsp;</span>
+						</div>
+						<div class=btr-game-content style=max-height:0>
+							<a class=btr-game-thumb-container href=#>
+								<img class=btr-game-thumb>
+								<img class=btr-game-icon>
+							</a>
+							<div class=btr-game-desc>
+								<span class=btr-game-desc-content></span>
+							</div>
+							<div class=btr-game-info>
+								<div class=btr-game-playbutton-container></div>
+								<div class=btr-game-stats>
+									<ul class=hlist>
+										<li class=list-item>
+											<div class="text-label slide-item-stat-title" ng-bind="'Label.Playing' | translate">Playing</div>
+											<div class="text-lead slide-item-members-count"></div>
+										</li>
+										<li class=list-item>
+											<div class="text-label slide-item-stat-title" ng-bind="'Label.Visits' | translate">Visits</div>
+											<div class="text-lead text-overflow slide-item-visits"></div>
+										</li>
+									</ul>
+								</div>
+							</div>
+						</div>
+					</div>`
+					
+					item.$find(".btr-game-button").$on("click", () => select(item))
+					if(index === 0) { select(item) }
+					
+					loggedInUserPromise.then(loggedInUser => {
+						if(userId !== loggedInUser) { return }
+						
+						item.prepend(html`
+						<div class=btr-game-dropdown>
+							<a class="rbx-menu-item btn-generic-more-sm" data-toggle="popover" data-container="body" data-bind="btr-placedrop-${universeId}" data-original-title="" title=""><span class="icon-more"></span></a>
+							<div data-toggle="btr-placedrop-${universeId}" style="display:none">
+								<ul class="dropdown-menu" role="menu">
+								</ul>
+							</div>
+						</div>
+						`)
+						
+						injectScript.call("setupGamePopovers", selector => {
+							Roblox?.BootstrapWidgets?.SetupPopover(null, null, selector)
+						}, `[data-bind='btr-placedrop-${universeId}']`)
+					})
+					
+					content.$find(">.spinner")?.remove()
+					item.classList.add("visible")
+					
+					RobloxApi.games.getGameDetails.batch(universeId).then(async _gameDetails => {
+						const gameDetails = _gameDetails.data.find(x => x.id === universeId)
+						const placeId = gameDetails.rootPlaceId
+						
+						item.$find(".btr-game-thumb-container").href = `https://www.roblox.com/games/${placeId}/${formatUrlName(gameDetails.name)}`
+						item.$find(".btr-game-title").textContent = gameDetails.name
+						item.$find(".btr-game-title").classList.remove("shimmer")
+						
+						loggedInUserPromise.then(loggedInUser => {
+							if(userId !== loggedInUser) { return }
+							
+							item.$find(".dropdown-menu").append(
+								html`<li><a onclick="Roblox.GameLauncher.editGameInStudio(${placeId}, ${universeId})"><div>Edit</div></a></li>`,
+								html`<li><a href="https://create.roblox.com/dashboard/creations/experiences/${universeId}/overview"><div>View Analytics</div></a></li>`,
+								html`<li><a href="https://advertise.roblox.com/"><div>Promote this Experience</div></a></li>`,
+								html`<li><a href="https://create.roblox.com/dashboard/creations/experiences/${universeId}/places/${placeId}/configure"><div>Configure this Place</div></a></li>`,
+								html`<li><a href="https://create.roblox.com/dashboard/creations/experiences/${universeId}/configure"><div>Configure this Experience</div></a></li>`,
+								html`<li><a href="https://create.roblox.com/dashboard/creations/experiences/${universeId}/localization"><div>Configure Localization</div></a></li>`,
+								html`<li><a class="btr-btn-toggle-profile" data-placeid="${placeId}"><div>Remove from Profile</div></a></li>`
+							)
+						})
+						
+						item.$find(".slide-item-members-count").textContent = formatNumber(gameDetails.playing)
+						item.$find(".slide-item-visits").textContent = formatNumber(gameDetails.visits)
+						
+						RobloxApi.thumbnails.getAssetThumbnails.batch(placeId, "768x432").then(json => {
+							const thumb = json.data.find(x => x.targetId === placeId)
+							item.$find(".btr-game-thumb").src = thumb.imageUrl
+						})
+						
+						RobloxApi.thumbnails.getPlaceIcons.batch(placeId, "150x150").then(json => {
+							const thumb = json.data.find(x => x.targetId === placeId)
+							item.$find(".btr-game-icon").src = thumb.imageUrl
+						})
+						
+						//
+						
+						const _placeDetails = await RobloxApi.games.getPlaceDetails.batch(placeId)
+						const placeDetails = _placeDetails.find(x => x.placeId === placeId)
+						
+						const desc = item.$find(".btr-game-desc-content")
+						desc.textContent = placeDetails.description
+						
+						injectScript.call("linkify", target => $(target).linkify(), desc)
+						
+						if(desc.scrollHeight > desc.offsetHeight) {
+							const descToggle = html`<span class="btr-toggle-description">Show More</span>`
+							desc.after(descToggle)
+							
+							descToggle.$on("click", () => {
+								const expanded = !desc.parentNode.classList.contains("expanded")
+								desc.parentNode.classList.toggle("expanded", expanded)
+
+								descToggle.textContent = expanded ? "Show Less" : "Show More"
+							})
+						}
+						
+						if(placeDetails.isPlayable) {
+							item.$find(".btr-game-playbutton-container").append(
+								html`<div class="btr-game-playbutton btn-primary-lg VisitButtonPlay VisitButtonPlayGLI" placeid="${placeId}" data-action="play" data-is-membership-level-ok="true">Play</div>`
+							)
+						} else {
+							const prohibitedReasons = {
+								UniverseDoesNotHaveARootPlace: "This game has no root place",
+								UniverseRootPlaceIsNotActive: "This game is not active",
+								InsufficientPermissionFriendsOnly: "This game is friends only",
+								InsufficientPermissionGroupOnly: "Group members only",
+								UnderReview: "This game is under moderation review",
+								PlaceHasNoPublishedVersion: "This place has no published version",
+								ContextualPlayabilityUnrated: "This experience is not accessible because it is unrated"
+							}
+							
+							item.$find(".btr-game-playbutton-container").append(html`
+								<button title="${prohibitedReasons[placeDetails.reasonProhibited] || placeDetails.reasonProhibited}" type=button class="btr-place-prohibited btn-common-play-game-unplayable-lg btn-primary-md btn-full-width" disabled>
+									<span class="icon-status-unavailable-secondary"></span>
+									<span class="btn-text">Unavailable</span>
+								</button>
+							`)
+						}
+					})
+					
+					content.append(item)
+					
+					items.push(item)
+				}
+				
+				document.body.$on("click", ".btr-btn-toggle-profile", ev => {
+					const placeId = ev.currentTarget.dataset.placeid
+					RobloxApi.inventory.toggleInCollection("asset", placeId, false)
+				})
+			}
+			
 			initPlayerBadges()
 			initGroups()
+			initGames()
 			initFavorites()
 			
 			if(SETTINGS.get("profile.embedInventoryEnabled")) {
@@ -1098,11 +940,15 @@ pageInit.profile = () => {
 				})
 			}
 			
-			$.ready(() => {
-				if(!$("#friends-carousel-container")) {
-					newCont.$find(".placeholder-friends")?.remove()
-				}
-			})
+			profileContainer.after(newCont)
+		})
+			
+		document.$watch(".profile-container", angularContainer => {
+			// rescue necessary elements and then remove the angular container to stop stuff from loading
+			const friends = angularContainer.$find("#friends-carousel-container")
+			if(friends) { angularContainer.before(friends) }
+			
+			angularContainer.remove()
 		})
 	})
 }

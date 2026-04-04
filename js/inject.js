@@ -1806,7 +1806,7 @@ document.addEventListener("btroblox/init", ev => {
 			})
 		},
 		"setupPopovers": () => {
-			Roblox?.BootstrapWidgets?.SetupPopover(null, null, "[data-bind^='popover-btr-']")
+			Roblox?.BootstrapWidgets?.SetupPopover(null, null, "[data-bind='popover-btr-download']")
 		},
 		"addBTRSettings": () => {
 			reactHook.inject("#settings-popover-menu", elem => {
@@ -3391,7 +3391,6 @@ document.addEventListener("btroblox/init", ev => {
 					switch(child.key) {
 					case "About":
 					case "FavoriteExperiences":
-					case "Friends":
 					case "Communities":
 					case "PlayerBadges":
 					case "Statistics":
@@ -3402,6 +3401,7 @@ document.addEventListener("btroblox/init", ev => {
 						break
 					case "CurrentlyWearing":
 					case "Collections":
+					case "Friends":
 					case "Store":
 						break // do nothing (we do something with this)
 					default:
@@ -3419,6 +3419,9 @@ document.addEventListener("btroblox/init", ev => {
 					})
 				}
 			})
+		},
+		"setupGamePopovers": selector => {
+			Roblox?.BootstrapWidgets?.SetupPopover(null, null, selector)
 		},
 		"linkify": target => $(target).linkify(),
 		"adblock.js": () => {

@@ -181,6 +181,50 @@ const xsrfFetch = (url, init = {}) => {
 	})
 }
 
+const batchable = (limit, callback) => {
+	const batches = []
+	
+	callback.batch = (list, ...args) => {
+		if(!Array.isArray(list)) { list = [list] }
+		
+		let batching = batches.find(x => {
+			if(x.length + list.length > limit) { return false }
+			if(x.args.length !== args.length) { return false }
+			
+			for(let i = 0; i < args.length; i++) {
+				if(args[i] !== x.args[i]) { return false }
+			}
+			
+			return true
+		})
+		
+		if(!batching) {
+			const batch = [...list]
+			
+			batch.args = args
+			
+			batch.promise = new Promise(resolve => {
+				setTimeout(() => {
+					if(batching === batch) { batching = null }
+					delete batch.promise
+					delete batch.args
+					resolve(callback(batch, ...args))
+				}, 0)
+			})
+			
+			batches.push(batch)
+			
+			return batch.promise
+		}
+		
+		batching.push(...list)
+		
+		return batching.promise
+	}
+	
+	return callback
+}
+
 const RobloxApi = {
 	accountinformation: {
 		getRobloxBadges: userId => 
@@ -342,10 +386,15 @@ const RobloxApi = {
 		))
 	},
 	games: {
-		getPlaceDetails: placeIds =>
+		getPlaceDetails: batchable(50, placeIds =>
 			xsrfFetch(`https://games.roblox.com/v1/games/multiget-place-details?placeIds=${placeIds.join("&placeIds=")}`, {
 				credentials: "include"
-			}).then(res => res.json()),
+			}).then(res => res.json())),
+		
+		getGameDetails: batchable(50, universeIds =>
+			xsrfFetch(`https://games.roblox.com/v1/games?universeIds=${universeIds.join("&universeIds=")}`, {
+				credentials: "include"
+			}).then(res => res.json())),
 			
 		getFavorites: (userId, limit=10, cursor="") =>
 			xsrfFetch(`https://games.roblox.com/v2/users/${userId}/favorite/games?limit=${limit}&cursor=${cursor}`, {
@@ -369,7 +418,7 @@ const RobloxApi = {
 				credentials: "include"
 			}).then(res => res.json()),
 			
-		toggleInCollection: (assetType, assetId, addToCollection = true) =>
+		toggleInCollection: (assetType, assetId, addToCollection=true) =>
 			xsrfFetch(`https://inventory.roblox.com/v1/collections/items/${assetType}/${assetId}`, {
 				method: addToCollection ? "POST" : "DELETE",
 				credentials: "include",
@@ -422,35 +471,40 @@ const RobloxApi = {
 			}).then(res => res.json()),
 	},
 	thumbnails: {
-		getAvatarHeadshots: (userIds, size = "150x150") =>
+		getAvatarHeadshots: batchable(100, (userIds, size="150x150") =>
 			xsrfFetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userIds.join(",")}&size=${size}&format=Png`, {
 				credentials: "include"
-			}).then(res => res.json()),
+			}).then(res => res.json())),
 		
-		getAvatarThumbnails: (userIds, size = "150x150") =>
+		getAvatarThumbnails: batchable(100, (userIds, size="150x150") =>
 			xsrfFetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userIds.join(",")}&size=${size}&format=Png`, {
 				credentials: "include"
-			}).then(res => res.json()),
+			}).then(res => res.json())),
 		
-		getAssetThumbnails: (assetIds, size) =>
+		getAssetThumbnails: batchable(100, (assetIds, size) =>
 			xsrfFetch(`https://thumbnails.roblox.com/v1/assets?assetIds=${assetIds.join(",")}&size=${size}&format=Png`, {
 				credentials: "include"
-			}).then(res => res.json()),
+			}).then(res => res.json())),
 		
-		getGroupIcons: (groupIds, size = "150x150", isCircular = false) =>
+		getGroupIcons: batchable(100, (groupIds, size="150x150", isCircular=false) =>
 			xsrfFetch(`https://thumbnails.roblox.com/v1/groups/icons?groupIds=${groupIds.join(",")}&size=${size}&format=Png&isCircular=${isCircular}`, {
 				credentials: "include"
-			}).then(res => res.json()),
+			}).then(res => res.json())),
 		
-		getBadgeIcons: (badgeIds, size = "150x150") =>
+		getBadgeIcons: batchable(100, (badgeIds, size="150x150") =>
 			xsrfFetch(`https://thumbnails.roblox.com/v1/badges/icons?badgeIds=${badgeIds.join(",")}&size=${size}&format=Png`, {
 				credentials: "include"
-			}).then(res => res.json()),
+			}).then(res => res.json())),
 			
-		getGameIcons: (gameIds, size = "150x150") =>
+		getGameIcons: batchable(100, (gameIds, size="150x150") =>
 			xsrfFetch(`https://thumbnails.roblox.com/v1/games/icons?universeIds=${gameIds.join(",")}&size=${size}&format=Png`, {
 				credentials: "include"
-			}).then(res => res.json()),
+			}).then(res => res.json())),
+		
+		getPlaceIcons: batchable(100, (placeIds, size="150x150", isCircular=false) =>
+			xsrfFetch(`https://thumbnails.roblox.com/v1/places/gameicons?placeIds=${placeIds.join(",")}&size=${size}&format=Png&isCircular=${isCircular}`, {
+				credentials: "include"
+			}).then(res => res.json())),
 			
 		batch: requests =>
 			xsrfFetch(`https://thumbnails.roblox.com/v1/batch`, {

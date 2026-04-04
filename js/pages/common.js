@@ -1202,7 +1202,7 @@ const initDownloadButton = async (assetId, assetTypeId, isBundle) => {
 	if(downloadButton.dataset.toggle) {
 		setTimeout(() => { // a bit ugly, but eh
 			injectScript.call("setupPopovers", () => {
-				Roblox?.BootstrapWidgets?.SetupPopover(null, null, "[data-bind^='popover-btr-']")
+				Roblox?.BootstrapWidgets?.SetupPopover(null, null, "[data-bind='popover-btr-download']")
 			})
 		}, 0)
 	}
