@@ -373,7 +373,7 @@ html .dark-theme.btr-profile .btr-section-content-off {
 						border-bottom-right-radius: 5px;
 						width: 100%;
 						height: 277px;
-						object-fit: contain;
+						object-fit: stretch;
 						
 						&:not([src]) {
 							opacity: 0;
@@ -437,20 +437,20 @@ html .dark-theme.btr-profile .btr-section-content-off {
 					width: 50%;
 					height: 100%;
 					text-align: center;
-				}
-
-				.btr-game-playbutton-container .btr-place-prohibited {
-					width: 88%;
-					padding: 7px;
-					pointer-events: initial;
 					
-					.icon-status-unavailable-secondary {
-						scale: calc(30/36);
+					.btr-game-playbutton {
+						width: 88%;
 					}
-				}
-
-				.btr-game-playbutton {
-					width: 88%;
+					
+					.btr-place-prohibited {
+						width: 88%;
+						padding: 7px;
+						pointer-events: initial;
+						
+						.icon-status-unavailable-secondary {
+							scale: calc(30/36);
+						}
+					}
 				}
 
 				.btr-game-stats {

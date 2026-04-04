@@ -842,10 +842,16 @@ pageInit.gamedetails = () => {
 						<div class="section-content btr-universe-box">
 							This place is part of 
 							<a class="btr-universe-name text-link" href="/games/${rootPlaceId}/${formatUrlName(rootPlaceName)}">${rootPlaceName || "..."}</a>
-							<div class="VisitButton VisitButtonPlayGLI btr-universe-visit-button" placeid="${rootPlaceId}" data-action=play data-is-membership-level-ok=true>
+							<div class=btr-universe-visit-button>
 								<a class="btn-secondary-md">Play</a>
 							</div>
 						</div>`
+						
+						box.$find(".btr-universe-visit-button").$on("click", () => {
+							injectScript.call("gamedetailsPlayGame", placeId => {
+								Roblox.GameLauncher.joinMultiplayerGame(placeId, true)
+							}, rootPlaceId)
+						})
 
 						newContainer.before(box)
 					}

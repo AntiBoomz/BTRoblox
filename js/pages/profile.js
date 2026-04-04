@@ -792,16 +792,18 @@ pageInit.profile = () => {
 								<span class=btr-game-desc-content></span>
 							</div>
 							<div class=btr-game-info>
-								<div class=btr-game-playbutton-container></div>
+								<div class=btr-game-playbutton-container>
+									<span class="spinner spinner-default"></span>
+								</div>
 								<div class=btr-game-stats>
 									<ul class=hlist>
 										<li class=list-item>
 											<div class="text-label slide-item-stat-title" ng-bind="'Label.Playing' | translate">Playing</div>
-											<div class="text-lead slide-item-members-count"></div>
+											<div class="text-lead slide-item-members-count">&nbsp;</div>
 										</li>
 										<li class=list-item>
 											<div class="text-label slide-item-stat-title" ng-bind="'Label.Visits' | translate">Visits</div>
-											<div class="text-lead text-overflow slide-item-visits"></div>
+											<div class="text-lead text-overflow slide-item-visits">&nbsp;</div>
 										</li>
 									</ul>
 								</div>
@@ -810,7 +812,10 @@ pageInit.profile = () => {
 					</div>`
 					
 					item.$find(".btr-game-button").$on("click", () => select(item))
-					if(index === 0) { select(item) }
+					if(index === 0) {
+						item.classList.add("selected")
+						item.$find(".btr-game-content").style.maxHeight = "none"
+					}
 					
 					loggedInUserPromise.then(loggedInUser => {
 						if(userId !== loggedInUser) { return }
@@ -832,6 +837,11 @@ pageInit.profile = () => {
 					
 					content.$find(">.spinner")?.remove()
 					item.classList.add("visible")
+					
+					RobloxApi.thumbnails.getGameThumbnails.batch(universeId, "768x432").then(json => {
+						const thumb = json.data.find(x => x.universeId === universeId)
+						item.$find(".btr-game-thumb").src = thumb.thumbnails?.[0]?.imageUrl
+					})
 					
 					RobloxApi.games.getGameDetails.batch(universeId).then(async _gameDetails => {
 						const gameDetails = _gameDetails.data.find(x => x.id === universeId)
@@ -857,11 +867,6 @@ pageInit.profile = () => {
 						
 						item.$find(".slide-item-members-count").textContent = formatNumber(gameDetails.playing)
 						item.$find(".slide-item-visits").textContent = formatNumber(gameDetails.visits)
-						
-						RobloxApi.thumbnails.getAssetThumbnails.batch(placeId, "768x432").then(json => {
-							const thumb = json.data.find(x => x.targetId === placeId)
-							item.$find(".btr-game-thumb").src = thumb.imageUrl
-						})
 						
 						RobloxApi.thumbnails.getPlaceIcons.batch(placeId, "150x150").then(json => {
 							const thumb = json.data.find(x => x.targetId === placeId)
@@ -891,8 +896,16 @@ pageInit.profile = () => {
 						}
 						
 						if(placeDetails.isPlayable) {
-							item.$find(".btr-game-playbutton-container").append(
-								html`<div class="btr-game-playbutton btn-primary-lg VisitButtonPlay VisitButtonPlayGLI" placeid="${placeId}" data-action="play" data-is-membership-level-ok="true">Play</div>`
+							const playButton = html`<div class="btr-game-playbutton btn-primary-lg">Play</div>`
+							
+							playButton.$on("click", () => {
+								injectScript.call("profilePlayGame", placeId => {
+									Roblox.GameLauncher.joinMultiplayerGame(placeId, true)
+								}, placeId)
+							})
+							
+							item.$find(".btr-game-playbutton-container").replaceChildren(
+								playButton
 							)
 						} else {
 							const prohibitedReasons = {
@@ -905,11 +918,11 @@ pageInit.profile = () => {
 								ContextualPlayabilityUnrated: "This experience is not accessible because it is unrated"
 							}
 							
-							item.$find(".btr-game-playbutton-container").append(html`
-								<button title="${prohibitedReasons[placeDetails.reasonProhibited] || placeDetails.reasonProhibited}" type=button class="btr-place-prohibited btn-common-play-game-unplayable-lg btn-primary-md btn-full-width" disabled>
+							item.$find(".btr-game-playbutton-container").replaceChildren(html`
+								<div title="${prohibitedReasons[placeDetails.reasonProhibited] || placeDetails.reasonProhibited}" class="btr-place-prohibited btn-common-play-game-unplayable-lg btn-primary-lg" disabled>
 									<span class="icon-status-unavailable-secondary"></span>
 									<span class="btn-text">Unavailable</span>
-								</button>
+								</div>
 							`)
 						}
 					})

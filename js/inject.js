@@ -3102,6 +3102,9 @@ document.addEventListener("btroblox/init", ev => {
 				}
 			})
 		},
+		"gamedetailsPlayGame": placeId => {
+			Roblox.GameLauncher.joinMultiplayerGame(placeId, true)
+		},
 		"groupsModifyLayout": () => {
 			angularHook.hijackModule("group", {
 				groupController(target, thisArg, args, argsMap) {
@@ -3424,6 +3427,9 @@ document.addEventListener("btroblox/init", ev => {
 			Roblox?.BootstrapWidgets?.SetupPopover(null, null, selector)
 		},
 		"linkify": target => $(target).linkify(),
+		"profilePlayGame": placeId => {
+			Roblox.GameLauncher.joinMultiplayerGame(placeId, true)
+		},
 		"adblock.js": () => {
 			util.ready(() => {
 				if(window.Roblox?.PrerollPlayer) {

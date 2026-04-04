@@ -485,6 +485,11 @@ const RobloxApi = {
 			xsrfFetch(`https://thumbnails.roblox.com/v1/assets?assetIds=${assetIds.join(",")}&size=${size}&format=Png`, {
 				credentials: "include"
 			}).then(res => res.json())),
+			
+		getGameThumbnails: batchable(100, (gameIds, size="768x432", countPerUniverse=1, defaults=true) =>
+			xsrfFetch(`https://thumbnails.roblox.com/v1/games/multiget/thumbnails?universeIds=${gameIds.join(",")}&size=${size}&countPerUniverse=${countPerUniverse}&defaults=${defaults}&format=Png`, {
+				credentials: "include"
+			}).then(res => res.json())),
 		
 		getGroupIcons: batchable(100, (groupIds, size="150x150", isCircular=false) =>
 			xsrfFetch(`https://thumbnails.roblox.com/v1/groups/icons?groupIds=${groupIds.join(",")}&size=${size}&format=Png&isCircular=${isCircular}`, {
