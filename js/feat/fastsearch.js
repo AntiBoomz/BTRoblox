@@ -70,9 +70,7 @@ const btrFastSearch = {
 		let currentSearchText = ""
 		let lastResultsLoaded = 0
 		
-		const thumbnailsToRequest = []
 		const thumbnailCache = {}
-		let thumbnailPromise = null
 
 		const presencesToRequest = []
 		const presenceCache = {}
@@ -102,49 +100,24 @@ const btrFastSearch = {
 				return thumbnailCache[userId]
 			}
 			
-			const request = userId => {
-				thumbnailsToRequest.push(userId)
-	
-				if(!thumbnailPromise) {
-					thumbnailPromise = new Promise(resolve => {
-						setTimeout(() => {
-							const userIds = thumbnailsToRequest.splice(0, thumbnailsToRequest.length)
-							thumbnailPromise = null
-							
-							RobloxApi.thumbnails.getAvatarHeadshots(userIds).then(json => {
-								const result = {}
-								
-								for(const thumb of json.data) {
-									if(thumb.imageUrl) {
-										result[thumb.targetId] = thumb.imageUrl
-									}
-								}
-								
-								resolve(result)
-							})
-						}, 100)
-					})
-				}
-				
-				return thumbnailPromise
-			}
-			
 			let numRetries = 0
-			const checkForThumb = thumbs => {
-				if(!thumbs[userId]) {
+			const checkForThumb = json => {
+				const thumb = json.data.find(x => x.targetId === +userId)
+				
+				if(!thumb?.imageUrl) {
 					if(numRetries++ >= 1) {
 						delete thumbnailCache[userId]
 						return null
 					}
 					
 					return new Promise(resolve => setTimeout(resolve, 500))
-						.then(() => request(userId).then(checkForThumb))
+						.then(() => RobloxApi.thumbnails.getAvatarHeadshots.batch(userId).then(checkForThumb))
 				}
 
-				return thumbs[userId]
+				return thumb.imageUrl
 			}
 			
-			return thumbnailCache[userId] = request(userId).then(checkForThumb)
+			return thumbnailCache[userId] = RobloxApi.thumbnails.getAvatarHeadshots.batch(userId).then(checkForThumb)
 		}
 
 		const requestPresence = userId => {
