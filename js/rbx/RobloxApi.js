@@ -205,7 +205,7 @@ const batchable = (limit, callback) => {
 			
 			batch.promise = new Promise(resolve => {
 				setTimeout(() => {
-					if(batching === batch) { batching = null }
+					batches.splice(batches.indexOf(batch), 1)
 					delete batch.promise
 					delete batch.args
 					resolve(callback(batch, ...args))
