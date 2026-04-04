@@ -3430,6 +3430,9 @@ document.addEventListener("btroblox/init", ev => {
 		"profilePlayGame": placeId => {
 			Roblox.GameLauncher.joinMultiplayerGame(placeId, true)
 		},
+		"profileEditPlace": (gameId, placeId) => {
+			Roblox.GameLauncher.editGameInStudio(placeId, gameId)
+		},
 		"adblock.js": () => {
 			util.ready(() => {
 				if(window.Roblox?.PrerollPlayer) {
@@ -3440,6 +3443,9 @@ document.addEventListener("btroblox/init", ev => {
 					window.Roblox.VideoPreRollDFP = null
 				}
 			})
+		},
+		"fastsearchFollowPlayer": userId => {
+			Roblox.GameLauncher.followPlayerIntoGame(userId)
 		},
 		"fastsearch": () => {
 			reactHook.inject("#navbar-universal-search, .navbar-search", elem => {

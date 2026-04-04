@@ -855,7 +855,7 @@ pageInit.profile = () => {
 							if(userId !== loggedInUser) { return }
 							
 							item.$find(".dropdown-menu").append(
-								html`<li><a onclick="Roblox.GameLauncher.editGameInStudio(${placeId}, ${universeId})"><div>Edit</div></a></li>`,
+								html`<li><a class=btr-btn-edit-place data-gameid=${universeId} data-placeid=${placeId}><div>Edit</div></a></li>`,
 								html`<li><a href="https://create.roblox.com/dashboard/creations/experiences/${universeId}/overview"><div>View Analytics</div></a></li>`,
 								html`<li><a href="https://advertise.roblox.com/"><div>Promote this Experience</div></a></li>`,
 								html`<li><a href="https://create.roblox.com/dashboard/creations/experiences/${universeId}/places/${placeId}/configure"><div>Configure this Place</div></a></li>`,
@@ -896,16 +896,8 @@ pageInit.profile = () => {
 						}
 						
 						if(placeDetails.isPlayable) {
-							const playButton = html`<div class="btr-game-playbutton btn-primary-lg">Play</div>`
-							
-							playButton.$on("click", () => {
-								injectScript.call("profilePlayGame", placeId => {
-									Roblox.GameLauncher.joinMultiplayerGame(placeId, true)
-								}, placeId)
-							})
-							
 							item.$find(".btr-game-playbutton-container").replaceChildren(
-								playButton
+								html`<div class="btr-game-playbutton btn-primary-lg" data-placeid=${placeId}>Play</div>`
 							)
 						} else {
 							const prohibitedReasons = {
@@ -932,9 +924,24 @@ pageInit.profile = () => {
 					items.push(item)
 				}
 				
+				document.body.$on("click", ".btr-game-playbutton", ev => {
+					injectScript.call("profilePlayGame", placeId => {
+						Roblox.GameLauncher.joinMultiplayerGame(placeId, true)
+					}, +ev.currentTarget.dataset.placeid)
+					ev.preventDefault()
+				})
+				
+				document.body.$on("click", ".btr-btn-edit-place", ev => {
+					injectScript.call("profileEditPlace", (gameId, placeId) => {
+						Roblox.GameLauncher.editGameInStudio(placeId, gameId)
+					}, +ev.currentTarget.dataset.gameid, +ev.currentTarget.dataset.placeid)
+					ev.preventDefault()
+				})
+				
 				document.body.$on("click", ".btr-btn-toggle-profile", ev => {
-					const placeId = ev.currentTarget.dataset.placeid
+					const placeId = +ev.currentTarget.dataset.placeid
 					RobloxApi.inventory.toggleInCollection("asset", placeId, false)
+					ev.preventDefault()
 				})
 			}
 			

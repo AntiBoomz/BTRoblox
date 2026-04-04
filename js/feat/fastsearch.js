@@ -360,7 +360,13 @@ const btrFastSearch = {
 							const followBtn = html`<button class="btr-fastsearch-follow btn-primary-xs">Join Game</button>`
 				
 							if(info.placeId) {
-								followBtn.setAttribute("onclick", `return Roblox.GameLauncher.followPlayerIntoGame(${user.UserId}), false`)
+								followBtn.$on("click", ev => {
+									injectScript.call("fastsearchFollowPlayer", userId => {
+										Roblox.GameLauncher.followPlayerIntoGame(userId)
+									}, user.UserId)
+									
+									ev.preventDefault()
+								})
 							} else {
 								followBtn.classList.add("disabled")
 							}

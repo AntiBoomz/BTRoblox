@@ -933,17 +933,16 @@ const htmltemplate = function(pieces, ...args) {
 	
 	const trimWhitespace = s => s.replace(/\b\n\s*\b/g, " ").replace(/\n[^\S ]*/g, "")
 	
-	const replacePrefix = `_btrMarker_${1e10 + Math.floor(Math.random() * 9e10)}`
 	let result = trimWhitespace(pieces[0])
 
 	for(let i = 0, len = args.length; i < len; i++) {
-		result += `${replacePrefix}_${i}_` + trimWhitespace(pieces[i + 1])
+		result += `!btr${i}!` + trimWhitespace(pieces[i + 1])
 	}
 	
 	const template = document.createElement("template")
 	template.innerHTML = result
 	
-	const replaceRegex = new RegExp(`${replacePrefix}_(\\d+)_`, "g")
+	const replaceRegex = new RegExp(`!btr(\\d+)!`, "g")
 	const replaceFn = (_, i) => args[parseInt(i, 10)]
 	
 	const replaceInserts = node => {
@@ -957,7 +956,11 @@ const htmltemplate = function(pieces, ...args) {
 			for(const child of node.childNodes) {
 				replaceInserts(child)
 			}
-		} else if(node.nodeType === Node.ATTRIBUTE_NODE || node.nodeType === Node.TEXT_NODE) {
+		} else if(node.nodeType === Node.ATTRIBUTE_NODE) {
+			if(!node.nodeName.toLowerCase().startsWith("on")) {
+				node.nodeValue = node.nodeValue.replace(replaceRegex, replaceFn)
+			}
+		} else if(node.nodeType === Node.TEXT_NODE) {
 			node.nodeValue = node.nodeValue.replace(replaceRegex, replaceFn)
 		}
 	}
