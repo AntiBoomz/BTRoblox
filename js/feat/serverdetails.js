@@ -107,19 +107,20 @@ const serverRegions = {
 }
 
 const serverRegionsByIp = {
-	"128.116.0.0": serverRegions.Ashburn,
+	// "128.116.0.0": serverRegions.SanJose,
 	"128.116.1.0": serverRegions.LosAngeles,
 	"128.116.5.0": serverRegions.Frankfurt,
 	"128.116.11.0": serverRegions.Ashburn,
 	"128.116.13.0": serverRegions.Paris,
 	"128.116.21.0": serverRegions.Amsterdam,
 	"128.116.22.0": serverRegions.Atlanta,
+	"128.116.31.0": serverRegions.London,
 	"128.116.32.0": serverRegions.NewYork,
 	"128.116.33.0": serverRegions.London,
-	"128.116.35.0": serverRegions.London,
 	"128.116.44.0": serverRegions.Frankfurt,
 	"128.116.45.0": serverRegions.Miami,
 	"128.116.46.0": serverRegions.Singapore,
+	"128.116.47.0": serverRegions.SanJose,
 	"128.116.48.0": serverRegions.Chicago,
 	"128.116.50.0": serverRegions.Singapore,
 	"128.116.51.0": serverRegions.Sydney,
@@ -129,6 +130,7 @@ const serverRegionsByIp = {
 	"128.116.56.0": serverRegions.Ashburn,
 	"128.116.57.0": serverRegions.SanJose,
 	"128.116.63.0": serverRegions.LosAngeles,
+	"128.116.64.0": serverRegions.SanJose,
 	"128.116.67.0": serverRegions.SanJose,
 	"128.116.74.0": serverRegions.Ashburn,
 	"128.116.80.0": serverRegions.Ashburn,
@@ -342,7 +344,7 @@ if(IS_BACKGROUND_PAGE) {
 				}, 5e3)
 			}
 			
-			const res = await fetch(`https://gamejoin.roblox.com/v1/join-game-instance`, {
+			const request = () => fetch(`https://gamejoin.roblox.com/v1/join-game-instance`, {
 				method: "POST",
 				credentials: "include",
 				headers: {
@@ -351,6 +353,13 @@ if(IS_BACKGROUND_PAGE) {
 				},
 				body: JSON.stringify({ placeId: info.placeId, gameId: info.jobId })
 			})
+			
+			let res = await request()
+			
+			if(res.status === 429) {
+				await new Promise(resolve => setTimeout(resolve, 1000))
+				res = await request()
+			}
 			
 			const json = await res.json()
 			const address = json?.joinScript?.UdmuxEndpoints?.[0]?.Address ?? json?.joinScript?.MachineAddress

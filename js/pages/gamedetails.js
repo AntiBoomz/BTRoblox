@@ -407,31 +407,14 @@ pageInit.gamedetails = () => {
 			)
 		}
 		
-		const useSyncExternalStore = (subscribe, getSnapshot) => {
-			const [counter, setCounter] = React.useState(0)
-			const snapshot = getSnapshot()
-			
-			const refresh = () => {
-				if(!Object.is(snapshot, getSnapshot())) {
-					setCounter(counter + 1)
-				}
-			}
-			
-			React.useEffect(() => (refresh(), subscribe(refresh)))
-			
-			return snapshot
-		}
-		
 		const globalServerRegions = {}
 		const onRegionsChanged = new Set()
 		
 		contentScript.listen("setServerRegion", (jobId, details) => {
-			if(JSON.stringify(details) !== JSON.stringify(globalServerRegions[jobId])) {
-				globalServerRegions[jobId] = details
-				
-				for(const fn of onRegionsChanged) {
-					fn()
-				}
+			globalServerRegions[jobId] = details
+			
+			for(const fn of onRegionsChanged) {
+				fn()
 			}
 		})
 		
@@ -518,14 +501,23 @@ pageInit.gamedetails = () => {
 						}
 						
 						if(regionSetting !== "ping") {
-							serverDetails = useSyncExternalStore(callback => {
-								onRegionsChanged.add(callback)
-								return () => onRegionsChanged.delete(callback)
-							}, () => globalServerRegions[jobId])
+							const [serverDetails, setServerDetails] = React.useState(null)
 							
 							React.useEffect(() => {
-								contentScript.send("getServerRegion", placeId, jobId)
-							}, [jobId])
+								const details = globalServerRegions[jobId]
+								
+								setServerDetails(globalServerRegions[jobId])
+								if(!details?.location) {
+									contentScript.send("getServerRegion", placeId, jobId)
+								}
+								
+								const callback = () => {
+									setServerDetails(globalServerRegions[jobId])
+								}
+								
+								onRegionsChanged.add(callback)
+								return () => onRegionsChanged.delete(callback)
+							}, [placeId, jobId])
 							
 							if(regionSetting === "combined") {
 								status.props.children += ` (${
