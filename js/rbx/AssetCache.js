@@ -88,6 +88,9 @@ const AssetCache = (() => {
 						.then(buffer => constructor(buffer, assetRequest)),
 				).catch(err => {
 					console.error(err)
+					if(methodCache[cacheKey] === methodPromise) {
+						delete methodCache[cacheKey]
+					}
 					return null
 				})
 				
@@ -122,6 +125,10 @@ const AssetCache = (() => {
 				urlParams = resolveAssetUrlParams(request, strict)
 			}
 			
+			if(!urlParams) {
+				throw new TypeError(`Invalid request '${request}'`)
+			}
+			
 			let cacheKey = urlParams.toString()
 			
 			if(params?.format) { cacheKey += "@f:" + params.format }
@@ -147,6 +154,11 @@ const AssetCache = (() => {
 					assetRequest.assetTypeId = json.assetTypeId
 					
 					return assetRequest
+				}).catch(err => {
+					if(resolveCache[cacheKey] === resolvePromise) {
+						delete resolveCache[cacheKey]
+					}
+					throw err
 				})
 				
 				resolvePromise.assetRequest = assetRequest
@@ -159,8 +171,6 @@ const AssetCache = (() => {
 			return resolvePromise
 		},
 		loadDirect: (cdnUrl, params) => {
-			if(cdnCache[cdnUrl]) { return cdnCache[cdnUrl] }
-			
 			let cdnPromise = cdnCache[cdnUrl]
 			
 			if(!cdnPromise) {
@@ -170,6 +180,11 @@ const AssetCache = (() => {
 					}
 					
 					return res.arrayBuffer()
+				}).catch(err => {
+					if(cdnCache[cdnUrl] === cdnPromise) {
+						delete cdnCache[cdnUrl]
+					}
+					throw err
 				})
 				
 				if(params?.cache !== false) {
@@ -179,7 +194,6 @@ const AssetCache = (() => {
 			
 			return cdnPromise
 		},
-		
 		loadAnimation: createMethod(async (buffer, assetRequest) => {
 			await loadOptionalFeature("parser")
 			
