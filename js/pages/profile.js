@@ -142,6 +142,7 @@ pageInit.profile = () => {
 				</div>
 
 				<div class=btr-profile-bottom>
+					<div class=btr-profile-currently-wearing></div>
 					<div class=placeholder-posts style=display:none></div>
 					<div class=placeholder-store style=display:none></div>
 					<div class=placeholder-collections style=display:none></div>
@@ -233,34 +234,6 @@ pageInit.profile = () => {
 						update()
 					})
 				})
-				.$watch(".profile-currently-wearing", wearing => {
-					const toggleItems = html`<span class="btr-toggle-items btn-control btn-control-sm">Show Items</span>`
-					profileContainer.$find(".profile-avatar-left").parentNode.append(toggleItems)
-					
-					const clone = wearing.cloneNode(false)
-					clone.classList.add("btr-currently-wearing", "stroke-muted", "stroke-standard", "shadow-transient-high")
-					clone.append(...wearing.childNodes)
-					toggleItems.after(clone)
-					
-					const onClick = ev => {
-						if(!ev.composedPath().includes(clone) && ev.target !== toggleItems) {
-							toggle()
-						}
-					}
-					
-					const toggle = () => {
-						clone.classList.toggle("visible")
-						toggleItems.textContent = clone.classList.contains("visible") ? "Hide Items" : "Show Items"
-						
-						if(clone.classList.contains("visible")) {
-							document.$on("click", onClick)
-						} else {
-							document.$off("click", onClick)
-						}
-					}
-					
-					toggleItems.$on("click", toggle)
-				})
 				.$watch(".profile-store", store => {
 					const clone = store.cloneNode(false)
 					clone.append(...store.childNodes)
@@ -331,6 +304,89 @@ pageInit.profile = () => {
 				}
 			})
 			
+			const initCurrentlyWearing = async () => {
+				const holder = newCont.$find(".btr-profile-currently-wearing")
+				const avatar = await RobloxApi.avatar.getUserAvatar(userId).catch(() => null)
+				if(!avatar || !document.contains(holder)) { return }
+				
+				const bodyPartTypes = [AssetType.Head, AssetType.Torso, AssetType.RightArm, AssetType.LeftArm, AssetType.RightLeg, AssetType.LeftLeg, AssetType.DynamicHead]
+				const avatarAssets = avatar.assets || []
+				const emotes = (avatar.emotes || []).map(emote => ({
+					id: Number(emote.assetId ?? emote.id),
+					name: emote.assetName ?? emote.name ?? "Emote",
+					assetType: { id: AssetType.EmoteAnimation }
+				})).filter(emote => Number.isSafeInteger(emote.id))
+				const categories = {
+					items: avatarAssets.filter(asset => WearableAssetTypeIds.includes(asset.assetType?.id) && !bodyPartTypes.includes(asset.assetType.id)),
+					bodyParts: avatarAssets.filter(asset => bodyPartTypes.includes(asset.assetType?.id)),
+					animations: avatarAssets.filter(asset => AnimationPreviewAssetTypeIds.includes(asset.assetType?.id) && asset.assetType.id !== AssetType.EmoteAnimation),
+					emotes: emotes.length ? emotes : avatarAssets.filter(asset => asset.assetType?.id === AssetType.EmoteAnimation)
+				}
+				const assets = Object.values(categories).flat()
+				if(!assets.length) {
+					holder.replaceChildren(html`<div class="section-content-off btr-section-content-off">This user is not wearing any items</div>`)
+					return
+				}
+				
+				const section = html`
+				<section class="btr-currently-wearing-section">
+					<div class="container-header">
+						<h2>Currently Wearing</h2>
+						<div class="btr-wearing-tabs">
+							<button type="button" class="btr-wearing-tab selected" data-category="items">Items</button>
+							<button type="button" class="btr-wearing-tab" data-category="bodyParts">Body Parts</button>
+							<button type="button" class="btr-wearing-tab" data-category="animations">Animations</button>
+							<button type="button" class="btr-wearing-tab" data-category="emotes">Emotes</button>
+						</div>
+					</div>
+					<div class="btr-currently-wearing-carousel"></div>
+				</section>`
+				const carousel = section.$find(".btr-currently-wearing-carousel")
+				const thumbnails = new Map()
+				let activeCategory = "items"
+				
+				const renderCategory = category => {
+					activeCategory = category
+					carousel.replaceChildren()
+					
+					for(const tab of section.$findAll(".btr-wearing-tab")) {
+						tab.classList.toggle("selected", tab.dataset.category === category)
+					}
+					
+					const categoryAssets = categories[category]
+					if(!categoryAssets.length) {
+						carousel.append(html`<div class="section-content-off btr-section-content-off">No ${category === "bodyParts" ? "body parts" : category} worn</div>`)
+						return
+					}
+					
+					for(const asset of categoryAssets) {
+						const thumbnail = thumbnails.get(asset.id) || ""
+						carousel.append(html`
+						<a class="btr-wearing-item" href="/catalog/${asset.id}/${formatUrlName(asset.name)}" title="${asset.name}">
+							<span class="btr-wearing-thumb"><img src="${thumbnail}" alt="${asset.name}"></span>
+							<span class="btr-wearing-name">${asset.name}</span>
+						</a>`)
+					}
+				}
+				
+				for(const tab of section.$findAll(".btr-wearing-tab")) {
+					tab.$on("click", () => renderCategory(tab.dataset.category))
+				}
+				
+				holder.replaceChildren(section)
+				renderCategory(activeCategory)
+				
+				RobloxApi.thumbnails.getAssetThumbnails(assets.map(asset => asset.id), "150x150").then(json => {
+					if(!document.contains(carousel)) { return }
+					
+					for(const thumb of json.data || []) {
+						thumbnails.set(thumb.targetId, thumb.imageUrl)
+					}
+					
+					renderCategory(activeCategory)
+				})
+			}
+
 			const initPlayerBadges = () => {
 				// if(userId === 1) {
 				// 	newCont.$find(".btr-profile-playerbadges").remove()
@@ -991,6 +1047,7 @@ pageInit.profile = () => {
 				})
 			}
 			
+			initCurrentlyWearing()
 			initPlayerBadges()
 			initGroups()
 			initGames()
