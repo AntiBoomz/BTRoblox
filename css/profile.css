@@ -172,42 +172,105 @@ html .dark-theme.btr-profile .btr-section-content-off {
 
 /* Currently Wearing */
 
-.btr-toggle-items {
-	position: absolute;
-	z-index: 25;
-	right: 12px;
-	bottom: 32px;
-	
-	anchor-name: --btr-wearing-anchor;
+.btr-profile-currently-wearing {
+	clear: both;
+	margin: 20px 0 28px;
 }
 
-.btr-currently-wearing {
-	position: absolute;
-	position-anchor: --btr-wearing-anchor;
-	
-	top: calc(anchor(bottom) + 10px);
-	right: 10px;
-	left: 10px;
-
-	opacity: 0;
-	pointer-events: none;
-	transition: opacity 0.3s;
-	z-index: 25;
-	
-	background: rgb(31, 32, 36);
-	border-radius: 8px;
-	padding: 20px;
-	
-	box-shadow: 0 0 8px 0 light-dark(rgba(0, 0, 0, .1), rgba(0, 0, 0, .3));
-	
-	&.visible {
-		opacity: 1;
-		pointer-events: initial;
-		transition: opacity 0.3s;
+.btr-currently-wearing-section {
+	.container-header {
+		display: flex;
+		align-items: center;
+		margin-bottom: 12px;
 	}
-	
-	.profile-carousel {
-		padding: 0 !important;
+
+	.btr-wearing-tabs {
+		display: flex;
+		gap: 2px;
+		margin-left: auto;
+		padding: 2px;
+		border-radius: 999px;
+		background: light-dark(#e3e3e3, #202126);
+	}
+
+	.btr-wearing-tab {
+		border: 0;
+		border-radius: 999px;
+		padding: 7px 13px;
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		font-size: 13px;
+		font-weight: 700;
+		line-height: 18px;
+		cursor: pointer;
+	}
+
+	.btr-wearing-tab:hover {
+		background: light-dark(rgba(0, 0, 0, .07), rgba(255, 255, 255, .08));
+	}
+
+	.btr-wearing-tab.selected {
+		background: light-dark(white, #303138);
+	}
+
+	.btr-currently-wearing-carousel {
+		display: flex;
+		gap: 12px;
+		min-width: 0;
+		overflow-x: auto;
+		padding-bottom: 4px;
+	}
+
+	.btr-wearing-item {
+		flex: 0 0 150px;
+		min-width: 0;
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.btr-wearing-thumb {
+		display: block;
+		width: 150px;
+		height: 150px;
+		overflow: hidden;
+		border-radius: 8px;
+		background: light-dark(#f2f2f2, #2c2d33);
+	}
+
+	.btr-wearing-thumb img {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+
+	.btr-wearing-name {
+		display: block;
+		margin-top: 7px;
+		font-size: 14px;
+		font-weight: 700;
+		line-height: 18px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.btr-wearing-item:hover .btr-wearing-name {
+		text-decoration: underline;
+	}
+
+	@media (max-width: 600px) {
+		.container-header {
+			align-items: flex-start;
+			flex-direction: column;
+			gap: 8px;
+		}
+
+		.btr-wearing-tabs {
+			margin-left: 0;
+			max-width: 100%;
+			overflow-x: auto;
+		}
 	}
 }
 
