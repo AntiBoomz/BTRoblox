@@ -30,40 +30,11 @@
 	height: 28px;
 	display: block;
 }
-
-.icon-nav-premium-btr {
-	background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI+PHBhdGggZD0iTTE0IDE0VjJIMnYxNGEyIDIgMCAwIDEtMi0yVjJhMiAyIDAgMCAxIDItMmgxMmEyIDIgMCAwIDEgMiAydjEyYTIgMiAwIDAgMS0yIDJIOHYtMnptLTItOHY2SDh2LTJoMlY2SDZ2MTBINFY0aDh6IiBmaWxsPSIjMzkzYjNkIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiLz48L3N2Zz4=);
-	background-repeat: no-repeat;
-	background-size: 22px;
-	background-position: center;
-	width: 28px;
-	height: 28px;
-	display: inline-block;
-}
-
 .icon-nav-friend-btr { background-position: 0 -28px; }
 .icon-nav-message-btr { background-position: 0 0; }
-/* a:hover .icon-nav-friend-btr { background-position: -28px -28px; }
-a:hover .icon-nav-message-btr { background-position: -28px 0; } */
-
-.dark-theme .icon-nav-premium-btr { filter: invert(100%); }
-.dark-theme a:hover .icon-nav-premium-btr { filter: invert(100%) brightness(2); }
 
 .light-theme .icon-nav-friend-btr { filter: invert(76%); }
 .light-theme .icon-nav-message-btr { filter: invert(76%); }
-.light-theme a:not(:hover) .icon-nav-premium-btr { filter: invert(24%); }
-
-#nav-premium:hover {
-	color: #00a2ff;
-}
-
-.light-theme #nav-premium:hover {
-	color: #393b3d;
-}
-
-.dark-theme #nav-premium:hover {
-	color: #fff;
-}
 
 #header .btr-nav-notif {
 	box-sizing: content-box;
@@ -72,33 +43,22 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	top: -2px;
 	right: -2px;
 
-	background: white;
+	background: light-dark(#393b3d, white);
 	padding: 0px 4px;
 	height: 16px;
 	min-width: 8px;
 	text-align: center;
 
-	color: #191919;
+	color: light-dark(#fff, #191919);
 	font-size: 10px;
 	font-weight: bold;
 	line-height: 17px;
 
 	border-radius: 10px;
-	border: 2px solid #0074bd;
+	border: 2px solid light-dark(#393b3d, #232527);
 }
 
-.light-theme #header .btr-nav-notif {
-	background-color: #393b3d;
-	border-color: #393b3d;
-	color: #fff;
-}
-
-.dark-theme #header .btr-nav-notif {
-	border-color: #232527;
-}
-
-.btr-nav-hide_notifs .btr-nav-notif,
-.btr-nav-hide_notifs .notification-blue {
+.btr-nav-hide_notifs a > span:has(.text-label-small) {
 	display: none !important;
 }
 
@@ -108,44 +68,51 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 
 /* btr-no-hamburger */
 
-@media (min-width: 1200px) {
-	.btr-no-hamburger #header .rbx-navbar-header {
-		max-width: 175px;
-		width: 175px;
-		margin: 0;
-		padding: 0 12px;
+.btr-no-hamburger {
+	@media (max-width: 1141px) {
+		#header {
+			.rbx-navbar-header {
+				max-width: 175px;
+				width: 175px;
+				margin: 0;
+				padding: 0 12px;
+			}
+			
+			.icon-logo {
+				display: block;
+			}
+			
+			.icon-logo-r {
+				display: none;
+			}
+			
+			.rbx-nav-collapse {
+				display: none;
+			}
+		}
+		
+		#wrap {
+			--left-nav-reserved-width: 289px;
+		}
+		
+		.left-nav {
+			visibility: visible !important;
+			transform: unset !important;
+		}
 	}
 	
-	.btr-no-hamburger #header .icon-logo {
-		display: block;
+	@media (max-width: 1200px) {
+		.rbx-navbar.col-md-5 {
+			width: 33.3%;
+		}
 	}
 	
-	.btr-no-hamburger #header .icon-logo-r {
-		display: none;
+	@media (max-width: 991px) and (min-width: 544px) {
+		#right-navigation-header {
+			left: 140px;
+		}
 	}
 }
-
-.btr-no-hamburger #header .rbx-nav-collapse {
-	display: none;
-}
-
-.btr-no-hamburger .rbx-left-col {
-	width: 175px;
-	display: block;
-	visibility: visible;
-}
-
-.btr-no-hamburger .rbx-left-col .rbx-scrollbar {
-	width: 175px;
-}
-
-@media (max-width: 1688px) {
-	body.btr-no-hamburger .container-main,
-	body.btr-no-hamburger .nav-container .nav-content {
-		margin-left: 175px;
-	}
-}
-
 
 /* New Chat */
 
@@ -170,7 +137,6 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	overflow: hidden;
 }
 
-
 /* Sidebar Blog Feed */
 
 #btr-blogfeed-container {
@@ -178,62 +144,53 @@ a:hover .icon-nav-message-btr { background-position: -28px 0; } */
 	
 	#btr-blogfeed {
 		margin-top: -3px;
+		padding-left: 40px;
 		
 		.btr-feed {
+			position: relative;
 			display: block;
 			font-size: 12px;
-			padding-left: 8px;
-			padding-right: 4px;
-			padding-top: 4px;
-			padding-bottom: 4px;
-			background-color: transparent;
+			padding: 4px 8px;
 			text-decoration: none;
 			overflow: hidden;
-			color: light-dark(#191919, #BDBEBE);
-		}
-
-		.btr-feed:hover {
-			background: rgba(0, 0, 0, 0.1);
-		}
-
-		.btr-feedcreator, .btr-feeddate {
-			opacity: 0.85;
-			font-size: 10px;
-			font-weight: normal;
-			margin: 0 !important;
-			white-space: nowrap;
-		}
-
-		.btr-feedtitle {
-			font-weight: 500;
-			line-height: 12px;
-			font-size: 12px;
-		}
-
-		.btr-feeddesc {
-			overflow: hidden;
-			max-height: 0;
-			width: 100%;
-			opacity: 0.8;
-			font-weight: 300;
-			transition: max-height 0.4s;
-			margin-top: 4px;
-			margin-bottom: 0px;
-			font-size: 11px;
+			font-weight: 400;
 			
-			display: -webkit-box;
-			-webkit-box-orient: vertical;
-			text-overflow: ellipsis;
-			-webkit-line-clamp: 7;
-		}
+			.btr-feedtitle {
+				line-height: 12px;
+				font-size: 12px;
+			}
+			
+			.btr-feeddate {
+				display: block;
+				font-size: 10px;
+				font-weight: normal;
+				margin: 0 !important;
+				white-space: nowrap;
+			}
+			
+			&:hover .btr-feeddesc {
+				max-height: 106px;
+				margin-bottom: 4px;
+			}
 
-		/* .btr-feed:hover > .btr-feeddesc {
-			max-height: 106px;
-			margin-bottom: 4px;
-		} */
+			.btr-feeddesc {
+				overflow: hidden;
+				max-height: 0;
+				width: 100%;
+				transition: max-height 0.4s;
+				margin-top: 4px;
+				margin-bottom: 0px;
+				font-size: 11px;
+				line-height: 13px;
+				
+				display: -webkit-box;
+				-webkit-box-orient: vertical;
+				text-overflow: ellipsis;
+				-webkit-line-clamp: 7;
+			}
+		}
 	}
 }
-
 
 
 /* PAGER */
@@ -1287,60 +1244,50 @@ html .btr-friends-list .friends-carousel-container > div {
 	grid-template-rows: repeat(var(--btr-friend-rows, 1), auto) repeat(100, 0);
 }
 
-html .btr-friends-list .friends-carousel-tile #friend-tile-button {
-	width: 100%;
-	padding: 0;
-}
+html .btr-friends-list .friends-carousel-tile {
+	#friend-tile-button {
+		width: 100%;
+		padding: 0;
+	}
 
-html .btr-friends-list .friends-carousel-tile .add-friends-icon-container,
-html .btr-friends-list .friends-carousel-tile .avatar {
-	margin-left: auto;
-	margin-right: auto;
-}
+	.add-friends-icon-container, .avatar {
+		margin-left: auto;
+		margin-right: auto;
+	}
 
-html .btr-friends-list .friends-carousel-tile .friends-carousel-tile-name {
-	width: 100%;
-	justify-content: center;
-}
+	.friends-carousel-tile-name {
+		width: 100%;
+		justify-content: center;
+	}
 
-html .btr-friends-list .friends-carousel-tile .friends-carousel-display-name {
-	max-width: 100%;
-	width: auto;
-}
+	.btr-friends-carousel-username-label {
+		margin-top: -2px;
+		margin-bottom: -2px;
+	}
 
-html .btr-friends-list .friends-carousel-tile:has(.friend-tile-verified-badge) .friends-carousel-display-name {
-	/* account for verified badge (21px wide) */
-	max-width: calc(100% - 21px);
-}
+	.btr-friends-carousel-username {
+		font-size: .7em;
+		color: light-dark(#737373, #b8b8b8);
+		text-overflow: ellipsis;
+		overflow: hidden;
+	}
+	
+	/* fix dropdown game thumbnails when loading (shimmer class messes with size) */
+	.friend-tile-dropdown .friend-tile-game-card {
+		float: left;
+		width: 100px;
+		height: 100px;
+	}
 
-html .btr-friends-list .friends-carousel-tile .btr-friends-carousel-username-label {
-	margin-top: -2px;
-	margin-bottom: -2px;
-}
-
-html .btr-friends-list .friends-carousel-tile .btr-friends-carousel-username {
-	font-size: .7em;
-	color: #b8b8b8;
-	text-overflow: ellipsis;
-	overflow: hidden;
-}
-
-html .btr-friends-list .light-theme .friends-carousel-tile .btr-friends-carousel-username {
-	color: #737373;
-}
-
-/* fix dropdown game thumbnails when loading (shimmer class messes with size) */
-
-html .btr-friends-list .friends-carousel-tile .friend-tile-dropdown .friend-tile-game-card {
-	float: left;
-	width: 100px;
-	height: 100px;
-}
-
-/* friend dropdown "Chat with X" text wrap to second line with long names which looks odd */
-
-html .btr-friends-list .friends-carousel-tile .friend-tile-dropdown .friend-tile-dropdown-button:has(.icon-chat-gray) {
-	white-space: nowrap;
-	text-overflow: ellipsis;
-	overflow: hidden;
+	/* fix friend dropdown "Chat with X" wrapping with long usernames (looks real bad) */
+	.friend-tile-dropdown .friend-tile-dropdown-button:has(.icon-chat-gray) {
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		overflow: hidden;
+	}
+	
+	/* fix spacing between displayname and roblox plus icon if not verified */
+	.friends-carousel-tile-name:not(:has(> .friend-tile-verified-badge)) .icon-regular-roblox-plus {
+		margin-left: 3px;
+	}
 }

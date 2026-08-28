@@ -132,7 +132,7 @@ const Navigation = {
 				}
 				
 				if(element.selector) {
-					document.$watch(element.selector, node => {
+					const add = node => {
 						if(element.html) {
 							const newNode = element.html.cloneNode(true)
 							node.replaceWith(newNode)
@@ -140,6 +140,28 @@ const Navigation = {
 						}
 						
 						element.addNode(node)
+					}
+					
+					document.$watch(element.selector, root => {
+						if(element.selector2) {
+							new MutationObserver(records => {
+								for(const record of records) {
+									for(const node of record.addedNodes) {
+										if(node.matches(element.selector2)) {
+											add(node)
+										}
+									}
+								}
+							}).observe(root, { childList: true })
+							
+							for(const node of root.children) {
+								if(node.matches(element.selector2)) {
+									add(node)
+								}
+							}
+						} else {
+							add(root)
+						}
 					})
 				}
 				
@@ -213,7 +235,7 @@ const Navigation = {
 				document.$watch("title", title => this.addNode(title))
 			}
 		})
-			*/
+		*/
 		
 		Navigation.register("header_robux", {
 			label: "Show Robux",
@@ -261,7 +283,7 @@ const Navigation = {
 				<li id="btr-navbar-friends" class="navbar-icon-item">
 					<a class="rbx-menu-item" href="/users/friends">
 						<span class="icon-nav-friend-btr"></span>
-						<span class="btr-nav-notif rbx-text-navbar-right" style="display:none;"></span>
+						<span class=btr-nav-notif style="display:none;"></span>
 					</a>
 				</li>`,
 			
@@ -269,15 +291,15 @@ const Navigation = {
 				node.style.display = this.enabled ? "" : "none"
 				if(!this.enabled) { return }
 				
-				const orig = $("#nav-friends")
-				const origNotif = orig?.$find(".notification")
+				const sidebar = $(".btr-nav-sidebar_friends > a")
+				const sidebarNotif = sidebar?.$find("span .text-label-small")
 				
 				const notif = node.$find(".btr-nav-notif")
 				const link = node.$find("a")
 				
-				link.href = orig.href
-				notif.textContent = origNotif ? origNotif.textContent.trim() : ""
-				notif.style.display = origNotif ? "" : "none"
+				link.href = sidebar?.href ?? link.href
+				notif.textContent = sidebarNotif ? sidebarNotif.textContent.trim() : ""
+				notif.style.display = sidebarNotif ? "" : "none"
 			}
 		})
 		
@@ -293,7 +315,7 @@ const Navigation = {
 				<li id="btr-navbar-messages" class="navbar-icon-item">
 					<a class="rbx-menu-item" href="/my/messages">
 						<span class="icon-nav-message-btr"></span>
-						<span class="btr-nav-notif rbx-text-navbar-right" style="display:none;"></span>
+						<span class=btr-nav-notif style="display:none;"></span>
 					</a>
 				</li>`,
 			
@@ -301,15 +323,15 @@ const Navigation = {
 				node.style.display = this.enabled ? "" : "none"
 				if(!this.enabled) { return }
 				
-				const orig = $("#nav-message")
-				const origNotif = orig?.$find(".notification")
+				const sidebar = $(".btr-nav-sidebar_messages > a")
+				const sidebarNotif = sidebar?.$find("span .text-label-small")
 				
 				const notif = node.$find(".btr-nav-notif")
 				const link = node.$find("a")
 				
-				link.href = orig.href
-				notif.textContent = origNotif ? origNotif.textContent.trim() : ""
-				notif.style.display = origNotif ? "" : "none"
+				link.href = sidebar?.href ?? link.href
+				notif.textContent = sidebarNotif ? sidebarNotif.textContent.trim() : ""
+				notif.style.display = sidebarNotif ? "" : "none"
 			}
 		})
 		
@@ -318,11 +340,13 @@ const Navigation = {
 		Navigation.register("sidebar_home", {
 			label: "Show Home",
 			
-			selector: "#nav-home",
+			selector: ".left-nav ul",
+			selector2: "li:has(a[href*='roblox.com/home'])",
+			
 			enabled: false,
 			
 			update(node) {
-				node.parentNode.style.display = this.enabled ? "" : "none"
+				node.style.display = this.enabled ? "" : "none"
 			}
 		})
 		
@@ -333,11 +357,13 @@ const Navigation = {
 				show_notifs: { label: "Show Unread", enabled: true, class: "!hide_notifs" }
 			},
 			
-			selector: "#nav-message",
+			selector: ".left-nav ul",
+			selector2: "li:has(a[href*='roblox.com/my/messages'])",
+			
 			enabled: true,
 			
 			update(node) {
-				node.parentNode.style.display = this.enabled ? "" : "none"
+				node.style.display = this.enabled ? "" : "none"
 			},
 			
 			nodeAdded(node) {
@@ -355,17 +381,19 @@ const Navigation = {
 		})
 		
 		Navigation.register("sidebar_friends", {
-			label: "Show Connect",
+			label: "Show Friends",
 			
 			settings: {
 				show_notifs: { label: "Show Requests", enabled: true, class: "!hide_notifs" }
 			},
 			
-			selector: "#nav-friends",
+			selector: ".left-nav ul",
+			selector2: "li:has(a[href*='roblox.com/users/friends'])",
+			
 			enabled: true,
 			
 			update(node) {
-				node.parentNode.style.display = this.enabled ? "" : "none"
+				node.style.display = this.enabled ? "" : "none"
 			},
 			
 			nodeAdded(node) {
@@ -385,11 +413,13 @@ const Navigation = {
 		Navigation.register("sidebar_trade", {
 			label: "Show Trade",
 			
-			selector: "#nav-trade",
+			selector: ".left-nav ul",
+			selector2: "li:has(a[href*='roblox.com/trades'])",
+			
 			enabled: true,
 			
 			update(node) {
-				node.parentNode.style.display = this.enabled ? "" : "none"
+				node.style.display = this.enabled ? "" : "none"
 			}
 		})
 		
@@ -400,24 +430,14 @@ const Navigation = {
 			selector: "#btr-placeholder-money",
 			html: html`
 				<li id=btr-nav-money>
-					<a href="/transactions" id=nav-money class="dynamic-overflow-container text-nav">
-						<div><span class="icon-nav-trade"></span></div>
-						<span class="font-header-2 dynamic-ellipsis-item">Transactions</span>
+					<a href="/transactions" id=nav-money class="content-emphasis text-title-large flex items-center gap-small padding-left-xsmall padding-right-xxsmall radius-medium relative clip group/interactable focus-visible:outline-focus disabled:outline-none">
+						<div role="presentation" class="absolute inset-[0] transition-colors group-hover/interactable:bg-[var(--color-state-hover)] group-active/interactable:bg-[var(--color-state-press)] group-disabled/interactable:bg-none"></div>
+						<span class="size-1000 grow-0 shrink-0 basis-auto flex justify-center items-center">
+							<span role="presentation" class="grow-0 shrink-0 basis-auto icon icon-regular-hand-two-arrows-horizontal size-[var(--icon-size-large)]"></span>
+						</span>
+						<span class="min-width-0 text-truncate-end text-no-wrap">Transactions</span>
 					</a>
 				</li>`,
-		})
-		
-		Navigation.register("sidebar_premium", {
-			label: "Show Premium",
-			
-			selector: "#btr-placeholder-premium",
-			html: html`
-				<li id=btr-nav-premium>
-					<a href=/premium/membership id=nav-premium class="dynamic-overflow-container text-nav">
-						<div><span class=icon-nav-premium-btr></span></div>
-						<span class="font-header-2 dynamic-ellipsis-item">Premium</span>
-					</a>
-				</li>`
 		})
 		
 		Navigation.register("sidebar_blogfeed", {
@@ -440,13 +460,14 @@ const Navigation = {
 						
 						for(const item of blogFeedData) {
 							blogfeed.append(html`
-							<a class="btr-feed" href="${item.url}">
-								<div class="btr-feedtitle">
+							<a class="btr-feed group/interactable radius-medium text-title-small" href="${item.url}">
+								<div role="presentation" class="absolute inset-[0] transition-colors group-hover/interactable:bg-[var(--color-state-hover)] group-active/interactable:bg-[var(--color-state-press)] group-disabled/interactable:bg-none"></div>
+								<div class="btr-feedtitle content-emphasis">
 									${item.title.trim() + " "}
-									<span class="btr-feeddate">(${$.dateSince(item.date)})</span>
+									<span class="btr-feeddate content-default">(${$.dateSince(item.date)})</span>
 								</div>
-								<div class="btr-feeddesc">${
-									parser.parseFromString(item.desc, "text/html").documentElement.textContent.replace(/\s+/g, " ").trim().slice(0, 220)
+								<div class="btr-feeddesc content-muted">${
+									parser.parseFromString(item.desc, "text/html").documentElement.textContent.replace(/\s+/g, " ").trim().slice(0, 300)
 								}</div>
 							</a>`)
 						}
@@ -464,38 +485,35 @@ const Navigation = {
 		Navigation.register("sidebar_shop", {
 			label: "Show Official Store",
 			
-			selector: "#nav-shop",
+			selector: ".left-nav ul",
+			selector2: "li:has(.icon-regular-building-store)",
+			
 			enabled: true,
 			
 			update(node) {
-				node.parentNode.style.display = this.enabled ? "" : "none"
+				node.style.display = this.enabled ? "" : "none"
 			}
 		})
 		
 		Navigation.register("sidebar_giftcards", {
 			label: "Show Gift Cards",
 			
-			selector: "#nav-giftcards",
+			selector: ".left-nav ul",
+			selector2: "li:has(a[href*='roblox.com/giftcards'])",
+			
 			enabled: true,
 			
 			update(node) {
-				node.parentNode.style.display = this.enabled ? "" : "none"
+				node.style.display = this.enabled ? "" : "none"
 			}
 		})
 		
-		Navigation.register("sidebar_premium_2", {
-			label: "Show Premium Button",
+		// Navigation.register("sidebar_events", {
+		// 	label: "Show Events",
 			
-			selector: ".left-col-list > .rbx-upgrade-now",
-			enabled: false
-		})
-		
-		Navigation.register("sidebar_events", {
-			label: "Show Events",
-			
-			selector: ".left-col-list > .rbx-platform-event-container",
-			enabled: true
-		})
+		// 	selector: ".left-col-list > .rbx-platform-event-container",
+		// 	enabled: true
+		// })
 		
 		if(SETTINGS.get("navigation.enabled") && location.host !== "create.roblox.com") {
 			injectScript.call("navigation", () => {
@@ -518,8 +536,8 @@ const Navigation = {
 					}
 				})
 				
-				reactHook.inject(".left-col-list", elem => {
-					const trade = elem.find(x => x.key === "trade")
+				reactHook.inject("ul.flex-col", elem => {
+					const trade = elem.find(x => x.props.path?.startsWith("/trades"))
 					if(trade) {
 						trade.after(
 							reactHook.createElement("div", {
@@ -530,16 +548,10 @@ const Navigation = {
 						)
 					}
 					
-					const blog = elem.find(x => x.key === "blog")
+					if(!trade) { return } // matched some other element?
+					
+					const blog = elem.find(x => x.props.path?.toString().includes("blog.roblox.com"))
 					if(blog) {
-						blog.before(
-							reactHook.createElement("div", {
-								id: "btr-placeholder-premium",
-								style: { display: "none" },
-								dangerouslySetInnerHTML: { __html: "" }
-							}),
-						)
-						
 						blog.after(
 							reactHook.createElement("div", {
 								id: "btr-placeholder-blogfeed",

@@ -62,7 +62,7 @@ const PAGE_INFO = {
 	},
 	messages: {
 		matches: ["^/my/messages"],
-		js: ["pages/messages.js"],
+		js: [],
 		css: ["messages.css"]
 	},
 	money: {

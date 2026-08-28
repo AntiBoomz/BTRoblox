@@ -8,7 +8,7 @@ pageInit.groups = () => {
 	}
 
 	if(!SETTINGS.get("groups.enabled")) { return }
-
+	
 	if(SETTINGS.get("groups.modifyLayout")) {
 		injectScript.call("groupsModifyLayout", () => {
 			angularHook.hijackModule("group", {
@@ -97,22 +97,16 @@ pageInit.groups = () => {
 		modifyAngularTemplate(["group-base", "group-about"], (baseTemplate, aboutTemplate) => {
 			const tabs = baseTemplate.$find(".rbx-tabs-horizontal")
 			
-			// move most things out of about and into the main container
-			const hoist = [
-				aboutTemplate.$find("group-events"),
-				aboutTemplate.$find("#group-announcements"),
-				aboutTemplate.$find(".group-shout"),
-				aboutTemplate.$find("social-links-container")
-			]
-			
-			for(const element of hoist) {
-				if(!element) { continue }
-				
-				element.removeAttribute("ng-switch-when")
-				tabs.before(element)
+			// move announcements above tabs
+			const announcements = aboutTemplate.$find("group-announcements")
+			if(announcements) {
+				announcements.removeAttribute("ng-switch-when")
+				announcements.style.display = "block"
+				announcements.style.clear = "both"
+				tabs.before(announcements)
 			}
 			
-			// toggle games/payouts based on custom tab
+			// custom tab logic
 			const games = aboutTemplate.$find("group-games")
 			if(games) {
 				games.setAttribute("ng-show", `!btrCustomTab.name`)
@@ -124,19 +118,14 @@ pageInit.groups = () => {
 				payouts.setAttribute("ng-show", `btrCustomTab.name === "payouts"`)
 			}
 			
-			// move discovery and group wall below the main container so it's visible in most views
+			// move discovery below tabs
 			const discovery = aboutTemplate.$find("group-forums-discovery")
 			if(discovery) {
 				discovery.removeAttribute("ng-switch-when")
 				discovery.setAttribute("ng-show", "layout.activeTab !== groupDetailsConstants.tabs.forums")
+				discovery.style.display = "block"
+				discovery.style.clear = "both"
 				tabs.parentNode.append(discovery)
-			}
-			
-			const wall = aboutTemplate.$find("group-wall")
-			if(wall) {
-				wall.removeAttribute("ng-switch-when")
-				wall.setAttribute("ng-show", "layout.activeTab !== groupDetailsConstants.tabs.forums")
-				tabs.parentNode.append(wall)
 			}
 		})
 		
@@ -159,6 +148,24 @@ pageInit.groups = () => {
 	onPageLoad(() => {
 		document.$watch("body", body => {
 			document.body.classList.toggle("btr-redesign", SETTINGS.get("groups.modifyLayout"))
+		})
+		
+		document.$watch([".profile-insights-container", ".description-more-btn"], (container, moreBtn) => {
+			const btn = html`<button type="button" class="flex items-center bg-surface-300 radius-circle text-caption-medium padding-x-medium padding-y-xsmall cursor-pointer profile-insight-pill-button" style="border: medium;">More</button>`
+			container.append(btn)
+			
+			moreBtn.style.display = "none"
+			
+			injectScript.call("hookGroupMoreButton", (btn, moreBtn) => {
+				// doing the listener in injectScript makes it work even if the extension reloads
+				
+				btn.addEventListener("click", event => {
+					event.stopPropagation()
+					event.preventDefault()
+					
+					moreBtn.click()
+				})
+			}, btn, moreBtn)
 		})
 	})
 }

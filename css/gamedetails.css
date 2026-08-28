@@ -17,6 +17,10 @@ div.page-content {
 
 /* Main container */
 
+body .no-gutter-ads.left-nav-new-width main.container-main {
+	margin-left: min(max(0px, calc(2000px - 100vw)), var(--left-nav-reserved-width));
+}
+
 body .btr-game-main-container {
 	padding: 12px;
 	margin-top: 12px;

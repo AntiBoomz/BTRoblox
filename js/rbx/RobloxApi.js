@@ -423,6 +423,11 @@ const RobloxApi = {
 				credentials: "include"
 			}).then(res => res.json()),
 			
+		canViewInventory: userId =>
+			xsrfFetch(`https://inventory.roblox.com/v1/users/${userId}/can-view-inventory`, {
+				credentials: "include"
+			}).then(res => res.json()),
+			
 		toggleInCollection: (assetType, assetId, addToCollection=true) =>
 			xsrfFetch(`https://inventory.roblox.com/v1/collections/items/${assetType}/${assetId}`, {
 				method: addToCollection ? "POST" : "DELETE",

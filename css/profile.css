@@ -79,6 +79,7 @@ html .dark-theme.btr-profile .btr-section-content-off {
 		
 		text-align: justify;
 		white-space: pre-wrap;
+		word-wrap: break-word;
 		
 		.btr-profile-description-content {
 			max-height: 162px;
@@ -176,7 +177,7 @@ html .dark-theme.btr-profile .btr-section-content-off {
 	position: absolute;
 	z-index: 25;
 	right: 12px;
-	bottom: 32px;
+	bottom: 12px;
 	
 	anchor-name: --btr-wearing-anchor;
 }

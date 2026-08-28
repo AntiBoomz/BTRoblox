@@ -12,8 +12,8 @@ pageInit.profile = () => {
 			}
 		})
 		
-		reactHook.inject(">.profile-tab-content", tabContent => {
-			for(const child of tabContent[0].props.children) {
+		reactHook.inject(">.profile-tab-content", tab => {
+			for(const child of tab[0].props.children) {
 				switch(child.key) {
 				case "About":
 				case "FavoriteExperiences":
@@ -29,6 +29,15 @@ pageInit.profile = () => {
 				case "Collections":
 				case "Friends":
 				case "Store":
+					if(!child.props.children?.props?.className?.startsWith("btr-wrapper-")) {
+						child.props.children = reactHook.createElement("div", {
+							className: `btr-wrapper-container-${child.key}`,
+							children: reactHook.createElement("div", {
+								className: `btr-wrapper-${child.key}`,
+								children: child.props.children
+							})
+						})
+					}
 					break // do nothing (we do something with this)
 				default:
 					if(IS_DEV_MODE) {
@@ -161,16 +170,6 @@ pageInit.profile = () => {
 			const profileDataPromise = profileDataPromises[userIdString] ??= new Promise(() => {})
 			
 			profileContainer
-				.$watch(".profile-tabs", tabs => {
-					tabs.parentNode.style.display = "none"
-				})
-				.$watch("#friends-carousel-container", friends => {
-					newCont.$find(".placeholder-friends").after(friends)
-					
-					friends.$watch(">*", cont => {
-						newCont.$find(".placeholder-friends").remove()
-					})
-				})
 				.$watch(".user-profile-header", header => {
 					const target = header.$find("> .flex-nowrap > a.radius-circle")
 					
@@ -181,9 +180,13 @@ pageInit.profile = () => {
 							<span class="text-no-wrap text-truncate-end">More</span>
 						</a>`
 						
-						btn.$on("click", () => {
-							profileContainer.$find(".description-content+.more-btn").click()
-						})
+						injectScript.call("hookProfileMoreButton", btn => {
+							// doing the listener in injectScript makes it work even if the extension reloads
+							
+							btn.addEventListener("click", () => {
+								document.querySelector(".description-content + .more-btn").click()
+							})
+						}, btn)
 						
 						target.parentNode.append(btn)
 						
@@ -233,26 +236,27 @@ pageInit.profile = () => {
 						update()
 					})
 				})
-				.$watch(".profile-currently-wearing", wearing => {
+				.$watch(".profile-tabs", tabs => {
+					tabs.parentNode.style.display = "none"
+				})
+				.$watch(".btr-wrapper-CurrentlyWearing", wearing => {
 					const toggleItems = html`<span class="btr-toggle-items btn-control btn-control-sm">Show Items</span>`
 					profileContainer.$find(".profile-avatar-left").parentNode.append(toggleItems)
 					
-					const clone = wearing.cloneNode(false)
-					clone.classList.add("btr-currently-wearing", "stroke-muted", "stroke-standard", "shadow-transient-high")
-					clone.append(...wearing.childNodes)
-					toggleItems.after(clone)
+					wearing.classList.add("btr-currently-wearing", "stroke-muted", "stroke-standard", "shadow-transient-high")
+					toggleItems.after(wearing)
 					
 					const onClick = ev => {
-						if(!ev.composedPath().includes(clone) && ev.target !== toggleItems) {
+						if(!ev.composedPath().includes(wearing) && ev.target !== toggleItems) {
 							toggle()
 						}
 					}
 					
 					const toggle = () => {
-						clone.classList.toggle("visible")
-						toggleItems.textContent = clone.classList.contains("visible") ? "Hide Items" : "Show Items"
+						wearing.classList.toggle("visible")
+						toggleItems.textContent = wearing.classList.contains("visible") ? "Hide Items" : "Show Items"
 						
-						if(clone.classList.contains("visible")) {
+						if(wearing.classList.contains("visible")) {
 							document.$on("click", onClick)
 						} else {
 							document.$off("click", onClick)
@@ -261,17 +265,14 @@ pageInit.profile = () => {
 					
 					toggleItems.$on("click", toggle)
 				})
-				.$watch(".profile-store", store => {
-					const clone = store.cloneNode(false)
-					clone.append(...store.childNodes)
-					
-					newCont.$find(".placeholder-store").replaceWith(clone)
+				.$watch(".btr-wrapper-Friends", friends => {
+					newCont.$find(".placeholder-friends").replaceWith(friends)
 				})
-				.$watch(".profile-collections", collections => {
-					const clone = collections.cloneNode(false)
-					clone.append(...collections.childNodes)
-					
-					newCont.$find(".placeholder-collections").replaceWith(clone)
+				.$watch(".btr-wrapper-Store", store => {
+					newCont.$find(".placeholder-store").replaceWith(store)
+				})
+				.$watch(".btr-wrapper-Collections", collections => {
+					newCont.$find(".placeholder-collections").replaceWith(collections)
 				})
 			
 			const gamesPromise = RobloxApi.games.getUserGames(userId, 50)
@@ -997,24 +998,20 @@ pageInit.profile = () => {
 			initFavorites()
 			
 			if(SETTINGS.get("profile.embedInventoryEnabled")) {
-				newCont.$find(".btr-profile-inventory").style.display = ""
-				
 				$.ready(() => {
-					newCont.$find(".placeholder-inventory").replaceWith(
-						html`<iframe id="btr-injected-inventory" src="/users/${userId}/inventory" scrolling="no">`
-					)
+					RobloxApi.inventory.canViewInventory(userId).then(result => {
+						if(result?.canView) {
+							newCont.$find(".btr-profile-inventory").style.display = ""
+							
+							newCont.$find(".placeholder-inventory").replaceWith(
+								html`<iframe id="btr-injected-inventory" src="/users/${userId}/inventory" scrolling="no">`
+							)
+						}
+					})
 				})
 			}
 			
 			profileContainer.after(newCont)
-		})
-			
-		document.$watch(".profile-container", angularContainer => {
-			// rescue necessary elements and then remove the angular container to stop stuff from loading
-			const friends = angularContainer.$find("#friends-carousel-container")
-			if(friends) { angularContainer.before(friends) }
-			
-			angularContainer.remove()
 		})
 	})
 }

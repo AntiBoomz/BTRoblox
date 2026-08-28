@@ -1266,8 +1266,15 @@ pageInit.www = () => {
 	
 	const headWatcher = document.$watch(">head").$then()
 	const bodyWatcher = document.$watch(">body", body => {
-		body.classList.toggle("btr-no-hamburger", SETTINGS.get("navigation.noHamburger"))
-		body.classList.toggle("btr-hide-ads", SETTINGS.get("general.hideAds"))
+		const update = () => {
+			body.classList.toggle("btr-no-hamburger", SETTINGS.get("navigation.noHamburger"))
+			body.classList.toggle("btr-hide-ads", SETTINGS.get("general.hideAds"))
+		}
+		
+		SETTINGS.onChange("navigation.noHamburger", update)
+		SETTINGS.onChange("general.hideAds", update)
+		
+		update()
 	}).$then()
 
 	headWatcher.$watch(`meta[name="user-data"]`, meta => {
@@ -1414,28 +1421,22 @@ pageInit.www = () => {
 	
 	if(SETTINGS.get("general.higherRobuxPrecision")) {
 		injectScript.call("higherRobuxPrecision", () => {
-			let hijackTruncValue = false
-
-			onSet(window, "CoreUtilities", CoreUtilities => {
-				hijackFunction(CoreUtilities.abbreviateNumber, "getTruncValue", (target, thisArg, args) => {
-					if(hijackTruncValue && args.length === 1) {
-						try {
-							return target.apply(thisArg, [args[0], 100_000, null, 2])
-						} catch(ex) {
-							console.error(ex)
-						}
-					}
-
-					return target.apply(thisArg, args)
-				})
-			})
-
 			reactHook.hijackConstructor(
-				props => "robuxAmount" in props && !("isEligibleForVng" in props),
+				props => "isGetCurrencyCallDone" in props && "robuxAmount" in props && !("isEligibleForVng" in props),
 				(target, thisArg, args) => {
-					hijackTruncValue = true
 					const result = target.apply(thisArg, args)
-					hijackTruncValue = false
+					
+					try {
+						const truncNumber = Roblox["core-scripts"].format.number.truncNumber
+						const robuxAmount = args[0].robuxAmount
+						
+						const label = reactHook.queryElement(result, x => x.props.id === "nav-robux-amount")
+						
+						if(label && label.props.children === truncNumber(robuxAmount)) {
+							label.props.children = truncNumber(robuxAmount, 100_000, null, 2)
+						}
+					} catch {}
+					
 					return result
 				}
 			)
@@ -1463,6 +1464,63 @@ pageInit.www = () => {
 			const accessoryAssetTypeIds = [8, 41, 42, 43, 44, 45, 46, 47, 57, 58]
 			const layeredAssetTypeIds = [64, 65, 66, 67, 68, 69, 70, 71, 72]
 			
+			const addAssetToAvatar = (target, thisArg, args) => {
+				const result = target.apply(thisArg, args)
+				const assets = [args[0], ...args[1]]
+				
+				let accessoriesLeft = 10
+				let layeredLeft = 10
+				
+				for(let i = 0; i < assets.length; i++) {
+					const asset = assets[i]
+					const assetTypeId = asset?.assetType?.id
+					
+					const isAccessory = accessoryAssetTypeIds.includes(assetTypeId)
+					const isLayered = layeredAssetTypeIds.includes(assetTypeId) || assetTypeId === 41
+					
+					let valid = true
+					
+					if(isAccessory || isLayered) {
+						if(isAccessory && accessoriesLeft <= 0) {
+							valid = false
+						}
+						
+						if(isLayered && layeredLeft <= 0) {
+							valid = false
+						}
+						
+						if(!settings.avatar.removeLayeredLimits && layeredAssetTypeIds.includes(assetTypeId)) {
+							if(!result.includes(asset)) {
+								valid = false
+							}
+						}
+					} else {
+						valid = result.includes(asset)
+					}
+					
+					if(valid) {
+						if(isAccessory) { accessoriesLeft-- }
+						if(isLayered) { layeredLeft-- }
+					} else {
+						assets.splice(i--, 1)
+					}
+				}
+				
+				return assets
+			}
+			
+			hijackFunction(Object, "defineProperty", (target, thisArg, args) => {
+				try {
+					const [obj, key, prop] = args
+					
+					if(key === "addAssetToAvatar" && obj?.__esModule && typeof prop?.get === "function") {
+						args[2] = { enumerable: true, value: new Proxy(prop.get(obj, key, obj), { apply: addAssetToAvatar }) }
+					}
+				} catch {}
+				
+				return target.apply(thisArg, args)
+			})
+			
 			onSet(window, "Roblox", Roblox => {
 				onSet(Roblox, "AvatarAccoutrementService", AvatarAccoutrementService => {
 					hijackFunction(AvatarAccoutrementService, "getAdvancedAccessoryLimit", (target, thisArg, args) => {
@@ -1473,50 +1531,7 @@ pageInit.www = () => {
 						return target.apply(thisArg, args)
 					})
 					
-					hijackFunction(AvatarAccoutrementService, "addAssetToAvatar", (target, thisArg, args) => {
-						const result = target.apply(thisArg, args)
-						const assets = [args[0], ...args[1]]
-						
-						let accessoriesLeft = 10
-						let layeredLeft = 10
-						
-						for(let i = 0; i < assets.length; i++) {
-							const asset = assets[i]
-							const assetTypeId = asset?.assetType?.id
-							
-							const isAccessory = accessoryAssetTypeIds.includes(assetTypeId)
-							const isLayered = layeredAssetTypeIds.includes(assetTypeId) || assetTypeId === 41
-							
-							let valid = true
-							
-							if(isAccessory || isLayered) {
-								if(isAccessory && accessoriesLeft <= 0) {
-									valid = false
-								}
-								
-								if(isLayered && layeredLeft <= 0) {
-									valid = false
-								}
-								
-								if(!settings.avatar.removeLayeredLimits && layeredAssetTypeIds.includes(assetTypeId)) {
-									if(!result.includes(asset)) {
-										valid = false
-									}
-								}
-							} else {
-								valid = result.includes(asset)
-							}
-							
-							if(valid) {
-								if(isAccessory) { accessoriesLeft-- }
-								if(isLayered) { layeredLeft-- }
-							} else {
-								assets.splice(i--, 1)
-							}
-						}
-						
-						return assets
-					})
+					hijackFunction(AvatarAccoutrementService, "addAssetToAvatar", addAssetToAvatar)
 				})
 			})
 		})

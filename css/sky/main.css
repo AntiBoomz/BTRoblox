@@ -6,10 +6,6 @@ html body {
 	background: #9AE4E8 url(/res/bg_sky.webp) left 40px no-repeat fixed !important;
 }
 
-html body.btr-no-hamburger {
-	background-position-x: 175px !important;
-}
-
 #container-main > .content,
 #MasterContainer #BodyWrapper {
 	position: relative;

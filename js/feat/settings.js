@@ -4,7 +4,7 @@ const DEFAULT_SETTINGS = {
 	_version: 2,
 	general: {
 		theme: { value: "default", validValues: ["default", "simblk", "sky", "red"] },
-		themeHotReload: { value: false, hidden: true },
+		themeHotReload: { value: false, hidden: "devOnly" },
 
 		hideAds: { value: false },
 		hideChat: { value: false },
@@ -37,9 +37,6 @@ const DEFAULT_SETTINGS = {
 		hideFriendActivity: { value: false },
 		instantGameHoverAction: { value: false },
 		showRecommendationPlayerCount: { value: true }
-	},
-	messages: {
-		enabled: { value: true }
 	},
 	navigation: {
 		enabled: { value: true },
@@ -109,7 +106,7 @@ const SETTINGS = {
 	
 	loadedSettings: JSON.parse(JSON.stringify(
 		DEFAULT_SETTINGS,
-		(key, value) => (key === "validValues" ? undefined : value)
+		(key, value) => (key === "validValues" || key === "hidden" ? undefined : value)
 	)),
 	
 	_save() {
