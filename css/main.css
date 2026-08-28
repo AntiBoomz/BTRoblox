@@ -168,10 +168,10 @@
 				white-space: nowrap;
 			}
 			
-			&:hover .btr-feeddesc {
+			/* &:hover .btr-feeddesc {
 				max-height: 106px;
 				margin-bottom: 4px;
-			}
+			} */
 
 			.btr-feeddesc {
 				overflow: hidden;
