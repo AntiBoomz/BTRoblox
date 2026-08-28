@@ -1061,7 +1061,12 @@ document.addEventListener("btroblox/init", ev => {
 					continue
 				}
 				
-				if(info.filter(args[0])) {
+				let valid = false
+				
+				try { valid = info.filter(args[0]) }
+				catch(ex) { console.error(ex) }
+				
+				if(valid) {
 					return info.handler(function(...args) {
 						return reactHook.nextConstructorReplace(render, index + 1, this, args)
 					}, thisArg, args)
@@ -1073,7 +1078,7 @@ document.addEventListener("btroblox/init", ev => {
 		
 		renderProxyProps: {
 			apply(render, thisArg, args) {
-				if(reactHook.renderTarget) {
+				if(reactHook.renderTarget && args[0]) {
 					return reactHook.nextConstructorReplace(render, 0, thisArg, args)
 				}
 				
@@ -1089,9 +1094,11 @@ document.addEventListener("btroblox/init", ev => {
 			
 			if(typeof type === "function") {
 				if(type.prototype?.isReactComponent) {
-					target = type.prototype
-					key = "render"
-					render = type.prototype.render
+					// target = type.prototype
+					// key = "render"
+					// render = type.prototype.render
+					//
+					// react components are not supported since props are accessed differently (this.props rather than passed as argument)
 				} else {
 					target = result
 					key = "type"
