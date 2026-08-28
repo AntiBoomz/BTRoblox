@@ -237,16 +237,61 @@ const Navigation = {
 		})
 		*/
 		
+		Navigation.register("header_charts", {
+			label: "Show Charts",
+			enabled: true,
+			
+			init() {
+				document.$watch("#header").$then().$watch("ul.rbx-navbar", navbar => {
+					const btn = navbar.$find(`#nav-charts-md-link, #nav-charts-sm-link`)?.parentNode
+					
+					if(btn) {
+						this.addNode(btn)
+					}
+				}, { continuous: true })
+			}
+		})
+		
+		Navigation.register("header_marketplace", {
+			label: "Show Marketplace",
+			enabled: true,
+			
+			init() {
+				document.$watch("#header").$then().$watch("ul.rbx-navbar", navbar => {
+					const btn = navbar.$find(`#nav-marketplace-md-link, #nav-marketplace-sm-link`)?.parentNode
+					
+					if(btn) {
+						this.addNode(btn)
+					}
+				}, { continuous: true })
+			}
+		})
+		
+		Navigation.register("header_create", {
+			label: "Show Create",
+			enabled: true,
+			
+			init() {
+				document.$watch("#header").$then().$watch("ul.rbx-navbar", navbar => {
+					const btn = navbar.$find(`#header-develop-md-link, #header-develop-sm-link`)?.parentNode
+					
+					if(btn) {
+						this.addNode(btn)
+					}
+				}, { continuous: true })
+			}
+		})
+		
 		Navigation.register("header_robux", {
 			label: "Show Robux",
 			enabled: false,
 			
 			init() {
 				document.$watch("#header").$then().$watch("ul.rbx-navbar", navbar => {
-					const robuxBtn = navbar.$find(`.rbx-navbar a[href^="/robux"], .rbx-navbar a[href^="/upgrades/robux"]`)?.parentNode || navbar.$find(`#navigation-robux-container, #navigation-robux-mobile-container`)
+					const btn = navbar.$find(`.rbx-navbar a[href^="/robux"], .rbx-navbar a[href^="/upgrades/robux"]`)?.parentNode || navbar.$find(`#navigation-robux-container, #navigation-robux-mobile-container`)
 					
-					if(robuxBtn) {
-						this.addNode(robuxBtn)
+					if(btn) {
+						this.addNode(btn)
 					}
 				}, { continuous: true })
 			}
@@ -350,6 +395,32 @@ const Navigation = {
 			}
 		})
 		
+		Navigation.register("sidebar_profile", {
+			label: "Show Profile",
+			
+			selector: ".left-nav ul",
+			selector2: "li:has(a[href*='roblox.com/users/profile'])",
+			
+			enabled: true,
+			
+			update(node) {
+				node.style.display = this.enabled ? "" : "none"
+			}
+		})
+		
+		Navigation.register("sidebar_plus", {
+			label: "Show Roblox Plus",
+			
+			selector: ".left-nav ul",
+			selector2: "li:not(.padding-top-xsmall):has(a[href*='roblox.com/plus'])",
+			
+			enabled: true,
+			
+			update(node) {
+				node.style.display = this.enabled ? "" : "none"
+			}
+		})
+		
 		Navigation.register("sidebar_messages", {
 			label: "Show Messages",
 			
@@ -410,6 +481,32 @@ const Navigation = {
 			}
 		})
 		
+		Navigation.register("sidebar_avatar", {
+			label: "Show Avatar",
+			
+			selector: ".left-nav ul",
+			selector2: "li:has(a[href*='roblox.com/my/avatar'])",
+			
+			enabled: true,
+			
+			update(node) {
+				node.style.display = this.enabled ? "" : "none"
+			}
+		})
+		
+		Navigation.register("sidebar_inventory", {
+			label: "Show Inventory",
+			
+			selector: ".left-nav ul",
+			selector2: "li:has(a[href*='roblox.com/users/inventory'])",
+			
+			enabled: true,
+			
+			update(node) {
+				node.style.display = this.enabled ? "" : "none"
+			}
+		})
+		
 		Navigation.register("sidebar_trade", {
 			label: "Show Trade",
 			
@@ -430,7 +527,7 @@ const Navigation = {
 			selector: "#btr-placeholder-money",
 			html: html`
 				<li id=btr-nav-money>
-					<a href="/transactions" id=nav-money class="content-emphasis text-title-large flex items-center gap-small padding-left-xsmall padding-right-xxsmall radius-medium relative clip group/interactable focus-visible:outline-focus disabled:outline-none">
+					<a href="/transactions" id=nav-money class="content-emphasis text-title-large flex items-center gap-small padding-left-xsmall padding-right-xxsmall radius-medium relative clip group/interactable focus-visible:outline-focus disabled:outline-none ${location.pathname.startsWith("/transactions") ? "bg-surface-300" : ""}">
 						<div role="presentation" class="absolute inset-[0] transition-colors group-hover/interactable:bg-[var(--color-state-hover)] group-active/interactable:bg-[var(--color-state-press)] group-disabled/interactable:bg-none"></div>
 						<span class="size-1000 grow-0 shrink-0 basis-auto flex justify-center items-center">
 							<span role="presentation" class="grow-0 shrink-0 basis-auto icon icon-regular-hand-two-arrows-horizontal size-[var(--icon-size-large)]"></span>
@@ -438,6 +535,19 @@ const Navigation = {
 						<span class="min-width-0 text-truncate-end text-no-wrap">Transactions</span>
 					</a>
 				</li>`,
+		})
+		
+		Navigation.register("sidebar_blog", {
+			label: "Show Blog",
+			
+			selector: ".left-nav ul",
+			selector2: "li:has(a[href*='blog.roblox.com'])",
+			
+			enabled: true,
+			
+			update(node) {
+				node.style.display = this.enabled ? "" : "none"
+			}
 		})
 		
 		Navigation.register("sidebar_blogfeed", {
@@ -496,10 +606,23 @@ const Navigation = {
 		})
 		
 		Navigation.register("sidebar_giftcards", {
-			label: "Show Gift Cards",
+			label: "Show Buy Gift Cards",
 			
 			selector: ".left-nav ul",
 			selector2: "li:has(a[href*='roblox.com/giftcards'])",
+			
+			enabled: true,
+			
+			update(node) {
+				node.style.display = this.enabled ? "" : "none"
+			}
+		})
+		
+		Navigation.register("sidebar_plus_card", {
+			label: "Show Roblox Plus Card",
+			
+			selector: ".left-nav ul",
+			selector2: "li.padding-top-xsmall:has(a[href*='/plus'])",
 			
 			enabled: true,
 			
