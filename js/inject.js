@@ -230,7 +230,7 @@ document.addEventListener("btroblox/init", ev => {
 	
 	//
 	
-	const formatNumber = num => String(num).replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/yg, "$1,") // Intl.NumberFormat().format(num)
+	const formatNumber = num => String(num).replace(/(\d\d*?)(?=(?:\d{3})+(?:\.|$))/yg, "$1,")
 	
 	const RobuxToCash = {
 		selectedRobuxToCashOption: selectedRobuxToCashOption,
@@ -240,11 +240,12 @@ document.addEventListener("btroblox/init", ev => {
 		},
 		convert(robux) {
 			const option = this.getSelectedOption()
+			const numFractions = option.cash.includes(".") ? option.cash.length - option.cash.indexOf(".") - 1 : 0
 			
-			const cash = Math.round((robux * option.cash) / option.robux + 0.4999) / 100
-			const cashString = formatNumber(cash.toFixed(option.currency.numFractions))
+			const cash = (robux * +option.cash) / +option.robux + 0.49999 / 10**numFractions
+			const cashString = formatNumber(cash.toFixed(numFractions))
 			
-			return `${option.currency.symbol}${cashString}`
+			return `${option.symbol}${cashString}`
 		}
 	}
 	

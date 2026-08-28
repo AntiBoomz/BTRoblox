@@ -126,9 +126,18 @@ const SettingsModal = {
 						
 						<div style="display: inline-block; width: 50%; padding: 2px; float: right;">
 							<label style="">Robux to Cash Conversion Rate</label>
-							<span style="width: calc(100% - 14px); display: inline-flex;">
-								<select id=btr-robuxToCash-currency style="flex: 0 1 auto"></select>
-								<select id=btr-robuxToCash-rate style="flex: 1 1 auto; min-width: 0; margin-left: 4px"></select>
+							<span style="width: calc(100% - 14px); display: inline-flex; margin-top: 2px;">
+								<select id=btr-robuxToCash-currency style="flex: 0 1 auto">
+									<option value=None>None</option>
+									<option value=Custom>Custom</option>
+									<hr></hr>
+								</select>
+								<input id=btr-robuxToCash-cash type=text placeholder="$4.99" pattern="^.*?\\d+(\\.\\d+)?$"></input>
+								<span id=btr-robuxToCash-robux-container>
+									<span id=btr-robuxToCash-robux-symbol></span>
+									<input id=btr-robuxToCash-robux type=text placeholder="500" pattern="^\\d+$"></input>
+								</span>
+								<select id=btr-robuxToCash-rate style="flex: 1 1 auto; min-width: 0; margin-left: 4px; display: none;"></select>
 							</span>
 							<span class=btr-setting-reset-button path=general.robuxToUSDRate></span>
 						</div>
@@ -334,79 +343,59 @@ const SettingsModal = {
 		
 		{ // RobuxToCash
 			const currencySelect = this.settingsDiv.$find("#btr-robuxToCash-currency")
-			const rateSelect = this.settingsDiv.$find("#btr-robuxToCash-rate")
-
-			currencySelect.replaceChildren()
-			rateSelect.replaceChildren()
-
-			const currencies = Object.values(RobuxToCash.Currencies)
+			const cashInput = this.settingsDiv.$find("#btr-robuxToCash-cash")
+			const robuxInput = this.settingsDiv.$find("#btr-robuxToCash-robux")
 			
-			for(const currency of currencies.filter(x => !x.usdRate))  {
-				currencySelect.append(html`<option>${currency.name}</option>`)
+			for(const option of RobuxToCash.Options) {
+				currencySelect.append(html`<option value=${option.name}>${option.name}</option>`)
 			}
 			
-			for(const currency of currencies.filter(x => x.usdRate).sort((a, b) => (a.name < b.name ? -1 : 1))) {
-				currencySelect.append(html`<option title="Rates are estimations based on USD-${currency.name} exchange rate on ${RobuxToCash.UpdateDate}" value="${currency.name}">${currency.name}*</option>`)
+			const currencyChanged = () => {
+				if(currencySelect.value === "Custom") {
+					const savedSymbolCash = (cashInput.value || "$4.99").replace(/\\/g, "\\\\").replace(/,/g, "\\c")
+					const savedRobux = (robuxInput.value || "500").replace(/\\/g, "\\\\").replace(/,/g, "\\c")
+					
+					const savedValue = `Custom,${savedSymbolCash},${savedRobux}`
+					SETTINGS.set("general.robuxToUSDRate", savedValue)
+				} else {
+					SETTINGS.set("general.robuxToUSDRate", currencySelect.value)
+				}
 			}
-
-			const setRate = () => {
-				SETTINGS.set("general.robuxToUSDRate", rateSelect.value)
-			}
-
-			currencySelect.$on("change", () => {
-				SETTINGS.set("general.robuxToUSDRate", RobuxToCash.OptionLists[currencySelect.value][0].name)
+			
+			currencySelect.$on("change", currencyChanged)
+			
+			cashInput.$on("change", () => {
+				currencySelect.value = "Custom"
+				currencyChanged()
 			})
-
-			rateSelect.$on("change", setRate)
-
-			const updateRate = () => {
-				const name = RobuxToCash.getSelectedOption().currency.name
-				currencySelect.value = name
-
-				rateSelect.replaceChildren()
-				let selected = false
-
-				for(const option of RobuxToCash.OptionLists[name]) {
-					let fullText = ""
-					
-					if(option.name === "none") {
-						fullText = "No currency selected"
-					} else {
-						const display = option.name.includes("devex") ? "DevEx"
-							: option.name.includes("Subscription") ? "Subscription"
-							: option.name.includes("Premium") ? "Premium"
-							: "Regular"
-						
-						const rateText = option.currency.usdRate ?
-							`${option.currency.symbol}${(option.cash / 100).toFixed(option.currency.numFractions)} ≈ US$${(option.usdCash / 100).toFixed(2)} = R$${option.robux}`
-							: `${option.currency.symbol}${(option.cash / 100).toFixed(option.currency.numFractions)} = R$${option.robux}`
-					
-						fullText = `${display} (${rateText})`
-					}
-					
-					rateSelect.append(html`<option value="${option.name}">${fullText}</option>`)
-
-					if(option.name === SETTINGS.get("general.robuxToUSDRate")) {
-						selected = true
-					}
-				}
+			
+			robuxInput.$on("change", () => {
+				currencySelect.value = "Custom"
+				currencyChanged()
+			})
+			
+			cashInput.$on("keydown", ev => ev.keyCode === 13 && cashInput.blur())
+			robuxInput.$on("keydown", ev => ev.keyCode === 13 && robuxInput.blur())
+			
+			const update = () => {
+				const option = RobuxToCash.getSelectedOption()
 				
-				if(selected) {
-					rateSelect.value = SETTINGS.get("general.robuxToUSDRate")
-				} else {
-					rateSelect.value = rateSelect.options[0].value
-					setRate()
-				}
+				currencySelect.value = option.name
 				
-				if(name === "None") {
-					rateSelect.setAttribute("disabled", "")
+				if(option.name === "None") {
+					cashInput.setAttribute("disabled", "")
+					robuxInput.setAttribute("disabled", "")
 				} else {
-					rateSelect.removeAttribute("disabled")
+					cashInput.removeAttribute("disabled")
+					robuxInput.removeAttribute("disabled")
+					
+					cashInput.value = `${option.symbol}${option.cash}`
+					robuxInput.value = option.robux
 				}
 			}
-
-			SETTINGS.onChange("general.robuxToUSDRate", updateRate)
-			updateRate()
+			
+			SETTINGS.onChange("general.robuxToUSDRate", update)
+			update()
 		}
 
 		{ // Reset Settings
