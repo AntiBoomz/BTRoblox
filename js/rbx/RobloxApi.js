@@ -234,7 +234,7 @@ const RobloxApi = {
 	},
 	assetdelivery: {
 		requestAssetV2: (urlParams, params) => {
-			if(!IS_BACKGROUND_PAGE && params?.browserAssetRequest) {
+			if(!IS_BACKGROUND_PAGE && (params?.browserAssetRequest || params?.format)) {
 				return RobloxApi.assetdelivery.requestAssetV2_bg(urlParams, params)
 			}
 			
