@@ -21,21 +21,16 @@ const SHARED_DATA = {
 				removeRuleIds: [9001],
 				addRules: [{
 					action: { type: "redirect", redirect: { url: url.toString() } },
-					condition: { urlFilter: "https://www.roblox.com/?btr_settings" },
+					condition: { urlFilter: "|https://*.roblox.com/?btr_settings|" },
 					id: 9001
 				}]
 			})
 		} else {
-			const thisIndex = this.payloadIndex = (this.payloadIndex || 0) + 1
-			
-			if(this.payloadScript) {
-				this.payloadScript.unregister()
-				this.payloadScript = null
-			}
-			
 			const details = chrome.runtime.getManifest().content_scripts[0]
 			
-			browser.contentScripts.register({
+			this.payloadScript?.then(x => x.unregister())
+			
+			this.payloadScript = browser.contentScripts.register({
 				matches: details.matches,
 				excludeMatches: details.exclude_matches,
 				js: [{
@@ -43,12 +38,6 @@ const SHARED_DATA = {
 				}],
 				allFrames: details.all_frames,
 				runAt: details.run_at
-			}).then(payloadScript => {
-				if(this.payloadIndex === thisIndex) {
-					this.payloadScript = payloadScript
-				} else {
-					payloadScript.unregister()
-				}
 			})
 		}
 	},
@@ -92,7 +81,7 @@ const SHARED_DATA = {
 			
 			if(syncLoadErrorCounter < 3) {
 				const request = new XMLHttpRequest()
-				request.open("HEAD", "https://www.roblox.com/?btr_settings", false)
+				request.open("HEAD", "/?btr_settings", false)
 				
 				try {
 					request.send()
