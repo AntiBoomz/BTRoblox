@@ -39,27 +39,12 @@ document.addEventListener("btroblox/init", ev => {
 		})
 	}
 	
-	const hijackFunction = (root, keys, callback) => {
-		if(!Array.isArray(keys)) { keys = [keys] }
-		
-		const next = (parent, index) => {
-			const key = keys[index]
-			
-			if(index >= keys.length - 1) {
-				const proxy = new Proxy(parent[key], { apply: callback })
-				
-				Object.defineProperty(parent, key, {
-					value: proxy,
-					configurable: true,
-				})
-				
-				return proxy
-			}
-			
-			onSet(parent, key, child => next(child, index + 1))
+	const hijackFunction = (...args) => {
+		if(args.length === 2) {
+			return new Proxy(args[0], { apply: args[1] })
 		}
 		
-		next(root, 0)
+		return args[0][args[1]] = new Proxy(args[0][args[1]], { apply: args[2] })
 	}
 	
 	const xhrTransforms = []
