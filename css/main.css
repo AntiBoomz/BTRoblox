@@ -2,6 +2,8 @@
 
 #btr-navbar-messages > a,
 #btr-navbar-friends > a {
+	display: block;
+	
 	padding: 4px;
 	border-radius: 8px;
 	background: none;
