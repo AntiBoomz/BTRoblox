@@ -509,7 +509,7 @@
 }
 
 .btr-settings-content checkbox input:checked + label:before {
-	background-image: url(/res/icon_checkbox.svg);
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' xml:space='preserve' preserveAspectRatio='none' viewBox='0 0 28 28'%3E%3Cpath fill='none' stroke='%23fff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round' stroke-miterlimit='10' d='m5 14 6 6L23 8'/%3E%3C/svg%3E");
 	background-color: #00A2FF;
 }
 
