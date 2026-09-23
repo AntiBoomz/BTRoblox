@@ -1269,9 +1269,11 @@ pageInit.www = () => {
 		const update = () => {
 			body.classList.toggle("btr-no-hamburger", SETTINGS.get("navigation.noHamburger"))
 			body.classList.toggle("btr-hide-ads", SETTINGS.get("general.hideAds"))
+			body.classList.toggle("btr-small-chat", SETTINGS.get("general.smallChatButton"))
 		}
 		
 		SETTINGS.onChange("navigation.noHamburger", update)
+		SETTINGS.onChange("general.smallChatButton", update)
 		SETTINGS.onChange("general.hideAds", update)
 		
 		update()
@@ -1541,35 +1543,6 @@ pageInit.www = () => {
 	
 	if(SETTINGS.get("general.hideChat")) {
 		bodyWatcher.$watch("#chat-container", cont => cont.remove())
-	} else {
-		if(SETTINGS.get("general.smallChatButton")) {
-			bodyWatcher.$watch("#chat-container", cont => cont.classList.add("btr-small-chat-button"))
-			
-			injectScript.call("smallChatButton", () => {
-				angularHook.hijackModule("chat", {
-					chatController(target, thisArg, args, argsMap) {
-						const result = target.apply(thisArg, args)
-
-						try {
-							const { $scope, chatUtility } = argsMap
-
-							const library = $scope.chatLibrary
-							const width = library.chatLayout.widthOfChat
-
-							$scope.$watch(() => library.chatLayout.collapsed, value => {
-								library.chatLayout.widthOfChat = value ? 54 + 6 : width
-								chatUtility.updateDialogsPosition(library)
-							})
-						} catch(ex) {
-							console.error(ex)
-							if(IS_DEV_MODE) { alert("hijackAngular Error") }
-						}
-
-						return result
-					}
-				})
-			})
-		}
 	}
 	
 	// Experiments

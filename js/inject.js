@@ -1991,30 +1991,6 @@ document.addEventListener("btroblox/init", ev => {
 				})
 			})
 		},
-		"smallChatButton": () => {
-			angularHook.hijackModule("chat", {
-				chatController(target, thisArg, args, argsMap) {
-					const result = target.apply(thisArg, args)
-
-					try {
-						const { $scope, chatUtility } = argsMap
-
-						const library = $scope.chatLibrary
-						const width = library.chatLayout.widthOfChat
-
-						$scope.$watch(() => library.chatLayout.collapsed, value => {
-							library.chatLayout.widthOfChat = value ? 54 + 6 : width
-							chatUtility.updateDialogsPosition(library)
-						})
-					} catch(ex) {
-						console.error(ex)
-						if(IS_DEV_MODE) { alert("hijackAngular Error") }
-					}
-
-					return result
-				}
-			})
-		},
 		"experiments": () => {
 			const modified = {}
 			const initial = {}

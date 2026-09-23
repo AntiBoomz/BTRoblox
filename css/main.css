@@ -114,27 +114,14 @@
 	}
 }
 
-/* New Chat */
+/* Chat */
 
-.btr-small-chat-button.chat-container.collapsed .chat-main {
+.btr-small-chat .react-chat-root > section:has([aria-expanded="false"]) {
 	width: 54px;
-}
-
-.btr-small-chat-button.chat-container #chat-group-create-btn {
-	display: none;
-}
-
-.btr-small-chat-button.chat-container #chat-friend-list {
-	max-height: 362px;
-}
-
-.btr-small-chat-button.chat-container .chat-main .chat-header .notification-red {
-	margin: -10px -16px 0 0;
-}
-
-.btr-small-chat-button.chat-container.collapsed .chat-header .chat-header-title {
-	height: 16px;
-	overflow: hidden;
+	
+	> button {
+		display: none;
+	}
 }
 
 /* Sidebar Blog Feed */
