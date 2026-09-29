@@ -1311,26 +1311,22 @@ document.addEventListener("btroblox/init", ev => {
 	
 	const injectedFunctions = {
 		// Insert injected functions here,
-		"avatar": () => {
-			let openAdvancedAccessories
-			
-			reactHook.hijackConstructor(
-				props => !openAdvancedAccessories && "openAdvancedAccessories" in props,
-				(target, thisArg, args) => {
-					openAdvancedAccessories = args[0].openAdvancedAccessories
-					return target.apply(thisArg, args)
+		"adblock.js": () => {
+			util.ready(() => {
+				if(window.Roblox?.PrerollPlayer) {
+					window.Roblox.PrerollPlayer.waitForPreroll = x => $.Deferred().resolve(x)
 				}
-			)
-			
-			reactHook.inject(".redraw-avatar", redraw => {
-				redraw.classList.add("btr-redraw-avatar")
-				
-				redraw.append(
-					reactHook.createElement("a", {
-						className: "text-link btr-advanced-button",
-						onClick: () => openAdvancedAccessories(),
-					}, "Advanced")
-				)
+
+				if(window.Roblox?.VideoPreRollDFP) {
+					window.Roblox.VideoPreRollDFP = null
+				}
+			})
+		},
+		"addBTRSettings": () => {
+			reactHook.inject("#settings-popover-menu", elem => {
+				elem.prepend(reactHook.createElement("li", {
+					dangerouslySetInnerHTML: { __html: `<a class="rbx-menu-item btr-settings-toggle">BTR Settings</a>`}
+				}))
 			})
 		},
 		"assetRefinement": () => {
@@ -1428,432 +1424,26 @@ document.addEventListener("btroblox/init", ev => {
 				})
 			})
 		},
-		"fullRangeBodyColors": () => {
-			let forceRefreshThumbnail
+		"avatar": () => {
+			let openAdvancedAccessories
 			
 			reactHook.hijackConstructor(
-				props => !forceRefreshThumbnail && "forceRefreshThumbnail" in props,
+				props => !openAdvancedAccessories && "openAdvancedAccessories" in props,
 				(target, thisArg, args) => {
-					forceRefreshThumbnail = args[0].forceRefreshThumbnail
+					openAdvancedAccessories = args[0].openAdvancedAccessories
 					return target.apply(thisArg, args)
 				}
 			)
 			
-			contentScript.listen("forceRefreshThumbnail", () => {
-				forceRefreshThumbnail?.()
-			})
-			
-			contentScript.listen("skinColorError", () => {
-				Roblox.BootstrapWidgets.ToggleSystemMessage($(".alert-warning"), 100, 2000, "Failed to update skin tone.")
-			})
-			
-			hijackXHR(request => {
-				if(request.url.endsWith("/set-body-colors")) {
-					request.onResponse.push(() => {
-						contentScript.send("updateBodyColors")
-					})
-				}
-			})
-		},
-		"showOwnedAssets": () => {
-			const ownedAssets = {}
-			
-			contentScript.listen("updateOwnedAssets", changes => {
-				for(const [assetId, isOwned] of Object.entries(changes)) {
-					ownedAssets[+assetId]?.set(isOwned)
-				 }
-			})
-			
-			reactHook.hijackConstructor( // ItemCard
-				props => "unitsAvailableForConsumption" in props && "id" in props,
-				(target, thisArg, args) => {
-					const props = args[0]
-					const result = target.apply(thisArg, args)
-					
-					if(props.type === "Asset" && props.id) {
-						let state = ownedAssets[props.id]
-						
-						if(!state) {
-							state = reactHook.createGlobalState(false)
-							ownedAssets[props.id] = state
-							
-							contentScript.send("checkOwnedAsset", props.id)
-						}
-						
-						const owned = reactHook.useGlobalState(state)
-						
-						if(owned) {
-							result.props.className = (result.props.className ?? "") + " btr-owned"
-							
-							const parent = reactHook.queryElement(result, x => x.props.className?.includes("item-card-link"))
-							
-							if(parent) {
-								let children = parent.props.children
-								
-								if(!Array.isArray(children)) {
-									children = parent.props.children = children ? [children] : []
-								}
-								
-								children.unshift(reactHook.createElement("span", {
-									className: "btr-item-owned",
-									children: reactHook.createElement("span", {
-										className: "icon-checkmark-white-bold",
-										title: "You own this item"
-									})
-								}))
-							}
-						}
-					}
-					
-					return result
-				}
-			)
-		},
-		"redirectEvents": (fromSelector, toSelector) => {
-			const from = document.querySelector(fromSelector)
-			const to = document.querySelector(toSelector)
-			
-			if(!from || !to) {
-				console.log("redirectEvents fail", fromSelector, toSelector, from, to)
-				return
-			}
-			
-			const events = [
-				"cancel", "click", "close", "contextmenu", "copy", "cut", "auxclick", "dblclick",
-				"dragend", "dragstart", "drop", "focusin", "focusout", "input", "invalid",
-				"keydown", "keypress", "keyup", "mousedown", "mouseup", "paste", "pause", "play",
-				"pointercancel", "pointerdown", "pointerup", "ratechange", "reset", "seeked",
-				"submit", "touchcancel", "touchend", "touchstart", "volumechange", "drag", "dragenter",
-				"dragexit", "dragleave", "dragover", "mousemove", "mouseout", "mouseover", "pointermove",
-				"pointerout", "pointerover", "scroll", "toggle", "touchmove", "wheel", "abort",
-				"animationend", "animationiteration", "animationstart", "canplay", "canplaythrough",
-				"durationchange", "emptied", "encrypted", "ended", "error", "gotpointercapture", "load",
-				"loadeddata", "loadedmetadata", "loadstart", "lostpointercapture", "playing", "progress",
-				"seeking", "stalled", "suspend", "timeupdate", "transitionend", "waiting", "change",
-				"compositionend", "textInput", "compositionstart", "compositionupdate"
-			]
-			
-			const methods = [
-				"stopImmediatePropagation", "stopPropagation", "preventDefault",
-				"getModifierState", "composedPath",
-			]
-			
-			const callback = event => {
-				const clone = new event.constructor(event.type, new Proxy(event, {
-					get(target, prop) {
-						return prop === "bubbles" ? false : target[prop]
-					}
-				}))
+			reactHook.inject(".redraw-avatar", redraw => {
+				redraw.classList.add("btr-redraw-avatar")
 				
-				Object.defineProperties(clone, {
-					target: { value: event.target },
-					bubbles: { value: event.bubbles },
-				})
-				
-				for(const method of methods) {
-					if(typeof clone[method] === "function") {
-						clone[method] = new Proxy(clone[method], {
-							apply(target, thisArg, args) {
-								if(thisArg === clone) {
-									target.apply(thisArg, args)
-									return event[method].apply(event, args)
-								}
-								
-								return target.apply(thisArg, args)
-							}
-						})
-					}
-				}
-				
-				if(!to.dispatchEvent(clone)) {
-					event.preventDefault()
-				}
-			}
-			
-			for(const event of events) {
-				from.addEventListener(event, callback, { capture: true })
-			}
-		},
-		"initReactFriends": () => {
-			reactHook.hijackConstructor( // FriendsCarouselContainer
-				props => "profileUserId" in props && "carouselName" in props, 
-				(target, thisArg, args) => {
-					const props = args[0]
-					const carouselName = props.carouselName
-					
-					// disable MustHideConnections so that friends load in faster
-					reactHook.hijackUseState(
-						(value, index) => value === false && index == 4,
-						(value, initial) => initial ? true : value
-					)
-					
-					const result = target.apply(thisArg, args)
-					
-					// if MustHideConnect is enabled, communicate that to profile code somehow
-					if(reactHook.renderTarget?.state?.[4]?.[0] === false) {
-						const noFriendsLabel = reactHook.querySelector(result, ".friends-carousel-0-friends")
-						
-						if(noFriendsLabel) {
-							noFriendsLabel.props.className += " btr-friends-carousel-disabled"
-						}
-					}
-					
-					return result
-				}
-			)
-			
-			reactHook.hijackConstructor( // FriendsList
-				props => "friendsList" in props, 
-				(target, thisArg, args) => {
-					const props = args[0]
-					const friendsList = props.friendsList
-					const carouselName = props.carouselName
-					
-					let showSecondRow = false
-					
-					if(carouselName === "WebHomeFriendsCarousel") {
-						showSecondRow = settings.home.friendsSecondRow
-					} else if(carouselName === "WebProfileFriendsCarousel") {
-						showSecondRow = settings.home.friendsSecondRow
-						
-						// Fixes an issue where profile friends list shows one too few friends
-						props.isAddFriendsTileEnabled = false
-					}
-					
-					if(showSecondRow) {
-						reactHook.hijackUseState( // visibleFriendsList
-							(value, index) => value === friendsList,
-							(value, initial) => {
-								if(value && friendsList && !initial) {
-									let count = value.length * 2
-									
-									if(carouselName === "WebHomeFriendsCarousel") {
-										const isTwoLines = value.length < friendsList.length
-										localStorage.setItem("BTRoblox:homeFriendsIsTwoLines", isTwoLines ? "true" : "false")
-										
-										// account for Add Friends button
-										count += 1
-									}
-									
-									return friendsList.slice(0, count)
-								}
-								
-								return value
-							}
-						)
-					}
-					
-					const result = target.apply(thisArg, args)
-					
-					try { result.props.className = `${result.props.className ?? ""} btr-friends-list` }
-					catch(ex) { console.error(ex) }
-					
-					if(showSecondRow) {
-						try { result.props.className = `${result.props.className ?? ""} btr-friends-secondRow` }
-						catch(ex) { console.error(ex) }
-						
-						if(carouselName === "WebHomeFriendsCarousel") {
-							if(!friendsList && localStorage.getItem("BTRoblox:homeFriendsIsTwoLines") === "true") {
-								try { result.props.className = `${result.props.className ?? ""} btr-friends-loading-two-lines` }
-								catch(ex) { console.error(ex) }
-							}
-						}
-					}
-					
-					return result
-				}
-			)
-			
-			if(settings.home.friendsShowUsername) {
-				const friendsState = reactHook.createGlobalState({})
-				
-				hijackXHR(request => {
-					if(request.method === "POST" && request.url === "https://apis.roblox.com/user-profile-api/v1/user/profiles/get-profiles") {
-						request.onRequest.push(request => {
-							const json = JSON.parse(request.body)
-							
-							if(!json.fields.includes("names.username")) {
-								json.fields.push("names.username")
-							}
-							
-							request.body = JSON.stringify(json)
-						})
-						
-						request.onResponse.push(json => {
-							for(const user of json.profileDetails) {
-								friendsState.value[user.userId] = user
-							}
-							
-							friendsState.update()
-						})
-					}
-				})
-				
-				reactHook.hijackConstructor( // FriendTileContent
-					props => props.displayName && props.userProfileUrl,
-					(target, thisArg, args) => {
-						const result = target.apply(thisArg, args)
-						
-						try {
-							const userId = args[0].id
-							
-							const labels = reactHook.queryElement(result, x => x.props.className?.includes("friends-carousel-tile-labels"))
-							if(labels && Array.isArray(labels.props.children)) {
-								const friends = reactHook.useGlobalState(friendsState)
-								const friend = friends[userId]
-								
-								if(friend) {
-									labels.props.children.splice(1, 0, 
-										reactHook.createElement("div", {
-											className: "friends-carousel-tile-sublabel btr-friends-carousel-username-label",
-											children: reactHook.createElement("span", {
-												className: "btr-friends-carousel-username",
-												children: `@${friend.names.username}`
-											})
-										})
-									)
-								}
-							}
-						} catch(ex) {
-							console.error(ex)
-						}
-						
-						return result
-					}
+				redraw.append(
+					reactHook.createElement("a", {
+						className: "text-link btr-advanced-button",
+						onClick: () => openAdvancedAccessories(),
+					}, "Advanced")
 				)
-			}
-			
-			if(settings.home.friendPresenceLinks) {
-				reactHook.hijackConstructor( // FriendTileDropdown
-					props => props.friend && props.gameUrl,
-					(target, thisArg, args) => {
-						const result = target.apply(thisArg, args)
-						
-						try {
-							const card = result.props.children?.[0]
-							
-							if(card?.props.className?.includes("in-game-friend-card")) {
-								result.props.children[0] = reactHook.createElement("a", {
-									href: args[0].gameUrl,
-									style: { display: "contents" },
-									onClick: event => event.preventDefault(),
-									children: card
-								})
-							}
-						} catch(ex) {
-							console.error(ex)
-						}
-						
-						return result
-					}
-				)
-			}
-		},
-		"initReactRobuxToCash": () => {
-			reactHook.inject(".text-robux-lg", elem => {
-				const originalText = elem[0].props.children
-				if(typeof originalText !== "string") { return }
-				
-				const robux = parseInt(originalText.replace(/\D/g, ""), 10)
-				
-				if(Number.isSafeInteger(robux)) {
-					const cash = RobuxToCash.convert(robux)
-					
-					elem.append(reactHook.createElement("span", {
-						className: "btr-robuxToCash-big",
-						children: ` (${cash})`
-					}))
-				}
-			})
-			
-			reactHook.inject(".text-robux-tile", elem => {
-				const originalText = elem[0].props.children
-				if(typeof originalText !== "string") { return }
-				
-				const robux = parseInt(originalText.replace(/\D/g, ""), 10)
-				
-				if(Number.isSafeInteger(robux)) {
-					const cash = RobuxToCash.convert(robux)
-					
-					elem.append(reactHook.createElement("span", {
-						className: "btr-robuxToCash-tile",
-						children: ` (${cash})`
-					}))
-				}
-			})
-			
-			reactHook.inject(".text-robux", elem => {
-				const originalText = elem[0].props.children
-				if(typeof originalText !== "string") { return }
-				
-				const robux = parseInt(originalText.replace(/\D/g, ""), 10)
-				
-				if(Number.isSafeInteger(robux)) {
-					const cash = RobuxToCash.convert(robux)
-					
-					elem.append(reactHook.createElement("span", {
-						className: "btr-robuxToCash",
-						children: ` (${cash})`
-					}))
-				}
-			})
-			
-			reactHook.inject(".icon-robux-container", elem => {
-				const child = elem.find(x => "amount" in x.props)
-				
-				if(child) {
-					const cash = RobuxToCash.convert(child[0].props.amount ?? 0)
-					
-					child.after(reactHook.createElement("span", {
-						className: "btr-robuxToCash",
-						children: ` (${cash})`
-					}))
-					
-					return
-				}
-			})
-		},
-		"setupPopovers": () => {
-			Roblox?.BootstrapWidgets?.SetupPopover(null, null, "[data-bind='popover-btr-download']")
-		},
-		"addBTRSettings": () => {
-			reactHook.inject("#settings-popover-menu", elem => {
-				elem.prepend(reactHook.createElement("li", {
-					dangerouslySetInnerHTML: { __html: `<a class="rbx-menu-item btr-settings-toggle">BTR Settings</a>`}
-				}))
-			})
-		},
-		"fixFirefoxLocalStorageIssue": () => {
-			onSet(window, "CoreRobloxUtilities", CoreRobloxUtilities => {
-				if(!CoreRobloxUtilities?.localStorageService?.saveDataByTimeStamp) { return }
-				
-				const lss = CoreRobloxUtilities.localStorageService
-				const localCache = {}
-				
-				hijackFunction(lss, "storage", () => true)
-				
-				hijackFunction(lss, "removeLocalStorage", (fn, thisArg, args) => {
-					delete localCache[args[0]]
-					return fn.apply(thisArg, args)
-				})
-				
-				hijackFunction(lss, "getLocalStorage", (fn, thisArg, args) => {
-					if(args[0] in localCache) {
-						return JSON.parse(localCache[args[0]])
-					}
-					
-					return fn.apply(thisArg, args)
-				})
-				
-				hijackFunction(lss, "setLocalStorage", (fn, thisArg, args) => {
-					try {
-						delete localCache[args[0]]
-						return fn.apply(thisArg, args)
-					} catch(ex) {
-						localCache[args[0]] = JSON.stringify(args[1])
-						console.error(ex)
-					}
-				})
 			})
 		},
 		"cacheRobuxAmount": () => {
@@ -1881,382 +1471,6 @@ document.addEventListener("btroblox/init", ev => {
 					return target.apply(thisArg, args)
 				}
 			)
-		},
-		"higherRobuxPrecision": () => {
-			reactHook.hijackConstructor(
-				props => "isGetCurrencyCallDone" in props && "robuxAmount" in props && !("isEligibleForVng" in props),
-				(target, thisArg, args) => {
-					const result = target.apply(thisArg, args)
-					
-					try {
-						const truncNumber = Roblox["core-scripts"].format.number.truncNumber
-						const robuxAmount = args[0].robuxAmount
-						
-						const label = reactHook.queryElement(result, x => x.props.id === "nav-robux-amount")
-						
-						if(label && label.props.children === truncNumber(robuxAmount)) {
-							label.props.children = truncNumber(robuxAmount, 100_000, null, 2)
-						}
-					} catch {}
-					
-					return result
-				}
-			)
-		},
-		"hideFriendActivity": () => {
-			hijackXHR(request => {
-				if(request.method === "POST" && request.url.match(/^https:\/\/apis\.roblox\.com\/discovery-api\/omni-recommendation(-metadata)?$/i)) {
-					request.onResponse.push(json => {
-						if(json?.contentMetadata?.Game) {
-							for(const gameData of Object.values(json.contentMetadata.Game)) {
-								delete gameData.friendActivityTitle
-							}
-						}
-					})
-				}
-			})
-		},
-		"removeAccessoryLimits": () => {
-			const accessoryAssetTypeIds = [8, 41, 42, 43, 44, 45, 46, 47, 57, 58]
-			const layeredAssetTypeIds = [64, 65, 66, 67, 68, 69, 70, 71, 72]
-			
-			const addAssetToAvatar = (target, thisArg, args) => {
-				const result = target.apply(thisArg, args)
-				const assets = [args[0], ...args[1]]
-				
-				let accessoriesLeft = 10
-				let layeredLeft = 10
-				
-				for(let i = 0; i < assets.length; i++) {
-					const asset = assets[i]
-					const assetTypeId = asset?.assetType?.id
-					
-					const isAccessory = accessoryAssetTypeIds.includes(assetTypeId)
-					const isLayered = layeredAssetTypeIds.includes(assetTypeId) || assetTypeId === 41
-					
-					let valid = true
-					
-					if(isAccessory || isLayered) {
-						if(isAccessory && accessoriesLeft <= 0) {
-							valid = false
-						}
-						
-						if(isLayered && layeredLeft <= 0) {
-							valid = false
-						}
-						
-						if(!settings.avatar.removeLayeredLimits && layeredAssetTypeIds.includes(assetTypeId)) {
-							if(!result.includes(asset)) {
-								valid = false
-							}
-						}
-					} else {
-						valid = result.includes(asset)
-					}
-					
-					if(valid) {
-						if(isAccessory) { accessoriesLeft-- }
-						if(isLayered) { layeredLeft-- }
-					} else {
-						assets.splice(i--, 1)
-					}
-				}
-				
-				return assets
-			}
-			
-			hijackFunction(Object, "defineProperty", (target, thisArg, args) => {
-				try {
-					const [obj, key, prop] = args
-					
-					if(key === "addAssetToAvatar" && obj?.__esModule && typeof prop?.get === "function") {
-						args[2] = { enumerable: true, value: new Proxy(prop.get(obj, key, obj), { apply: addAssetToAvatar }) }
-					}
-				} catch {}
-				
-				return target.apply(thisArg, args)
-			})
-			
-			onSet(window, "Roblox", Roblox => {
-				onSet(Roblox, "AvatarAccoutrementService", AvatarAccoutrementService => {
-					hijackFunction(AvatarAccoutrementService, "getAdvancedAccessoryLimit", (target, thisArg, args) => {
-						if(accessoryAssetTypeIds.includes(+args[0]) || layeredAssetTypeIds.includes(+args[0])) {
-							return
-						}
-						
-						return target.apply(thisArg, args)
-					})
-					
-					hijackFunction(AvatarAccoutrementService, "addAssetToAvatar", addAssetToAvatar)
-				})
-			})
-		},
-		"experiments": () => {
-			const modified = {}
-			const initial = {}
-			const layers = {}
-			
-			const modify = (experiment, key, value) => {
-				modified[experiment] ??= {}
-				
-				if(typeof value === "string") {
-					try { modified[experiment][key] = JSON.parse(value) }
-					catch(ex) { delete modified[experiment][key] }
-				} else {
-					delete modified[experiment][key]
-				}
-				
-				if(layers[experiment]) {
-					const modifiedValue = key in modified[experiment] ? modified[experiment][key] : value
-					
-					for(const layer of layers[experiment]) {
-						layer[key] = modifiedValue
-					}
-				}
-			}
-			
-			contentScript.listen("updateExperiment", modify)
-			
-			try {
-				const saved = JSON.parse(settings.general.experiments || "{}")
-				
-				if(saved) {
-					for(const [experiment, values] of Object.entries(saved)) {
-						for(const [key, value] of Object.entries(values)) {
-							modify(experiment, key, value)
-						}
-					}
-				}
-			} catch(ex) {
-				console.error(ex)
-			}
-			
-			const populate = (experiment, key, value) => {
-				if(key === "then" || key === "toJSON") { return }
-				
-				initial[experiment] ??= {}
-				if(key in initial[experiment]) { return }
-				
-				initial[experiment][key] = value
-				contentScript.send("populateExperiment", experiment, key, value)
-			}
-			
-			onSet(window, "Roblox", Roblox => {
-				onSet(Roblox, "ExperimentationService", ExperimentationService => {
-					hijackFunction(ExperimentationService, "getAllValuesForLayer", (target, thisArg, args) => {
-						let result = target.apply(thisArg, args)
-						
-						if(result instanceof Promise) {
-							const experiment = args[0]
-							
-							result = result.then(layer => {
-								try {
-									for(const [key, value] of Object.entries(layer)) {
-										populate(experiment, key, value)
-									}
-									
-									layers[experiment] ??= []
-									layers[experiment].push(layer)
-									
-									if(modified[experiment]) {
-										for(const [key, modifiedValue] of Object.entries(modified[experiment])) {
-											layer[key] = modifiedValue
-										}
-									}
-									
-									return new Proxy(layer, {
-										get(target, key) {
-											populate(experiment, key, undefined)
-											return target[key]
-										}
-									})
-								} catch(ex) {
-									if(IS_DEV_MODE) {
-										console.error(ex)
-									}
-								}
-								
-								return layer
-							})
-						}
-						
-						return result
-					})
-				})
-			})
-		},
-		"hijackAuth": () => {
-			let didSendFirstAuth = false
-			
-			hijackXHR(request => {
-				if(!didSendFirstAuth && request.method === "GET" && request.url === `https://users.roblox.com/v1/users/authenticated`) {
-					request.onResponse.push(json => {
-						if(!didSendFirstAuth) {
-							didSendFirstAuth = true
-							contentScript.send("onFirstAuth", json)
-						}
-					})
-				}
-			})
-		},
-		"webpackHook": () => {
-			const webpackHook = {
-				processedModules: new WeakSet(),
-				propertyHandlers: new Map(),
-				moduleHandlers: [],
-				objects: {},
-				
-				onModule(fn) {
-					this.moduleHandlers.push(fn)
-				},
-				
-				onProperty(keys, fn) {
-					if(!Array.isArray(keys)) { keys = [keys] }
-					
-					const callback = keys.length >= 2 ? obj => {
-						for(const key of keys) {
-							if(!Object.hasOwn(obj, key)) {
-								return
-							}
-						}
-						
-						fn(obj)
-					} : fn
-					
-					for(const key of keys) {
-						let list = this.propertyHandlers.get(key)
-						
-						if(!list) {
-							list = []
-							
-							Object.defineProperty(Object.prototype, key, {
-								configurable: true,
-								set(value) {
-									Object.defineProperty(this, key, {
-										configurable: true,
-										enumerable: true,
-										writable: true,
-										value: value
-									})
-									
-									for(const fn of list) {
-										try { fn(args[0]) }
-										catch(ex) { console.error(ex) }
-									}
-								}
-							})
-							
-							if(!this.propertyHandlers.size) {
-								const propertyHandlers = this.propertyHandlers
-								
-								Object.defineProperty = new Proxy(Object.defineProperty, {
-									apply(target, thisArg, args) {
-										const result = target.apply(thisArg, args)
-										
-										const list = propertyHandlers.get(args[1])
-										if(list) {
-											for(const fn of list) {
-												try { fn(args[0]) }
-												catch(ex) { console.error(ex) }
-											}
-										}
-										
-										return result
-									}
-								})
-							}
-							
-							this.propertyHandlers.set(key, list)
-						}
-						
-						list.push(callback)
-					}
-				},
-				
-				init() {
-					onSet(window, "webpackChunk_N_E", chunks => {
-						const addChunk = chunk => {
-							for(const id of Object.keys(chunk)) {
-								hijackFunction(chunk, id, (target, thisArg, args) => {
-									const result = target.apply(thisArg, args)
-									
-									try {
-										const module = args[0].exports
-										if(typeof module === "object" && !this.processedModules.has(module)) {
-											this.processedModules.add(module)
-											
-											for(const fn of this.moduleHandlers) {
-												try { fn(module, target) }
-												catch(ex) { console.error(ex) }
-											}
-										}
-									} catch(ex) {
-										console.error(ex)
-									}
-									
-									return result
-								})
-							}
-						}
-						
-						const override = pushfn => new Proxy(pushfn, {
-							apply: (target, thisArg, args) => {
-								for(const chunk of args) {
-									try { addChunk(chunk[1]) }
-									catch(ex) { console.error(ex) }
-								}
-								
-								return target.apply(thisArg, args)
-							}
-						})
-						
-						let pushoverride = override(chunks.push)
-						
-						Object.defineProperty(chunks, "push", {
-							enumerable: false,
-							configurable: true,
-							set(fn) { pushoverride = override(fn) },
-							get() { return pushoverride }
-						})
-						
-						for(const chunk of chunks) {
-							try { addChunk(chunk[1]) }
-							catch(ex) { console.error(ex) }
-						}
-					})
-				}
-			}
-			
-			const { objects } = webpackHook
-			
-			objects.Mui = {}
-			
-			webpackHook.onModule((module, target) => {
-				if("jsx" in module && "jsxs" in module) {
-					hijackFunction(module, "jsx", reactHook.onCreateElement.bind(reactHook))
-					hijackFunction(module, "jsxs", reactHook.onCreateElement.bind(reactHook))
-					objects.jsx = module.jsx
-					
-				} else if("useState" in module && "useCallback" in module) {
-					reactHook.onReact(module)
-					objects.React = module
-					
-				}
-				
-				const moduleCode = target.toString()
-				
-				if(moduleCode.includes(`name:"MenuItem"`)) {
-					objects.Mui.MenuItem = Object.values(module)[0]
-				} else if(moduleCode.includes(`name:"Button"`)) {
-					objects.Mui.Button = Object.values(module)[0]
-				} else if(moduleCode.includes(`name:"Divider"`)) {
-					objects.Mui.Divider = Object.values(module)[0]
-				}
-			})
-			
-			BTRoblox.webpackHook = webpackHook
-			
-			webpackHook.init()
 		},
 		"createAddBTRSettings": () => {
 			const { webpackHook } = BTRoblox
@@ -2542,6 +1756,692 @@ document.addEventListener("btroblox/init", ev => {
 				}
 			)
 		},
+		"experiments": () => {
+			const modified = {}
+			const initial = {}
+			const layers = {}
+			
+			const modify = (experiment, key, value) => {
+				modified[experiment] ??= {}
+				
+				if(typeof value === "string") {
+					try { modified[experiment][key] = JSON.parse(value) }
+					catch(ex) { delete modified[experiment][key] }
+				} else {
+					delete modified[experiment][key]
+				}
+				
+				if(layers[experiment]) {
+					const modifiedValue = key in modified[experiment] ? modified[experiment][key] : value
+					
+					for(const layer of layers[experiment]) {
+						layer[key] = modifiedValue
+					}
+				}
+			}
+			
+			contentScript.listen("updateExperiment", modify)
+			
+			try {
+				const saved = JSON.parse(settings.general.experiments || "{}")
+				
+				if(saved) {
+					for(const [experiment, values] of Object.entries(saved)) {
+						for(const [key, value] of Object.entries(values)) {
+							modify(experiment, key, value)
+						}
+					}
+				}
+			} catch(ex) {
+				console.error(ex)
+			}
+			
+			const populate = (experiment, key, value) => {
+				if(key === "then" || key === "toJSON") { return }
+				
+				initial[experiment] ??= {}
+				if(key in initial[experiment]) { return }
+				
+				initial[experiment][key] = value
+				contentScript.send("populateExperiment", experiment, key, value)
+			}
+			
+			onSet(window, "Roblox", Roblox => {
+				onSet(Roblox, "ExperimentationService", ExperimentationService => {
+					hijackFunction(ExperimentationService, "getAllValuesForLayer", (target, thisArg, args) => {
+						let result = target.apply(thisArg, args)
+						
+						if(result instanceof Promise) {
+							const experiment = args[0]
+							
+							result = result.then(layer => {
+								try {
+									for(const [key, value] of Object.entries(layer)) {
+										populate(experiment, key, value)
+									}
+									
+									layers[experiment] ??= []
+									layers[experiment].push(layer)
+									
+									if(modified[experiment]) {
+										for(const [key, modifiedValue] of Object.entries(modified[experiment])) {
+											layer[key] = modifiedValue
+										}
+									}
+									
+									return new Proxy(layer, {
+										get(target, key) {
+											populate(experiment, key, undefined)
+											return target[key]
+										}
+									})
+								} catch(ex) {
+									if(IS_DEV_MODE) {
+										console.error(ex)
+									}
+								}
+								
+								return layer
+							})
+						}
+						
+						return result
+					})
+				})
+			})
+		},
+		"fastsearch": () => {
+			reactHook.inject("#navbar-universal-search, .navbar-search", elem => {
+				elem.find("ul")?.prepend(reactHook.createElement("div", {
+					id: "btr-fastsearch-container",
+					dangerouslySetInnerHTML: { __html: "" }
+				}))
+			})
+		},
+		"fastsearchFollowPlayer": userId => {
+			Roblox.GameLauncher.followPlayerIntoGame(userId)
+		},
+		"favoritesAtTop": () => {
+			hijackXHR(request => {
+				if(request.method === "POST" && request.url.match(/^https:\/\/apis\.roblox\.com\/discovery-api\/omni-recommendation(-metadata)?$/i)) {
+					request.onResponse.push(json => {
+						if(settings.home.favoritesAtTop && json?.sorts) {
+							const favoritesSort = json.sorts.find(x => x.topicId === 100000001)
+							const continueSort = json.sorts.find(x => x.topicId === 100000003)
+							
+							if(favoritesSort) {
+								json.sorts.splice(json.sorts.indexOf(favoritesSort), 1)
+								json.sorts.splice(1, 0, favoritesSort)
+							}
+							
+							if(continueSort) {
+								json.sorts.splice(json.sorts.indexOf(continueSort), 1)
+								json.sorts.splice(1, 0, continueSort)
+							}
+						}
+					})
+				}
+			})
+		},
+		"fixFirefoxLocalStorageIssue": () => {
+			onSet(window, "CoreRobloxUtilities", CoreRobloxUtilities => {
+				if(!CoreRobloxUtilities?.localStorageService?.saveDataByTimeStamp) { return }
+				
+				const lss = CoreRobloxUtilities.localStorageService
+				const localCache = {}
+				
+				hijackFunction(lss, "storage", () => true)
+				
+				hijackFunction(lss, "removeLocalStorage", (fn, thisArg, args) => {
+					delete localCache[args[0]]
+					return fn.apply(thisArg, args)
+				})
+				
+				hijackFunction(lss, "getLocalStorage", (fn, thisArg, args) => {
+					if(args[0] in localCache) {
+						return JSON.parse(localCache[args[0]])
+					}
+					
+					return fn.apply(thisArg, args)
+				})
+				
+				hijackFunction(lss, "setLocalStorage", (fn, thisArg, args) => {
+					try {
+						delete localCache[args[0]]
+						return fn.apply(thisArg, args)
+					} catch(ex) {
+						localCache[args[0]] = JSON.stringify(args[1])
+						console.error(ex)
+					}
+				})
+			})
+		},
+		"fullRangeBodyColors": () => {
+			let forceRefreshThumbnail
+			
+			reactHook.hijackConstructor(
+				props => !forceRefreshThumbnail && "forceRefreshThumbnail" in props,
+				(target, thisArg, args) => {
+					forceRefreshThumbnail = args[0].forceRefreshThumbnail
+					return target.apply(thisArg, args)
+				}
+			)
+			
+			contentScript.listen("forceRefreshThumbnail", () => {
+				forceRefreshThumbnail?.()
+			})
+			
+			contentScript.listen("skinColorError", () => {
+				Roblox.BootstrapWidgets.ToggleSystemMessage($(".alert-warning"), 100, 2000, "Failed to update skin tone.")
+			})
+			
+			hijackXHR(request => {
+				if(request.url.endsWith("/set-body-colors")) {
+					request.onResponse.push(() => {
+						contentScript.send("updateBodyColors")
+					})
+				}
+			})
+		},
+		"gamedetails": () => {
+			reactHook.inject(".game-description-container", elem => {
+				elem.replaceWith(reactHook.createElement("div", { style: { display: "contents" } },
+					reactHook.createElement("div", { id: "btr-description-wrapper", style: { display: "contents" } }, elem[0])
+				))
+			})
+			
+			reactHook.inject(".container-list.games-detail", elem => {
+				elem.replaceWith(reactHook.createElement("div", { style: { display: "contents" } },
+					reactHook.createElement("div", { id: "btr-recommendations-wrapper", style: { display: "contents" } }, elem[0])
+				))
+			})
+			
+			reactHook.inject(".game-social-links .btn-secondary-lg", elem => {
+				const socials = reactHook.renderTarget?.state[0]?.[0]
+				const entry = socials?.find(x => x.id === +elem[0].key)
+				
+				if(entry) {
+					elem[0].props.href = entry.url
+					
+					hijackFunction(elem[0].props, "onClick", (target, thisArg, args) => {
+						const event = args[0]
+						event.preventDefault()
+						
+						const result = target.apply(thisArg, args)
+						return result
+					})
+				}
+			})
+		},
+		"gamedetailsPlayGame": placeId => {
+			Roblox.GameLauncher.joinMultiplayerGame(placeId, true)
+		},
+		"groupsModifyLayout": () => {
+			angularHook.hijackModule("group", {
+				groupController(target, thisArg, args, argsMap) {
+					const result = target.apply(thisArg, args)
+					
+					try {
+						const { $scope, groupDetailsConstants } = argsMap
+						
+						groupDetailsConstants.tabs.payouts = {
+							state: "about",
+							btrCustomTab: "payouts",
+							translationKey: "Heading.Payouts"
+						}
+						
+						$scope.btrCustomTab = {
+							name: null
+						}
+						
+						hijackFunction($scope, "groupDetailsTabs", (target, thisArg, args) => {
+							let result = target.apply(thisArg, args)
+							
+							const entries = Object.entries(result)
+							
+							if($scope.isAuthenticatedUser && $scope.layout?.btrPayoutsEnabled) {
+								entries.push(["payouts", groupDetailsConstants.tabs.payouts])
+							}
+							
+							result = Object.fromEntries(entries)
+							
+							return result
+						})
+					} catch(ex) {
+						console.error(ex)
+					}
+					
+					return result
+				},
+				groupTab(target, thisArg, args) {
+					const result = target.apply(thisArg, args)
+					
+					try {
+						result.scope.btrCustomTab = "="
+					} catch(ex) {
+						console.error(ex)
+					}
+					
+					return result
+				}
+			})
+			
+			angularHook.hijackModule("groupPayouts", {
+				groupPayouts(component) {
+					component.bindings.layout = "="
+				},
+				groupPayoutsController(target, thisArg, args, argsMap) {
+					const result = target.apply(thisArg, args)
+					
+					try {
+						const { groupPayoutsService } = argsMap
+						const controller = thisArg
+						
+						hijackFunction(groupPayoutsService, "getGroupPayoutRecipients", (target, thisArg, args) => {
+							const result = target.apply(thisArg, args)
+							
+							try {
+								result.then(
+									recipients => controller.layout.btrPayoutsEnabled = recipients.length > 0,
+									() => controller.layout.btrPayoutsEnabled = false
+								)
+							} catch(ex) {
+								console.error(ex)
+							}
+							
+							return result
+						})
+					} catch(ex) {
+						console.error(ex)
+					}
+	
+					return result
+				}
+			})
+		},
+		"hideFriendActivity": () => {
+			hijackXHR(request => {
+				if(request.method === "POST" && request.url.match(/^https:\/\/apis\.roblox\.com\/discovery-api\/omni-recommendation(-metadata)?$/i)) {
+					request.onResponse.push(json => {
+						if(json?.contentMetadata?.Game) {
+							for(const gameData of Object.values(json.contentMetadata.Game)) {
+								delete gameData.friendActivityTitle
+							}
+						}
+					})
+				}
+			})
+		},
+		"higherRobuxPrecision": () => {
+			reactHook.hijackConstructor(
+				props => "isGetCurrencyCallDone" in props && "robuxAmount" in props && !("isEligibleForVng" in props),
+				(target, thisArg, args) => {
+					const result = target.apply(thisArg, args)
+					
+					try {
+						const truncNumber = Roblox["core-scripts"].format.number.truncNumber
+						const robuxAmount = args[0].robuxAmount
+						
+						const label = reactHook.queryElement(result, x => x.props.id === "nav-robux-amount")
+						
+						if(label && label.props.children === truncNumber(robuxAmount)) {
+							label.props.children = truncNumber(robuxAmount, 100_000, null, 2)
+						}
+					} catch {}
+					
+					return result
+				}
+			)
+		},
+		"hijackAuth": () => {
+			let didSendFirstAuth = false
+			
+			hijackXHR(request => {
+				if(!didSendFirstAuth && request.method === "GET" && request.url === `https://users.roblox.com/v1/users/authenticated`) {
+					request.onResponse.push(json => {
+						if(!didSendFirstAuth) {
+							didSendFirstAuth = true
+							contentScript.send("onFirstAuth", json)
+						}
+					})
+				}
+			})
+		},
+		"hookGroupMoreButton": (btn, moreBtn) => {
+			// doing the listener in injectScript makes it work even if the extension reloads
+			
+			btn.addEventListener("click", event => {
+				event.stopPropagation()
+				event.preventDefault()
+				
+				moreBtn.click()
+			})
+		},
+		"hookProfileMoreButton": btn => {
+			// doing the listener in injectScript makes it work even if the extension reloads
+			
+			btn.addEventListener("click", () => {
+				document.querySelector(".description-content + .more-btn").click()
+			})
+		},
+		"initReactFriends": () => {
+			reactHook.hijackConstructor( // FriendsCarouselContainer
+				props => "profileUserId" in props && "carouselName" in props, 
+				(target, thisArg, args) => {
+					const props = args[0]
+					const carouselName = props.carouselName
+					
+					// disable MustHideConnections so that friends load in faster
+					reactHook.hijackUseState(
+						(value, index) => value === false && index == 4,
+						(value, initial) => initial ? true : value
+					)
+					
+					const result = target.apply(thisArg, args)
+					
+					// if MustHideConnect is enabled, communicate that to profile code somehow
+					if(reactHook.renderTarget?.state?.[4]?.[0] === false) {
+						const noFriendsLabel = reactHook.querySelector(result, ".friends-carousel-0-friends")
+						
+						if(noFriendsLabel) {
+							noFriendsLabel.props.className += " btr-friends-carousel-disabled"
+						}
+					}
+					
+					return result
+				}
+			)
+			
+			reactHook.hijackConstructor( // FriendsList
+				props => "friendsList" in props, 
+				(target, thisArg, args) => {
+					const props = args[0]
+					const friendsList = props.friendsList
+					const carouselName = props.carouselName
+					
+					let showSecondRow = false
+					
+					if(carouselName === "WebHomeFriendsCarousel") {
+						showSecondRow = settings.home.friendsSecondRow
+					} else if(carouselName === "WebProfileFriendsCarousel") {
+						showSecondRow = settings.home.friendsSecondRow
+						
+						// Fixes an issue where profile friends list shows one too few friends
+						props.isAddFriendsTileEnabled = false
+					}
+					
+					if(showSecondRow) {
+						reactHook.hijackUseState( // visibleFriendsList
+							(value, index) => value === friendsList,
+							(value, initial) => {
+								if(value && friendsList && !initial) {
+									let count = value.length * 2
+									
+									if(carouselName === "WebHomeFriendsCarousel") {
+										const isTwoLines = value.length < friendsList.length
+										localStorage.setItem("BTRoblox:homeFriendsIsTwoLines", isTwoLines ? "true" : "false")
+										
+										// account for Add Friends button
+										count += 1
+									}
+									
+									return friendsList.slice(0, count)
+								}
+								
+								return value
+							}
+						)
+					}
+					
+					const result = target.apply(thisArg, args)
+					
+					try { result.props.className = `${result.props.className ?? ""} btr-friends-list` }
+					catch(ex) { console.error(ex) }
+					
+					if(showSecondRow) {
+						try { result.props.className = `${result.props.className ?? ""} btr-friends-secondRow` }
+						catch(ex) { console.error(ex) }
+						
+						if(carouselName === "WebHomeFriendsCarousel") {
+							if(!friendsList && localStorage.getItem("BTRoblox:homeFriendsIsTwoLines") === "true") {
+								try { result.props.className = `${result.props.className ?? ""} btr-friends-loading-two-lines` }
+								catch(ex) { console.error(ex) }
+							}
+						}
+					}
+					
+					return result
+				}
+			)
+			
+			if(settings.home.friendsShowUsername) {
+				const friendsState = reactHook.createGlobalState({})
+				
+				hijackXHR(request => {
+					if(request.method === "POST" && request.url === "https://apis.roblox.com/user-profile-api/v1/user/profiles/get-profiles") {
+						request.onRequest.push(request => {
+							const json = JSON.parse(request.body)
+							
+							if(!json.fields.includes("names.username")) {
+								json.fields.push("names.username")
+							}
+							
+							request.body = JSON.stringify(json)
+						})
+						
+						request.onResponse.push(json => {
+							for(const user of json.profileDetails) {
+								friendsState.value[user.userId] = user
+							}
+							
+							friendsState.update()
+						})
+					}
+				})
+				
+				reactHook.hijackConstructor( // FriendTileContent
+					props => props.displayName && props.userProfileUrl,
+					(target, thisArg, args) => {
+						const result = target.apply(thisArg, args)
+						
+						try {
+							const userId = args[0].id
+							
+							const labels = reactHook.queryElement(result, x => x.props.className?.includes("friends-carousel-tile-labels"))
+							if(labels && Array.isArray(labels.props.children)) {
+								const friends = reactHook.useGlobalState(friendsState)
+								const friend = friends[userId]
+								
+								if(friend) {
+									labels.props.children.splice(1, 0, 
+										reactHook.createElement("div", {
+											className: "friends-carousel-tile-sublabel btr-friends-carousel-username-label",
+											children: reactHook.createElement("span", {
+												className: "btr-friends-carousel-username",
+												children: `@${friend.names.username}`
+											})
+										})
+									)
+								}
+							}
+						} catch(ex) {
+							console.error(ex)
+						}
+						
+						return result
+					}
+				)
+			}
+			
+			if(settings.home.friendPresenceLinks) {
+				reactHook.hijackConstructor( // FriendTileDropdown
+					props => props.friend && props.gameUrl,
+					(target, thisArg, args) => {
+						const result = target.apply(thisArg, args)
+						
+						try {
+							const card = result.props.children?.[0]
+							
+							if(card?.props.className?.includes("in-game-friend-card")) {
+								result.props.children[0] = reactHook.createElement("a", {
+									href: args[0].gameUrl,
+									style: { display: "contents" },
+									onClick: event => event.preventDefault(),
+									children: card
+								})
+							}
+						} catch(ex) {
+							console.error(ex)
+						}
+						
+						return result
+					}
+				)
+			}
+		},
+		"initReactRobuxToCash": () => {
+			reactHook.inject(".text-robux-lg", elem => {
+				const originalText = elem[0].props.children
+				if(typeof originalText !== "string") { return }
+				
+				const robux = parseInt(originalText.replace(/\D/g, ""), 10)
+				
+				if(Number.isSafeInteger(robux)) {
+					const cash = RobuxToCash.convert(robux)
+					
+					elem.append(reactHook.createElement("span", {
+						className: "btr-robuxToCash-big",
+						children: ` (${cash})`
+					}))
+				}
+			})
+			
+			reactHook.inject(".text-robux-tile", elem => {
+				const originalText = elem[0].props.children
+				if(typeof originalText !== "string") { return }
+				
+				const robux = parseInt(originalText.replace(/\D/g, ""), 10)
+				
+				if(Number.isSafeInteger(robux)) {
+					const cash = RobuxToCash.convert(robux)
+					
+					elem.append(reactHook.createElement("span", {
+						className: "btr-robuxToCash-tile",
+						children: ` (${cash})`
+					}))
+				}
+			})
+			
+			reactHook.inject(".text-robux", elem => {
+				const originalText = elem[0].props.children
+				if(typeof originalText !== "string") { return }
+				
+				const robux = parseInt(originalText.replace(/\D/g, ""), 10)
+				
+				if(Number.isSafeInteger(robux)) {
+					const cash = RobuxToCash.convert(robux)
+					
+					elem.append(reactHook.createElement("span", {
+						className: "btr-robuxToCash",
+						children: ` (${cash})`
+					}))
+				}
+			})
+			
+			reactHook.inject(".icon-robux-container", elem => {
+				const child = elem.find(x => "amount" in x.props)
+				
+				if(child) {
+					const cash = RobuxToCash.convert(child[0].props.amount ?? 0)
+					
+					child.after(reactHook.createElement("span", {
+						className: "btr-robuxToCash",
+						children: ` (${cash})`
+					}))
+					
+					return
+				}
+			})
+		},
+		"instantGameHoverAction": () => {
+			reactHook.inject(".hover-game-tile.old-hover", elem => {
+				const props = elem[0].props
+				
+				const [isFocused, setIsFocused] = reactHook.React.useState(false)
+				
+				props.className = (props.className ?? "").replace(/\bfocused\b/, "")
+				props.className += " btr-game-hover-fix"
+				
+				if(isFocused) {
+					props.className += " focused"
+				}
+				
+				props.onMouseOver = new Proxy(props.onMouseOver ?? (() => {}), {
+					apply(target, thisArg, args) {
+						setIsFocused(true)
+						return target.apply(thisArg, args)
+					}
+				})
+				
+				props.onMouseLeave = new Proxy(props.onMouseLeave ?? (() => {}), {
+					apply(target, thisArg, args) {
+						setIsFocused(false)
+						return target.apply(thisArg, args)
+					}
+				})
+			})
+		},
+		"inventoryTools": () => {
+			angularHook.hijackModule("inventory", {
+				inventoryContentController(target, thisArg, args, argsMap) {
+					const result = target.apply(thisArg, args)
+					
+					try {
+						const { $scope } = argsMap
+						
+						$scope.$watch("$ctrl.assets", () => {
+							setTimeout(() => contentScript.send("inventoryUpdateEnd"), 0)
+						})
+						
+					} catch(ex) {
+						console.error(ex)
+						if(IS_DEV_MODE) { alert("hijackAngular Error") }
+					}
+					
+					return result
+				}
+			})
+		},
+		"itemdetails": () => {
+			reactHook.hijackConstructor(
+				props => "itemDetails" in props,
+				(target, thisArg, args) => {
+					const result = target.apply(thisArg, args)
+					
+					try {
+						const props = args[0]
+						
+						if(result?.props?.className?.includes("item-details-info-header")) {
+							const { itemDetails } = props
+							
+							result.props.children.splice(1, 0, reactHook.createElement("div", {
+								className: "btr-buttons",
+								dangerouslySetInnerHTML: { __html: "" },
+								
+								"data-btr-asset-id": itemDetails.id,
+								"data-btr-asset-type-id": itemDetails.assetType,
+								"data-btr-item-type": itemDetails.itemType,
+							}))
+						}
+					} catch(ex) {
+						console.error(ex)
+					}
+					
+					return result
+				}
+			)
+		},
+		"linkify": target => $(target).linkify(),
 		"marketplacePageChanged": () => {
 			hijackFunction(history, "pushState", (target, thisArg, args) => {
 				const result = target.apply(thisArg, args)
@@ -2553,6 +2453,70 @@ document.addEventListener("btroblox/init", ev => {
 				const result = target.apply(thisArg, args)
 				contentScript.send("stateChange")
 				return result
+			})
+		},
+		"money": () => {
+			reactHook.inject(".balance-label.icon-robux-container", elem => {
+				const list = elem[0].props.children[0]?.props.children
+				
+				if(Array.isArray(list)) {
+					const robux = parseInt(list.at(-1).replace(/\D/g, ""), 10)
+					
+					if(Number.isSafeInteger(robux)) {
+						const cash = RobuxToCash.convert(robux)
+						
+						list.push(reactHook.createElement("span", {
+							className: "btr-robuxToCash",
+							children: ` (${cash})`
+						}))
+					}
+				}
+			})
+		},
+		"navigation": () => {
+			reactHook.inject("ul.navbar-right", elem => {
+				const robux = elem.find(x => "robuxAmount" in x.props)
+				
+				if(robux) {
+					robux.before(
+						reactHook.createElement("div", {
+							id: "btr-placeholder-friends",
+							style: { display: "none" },
+							dangerouslySetInnerHTML: { __html: "" }
+						}),
+						reactHook.createElement("div", {
+							id: "btr-placeholder-messages",
+							style: { display: "none" },
+							dangerouslySetInnerHTML: { __html: "" }
+						}),
+					)
+				}
+			})
+			
+			reactHook.inject("ul.flex-col", elem => {
+				const trade = elem.find(x => x.props.path?.startsWith("/trades"))
+				if(trade) {
+					trade.after(
+						reactHook.createElement("div", {
+							id: "btr-placeholder-money",
+							style: { display: "none" },
+							dangerouslySetInnerHTML: { __html: "" }
+						}),
+					)
+				}
+				
+				if(!trade) { return } // matched some other element?
+				
+				const blog = elem.find(x => x.props.path?.toString().includes("blog.roblox.com"))
+				if(blog) {
+					blog.after(
+						reactHook.createElement("div", {
+							id: "btr-placeholder-blogfeed",
+							style: { display: "none" },
+							dangerouslySetInnerHTML: { __html: "" }
+						}),
+					)
+				}
 			})
 		},
 		"pagedServers": () => {
@@ -3064,278 +3028,6 @@ document.addEventListener("btroblox/init", ev => {
 				}
 			)
 		},
-		"gamedetails": () => {
-			reactHook.inject(".game-description-container", elem => {
-				elem.replaceWith(reactHook.createElement("div", { style: { display: "contents" } },
-					reactHook.createElement("div", { id: "btr-description-wrapper", style: { display: "contents" } }, elem[0])
-				))
-			})
-			
-			reactHook.inject(".container-list.games-detail", elem => {
-				elem.replaceWith(reactHook.createElement("div", { style: { display: "contents" } },
-					reactHook.createElement("div", { id: "btr-recommendations-wrapper", style: { display: "contents" } }, elem[0])
-				))
-			})
-			
-			reactHook.inject(".game-social-links .btn-secondary-lg", elem => {
-				const socials = reactHook.renderTarget?.state[0]?.[0]
-				const entry = socials?.find(x => x.id === +elem[0].key)
-				
-				if(entry) {
-					elem[0].props.href = entry.url
-					
-					hijackFunction(elem[0].props, "onClick", (target, thisArg, args) => {
-						const event = args[0]
-						event.preventDefault()
-						
-						const result = target.apply(thisArg, args)
-						return result
-					})
-				}
-			})
-		},
-		"gamedetailsPlayGame": placeId => {
-			Roblox.GameLauncher.joinMultiplayerGame(placeId, true)
-		},
-		"groupsModifyLayout": () => {
-			angularHook.hijackModule("group", {
-				groupController(target, thisArg, args, argsMap) {
-					const result = target.apply(thisArg, args)
-					
-					try {
-						const { $scope, groupDetailsConstants } = argsMap
-						
-						groupDetailsConstants.tabs.payouts = {
-							state: "about",
-							btrCustomTab: "payouts",
-							translationKey: "Heading.Payouts"
-						}
-						
-						$scope.btrCustomTab = {
-							name: null
-						}
-						
-						hijackFunction($scope, "groupDetailsTabs", (target, thisArg, args) => {
-							let result = target.apply(thisArg, args)
-							
-							const entries = Object.entries(result)
-							
-							if($scope.isAuthenticatedUser && $scope.layout?.btrPayoutsEnabled) {
-								entries.push(["payouts", groupDetailsConstants.tabs.payouts])
-							}
-							
-							result = Object.fromEntries(entries)
-							
-							return result
-						})
-					} catch(ex) {
-						console.error(ex)
-					}
-					
-					return result
-				},
-				groupTab(target, thisArg, args) {
-					const result = target.apply(thisArg, args)
-					
-					try {
-						result.scope.btrCustomTab = "="
-					} catch(ex) {
-						console.error(ex)
-					}
-					
-					return result
-				}
-			})
-			
-			angularHook.hijackModule("groupPayouts", {
-				groupPayouts(component) {
-					component.bindings.layout = "="
-				},
-				groupPayoutsController(target, thisArg, args, argsMap) {
-					const result = target.apply(thisArg, args)
-					
-					try {
-						const { groupPayoutsService } = argsMap
-						const controller = thisArg
-						
-						hijackFunction(groupPayoutsService, "getGroupPayoutRecipients", (target, thisArg, args) => {
-							const result = target.apply(thisArg, args)
-							
-							try {
-								result.then(
-									recipients => controller.layout.btrPayoutsEnabled = recipients.length > 0,
-									() => controller.layout.btrPayoutsEnabled = false
-								)
-							} catch(ex) {
-								console.error(ex)
-							}
-							
-							return result
-						})
-					} catch(ex) {
-						console.error(ex)
-					}
-	
-					return result
-				}
-			})
-		},
-		"hookGroupMoreButton": (btn, moreBtn) => {
-			// doing the listener in injectScript makes it work even if the extension reloads
-			
-			btn.addEventListener("click", event => {
-				event.stopPropagation()
-				event.preventDefault()
-				
-				moreBtn.click()
-			})
-		},
-		"favoritesAtTop": () => {
-			hijackXHR(request => {
-				if(request.method === "POST" && request.url.match(/^https:\/\/apis\.roblox\.com\/discovery-api\/omni-recommendation(-metadata)?$/i)) {
-					request.onResponse.push(json => {
-						if(settings.home.favoritesAtTop && json?.sorts) {
-							const favoritesSort = json.sorts.find(x => x.topicId === 100000001)
-							const continueSort = json.sorts.find(x => x.topicId === 100000003)
-							
-							if(favoritesSort) {
-								json.sorts.splice(json.sorts.indexOf(favoritesSort), 1)
-								json.sorts.splice(1, 0, favoritesSort)
-							}
-							
-							if(continueSort) {
-								json.sorts.splice(json.sorts.indexOf(continueSort), 1)
-								json.sorts.splice(1, 0, continueSort)
-							}
-						}
-					})
-				}
-			})
-		},
-		"showRecommendationPlayerCount": () => {
-			reactHook.hijackConstructor(
-				props => "wideTileType" in props && "gameData" in props && "playerCountStyle" in props,
-				(target, thisArg, args) => {
-					const props = args[0]
-					props.playerCountStyle = "Footer"
-					return target.apply(thisArg, args)
-				}
-			)
-		},
-		"instantGameHoverAction": () => {
-			reactHook.inject(".hover-game-tile.old-hover", elem => {
-				const props = elem[0].props
-				
-				const [isFocused, setIsFocused] = reactHook.React.useState(false)
-				
-				props.className = (props.className ?? "").replace(/\bfocused\b/, "")
-				props.className += " btr-game-hover-fix"
-				
-				if(isFocused) {
-					props.className += " focused"
-				}
-				
-				props.onMouseOver = new Proxy(props.onMouseOver ?? (() => {}), {
-					apply(target, thisArg, args) {
-						setIsFocused(true)
-						return target.apply(thisArg, args)
-					}
-				})
-				
-				props.onMouseLeave = new Proxy(props.onMouseLeave ?? (() => {}), {
-					apply(target, thisArg, args) {
-						setIsFocused(false)
-						return target.apply(thisArg, args)
-					}
-				})
-			})
-		},
-		"inventoryTools": () => {
-			angularHook.hijackModule("inventory", {
-				inventoryContentController(target, thisArg, args, argsMap) {
-					const result = target.apply(thisArg, args)
-					
-					try {
-						const { $scope } = argsMap
-						
-						$scope.$watch("$ctrl.assets", () => {
-							setTimeout(() => contentScript.send("inventoryUpdateEnd"), 0)
-						})
-						
-					} catch(ex) {
-						console.error(ex)
-						if(IS_DEV_MODE) { alert("hijackAngular Error") }
-					}
-					
-					return result
-				}
-			})
-		},
-		"refreshInventory": () => {
-			const scope = angular.element(document.querySelector("assets-explorer")).scope()
-			const ctrl = scope?.$parent?.$ctrl
-			
-			if(ctrl) {
-				const real1 = ctrl.cursorPager.loadPreviousPage
-				const real2 = ctrl.assetsPager.canLoadPreviousPage
-				
-				ctrl.cursorPager.loadPreviousPage = ctrl.cursorPager.reloadCurrentPage
-				ctrl.assetsPager.canLoadPreviousPage = () => true
-				
-				try { ctrl.assetsPager.loadPreviousPage() }
-				catch(ex) {}
-				
-				ctrl.cursorPager.loadPreviousPage = real1
-				ctrl.assetsPager.canLoadPreviousPage = real2
-			}
-		},
-		"itemdetails": () => {
-			reactHook.hijackConstructor(
-				props => "itemDetails" in props,
-				(target, thisArg, args) => {
-					const result = target.apply(thisArg, args)
-					
-					try {
-						const props = args[0]
-						
-						if(result?.props?.className?.includes("item-details-info-header")) {
-							const { itemDetails } = props
-							
-							result.props.children.splice(1, 0, reactHook.createElement("div", {
-								className: "btr-buttons",
-								dangerouslySetInnerHTML: { __html: "" },
-								
-								"data-btr-asset-id": itemDetails.id,
-								"data-btr-asset-type-id": itemDetails.assetType,
-								"data-btr-item-type": itemDetails.itemType,
-							}))
-						}
-					} catch(ex) {
-						console.error(ex)
-					}
-					
-					return result
-				}
-			)
-		},
-		"money": () => {
-			reactHook.inject(".balance-label.icon-robux-container", elem => {
-				const list = elem[0].props.children[0]?.props.children
-				
-				if(Array.isArray(list)) {
-					const robux = parseInt(list.at(-1).replace(/\D/g, ""), 10)
-					
-					if(Number.isSafeInteger(robux)) {
-						const cash = RobuxToCash.convert(robux)
-						
-						list.push(reactHook.createElement("span", {
-							className: "btr-robuxToCash",
-							children: ` (${cash})`
-						}))
-					}
-				}
-			})
-		},
 		"profile": () => {
 			angularHook.hijackModule("peopleList", {
 				layoutService(target, thisArg, args, argsMap) {
@@ -3390,90 +3082,398 @@ document.addEventListener("btroblox/init", ev => {
 				}
 			})
 		},
-		"hookProfileMoreButton": btn => {
-			// doing the listener in injectScript makes it work even if the extension reloads
+		"profileEditPlace": (gameId, placeId) => {
+			Roblox.GameLauncher.editGameInStudio(placeId, gameId)
+		},
+		"profilePlayGame": placeId => {
+			Roblox.GameLauncher.joinMultiplayerGame(placeId, true)
+		},
+		"redirectEvents": (fromSelector, toSelector) => {
+			const from = document.querySelector(fromSelector)
+			const to = document.querySelector(toSelector)
 			
-			btn.addEventListener("click", () => {
-				document.querySelector(".description-content + .more-btn").click()
+			if(!from || !to) {
+				console.log("redirectEvents fail", fromSelector, toSelector, from, to)
+				return
+			}
+			
+			const events = [
+				"cancel", "click", "close", "contextmenu", "copy", "cut", "auxclick", "dblclick",
+				"dragend", "dragstart", "drop", "focusin", "focusout", "input", "invalid",
+				"keydown", "keypress", "keyup", "mousedown", "mouseup", "paste", "pause", "play",
+				"pointercancel", "pointerdown", "pointerup", "ratechange", "reset", "seeked",
+				"submit", "touchcancel", "touchend", "touchstart", "volumechange", "drag", "dragenter",
+				"dragexit", "dragleave", "dragover", "mousemove", "mouseout", "mouseover", "pointermove",
+				"pointerout", "pointerover", "scroll", "toggle", "touchmove", "wheel", "abort",
+				"animationend", "animationiteration", "animationstart", "canplay", "canplaythrough",
+				"durationchange", "emptied", "encrypted", "ended", "error", "gotpointercapture", "load",
+				"loadeddata", "loadedmetadata", "loadstart", "lostpointercapture", "playing", "progress",
+				"seeking", "stalled", "suspend", "timeupdate", "transitionend", "waiting", "change",
+				"compositionend", "textInput", "compositionstart", "compositionupdate"
+			]
+			
+			const methods = [
+				"stopImmediatePropagation", "stopPropagation", "preventDefault",
+				"getModifierState", "composedPath",
+			]
+			
+			const callback = event => {
+				const clone = new event.constructor(event.type, new Proxy(event, {
+					get(target, prop) {
+						return prop === "bubbles" ? false : target[prop]
+					}
+				}))
+				
+				Object.defineProperties(clone, {
+					target: { value: event.target },
+					bubbles: { value: event.bubbles },
+				})
+				
+				for(const method of methods) {
+					if(typeof clone[method] === "function") {
+						clone[method] = new Proxy(clone[method], {
+							apply(target, thisArg, args) {
+								if(thisArg === clone) {
+									target.apply(thisArg, args)
+									return event[method].apply(event, args)
+								}
+								
+								return target.apply(thisArg, args)
+							}
+						})
+					}
+				}
+				
+				if(!to.dispatchEvent(clone)) {
+					event.preventDefault()
+				}
+			}
+			
+			for(const event of events) {
+				from.addEventListener(event, callback, { capture: true })
+			}
+		},
+		"refreshInventory": () => {
+			const scope = angular.element(document.querySelector("assets-explorer")).scope()
+			const ctrl = scope?.$parent?.$ctrl
+			
+			if(ctrl) {
+				const real1 = ctrl.cursorPager.loadPreviousPage
+				const real2 = ctrl.assetsPager.canLoadPreviousPage
+				
+				ctrl.cursorPager.loadPreviousPage = ctrl.cursorPager.reloadCurrentPage
+				ctrl.assetsPager.canLoadPreviousPage = () => true
+				
+				try { ctrl.assetsPager.loadPreviousPage() }
+				catch(ex) {}
+				
+				ctrl.cursorPager.loadPreviousPage = real1
+				ctrl.assetsPager.canLoadPreviousPage = real2
+			}
+		},
+		"removeAccessoryLimits": () => {
+			const accessoryAssetTypeIds = [8, 41, 42, 43, 44, 45, 46, 47, 57, 58]
+			const layeredAssetTypeIds = [64, 65, 66, 67, 68, 69, 70, 71, 72]
+			
+			const addAssetToAvatar = (target, thisArg, args) => {
+				const result = target.apply(thisArg, args)
+				const assets = [args[0], ...args[1]]
+				
+				let accessoriesLeft = 10
+				let layeredLeft = 10
+				
+				for(let i = 0; i < assets.length; i++) {
+					const asset = assets[i]
+					const assetTypeId = asset?.assetType?.id
+					
+					const isAccessory = accessoryAssetTypeIds.includes(assetTypeId)
+					const isLayered = layeredAssetTypeIds.includes(assetTypeId) || assetTypeId === 41
+					
+					let valid = true
+					
+					if(isAccessory || isLayered) {
+						if(isAccessory && accessoriesLeft <= 0) {
+							valid = false
+						}
+						
+						if(isLayered && layeredLeft <= 0) {
+							valid = false
+						}
+						
+						if(!settings.avatar.removeLayeredLimits && layeredAssetTypeIds.includes(assetTypeId)) {
+							if(!result.includes(asset)) {
+								valid = false
+							}
+						}
+					} else {
+						valid = result.includes(asset)
+					}
+					
+					if(valid) {
+						if(isAccessory) { accessoriesLeft-- }
+						if(isLayered) { layeredLeft-- }
+					} else {
+						assets.splice(i--, 1)
+					}
+				}
+				
+				return assets
+			}
+			
+			hijackFunction(Object, "defineProperty", (target, thisArg, args) => {
+				try {
+					const [obj, key, prop] = args
+					
+					if(key === "addAssetToAvatar" && obj?.__esModule && typeof prop?.get === "function") {
+						args[2] = { enumerable: true, value: new Proxy(prop.get(obj, key, obj), { apply: addAssetToAvatar }) }
+					}
+				} catch {}
+				
+				return target.apply(thisArg, args)
+			})
+			
+			onSet(window, "Roblox", Roblox => {
+				onSet(Roblox, "AvatarAccoutrementService", AvatarAccoutrementService => {
+					hijackFunction(AvatarAccoutrementService, "getAdvancedAccessoryLimit", (target, thisArg, args) => {
+						if(accessoryAssetTypeIds.includes(+args[0]) || layeredAssetTypeIds.includes(+args[0])) {
+							return
+						}
+						
+						return target.apply(thisArg, args)
+					})
+					
+					hijackFunction(AvatarAccoutrementService, "addAssetToAvatar", addAssetToAvatar)
+				})
 			})
 		},
 		"setupGamePopovers": selector => {
 			Roblox?.BootstrapWidgets?.SetupPopover(null, null, selector)
 		},
-		"linkify": target => $(target).linkify(),
-		"profilePlayGame": placeId => {
-			Roblox.GameLauncher.joinMultiplayerGame(placeId, true)
+		"setupPopovers": () => {
+			Roblox?.BootstrapWidgets?.SetupPopover(null, null, "[data-bind='popover-btr-download']")
 		},
-		"profileEditPlace": (gameId, placeId) => {
-			Roblox.GameLauncher.editGameInStudio(placeId, gameId)
-		},
-		"adblock.js": () => {
-			util.ready(() => {
-				if(window.Roblox?.PrerollPlayer) {
-					window.Roblox.PrerollPlayer.waitForPreroll = x => $.Deferred().resolve(x)
-				}
-
-				if(window.Roblox?.VideoPreRollDFP) {
-					window.Roblox.VideoPreRollDFP = null
-				}
+		"showOwnedAssets": () => {
+			const ownedAssets = {}
+			
+			contentScript.listen("updateOwnedAssets", changes => {
+				for(const [assetId, isOwned] of Object.entries(changes)) {
+					ownedAssets[+assetId]?.set(isOwned)
+				 }
 			})
+			
+			reactHook.hijackConstructor( // ItemCard
+				props => "unitsAvailableForConsumption" in props && "id" in props,
+				(target, thisArg, args) => {
+					const props = args[0]
+					const result = target.apply(thisArg, args)
+					
+					if(props.type === "Asset" && props.id) {
+						let state = ownedAssets[props.id]
+						
+						if(!state) {
+							state = reactHook.createGlobalState(false)
+							ownedAssets[props.id] = state
+							
+							contentScript.send("checkOwnedAsset", props.id)
+						}
+						
+						const owned = reactHook.useGlobalState(state)
+						
+						if(owned) {
+							result.props.className = (result.props.className ?? "") + " btr-owned"
+							
+							const parent = reactHook.queryElement(result, x => x.props.className?.includes("item-card-link"))
+							
+							if(parent) {
+								let children = parent.props.children
+								
+								if(!Array.isArray(children)) {
+									children = parent.props.children = children ? [children] : []
+								}
+								
+								children.unshift(reactHook.createElement("span", {
+									className: "btr-item-owned",
+									children: reactHook.createElement("span", {
+										className: "icon-checkmark-white-bold",
+										title: "You own this item"
+									})
+								}))
+							}
+						}
+					}
+					
+					return result
+				}
+			)
 		},
-		"fastsearchFollowPlayer": userId => {
-			Roblox.GameLauncher.followPlayerIntoGame(userId)
+		"showRecommendationPlayerCount": () => {
+			reactHook.hijackConstructor(
+				props => "wideTileType" in props && "gameData" in props && "playerCountStyle" in props,
+				(target, thisArg, args) => {
+					const props = args[0]
+					props.playerCountStyle = "Footer"
+					return target.apply(thisArg, args)
+				}
+			)
 		},
-		"fastsearch": () => {
-			reactHook.inject("#navbar-universal-search, .navbar-search", elem => {
-				elem.find("ul")?.prepend(reactHook.createElement("div", {
-					id: "btr-fastsearch-container",
-					dangerouslySetInnerHTML: { __html: "" }
-				}))
-			})
-		},
-		"navigation": () => {
-			reactHook.inject("ul.navbar-right", elem => {
-				const robux = elem.find(x => "robuxAmount" in x.props)
+		"webpackHook": () => {
+			const webpackHook = {
+				processedModules: new WeakSet(),
+				propertyHandlers: new Map(),
+				moduleHandlers: [],
+				objects: {},
 				
-				if(robux) {
-					robux.before(
-						reactHook.createElement("div", {
-							id: "btr-placeholder-friends",
-							style: { display: "none" },
-							dangerouslySetInnerHTML: { __html: "" }
-						}),
-						reactHook.createElement("div", {
-							id: "btr-placeholder-messages",
-							style: { display: "none" },
-							dangerouslySetInnerHTML: { __html: "" }
-						}),
-					)
+				onModule(fn) {
+					this.moduleHandlers.push(fn)
+				},
+				
+				onProperty(keys, fn) {
+					if(!Array.isArray(keys)) { keys = [keys] }
+					
+					const callback = keys.length >= 2 ? obj => {
+						for(const key of keys) {
+							if(!Object.hasOwn(obj, key)) {
+								return
+							}
+						}
+						
+						fn(obj)
+					} : fn
+					
+					for(const key of keys) {
+						let list = this.propertyHandlers.get(key)
+						
+						if(!list) {
+							list = []
+							
+							Object.defineProperty(Object.prototype, key, {
+								configurable: true,
+								set(value) {
+									Object.defineProperty(this, key, {
+										configurable: true,
+										enumerable: true,
+										writable: true,
+										value: value
+									})
+									
+									for(const fn of list) {
+										try { fn(args[0]) }
+										catch(ex) { console.error(ex) }
+									}
+								}
+							})
+							
+							if(!this.propertyHandlers.size) {
+								const propertyHandlers = this.propertyHandlers
+								
+								Object.defineProperty = new Proxy(Object.defineProperty, {
+									apply(target, thisArg, args) {
+										const result = target.apply(thisArg, args)
+										
+										const list = propertyHandlers.get(args[1])
+										if(list) {
+											for(const fn of list) {
+												try { fn(args[0]) }
+												catch(ex) { console.error(ex) }
+											}
+										}
+										
+										return result
+									}
+								})
+							}
+							
+							this.propertyHandlers.set(key, list)
+						}
+						
+						list.push(callback)
+					}
+				},
+				
+				init() {
+					onSet(window, "webpackChunk_N_E", chunks => {
+						const addChunk = chunk => {
+							for(const id of Object.keys(chunk)) {
+								hijackFunction(chunk, id, (target, thisArg, args) => {
+									const result = target.apply(thisArg, args)
+									
+									try {
+										const module = args[0].exports
+										if(typeof module === "object" && !this.processedModules.has(module)) {
+											this.processedModules.add(module)
+											
+											for(const fn of this.moduleHandlers) {
+												try { fn(module, target) }
+												catch(ex) { console.error(ex) }
+											}
+										}
+									} catch(ex) {
+										console.error(ex)
+									}
+									
+									return result
+								})
+							}
+						}
+						
+						const override = pushfn => new Proxy(pushfn, {
+							apply: (target, thisArg, args) => {
+								for(const chunk of args) {
+									try { addChunk(chunk[1]) }
+									catch(ex) { console.error(ex) }
+								}
+								
+								return target.apply(thisArg, args)
+							}
+						})
+						
+						let pushoverride = override(chunks.push)
+						
+						Object.defineProperty(chunks, "push", {
+							enumerable: false,
+							configurable: true,
+							set(fn) { pushoverride = override(fn) },
+							get() { return pushoverride }
+						})
+						
+						for(const chunk of chunks) {
+							try { addChunk(chunk[1]) }
+							catch(ex) { console.error(ex) }
+						}
+					})
+				}
+			}
+			
+			const { objects } = webpackHook
+			
+			objects.Mui = {}
+			
+			webpackHook.onModule((module, target) => {
+				if("jsx" in module && "jsxs" in module) {
+					hijackFunction(module, "jsx", reactHook.onCreateElement.bind(reactHook))
+					hijackFunction(module, "jsxs", reactHook.onCreateElement.bind(reactHook))
+					objects.jsx = module.jsx
+					
+				} else if("useState" in module && "useCallback" in module) {
+					reactHook.onReact(module)
+					objects.React = module
+					
+				}
+				
+				const moduleCode = target.toString()
+				
+				if(moduleCode.includes(`name:"MenuItem"`)) {
+					objects.Mui.MenuItem = Object.values(module)[0]
+				} else if(moduleCode.includes(`name:"Button"`)) {
+					objects.Mui.Button = Object.values(module)[0]
+				} else if(moduleCode.includes(`name:"Divider"`)) {
+					objects.Mui.Divider = Object.values(module)[0]
 				}
 			})
 			
-			reactHook.inject("ul.flex-col", elem => {
-				const trade = elem.find(x => x.props.path?.startsWith("/trades"))
-				if(trade) {
-					trade.after(
-						reactHook.createElement("div", {
-							id: "btr-placeholder-money",
-							style: { display: "none" },
-							dangerouslySetInnerHTML: { __html: "" }
-						}),
-					)
-				}
-				
-				if(!trade) { return } // matched some other element?
-				
-				const blog = elem.find(x => x.props.path?.toString().includes("blog.roblox.com"))
-				if(blog) {
-					blog.after(
-						reactHook.createElement("div", {
-							id: "btr-placeholder-blogfeed",
-							style: { display: "none" },
-							dangerouslySetInnerHTML: { __html: "" }
-						}),
-					)
-				}
-			})
+			BTRoblox.webpackHook = webpackHook
+			
+			webpackHook.init()
 		}
 		// Stop inserting injected functions here
 	}
