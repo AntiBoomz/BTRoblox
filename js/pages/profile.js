@@ -50,29 +50,36 @@ pageInit.profile = () => {
 		hijackXHR(request => {
 			if(request.url === "https://apis.roblox.com/profile-platform-api/v1/profiles/get") {
 				request.onResponse.push(json => {
-					contentScript.send("profileData", json)
+					if(json?.components?.About) {
+						contentScript.send("profileData", json)
+					}
 				})
 			}
 		})
 	})
 	
-	const profileDataPromises = {}
+	let profileDataPromise
+	let profileDataFilter
 	
 	injectScript.listen("profileData", json => {
-		const promise = profileDataPromises[json.profileId] ??= new Promise(() => {})
-		promise.$resolve(json)
+		if(json.profileId === profileDataFilter) {
+			profileDataPromise.$resolve(json)
+			profileDataFilter = null
+		}
 	})
 	
 	onPageReset(() => {
 		document.body?.classList.remove("btr-profile")
 		
-		for(const key of Object.keys(profileDataPromises)) {
-			delete profileDataPromises[key]
-		}
+		profileDataPromise = null
+		profileDataFilter = null
 	})
 	
 	onPageLoad(userIdString => {
 		const userId = Number.parseInt(userIdString, 10)
+		
+		profileDataPromise = new Promise(() => {})
+		profileDataFilter = userIdString
 		
 		document.$watch("body", body => body.classList.add("btr-profile"))
 		
@@ -167,7 +174,6 @@ pageInit.profile = () => {
 			</div>`
 			
 			// const presencePromise = new Promise(resolve => resolve(RobloxApi.presence.getPresence([userId]).then(json => json?.userPresences?.[0])))
-			const profileDataPromise = profileDataPromises[userIdString] ??= new Promise(() => {})
 			
 			profileContainer
 				.$watch(".user-profile-header", header => {

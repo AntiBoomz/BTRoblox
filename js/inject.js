@@ -3383,7 +3383,9 @@ document.addEventListener("btroblox/init", ev => {
 			hijackXHR(request => {
 				if(request.url === "https://apis.roblox.com/profile-platform-api/v1/profiles/get") {
 					request.onResponse.push(json => {
-						contentScript.send("profileData", json)
+						if(json?.components?.About) {
+							contentScript.send("profileData", json)
+						}
 					})
 				}
 			})
