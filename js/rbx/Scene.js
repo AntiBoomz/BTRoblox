@@ -7,7 +7,7 @@ const RBXScene = (() => {
 			this._prevRes = { width: -1, height: -1 }
 			this.cameraControlsEnabled = true
 
-			this.cameraMinZoom = 2
+			this.cameraMinZoom = 1.5
 			this.cameraMaxZoom = 25
 			this.cameraZoom = 10
 			this.cameraSlide = 0
@@ -170,8 +170,8 @@ const RBXScene = (() => {
 			
 			//
 			if(this.cameraSlideEnabled) {
-				let minSlide = 2
-				let maxSlide = 5.5
+				let minSlide = 1
+				let maxSlide = 6.5
 				
 				if(this.avatar.playerType === "R15" && this.avatar.joints.LowerTorso) {
 					maxSlide =
