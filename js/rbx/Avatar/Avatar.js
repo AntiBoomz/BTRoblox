@@ -713,7 +713,7 @@ const RBXAvatar = (() => {
 				baseColor: [...baseColor],
 				opacity: 1 - (hanInst.Transparency || 0),
 				
-				legacyHatCFrame: accInst.AttachmentPoint ? RBXAvatar.CFrameToMatrix4(...accInst.AttachmentPoint).invert() : new THREE.Matrix4(),
+				attachmentPoint: accInst.AttachmentPoint ? RBXAvatar.CFrameToMatrix4(...accInst.AttachmentPoint) : null,
 				scaleType: scaleType
 			}
 			
@@ -721,7 +721,7 @@ const RBXAvatar = (() => {
 				if(att.ClassName === "Attachment") {
 					acc.attachments.push({
 						name: att.Name,
-						cframe: RBXAvatar.CFrameToMatrix4(...att.CFrame).invert()
+						cframe: RBXAvatar.CFrameToMatrix4(...att.CFrame)
 					})
 				}
 			}
@@ -1822,6 +1822,7 @@ const RBXAvatar = (() => {
 			for(const acc of Object.values(accessories)) {
 				const meta = acc.asset.meta
 				
+				// Do not show layered clothing if disabled or R6
 				if(acc.wrapLayer) {
 					if(!SETTINGS.get("general.previewLayeredClothing")) {
 						continue
@@ -1833,18 +1834,18 @@ const RBXAvatar = (() => {
 				}
 				
 				// Attach to correct attachment
-				const attCFrame = new THREE.Matrix4()
-				let attachment
+				let bodyAttachment
+				let accAttachment
 				
 				for(const att of acc.attachments) {
 					if(this.attachments[att.name]) {
-						attachment = this.attachments[att.name]
-						attCFrame.copy(att.cframe)
+						bodyAttachment = this.attachments[att.name]
+						accAttachment = att
 						break
 					}
 				}
 				
-				const parent = attachment ? attachment.parent : this.parts.Head
+				const parent = bodyAttachment ? bodyAttachment.parent : this.parts.Head
 				
 				if(!parent) {
 					acc.attachment = null
@@ -1962,50 +1963,52 @@ const RBXAvatar = (() => {
 					}
 				}
 				
-				// Scale
+				// Scale & CFrame
 				this.getScaleMod(parent.name, acc.scaleType, parent.rbxScaleType, acc.obj.rbxScaleMod)
 				
-				if(meta?.scale) {
-					acc.obj.rbxScaleMod.x *= meta.scale.X ?? 1
-					acc.obj.rbxScaleMod.y *= meta.scale.Y ?? 1
-					acc.obj.rbxScaleMod.z *= meta.scale.Z ?? 1
-				}
-				
-				acc.obj.scale.set(...(acc.scale || [1, 1, 1])).multiply(acc.obj.rbxScaleMod)
-				
-				// Position
-				if(attachment) {
-					acc.bakedCFrame.copy(attachment.bakedCFrame).multiply(
-						scalePosition(tempMatrix.copy(attCFrame), acc.obj.rbxScaleMod)
+				if(bodyAttachment) {
+					// meta.position is not affected by meta.scale, so calculating these first
+					let translateX = (meta?.position?.X ?? 0) * acc.obj.rbxScaleMod.x
+					let translateY = (meta?.position?.Y ?? 0) * acc.obj.rbxScaleMod.y
+					let translateZ = (meta?.position?.Z ?? 0) * acc.obj.rbxScaleMod.z
+					
+					// apply meta.scale
+					acc.obj.rbxScaleMod.x *= meta?.scale?.X ?? 1
+					acc.obj.rbxScaleMod.y *= meta?.scale?.Y ?? 1
+					acc.obj.rbxScaleMod.z *= meta?.scale?.Z ?? 1
+					
+					// 
+					acc.bakedCFrame.copy(accAttachment.cframe).invert()
+					scalePosition(acc.bakedCFrame, acc.obj.rbxScaleMod)
+					
+					acc.bakedCFrame.premultiply(bodyAttachment.bakedCFrame)
+					
+					// Apply meta.rotation and meta.position
+					tempVector.setFromMatrixPosition(acc.bakedCFrame)
+					tempVector.x += translateX
+					tempVector.y += translateY
+					tempVector.z += translateZ
+					
+					acc.bakedCFrame.premultiply(
+						tempMatrix.makeRotationFromEuler(tempEuler.set(
+							(meta?.rotation?.X ?? 0) / 180 * Math.PI,
+							(meta?.rotation?.Y ?? 0) / 180 * Math.PI,
+							(meta?.rotation?.Z ?? 0) / 180 * Math.PI,
+							"YXZ"
+						))
 					)
+					
+					acc.bakedCFrame.setPosition(tempVector)
+					
 				} else {
-					// Legacy hats, position is not scaled
 					acc.bakedCFrame.makeTranslation(0, 0.5, 0)
 					
-					if(acc.legacyHatCFrame) {
-						acc.bakedCFrame.multiply(acc.legacyHatCFrame)
+					if(acc.attachmentPoint) {
+						acc.bakedCFrame.multiply(tempMatrix.copy(acc.attachmentPoint).invert())
 					}
 				}
 				
-				if(meta?.position) {
-					acc.bakedCFrame.elements[12] += (meta.position.X ?? 0) * acc.obj.rbxScaleMod.x
-					acc.bakedCFrame.elements[13] += (meta.position.Y ?? 0) * acc.obj.rbxScaleMod.y
-					acc.bakedCFrame.elements[14] += (meta.position.Z ?? 0) * acc.obj.rbxScaleMod.z
-				}
-				
-				if(meta?.rotation) {
-					tempVector.setFromMatrixPosition(acc.bakedCFrame)
-					acc.bakedCFrame.setPosition(0, 0, 0)
-					
-					acc.bakedCFrame.premultiply(tempMatrix.makeRotationFromEuler(tempEuler.set(
-						(meta.rotation.X ?? 0) / 180 * Math.PI,
-						(meta.rotation.Y ?? 0) / 180 * Math.PI,
-						(meta.rotation.Z ?? 0) / 180 * Math.PI,
-						"YXZ"
-					)))
-					
-					acc.bakedCFrame.setPosition(tempVector)
-				}
+				acc.obj.scale.set(...(acc.scale || [1, 1, 1])).multiply(acc.obj.rbxScaleMod)
 				
 				// Mesh offset (not scaled)
 				if(acc.offset) {
@@ -2014,7 +2017,7 @@ const RBXAvatar = (() => {
 				
 				//
 				
-				acc.attachment = attachment
+				acc.attachment = accAttachment
 				acc.parent = parent
 				
 				if(!acc.obj.parent) {
