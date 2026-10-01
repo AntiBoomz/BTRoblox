@@ -59,7 +59,7 @@ const DracoBitstream = {
 		// DecodeHeader
 		const { majorVersion, minorVersion, encoderType, encoderMethod, flags } = parser.header = this.parseHeader(stream)
 		
-		console.log(`DRACO ${majorVersion}.${minorVersion} | encoderType: ${encoderType}, encoderMethod: ${encoderMethod}, flags: ${flags}`)
+		// console.log(`DRACO ${majorVersion}.${minorVersion} | encoderType: ${encoderType}, encoderMethod: ${encoderMethod}, flags: ${flags}`)
 		
 		if(encoderType !== TRIANGULAR_MESH) {
 			throw "draco encoderType not implemented"
