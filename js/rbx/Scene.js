@@ -23,6 +23,8 @@ const RBXScene = (() => {
 				antialias: true,
 				alpha: true
 			})
+			
+			renderer.debug.checkShaderErrors = false
 
 			renderer.setClearAlpha(0)
 			renderer.shadowMap.enabled = true
