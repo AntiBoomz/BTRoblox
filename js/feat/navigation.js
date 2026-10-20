@@ -326,8 +326,10 @@ const Navigation = {
 			selector: "#btr-placeholder-friends",
 			html: html`
 				<li id="btr-navbar-friends" class="navbar-icon-item">
-					<a class="rbx-menu-item" href="/users/friends">
-						<span class="icon-nav-friend-btr"></span>
+					<a class="btn-navigation-nav-settings-md" href="/users/friends" aria-label="Friends">
+						<span class="rbx-menu-item">
+							<span aria-hidden="true" class="grow-0 shrink-0 basis-auto icon icon-regular-two-people size-[var(--icon-size-xlarge)] [vertical-align:middle]"></span>
+						</span>
 						<span class=btr-nav-notif style="display:none;"></span>
 					</a>
 				</li>`,
@@ -358,8 +360,10 @@ const Navigation = {
 			selector: "#btr-placeholder-messages",
 			html: html`
 				<li id="btr-navbar-messages" class="navbar-icon-item">
-					<a class="rbx-menu-item" href="/my/messages">
-						<span class="icon-nav-message-btr"></span>
+					<a class="btn-navigation-nav-settings-md" href="/my/messages" aria-label="Messages">
+						<span class="rbx-menu-item">
+							<span aria-hidden="true" class="grow-0 shrink-0 basis-auto icon icon-regular-speech-bubble-align-center size-[var(--icon-size-xlarge)] [vertical-align:middle]"></span>
+						</span>
 						<span class=btr-nav-notif style="display:none;"></span>
 					</a>
 				</li>`,
