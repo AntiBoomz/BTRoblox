@@ -244,7 +244,7 @@
 /* */
 
 .btr-sourceviewer-source-container, .btr-sourceviewer-source-container * {
-	font-family: "Courier New" !important;
+	font-family: "Fira Mono", monospace !important;
 	font-size: 14px !important;
 	font-weight: 300;
 	line-height: 18px;
